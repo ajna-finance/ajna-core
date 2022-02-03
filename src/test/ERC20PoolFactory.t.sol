@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.10;
 
-import "ds-test/test.sol";
+import "@ds-test/test.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../Erc20Pool.sol";
-import "../Erc20PoolFactory.sol";
+import "../ERC20Pool.sol";
+import "../ERC20PoolFactory.sol";
 
 contract PoolFactoryTest is DSTest {
-    Erc20PoolFactory internal factory;
+    ERC20PoolFactory internal factory;
     ERC20 internal token;
 
     function setUp() public {
-        factory = new Erc20PoolFactory();
+        factory = new ERC20PoolFactory();
         token = new ERC20("Test", "T");
     }
 
     function test_deploy() public {
-        Erc20Pool pool = factory.deployPool(token);
+        ERC20Pool pool = factory.deployPool(token);
 
         assertEq(address(token), address(pool.UNDERLYING()));
     }
@@ -31,11 +31,11 @@ contract PoolFactoryTest is DSTest {
     function test_predict_deployed_address() public {
         address predictedAddress = factory.calculatePoolAddress(token);
 
-        assert(false == factory.isPoolDeployed(Erc20Pool(predictedAddress)));
+        assert(false == factory.isPoolDeployed(ERC20Pool(predictedAddress)));
 
-        Erc20Pool pool = factory.deployPool(token);
+        ERC20Pool pool = factory.deployPool(token);
 
         assertEq(address(pool), predictedAddress);
-        assert(true == factory.isPoolDeployed(Erc20Pool(predictedAddress)));
+        assert(true == factory.isPoolDeployed(ERC20Pool(predictedAddress)));
     }
 }
