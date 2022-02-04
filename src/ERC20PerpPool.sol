@@ -8,6 +8,7 @@ interface IPerpPool {
     function depositCollateral(uint256 _amount) external;
     function withdrawCollateral(uint256 _amount) external;
     function depositQuoteToken(uint256 _amount, uint256 _price) external;
+    function withdrawQuoteToken(uint256 _amount) external;
     function borrow(uint256 _amount) external;
     function actualUtilization() external view returns (uint256);
     function targetUtilization() external view returns (uint256);
@@ -29,11 +30,6 @@ contract ERC20PerpPool is IPerpPool {
         uint256 inflatorSnapshot;
     }
 
-    enum PricePointer {
-        HighestUtilizable,
-        LowestUtilized
-    }
-
     // --- Math ---
     uint private constant WAD = 10 ** 18;
 
@@ -52,19 +48,36 @@ contract ERC20PerpPool is IPerpPool {
     function wdiv(uint x, uint y) internal pure returns (uint z) {
         z = add(mul(x, WAD), y / 2) / y;
     }
+    function max(uint x, uint y) internal pure returns (uint z) {
+        z = x >= y ? x : y;
+    }
 
     event CollateralDeposited(address depositor, uint256 amount, uint256 collateralAccumulator);
     event CollateralWithdrawn(address depositor, uint256 amount, uint256 collateralAccumulator);
 
+    uint public constant HIGHEST_UTILIZABLE_PRICE = 1;
+    uint public constant LOWEST_UTILIZABLE_PRICE = 2;
+
     uint public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
+    uint public constant MAX_PRICE = 1000 * WAD;
+    uint public constant MIN_PRICE = 10 * WAD;
+    uint public constant PRICE_COUNT = 10;
+    uint public constant PRICE_STEP = (MAX_PRICE - MIN_PRICE) / PRICE_COUNT;
 
     IERC20 public immutable collateralToken;
-    IERC20 public immutable quoteToken;
-
     mapping(address => uint256) public collateralBalances;
-    mapping(address => uint256) public quoteBalances;
-
     uint256 public collateralAccumulator;
+
+    IERC20 public immutable quoteToken;
+    mapping(address => uint256) public quoteBalances;
+    uint256 public quoteTokenAccumulator;
+
+    mapping(uint256 => uint256) public priceToIndex;
+    mapping(uint256 => uint256) public indexToPrice;
+    mapping(uint256 => uint256) public pointerToIndex;
+
+    mapping(uint256 => PriceBucket) public buckets;
+
     uint256 public borrowerInflator;
     uint256 public lastBorrowerInflatorUpdate;
     uint256 public previousRate;
@@ -80,6 +93,12 @@ contract ERC20PerpPool is IPerpPool {
 
         previousRate = wdiv(5, 100);
         previousRateUpdate = block.timestamp;
+
+        for (uint256 i = 0; i < PRICE_COUNT; i++) {
+            uint256 price = MIN_PRICE + (PRICE_STEP * i);
+            priceToIndex[price] = i;
+            indexToPrice[i] = price;
+        }
     }
 
     modifier updateBorrowerInflator(address account) {
@@ -102,7 +121,7 @@ contract ERC20PerpPool is IPerpPool {
     }
 
     function withdrawCollateral(uint256 _amount) external updateBorrowerInflator(msg.sender) {
-        require(_amount <= collateralBalances[msg.sender], "Not enough collateral");
+        require(_amount <= collateralBalances[msg.sender], "Not enough collateral to withdraw");
 
         collateralBalances[msg.sender] -= _amount;
         collateralAccumulator -= _amount;
@@ -112,6 +131,32 @@ contract ERC20PerpPool is IPerpPool {
     }
 
     function depositQuoteToken(uint256 _amount, uint256 _price) external {
+
+        uint256 depositBucketId = priceToIndex[_price];
+        require(depositBucketId > 0, "Price bucket not found");
+
+        PriceBucket storage bucket = buckets[depositBucketId];
+        bucket.lpTokenBalance[msg.sender] += _amount;
+        bucket.onDeposit += _amount;
+
+        quoteBalances[msg.sender] += _amount;
+        quoteTokenAccumulator += _amount;
+
+        uint256 lupIndex = pointerToIndex[LOWEST_UTILIZABLE_PRICE];
+        if (depositBucketId > lupIndex) {
+            for (uint256 i = lupIndex; i < depositBucketId; i++) {
+                // TODO reallocate debt here!
+            }
+        }
+
+        if (bucket.onDeposit == 0) {
+            return;
+        }
+        pointerToIndex[HIGHEST_UTILIZABLE_PRICE] = max(pointerToIndex[HIGHEST_UTILIZABLE_PRICE], depositBucketId);
+
+    }
+
+    function withdrawQuoteToken(uint256 _amount) external {
     }
 
     function borrow(uint256 _amount) external {

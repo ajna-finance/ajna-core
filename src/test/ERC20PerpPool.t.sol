@@ -75,4 +75,5 @@ contract ERC20PerpPoolTest is DSTest, stdCheats {
         // borrower inflator updated with new deposit tx
         assertGt(pool.borrowerInflator(), 1 ether);
     }
+
 }

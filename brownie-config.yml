@@ -1,0 +1,23 @@
+project_structure:
+    build: out
+    contracts: src
+    tests: src/tests
+
+# use Ganache's forked mainnet mode as the default network
+# NOTE: You don't *have* to do this, but it is often helpful for testing
+networks:
+  default: mainnet-fork
+
+# automatically fetch contract sources from Etherscan
+autofetch_sources: True
+
+# path remapping to support imports from GitHub/NPM
+compiler:
+  solc:
+    version: 0.8.10
+    remappings:
+      - "@ds-test=lib/ds-test/src/"
+      - "@ds-math=lib/ds-math/src/"
+      - "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts"
+      - "@std=lib/forge-std/src/"
+
