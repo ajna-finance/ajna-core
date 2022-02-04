@@ -15,11 +15,6 @@ interface IPerpPool {
 
 contract ERC20PerpPool is IPerpPool {
 
-    struct Balance {
-        uint256 collateral;
-        uint256 quote;
-    }
-
     struct PriceBucket {
         mapping(address => uint256) lpTokenBalance;
         uint256 onDeposit;
@@ -66,7 +61,9 @@ contract ERC20PerpPool is IPerpPool {
     IERC20 public immutable collateralToken;
     IERC20 public immutable quoteToken;
 
-    mapping(address => Balance) public balances;
+    mapping(address => uint256) public collateralBalances;
+    mapping(address => uint256) public quoteBalances;
+
     uint256 public collateralAccumulator;
     uint256 public borrowerInflator;
     uint256 public lastBorrowerInflatorUpdate;
@@ -97,7 +94,7 @@ contract ERC20PerpPool is IPerpPool {
     }
 
     function depositCollateral(uint256 _amount) external updateBorrowerInflator(msg.sender) {
-        balances[msg.sender].collateral += _amount;
+        collateralBalances[msg.sender] += _amount;
         collateralAccumulator += _amount;
 
         collateralToken.transferFrom(msg.sender, address(this), _amount);
@@ -105,9 +102,9 @@ contract ERC20PerpPool is IPerpPool {
     }
 
     function withdrawCollateral(uint256 _amount) external updateBorrowerInflator(msg.sender) {
-        require(_amount <= balances[msg.sender].collateral, "Not enough collateral");
+        require(_amount <= collateralBalances[msg.sender], "Not enough collateral");
 
-        balances[msg.sender].collateral -= _amount;
+        collateralBalances[msg.sender] -= _amount;
         collateralAccumulator -= _amount;
 
         collateralToken.transferFrom(address(this), msg.sender, _amount);
@@ -128,10 +125,11 @@ contract ERC20PerpPool is IPerpPool {
         return 0;
     }
 
-    function borrowerInflatorPending() public view returns (uint256) {
+    function borrowerInflatorPending() public view returns (uint256 pendingBorrowerInflator) {
         uint256 secondsSinceLastUpdate = block.timestamp - lastBorrowerInflatorUpdate;
         uint256 borrowerSpr = previousRate / SECONDS_PER_YEAR;
-        return borrowerInflator * 1 + (borrowerSpr * secondsSinceLastUpdate);
+
+        pendingBorrowerInflator = wmul(borrowerInflator, 1 * WAD + (borrowerSpr * secondsSinceLastUpdate));
     }
     
 }
