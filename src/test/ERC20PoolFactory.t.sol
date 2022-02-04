@@ -5,37 +5,40 @@ import "@ds-test/test.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../ERC20Pool.sol";
+import "../ERC20PerpPool.sol";
 import "../ERC20PoolFactory.sol";
 
 contract PoolFactoryTest is DSTest {
     ERC20PoolFactory internal factory;
-    ERC20 internal token;
+    ERC20 internal collateral;
+    ERC20 internal quote;
 
     function setUp() public {
         factory = new ERC20PoolFactory();
-        token = new ERC20("Test", "T");
+        collateral = new ERC20("Collateral", "C");
+        quote = new ERC20("Quote", "Q");
     }
 
     function test_deploy() public {
-        ERC20Pool pool = factory.deployPool(token);
+        ERC20PerpPool pool = factory.deployPool(collateral, quote);
 
-        assertEq(address(token), address(pool.UNDERLYING()));
+        assertEq(address(collateral), address(pool.collateralToken()));
+        assertEq(address(quote), address(pool.quoteToken()));
     }
 
     function testFail_deploy_same_pool_twice() public {
-        factory.deployPool(token);
-        factory.deployPool(token);
+        factory.deployPool(collateral, quote);
+        factory.deployPool(collateral, quote);
     }
 
     function test_predict_deployed_address() public {
-        address predictedAddress = factory.calculatePoolAddress(token);
+        address predictedAddress = factory.calculatePoolAddress(collateral, quote);
 
-        assert(false == factory.isPoolDeployed(ERC20Pool(predictedAddress)));
+        assert(false == factory.isPoolDeployed(ERC20PerpPool(predictedAddress)));
 
-        ERC20Pool pool = factory.deployPool(token);
+        ERC20PerpPool pool = factory.deployPool(collateral, quote);
 
         assertEq(address(pool), predictedAddress);
-        assert(true == factory.isPoolDeployed(ERC20Pool(predictedAddress)));
+        assert(true == factory.isPoolDeployed(ERC20PerpPool(predictedAddress)));
     }
 }

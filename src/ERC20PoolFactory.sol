@@ -3,26 +3,26 @@
 pragma solidity 0.8.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import {ERC20Pool} from "./ERC20Pool.sol";
+import {ERC20PerpPool} from "./ERC20PerpPool.sol";
 
 contract ERC20PoolFactory {
-    event PoolCreated(ERC20Pool pool);
+    event PoolCreated(ERC20PerpPool pool);
 
-    function deployPool(IERC20 underlying) external returns (ERC20Pool pool) {
-        bytes32 salt = keccak256(abi.encode(underlying));
+    function deployPool(IERC20 collateral, IERC20 quote) external returns (ERC20PerpPool pool) {
+        bytes32 salt = keccak256(abi.encode(collateral, quote));
 
-        pool = new ERC20Pool{salt: salt}(underlying);
+        pool = new ERC20PerpPool{salt: salt}(collateral, quote);
 
         emit PoolCreated(pool);
     }
 
-    function isPoolDeployed(ERC20Pool pool) external view returns (bool) {
+    function isPoolDeployed(ERC20PerpPool pool) external view returns (bool) {
         return address(pool).code.length > 0;
     }
 
-    function calculatePoolAddress(IERC20 underlying) public view returns (address predictedAddress) {
-        bytes32 salt = keccak256(abi.encode(underlying));
-        bytes memory poolConstructorArgs = abi.encode(underlying);
+    function calculatePoolAddress(IERC20 collateral, IERC20 quote) public view returns (address predictedAddress) {
+        bytes memory poolConstructorArgs = abi.encode(collateral, quote);
+        bytes32 salt = keccak256(poolConstructorArgs);
 
         predictedAddress = address(
             uint160(
@@ -32,7 +32,7 @@ contract ERC20PoolFactory {
                             bytes1(0xff),
                             address(this),
                             salt,
-                            keccak256(abi.encodePacked(type(ERC20Pool).creationCode, poolConstructorArgs))
+                            keccak256(abi.encodePacked(type(ERC20PerpPool).creationCode, poolConstructorArgs))
                         )
                     )
                 )
