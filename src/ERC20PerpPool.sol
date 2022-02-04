@@ -19,8 +19,11 @@ contract ERC20PerpPool is IPerpPool {
     struct PriceBucket {
         mapping(address => uint256) lpTokenBalance;
         uint256 onDeposit;
+        uint256 totalDebitors;
+        mapping(uint256 => address) debitorIndex;
         mapping(address => uint256) debt;
         uint256 accumulator;
+        uint256 price;
     }
 
     struct BorrowerInfo {
@@ -50,6 +53,9 @@ contract ERC20PerpPool is IPerpPool {
     }
     function max(uint x, uint y) internal pure returns (uint z) {
         z = x >= y ? x : y;
+    }
+    function min(uint x, uint y) internal pure returns (uint z) {
+        z = x <= y ? x : y;
     }
 
     event CollateralDeposited(address depositor, uint256 amount, uint256 collateralAccumulator);
@@ -98,6 +104,8 @@ contract ERC20PerpPool is IPerpPool {
             uint256 price = MIN_PRICE + (PRICE_STEP * i);
             priceToIndex[price] = i;
             indexToPrice[i] = price;
+
+            buckets[i].price = price;
         }
     }
 
@@ -145,7 +153,19 @@ contract ERC20PerpPool is IPerpPool {
         uint256 lupIndex = pointerToIndex[LOWEST_UTILIZABLE_PRICE];
         if (depositBucketId > lupIndex) {
             for (uint256 i = lupIndex; i < depositBucketId; i++) {
-                // TODO reallocate debt here!
+                require(buckets[i].price < bucket.price, "To bucket price not greater than from bucket price");
+
+                for (uint256 debtIndex = 0; debtIndex < buckets[i].totalDebitors; debtIndex++) {
+                    uint256 debtToReallocate = min(buckets[i].debt[buckets[i].debitorIndex[debtIndex]],
+                                                bucket.onDeposit);
+                    if (debtToReallocate > 0) {
+                        // Todo reallocate debt here
+                    }
+                    if (bucket.onDeposit == 0) {
+                        break;
+                    }
+                }
+
             }
         }
 
