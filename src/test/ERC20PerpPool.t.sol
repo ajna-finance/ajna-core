@@ -11,7 +11,6 @@ import {ERC20PerpPool} from "../ERC20PerpPool.sol";
 contract UserWithCollateral {
     function approveAndDepositTokenAsCollateral(IERC20 token, ERC20PerpPool pool, uint256 amount) public {
         token.approve(address(pool), amount);
-
         pool.depositCollateral(amount);
     }
 }
@@ -42,7 +41,8 @@ contract ERC20PerpPoolTest is DSTest, stdCheats {
 
         pool = new ERC20PerpPool(collateral, quote);
     }
-    function test_deploy() public {
+
+    function testDeploy() public {
         assertEq(address(collateral), address(pool.collateralToken()));
         assertEq(address(quote), address(pool.quoteToken()));
 
@@ -54,7 +54,7 @@ contract ERC20PerpPoolTest is DSTest, stdCheats {
         assertEq(block.timestamp, pool.previousRateUpdate());
     }
 
-    function test_depositCollateral() public {
+    function testDepositCollateral() public {
         alice.approveAndDepositTokenAsCollateral(collateral, pool, 50 ether);
 
         uint256 aliceCollateral = pool.collateralBalances(address(alice));
