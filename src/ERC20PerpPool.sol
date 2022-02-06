@@ -140,28 +140,32 @@ contract ERC20PerpPool is IPerpPool {
 
     function depositQuoteToken(uint256 _amount, uint256 _price) external {
 
-        uint256 depositBucketId = priceToIndex[_price];
-        require(depositBucketId > 0, "Price bucket not found");
+        uint256 depositIndex = priceToIndex[_price];
+        require(depositIndex > 0, "Price bucket not found");
 
-        PriceBucket storage bucket = buckets[depositBucketId];
-        bucket.lpTokenBalance[msg.sender] += _amount;
-        bucket.onDeposit += _amount;
+        PriceBucket storage toBucket = buckets[depositIndex];
+        toBucket.lpTokenBalance[msg.sender] += _amount;
+        toBucket.onDeposit += _amount;
 
         quoteBalances[msg.sender] += _amount;
         quoteTokenAccumulator += _amount;
 
         uint256 lupIndex = pointerToIndex[LOWEST_UTILIZABLE_PRICE];
-        if (depositBucketId > lupIndex) {
-            for (uint256 i = lupIndex; i < depositBucketId; i++) {
-                require(buckets[i].price < bucket.price, "To bucket price not greater than from bucket price");
+        if (depositIndex > lupIndex) {
+            for (uint256 i = lupIndex; i < depositIndex; i++) {
+                require(buckets[i].price < toBucket.price, "To bucket price not greater than from bucket price");
 
                 for (uint256 debtIndex = 0; debtIndex < buckets[i].totalDebitors; debtIndex++) {
                     uint256 debtToReallocate = min(buckets[i].debt[buckets[i].debitorIndex[debtIndex]],
-                                                bucket.onDeposit);
+                        toBucket.onDeposit);
                     if (debtToReallocate > 0) {
                         // Todo reallocate debt here
+                        require(debtToReallocate <= buckets[i].debt[buckets[i].debitorIndex[debtIndex]],
+                            "Borrower does not have debt to reallocate");
+                        require(toBucket.onDeposit > debtToReallocate, "Insufficent liquidity to reallocate");
+
                     }
-                    if (bucket.onDeposit == 0) {
+                    if (toBucket.onDeposit == 0) {
                         break;
                     }
                 }
@@ -169,10 +173,10 @@ contract ERC20PerpPool is IPerpPool {
             }
         }
 
-        if (bucket.onDeposit == 0) {
+        if (toBucket.onDeposit == 0) {
             return;
         }
-        pointerToIndex[HIGHEST_UTILIZABLE_PRICE] = max(pointerToIndex[HIGHEST_UTILIZABLE_PRICE], depositBucketId);
+        pointerToIndex[HIGHEST_UTILIZABLE_PRICE] = max(pointerToIndex[HIGHEST_UTILIZABLE_PRICE], depositIndex);
 
     }
 
