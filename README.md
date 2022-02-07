@@ -37,7 +37,13 @@ make test
 - Make a copy of .env.example and name it .env. Add the values for ETHERSCAN_TOKEN and WEB3_INFURA_PROJECT_ID
 - Run `brownie console`
 
-### ERC20 pool test
+### Brownie integraion tests
+
+```bash
+brownie test
+```
+
+### ERC20 pool manual test
 
 - Deploy ERC20 Perp pool for DAI/MKR, swap ETH to DAI for `alice` and ETH to MKR for `bob` and check balances:
 

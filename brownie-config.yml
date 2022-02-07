@@ -1,7 +1,7 @@
 project_structure:
     build: out
     contracts: src
-    tests: src/tests
+    tests: tests
 
 # use Ganache's forked mainnet mode as the default network
 # NOTE: You don't *have* to do this, but it is often helpful for testing
