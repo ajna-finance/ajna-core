@@ -28,7 +28,6 @@ contract ERC20PerpPool is IPerpPool {
     }
 
     struct BorrowerInfo {
-        // address borrower;
         uint256 collateralEncumbered;
         uint256 debt;
         uint256 inflatorSnapshot;
@@ -59,16 +58,18 @@ contract ERC20PerpPool is IPerpPool {
         z = x <= y ? x : y;
     }
 
-    event CollateralDeposited(address depositor, uint256 amount, uint256 collateralAccumulator);
-    event CollateralWithdrawn(address depositor, uint256 amount, uint256 collateralAccumulator);
+    event CollateralDeposit(address depositor, uint256 amount, uint256 collateralAccumulator);
+    event CollateralWithdraw(address depositor, uint256 amount, uint256 collateralAccumulator);
+    event QuoteTokenDeposit(address depositor, uint256 amount, uint256 quoteTokenAccumulator);
+    event Borrow(address borrower, uint256 amount, uint256 quoteTokenAccumulator);
 
     uint public constant HIGHEST_UTILIZABLE_PRICE = 1;
     uint public constant LOWEST_UTILIZED_PRICE = 2;
 
     uint public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
-    uint public constant MAX_PRICE = 1000 * WAD;
-    uint public constant MIN_PRICE = 10 * WAD;
-    uint public constant PRICE_COUNT = 10;
+    uint public constant MAX_PRICE = 5000 * WAD;
+    uint public constant MIN_PRICE = 1000 * WAD;
+    uint public constant PRICE_COUNT = 15;
     uint public constant PRICE_STEP = (MAX_PRICE - MIN_PRICE) / PRICE_COUNT;
 
     IERC20 public immutable collateralToken;
@@ -91,6 +92,9 @@ contract ERC20PerpPool is IPerpPool {
     uint256 public lastBorrowerInflatorUpdate;
     uint256 public previousRate;
     uint256 public previousRateUpdate;
+
+    uint256 public debtAccumulatorCollateral;
+    uint256 public debtAccumulatorQuote;
 
     constructor(IERC20 _collateralToken, IERC20 _quoteToken) {
 
@@ -124,24 +128,29 @@ contract ERC20PerpPool is IPerpPool {
     }
 
     function depositCollateral(uint256 _amount) external updateBorrowerInflator(msg.sender) {
+
+        require(collateralToken.balanceOf(msg.sender) >= _amount, "Not enough funds to deposit");
+
         collateralBalances[msg.sender] += _amount;
         collateralAccumulator += _amount;
 
         collateralToken.transferFrom(msg.sender, address(this), _amount);
-        emit CollateralDeposited(msg.sender, _amount, collateralAccumulator);
+        emit CollateralDeposit(msg.sender, _amount, collateralAccumulator);
     }
 
     function withdrawCollateral(uint256 _amount) external updateBorrowerInflator(msg.sender) {
-        require(_amount <= collateralBalances[msg.sender], "Not enough collateral to withdraw");
+        require(_amount < collateralAvailableToWithdraw(msg.sender), "Not enough collateral to withdraw");
 
         collateralBalances[msg.sender] -= _amount;
         collateralAccumulator -= _amount;
 
         collateralToken.transferFrom(address(this), msg.sender, _amount);
-        emit CollateralWithdrawn(msg.sender, _amount, collateralAccumulator);
+        emit CollateralWithdraw(msg.sender, _amount, collateralAccumulator);
     }
 
     function depositQuoteToken(uint256 _amount, uint256 _price) external {
+
+        require(quoteToken.balanceOf(msg.sender) >= _amount, "Not enough funds to deposit");
 
         uint256 depositIndex = priceToIndex[_price];
         require(depositIndex > 0, "Price bucket not found");
@@ -157,43 +166,44 @@ contract ERC20PerpPool is IPerpPool {
         if (depositIndex > lupIndex) {
             for (uint256 i = lupIndex; i < depositIndex; i++) {
 
-                PriceBucket storage fromBucket = buckets[i];
-                require(fromBucket.price < toBucket.price, "To bucket price not greater than from bucket price");
+                require(buckets[i].price < toBucket.price,
+                    "To bucket price lower than from bucket price");
 
-                for (uint256 debitorIndex = 0; debitorIndex < fromBucket.totalDebitors; debitorIndex++) {
-                    address debitor = fromBucket.indexToDebitor[debitorIndex];
-                    uint256 debtToReallocate = min(fromBucket.debt[debitor], toBucket.onDeposit);
+                for (uint256 debitorIndex = 0; debitorIndex < buckets[i].totalDebitors; debitorIndex++) {
+                    address debitor = buckets[i].indexToDebitor[debitorIndex];
+                    uint256 debtToReallocate = min(buckets[i].debt[debitor], toBucket.onDeposit);
                     if (debtToReallocate > 0) {
 
-                        require(debtToReallocate <= fromBucket.debt[debitor],
-                            "Borrower does not have debt to reallocate");
-                        require(toBucket.onDeposit > debtToReallocate, "Insufficent liquidity to reallocate");
+                        require(debtToReallocate <= buckets[i].debt[debitor],
+                            "No debt to reallocate");
+                        require(toBucket.onDeposit >= debtToReallocate,
+                            "Insufficent liquidity to reallocate");
 
                         // update accounting of encumbered collateral
                         borrowers[debitor].collateralEncumbered += 
-                            wdiv(_amount, toBucket.price) - wdiv(_amount, fromBucket.price);
+                            debtToReallocate /toBucket.price - debtToReallocate / buckets[i].price;
                         
                         if (toBucket.debt[debitor] == 0 && toBucket.debitorToIndex[debitor] == 0) {
                             toBucket.indexToDebitor[toBucket.totalDebitors] = debitor;
                             toBucket.debitorToIndex[debitor] = toBucket.totalDebitors;
                             toBucket.totalDebitors += 1;
                         }
-                        toBucket.debt[debitor] += _amount;
-                        toBucket.debtAccumulator += _amount;
+                        toBucket.debt[debitor] += debtToReallocate;
+                        toBucket.debtAccumulator += debtToReallocate;
 
-                        fromBucket.debt[debitor] -= _amount;
-                        if (fromBucket.debt[debitor] == 0) {
-                            delete fromBucket.indexToDebitor[fromBucket.debitorToIndex[debitor]];
-                            delete fromBucket.debitorToIndex[debitor];
-                            fromBucket.totalDebitors -= 1;
+                        buckets[i].debt[debitor] -= debtToReallocate;
+                        if (buckets[i].debt[debitor] == 0) {
+                            delete buckets[i].indexToDebitor[buckets[i].debitorToIndex[debitor]];
+                            delete buckets[i].debitorToIndex[debitor];
+                            buckets[i].totalDebitors -= 1;
                         }
-                        fromBucket.debtAccumulator -= _amount;
+                        buckets[i].debtAccumulator -= debtToReallocate;
 
                         // pay off the moved debt
-                        fromBucket.onDeposit += _amount;
-                        toBucket.onDeposit -= _amount;
+                        buckets[i].onDeposit -= debtToReallocate;
+                        toBucket.onDeposit += debtToReallocate;
 
-                        if (priceToIndex[fromBucket.price] >= lupIndex) {
+                        if (priceToIndex[buckets[i].price] >= lupIndex) {
                             while (buckets[lupIndex].debtAccumulator == 0) {
                                 lupIndex += 1;
                             }
@@ -220,17 +230,74 @@ contract ERC20PerpPool is IPerpPool {
         }
         pointerToIndex[HIGHEST_UTILIZABLE_PRICE] = max(pointerToIndex[HIGHEST_UTILIZABLE_PRICE], depositIndex);
 
+        quoteToken.transferFrom(msg.sender, address(this), _amount);
+        emit QuoteTokenDeposit(msg.sender, _amount, quoteTokenAccumulator);
+
     }
 
     function withdrawQuoteToken(uint256 _amount) external {
     }
 
-    function borrow(uint256 _amount) external {
-        require(collateralBalances[msg.sender] > 0, "No colalteral for borrower");
-        require(borrowers[msg.sender].collateralEncumbered > collateralBalances[msg.sender],
+    function borrow(uint256 _amount) external updateBorrowerInflator(msg.sender) {
+        require(collateralBalances[msg.sender] > 0, "No collalteral for borrower");
+        require(borrowers[msg.sender].collateralEncumbered < collateralBalances[msg.sender],
             "Borrower is already undercollateralized");
         
+        uint256 amountRemaining = _amount;
+        uint256 lastBucketBorrowedFrom;
 
+        for (uint256 bucketId = pointerToIndex[HIGHEST_UTILIZABLE_PRICE] + 1; bucketId > 0; bucketId--) {
+            PriceBucket storage bucket = buckets[bucketId];
+            
+            if (bucket.onDeposit > 0) {
+                uint256 priceAmount = min(bucket.onDeposit, amountRemaining);
+                uint256 priceCost = priceAmount * WAD / bucket.price;
+                
+                require(borrowers[msg.sender].collateralEncumbered + priceCost < collateralBalances[msg.sender],
+                    "Insufficient collateral to fund loan");
+                require(bucket.onDeposit >= priceAmount, "Not enough funds deposited in bucket");
+        
+                bucket.onDeposit -= priceAmount;
+                if (bucket.debt[msg.sender] == 0 && bucket.debitorToIndex[msg.sender] == 0) {
+                    bucket.indexToDebitor[bucket.totalDebitors] = msg.sender;
+                    bucket.debitorToIndex[msg.sender] = bucket.totalDebitors;
+                    bucket.totalDebitors += 1;
+                }
+                bucket.debt[msg.sender] += priceAmount;
+                bucket.debtAccumulator += priceAmount;
+                quoteBalances[msg.sender] += priceAmount;
+
+                amountRemaining -= priceAmount;
+                debtAccumulatorCollateral += priceCost;
+                debtAccumulatorQuote += priceAmount;
+                borrowers[msg.sender].debt += priceAmount;
+                borrowers[msg.sender].collateralEncumbered += priceCost;
+
+                lastBucketBorrowedFrom = bucketId;
+
+                if (amountRemaining == 0) {
+                    break;
+                }
+            }
+        }
+
+        borrowers[msg.sender].inflatorSnapshot = borrowerInflator;
+
+        require(amountRemaining == 0, "Amount remaining greater than 0");
+
+        if (lastBucketBorrowedFrom > 0) {
+            pointerToIndex[LOWEST_UTILIZED_PRICE] = min(pointerToIndex[LOWEST_UTILIZED_PRICE], lastBucketBorrowedFrom);
+
+            while (buckets[lastBucketBorrowedFrom].onDeposit == 0 && lastBucketBorrowedFrom > 0) {
+                lastBucketBorrowedFrom -= 1;
+            }
+            if (buckets[lastBucketBorrowedFrom].onDeposit > 0) {
+                pointerToIndex[HIGHEST_UTILIZABLE_PRICE] = lastBucketBorrowedFrom;
+            }
+        }
+
+        quoteToken.transferFrom(address(this), msg.sender, _amount);
+        emit Borrow(msg.sender, _amount, quoteTokenAccumulator);
     }
 
     function actualUtilization() public view returns (uint256) {
@@ -247,5 +314,35 @@ contract ERC20PerpPool is IPerpPool {
 
         pendingBorrowerInflator = wmul(borrowerInflator, 1 * WAD + (borrowerSpr * secondsSinceLastUpdate));
     }
-    
+
+    function collateralAvailableToWithdraw(address _address) public view returns (uint256 collateral) {
+        collateral = collateralBalances[_address] - _pendingEncumberedCollateral(_address);
+    }
+
+    function addressBalances(address _address) public view 
+        returns (uint256, uint256, uint256, uint256, uint256) {
+        return (
+            collateralBalances[_address],
+            quoteBalances[_address],
+            borrowers[_address].collateralEncumbered,
+            borrowers[_address].debt,
+            borrowers[_address].inflatorSnapshot
+        );
+    }
+
+    function bucketInfoForAddress(uint256 _bucketId, address _address) public view
+        returns (uint256, uint256, uint256, uint256, uint256) {
+        return (
+            buckets[_bucketId].onDeposit,
+            buckets[_bucketId].totalDebitors,
+            buckets[_bucketId].debt[_address],
+            buckets[_bucketId].debtAccumulator,
+            buckets[_bucketId].price
+        );
+    }
+
+    function _pendingEncumberedCollateral(address _address) public view returns (uint256 collateral) {
+        collateral = wmul(borrowers[_address].collateralEncumbered, 
+            1 * WAD + borrowerInflatorPending() - borrowers[_address].inflatorSnapshot);
+    }
 }
