@@ -168,8 +168,10 @@ contract ERC20PerpPool is IPerpPool {
 
                 require(buckets[i].price < toBucket.price,
                     "To bucket price lower than from bucket price");
+                
+                uint256 totalDebitors = buckets[i].totalDebitors;
 
-                for (uint256 debitorIndex = 0; debitorIndex < buckets[i].totalDebitors; debitorIndex++) {
+                for (uint256 debitorIndex = 0; debitorIndex < totalDebitors; debitorIndex++) {
                     address debitor = buckets[i].indexToDebitor[debitorIndex];
                     uint256 debtToReallocate = min(buckets[i].debt[debitor], toBucket.onDeposit);
                     if (debtToReallocate > 0) {
@@ -181,7 +183,7 @@ contract ERC20PerpPool is IPerpPool {
 
                         // update accounting of encumbered collateral
                         borrowers[debitor].collateralEncumbered += 
-                            debtToReallocate /toBucket.price - debtToReallocate / buckets[i].price;
+                            debtToReallocate / buckets[i].price - debtToReallocate / toBucket.price;
                         
                         if (toBucket.debt[debitor] == 0 && toBucket.debitorToIndex[debitor] == 0) {
                             toBucket.indexToDebitor[toBucket.totalDebitors] = debitor;
@@ -200,8 +202,8 @@ contract ERC20PerpPool is IPerpPool {
                         buckets[i].debtAccumulator -= debtToReallocate;
 
                         // pay off the moved debt
-                        buckets[i].onDeposit -= debtToReallocate;
-                        toBucket.onDeposit += debtToReallocate;
+                        buckets[i].onDeposit += debtToReallocate;
+                        toBucket.onDeposit -= debtToReallocate;
 
                         if (priceToIndex[buckets[i].price] >= lupIndex) {
                             while (buckets[lupIndex].debtAccumulator == 0) {

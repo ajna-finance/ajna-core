@@ -85,7 +85,7 @@ def mkr_dai_pool(mkr, dai, deployer):
 def lenders(uniswap_dai, dai, mkr_dai_pool, lender1, lender2, lender3, lender4):
     lenders = [lender1, lender2, lender3, lender4]
     for lender in lenders:
-        uniswap_dai.ethToTokenSwapInput(1, 9999999999, {"from": lender, "value": "50 ether"});
+        uniswap_dai.ethToTokenSwapInput(1, 9999999999, {"from": lender, "value": "90 ether"});
         dai.approve(mkr_dai_pool, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, {"from" : lender})
     yield lenders
     

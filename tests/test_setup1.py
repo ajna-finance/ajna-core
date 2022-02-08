@@ -39,9 +39,9 @@ def test_5borrowers(
 
     # borrower1 borrows 10000 DAI
     _assert_borrow(borrowers[0], 10000 * 1e18, dai, mkr_dai_pool)
-    # borrower1 borrows 1000 DAI
+    # borrower2 borrows 1000 DAI
     _assert_borrow(borrowers[1], 1000 * 1e18, dai, mkr_dai_pool)
-    # borrower2 borrows 2000 DAI
+    # borrower3 borrows 2000 DAI
     _assert_borrow(borrowers[2], 2000 * 1e18, dai, mkr_dai_pool)
     # borrower4 borrows 1000 DAI
     _assert_borrow(borrowers[3], 1000 * 1e18, dai, mkr_dai_pool)
@@ -65,11 +65,41 @@ def test_5borrowers(
     # borrower5 debt should be 7000 DAI
     assert _get_borrower_debt(borrowers[4], 7, mkr_dai_pool) == 7000 * 1e18
 
+    # lender1 deposit 26000 DAI in bucket 9, covering entire 21000 DAI debt
     bucket_price = mkr_dai_pool.indexToPrice(9)
-    # lender1 deposit 25000 DAI in bucket 9, covering entire 21000 DAI debt
-    assert dai.balanceOf(lenders[3]) > 25000 * 1e18
-    # this fails now with Integer overflow, need t figure out why's that
-    mkr_dai_pool.depositQuoteToken(25000 * 1e18, bucket_price, {"from": lenders[1]})
+    assert dai.balanceOf(lenders[1]) > 26000 * 1e18
+    mkr_dai_pool.depositQuoteToken(26000 * 1e18, bucket_price, {"from": lenders[1]})
+    # check debt reallocated from bucket 7
+    bucket7_on_deposit, bucket7_total_debitors, borrower_debt, bucket7_debt_accumulator, _ = mkr_dai_pool.bucketInfoForAddress(7, borrowers[0])
+    assert bucket7_on_deposit == (21000 + 5000) * 1e18 # on deposit = 21000 DAI repaid debt + existing 5000 DAI on deposit
+    assert bucket7_total_debitors == 0
+    assert bucket7_debt_accumulator == 0
+
+    # check debt allocated to bucket 9
+    bucket9_on_deposit, bucket9_total_debitors, borrower_debt, bucket9_debt_accumulator, _ = mkr_dai_pool.bucketInfoForAddress(9, borrowers[0])
+    assert bucket9_on_deposit == (26000 - 21000) * 1e18 # on deposit = 26000 DAI added by lender - 21000 DAI debt
+    assert bucket9_total_debitors == 5 # all 5 borrowers moved
+    assert bucket9_debt_accumulator == 21000 * 1e18 # 21000 DAI debt moved from bucket 7
+
+    # debts for borrowers should remain same in bucket 9 and 0 in bucket 7
+    # borrower1 debt should be 10000 DAI
+    assert _get_borrower_debt(borrowers[0], 7, mkr_dai_pool) == 0
+    assert borrower_debt == 10000 * 1e18
+    # borrower2 debt should be 1000 DAI
+    assert _get_borrower_debt(borrowers[1], 7, mkr_dai_pool) == 0
+    assert _get_borrower_debt(borrowers[1], 9, mkr_dai_pool) == 1000 * 1e18
+    # borrower3 debt should be 2000 DAI
+    assert _get_borrower_debt(borrowers[2], 7, mkr_dai_pool) == 0
+    assert _get_borrower_debt(borrowers[2], 9, mkr_dai_pool) == 2000 * 1e18
+    # borrower4 debt should be 1000 DAI
+    assert _get_borrower_debt(borrowers[3], 7, mkr_dai_pool) == 0
+    assert _get_borrower_debt(borrowers[3], 9, mkr_dai_pool) == 1000 * 1e18
+    # borrower5 debt should be 7000 DAI
+    assert _get_borrower_debt(borrowers[4], 7, mkr_dai_pool) == 0
+    assert _get_borrower_debt(borrowers[4], 9, mkr_dai_pool) == 7000 * 1e18
+
+    # check DAI balance of pool inline with bucket deposits
+    assert dai.balanceOf(mkr_dai_pool) == bucket7_on_deposit + bucket9_on_deposit
 
 
 def _assert_lender_quote_deposit(lender, amount, price, dai, mkr_dai_pool):
