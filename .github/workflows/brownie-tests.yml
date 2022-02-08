@@ -1,4 +1,4 @@
-name: Brownie Test
+name: Brownie Tests
 
 on:
   push:
