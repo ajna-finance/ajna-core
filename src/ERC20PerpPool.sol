@@ -253,7 +253,7 @@ contract ERC20PerpPool is IPerpPool {
             
             if (bucket.onDeposit > 0) {
                 uint256 priceAmount = min(bucket.onDeposit, amountRemaining);
-                uint256 priceCost = priceAmount * WAD / bucket.price;
+                uint256 priceCost = priceAmount / bucket.price;
                 
                 require(borrowers[msg.sender].collateralEncumbered + priceCost < collateralBalances[msg.sender],
                     "Insufficient collateral to fund loan");
