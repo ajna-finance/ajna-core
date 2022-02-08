@@ -1,4 +1,4 @@
-name: Test
+name: Brownie Test
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
   pull_request:
 
 jobs:
-  test:
+  tests:
     runs-on: ubuntu-latest
 
     steps:
