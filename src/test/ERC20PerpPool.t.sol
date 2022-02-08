@@ -150,10 +150,6 @@ contract ERC20PerpPoolPerformanceTest is DSTest, stdCheats {
             collateral.mint(address(user), 100_000 * 1e18);
             user.approveToken(collateral, address(pool), type(uint256).max);
 
-            assertEq(
-                collateral.allowance(address(user), address(pool)),
-                type(uint256).max
-            );
             borrowers.push(user);
         }
 
@@ -162,10 +158,6 @@ contract ERC20PerpPoolPerformanceTest is DSTest, stdCheats {
             quote.mint(address(user), 100_000 * 1e18);
             user.approveToken(quote, address(pool), type(uint256).max);
 
-            assertEq(
-                quote.allowance(address(user), address(pool)),
-                type(uint256).max
-            );
             lenders.push(user);
         }
     }
@@ -178,12 +170,12 @@ contract ERC20PerpPoolPerformanceTest is DSTest, stdCheats {
         _depositQuoteToken(lenders[2], 7_000 * 1e18, bucketPrice);
         _depositQuoteToken(lenders[3], 4_000 * 1e18, bucketPrice);
 
-        (uint256 onDeposit, , , , ) = pool.bucketInfoForAddress(
+        (uint256 onDepositLender, , , , ) = pool.bucketInfoForAddress(
             7,
             address(lenders[0])
         );
 
-        assertEq(onDeposit, 26_000 * 1e18);
+        assertEq(onDepositLender, 26_000 * 1e18);
 
         _depositCollateral(borrowers[0], 10 * 1e18);
         _depositCollateral(borrowers[1], 3 * 1e18);
@@ -196,6 +188,78 @@ contract ERC20PerpPoolPerformanceTest is DSTest, stdCheats {
         _borrow(borrowers[2], 2_000 * 1e18);
         _borrow(borrowers[3], 1_000 * 1e18);
         _borrow(borrowers[4], 7_000 * 1e18);
+
+        (
+            uint256 onDepositBorrower,
+            uint256 totalDebitors,
+            uint256 borrowerDebt,
+            uint256 debtAccumulator,
+            uint256 price
+        ) = pool.bucketInfoForAddress(7, address(borrowers[0]));
+
+        assertEq(onDepositBorrower, 5_000 * 1e18);
+        assertEq(totalDebitors, 5);
+        assertEq(debtAccumulator, 21_000 * 1e18);
+
+        assertEq(borrowerDebt, 10_000 * 1e18);
+
+        _checkBorrowerDebt(borrowers[1], 7, 1_000 * 1e18);
+        _checkBorrowerDebt(borrowers[2], 7, 2_000 * 1e18);
+        _checkBorrowerDebt(borrowers[3], 7, 1_000 * 1e18);
+        _checkBorrowerDebt(borrowers[4], 7, 7_000 * 1e18);
+
+        bucketPrice = pool.indexToPrice(9);
+
+        assertGt(quote.balanceOf(address(lenders[1])), 26_000 * 1e18);
+        lenders[1].depositQuoteToken(pool, 26_000 * 1e18, bucketPrice);
+
+        uint256 bucket7_onDepositBorrower;
+        uint256 bucket9_onDepositBorrower;
+
+        (
+            bucket7_onDepositBorrower,
+            totalDebitors,
+            borrowerDebt,
+            debtAccumulator,
+            price
+        ) = pool.bucketInfoForAddress(7, address(borrowers[0]));
+
+        assertEq(bucket7_onDepositBorrower, (21_000 + 5_000) * 1e18);
+        assertEq(totalDebitors, 0);
+        assertEq(debtAccumulator, 0);
+        _checkBorrowerDebt(borrowers[0], 7, 0);
+
+        (
+            bucket9_onDepositBorrower,
+            totalDebitors,
+            borrowerDebt,
+            debtAccumulator,
+            price
+        ) = pool.bucketInfoForAddress(9, address(borrowers[0]));
+
+        assertEq(bucket9_onDepositBorrower, (26_000 - 21_000) * 1e18);
+        assertEq(totalDebitors, 5);
+        assertEq(debtAccumulator, 21_000 * 1e18);
+        assertEq(borrowerDebt, 10_000 * 1e18);
+
+        _checkBorrowerDebt(borrowers[0], 7, 0);
+
+        _checkBorrowerDebt(borrowers[1], 7, 0);
+        _checkBorrowerDebt(borrowers[1], 9, 1_000 * 1e18);
+
+        _checkBorrowerDebt(borrowers[2], 7, 0);
+        _checkBorrowerDebt(borrowers[2], 9, 2_000 * 1e18);
+
+        _checkBorrowerDebt(borrowers[3], 7, 0);
+        _checkBorrowerDebt(borrowers[3], 9, 1_000 * 1e18);
+
+        _checkBorrowerDebt(borrowers[4], 7, 0);
+        _checkBorrowerDebt(borrowers[4], 9, 7_000 * 1e18);
+
+        assertEq(
+            quote.balanceOf(address(pool)),
+            bucket7_onDepositBorrower + bucket9_onDepositBorrower
+        );
     }
 
     function _depositQuoteToken(
@@ -227,5 +291,18 @@ contract ERC20PerpPoolPerformanceTest is DSTest, stdCheats {
         borrower.borrow(pool, amount);
 
         assertEq(quote.balanceOf(address(borrower)), amount);
+    }
+
+    function _checkBorrowerDebt(
+        UserWithCollateral borrower,
+        uint256 bucket,
+        uint256 expectedDebt
+    ) internal {
+        (, , uint256 borrowerDebt, , ) = pool.bucketInfoForAddress(
+            bucket,
+            address(borrower)
+        );
+
+        assertEq(expectedDebt, borrowerDebt);
     }
 }
