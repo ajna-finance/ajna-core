@@ -113,13 +113,13 @@ contract ERC20PerpPoolTest is DSTest, stdCheats {
 
         // we're at the same block, borrower inflator should be same
         assertEq(pool.borrowerInflator(), 1 * 1e18);
-        assertEq(pool.borrowerInflatorPending(), 1 * 1e18);
+        assertEq(pool.nextBorrowerInflator(), 1 * 1e18);
 
         vm.warp(block.timestamp + 1 minutes);
 
         // blocks mined but no tx to update borrower inflator
         assertEq(pool.borrowerInflator(), 1 * 1e18);
-        assertGt(pool.borrowerInflatorPending(), 1000000095000000000);
+        assertGt(pool.nextBorrowerInflator(), 1000000095000000000);
 
         alice.approveAndDepositTokenAsCollateral(collateral, pool, 50 * 1e18);
         // borrower inflator updated with new deposit tx
@@ -170,10 +170,7 @@ contract ERC20PerpPoolPerformanceTest is DSTest, stdCheats {
         _depositQuoteToken(lenders[2], 7_000 * 1e18, bucketPrice);
         _depositQuoteToken(lenders[3], 4_000 * 1e18, bucketPrice);
 
-        (uint256 onDepositLender, , , , ) = pool.bucketInfoForAddress(
-            7,
-            address(lenders[0])
-        );
+        (uint256 onDepositLender, , , ) = pool.bucketInfo(7);
 
         assertEq(onDepositLender, 26_000 * 1e18);
 
@@ -192,17 +189,15 @@ contract ERC20PerpPoolPerformanceTest is DSTest, stdCheats {
         (
             uint256 onDepositBorrower,
             uint256 totalDebitors,
-            uint256 borrowerDebt,
             uint256 debtAccumulator,
             uint256 price
-        ) = pool.bucketInfoForAddress(7, address(borrowers[0]));
+        ) = pool.bucketInfo(7);
 
         assertEq(onDepositBorrower, 5_000 * 1e18);
         assertEq(totalDebitors, 5);
         assertEq(debtAccumulator, 21_000 * 1e18);
 
-        assertEq(borrowerDebt, 10_000 * 1e18);
-
+        _checkBorrowerDebt(borrowers[0], 7, 10_000 * 1e18);
         _checkBorrowerDebt(borrowers[1], 7, 1_000 * 1e18);
         _checkBorrowerDebt(borrowers[2], 7, 2_000 * 1e18);
         _checkBorrowerDebt(borrowers[3], 7, 1_000 * 1e18);
@@ -219,30 +214,27 @@ contract ERC20PerpPoolPerformanceTest is DSTest, stdCheats {
         (
             bucket7_onDepositBorrower,
             totalDebitors,
-            borrowerDebt,
             debtAccumulator,
             price
-        ) = pool.bucketInfoForAddress(7, address(borrowers[0]));
+        ) = pool.bucketInfo(7);
 
         assertEq(bucket7_onDepositBorrower, (21_000 + 5_000) * 1e18);
         assertEq(totalDebitors, 0);
         assertEq(debtAccumulator, 0);
-        _checkBorrowerDebt(borrowers[0], 7, 0);
 
         (
             bucket9_onDepositBorrower,
             totalDebitors,
-            borrowerDebt,
             debtAccumulator,
             price
-        ) = pool.bucketInfoForAddress(9, address(borrowers[0]));
+        ) = pool.bucketInfo(9);
 
         assertEq(bucket9_onDepositBorrower, (26_000 - 21_000) * 1e18);
         assertEq(totalDebitors, 5);
         assertEq(debtAccumulator, 21_000 * 1e18);
-        assertEq(borrowerDebt, 10_000 * 1e18);
 
         _checkBorrowerDebt(borrowers[0], 7, 0);
+        _checkBorrowerDebt(borrowers[0], 9, 10_000 * 1e18);
 
         _checkBorrowerDebt(borrowers[1], 7, 0);
         _checkBorrowerDebt(borrowers[1], 9, 1_000 * 1e18);
@@ -298,10 +290,7 @@ contract ERC20PerpPoolPerformanceTest is DSTest, stdCheats {
         uint256 bucket,
         uint256 expectedDebt
     ) internal {
-        (, , uint256 borrowerDebt, , ) = pool.bucketInfoForAddress(
-            bucket,
-            address(borrower)
-        );
+        uint256 borrowerDebt = pool.userDebt(address(borrower), bucket);
 
         assertEq(expectedDebt, borrowerDebt);
     }

@@ -32,9 +32,14 @@ contract PoolFactoryTest is DSTest {
     }
 
     function testPredictDeployedAddress() public {
-        address predictedAddress = factory.calculatePoolAddress(collateral, quote);
+        address predictedAddress = factory.calculatePoolAddress(
+            collateral,
+            quote
+        );
 
-        assert(false == factory.isPoolDeployed(ERC20PerpPool(predictedAddress)));
+        assert(
+            false == factory.isPoolDeployed(ERC20PerpPool(predictedAddress))
+        );
 
         ERC20PerpPool pool = factory.deployPool(collateral, quote);
 
