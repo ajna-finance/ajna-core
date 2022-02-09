@@ -71,15 +71,34 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
         }
     }
 
-    function test_5_borrowers() public {
-        uint256 bucketPrice = pool.indexToPrice(7);
+    function test_5_borrowers_1_to_7() public {
+        scenario_with_5_borrowers(1, 7);
+    }
+
+    function test_5_borrowers_1_to_100() public {
+        scenario_with_5_borrowers(1, 100);
+    }
+
+    function test_5_borrowers_1_to_1000() public {
+        scenario_with_5_borrowers(1, 1000);
+    }
+
+    function test_5_borrowers_1_to_3000() public {
+        scenario_with_5_borrowers(1, 3000);
+    }
+
+    function scenario_with_5_borrowers(
+        uint256 initialBucket,
+        uint256 laterBucket
+    ) public {
+        uint256 bucketPrice = pool.indexToPrice(initialBucket);
 
         _depositQuoteToken(lenders[0], 10_000 * 1e18, bucketPrice);
         _depositQuoteToken(lenders[1], 5_000 * 1e18, bucketPrice);
         _depositQuoteToken(lenders[2], 7_000 * 1e18, bucketPrice);
         _depositQuoteToken(lenders[3], 4_000 * 1e18, bucketPrice);
 
-        (uint256 onDepositLender, , , ) = pool.bucketInfo(7);
+        (uint256 onDepositLender, , , ) = pool.bucketInfo(initialBucket);
 
         assertEq(onDepositLender, 26_000 * 1e18);
 
@@ -100,19 +119,19 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
             uint256 totalDebitors,
             uint256 debtAccumulator,
             uint256 price
-        ) = pool.bucketInfo(7);
+        ) = pool.bucketInfo(initialBucket);
 
         assertEq(onDepositBorrower, 5_000 * 1e18);
         assertEq(totalDebitors, 5);
         assertEq(debtAccumulator, 21_000 * 1e18);
 
-        _checkBorrowerDebt(borrowers[0], 7, 10_000 * 1e18);
-        _checkBorrowerDebt(borrowers[1], 7, 1_000 * 1e18);
-        _checkBorrowerDebt(borrowers[2], 7, 2_000 * 1e18);
-        _checkBorrowerDebt(borrowers[3], 7, 1_000 * 1e18);
-        _checkBorrowerDebt(borrowers[4], 7, 7_000 * 1e18);
+        _checkBorrowerDebt(borrowers[0], initialBucket, 10_000 * 1e18);
+        _checkBorrowerDebt(borrowers[1], initialBucket, 1_000 * 1e18);
+        _checkBorrowerDebt(borrowers[2], initialBucket, 2_000 * 1e18);
+        _checkBorrowerDebt(borrowers[3], initialBucket, 1_000 * 1e18);
+        _checkBorrowerDebt(borrowers[4], initialBucket, 7_000 * 1e18);
 
-        bucketPrice = pool.indexToPrice(9);
+        bucketPrice = pool.indexToPrice(laterBucket);
 
         assertGt(quote.balanceOf(address(lenders[1])), 26_000 * 1e18);
         lenders[1].depositQuoteToken(pool, 26_000 * 1e18, bucketPrice);
@@ -121,34 +140,34 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
         uint256 bucket9OnDepositBorrower;
 
         (bucket7OnDepositBorrower, totalDebitors, debtAccumulator, price) = pool
-            .bucketInfo(7);
+            .bucketInfo(initialBucket);
 
         assertEq(bucket7OnDepositBorrower, (21_000 + 5_000) * 1e18);
         assertEq(totalDebitors, 0);
         assertEq(debtAccumulator, 0);
-        _checkBorrowerDebt(borrowers[0], 7, 0);
+        _checkBorrowerDebt(borrowers[0], initialBucket, 0);
 
         (bucket9OnDepositBorrower, totalDebitors, debtAccumulator, price) = pool
-            .bucketInfo(9);
+            .bucketInfo(laterBucket);
 
         assertEq(bucket9OnDepositBorrower, (26_000 - 21_000) * 1e18);
         assertEq(totalDebitors, 5);
         assertEq(debtAccumulator, 21_000 * 1e18);
 
-        _checkBorrowerDebt(borrowers[0], 7, 0);
-        _checkBorrowerDebt(borrowers[0], 9, 10_000 * 1e18);
+        _checkBorrowerDebt(borrowers[0], initialBucket, 0);
+        _checkBorrowerDebt(borrowers[0], laterBucket, 10_000 * 1e18);
 
-        _checkBorrowerDebt(borrowers[1], 7, 0);
-        _checkBorrowerDebt(borrowers[1], 9, 1_000 * 1e18);
+        _checkBorrowerDebt(borrowers[1], initialBucket, 0);
+        _checkBorrowerDebt(borrowers[1], laterBucket, 1_000 * 1e18);
 
-        _checkBorrowerDebt(borrowers[2], 7, 0);
-        _checkBorrowerDebt(borrowers[2], 9, 2_000 * 1e18);
+        _checkBorrowerDebt(borrowers[2], initialBucket, 0);
+        _checkBorrowerDebt(borrowers[2], laterBucket, 2_000 * 1e18);
 
-        _checkBorrowerDebt(borrowers[3], 7, 0);
-        _checkBorrowerDebt(borrowers[3], 9, 1_000 * 1e18);
+        _checkBorrowerDebt(borrowers[3], initialBucket, 0);
+        _checkBorrowerDebt(borrowers[3], laterBucket, 1_000 * 1e18);
 
-        _checkBorrowerDebt(borrowers[4], 7, 0);
-        _checkBorrowerDebt(borrowers[4], 9, 7_000 * 1e18);
+        _checkBorrowerDebt(borrowers[4], initialBucket, 0);
+        _checkBorrowerDebt(borrowers[4], laterBucket, 7_000 * 1e18);
 
         assertEq(
             quote.balanceOf(address(pool)),
