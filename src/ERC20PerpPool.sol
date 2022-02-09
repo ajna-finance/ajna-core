@@ -62,7 +62,6 @@ contract ERC20PerpPool is IPerpPool, Common {
         mapping(address => uint256) debitorToIndex;
         mapping(address => uint256) debt;
         uint256 debtAccumulator;
-        uint256 price;
     }
 
     struct Borrower {
@@ -179,9 +178,6 @@ contract ERC20PerpPool is IPerpPool, Common {
         );
 
         Bucket storage toBucket = buckets[depositIndex];
-        if (toBucket.price == 0) {
-            toBucket.price = indexToPrice(depositIndex);
-        }
 
         toBucket.lpTokenBalance[msg.sender] += _amount;
         toBucket.onDeposit += _amount;
@@ -194,16 +190,10 @@ contract ERC20PerpPool is IPerpPool, Common {
         uint256 lupIndex = lup();
         if (depositIndex > lupIndex) {
             for (uint256 i = lupIndex; i < depositIndex; i++) {
-                require(
-                    indexToPrice(i) < toBucket.price,
-                    "lower-to-bucket-price"
-                );
+                uint256 fromBucketPrice = indexToPrice(i);
+                require(fromBucketPrice < _price, "lower-to-bucket-price");
 
                 Bucket storage fromBucket = buckets[i];
-
-                if (fromBucket.price == 0) {
-                    fromBucket.price = indexToPrice(i);
-                }
 
                 uint256 totalDebitors = fromBucket.totalDebitors;
                 uint256 fromBucketDebtAccumulator = fromBucket.debtAccumulator;
@@ -228,9 +218,9 @@ contract ERC20PerpPool is IPerpPool, Common {
                         // update accounting of encumbered collateral
                         borrowers[debitor].collateralEncumbered +=
                             debtToReallocate /
-                            fromBucket.price -
+                            fromBucketPrice -
                             debtToReallocate /
-                            toBucket.price;
+                            _price;
 
                         if (
                             toBucket.debt[debitor] == 0 &&
@@ -298,7 +288,7 @@ contract ERC20PerpPool is IPerpPool, Common {
 
             if (bucket.onDeposit > 0) {
                 uint256 priceAmount = min(bucket.onDeposit, amountRemaining);
-                uint256 priceCost = priceAmount / bucket.price;
+                uint256 priceCost = priceAmount / indexToPrice(bucketId);
 
                 require(
                     bucket.onDeposit >= priceAmount &&
@@ -406,7 +396,7 @@ contract ERC20PerpPool is IPerpPool, Common {
             buckets[_id].onDeposit,
             buckets[_id].totalDebitors,
             buckets[_id].debtAccumulator,
-            buckets[_id].price
+            indexToPrice(_id)
         );
     }
 

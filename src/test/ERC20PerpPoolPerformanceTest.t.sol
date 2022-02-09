@@ -71,19 +71,19 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
         }
     }
 
-    function test_5_borrowers_1_to_7() public {
+    function test_5_borrowers_move_from_bucket_1_to_7() public {
         scenario_with_5_borrowers(1, 7);
     }
 
-    function test_5_borrowers_1_to_100() public {
+    function test_5_borrowers_move_from_bucket_1_to_100() public {
         scenario_with_5_borrowers(1, 100);
     }
 
-    function test_5_borrowers_1_to_1000() public {
+    function test_5_borrowers_move_from_bucket_1_to_1000() public {
         scenario_with_5_borrowers(1, 1000);
     }
 
-    function test_5_borrowers_1_to_3000() public {
+    function test_5_borrowers_move_from_bucket_1_to_3000() public {
         scenario_with_5_borrowers(1, 3000);
     }
 
@@ -136,21 +136,21 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
         assertGt(quote.balanceOf(address(lenders[1])), 26_000 * 1e18);
         lenders[1].depositQuoteToken(pool, 26_000 * 1e18, bucketPrice);
 
-        uint256 bucket7OnDepositBorrower;
-        uint256 bucket9OnDepositBorrower;
+        uint256 initialBucketOnDeposit;
+        uint256 laterBucketOnDeposit;
 
-        (bucket7OnDepositBorrower, totalDebitors, debtAccumulator, price) = pool
+        (initialBucketOnDeposit, totalDebitors, debtAccumulator, price) = pool
             .bucketInfo(initialBucket);
 
-        assertEq(bucket7OnDepositBorrower, (21_000 + 5_000) * 1e18);
+        assertEq(initialBucketOnDeposit, (21_000 + 5_000) * 1e18);
         assertEq(totalDebitors, 0);
         assertEq(debtAccumulator, 0);
         _checkBorrowerDebt(borrowers[0], initialBucket, 0);
 
-        (bucket9OnDepositBorrower, totalDebitors, debtAccumulator, price) = pool
+        (laterBucketOnDeposit, totalDebitors, debtAccumulator, price) = pool
             .bucketInfo(laterBucket);
 
-        assertEq(bucket9OnDepositBorrower, (26_000 - 21_000) * 1e18);
+        assertEq(laterBucketOnDeposit, (26_000 - 21_000) * 1e18);
         assertEq(totalDebitors, 5);
         assertEq(debtAccumulator, 21_000 * 1e18);
 
@@ -171,7 +171,7 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
 
         assertEq(
             quote.balanceOf(address(pool)),
-            bucket7OnDepositBorrower + bucket9OnDepositBorrower
+            initialBucketOnDeposit + laterBucketOnDeposit
         );
     }
 
