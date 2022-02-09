@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.10;
+pragma solidity 0.8.11;
 
 import "@ds-test/test.sol";
 
@@ -32,9 +32,14 @@ contract PoolFactoryTest is DSTest {
     }
 
     function testPredictDeployedAddress() public {
-        address predictedAddress = factory.calculatePoolAddress(collateral, quote);
+        address predictedAddress = factory.calculatePoolAddress(
+            collateral,
+            quote
+        );
 
-        assert(false == factory.isPoolDeployed(ERC20PerpPool(predictedAddress)));
+        assert(
+            false == factory.isPoolDeployed(ERC20PerpPool(predictedAddress))
+        );
 
         ERC20PerpPool pool = factory.deployPool(collateral, quote);
 
