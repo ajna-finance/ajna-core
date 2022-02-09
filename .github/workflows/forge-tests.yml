@@ -16,4 +16,4 @@ jobs:
           version: nightly
 
       - name: Run tests
-        run: make test
+        run: test-with-gas-report
