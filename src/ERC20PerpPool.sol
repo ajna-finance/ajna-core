@@ -93,7 +93,10 @@ contract ERC20PerpPool is IPerpPool, Common {
     );
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
+    uint256 public constant MAX_PRICE = 5000 * WAD;
+    uint256 public constant MIN_PRICE = 1000 * WAD;
     uint256 public constant PRICE_COUNT = 15;
+    uint256 public constant PRICE_STEP = (MAX_PRICE - MIN_PRICE) / PRICE_COUNT;
 
     mapping(uint256 => uint256) public priceToIndex;
     mapping(uint256 => uint256) public indexToPrice;
@@ -126,7 +129,7 @@ contract ERC20PerpPool is IPerpPool, Common {
         previousRateUpdate = block.timestamp;
 
         for (uint256 i = 0; i < PRICE_COUNT; i++) {
-            uint256 price = 1000 * WAD + (((4000 * WAD) / PRICE_COUNT) * i);
+            uint256 price = MIN_PRICE + (PRICE_STEP * i);
             priceToIndex[price] = i;
             indexToPrice[i] = price;
 
