@@ -50,13 +50,13 @@ contract ERC20PerpPoolTest is DSTestPlus {
 
         // we're at the same block, borrower inflator should be same
         assertEq(pool.borrowerInflator(), 1 * 1e18);
-        assertEq(pool.borrowerInflatorPending(), 1 * 1e18);
+        assertEq(pool.nextBorrowerInflator(), 1 * 1e18);
 
         vm.warp(block.timestamp + 1 minutes);
 
         // blocks mined but no tx to update borrower inflator
         assertEq(pool.borrowerInflator(), 1 * 1e18);
-        assertGt(pool.borrowerInflatorPending(), 1000000095000000000);
+        assertGt(pool.nextBorrowerInflator(), 1000000095000000000);
 
         alice.approveAndDepositTokenAsCollateral(collateral, pool, 50 * 1e18);
         // borrower inflator updated with new deposit tx

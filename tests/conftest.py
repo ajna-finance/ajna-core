@@ -1,6 +1,7 @@
 import pytest
 from brownie import Contract, ERC20PerpPool
 
+
 @pytest.fixture
 def deployer(accounts):
     yield accounts[0]
@@ -77,7 +78,7 @@ def uniswap_mkr():
 
 @pytest.fixture
 def mkr_dai_pool(mkr, dai, deployer):
-    daiPool = ERC20PerpPool.deploy(mkr, dai, {"from" : deployer})
+    daiPool = ERC20PerpPool.deploy(mkr, dai, {"from": deployer})
     yield daiPool
 
 
@@ -85,18 +86,36 @@ def mkr_dai_pool(mkr, dai, deployer):
 def lenders(uniswap_dai, dai, mkr_dai_pool, lender1, lender2, lender3, lender4):
     lenders = [lender1, lender2, lender3, lender4]
     for lender in lenders:
-        uniswap_dai.ethToTokenSwapInput(1, 9999999999, {"from": lender, "value": "90 ether"});
-        dai.approve(mkr_dai_pool, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, {"from" : lender})
+        uniswap_dai.ethToTokenSwapInput(
+            1, 9999999999, {"from": lender, "value": "90 ether"}
+        )
+        dai.approve(
+            mkr_dai_pool,
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+            {"from": lender},
+        )
     yield lenders
-    
+
 
 @pytest.fixture
-def borrowers(uniswap_mkr, mkr, mkr_dai_pool, borrower1, borrower2, borrower3, borrower4, borrower5):
+def borrowers(
+    uniswap_mkr,
+    mkr,
+    mkr_dai_pool,
+    borrower1,
+    borrower2,
+    borrower3,
+    borrower4,
+    borrower5,
+):
     borrowers = [borrower1, borrower2, borrower3, borrower4, borrower5]
     for borrower in borrowers:
-        uniswap_mkr.ethToTokenSwapInput(1, 9999999999, {"from": borrower, "value": "50 ether"});
-        mkr.approve(mkr_dai_pool, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, {"from" : borrower})
+        uniswap_mkr.ethToTokenSwapInput(
+            1, 9999999999, {"from": borrower, "value": "50 ether"}
+        )
+        mkr.approve(
+            mkr_dai_pool,
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+            {"from": borrower},
+        )
     yield borrowers
-
-
-
