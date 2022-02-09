@@ -12,6 +12,7 @@ def test_5borrowers(
 ):
 
     bucket_price = mkr_dai_pool.indexToPrice(7)
+    assert mkr.balanceOf(borrowers[0]) == 100 * 10**18
 
     # lender1 deposit 10000 DAI in bucket 7
     _assert_lender_quote_deposit(
@@ -129,6 +130,31 @@ def test_5borrowers(
 
     # check DAI balance of pool inline with bucket deposits
     assert dai.balanceOf(mkr_dai_pool) == bucket7_on_deposit + bucket9_on_deposit
+
+
+def test_50borrowers(
+    lenders,
+    borrowers,
+    mkr_dai_pool,
+    dai,
+    mkr,
+):
+    assert mkr.balanceOf(borrowers[0]) == 100 * 10**18
+    bucket_price = mkr_dai_pool.indexToPrice(7)
+
+    # 4 lenders deposit 10000 DAI each in bucket 7
+    for i in range(4):
+        _assert_lender_quote_deposit(
+            lenders[i], 10000 * 1e18, bucket_price, dai, mkr_dai_pool
+        )
+
+    # 50 lenders deposit 100 MKR each from bucket 7
+    for i in range(50):
+        _assert_borrower_collateral_deposit(borrowers[i], 100 * 1e18, mkr, mkr_dai_pool)
+
+    # 50 lenders borrow 800 DAI each from bucket 7
+    for i in range(50):
+        _assert_borrow(borrowers[i], 800 * 1e18, dai, mkr_dai_pool)
 
 
 def _assert_lender_quote_deposit(lender, amount, price, dai, mkr_dai_pool):
