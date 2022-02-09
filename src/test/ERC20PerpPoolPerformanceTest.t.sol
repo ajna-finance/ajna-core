@@ -16,7 +16,7 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
     UserWithCollateral[] internal borrowers;
     UserWithQuoteToken[] internal lenders;
 
-    uint256 internal constant MAX_USERS = 100;
+    uint8 internal constant MAX_USERS = type(uint8).max;
 
     function setUp() public {
         collateral = new CollateralToken();
@@ -38,6 +38,36 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
             user.approveToken(quote, address(pool), type(uint256).max);
 
             lenders.push(user);
+        }
+    }
+
+    function skip_test_x_borrowers(
+        uint8 numberOfLenders,
+        uint8 numberOfBorrowers
+    ) public logs_gas {
+        if (numberOfLenders == 0 || numberOfBorrowers == 0) {
+            return;
+        }
+        if (numberOfLenders > 100 || numberOfBorrowers > 100) {
+            return;
+        }
+
+        uint256 bucketPrice = pool.indexToPrice(7);
+
+        for (uint8 i = 0; i < numberOfLenders; i++) {
+            _depositQuoteToken(lenders[i], 1_000 * 1e18, bucketPrice);
+        }
+
+        for (uint8 i = 0; i < numberOfBorrowers; i++) {
+            _depositCollateral(borrowers[i], 1e18);
+        }
+
+        for (uint8 i = 0; i < numberOfBorrowers; i++) {
+            _borrow(borrowers[i], 1e18);
+        }
+
+        for (uint8 i = 0; i < numberOfBorrowers; i++) {
+            _checkBorrowerDebt(borrowers[i], 7, 1e18);
         }
     }
 

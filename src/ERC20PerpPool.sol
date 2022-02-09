@@ -95,46 +95,30 @@ contract ERC20PerpPool is IPerpPool, Common {
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
     uint256 public constant MAX_PRICE = 5000 * WAD;
     uint256 public constant MIN_PRICE = 1000 * WAD;
-    uint256 public constant PRICE_COUNT = 15;
+    uint256 public constant PRICE_COUNT = 3000;
     uint256 public constant PRICE_STEP = (MAX_PRICE - MIN_PRICE) / PRICE_COUNT;
 
-    mapping(uint256 => uint256) public priceToIndex;
-    mapping(uint256 => uint256) public indexToPrice;
-    mapping(uint256 => uint256) public pointerToIndex;
+    IERC20 public immutable collateralToken;
+    IERC20 public immutable quoteToken;
+
     mapping(uint256 => Bucket) public buckets;
 
-    IERC20 public immutable collateralToken;
     mapping(address => uint256) public collateralBalances;
     uint256 public collateralAccumulator;
 
-    IERC20 public immutable quoteToken;
     mapping(address => uint256) public quoteBalances;
     uint256 public quoteTokenAccumulator;
 
     mapping(address => Borrower) public borrowers;
 
-    uint256 public borrowerInflator;
-    uint256 public lastBorrowerInflatorUpdate;
-    uint256 public previousRate;
-    uint256 public previousRateUpdate;
+    uint256 public borrowerInflator = 1 * WAD;
+    uint256 public lastBorrowerInflatorUpdate = block.timestamp;
+    uint256 public previousRate = wdiv(5, 100);
+    uint256 public previousRateUpdate = block.timestamp;
 
     constructor(IERC20 _collateralToken, IERC20 _quoteToken) {
         collateralToken = _collateralToken;
         quoteToken = _quoteToken;
-
-        borrowerInflator = 1 * WAD;
-        lastBorrowerInflatorUpdate = block.timestamp;
-
-        previousRate = wdiv(5, 100);
-        previousRateUpdate = block.timestamp;
-
-        for (uint256 i = 0; i < PRICE_COUNT; i++) {
-            uint256 price = MIN_PRICE + (PRICE_STEP * i);
-            priceToIndex[price] = i;
-            indexToPrice[i] = price;
-
-            buckets[i].price = price;
-        }
     }
 
     modifier updateBorrowerInflator(address account) {
@@ -145,6 +129,14 @@ contract ERC20PerpPool is IPerpPool, Common {
 
         borrowerInflator = nextBorrowerInflator();
         lastBorrowerInflatorUpdate = block.timestamp;
+    }
+
+    function priceToIndex(uint256 price) public pure returns (uint256 index) {
+        index = (price - MIN_PRICE) / PRICE_STEP;
+    }
+
+    function indexToPrice(uint256 index) public pure returns (uint256 price) {
+        price = MIN_PRICE + (PRICE_STEP * index);
     }
 
     function depositCollateral(uint256 _amount)
@@ -180,13 +172,17 @@ contract ERC20PerpPool is IPerpPool, Common {
     }
 
     function depositQuoteToken(uint256 _amount, uint256 _price) external {
-        uint256 depositIndex = priceToIndex[_price];
+        uint256 depositIndex = priceToIndex(_price);
         require(
             depositIndex > 0 && quoteToken.balanceOf(msg.sender) >= _amount,
             "no-price-bucket-or-balance"
         );
 
         Bucket storage toBucket = buckets[depositIndex];
+        if (toBucket.price == 0) {
+            toBucket.price = indexToPrice(depositIndex);
+        }
+
         toBucket.lpTokenBalance[msg.sender] += _amount;
         toBucket.onDeposit += _amount;
 
@@ -199,10 +195,16 @@ contract ERC20PerpPool is IPerpPool, Common {
         if (depositIndex > lupIndex) {
             for (uint256 i = lupIndex; i < depositIndex; i++) {
                 require(
-                    buckets[i].price < toBucket.price,
+                    indexToPrice(i) < toBucket.price,
                     "lower-to-bucket-price"
                 );
+
                 Bucket storage fromBucket = buckets[i];
+
+                if (fromBucket.price == 0) {
+                    fromBucket.price = indexToPrice(i);
+                }
+
                 uint256 totalDebitors = fromBucket.totalDebitors;
                 uint256 fromBucketDebtAccumulator = fromBucket.debtAccumulator;
 
