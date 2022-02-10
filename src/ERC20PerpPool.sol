@@ -94,7 +94,7 @@ contract ERC20PerpPool is IPerpPool, Common {
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
     uint256 public constant MAX_PRICE = 5000 * WAD;
     uint256 public constant MIN_PRICE = 1000 * WAD;
-    uint256 public constant PRICE_COUNT = 72000;
+    uint256 public constant PRICE_COUNT = 7000;
     uint256 public constant PRICE_STEP = (MAX_PRICE - MIN_PRICE) / PRICE_COUNT;
 
     IERC20 public immutable collateralToken;
