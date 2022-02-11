@@ -21,7 +21,7 @@ def mkr():
 
 @pytest.fixture
 def mkr_dai_pool(mkr, dai, deployer):
-    daiPool = ERC20PerpPool.deploy(mkr, dai, {"from": deployer})
+    daiPool = ERC20PerpPool.deploy(mkr, dai, 20, {"from": deployer})
     yield daiPool
 
 
