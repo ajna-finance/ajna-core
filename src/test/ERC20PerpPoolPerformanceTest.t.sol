@@ -12,6 +12,7 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
     ERC20PerpPool internal pool;
     CollateralToken internal collateral;
     QuoteToken internal quote;
+    uint256 internal count = 7000;
 
     UserWithCollateral[] internal borrowers;
     UserWithQuoteToken[] internal lenders;
@@ -22,7 +23,7 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
         collateral = new CollateralToken();
         quote = new QuoteToken();
 
-        pool = new ERC20PerpPool(collateral, quote);
+        pool = new ERC20PerpPool(collateral, quote, count);
 
         for (uint256 i; i < MAX_USERS; ++i) {
             UserWithCollateral user = new UserWithCollateral();

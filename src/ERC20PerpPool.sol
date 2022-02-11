@@ -94,8 +94,8 @@ contract ERC20PerpPool is IPerpPool, Common {
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
     uint256 public constant MAX_PRICE = 5000 * WAD;
     uint256 public constant MIN_PRICE = 1000 * WAD;
-    uint256 public constant PRICE_COUNT = 7000;
-    uint256 public constant PRICE_STEP = (MAX_PRICE - MIN_PRICE) / PRICE_COUNT;
+    uint256 public immutable count;
+    uint256 public immutable priceStep;
 
     IERC20 public immutable collateralToken;
     IERC20 public immutable quoteToken;
@@ -115,9 +115,15 @@ contract ERC20PerpPool is IPerpPool, Common {
     uint256 public previousRate = wdiv(5, 100);
     uint256 public previousRateUpdate = block.timestamp;
 
-    constructor(IERC20 _collateralToken, IERC20 _quoteToken) {
+    constructor(
+        IERC20 _collateralToken,
+        IERC20 _quoteToken,
+        uint256 _count
+    ) {
         collateralToken = _collateralToken;
         quoteToken = _quoteToken;
+        count = _count;
+        priceStep = (MAX_PRICE - MIN_PRICE) / count;
     }
 
     modifier updateBorrowerInflator(address account) {
@@ -130,12 +136,12 @@ contract ERC20PerpPool is IPerpPool, Common {
         lastBorrowerInflatorUpdate = block.timestamp;
     }
 
-    function priceToIndex(uint256 price) public pure returns (uint256 index) {
-        index = (price - MIN_PRICE) / PRICE_STEP;
+    function priceToIndex(uint256 price) public view returns (uint256 index) {
+        index = (price - MIN_PRICE) / priceStep;
     }
 
-    function indexToPrice(uint256 index) public pure returns (uint256 price) {
-        price = MIN_PRICE + (PRICE_STEP * index);
+    function indexToPrice(uint256 index) public view returns (uint256 price) {
+        price = MIN_PRICE + (priceStep * index);
     }
 
     function depositCollateral(uint256 _amount)
@@ -357,11 +363,7 @@ contract ERC20PerpPool is IPerpPool, Common {
     }
 
     function lup() private view returns (uint256) {
-        for (
-            uint256 bucketIndex = 0;
-            bucketIndex < PRICE_COUNT;
-            bucketIndex++
-        ) {
+        for (uint256 bucketIndex = 0; bucketIndex < count; bucketIndex++) {
             if (buckets[bucketIndex].totalDebitors > 0) {
                 return bucketIndex;
             }
@@ -370,11 +372,7 @@ contract ERC20PerpPool is IPerpPool, Common {
     }
 
     function hup() private view returns (uint256) {
-        for (
-            uint256 bucketIndex = PRICE_COUNT;
-            bucketIndex > 0;
-            bucketIndex--
-        ) {
+        for (uint256 bucketIndex = count; bucketIndex > 0; bucketIndex--) {
             if (buckets[bucketIndex].onDeposit > 0) {
                 return bucketIndex;
             }

@@ -12,6 +12,7 @@ contract ERC20PerpPoolTest is DSTestPlus {
     ERC20PerpPool internal pool;
     CollateralToken internal collateral;
     QuoteToken internal quote;
+    uint256 internal count = 7000;
 
     UserWithCollateral internal alice;
     UserWithCollateral internal bob;
@@ -26,12 +27,13 @@ contract ERC20PerpPoolTest is DSTestPlus {
 
         quote = new QuoteToken();
 
-        pool = new ERC20PerpPool(collateral, quote);
+        pool = new ERC20PerpPool(collateral, quote, count);
     }
 
     function testDeploy() public {
         assertEq(address(collateral), address(pool.collateralToken()));
         assertEq(address(quote), address(pool.quoteToken()));
+        assertEq(7000, pool.count());
 
         // TODO: Should them be also parameters to constructor
         assertEq(1 * 1e18, pool.borrowerInflator());
