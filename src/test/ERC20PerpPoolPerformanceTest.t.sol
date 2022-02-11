@@ -26,7 +26,7 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
 
         for (uint256 i; i < MAX_USERS; ++i) {
             UserWithCollateral user = new UserWithCollateral();
-            collateral.mint(address(user), 100_000 * 1e18);
+            collateral.mint(address(user), 1_000_000 * 1e18);
             user.approveToken(collateral, address(pool), type(uint256).max);
 
             borrowers.push(user);
@@ -34,7 +34,7 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
 
         for (uint256 i; i < MAX_USERS; ++i) {
             UserWithQuoteToken user = new UserWithQuoteToken();
-            quote.mint(address(user), 100_000 * 1e18);
+            quote.mint(address(user), 1_000_000 * 1e18);
             user.approveToken(quote, address(pool), type(uint256).max);
 
             lenders.push(user);
@@ -44,7 +44,7 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
     function skip_test_x_borrowers(
         uint8 numberOfLenders,
         uint8 numberOfBorrowers
-    ) public logs_gas {
+    ) public {
         if (numberOfLenders == 0 || numberOfBorrowers == 0) {
             return;
         }
@@ -85,6 +85,179 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
 
     function test_5_borrowers_move_from_bucket_1_to_3000() public {
         scenario_with_5_borrowers(1, 3000);
+    }
+
+    function test_5_borrowers_and_2_buckets() public {
+        uint256 onDepositBorrower;
+        uint256 totalDebitors;
+        uint256 debtAccumulator;
+
+        uint256 firstBucketId = 1;
+        uint256 secondBucketId = 2;
+        uint256 firstBucketPrice = pool.indexToPrice(firstBucketId);
+        uint256 secondBucketPrice = pool.indexToPrice(secondBucketId);
+
+        _depositQuoteToken(lenders[0], 10_000 * 1e18, firstBucketPrice);
+        _depositQuoteToken(lenders[0], 5_000 * 1e18, secondBucketPrice);
+
+        _depositQuoteToken(lenders[1], 5_000 * 1e18, firstBucketPrice);
+        _depositQuoteToken(lenders[1], 3_000 * 1e18, secondBucketPrice);
+
+        _depositQuoteToken(lenders[2], 7_000 * 1e18, firstBucketPrice);
+        _depositQuoteToken(lenders[2], 2_000 * 1e18, secondBucketPrice);
+
+        _depositQuoteToken(lenders[3], 4_000 * 1e18, firstBucketPrice);
+        _depositQuoteToken(lenders[3], 5_000 * 1e18, secondBucketPrice);
+
+        (onDepositBorrower, , , ) = pool.bucketInfo(firstBucketId);
+        assertEq(onDepositBorrower, 26_000 * 1e18);
+
+        (onDepositBorrower, , , ) = pool.bucketInfo(secondBucketId);
+        assertEq(onDepositBorrower, 15_000 * 1e18);
+
+        for (uint256 i = 0; i < 5; i++) {
+            _depositCollateral(borrowers[i], 50 * 1e18);
+        }
+
+        for (uint256 i = 0; i < 5; i++) {
+            _borrow(borrowers[i], 8_000 * 1e18);
+        }
+
+        (
+            onDepositBorrower,
+            totalDebitors,
+            debtAccumulator,
+            firstBucketPrice
+        ) = pool.bucketInfo(firstBucketId);
+
+        assertEq(onDepositBorrower, 1_000 * 1e18);
+        assertEq(totalDebitors, 4);
+        assertEq(debtAccumulator, 25_000 * 1e18);
+
+        (
+            onDepositBorrower,
+            totalDebitors,
+            debtAccumulator,
+            secondBucketPrice
+        ) = pool.bucketInfo(secondBucketId);
+
+        assertEq(onDepositBorrower, 0);
+        assertEq(totalDebitors, 2);
+        assertEq(debtAccumulator, 15_000 * 1e18);
+
+        _checkBorrowerDebt(borrowers[0], secondBucketId, 8_000 * 1e18);
+        _checkBorrowerDebt(borrowers[1], secondBucketId, 7_000 * 1e18);
+
+        _checkBorrowerDebt(borrowers[1], firstBucketId, 1_000 * 1e18);
+        _checkBorrowerDebt(borrowers[2], firstBucketId, 8_000 * 1e18);
+        _checkBorrowerDebt(borrowers[3], firstBucketId, 8_000 * 1e18);
+        _checkBorrowerDebt(borrowers[4], firstBucketId, 8_000 * 1e18);
+
+        uint256 thirdBucketId = 3;
+        uint256 thirdBucketPrice = pool.indexToPrice(thirdBucketId);
+
+        _depositQuoteToken(lenders[4], 50_000 * 1e18, thirdBucketPrice);
+
+        (
+            onDepositBorrower,
+            totalDebitors,
+            debtAccumulator,
+            firstBucketPrice
+        ) = pool.bucketInfo(firstBucketId);
+
+        assertEq(onDepositBorrower, 26_000 * 1e18);
+        assertEq(totalDebitors, 0);
+        assertEq(debtAccumulator, 0);
+
+        (
+            onDepositBorrower,
+            totalDebitors,
+            debtAccumulator,
+            secondBucketPrice
+        ) = pool.bucketInfo(secondBucketId);
+
+        assertEq(onDepositBorrower, 15_000 * 1e18);
+        assertEq(totalDebitors, 0);
+        assertEq(debtAccumulator, 0);
+
+        (
+            onDepositBorrower,
+            totalDebitors,
+            debtAccumulator,
+            thirdBucketPrice
+        ) = pool.bucketInfo(thirdBucketId);
+
+        assertEq(onDepositBorrower, 10_000 * 1e18);
+        assertEq(totalDebitors, 5);
+        assertEq(debtAccumulator, 40_000 * 1e18);
+
+        for (uint256 i = 0; i < 5; i++) {
+            _checkBorrowerDebt(borrowers[i], thirdBucketId, 8_000 * 1e18);
+        }
+    }
+
+    function test_5_borrowers_and_10_buckets() public {
+        uint256 onDepositBorrower;
+        uint256 totalDebitors;
+        uint256 debtAccumulator;
+
+        for (uint256 i = 1; i <= 10; i++) {
+            uint256 bucketPrice = pool.indexToPrice(i);
+            _depositQuoteToken(lenders[0], 5_000 * 1e18, bucketPrice);
+            _depositQuoteToken(lenders[1], 3_000 * 1e18, bucketPrice);
+            _depositQuoteToken(lenders[2], 4_000 * 1e18, bucketPrice);
+            _depositQuoteToken(lenders[3], 7_000 * 1e18, bucketPrice);
+        }
+
+        assertEq(quote.balanceOf(address(pool)), 190_000 * 1e18);
+
+        for (uint256 i = 1; i <= 10; i++) {
+            (uint256 onDepositBorrower, , , ) = pool.bucketInfo(i);
+            assertEq(onDepositBorrower, 19_000 * 1e18);
+        }
+
+        for (uint256 i = 0; i < 5; i++) {
+            _depositCollateral(borrowers[i], 50 * 1e18);
+        }
+
+        for (uint256 i = 0; i < 5; i++) {
+            _borrow(borrowers[i], 38_000 * 1e18);
+        }
+
+        for (uint256 i = 1; i <= 10; i++) {
+            (onDepositBorrower, totalDebitors, debtAccumulator, ) = pool
+                .bucketInfo(i);
+            assertEq(onDepositBorrower, 0);
+            assertEq(totalDebitors, 1);
+            assertEq(debtAccumulator, 19_000 * 1e18);
+        }
+
+        _checkBorrowerDebt(borrowers[0], 10, 19_000 * 1e18);
+        _checkBorrowerDebt(borrowers[0], 9, 19_000 * 1e18);
+        _checkBorrowerDebt(borrowers[4], 2, 19_000 * 1e18);
+        _checkBorrowerDebt(borrowers[4], 1, 19_000 * 1e18);
+
+        uint256 bucket11_price = pool.indexToPrice(11);
+        _depositQuoteToken(lenders[4], 200_000 * 1e18, bucket11_price);
+
+        for (uint256 i = 1; i <= 10; i++) {
+            (onDepositBorrower, totalDebitors, debtAccumulator, ) = pool
+                .bucketInfo(i);
+            assertEq(onDepositBorrower, 19_000 * 1e18);
+            assertEq(totalDebitors, 0);
+            assertEq(debtAccumulator, 0);
+        }
+
+        (onDepositBorrower, totalDebitors, debtAccumulator, ) = pool.bucketInfo(
+            11
+        );
+        assertEq(onDepositBorrower, 10_000 * 1e18);
+        assertEq(totalDebitors, 5);
+        assertEq(debtAccumulator, 190_000 * 1e18);
+
+        for (uint256 i = 0; i < 5; i++) {
+            _checkBorrowerDebt(borrowers[i], 11, 38_000 * 1e18);
+        }
     }
 
     function scenario_with_5_borrowers(
@@ -181,12 +354,14 @@ contract ERC20PerpPoolPerformanceTest is DSTestPlus {
         uint256 price
     ) internal {
         uint256 balance = quote.balanceOf(address(lender));
+        uint256 poolBalance = pool.quoteBalances(address(lender));
+
         assertGt(balance, amount);
 
         lender.depositQuoteToken(pool, amount, price);
 
         assertEq(balance - quote.balanceOf(address(lender)), amount);
-        assertEq(pool.quoteBalances(address(lender)), amount);
+        assertEq(pool.quoteBalances(address(lender)), poolBalance + amount);
     }
 
     function _depositCollateral(UserWithCollateral borrower, uint256 amount)
