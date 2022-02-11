@@ -8,51 +8,6 @@ def deployer(accounts):
 
 
 @pytest.fixture
-def lender1(accounts):
-    yield accounts[1]
-
-
-@pytest.fixture
-def lender2(accounts):
-    yield accounts[2]
-
-
-@pytest.fixture
-def lender3(accounts):
-    yield accounts[3]
-
-
-@pytest.fixture
-def lender4(accounts):
-    yield accounts[4]
-
-
-@pytest.fixture
-def borrower1(accounts):
-    yield accounts[5]
-
-
-@pytest.fixture
-def borrower2(accounts):
-    yield accounts[6]
-
-
-@pytest.fixture
-def borrower3(accounts):
-    yield accounts[7]
-
-
-@pytest.fixture
-def borrower4(accounts):
-    yield accounts[8]
-
-
-@pytest.fixture
-def borrower5(accounts):
-    yield accounts[9]
-
-
-@pytest.fixture
 def dai():
     token_address = "0x6b175474e89094c44da98b954eedeac495271d0f"
     yield Contract(token_address)
@@ -65,57 +20,79 @@ def mkr():
 
 
 @pytest.fixture
-def uniswap_dai():
-    token_address = "0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667"
-    yield Contract(token_address)
-
-
-@pytest.fixture
-def uniswap_mkr():
-    token_address = "0x2C4Bd064b998838076fa341A83d007FC2FA50957"
-    yield Contract(token_address)
-
-
-@pytest.fixture
 def mkr_dai_pool(mkr, dai, deployer):
     daiPool = ERC20PerpPool.deploy(mkr, dai, {"from": deployer})
     yield daiPool
 
 
 @pytest.fixture
-def lenders(uniswap_dai, dai, mkr_dai_pool, lender1, lender2, lender3, lender4):
-    lenders = [lender1, lender2, lender3, lender4]
-    for lender in lenders:
-        uniswap_dai.ethToTokenSwapInput(
-            1, 9999999999, {"from": lender, "value": "90 ether"}
-        )
+def lenders(dai, mkr_dai_pool, accounts):
+    amount = 200_000 * 10**18  # 100000 DAI for each lender
+    reserve = accounts.at("0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643", force=True)
+    lenders = []
+    for index in range(10):
+        lender = accounts.add()
+        dai.transfer(lender, amount, {"from": reserve})
         dai.approve(
             mkr_dai_pool,
             0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
             {"from": lender},
         )
+        lenders.append(lender)
     yield lenders
 
 
 @pytest.fixture
-def borrowers(
-    uniswap_mkr,
-    mkr,
-    mkr_dai_pool,
-    borrower1,
-    borrower2,
-    borrower3,
-    borrower4,
-    borrower5,
-):
-    borrowers = [borrower1, borrower2, borrower3, borrower4, borrower5]
-    for borrower in borrowers:
-        uniswap_mkr.ethToTokenSwapInput(
-            1, 9999999999, {"from": borrower, "value": "50 ether"}
-        )
+def borrowers(mkr, mkr_dai_pool, accounts):
+    amount = 100 * 10**18  # 100 MKR for each borrower
+    reserve = accounts.at("0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB", force=True)
+    borrowers = []
+    for index in range(10):
+        borrower = accounts.add()
+        mkr.transfer(borrower, amount, {"from": reserve})
         mkr.approve(
             mkr_dai_pool,
             0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
             {"from": borrower},
         )
+        borrowers.append(borrower)
     yield borrowers
+
+
+class TestUtils:
+    @staticmethod
+    def assert_lender_quote_deposit(lender, amount, price, dai, mkr_dai_pool):
+        balance = dai.balanceOf(lender)
+        assert balance > amount
+        mkr_dai_pool.depositQuoteToken(amount, price, {"from": lender})
+        assert balance - dai.balanceOf(lender) == amount
+        assert mkr_dai_pool.quoteBalances(lender) == amount
+
+    @staticmethod
+    def assert_borrower_collateral_deposit(borrower, amount, mkr, mkr_dai_pool):
+        balance = mkr.balanceOf(borrower)
+        assert balance > amount
+        mkr_dai_pool.depositCollateral(amount, {"from": borrower})
+        assert balance - mkr.balanceOf(borrower) == amount
+        assert mkr_dai_pool.collateralBalances(borrower) == amount
+
+    @staticmethod
+    def assert_borrow(borrower, amount, dai, mkr_dai_pool):
+        mkr_dai_pool.borrow(amount, {"from": borrower})
+        assert dai.balanceOf(borrower) == amount
+
+    @staticmethod
+    def assert_bucket(bucket, deposit, debt, debitors, mkr_dai_pool):
+        onDeposit, totalDebitors, bucketDebt, _ = mkr_dai_pool.bucketInfo(bucket)
+        assert onDeposit == deposit
+        assert totalDebitors == debitors
+        assert bucketDebt == debt
+
+    @staticmethod
+    def assert_borrower_debt(borrower, bucket, expected, mkr_dai_pool):
+        assert mkr_dai_pool.userDebt(borrower, bucket) == expected
+
+
+@pytest.fixture
+def test_utils():
+    return TestUtils
