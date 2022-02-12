@@ -4,6 +4,9 @@ pragma solidity 0.8.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
+import "./libraries/Bucket.sol";
+import "./libraries/BucketMap.sol";
+
 interface IPerpPool {
     function depositCollateral(uint256 _amount) external;
     function withdrawCollateral(uint256 _amount) external;
@@ -15,17 +18,6 @@ interface IPerpPool {
 }
 
 contract ERC20PerpPool is IPerpPool {
-
-    struct PriceBucket {
-        mapping(address => uint256) lpTokenBalance;
-        uint256 onDeposit;
-        uint256 totalDebitors;
-        mapping(uint256 => address) indexToDebitor;
-        mapping(address => uint256) debitorToIndex;
-        mapping(address => uint256) debt;
-        uint256 debtAccumulator;
-        uint256 price;
-    }
 
     struct BorrowerInfo {
         uint256 collateralEncumbered;
@@ -72,6 +64,11 @@ contract ERC20PerpPool is IPerpPool {
     uint public constant PRICE_COUNT = 15;
     uint public constant PRICE_STEP = (MAX_PRICE - MIN_PRICE) / PRICE_COUNT;
 
+    // global spacing between price buckets set to 1 bp
+    uint256 public immutable bucketSpacing = 1;
+    // TODO: update uint256 -> int24
+    mapping(uint256 => Bucket.PriceBucket) public buckets;
+
     IERC20 public immutable collateralToken;
     mapping(address => uint256) public collateralBalances;
     uint256 public collateralAccumulator;
@@ -84,7 +81,6 @@ contract ERC20PerpPool is IPerpPool {
     mapping(uint256 => uint256) public indexToPrice;
     mapping(uint256 => uint256) public pointerToIndex;
 
-    mapping(uint256 => PriceBucket) public buckets;
 
     mapping(address => BorrowerInfo) public borrowers;
 
@@ -155,7 +151,7 @@ contract ERC20PerpPool is IPerpPool {
         uint256 depositIndex = priceToIndex[_price];
         require(depositIndex > 0, "Price bucket not found");
 
-        PriceBucket storage toBucket = buckets[depositIndex];
+        Bucket.PriceBucket storage toBucket = buckets[depositIndex];
         toBucket.lpTokenBalance[msg.sender] += _amount;
         toBucket.onDeposit += _amount;
 
@@ -249,7 +245,7 @@ contract ERC20PerpPool is IPerpPool {
         uint256 lastBucketBorrowedFrom;
 
         for (uint256 bucketId = pointerToIndex[HIGHEST_UTILIZABLE_PRICE] + 1; bucketId > 0; bucketId--) {
-            PriceBucket storage bucket = buckets[bucketId];
+            Bucket.PriceBucket storage bucket = buckets[bucketId];
             
             if (bucket.onDeposit > 0) {
                 uint256 priceAmount = min(bucket.onDeposit, amountRemaining);
