@@ -1,5 +1,5 @@
 import pytest
-from brownie import Contract, ERC20PerpPool
+from brownie import Contract, ERC20Pool
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def mkr():
 
 @pytest.fixture
 def mkr_dai_pool(mkr, dai, deployer):
-    daiPool = ERC20PerpPool.deploy(mkr, dai, 20, {"from": deployer})
+    daiPool = ERC20Pool.deploy(mkr, dai, {"from": deployer})
     yield daiPool
 
 
@@ -57,42 +57,3 @@ def borrowers(mkr, mkr_dai_pool, accounts):
         )
         borrowers.append(borrower)
     yield borrowers
-
-
-class TestUtils:
-    @staticmethod
-    def assert_lender_quote_deposit(lender, amount, price, dai, mkr_dai_pool):
-        balance = dai.balanceOf(lender)
-        assert balance > amount
-        mkr_dai_pool.depositQuoteToken(amount, price, {"from": lender})
-        assert balance - dai.balanceOf(lender) == amount
-        assert mkr_dai_pool.quoteBalances(lender) == amount
-
-    @staticmethod
-    def assert_borrower_collateral_deposit(borrower, amount, mkr, mkr_dai_pool):
-        balance = mkr.balanceOf(borrower)
-        assert balance > amount
-        mkr_dai_pool.depositCollateral(amount, {"from": borrower})
-        assert balance - mkr.balanceOf(borrower) == amount
-        assert mkr_dai_pool.collateralBalances(borrower) == amount
-
-    @staticmethod
-    def assert_borrow(borrower, amount, dai, mkr_dai_pool):
-        mkr_dai_pool.borrow(amount, {"from": borrower})
-        assert dai.balanceOf(borrower) == amount
-
-    @staticmethod
-    def assert_bucket(bucket, deposit, debt, debitors, mkr_dai_pool):
-        onDeposit, totalDebitors, bucketDebt, _ = mkr_dai_pool.bucketInfo(bucket)
-        assert onDeposit == deposit
-        assert totalDebitors == debitors
-        assert bucketDebt == debt
-
-    @staticmethod
-    def assert_borrower_debt(borrower, bucket, expected, mkr_dai_pool):
-        assert mkr_dai_pool.userDebt(borrower, bucket) == expected
-
-
-@pytest.fixture
-def test_utils():
-    return TestUtils

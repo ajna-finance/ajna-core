@@ -2,14 +2,16 @@
 
 Ajna contracts
 
-## Development
+# Development
 
 Install Foundry [instructions](https://github.com/gakonst/foundry/blob/master/README.md#installation)  then, install the [foundry](https://github.com/gakonst/foundry) toolchain installer (`foundryup`) with:
+
 ```bash
 curl -L https://foundry.paradigm.xyz | bash
 ```
 
-To get the latest `forge` or `cast` binaries, tun 
+To get the latest `forge` or `cast` binaries, tun
+
 ```bash
 foundryup
 ```
@@ -33,11 +35,12 @@ make test
 ```
 
 ## Brownie integration
+
 - Install Brownie [instructions](https://eth-brownie.readthedocs.io/en/stable/install.html)
 - Make a copy of .env.example and name it .env. Add the values for ETHERSCAN_TOKEN and WEB3_INFURA_PROJECT_ID
 - Run `brownie console`
 
-### Brownie integraion tests
+### Brownie integration tests
 
 ```bash
 brownie test
@@ -45,32 +48,57 @@ brownie test
 
 ### ERC20 pool manual test
 
-- Deploy ERC20 Perp pool for DAI/MKR, swap ETH to DAI for `alice` and ETH to MKR for `bob` and check balances:
+- Deploy ERC20 MKR/DAI pool
+  - 1 lender funded with 1000000 DAI
+  - lender deposits 100000 DAI in each bucket with 4000, 2000, 1500, 1000 price
+  - 5 borrowers funded with 500 MKR each and depositing 1500 MKR as collateral (borrower1 - 100 MKR, borrower2 - 200 MKR, borrower3 - 300 MKR, borrower4 - 400 MKR, borrower5 - 500 MKR, )
+  - borrower1 borrows 100000 DAI from hup (4000)
+  - borrower2 borrows 100000 DAI from next hup (2000)
 
 ```bash
->>> deployer, alice, bob, dai, mkr, daiPool = run('erc20setup')
->>> dai.balanceOf(alice)
-157571811476835406723764
+>>> lender, borrower1, borrower2, borrower3, borrower4, borrower5, dai, mkr, pool = run('erc20setup')
+>>> mkr.balanceOf(pool)
+1500000000000000000000
+>>> dai.balanceOf(pool)
+200000000000000000000000
+>>> dai.balanceOf(borrower1)
+100000000000000000000000
+>>> dai.balanceOf(borrower2)
+100000000000000000000000
 ```
-- Deposit and withdraw collateral from pool:
 
-```bash
->>> daiPool.deposit(1111111111, {"from": alice})
->>> dai.balanceOf(daiPool)
-1111111111
->>> daiPool.withdraw(1111111111, {"from": alice})
-0
+# Functionality
+
+## Bucket
+
+- no bucket is preallocated
+- each bucket contains a pointer to next bucket price
+- next price pointer is updated when new deposit occurs at a price between current bucket price and next price
+
+```code
+    struct Bucket {
+        uint256 price; // current bucket price
+        uint256 next; // next utilizable bucket price
+        uint256 amount; // total quote deposited in bucket
+        uint256 debt; // accumulated bucket debt
+    }
 ```
-- Deposit quote token into the pool:
-```
->>> daiPool.depositQuoteToken(125454, 307000000000000000000, {"from": alice})
->>> daiPool.quoteBalances(alice)
-125454
-```
-- Query buckets
-```
->>> daiPool.indexToPrice(3)
-307000000000000000000
->>> daiPool.priceToIndex(307000000000000000000)
-3
+
+## addQuoteToken
+
+- lender should provide a valid price to deposit quote token at
+- can only move HUP up and never down
+- no debt reallocation occurs
+- if lending at a higher price than HUP then HUP is updated accordingly
+- next HUP pointer is updated for each price bucket where case
+
+```mermaid
+graph quoteToken
+    A[add quote token: amount and price] --> B{Is valid price}
+    B -->|No| C[Revert]
+    B -->|Yes| D[Is price > hup]
+    D -->|Yes| E[Update hup] --> F{Is price > next price}
+    D -->|No| F{Is price > next price}
+    F -->|Yes| G[Update bucket pointers] --> I[Transfer amount from lender to pool] --> J[emit event]
+    F -->|No| H[Move to next bucket]--> F{Is price > next price}
 ```

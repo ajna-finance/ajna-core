@@ -1,27 +1,58 @@
 from brownie import *
-import itertools
+
 
 def main():
-    deployer = accounts[0];
-    alice = accounts[1];
-    bob = accounts[2];
-    uniswapDai = Contract("0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667");
-    uniswapDai.ethToTokenSwapInput(1, 9999999999, {"from": alice, "value": "50 ether"});
-    uniswapMkr = Contract("0x2C4Bd064b998838076fa341A83d007FC2FA50957");
-    uniswapMkr.ethToTokenSwapInput(1, 9999999999, {"from": bob, "value": "50 ether"});
-    dai = Contract('0x6b175474e89094c44da98b954eedeac495271d0f');
-    mkr = Contract('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2')
-    daiPool = ERC20PerpPool.deploy(mkr, dai, {"from" : deployer});
-    dai.approve(daiPool, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, {"from" : alice});
-    dai.approve(daiPool, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, {"from" : bob});
-    mkr.approve(daiPool, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, {"from" : alice});
-    mkr.approve(daiPool, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff, {"from" : bob});
+    deployer = accounts[0]
+    lender = accounts[1]
+    borrower1 = accounts[2]
+    borrower2 = accounts[3]
+    borrower3 = accounts[4]
+    borrower4 = accounts[5]
+    borrower5 = accounts[6]
+    dai = Contract("0x6b175474e89094c44da98b954eedeac495271d0f")
+    mkr = Contract("0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2")
+    contract = ERC20Pool.deploy(
+        mkr,
+        dai,
+        {"from": deployer},
+    )
 
-    # Alice deposits 10000 DAI at price of 2866.666666666666666662 DAI / MKR - bucket 7
-    daiPool.depositQuoteToken(10000000000000000000000, 2866666666666666666662, {"from": alice})
-    # Bob deposits 10 MKR as collateral
-    daiPool.depositCollateral(10000000000000000000, {"from": bob})
-    # Bob borrows 5000 DAI
-    daiPool.borrow(5000000000000000000000, {"from": bob})
+    dai_reserve = accounts.at("0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643", force=True)
+    dai.transfer(lender, 1_000_000 * 1e18, {"from": dai_reserve})
+    dai.approve(
+        contract,
+        0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+        {"from": lender},
+    )
 
-    return deployer, alice, bob, dai, mkr, daiPool;
+    mkr_reserve = accounts.at("0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB", force=True)
+    for i in range(2, 7):
+        mkr.transfer(accounts[i], 500 * 1e18, {"from": mkr_reserve})
+        mkr.approve(
+            contract,
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+            {"from": accounts[i]},
+        )
+
+    contract.addQuoteToken(100000 * 1e18, 4000 * 1e18, {"from": lender})
+    contract.addQuoteToken(100000 * 1e18, 2000 * 1e18, {"from": lender})
+    contract.addQuoteToken(100000 * 1e18, 1500 * 1e18, {"from": lender})
+    contract.addQuoteToken(100000 * 1e18, 1000 * 1e18, {"from": lender})
+    contract.addCollateral(100 * 1e18, {"from": borrower1})
+    contract.addCollateral(200 * 1e18, {"from": borrower2})
+    contract.addCollateral(300 * 1e18, {"from": borrower3})
+    contract.addCollateral(400 * 1e18, {"from": borrower4})
+    contract.addCollateral(500 * 1e18, {"from": borrower5})
+    contract.borrow(100_000 * 1e18, 4000 * 1e18, {"from": borrower1})
+    contract.borrow(100_000 * 1e18, 2000 * 1e18, {"from": borrower2})
+    return (
+        lender,
+        borrower1,
+        borrower2,
+        borrower3,
+        borrower4,
+        borrower5,
+        dai,
+        mkr,
+        contract,
+    )
