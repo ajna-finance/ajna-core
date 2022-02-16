@@ -167,7 +167,7 @@ def test_quote_deposit(
     assert pool_event["price"] == 5000 * 1e18
 
 
-def test_quote_deposit_gas(
+def test_quote_deposit_gas_below_hup(
     lenders,
     borrowers,
     mkr_dai_pool,
@@ -176,14 +176,38 @@ def test_quote_deposit_gas(
     capsys,
 ):
     txes = []
-    for i in range(15):
+    for i in range(20):
         tx = mkr_dai_pool.addQuoteToken(
-            10_000 * 1e18, (4000 - 100 * i) * 1e18, {"from": lenders[0]}
+            100 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
         )
         txes.append(tx)
     with capsys.disabled():
         print("\n==================================")
-        print("Gas estimations:")
+        print("Gas estimations (deposit below hup):")
+        print("==================================")
+        for i in range(len(txes)):
+            print(f"Transaction: {i} | Gas used: {str(txes[i].gas_used)}")
+        print("==================================")
+    assert True
+
+
+def test_quote_deposit_gas_above_hup(
+    lenders,
+    borrowers,
+    mkr_dai_pool,
+    dai,
+    mkr,
+    capsys,
+):
+    txes = []
+    for i in range(20):
+        tx = mkr_dai_pool.addQuoteToken(
+            100 * 1e18, (2000 + 10 * i) * 1e18, {"from": lenders[0]}
+        )
+        txes.append(tx)
+    with capsys.disabled():
+        print("\n==================================")
+        print("Gas estimations (deposit above hup):")
         print("==================================")
         for i in range(len(txes)):
             print(f"Transaction: {i} | Gas used: {str(txes[i].gas_used)}")
