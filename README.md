@@ -48,7 +48,7 @@ brownie test
 
 ### ERC20 pool manual test
 
-- Deploy ERC20 MKR/DAI pool
+- Running following command will deploy ERC20 MKR/DAI pool
   - 1 lender funded with 1000000 DAI
   - lender deposits 100000 DAI in each bucket with 4000, 2000, 1500, 1000 price
   - 5 borrowers funded with 500 MKR each and depositing 1500 MKR as collateral (borrower1 - 100 MKR, borrower2 - 200 MKR, borrower3 - 300 MKR, borrower4 - 400 MKR, borrower5 - 500 MKR, )
