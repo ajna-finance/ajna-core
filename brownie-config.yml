@@ -20,4 +20,5 @@ compiler:
       - "@ds-math=lib/ds-math/src/"
       - "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts"
       - "@std=lib/forge-std/src/"
+      - "@solmate=lib/solmate/src/"
 
