@@ -93,12 +93,12 @@ brownie test
 - next HUP pointer is updated for each price bucket where case
 
 ```mermaid
-graph quoteToken
-    A[add quote token: amount and price] --> B{Is valid price}
-    B -->|No| C[Revert]
-    B -->|Yes| D[Is price > hup]
-    D -->|Yes| E[Update hup] --> F{Is price > next price}
-    D -->|No| F{Is price > next price}
-    F -->|Yes| G[Update bucket pointers] --> I[Transfer amount from lender to pool] --> J[emit event]
-    F -->|No| H[Move to next bucket]--> F{Is price > next price}
+  graph TD;
+      A[add quote token: amount and price] --> B{Is valid price};
+      B -- No --> C[Revert];
+      B -- Yes --> D[Is price > hup];
+      D -- Yes --> E[Update hup] --> F{Is price > next price};
+      D -- No --> F{Is price > next price};
+      F -- Yes --> G[Update bucket pointers] --> I[Transfer amount from lender to pool] --> J[emit event];
+      F -- No --> H[Move to next bucket]--> F{Is price > next price};
 ```
