@@ -109,7 +109,7 @@ contract ERC20Pool is IPool, Common {
     }
 
     function addQuoteToken(uint256 _amount, uint256 _price) external {
-        require(this.isValidPrice(_price), "ajna/invalid-bucket-price");
+        require(isValidPrice(_price), "ajna/invalid-bucket-price");
 
         lenders[msg.sender][_price] += _amount;
         lenderBalance[msg.sender] += _amount;
@@ -142,15 +142,12 @@ contract ERC20Pool is IPool, Common {
     }
 
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
-        require(this.isValidPrice(_price), "Not a valid bucket price");
+        require(isValidPrice(_price), "Not a valid bucket price");
         require(
             lenders[msg.sender][_price] >= _amount,
             "Exceeds lended amount"
         );
-        require(
-            _amount <= this.onDeposit(_price),
-            "Not enough liquidity in bucket"
-        );
+        require(_amount <= onDeposit(_price), "Not enough liquidity in bucket");
 
         lenders[msg.sender][_price] -= _amount;
         lenderBalance[msg.sender] -= _amount;
@@ -184,7 +181,7 @@ contract ERC20Pool is IPool, Common {
     }
 
     function borrow(uint256 _amount, uint256 _hup) external {
-        require(this.getNextHup() == _hup, "Not valid hup");
+        require(getNextHup() == _hup, "Not valid hup");
 
         hup = _hup;
 
@@ -254,7 +251,7 @@ contract ERC20Pool is IPool, Common {
     }
 
     function getNextHup() public view returns (uint256) {
-        return this.getNextHup(hup);
+        return getNextHup(hup);
     }
 
     function getNextHup(uint256 _price) public view returns (uint256) {
@@ -272,7 +269,7 @@ contract ERC20Pool is IPool, Common {
     }
 
     function onDeposit() public view returns (uint256) {
-        return this.onDeposit(hup);
+        return onDeposit(hup);
     }
 
     function getPoolPrice() public view returns (uint256) {
