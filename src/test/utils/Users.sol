@@ -2,16 +2,16 @@
 pragma solidity 0.8.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20PerpPool} from "../../ERC20PerpPool.sol";
+import {ERC20Pool} from "../../ERC20Pool.sol";
 
 contract UserWithCollateral {
     function approveAndDepositTokenAsCollateral(
         IERC20 token,
-        ERC20PerpPool pool,
+        ERC20Pool pool,
         uint256 amount
     ) public {
         token.approve(address(pool), amount);
-        pool.depositCollateral(amount);
+        pool.addCollateral(amount);
     }
 
     function approveToken(
@@ -22,22 +22,26 @@ contract UserWithCollateral {
         token.approve(spender, amount);
     }
 
-    function depositCollteral(ERC20PerpPool pool, uint256 amount) public {
-        pool.depositCollateral(amount);
+    function addCollteral(ERC20Pool pool, uint256 amount) public {
+        pool.addCollateral(amount);
     }
 
-    function borrow(ERC20PerpPool pool, uint256 amount) public {
-        pool.borrow(amount);
+    function borrow(
+        ERC20Pool pool,
+        uint256 amount,
+        uint256 price
+    ) public {
+        pool.borrow(amount, price);
     }
 }
 
 contract UserWithQuoteToken {
-    function depositQuoteToken(
-        ERC20PerpPool pool,
+    function addQuoteToken(
+        ERC20Pool pool,
         uint256 amount,
         uint256 price
     ) public {
-        pool.depositQuoteToken(amount, price);
+        pool.addQuoteToken(amount, price);
     }
 
     function approveToken(
