@@ -97,8 +97,24 @@ brownie test
       A[add quote token: amount and price] --> B{Is valid price};
       B -- No --> C[Revert];
       B -- Yes --> D[Is price > hup];
-      D -- Yes --> E[Update hup] --> F{Is price > next price};
       D -- No --> F{Is price > next price};
-      F -- Yes --> G[Update bucket pointers] --> I[Transfer amount from lender to pool] --> J[emit event];
+      D -- Yes --> E[Update hup] --> F{Is price > next price};
       F -- No --> H[Move to next bucket]--> F{Is price > next price};
+      F -- Yes --> G[Update bucket pointers] --> I[Transfer amount from lender to pool] --> J[emit event];
 ```
+
+## BorrowOrder
+
+```code
+    struct BorrowOrder {
+        uint256 amount; // amount to borrow
+        uint256 price; // borrow at price
+    }
+```
+
+## borrow
+
+- can only move HUP down and never up
+- borrower should call borrow method with a sorted array of BorrowOrder objects representing a tuple of amount and next HUP
+- if not enough amount on deposit to complete an order then transaction will fail
+- collateral encumbered is calculated at the new HUP set by borrow action (that is the lowest price bucket used to complete the loan)

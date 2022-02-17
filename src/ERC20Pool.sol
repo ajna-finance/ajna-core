@@ -5,6 +5,11 @@ pragma solidity 0.8.10;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IPool {
+    struct BorrowOrder {
+        uint256 amount; // amount to borrow
+        uint256 price; // borrow at price
+    }
+
     function addQuoteToken(uint256 _amount, uint256 _price) external;
 
     function removeQuoteToken(uint256 _amount, uint256 _price) external;
@@ -13,7 +18,7 @@ interface IPool {
 
     function removeCollateral(uint256 _amount) external;
 
-    function borrow(uint256 _amount, uint256 _hup) external;
+    function borrow(BorrowOrder[] calldata _request) external;
 
     function payBack(uint256 _amount) external;
 }
@@ -180,30 +185,42 @@ contract ERC20Pool is IPool, Common {
         emit RemoveCollateral(msg.sender, _amount);
     }
 
-    function borrow(uint256 _amount, uint256 _hup) external {
-        require(getNextHup() == _hup, "Not valid hup");
+    function borrow(BorrowOrder[] calldata _request) external {
+        uint256 nextHup = hup;
+        uint256 totalAmount;
+        for (uint256 i = 0; i < _request.length; i++) {
+            require(nextHup >= _request[i].price, "ajna/invalid-next-hup");
+            nextHup = _request[i].price;
 
-        hup = _hup;
+            require(
+                buckets[nextHup].amount - buckets[nextHup].debt >=
+                    _request[i].amount,
+                "ajna/not-enough-on-deposit"
+            );
 
-        require(
-            buckets[hup].amount - buckets[hup].debt >= _amount,
-            "Not enough amount to borrow"
-        );
+            borrowers[msg.sender].debt += _request[i].amount;
+            totalDebt += _request[i].amount;
+            buckets[nextHup].debt += _request[i].amount;
+            totalAmount += _request[i].amount;
+        }
+
+        if (hup != nextHup) {
+            require(getNextHup() == nextHup, "ajna/invalid-hup");
+            hup = nextHup;
+        }
+
         require(
             borrowers[msg.sender].collateralDeposited -
                 borrowers[msg.sender].collateralEncumbered >
-                wdiv(_amount, hup),
-            "Not enough collateral"
+                wdiv(totalAmount, hup),
+            "ajna/not-enough-collateral"
         );
 
-        borrowers[msg.sender].debt += _amount;
-        totalDebt += _amount;
-        borrowers[msg.sender].collateralEncumbered += wdiv(_amount, hup);
-        totalEncumberedCollateral += wdiv(_amount, hup);
-        buckets[hup].debt += _amount;
+        borrowers[msg.sender].collateralEncumbered += wdiv(totalAmount, hup);
+        totalEncumberedCollateral += wdiv(totalAmount, hup);
 
-        quoteToken.transfer(msg.sender, _amount);
-        emit Borrow(msg.sender, hup, _amount);
+        quoteToken.transfer(msg.sender, totalAmount);
+        emit Borrow(msg.sender, hup, totalAmount);
     }
 
     function payBack(uint256 _amount) external {
