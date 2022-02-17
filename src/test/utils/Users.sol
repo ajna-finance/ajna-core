@@ -2,9 +2,11 @@
 pragma solidity 0.8.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20Pool} from "../../ERC20Pool.sol";
+import {ERC20Pool, IPool} from "../../ERC20Pool.sol";
 
 contract UserWithCollateral {
+    IPool.BorrowOrder[] orders;
+
     function approveAndDepositTokenAsCollateral(
         IERC20 token,
         ERC20Pool pool,
@@ -31,7 +33,9 @@ contract UserWithCollateral {
         uint256 amount,
         uint256 price
     ) public {
-        pool.borrow(amount, price);
+        IPool.BorrowOrder memory order = IPool.BorrowOrder(amount, price);
+        orders.push(order);
+        pool.borrow(orders);
     }
 }
 
