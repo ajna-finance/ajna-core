@@ -3,6 +3,7 @@
 pragma solidity 0.8.10;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IPool {
     struct BorrowOrder {
@@ -57,6 +58,8 @@ contract Common {
 }
 
 contract ERC20Pool is IPool, Common {
+    using SafeERC20 for IERC20;
+
     struct BorrowerInfo {
         uint256 debt;
         uint256 collateralDeposited;
@@ -142,7 +145,7 @@ contract ERC20Pool is IPool, Common {
             next = buckets[next].next;
         }
 
-        quoteToken.transferFrom(msg.sender, address(this), _amount);
+        quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
         emit AddQuoteToken(msg.sender, _price, _amount, hup);
     }
 
@@ -158,7 +161,7 @@ contract ERC20Pool is IPool, Common {
         lenderBalance[msg.sender] -= _amount;
         buckets[_price].amount -= _amount;
 
-        quoteToken.transfer(msg.sender, _amount);
+        quoteToken.safeTransfer(msg.sender, _amount);
         emit RemoveQuoteToken(msg.sender, _price, _amount);
     }
 
@@ -166,7 +169,7 @@ contract ERC20Pool is IPool, Common {
         borrowers[msg.sender].collateralDeposited += _amount;
         totalCollateral += _amount;
 
-        collateral.transferFrom(msg.sender, address(this), _amount);
+        collateral.safeTransferFrom(msg.sender, address(this), _amount);
         emit AddCollateral(msg.sender, _amount);
     }
 
@@ -181,7 +184,7 @@ contract ERC20Pool is IPool, Common {
         borrowers[msg.sender].collateralDeposited -= _amount;
         totalCollateral -= _amount;
 
-        collateral.transfer(msg.sender, _amount);
+        collateral.safeTransfer(msg.sender, _amount);
         emit RemoveCollateral(msg.sender, _amount);
     }
 
@@ -219,7 +222,7 @@ contract ERC20Pool is IPool, Common {
         borrowers[msg.sender].collateralEncumbered += wdiv(totalAmount, hup);
         totalEncumberedCollateral += wdiv(totalAmount, hup);
 
-        quoteToken.transfer(msg.sender, totalAmount);
+        quoteToken.safeTransfer(msg.sender, totalAmount);
         emit Borrow(msg.sender, hup, totalAmount);
     }
 
@@ -255,7 +258,7 @@ contract ERC20Pool is IPool, Common {
         buckets[hup].amount += _amount;
         totalDebt -= _amount;
 
-        quoteToken.transfer(msg.sender, _amount);
+        quoteToken.safeTransfer(msg.sender, _amount);
         emit PayBack(msg.sender, poolPrice, _amount);
     }
 
