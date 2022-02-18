@@ -6,11 +6,6 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IPool {
-    struct BorrowOrder {
-        uint256 amount; // amount to borrow
-        uint256 price; // borrow at price
-    }
-
     function addQuoteToken(uint256 _amount, uint256 _price) external;
 
     function removeQuoteToken(uint256 _amount, uint256 _price) external;
@@ -19,7 +14,7 @@ interface IPool {
 
     function removeCollateral(uint256 _amount) external;
 
-    function borrow(BorrowOrder[] calldata _request) external;
+    function borrow(uint256 _amount, uint256 _stopPrice) external;
 
     function payBack(uint256 _amount) external;
 }
@@ -188,42 +183,50 @@ contract ERC20Pool is IPool, Common {
         emit RemoveCollateral(msg.sender, _amount);
     }
 
-    function borrow(BorrowOrder[] calldata _request) external {
+    function borrow(uint256 _amount, uint256 _stopPrice) external {
+        require(
+            _amount <= totalQuoteToken - totalDebt,
+            "ajna/not-enough-liquidity"
+        );
         uint256 nextHup = hup;
-        uint256 totalAmount;
-        for (uint256 i = 0; i < _request.length; i++) {
-            require(nextHup >= _request[i].price, "ajna/invalid-next-hup");
-            nextHup = _request[i].price;
+        uint256 amountRemaining = _amount;
+        uint256 onNextHupDeposit = onDeposit();
 
-            require(
-                buckets[nextHup].amount - buckets[nextHup].debt >=
-                    _request[i].amount,
-                "ajna/not-enough-on-deposit"
-            );
+        while (true) {
+            require(nextHup >= _stopPrice, "ajna/stop-price-exceeded");
 
-            borrowers[msg.sender].debt += _request[i].amount;
-            totalDebt += _request[i].amount;
-            buckets[nextHup].debt += _request[i].amount;
-            totalAmount += _request[i].amount;
+            if (amountRemaining > onNextHupDeposit) {
+                // take all on deposit from this bucket, move to next
+                buckets[nextHup].debt += onNextHupDeposit;
+                amountRemaining -= onNextHupDeposit;
+            } else if (amountRemaining <= onNextHupDeposit) {
+                // take all remaining loan from this bucket and exit
+                buckets[nextHup].debt += amountRemaining;
+                break;
+            }
+
+            nextHup = getNextHup(nextHup);
+            onNextHupDeposit = onDeposit(nextHup);
         }
 
         if (hup != nextHup) {
-            require(getNextHup() == nextHup, "ajna/invalid-hup");
             hup = nextHup;
         }
 
         require(
             borrowers[msg.sender].collateralDeposited -
                 borrowers[msg.sender].collateralEncumbered >
-                wdiv(totalAmount, hup),
+                wdiv(_amount, hup),
             "ajna/not-enough-collateral"
         );
 
-        borrowers[msg.sender].collateralEncumbered += wdiv(totalAmount, hup);
-        totalEncumberedCollateral += wdiv(totalAmount, hup);
+        totalDebt += _amount;
+        borrowers[msg.sender].debt += _amount;
+        borrowers[msg.sender].collateralEncumbered += wdiv(_amount, hup);
+        totalEncumberedCollateral += wdiv(_amount, hup);
 
-        quoteToken.safeTransfer(msg.sender, totalAmount);
-        emit Borrow(msg.sender, hup, totalAmount);
+        quoteToken.safeTransfer(msg.sender, _amount);
+        emit Borrow(msg.sender, hup, _amount);
     }
 
     function payBack(uint256 _amount) external {

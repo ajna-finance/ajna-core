@@ -25,44 +25,26 @@ def test_borrow(
     assert mkr_dai_pool.totalQuoteToken() == 50_000 * 1e18
     assert mkr_dai_pool.hup() == 4000 * 1e18
 
-    # should fail if borrower wants to borrow a greater amount than in bucket
+    # should fail if borrower wants to borrow a greater amount than in pool
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        data = mkr_dai_pool.borrow.encode_input([(20_000 * 1e18, 4000 * 1e18)])
-        borrower1.transfer(mkr_dai_pool, data=data)
-    assert exc.value.revert_msg == "ajna/not-enough-on-deposit"
+        mkr_dai_pool.borrow(60_000 * 1e18, 2000 * 1e18, {"from": borrower1})
+    assert exc.value.revert_msg == "ajna/not-enough-liquidity"
 
-    # should fail if borrower wants to borrow from different bucket but HUP
+    # should fail if not enough collateral deposited by borrower
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        data = mkr_dai_pool.borrow.encode_input([(10_000 * 1e18, 3500 * 1e18)])
-        borrower1.transfer(mkr_dai_pool, data=data)
-    assert exc.value.revert_msg == "ajna/invalid-hup"
-
-    # should fail if borrow orders not sorted by price
-    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        data = mkr_dai_pool.borrow.encode_input(
-            [(10_000 * 1e18, 3500 * 1e18), (10_000 * 1e18, 4000 * 1e18)]
-        )
-        borrower1.transfer(mkr_dai_pool, data=data)
-    assert exc.value.revert_msg == "ajna/invalid-next-hup"
-
-    # should fail if no collateral deposited by borrower
-    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        data = mkr_dai_pool.borrow.encode_input([(10_000 * 1e18, 4000 * 1e18)])
-        borrower1.transfer(mkr_dai_pool, data=data)
+        mkr_dai_pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower1})
     assert exc.value.revert_msg == "ajna/not-enough-collateral"
 
     # borrower deposit 100 MKR collateral
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower1})
 
+    # should fail if stop price exceeded
+    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
+        mkr_dai_pool.borrow(15_000 * 1e18, 4000 * 1e18, {"from": borrower1})
+    assert exc.value.revert_msg == "ajna/stop-price-exceeded"
+
     # get 21000 DAI loan from 3 buckets
-    data = mkr_dai_pool.borrow.encode_input(
-        [
-            (10_000 * 1e18, 4000 * 1e18),
-            (10_000 * 1e18, 3500 * 1e18),
-            (1_000 * 1e18, 3000 * 1e18),
-        ]
-    )
-    tx = borrower1.transfer(mkr_dai_pool, data=data)
+    tx = mkr_dai_pool.borrow(21_000 * 1e18, 3000 * 1e18, {"from": borrower1})
 
     assert dai.balanceOf(borrower1) == 21_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 29_000 * 1e18
@@ -87,8 +69,7 @@ def test_borrow(
     assert pool_event["amount"] == 21_000 * 1e18
 
     # borrow remaining 9000 DAI from HUP
-    data = mkr_dai_pool.borrow.encode_input([(9_000 * 1e18, 3000 * 1e18)])
-    tx = borrower1.transfer(mkr_dai_pool, data=data)
+    tx = mkr_dai_pool.borrow(9_000 * 1e18, 3000 * 1e18, {"from": borrower1})
 
     assert dai.balanceOf(borrower1) == 30_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 20_000 * 1e18
@@ -130,27 +111,15 @@ def test_borrow_gas(
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
 
     # borrow 10_000 DAI from single bucket (HUP)
-    data = mkr_dai_pool.borrow.encode_input([(10_000 * 1e18, 4000 * 1e18)])
-    tx_one_bucket = borrowers[0].transfer(mkr_dai_pool, data=data)
+    tx_one_bucket = mkr_dai_pool.borrow(
+        10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]}
+    )
     txes.append(tx_one_bucket)
 
     # borrow 101_000 DAI from 11 buckets
-    data = mkr_dai_pool.borrow.encode_input(
-        [
-            (10_000 * 1e18, 3990 * 1e18),
-            (10_000 * 1e18, 3980 * 1e18),
-            (10_000 * 1e18, 3970 * 1e18),
-            (10_000 * 1e18, 3960 * 1e18),
-            (10_000 * 1e18, 3950 * 1e18),
-            (10_000 * 1e18, 3940 * 1e18),
-            (10_000 * 1e18, 3930 * 1e18),
-            (10_000 * 1e18, 3920 * 1e18),
-            (10_000 * 1e18, 3910 * 1e18),
-            (10_000 * 1e18, 3900 * 1e18),
-            (1_000 * 1e18, 3890 * 1e18),
-        ]
+    tx_11_buckets = mkr_dai_pool.borrow(
+        101_000 * 1e18, 1000 * 1e18, {"from": borrowers[0]}
     )
-    tx_11_buckets = borrowers[0].transfer(mkr_dai_pool, data=data)
     txes.append(tx_11_buckets)
 
     with capsys.disabled():

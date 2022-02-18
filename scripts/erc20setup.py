@@ -43,9 +43,8 @@ def main():
     contract.addCollateral(300 * 1e18, {"from": borrower3})
     contract.addCollateral(400 * 1e18, {"from": borrower4})
     contract.addCollateral(500 * 1e18, {"from": borrower5})
-    borrow_data = contract.borrow.encode_input([(10_000 * 1e18, 4000 * 1e18)])
-    borrower1.transfer(contract, data=borrow_data)
-    borrower2.transfer(contract, data=borrow_data)
+    contract.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower1})
+    contract.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower2})
     return (
         lender,
         borrower1,
