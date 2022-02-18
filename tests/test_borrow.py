@@ -44,7 +44,9 @@ def test_borrow(
     assert exc.value.revert_msg == "ajna/stop-price-exceeded"
 
     # get 21000 DAI loan from 3 buckets
-    tx = mkr_dai_pool.borrow(21_000 * 1e18, 3000 * 1e18, {"from": borrower1})
+    # loan price should be 3000 DAI
+    assert 3000 * 1e18 == mkr_dai_pool.estimatePriceForLoan(21_000 * 1e18)
+    tx = mkr_dai_pool.borrow(21_000 * 1e18, 2500 * 1e18, {"from": borrower1})
 
     assert dai.balanceOf(borrower1) == 21_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 29_000 * 1e18

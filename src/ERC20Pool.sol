@@ -265,6 +265,30 @@ contract ERC20Pool is IPool, Common {
         emit PayBack(msg.sender, poolPrice, _amount);
     }
 
+    function estimatePriceForLoan(uint256 _amount)
+        public
+        view
+        returns (uint256)
+    {
+        if (_amount > totalQuoteToken - totalDebt) {
+            return 0;
+        }
+
+        uint256 nextHup = hup;
+        uint256 onNextHupDeposit = onDeposit();
+
+        while (true) {
+            if (_amount > onNextHupDeposit) {
+                _amount -= onNextHupDeposit;
+            } else if (_amount <= onNextHupDeposit) {
+                return nextHup;
+            }
+
+            nextHup = buckets[nextHup].next;
+            onNextHupDeposit = onDeposit(nextHup);
+        }
+    }
+
     function isValidPrice(uint256 _price) public view returns (bool) {
         if ((_price - MIN_PRICE) % STEP > 0) {
             return false;
