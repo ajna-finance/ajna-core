@@ -81,7 +81,7 @@ contract ERC20Pool is IPool {
         lenders[msg.sender][_price] += _amount;
         lenderBalance[msg.sender] += _amount;
 
-        hup = buckets.addPriceBucket(_price, _amount, hup);
+        hup = buckets.addPriceBucket(_amount, _price, hup);
         totalQuoteToken += _amount;
 
         quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -136,7 +136,7 @@ contract ERC20Pool is IPool {
             "ajna/not-enough-liquidity"
         );
 
-        hup = buckets.borrow(_stopPrice, _amount, hup);
+        hup = buckets.borrow(_amount, _stopPrice, hup);
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
         require(

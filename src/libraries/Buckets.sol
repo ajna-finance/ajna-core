@@ -10,8 +10,8 @@ library Buckets {
 
     function addPriceBucket(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _price,
         uint256 _amount,
+        uint256 _price,
         uint256 _hup
     ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
@@ -42,8 +42,8 @@ library Buckets {
 
     function borrow(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _stop,
         uint256 _amount,
+        uint256 _stop,
         uint256 _hup
     ) public returns (uint256) {
         Bucket storage curHup = buckets[_hup];
