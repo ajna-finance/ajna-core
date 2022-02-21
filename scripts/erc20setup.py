@@ -11,6 +11,7 @@ def main():
     borrower5 = accounts[6]
     dai = Contract("0x6b175474e89094c44da98b954eedeac495271d0f")
     mkr = Contract("0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2")
+    Maths.deploy({"from": deployer})
     contract = ERC20Pool.deploy(
         mkr,
         dai,
