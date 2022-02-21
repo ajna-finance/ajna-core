@@ -116,13 +116,15 @@ contract ERC20Pool is IPool, Common {
 
         lenders[msg.sender][_price] += _amount;
         lenderBalance[msg.sender] += _amount;
-        buckets[_price].price = _price;
-        buckets[_price].amount += _amount;
+
+        Bucket storage bucket = buckets[_price];
+        bucket.price = _price;
+        bucket.amount += _amount;
         totalQuoteToken += _amount;
 
         //  update HUP
-        if (_price > hup && buckets[_price].amount - buckets[_price].debt > 0) {
-            buckets[_price].next = hup;
+        if (_price > hup && bucket.amount - bucket.debt > 0) {
+            bucket.next = hup;
             hup = _price;
         }
 
@@ -133,7 +135,7 @@ contract ERC20Pool is IPool, Common {
         while (true) {
             if (_price > next) {
                 buckets[cur].next = _price;
-                buckets[_price].next = next;
+                bucket.next = next;
                 break;
             }
             cur = next;
@@ -188,9 +190,11 @@ contract ERC20Pool is IPool, Common {
             _amount <= totalQuoteToken - totalDebt,
             "ajna/not-enough-liquidity"
         );
-        uint256 nextHup = hup;
+
+        Bucket storage curHup = buckets[hup];
+        uint256 nextHup = curHup.price;
         uint256 amountRemaining = _amount;
-        uint256 onNextHupDeposit = onDeposit();
+        uint256 onNextHupDeposit = curHup.amount - curHup.debt;
 
         while (true) {
             require(nextHup >= _stopPrice, "ajna/stop-price-exceeded");
@@ -213,16 +217,18 @@ contract ERC20Pool is IPool, Common {
             hup = nextHup;
         }
 
+        BorrowerInfo storage borrower = borrowers[msg.sender];
+
         require(
-            borrowers[msg.sender].collateralDeposited -
-                borrowers[msg.sender].collateralEncumbered >
+            borrower.collateralDeposited - borrower.collateralEncumbered >
                 wdiv(_amount, hup),
             "ajna/not-enough-collateral"
         );
 
+        borrower.debt += _amount;
+        borrower.collateralEncumbered += wdiv(_amount, hup);
+
         totalDebt += _amount;
-        borrowers[msg.sender].debt += _amount;
-        borrowers[msg.sender].collateralEncumbered += wdiv(_amount, hup);
         totalEncumberedCollateral += wdiv(_amount, hup);
 
         quoteToken.safeTransfer(msg.sender, _amount);

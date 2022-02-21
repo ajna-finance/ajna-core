@@ -103,6 +103,7 @@ def test_borrow_gas(
     dai,
     mkr,
     capsys,
+    test_utils,
 ):
     txes = []
     for i in range(12):
@@ -128,7 +129,11 @@ def test_borrow_gas(
         print("\n==================================")
         print("Gas estimations:")
         print("==================================")
-        print(f"Borrow single bucket (HUP) - Gas used: {str(tx_one_bucket.gas_used)}")
-        print(f"Borrow multiple buckets 11 - Gas used: {str(tx_11_buckets.gas_used)}")
+        print(
+            f"Borrow single bucket (HUP) - {test_utils.get_gas_usage(tx_one_bucket.gas_used)}"
+        )
+        print(
+            f"Borrow multiple buckets 11 - {test_utils.get_gas_usage(tx_11_buckets.gas_used)}"
+        )
         print("==================================")
     assert True

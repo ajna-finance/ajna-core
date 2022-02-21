@@ -57,3 +57,16 @@ def borrowers(mkr, mkr_dai_pool, accounts):
         )
         borrowers.append(borrower)
     yield borrowers
+
+
+class TestUtils:
+    @staticmethod
+    def get_gas_usage(gas) -> str:
+        in_eth = gas * 100 * 10e-9
+        in_fiat = in_eth * 3000
+        return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
+
+
+@pytest.fixture
+def test_utils():
+    return TestUtils

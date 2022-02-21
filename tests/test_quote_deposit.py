@@ -174,6 +174,7 @@ def test_quote_deposit_gas_below_hup(
     dai,
     mkr,
     capsys,
+    test_utils,
 ):
     txes = []
     for i in range(20):
@@ -186,7 +187,7 @@ def test_quote_deposit_gas_below_hup(
         print("Gas estimations (deposit below hup):")
         print("==================================")
         for i in range(len(txes)):
-            print(f"Transaction: {i} | Gas used: {str(txes[i].gas_used)}")
+            print(f"Transaction: {i} | {test_utils.get_gas_usage(txes[i].gas_used)}")
         print("==================================")
     assert True
 
@@ -198,6 +199,7 @@ def test_quote_deposit_gas_above_hup(
     dai,
     mkr,
     capsys,
+    test_utils,
 ):
     txes = []
     for i in range(20):
@@ -210,6 +212,8 @@ def test_quote_deposit_gas_above_hup(
         print("Gas estimations (deposit above hup):")
         print("==================================")
         for i in range(len(txes)):
-            print(f"Transaction: {i} | Gas used: {str(txes[i].gas_used)}")
+            print(
+                f"Transaction: {i} | Gas used: {test_utils.get_gas_usage(txes[i].gas_used)}"
+            )
         print("==================================")
     assert True
