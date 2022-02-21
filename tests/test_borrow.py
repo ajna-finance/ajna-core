@@ -51,7 +51,13 @@ def test_borrow(
     assert dai.balanceOf(borrower1) == 21_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 29_000 * 1e18
     assert mkr_dai_pool.hup() == 3000 * 1e18
-    assert mkr_dai_pool.onDeposit() == 9_000 * 1e18
+    (
+        bucket_price,
+        bucket_next_price,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    assert bucket_deposit - bucket_debt == 9_000 * 1e18
     assert mkr_dai_pool.totalDebt() == 21_000 * 1e18
     assert mkr_dai_pool.totalEncumberedCollateral() == (21_000 / 3000) * 1e18
     # check borrower
@@ -76,7 +82,13 @@ def test_borrow(
     assert dai.balanceOf(borrower1) == 30_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 20_000 * 1e18
     assert mkr_dai_pool.hup() == 3000 * 1e18
-    assert mkr_dai_pool.onDeposit() == 0
+    (
+        bucket_price,
+        bucket_next_price,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    assert bucket_deposit - bucket_debt == 0
     assert mkr_dai_pool.totalDebt() == 30_000 * 1e18
     assert mkr_dai_pool.totalEncumberedCollateral() == (30_000 / 3000) * 1e18
     # check borrower
