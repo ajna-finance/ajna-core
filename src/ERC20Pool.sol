@@ -6,6 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./libraries/Maths.sol";
+import "./libraries/Buckets.sol";
 
 interface IPool {
     function addQuoteToken(uint256 _amount, uint256 _price) external;
@@ -23,18 +24,12 @@ interface IPool {
 
 contract ERC20Pool is IPool {
     using SafeERC20 for IERC20;
+    using Buckets for mapping(uint256 => Buckets.Bucket);
 
     struct BorrowerInfo {
         uint256 debt;
         uint256 collateralDeposited;
         uint256 collateralEncumbered;
-    }
-
-    struct Bucket {
-        uint256 price; // current bucket price
-        uint256 next; // next utilizable bucket price
-        uint256 amount; // total quote deposited in bucket
-        uint256 debt; // accumulated bucket debt
     }
 
     uint256 public constant MAX_PRICE = 7000 * 10**18;
@@ -48,7 +43,7 @@ contract ERC20Pool is IPool {
     uint256 public hup;
 
     // buckets: price -> Bucket
-    mapping(uint256 => Bucket) public buckets;
+    mapping(uint256 => Buckets.Bucket) public buckets;
 
     // lenders book: lender address -> price bucket -> amount
     mapping(address => mapping(uint256 => uint256)) public lenders;
@@ -86,30 +81,8 @@ contract ERC20Pool is IPool {
         lenders[msg.sender][_price] += _amount;
         lenderBalance[msg.sender] += _amount;
 
-        Bucket storage bucket = buckets[_price];
-        bucket.price = _price;
-        bucket.amount += _amount;
+        hup = buckets.addPriceBucket(_amount, _price, hup);
         totalQuoteToken += _amount;
-
-        //  update HUP
-        if (_price > hup && bucket.amount - bucket.debt > 0) {
-            bucket.next = hup;
-            hup = _price;
-        }
-
-        uint256 cur = hup;
-        uint256 next = buckets[hup].next;
-
-        // update next price pointers accordingly to current price
-        while (true) {
-            if (_price > next) {
-                buckets[cur].next = _price;
-                bucket.next = next;
-                break;
-            }
-            cur = next;
-            next = buckets[next].next;
-        }
 
         quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
         emit AddQuoteToken(msg.sender, _price, _amount, hup);
@@ -121,7 +94,10 @@ contract ERC20Pool is IPool {
             lenders[msg.sender][_price] >= _amount,
             "Exceeds lended amount"
         );
-        require(_amount <= onDeposit(_price), "Not enough liquidity in bucket");
+        require(
+            _amount <= buckets.onDeposit(_price),
+            "Not enough liquidity in bucket"
+        );
 
         lenders[msg.sender][_price] -= _amount;
         lenderBalance[msg.sender] -= _amount;
@@ -160,40 +136,14 @@ contract ERC20Pool is IPool {
             "ajna/not-enough-liquidity"
         );
 
-        Bucket storage curHup = buckets[hup];
-        uint256 nextHup = curHup.price;
-        uint256 amountRemaining = _amount;
-        uint256 onNextHupDeposit = curHup.amount - curHup.debt;
-
-        while (true) {
-            require(nextHup >= _stopPrice, "ajna/stop-price-exceeded");
-
-            if (amountRemaining > onNextHupDeposit) {
-                // take all on deposit from this bucket, move to next
-                buckets[nextHup].debt += onNextHupDeposit;
-                amountRemaining -= onNextHupDeposit;
-            } else if (amountRemaining <= onNextHupDeposit) {
-                // take all remaining loan from this bucket and exit
-                buckets[nextHup].debt += amountRemaining;
-                break;
-            }
-
-            nextHup = getNextHup(nextHup);
-            onNextHupDeposit = onDeposit(nextHup);
-        }
-
-        if (hup != nextHup) {
-            hup = nextHup;
-        }
+        hup = buckets.borrow(_amount, _stopPrice, hup);
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
-
         require(
             borrower.collateralDeposited - borrower.collateralEncumbered >
                 Maths.wdiv(_amount, hup),
             "ajna/not-enough-collateral"
         );
-
         borrower.debt += _amount;
         borrower.collateralEncumbered += Maths.wdiv(_amount, hup);
 
@@ -249,49 +199,15 @@ contract ERC20Pool is IPool {
             return 0;
         }
 
-        uint256 nextHup = hup;
-        uint256 onNextHupDeposit = onDeposit();
-
-        while (true) {
-            if (_amount > onNextHupDeposit) {
-                _amount -= onNextHupDeposit;
-            } else if (_amount <= onNextHupDeposit) {
-                return nextHup;
-            }
-
-            nextHup = buckets[nextHup].next;
-            onNextHupDeposit = onDeposit(nextHup);
-        }
+        return buckets.estimatePrice(_amount, hup);
     }
 
-    function isValidPrice(uint256 _price) public view returns (bool) {
+    function isValidPrice(uint256 _price) public pure returns (bool) {
         if ((_price - MIN_PRICE) % STEP > 0) {
             return false;
         }
         uint256 index = (_price - MIN_PRICE) / STEP;
         return (index >= 0 && index < COUNT);
-    }
-
-    function getNextHup() public view returns (uint256) {
-        return getNextHup(hup);
-    }
-
-    function getNextHup(uint256 _price) public view returns (uint256) {
-        uint256 cur = _price;
-        while (true) {
-            if (buckets[cur].amount - buckets[cur].debt > 0) {
-                return cur;
-            }
-            cur = buckets[cur].next;
-        }
-    }
-
-    function onDeposit(uint256 _price) public view returns (uint256) {
-        return buckets[_price].amount - buckets[_price].debt;
-    }
-
-    function onDeposit() public view returns (uint256) {
-        return onDeposit(hup);
     }
 
     function getPoolPrice() public view returns (uint256) {
