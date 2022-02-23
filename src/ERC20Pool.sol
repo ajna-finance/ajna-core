@@ -47,7 +47,7 @@ contract ERC20Pool is IPool {
     IERC20 public immutable collateral;
     IERC20 public immutable quoteToken;
 
-    uint256 public hup;
+    uint256 public hdp;
     uint256 public lup;
 
     // buckets: price -> Bucket
@@ -71,7 +71,7 @@ contract ERC20Pool is IPool {
         address lender,
         uint256 price,
         uint256 amount,
-        uint256 hup
+        uint256 lup
     );
     event RemoveQuoteToken(address lender, uint256 price, uint256 amount);
     event AddCollateral(address borrower, uint256 amount);
@@ -92,7 +92,7 @@ contract ERC20Pool is IPool {
 
         // create bucket if not initialized yet
         if (!BitMaps.get(bitmap, _price)) {
-            hup = buckets.initializeBucket(hup, _price);
+            hdp = buckets.initializeBucket(hdp, _price);
             BitMaps.setTo(bitmap, _price, true);
         }
 
@@ -102,11 +102,11 @@ contract ERC20Pool is IPool {
 
         // reallocate debt if needed
         if (totalDebt > 0 && _price > lup) {
-            lup = buckets.reallocateDebt(_amount, _price, hup, lup);
+            lup = buckets.reallocateDebt(_amount, _price, hdp, lup);
         }
 
         quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
-        emit AddQuoteToken(msg.sender, _price, _amount, hup);
+        emit AddQuoteToken(msg.sender, _price, _amount, lup);
     }
 
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
@@ -157,7 +157,12 @@ contract ERC20Pool is IPool {
             "ajna/not-enough-liquidity"
         );
 
-        lup = buckets.borrow(_amount, _stopPrice, hup, lup);
+        // if first loan then borrow at hdp
+        if (lup == 0) {
+            lup = buckets.borrow(_amount, _stopPrice, hdp);
+        } else {
+            lup = buckets.borrow(_amount, _stopPrice, lup);
+        }
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
         require(
@@ -204,7 +209,7 @@ contract ERC20Pool is IPool {
             borrowers[msg.sender].collateralEncumbered = 0;
         }
 
-        buckets[hup].amount += _amount;
+        buckets[lup].amount += _amount;
         totalDebt -= _amount;
 
         quoteToken.safeTransfer(msg.sender, _amount);
@@ -241,7 +246,11 @@ contract ERC20Pool is IPool {
             return 0;
         }
 
-        return buckets.estimatePrice(_amount, hup);
+        if (lup == 0) {
+            return buckets.estimatePrice(_amount, hdp);
+        }
+
+        return buckets.estimatePrice(_amount, lup);
     }
 
     function isValidPrice(uint256 _price) public pure returns (bool) {
@@ -256,14 +265,14 @@ contract ERC20Pool is IPool {
         if (totalDebt > 0) {
             return Maths.wdiv(totalDebt, totalEncumberedCollateral);
         }
-        return hup;
+        return lup;
     }
 
     function getMinimumPoolPrice() public view returns (uint256) {
         if (totalDebt > 0) {
             return Maths.wdiv(totalDebt, totalCollateral);
         }
-        return hup;
+        return lup;
     }
 
     function getPoolCollateralization() public view returns (uint256) {

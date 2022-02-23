@@ -11,20 +11,20 @@ library Buckets {
 
     function initializeBucket(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _hup,
+        uint256 _hdp,
         uint256 _price
     ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
         bucket.price = _price;
 
-        if (_price > _hup) {
-            bucket.down = _hup;
-            _hup = _price;
+        if (_price > _hdp) {
+            bucket.down = _hdp;
+            _hdp = _price;
         }
 
-        uint256 cur = _hup;
-        uint256 down = buckets[_hup].down;
-        uint256 up = buckets[_hup].up;
+        uint256 cur = _hdp;
+        uint256 down = buckets[_hdp].down;
+        uint256 up = buckets[_hdp].up;
 
         // update price pointers
         while (true) {
@@ -40,14 +40,14 @@ library Buckets {
             up = buckets[cur].up;
         }
 
-        return _hup;
+        return _hdp;
     }
 
     function reallocateDebt(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _amount,
         uint256 _price,
-        uint256 _hup,
+        uint256 _hdp,
         uint256 _lup
     ) public returns (uint256) {
         Bucket memory bucket = buckets[_price];
@@ -57,7 +57,7 @@ library Buckets {
         uint256 debtReallocated;
 
         while (true) {
-            if (curLup.price == _hup) {
+            if (curLup.price == _hdp) {
                 break;
             }
 
@@ -86,33 +86,33 @@ library Buckets {
         mapping(uint256 => Bucket) storage buckets,
         uint256 _amount,
         uint256 _stop,
-        uint256 _hup,
         uint256 _lup
     ) public returns (uint256) {
-        Bucket storage curHup = buckets[_hup];
+        Bucket storage curLup = buckets[_lup];
         uint256 amountRemaining = _amount;
-        uint256 curHupDeposit;
+        uint256 curLupDeposit;
 
         while (true) {
-            require(curHup.price >= _stop, "ajna/stop-price-exceeded");
+            require(curLup.price >= _stop, "ajna/stop-price-exceeded");
 
-            curHupDeposit = curHup.amount - curHup.debt;
+            curLupDeposit = curLup.amount - curLup.debt;
 
-            if (amountRemaining > curHupDeposit) {
-                // take all on deposit from this bucket, move to next
-                curHup.debt += curHupDeposit;
-                amountRemaining -= curHupDeposit;
+            if (amountRemaining > curLupDeposit) {
+                // take all on deposit from this bucket
+                curLup.debt += curLupDeposit;
+                amountRemaining -= curLupDeposit;
             } else {
-                // take all remaining loan from this bucket and exit
-                curHup.debt += amountRemaining;
+                // take all remaining amount for loan from this bucket and exit
+                curLup.debt += amountRemaining;
                 break;
             }
 
-            curHup = buckets[curHup.down];
+            // move to next bucket
+            curLup = buckets[curLup.down];
         }
 
-        if (_lup > curHup.price || _lup == 0) {
-            _lup = curHup.price;
+        if (_lup > curLup.price || _lup == 0) {
+            _lup = curLup.price;
         }
 
         return _lup;
@@ -121,21 +121,21 @@ library Buckets {
     function estimatePrice(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _amount,
-        uint256 _hup
+        uint256 _hdp
     ) public view returns (uint256) {
-        Bucket memory curHup = buckets[_hup];
-        uint256 curHupDeposit;
+        Bucket memory curLup = buckets[_hdp];
+        uint256 curLupDeposit;
 
         while (true) {
-            curHupDeposit = curHup.amount - curHup.debt;
+            curLupDeposit = curLup.amount - curLup.debt;
 
-            if (_amount > curHupDeposit) {
-                _amount -= curHupDeposit;
-            } else if (_amount <= curHupDeposit) {
-                return curHup.price;
+            if (_amount > curLupDeposit) {
+                _amount -= curLupDeposit;
+            } else if (_amount <= curLupDeposit) {
+                return curLup.price;
             }
 
-            curHup = buckets[curHup.down];
+            curLup = buckets[curLup.down];
         }
 
         return 0;

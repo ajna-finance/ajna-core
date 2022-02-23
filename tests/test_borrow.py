@@ -23,7 +23,7 @@ def test_borrow(
 
     # check pool balance
     assert mkr_dai_pool.totalQuoteToken() == 50_000 * 1e18
-    assert mkr_dai_pool.hup() == 4000 * 1e18
+    assert mkr_dai_pool.hdp() == 4000 * 1e18
 
     # should fail if borrower wants to borrow a greater amount than in pool
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
@@ -50,7 +50,7 @@ def test_borrow(
 
     assert dai.balanceOf(borrower1) == 21_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 29_000 * 1e18
-    assert mkr_dai_pool.hup() == 4000 * 1e18
+    assert mkr_dai_pool.hdp() == 4000 * 1e18
     assert mkr_dai_pool.lup() == 3000 * 1e18
     (
         _,
@@ -78,12 +78,12 @@ def test_borrow(
     assert pool_event["price"] == 3000 * 1e18
     assert pool_event["amount"] == 21_000 * 1e18
 
-    # borrow remaining 9000 DAI from HUP
+    # borrow remaining 9000 DAI from LUP
     tx = mkr_dai_pool.borrow(9_000 * 1e18, 3000 * 1e18, {"from": borrower1})
 
     assert dai.balanceOf(borrower1) == 30_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 20_000 * 1e18
-    assert mkr_dai_pool.hup() == 4000 * 1e18
+    assert mkr_dai_pool.hdp() == 4000 * 1e18
     assert mkr_dai_pool.lup() == 3000 * 1e18
     (
         _,
@@ -172,7 +172,7 @@ def test_borrow_gas(
 
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
 
-    # borrow 10_000 DAI from single bucket (HUP)
+    # borrow 10_000 DAI from single bucket (LUP)
     tx_one_bucket = mkr_dai_pool.borrow(
         10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]}
     )
