@@ -50,10 +50,12 @@ def test_borrow(
 
     assert dai.balanceOf(borrower1) == 21_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 29_000 * 1e18
-    assert mkr_dai_pool.hup() == 3000 * 1e18
+    assert mkr_dai_pool.hup() == 4000 * 1e18
+    assert mkr_dai_pool.lup() == 3000 * 1e18
     (
-        bucket_price,
-        bucket_next_price,
+        _,
+        _,
+        _,
         bucket_deposit,
         bucket_debt,
     ) = mkr_dai_pool.buckets(3000 * 1e18)
@@ -81,10 +83,12 @@ def test_borrow(
 
     assert dai.balanceOf(borrower1) == 30_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 20_000 * 1e18
-    assert mkr_dai_pool.hup() == 3000 * 1e18
+    assert mkr_dai_pool.hup() == 4000 * 1e18
+    assert mkr_dai_pool.lup() == 3000 * 1e18
     (
-        bucket_price,
-        bucket_next_price,
+        _,
+        _,
+        _,
         bucket_deposit,
         bucket_debt,
     ) = mkr_dai_pool.buckets(3000 * 1e18)
@@ -106,6 +110,49 @@ def test_borrow(
     assert pool_event["borrower"] == borrower1
     assert pool_event["price"] == 3000 * 1e18
     assert pool_event["amount"] == 9_000 * 1e18
+
+    # deposit at 5000 and pay back entire debt
+    mkr_dai_pool.addQuoteToken(40_000 * 1e18, 5000 * 1e18, {"from": lender})
+    # check debt paid for 3000 DAI bucket
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    assert bucket_deposit == 10_000 * 1e18
+    assert bucket_debt == 0
+    # check debt paid for 3500 DAI bucket
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(3500 * 1e18)
+    assert bucket_deposit == 10_000 * 1e18
+    assert bucket_debt == 0
+    # check debt paid for 4000 DAI bucket
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(4000 * 1e18)
+    assert bucket_deposit == 10_000 * 1e18
+    assert bucket_debt == 0
+    # check 5000 DAI bucket, accumulated all 30000 DAI debt, deposited 40000 DAI
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(5000 * 1e18)
+    assert bucket_deposit == 40_000 * 1e18
+    assert bucket_debt == 30_000 * 1e18
 
 
 def test_borrow_gas(
@@ -129,11 +176,18 @@ def test_borrow_gas(
     tx_one_bucket = mkr_dai_pool.borrow(
         10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]}
     )
+    tx_reallocate_debt_one_bucket = mkr_dai_pool.addQuoteToken(
+        10_000 * 1e18, 5000 * 1e18, {"from": lenders[0]}
+    )
     txes.append(tx_one_bucket)
+    txes.append(tx_reallocate_debt_one_bucket)
 
     # borrow 101_000 DAI from 11 buckets
     tx_11_buckets = mkr_dai_pool.borrow(
         101_000 * 1e18, 1000 * 1e18, {"from": borrowers[0]}
+    )
+    tx_reallocate_debt_11_buckets = mkr_dai_pool.addQuoteToken(
+        150_000 * 1e18, 6000 * 1e18, {"from": lenders[1]}
     )
     txes.append(tx_11_buckets)
 
@@ -142,10 +196,12 @@ def test_borrow_gas(
         print("Gas estimations:")
         print("==================================")
         print(
-            f"Borrow single bucket (HUP) - {test_utils.get_gas_usage(tx_one_bucket.gas_used)}"
+            f"Borrow single bucket           - {test_utils.get_gas_usage(tx_one_bucket.gas_used)}\n"
+            f"Reallocate debt single bucket  - {test_utils.get_gas_usage(tx_reallocate_debt_one_bucket.gas_used)}"
         )
         print(
-            f"Borrow multiple buckets 11 - {test_utils.get_gas_usage(tx_11_buckets.gas_used)}"
+            f"Borrow from multiple buckets (11)      - {test_utils.get_gas_usage(tx_11_buckets.gas_used)}\n"
+            f"Reallocate debt multiple buckets (11)  - {test_utils.get_gas_usage(tx_reallocate_debt_11_buckets.gas_used)}"
         )
         print("==================================")
     assert True
