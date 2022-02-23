@@ -28,12 +28,14 @@ def test_quote_deposit(
     # check bucket balance
     (
         bucket_price,
-        bucket_next_price,
+        bucket_up_price,
+        bucket_down_price,
         bucket_deposit,
         bucket_debt,
     ) = mkr_dai_pool.buckets(4000 * 1e18)
     assert bucket_price == 4000 * 1e18
-    assert bucket_next_price == 0
+    assert bucket_up_price == 4000 * 1e18
+    assert bucket_down_price == 0
     assert bucket_deposit == 10_000 * 1e18
     assert bucket_debt == 0
     # check tokens transfered
@@ -51,7 +53,7 @@ def test_quote_deposit(
     assert pool_event["price"] == 4000 * 1e18
 
     # test 20000 DAI deposit at price of 1 MKR = 2000 DAI
-    # hup should remain same 4000 DAI and hup next price should be updated from 0 to 2000 DAI
+    # hup should remain same 4000 DAI
     tx = mkr_dai_pool.addQuoteToken(20_000 * 1e18, 2000 * 1e18, {"from": lender})
     # check pool balance
     assert mkr_dai_pool.lenders(lender, 2000 * 1e18) == 20_000 * 1e18
@@ -61,22 +63,25 @@ def test_quote_deposit(
     # check new bucket balance
     (
         bucket_price,
-        bucket_next_price,
+        bucket_up_price,
+        bucket_down_price,
         bucket_deposit,
         bucket_debt,
     ) = mkr_dai_pool.buckets(2000 * 1e18)
     assert bucket_price == 2000 * 1e18
-    assert bucket_next_price == 0
+    assert bucket_up_price == 4000 * 1e18
+    assert bucket_down_price == 0
     assert bucket_deposit == 20_000 * 1e18
     assert bucket_debt == 0
     # check hup next price pointer updated
     (
         _,
-        hup_next_price,
+        _,
+        bucket_down_price,
         _,
         _,
     ) = mkr_dai_pool.buckets(4000 * 1e18)
-    assert hup_next_price == 2000 * 1e18
+    assert bucket_down_price == 2000 * 1e18
     # check tokens transfered
     assert dai.balanceOf(mkr_dai_pool) == 30_000 * 1e18
     assert dai.balanceOf(lender) == 170_000 * 1e18
@@ -103,22 +108,33 @@ def test_quote_deposit(
     # check new bucket balance
     (
         bucket_price,
-        bucket_next_price,
+        bucket_up_price,
+        bucket_down_price,
         bucket_deposit,
         bucket_debt,
     ) = mkr_dai_pool.buckets(3000 * 1e18)
     assert bucket_price == 3000 * 1e18
-    assert bucket_next_price == 2000 * 1e18
+    assert bucket_up_price == 4000 * 1e18
+    assert bucket_down_price == 2000 * 1e18
     assert bucket_deposit == 30_000 * 1e18
     assert bucket_debt == 0
     # check hup bucket next price pointer updated
     (
         _,
-        hup_next_price,
+        _,
+        bucket_down_price,
         _,
         _,
     ) = mkr_dai_pool.buckets(4000 * 1e18)
-    assert hup_next_price == 3000 * 1e18
+    assert bucket_down_price == 3000 * 1e18
+    (
+        _,
+        bucket_up_price,
+        _,
+        _,
+        _,
+    ) = mkr_dai_pool.buckets(2000 * 1e18)
+    assert bucket_up_price == 3000 * 1e18
     # check tokens transfered
     assert dai.balanceOf(mkr_dai_pool) == 60_000 * 1e18
     assert dai.balanceOf(lender) == 140_000 * 1e18
@@ -144,12 +160,14 @@ def test_quote_deposit(
     # check new bucket balance
     (
         bucket_price,
-        bucket_next_price,
+        bucket_up_price,
+        bucket_down_price,
         bucket_deposit,
         bucket_debt,
     ) = mkr_dai_pool.buckets(5000 * 1e18)
     assert bucket_price == 5000 * 1e18
-    assert bucket_next_price == 4000 * 1e18
+    assert bucket_up_price == 5000 * 1e18
+    assert bucket_down_price == 4000 * 1e18
     assert bucket_deposit == 40_000 * 1e18
     assert bucket_debt == 0
     # check tokens transfered

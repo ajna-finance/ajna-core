@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.11;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./libraries/Maths.sol";
 import "./libraries/Buckets.sol";
@@ -20,6 +21,12 @@ interface IPool {
     function borrow(uint256 _amount, uint256 _stopPrice) external;
 
     function payBack(uint256 _amount) external;
+
+    function isBucketInitialized(uint256 _price) external returns (bool);
+
+    function ensureBucket(uint256 _prevPrice, uint256 _price) external;
+
+    function getNextValidPrice(uint256 _price) external returns (uint256);
 }
 
 contract ERC20Pool is IPool {
@@ -41,9 +48,11 @@ contract ERC20Pool is IPool {
     IERC20 public immutable quoteToken;
 
     uint256 public hup;
+    uint256 public lup;
 
     // buckets: price -> Bucket
     mapping(uint256 => Buckets.Bucket) public buckets;
+    BitMaps.BitMap private bitmap;
 
     // lenders book: lender address -> price bucket -> amount
     mapping(address => mapping(uint256 => uint256)) public lenders;
@@ -81,8 +90,20 @@ contract ERC20Pool is IPool {
         lenders[msg.sender][_price] += _amount;
         lenderBalance[msg.sender] += _amount;
 
-        hup = buckets.addPriceBucket(_amount, _price, hup);
+        // create bucket if not initialized yet
+        if (!BitMaps.get(bitmap, _price)) {
+            hup = buckets.initializeBucket(hup, _price);
+            BitMaps.setTo(bitmap, _price, true);
+        }
+
+        // deposit amount
+        buckets[_price].amount += _amount;
         totalQuoteToken += _amount;
+
+        // reallocate debt if needed
+        if (totalDebt > 0 && _price > lup) {
+            lup = buckets.reallocateDebt(_amount, _price, hup, lup);
+        }
 
         quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
         emit AddQuoteToken(msg.sender, _price, _amount, hup);
@@ -136,22 +157,22 @@ contract ERC20Pool is IPool {
             "ajna/not-enough-liquidity"
         );
 
-        hup = buckets.borrow(_amount, _stopPrice, hup);
+        lup = buckets.borrow(_amount, _stopPrice, hup, lup);
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
         require(
             borrower.collateralDeposited - borrower.collateralEncumbered >
-                Maths.wdiv(_amount, hup),
+                Maths.wdiv(_amount, lup),
             "ajna/not-enough-collateral"
         );
         borrower.debt += _amount;
-        borrower.collateralEncumbered += Maths.wdiv(_amount, hup);
+        borrower.collateralEncumbered += Maths.wdiv(_amount, lup);
 
         totalDebt += _amount;
-        totalEncumberedCollateral += Maths.wdiv(_amount, hup);
+        totalEncumberedCollateral += Maths.wdiv(_amount, lup);
 
         quoteToken.safeTransfer(msg.sender, _amount);
-        emit Borrow(msg.sender, hup, _amount);
+        emit Borrow(msg.sender, lup, _amount);
     }
 
     function payBack(uint256 _amount) external {
@@ -188,6 +209,27 @@ contract ERC20Pool is IPool {
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit PayBack(msg.sender, poolPrice, _amount);
+    }
+
+    function isBucketInitialized(uint256 _price) public view returns (bool) {
+        return BitMaps.get(bitmap, _price);
+    }
+
+    function ensureBucket(uint256 _prevPrice, uint256 _price) public {
+        require(_prevPrice > _price, "ajna/price-lower-than-prev");
+        require(BitMaps.get(bitmap, _prevPrice), "ajna/prev-not-initialized");
+        require(!BitMaps.get(bitmap, _price), "ajna/price-already-initialized");
+
+        buckets.initializeBucket(_prevPrice, _price);
+        BitMaps.setTo(bitmap, _price, true);
+    }
+
+    function getNextValidPrice(uint256 _price) public view returns (uint256) {
+        uint256 next = _price + STEP;
+        if (next > MAX_PRICE) {
+            return 0;
+        }
+        return next;
     }
 
     function estimatePriceForLoan(uint256 _amount)
