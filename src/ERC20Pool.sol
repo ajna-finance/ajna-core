@@ -21,6 +21,12 @@ interface IPool {
     function borrow(uint256 _amount, uint256 _stopPrice) external;
 
     function payBack(uint256 _amount) external;
+
+    function isBucketInitialized(uint256 _price) external returns (bool);
+
+    function ensureBucket(uint256 _prevPrice, uint256 _price) external;
+
+    function getNextValidPrice(uint256 _price) external returns (uint256);
 }
 
 contract ERC20Pool is IPool {
@@ -203,6 +209,27 @@ contract ERC20Pool is IPool {
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit PayBack(msg.sender, poolPrice, _amount);
+    }
+
+    function isBucketInitialized(uint256 _price) public view returns (bool) {
+        return BitMaps.get(bitmap, _price);
+    }
+
+    function ensureBucket(uint256 _prevPrice, uint256 _price) public {
+        require(_prevPrice > _price, "ajna/price-lower-than-prev");
+        require(BitMaps.get(bitmap, _prevPrice), "ajna/prev-not-initialized");
+        require(!BitMaps.get(bitmap, _price), "ajna/price-already-initialized");
+
+        buckets.initializeBucket(_prevPrice, _price);
+        BitMaps.setTo(bitmap, _price, true);
+    }
+
+    function getNextValidPrice(uint256 _price) public view returns (uint256) {
+        uint256 next = _price + STEP;
+        if (next > MAX_PRICE) {
+            return 0;
+        }
+        return next;
     }
 
     function estimatePriceForLoan(uint256 _amount)
