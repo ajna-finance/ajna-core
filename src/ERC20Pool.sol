@@ -91,7 +91,7 @@ contract ERC20Pool is IPool {
         lenderBalance[msg.sender] += _amount;
 
         // create bucket if not initialized yet
-        if (_buckets.isBucketInitialized(_price)) {
+        if (!_buckets.isBucketInitialized(_price)) {
             hdp = _buckets.initializeBucket(hdp, _price);
         }
 

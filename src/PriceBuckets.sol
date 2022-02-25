@@ -183,6 +183,6 @@ contract PriceBuckets {
     }
 
     function isBucketInitialized(uint256 _price) public view returns (bool) {
-        return !BitMaps.get(bitmap, _price);
+        return BitMaps.get(bitmap, _price);
     }
 }
