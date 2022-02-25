@@ -327,6 +327,7 @@ contract ERC20Pool is IPool {
             uint256,
             uint256,
             uint256,
+            uint256,
             uint256
         )
     {
@@ -336,30 +337,23 @@ contract ERC20Pool is IPool {
             borrower.collateralEncumbered
         ) - Maths.wad(1);
 
-        return (
-            borrower.debt,
-            borrower.collateralDeposited,
-            borrower.collateralEncumbered,
-            collateralization,
-            borrower.inflatorSnapshot
-        );
-    }
-
-    function getPendingEncumberedCollateral(address _borrower)
-        public
-        view
-        returns (uint256)
-    {
-        BorrowerInfo memory borrower = borrowers[_borrower];
         uint256 interestAdjustment = Maths.wad(1) +
             nextBorrowerInflator() -
             borrower.inflatorSnapshot;
 
-        return
-            Maths.wmul(
-                borrowers[_borrower].collateralEncumbered,
-                interestAdjustment
-            );
+        uint256 collateralEncumberedPending = Maths.wmul(
+            borrowers[_borrower].collateralEncumbered,
+            interestAdjustment
+        );
+
+        return (
+            borrower.debt,
+            borrower.collateralDeposited,
+            borrower.collateralEncumbered,
+            collateralEncumberedPending,
+            collateralization,
+            borrower.inflatorSnapshot
+        );
     }
 
     function estimatePriceForLoan(uint256 _amount)
