@@ -1,5 +1,5 @@
 import pytest
-from brownie import Contract, ERC20Pool, BucketMath
+from brownie import Contract, ERC20Pool, Maths, Buckets
 
 
 @pytest.fixture
@@ -25,7 +25,9 @@ def bucket_math(deployer):
     yield bucket_math
 
 @pytest.fixture
-def mkr_dai_pool(bucket_math, mkr, dai, deployer):
+def mkr_dai_pool(mkr, dai, deployer):
+    Maths.deploy({"from": deployer})
+    Buckets.deploy({"from": deployer})
     daiPool = ERC20Pool.deploy(mkr, dai, {"from": deployer})
     yield daiPool
 
@@ -62,3 +64,16 @@ def borrowers(mkr, mkr_dai_pool, accounts):
         )
         borrowers.append(borrower)
     yield borrowers
+
+
+class TestUtils:
+    @staticmethod
+    def get_gas_usage(gas) -> str:
+        in_eth = gas * 100 * 10e-9
+        in_fiat = in_eth * 3000
+        return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
+
+
+@pytest.fixture
+def test_utils():
+    return TestUtils

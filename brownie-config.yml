@@ -14,7 +14,7 @@ autofetch_sources: True
 # path remapping to support imports from GitHub/NPM
 compiler:
   solc:
-    version: 0.8.10
+    version: 0.8.11
     remappings:
       - "@ds-test=lib/ds-test/src/"
       - "@ds-math=lib/ds-math/src/"

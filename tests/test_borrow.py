@@ -23,51 +23,43 @@ def test_borrow(
 
     # check pool balance
     assert mkr_dai_pool.totalQuoteToken() == 50_000 * 1e18
-    assert mkr_dai_pool.hup() == 4000 * 1e18
+    assert mkr_dai_pool.hdp() == 4000 * 1e18
 
-    # should fail if borrower wants to borrow a greater amount than in bucket
+    # should fail if borrower wants to borrow a greater amount than in pool
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        data = mkr_dai_pool.borrow.encode_input([(20_000 * 1e18, 4000 * 1e18)])
-        borrower1.transfer(mkr_dai_pool, data=data)
-    assert exc.value.revert_msg == "ajna/not-enough-on-deposit"
+        mkr_dai_pool.borrow(60_000 * 1e18, 2000 * 1e18, {"from": borrower1})
+    assert exc.value.revert_msg == "ajna/not-enough-liquidity"
 
-    # should fail if borrower wants to borrow from different bucket but HUP
+    # should fail if not enough collateral deposited by borrower
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        data = mkr_dai_pool.borrow.encode_input([(10_000 * 1e18, 3500 * 1e18)])
-        borrower1.transfer(mkr_dai_pool, data=data)
-    assert exc.value.revert_msg == "ajna/invalid-hup"
-
-    # should fail if borrow orders not sorted by price
-    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        data = mkr_dai_pool.borrow.encode_input(
-            [(10_000 * 1e18, 3500 * 1e18), (10_000 * 1e18, 4000 * 1e18)]
-        )
-        borrower1.transfer(mkr_dai_pool, data=data)
-    assert exc.value.revert_msg == "ajna/invalid-next-hup"
-
-    # should fail if no collateral deposited by borrower
-    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        data = mkr_dai_pool.borrow.encode_input([(10_000 * 1e18, 4000 * 1e18)])
-        borrower1.transfer(mkr_dai_pool, data=data)
+        mkr_dai_pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower1})
     assert exc.value.revert_msg == "ajna/not-enough-collateral"
 
     # borrower deposit 100 MKR collateral
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower1})
 
+    # should fail if stop price exceeded
+    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
+        mkr_dai_pool.borrow(15_000 * 1e18, 4000 * 1e18, {"from": borrower1})
+    assert exc.value.revert_msg == "ajna/stop-price-exceeded"
+
     # get 21000 DAI loan from 3 buckets
-    data = mkr_dai_pool.borrow.encode_input(
-        [
-            (10_000 * 1e18, 4000 * 1e18),
-            (10_000 * 1e18, 3500 * 1e18),
-            (1_000 * 1e18, 3000 * 1e18),
-        ]
-    )
-    tx = borrower1.transfer(mkr_dai_pool, data=data)
+    # loan price should be 3000 DAI
+    assert 3000 * 1e18 == mkr_dai_pool.estimatePriceForLoan(21_000 * 1e18)
+    tx = mkr_dai_pool.borrow(21_000 * 1e18, 2500 * 1e18, {"from": borrower1})
 
     assert dai.balanceOf(borrower1) == 21_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 29_000 * 1e18
-    assert mkr_dai_pool.hup() == 3000 * 1e18
-    assert mkr_dai_pool.onDeposit() == 9_000 * 1e18
+    assert mkr_dai_pool.hdp() == 4000 * 1e18
+    assert mkr_dai_pool.lup() == 3000 * 1e18
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    assert bucket_deposit - bucket_debt == 9_000 * 1e18
     assert mkr_dai_pool.totalDebt() == 21_000 * 1e18
     assert mkr_dai_pool.totalEncumberedCollateral() == (21_000 / 3000) * 1e18
     # check borrower
@@ -86,14 +78,21 @@ def test_borrow(
     assert pool_event["price"] == 3000 * 1e18
     assert pool_event["amount"] == 21_000 * 1e18
 
-    # borrow remaining 9000 DAI from HUP
-    data = mkr_dai_pool.borrow.encode_input([(9_000 * 1e18, 3000 * 1e18)])
-    tx = borrower1.transfer(mkr_dai_pool, data=data)
+    # borrow remaining 9000 DAI from LUP
+    tx = mkr_dai_pool.borrow(9_000 * 1e18, 3000 * 1e18, {"from": borrower1})
 
     assert dai.balanceOf(borrower1) == 30_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 20_000 * 1e18
-    assert mkr_dai_pool.hup() == 3000 * 1e18
-    assert mkr_dai_pool.onDeposit() == 0
+    assert mkr_dai_pool.hdp() == 4000 * 1e18
+    assert mkr_dai_pool.lup() == 3000 * 1e18
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    assert bucket_deposit - bucket_debt == 0
     assert mkr_dai_pool.totalDebt() == 30_000 * 1e18
     assert mkr_dai_pool.totalEncumberedCollateral() == (30_000 / 3000) * 1e18
     # check borrower
@@ -112,6 +111,49 @@ def test_borrow(
     assert pool_event["price"] == 3000 * 1e18
     assert pool_event["amount"] == 9_000 * 1e18
 
+    # deposit at 5000 and pay back entire debt
+    mkr_dai_pool.addQuoteToken(40_000 * 1e18, 5000 * 1e18, {"from": lender})
+    # check debt paid for 3000 DAI bucket
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    assert bucket_deposit == 10_000 * 1e18
+    assert bucket_debt == 0
+    # check debt paid for 3500 DAI bucket
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(3500 * 1e18)
+    assert bucket_deposit == 10_000 * 1e18
+    assert bucket_debt == 0
+    # check debt paid for 4000 DAI bucket
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(4000 * 1e18)
+    assert bucket_deposit == 10_000 * 1e18
+    assert bucket_debt == 0
+    # check 5000 DAI bucket, accumulated all 30000 DAI debt, deposited 40000 DAI
+    (
+        _,
+        _,
+        _,
+        bucket_deposit,
+        bucket_debt,
+    ) = mkr_dai_pool.buckets(5000 * 1e18)
+    assert bucket_deposit == 40_000 * 1e18
+    assert bucket_debt == 30_000 * 1e18
+
 
 def test_borrow_gas(
     lenders,
@@ -120,6 +162,7 @@ def test_borrow_gas(
     dai,
     mkr,
     capsys,
+    test_utils,
 ):
     txes = []
     for i in range(12):
@@ -129,35 +172,36 @@ def test_borrow_gas(
 
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
 
-    # borrow 10_000 DAI from single bucket (HUP)
-    data = mkr_dai_pool.borrow.encode_input([(10_000 * 1e18, 4000 * 1e18)])
-    tx_one_bucket = borrowers[0].transfer(mkr_dai_pool, data=data)
+    # borrow 10_000 DAI from single bucket (LUP)
+    tx_one_bucket = mkr_dai_pool.borrow(
+        10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]}
+    )
+    tx_reallocate_debt_one_bucket = mkr_dai_pool.addQuoteToken(
+        10_000 * 1e18, 5000 * 1e18, {"from": lenders[0]}
+    )
     txes.append(tx_one_bucket)
+    txes.append(tx_reallocate_debt_one_bucket)
 
     # borrow 101_000 DAI from 11 buckets
-    data = mkr_dai_pool.borrow.encode_input(
-        [
-            (10_000 * 1e18, 3990 * 1e18),
-            (10_000 * 1e18, 3980 * 1e18),
-            (10_000 * 1e18, 3970 * 1e18),
-            (10_000 * 1e18, 3960 * 1e18),
-            (10_000 * 1e18, 3950 * 1e18),
-            (10_000 * 1e18, 3940 * 1e18),
-            (10_000 * 1e18, 3930 * 1e18),
-            (10_000 * 1e18, 3920 * 1e18),
-            (10_000 * 1e18, 3910 * 1e18),
-            (10_000 * 1e18, 3900 * 1e18),
-            (1_000 * 1e18, 3890 * 1e18),
-        ]
+    tx_11_buckets = mkr_dai_pool.borrow(
+        101_000 * 1e18, 1000 * 1e18, {"from": borrowers[0]}
     )
-    tx_11_buckets = borrowers[0].transfer(mkr_dai_pool, data=data)
+    tx_reallocate_debt_11_buckets = mkr_dai_pool.addQuoteToken(
+        150_000 * 1e18, 6000 * 1e18, {"from": lenders[1]}
+    )
     txes.append(tx_11_buckets)
 
     with capsys.disabled():
         print("\n==================================")
         print("Gas estimations:")
         print("==================================")
-        print(f"Borrow single bucket (HUP) - Gas used: {str(tx_one_bucket.gas_used)}")
-        print(f"Borrow multiple buckets 11 - Gas used: {str(tx_11_buckets.gas_used)}")
+        print(
+            f"Borrow single bucket           - {test_utils.get_gas_usage(tx_one_bucket.gas_used)}\n"
+            f"Reallocate debt single bucket  - {test_utils.get_gas_usage(tx_reallocate_debt_one_bucket.gas_used)}"
+        )
+        print(
+            f"Borrow from multiple buckets (11)      - {test_utils.get_gas_usage(tx_11_buckets.gas_used)}\n"
+            f"Reallocate debt multiple buckets (11)  - {test_utils.get_gas_usage(tx_reallocate_debt_11_buckets.gas_used)}"
+        )
         print("==================================")
     assert True

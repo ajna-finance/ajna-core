@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.11;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+
+import "./libraries/Maths.sol";
+import "./libraries/Buckets.sol";
 
 interface IPool {
-    struct BorrowOrder {
-        uint256 amount; // amount to borrow
-        uint256 price; // borrow at price
-    }
-
     function addQuoteToken(uint256 _amount, uint256 _price) external;
 
     function removeQuoteToken(uint256 _amount, uint256 _price) external;
@@ -19,46 +18,20 @@ interface IPool {
 
     function removeCollateral(uint256 _amount) external;
 
-    function borrow(BorrowOrder[] calldata _request) external;
+    function borrow(uint256 _amount, uint256 _stopPrice) external;
 
     function payBack(uint256 _amount) external;
+
+    function isBucketInitialized(uint256 _price) external returns (bool);
+
+    function ensureBucket(uint256 _prevPrice, uint256 _price) external;
+
+    function getNextValidPrice(uint256 _price) external returns (uint256);
 }
 
-contract Common {
-    // --- Math ---
-    uint256 public constant WAD = 10**18;
-
-    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x, "ds-math-add-overflow");
-    }
-
-    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x - y) <= x, "ds-math-sub-underflow");
-    }
-
-    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x, "ds-math-mul-overflow");
-    }
-
-    function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, y), WAD / 2) / WAD;
-    }
-
-    function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, WAD), y / 2) / y;
-    }
-
-    function max(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = x >= y ? x : y;
-    }
-
-    function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = x <= y ? x : y;
-    }
-}
-
-contract ERC20Pool is IPool, Common {
+contract ERC20Pool is IPool {
     using SafeERC20 for IERC20;
+    using Buckets for mapping(uint256 => Buckets.Bucket);
 
     struct BorrowerInfo {
         uint256 debt;
@@ -66,25 +39,20 @@ contract ERC20Pool is IPool, Common {
         uint256 collateralEncumbered;
     }
 
-    struct Bucket {
-        uint256 price; // current bucket price
-        uint256 next; // next utilizable bucket price
-        uint256 amount; // total quote deposited in bucket
-        uint256 debt; // accumulated bucket debt
-    }
-
-    uint256 public constant MAX_PRICE = 7000 * WAD;
-    uint256 public constant MIN_PRICE = 1000 * WAD;
+    uint256 public constant MAX_PRICE = 7000 * 10**18;
+    uint256 public constant MIN_PRICE = 1000 * 10**18;
     uint256 public constant COUNT = 6000;
     uint256 public constant STEP = (MAX_PRICE - MIN_PRICE) / COUNT;
 
     IERC20 public immutable collateral;
     IERC20 public immutable quoteToken;
 
-    uint256 public hup;
+    uint256 public hdp;
+    uint256 public lup;
 
     // buckets: price -> Bucket
-    mapping(uint256 => Bucket) public buckets;
+    mapping(uint256 => Buckets.Bucket) public buckets;
+    BitMaps.BitMap private bitmap;
 
     // lenders book: lender address -> price bucket -> amount
     mapping(address => mapping(uint256 => uint256)) public lenders;
@@ -103,7 +71,7 @@ contract ERC20Pool is IPool, Common {
         address lender,
         uint256 price,
         uint256 amount,
-        uint256 hup
+        uint256 lup
     );
     event RemoveQuoteToken(address lender, uint256 price, uint256 amount);
     event AddCollateral(address borrower, uint256 amount);
@@ -121,32 +89,24 @@ contract ERC20Pool is IPool, Common {
 
         lenders[msg.sender][_price] += _amount;
         lenderBalance[msg.sender] += _amount;
-        buckets[_price].price = _price;
+
+        // create bucket if not initialized yet
+        if (!BitMaps.get(bitmap, _price)) {
+            hdp = buckets.initializeBucket(hdp, _price);
+            BitMaps.setTo(bitmap, _price, true);
+        }
+
+        // deposit amount
         buckets[_price].amount += _amount;
         totalQuoteToken += _amount;
 
-        //  update HUP
-        if (_price > hup && buckets[_price].amount - buckets[_price].debt > 0) {
-            buckets[_price].next = hup;
-            hup = _price;
-        }
-
-        uint256 cur = hup;
-        uint256 next = buckets[hup].next;
-
-        // update next price pointers accordingly to current price
-        while (true) {
-            if (_price > next) {
-                buckets[cur].next = _price;
-                buckets[_price].next = next;
-                break;
-            }
-            cur = next;
-            next = buckets[next].next;
+        // reallocate debt if needed
+        if (totalDebt > 0 && _price > lup) {
+            lup = buckets.reallocateDebt(_amount, _price, hdp, lup);
         }
 
         quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
-        emit AddQuoteToken(msg.sender, _price, _amount, hup);
+        emit AddQuoteToken(msg.sender, _price, _amount, lup);
     }
 
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
@@ -155,7 +115,10 @@ contract ERC20Pool is IPool, Common {
             lenders[msg.sender][_price] >= _amount,
             "Exceeds lended amount"
         );
-        require(_amount <= onDeposit(_price), "Not enough liquidity in bucket");
+        require(
+            _amount <= buckets.onDeposit(_price),
+            "Not enough liquidity in bucket"
+        );
 
         lenders[msg.sender][_price] -= _amount;
         lenderBalance[msg.sender] -= _amount;
@@ -188,42 +151,33 @@ contract ERC20Pool is IPool, Common {
         emit RemoveCollateral(msg.sender, _amount);
     }
 
-    function borrow(BorrowOrder[] calldata _request) external {
-        uint256 nextHup = hup;
-        uint256 totalAmount;
-        for (uint256 i = 0; i < _request.length; i++) {
-            require(nextHup >= _request[i].price, "ajna/invalid-next-hup");
-            nextHup = _request[i].price;
-
-            require(
-                buckets[nextHup].amount - buckets[nextHup].debt >=
-                    _request[i].amount,
-                "ajna/not-enough-on-deposit"
-            );
-
-            borrowers[msg.sender].debt += _request[i].amount;
-            totalDebt += _request[i].amount;
-            buckets[nextHup].debt += _request[i].amount;
-            totalAmount += _request[i].amount;
-        }
-
-        if (hup != nextHup) {
-            require(getNextHup() == nextHup, "ajna/invalid-hup");
-            hup = nextHup;
-        }
-
+    function borrow(uint256 _amount, uint256 _stopPrice) external {
         require(
-            borrowers[msg.sender].collateralDeposited -
-                borrowers[msg.sender].collateralEncumbered >
-                wdiv(totalAmount, hup),
-            "ajna/not-enough-collateral"
+            _amount <= totalQuoteToken - totalDebt,
+            "ajna/not-enough-liquidity"
         );
 
-        borrowers[msg.sender].collateralEncumbered += wdiv(totalAmount, hup);
-        totalEncumberedCollateral += wdiv(totalAmount, hup);
+        // if first loan then borrow at hdp
+        if (lup == 0) {
+            lup = buckets.borrow(_amount, _stopPrice, hdp);
+        } else {
+            lup = buckets.borrow(_amount, _stopPrice, lup);
+        }
 
-        quoteToken.safeTransfer(msg.sender, totalAmount);
-        emit Borrow(msg.sender, hup, totalAmount);
+        BorrowerInfo storage borrower = borrowers[msg.sender];
+        require(
+            borrower.collateralDeposited - borrower.collateralEncumbered >
+                Maths.wdiv(_amount, lup),
+            "ajna/not-enough-collateral"
+        );
+        borrower.debt += _amount;
+        borrower.collateralEncumbered += Maths.wdiv(_amount, lup);
+
+        totalDebt += _amount;
+        totalEncumberedCollateral += Maths.wdiv(_amount, lup);
+
+        quoteToken.safeTransfer(msg.sender, _amount);
+        emit Borrow(msg.sender, lup, _amount);
     }
 
     function payBack(uint256 _amount) external {
@@ -236,17 +190,17 @@ contract ERC20Pool is IPool, Common {
 
         if (
             borrowers[msg.sender].collateralEncumbered >=
-            wdiv(_amount, poolPrice)
+            Maths.wdiv(_amount, poolPrice)
         ) {
             // pay back entire amount
-            borrowers[msg.sender].collateralEncumbered -= wdiv(
+            borrowers[msg.sender].collateralEncumbered -= Maths.wdiv(
                 _amount,
                 poolPrice
             );
-            totalEncumberedCollateral -= wdiv(_amount, poolPrice);
+            totalEncumberedCollateral -= Maths.wdiv(_amount, poolPrice);
         } else {
             // pay back only amount needed to cover encumbered collateral
-            _amount = wmul(
+            _amount = Maths.wmul(
                 borrowers[msg.sender].collateralEncumbered,
                 poolPrice
             );
@@ -255,14 +209,51 @@ contract ERC20Pool is IPool, Common {
             borrowers[msg.sender].collateralEncumbered = 0;
         }
 
-        buckets[hup].amount += _amount;
+        buckets[lup].amount += _amount;
         totalDebt -= _amount;
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit PayBack(msg.sender, poolPrice, _amount);
     }
 
-    function isValidPrice(uint256 _price) public view returns (bool) {
+    function isBucketInitialized(uint256 _price) public view returns (bool) {
+        return BitMaps.get(bitmap, _price);
+    }
+
+    function ensureBucket(uint256 _prevPrice, uint256 _price) public {
+        require(_prevPrice > _price, "ajna/price-lower-than-prev");
+        require(BitMaps.get(bitmap, _prevPrice), "ajna/prev-not-initialized");
+        require(!BitMaps.get(bitmap, _price), "ajna/price-already-initialized");
+
+        buckets.initializeBucket(_prevPrice, _price);
+        BitMaps.setTo(bitmap, _price, true);
+    }
+
+    function getNextValidPrice(uint256 _price) public view returns (uint256) {
+        uint256 next = _price + STEP;
+        if (next > MAX_PRICE) {
+            return 0;
+        }
+        return next;
+    }
+
+    function estimatePriceForLoan(uint256 _amount)
+        public
+        view
+        returns (uint256)
+    {
+        if (_amount > totalQuoteToken - totalDebt) {
+            return 0;
+        }
+
+        if (lup == 0) {
+            return buckets.estimatePrice(_amount, hdp);
+        }
+
+        return buckets.estimatePrice(_amount, lup);
+    }
+
+    function isValidPrice(uint256 _price) public pure returns (bool) {
         if ((_price - MIN_PRICE) % STEP > 0) {
             return false;
         }
@@ -270,44 +261,22 @@ contract ERC20Pool is IPool, Common {
         return (index >= 0 && index < COUNT);
     }
 
-    function getNextHup() public view returns (uint256) {
-        return getNextHup(hup);
-    }
-
-    function getNextHup(uint256 _price) public view returns (uint256) {
-        uint256 cur = _price;
-        while (true) {
-            if (buckets[cur].amount - buckets[cur].debt > 0) {
-                return cur;
-            }
-            cur = buckets[cur].next;
-        }
-    }
-
-    function onDeposit(uint256 _price) public view returns (uint256) {
-        return buckets[_price].amount - buckets[_price].debt;
-    }
-
-    function onDeposit() public view returns (uint256) {
-        return onDeposit(hup);
-    }
-
     function getPoolPrice() public view returns (uint256) {
         if (totalDebt > 0) {
-            return wdiv(totalDebt, totalEncumberedCollateral);
+            return Maths.wdiv(totalDebt, totalEncumberedCollateral);
         }
-        return hup;
+        return lup;
     }
 
     function getMinimumPoolPrice() public view returns (uint256) {
         if (totalDebt > 0) {
-            return wdiv(totalDebt, totalCollateral);
+            return Maths.wdiv(totalDebt, totalCollateral);
         }
-        return hup;
+        return lup;
     }
 
     function getPoolCollateralization() public view returns (uint256) {
-        return wdiv(totalCollateral, totalEncumberedCollateral);
+        return Maths.wdiv(totalCollateral, totalEncumberedCollateral);
     }
 
     function getCollateralization(address _borrower)
@@ -316,7 +285,7 @@ contract ERC20Pool is IPool, Common {
         returns (uint256)
     {
         return
-            wdiv(
+            Maths.wdiv(
                 borrowers[_borrower].collateralDeposited -
                     borrowers[_borrower].collateralEncumbered,
                 getPoolPrice()
@@ -324,10 +293,10 @@ contract ERC20Pool is IPool, Common {
     }
 
     function getActualUtilization() public view returns (uint256) {
-        return wdiv(totalQuoteToken, totalDebt + totalQuoteToken);
+        return Maths.wdiv(totalQuoteToken, totalDebt + totalQuoteToken);
     }
 
     function getTargetUtilization() public view returns (uint256) {
-        return wdiv(1 * WAD, getPoolCollateralization());
+        return Maths.wdiv(1, getPoolCollateralization());
     }
 }
