@@ -138,14 +138,24 @@ contract ERC20Pool is IPool {
     }
 
     function removeCollateral(uint256 _amount) external {
-        require(
-            borrowers[msg.sender].collateralDeposited -
-                borrowers[msg.sender].collateralEncumbered >
-                _amount,
-            "Not enough collateral"
+        BorrowerInfo storage borrower = borrowers[msg.sender];
+
+        uint256 interestAdjustment = Maths.wad(1) +
+            nextBorrowerInflator() -
+            borrower.inflatorSnapshot;
+
+        uint256 collateralEncumberedPending = Maths.wmul(
+            borrower.collateralEncumbered,
+            interestAdjustment
         );
 
-        borrowers[msg.sender].collateralDeposited -= _amount;
+        require(
+            borrower.collateralDeposited - collateralEncumberedPending >=
+                _amount,
+            "ajna/not-enough-collateral"
+        );
+
+        borrower.collateralDeposited -= _amount;
         totalCollateral -= _amount;
 
         collateral.safeTransfer(msg.sender, _amount);
