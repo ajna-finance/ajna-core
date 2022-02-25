@@ -36,13 +36,20 @@ def test_borrow(
     assert exc.value.revert_msg == "ajna/not-enough-collateral"
 
     # borrower deposit 100 MKR collateral
-    mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower1})
+    mkr_dai_pool.addCollateral(10 * 1e18, {"from": borrower1})
 
     # should fail if stop price exceeded
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
         mkr_dai_pool.borrow(15_000 * 1e18, 4000 * 1e18, {"from": borrower1})
     assert exc.value.revert_msg == "ajna/stop-price-exceeded"
 
+    # should fail if not enough collateral to get the loan
+    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
+        mkr_dai_pool.borrow(40_000 * 1e18, 2000 * 1e18, {"from": borrower1})
+    assert exc.value.revert_msg == "ajna/not-enough-collateral"
+
+    # borrower deposit more 90 MKR collateral
+    mkr_dai_pool.addCollateral(90 * 1e18, {"from": borrower1})
     # get 21000 DAI loan from 3 buckets
     # loan price should be 3000 DAI
     assert 3000 * 1e18 == mkr_dai_pool.estimatePriceForLoan(21_000 * 1e18)
@@ -61,13 +68,15 @@ def test_borrow(
     ) = mkr_dai_pool.buckets(3000 * 1e18)
     assert bucket_deposit - bucket_debt == 9_000 * 1e18
     assert mkr_dai_pool.totalDebt() == 21_000 * 1e18
-    assert mkr_dai_pool.totalEncumberedCollateral() == (21_000 / 3000) * 1e18
+    # encumbered collaterall should be calculated for each bucket price and amount taken
+    # (10000/4000 + 10000/3500 + 1000/3000)
+    assert mkr_dai_pool.totalEncumberedCollateral() == 5690476190476190476
     # check borrower
-    (debt, col_deposited, col_encumbered) = mkr_dai_pool.borrowers(borrower1)
+    (debt, col_deposited, col_encumbered, _) = mkr_dai_pool.borrowers(borrower1)
     assert debt == 21_000 * 1e18
     assert col_deposited == 100 * 1e18
-    # collateral encumbered at last price, that is 3000 DAI
-    assert col_encumbered == (21_000 / 3000) * 1e18
+    # collateral encumbered based on bucket price and amount
+    assert col_encumbered == 5690476190476190476
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == mkr_dai_pool
@@ -94,13 +103,16 @@ def test_borrow(
     ) = mkr_dai_pool.buckets(3000 * 1e18)
     assert bucket_deposit - bucket_debt == 0
     assert mkr_dai_pool.totalDebt() == 30_000 * 1e18
-    assert mkr_dai_pool.totalEncumberedCollateral() == (30_000 / 3000) * 1e18
+    # collateral encumbered based on bucket price and amount
+    # 10_000 / 4000 + 10_000 / 3500 + 1_000 / 3000 + 9_000 / 3000
+    assert mkr_dai_pool.totalEncumberedCollateral() == 8690476190476190476
     # check borrower
-    (debt, col_deposited, col_encumbered) = mkr_dai_pool.borrowers(borrower1)
+    (debt, col_deposited, col_encumbered, _) = mkr_dai_pool.borrowers(borrower1)
     assert debt == 30_000 * 1e18
     assert col_deposited == 100 * 1e18
-    # collateral encumbered at last price, that is 3000 DAI
-    assert col_encumbered == (30_000 / 3000) * 1e18
+    # collateral encumbered based on bucket price and amount
+    # 10_000 / 4000 + 10_000 / 3500 + 1_000 / 3000 + 9_000 / 3000
+    assert col_encumbered == 8690476190476190476
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == mkr_dai_pool
