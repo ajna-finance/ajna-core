@@ -65,7 +65,7 @@ def test_borrow(
         _,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     assert bucket_deposit - bucket_debt == 9_000 * 1e18
     assert mkr_dai_pool.totalDebt() == 21_000 * 1e18
     # encumbered collaterall should be calculated for each bucket price and amount taken
@@ -100,7 +100,7 @@ def test_borrow(
         _,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     assert bucket_deposit - bucket_debt == 0
     assert mkr_dai_pool.totalDebt() == 30_000 * 1e18
     # collateral encumbered based on bucket price and amount
@@ -132,7 +132,7 @@ def test_borrow(
         _,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     assert bucket_deposit == 10_000 * 1e18
     assert bucket_debt == 0
     # check debt paid for 3500 DAI bucket
@@ -142,7 +142,7 @@ def test_borrow(
         _,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(3500 * 1e18)
+    ) = mkr_dai_pool.bucketAt(3500 * 1e18)
     assert bucket_deposit == 10_000 * 1e18
     assert bucket_debt == 0
     # check debt paid for 4000 DAI bucket
@@ -152,7 +152,7 @@ def test_borrow(
         _,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(4000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_deposit == 10_000 * 1e18
     assert bucket_debt == 0
     # check 5000 DAI bucket, accumulated all 30000 DAI debt, deposited 40000 DAI
@@ -162,7 +162,7 @@ def test_borrow(
         _,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(5000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(5000 * 1e18)
     assert bucket_deposit == 40_000 * 1e18
     assert bucket_debt == 30_000 * 1e18
 

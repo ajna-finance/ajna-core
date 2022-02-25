@@ -1,8 +1,10 @@
 pragma solidity 0.8.11;
 
-import "./Maths.sol";
+import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
-library Buckets {
+import "./libraries/Maths.sol";
+
+contract PriceBuckets {
     struct Bucket {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
@@ -11,11 +13,21 @@ library Buckets {
         uint256 debt; // accumulated bucket debt
     }
 
-    function initializeBucket(
-        mapping(uint256 => Bucket) storage buckets,
-        uint256 _hdp,
-        uint256 _price
-    ) public returns (uint256) {
+    mapping(uint256 => Bucket) private buckets;
+    BitMaps.BitMap private bitmap;
+
+    function addToBucket(uint256 _price, uint256 _amount) public {
+        buckets[_price].amount += _amount;
+    }
+
+    function subtractFromBucket(uint256 _price, uint256 _amount) public {
+        buckets[_price].amount -= _amount;
+    }
+
+    function initializeBucket(uint256 _hdp, uint256 _price)
+        public
+        returns (uint256)
+    {
         Bucket storage bucket = buckets[_price];
         bucket.price = _price;
 
@@ -42,11 +54,11 @@ library Buckets {
             up = buckets[cur].up;
         }
 
+        BitMaps.setTo(bitmap, _price, true);
         return _hdp;
     }
 
     function reallocateDebt(
-        mapping(uint256 => Bucket) storage buckets,
         uint256 _amount,
         uint256 _price,
         uint256 _hdp,
@@ -85,7 +97,6 @@ library Buckets {
     }
 
     function borrow(
-        mapping(uint256 => Bucket) storage buckets,
         uint256 _amount,
         uint256 _stop,
         uint256 _lup
@@ -123,11 +134,11 @@ library Buckets {
         return (_lup, loanCost);
     }
 
-    function estimatePrice(
-        mapping(uint256 => Bucket) storage buckets,
-        uint256 _amount,
-        uint256 _hdp
-    ) public view returns (uint256) {
+    function estimatePrice(uint256 _amount, uint256 _hdp)
+        public
+        view
+        returns (uint256)
+    {
         Bucket memory curLup = buckets[_hdp];
         uint256 curLupDeposit;
 
@@ -146,11 +157,32 @@ library Buckets {
         return 0;
     }
 
-    function onDeposit(
-        mapping(uint256 => Bucket) storage buckets,
-        uint256 _price
-    ) public view returns (uint256) {
+    function onDeposit(uint256 _price) public view returns (uint256) {
         Bucket storage cur = buckets[_price];
         return cur.amount - cur.debt;
+    }
+
+    function at(uint256 _price)
+        public
+        view
+        returns (
+            uint256 price,
+            uint256 up,
+            uint256 down,
+            uint256 amount,
+            uint256 debt
+        )
+    {
+        Bucket memory bucket = buckets[_price];
+
+        price = bucket.price;
+        up = bucket.up;
+        down = bucket.down;
+        amount = bucket.amount;
+        debt = bucket.debt;
+    }
+
+    function isBucketInitialized(uint256 _price) public view returns (bool) {
+        return !BitMaps.get(bitmap, _price);
     }
 }

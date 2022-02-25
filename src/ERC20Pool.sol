@@ -4,10 +4,9 @@ pragma solidity 0.8.11;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./libraries/Maths.sol";
-import "./libraries/Buckets.sol";
+import "./PriceBuckets.sol";
 
 interface IPool {
     function addQuoteToken(uint256 _amount, uint256 _price) external;
@@ -22,16 +21,11 @@ interface IPool {
 
     function payBack(uint256 _amount) external;
 
-    function isBucketInitialized(uint256 _price) external returns (bool);
-
-    function ensureBucket(uint256 _prevPrice, uint256 _price) external;
-
     function getNextValidPrice(uint256 _price) external returns (uint256);
 }
 
 contract ERC20Pool is IPool {
     using SafeERC20 for IERC20;
-    using Buckets for mapping(uint256 => Buckets.Bucket);
 
     struct BorrowerInfo {
         uint256 debt;
@@ -51,9 +45,7 @@ contract ERC20Pool is IPool {
     uint256 public hdp;
     uint256 public lup;
 
-    // buckets: price -> Bucket
-    mapping(uint256 => Buckets.Bucket) public buckets;
-    BitMaps.BitMap private bitmap;
+    PriceBuckets private immutable _buckets;
 
     // lenders book: lender address -> price bucket -> amount
     mapping(address => mapping(uint256 => uint256)) public lenders;
@@ -88,6 +80,8 @@ contract ERC20Pool is IPool {
     constructor(IERC20 _collateral, IERC20 _quoteToken) {
         collateral = _collateral;
         quoteToken = _quoteToken;
+
+        _buckets = new PriceBuckets();
     }
 
     function addQuoteToken(uint256 _amount, uint256 _price) external {
@@ -97,18 +91,17 @@ contract ERC20Pool is IPool {
         lenderBalance[msg.sender] += _amount;
 
         // create bucket if not initialized yet
-        if (!BitMaps.get(bitmap, _price)) {
-            hdp = buckets.initializeBucket(hdp, _price);
-            BitMaps.setTo(bitmap, _price, true);
+        if (_buckets.isBucketInitialized(_price)) {
+            hdp = _buckets.initializeBucket(hdp, _price);
         }
 
         // deposit amount
-        buckets[_price].amount += _amount;
+        _buckets.addToBucket(_price, _amount);
         totalQuoteToken += _amount;
 
         // reallocate debt if needed
         if (totalDebt > 0 && _price > lup) {
-            lup = buckets.reallocateDebt(_amount, _price, hdp, lup);
+            lup = _buckets.reallocateDebt(_amount, _price, hdp, lup);
         }
 
         quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -122,13 +115,14 @@ contract ERC20Pool is IPool {
             "Exceeds lended amount"
         );
         require(
-            _amount <= buckets.onDeposit(_price),
+            _amount <= _buckets.onDeposit(_price),
             "Not enough liquidity in bucket"
         );
 
         lenders[msg.sender][_price] -= _amount;
         lenderBalance[msg.sender] -= _amount;
-        buckets[_price].amount -= _amount;
+
+        _buckets.subtractFromBucket(_price, _amount);
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit RemoveQuoteToken(msg.sender, _price, _amount);
@@ -174,9 +168,9 @@ contract ERC20Pool is IPool {
         // if first loan then borrow at hdp
         uint256 loanCost;
         if (lup == 0) {
-            (lup, loanCost) = buckets.borrow(_amount, _stopPrice, hdp);
+            (lup, loanCost) = _buckets.borrow(_amount, _stopPrice, hdp);
         } else {
-            (lup, loanCost) = buckets.borrow(_amount, _stopPrice, lup);
+            (lup, loanCost) = _buckets.borrow(_amount, _stopPrice, lup);
         }
 
         require(
@@ -227,7 +221,8 @@ contract ERC20Pool is IPool {
             borrowers[msg.sender].collateralEncumbered = 0;
         }
 
-        buckets[lup].amount += _amount;
+        _buckets.addToBucket(lup, _amount);
+
         totalDebt -= _amount;
 
         quoteToken.safeTransfer(msg.sender, _amount);
@@ -236,20 +231,21 @@ contract ERC20Pool is IPool {
 
     // -------------------- Bucket related functions --------------------
 
-    function isBucketInitialized(uint256 _price) public view returns (bool) {
-        return BitMaps.get(bitmap, _price);
+    function bucketAt(uint256 _price)
+        public
+        view
+        returns (
+            uint256 price,
+            uint256 up,
+            uint256 down,
+            uint256 amount,
+            uint256 debt
+        )
+    {
+        return _buckets.at(_price);
     }
 
-    function ensureBucket(uint256 _prevPrice, uint256 _price) public {
-        require(_prevPrice > _price, "ajna/price-lower-than-prev");
-        require(BitMaps.get(bitmap, _prevPrice), "ajna/prev-not-initialized");
-        require(!BitMaps.get(bitmap, _price), "ajna/price-already-initialized");
-
-        buckets.initializeBucket(_prevPrice, _price);
-        BitMaps.setTo(bitmap, _price, true);
-    }
-
-    function getNextValidPrice(uint256 _price) public view returns (uint256) {
+    function getNextValidPrice(uint256 _price) public pure returns (uint256) {
         // dummy implementation, should calculate using maths library
         uint256 next = _price + 1;
         if (next > MAX_PRICE) {
@@ -366,9 +362,9 @@ contract ERC20Pool is IPool {
         }
 
         if (lup == 0) {
-            return buckets.estimatePrice(_amount, hdp);
+            return _buckets.estimatePrice(_amount, hdp);
         }
 
-        return buckets.estimatePrice(_amount, lup);
+        return _buckets.estimatePrice(_amount, lup);
     }
 }
