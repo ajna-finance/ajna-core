@@ -319,16 +319,30 @@ contract ERC20Pool is IPool {
 
     // -------------------- Borrower related functions --------------------
 
-    function getBorrowerCollateralization(address _borrower)
+    function getBorrowerInfo(address _borrower)
         public
         view
-        returns (uint256)
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
     {
-        return
-            Maths.wdiv(
-                borrowers[_borrower].collateralDeposited,
-                borrowers[_borrower].collateralEncumbered
-            ) - Maths.wad(1);
+        BorrowerInfo memory borrower = borrowers[_borrower];
+        uint256 collateralization = Maths.wdiv(
+            borrower.collateralDeposited,
+            borrower.collateralEncumbered
+        ) - Maths.wad(1);
+
+        return (
+            borrower.debt,
+            borrower.collateralDeposited,
+            borrower.collateralEncumbered,
+            collateralization,
+            borrower.inflatorSnapshot
+        );
     }
 
     function getPendingEncumberedCollateral(address _borrower)
