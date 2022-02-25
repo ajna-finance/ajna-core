@@ -54,25 +54,25 @@ library BucketMath {
 
     }
 
-    // @notice Calculates the price for a given bucket index
-    // TODO: convert index to int24 for reduced storage costs
+    // @notice Calculates the index for a given bucket price
+    // @dev Throws if price exceeds maximum constant
     function priceToIndex(uint256 price) public pure returns (uint256 index) {
-        // require(price <= MAX_PRICE && price > MIN_PRICE, 'Exceeds P Bounds');
+        require(price <= MAX_PRICE && price > MIN_PRICE, 'Exceeds P Bounds');
 
         // V1
         // index = (price - MIN_PRICE) / FLOAT_STEP;
 
         // V2
-        // index = log(FLOAT_STEP) * price;
         // index = (log(FLOAT_STEP) * price) /  MAX_PRICE;
 
         // V3
-        uint256 index = (PRBMathUD60x18.log2(price) / PRBMathUD60x18.log2(FLOAT_STEP)) / WAD;
+        uint256 index = (PRBMathUD60x18.log2(PRBMathUD60x18.fromUint(price)) / PRBMathUD60x18.log2(PRBMathUD60x18.fromUint(FLOAT_STEP))) / WAD;
+        // return PRBMathUD60x18.toUint(index);
         return index;
 
     }
 
-    // @notice Calculates the bucket index for a given price
+    // @notice Calculates the bucket price for a given index
     // @dev Throws if index exceeds maximum constant
     // @dev Uses fixed-point math to get around lack of floating point numbers in EVM
     // TODO: convert index to int24 for reduced storage costs
@@ -87,9 +87,9 @@ library BucketMath {
 
         // V3
         // x^y = 2^(y*log_2(x))
-        uint256 price = 2 ** ((index * PRBMathUD60x18.log2(FLOAT_STEP)) / WAD);
+        uint256 price = PRBMathUD60x18.exp2(PRBMathUD60x18.mul(PRBMathUD60x18.fromUint(index), PRBMathUD60x18.log2(FLOAT_STEP)));
         return price;
-        // return (PRBMathUD60x18.fromUint(FLOAT_STEP).log2() / WAD) * index;
+
     }
 
     function isValidPrice(uint256 _price) public pure returns (bool) {
