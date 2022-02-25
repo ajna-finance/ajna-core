@@ -32,7 +32,7 @@ def test_quote_deposit(
         bucket_down_price,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(4000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_price == 4000 * 1e18
     assert bucket_up_price == 4000 * 1e18
     assert bucket_down_price == 0
@@ -67,7 +67,7 @@ def test_quote_deposit(
         bucket_down_price,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(2000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(2000 * 1e18)
     assert bucket_price == 2000 * 1e18
     assert bucket_up_price == 4000 * 1e18
     assert bucket_down_price == 0
@@ -80,7 +80,7 @@ def test_quote_deposit(
         bucket_down_price,
         _,
         _,
-    ) = mkr_dai_pool.buckets(4000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_down_price == 2000 * 1e18
     # check tokens transfered
     assert dai.balanceOf(mkr_dai_pool) == 30_000 * 1e18
@@ -112,7 +112,7 @@ def test_quote_deposit(
         bucket_down_price,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(3000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     assert bucket_price == 3000 * 1e18
     assert bucket_up_price == 4000 * 1e18
     assert bucket_down_price == 2000 * 1e18
@@ -125,7 +125,7 @@ def test_quote_deposit(
         bucket_down_price,
         _,
         _,
-    ) = mkr_dai_pool.buckets(4000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_down_price == 3000 * 1e18
     (
         _,
@@ -133,7 +133,7 @@ def test_quote_deposit(
         _,
         _,
         _,
-    ) = mkr_dai_pool.buckets(2000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(2000 * 1e18)
     assert bucket_up_price == 3000 * 1e18
     # check tokens transfered
     assert dai.balanceOf(mkr_dai_pool) == 60_000 * 1e18
@@ -164,7 +164,7 @@ def test_quote_deposit(
         bucket_down_price,
         bucket_deposit,
         bucket_debt,
-    ) = mkr_dai_pool.buckets(5000 * 1e18)
+    ) = mkr_dai_pool.bucketAt(5000 * 1e18)
     assert bucket_price == 5000 * 1e18
     assert bucket_up_price == 5000 * 1e18
     assert bucket_down_price == 4000 * 1e18
