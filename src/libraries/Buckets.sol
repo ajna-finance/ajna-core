@@ -1,5 +1,7 @@
 pragma solidity 0.8.11;
 
+import "./Maths.sol";
+
 library Buckets {
     struct Bucket {
         uint256 price; // current bucket price
@@ -87,10 +89,11 @@ library Buckets {
         uint256 _amount,
         uint256 _stop,
         uint256 _lup
-    ) public returns (uint256) {
+    ) public returns (uint256, uint256) {
         Bucket storage curLup = buckets[_lup];
         uint256 amountRemaining = _amount;
         uint256 curLupDeposit;
+        uint256 loanCost;
 
         while (true) {
             require(curLup.price >= _stop, "ajna/stop-price-exceeded");
@@ -101,9 +104,11 @@ library Buckets {
                 // take all on deposit from this bucket
                 curLup.debt += curLupDeposit;
                 amountRemaining -= curLupDeposit;
+                loanCost += Maths.wdiv(curLupDeposit, curLup.price);
             } else {
                 // take all remaining amount for loan from this bucket and exit
                 curLup.debt += amountRemaining;
+                loanCost += Maths.wdiv(amountRemaining, curLup.price);
                 break;
             }
 
@@ -115,7 +120,7 @@ library Buckets {
             _lup = curLup.price;
         }
 
-        return _lup;
+        return (_lup, loanCost);
     }
 
     function estimatePrice(

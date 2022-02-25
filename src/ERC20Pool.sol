@@ -37,12 +37,13 @@ contract ERC20Pool is IPool {
         uint256 debt;
         uint256 collateralDeposited;
         uint256 collateralEncumbered;
+        uint256 inflatorSnapshot;
     }
 
+    uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
     uint256 public constant MAX_PRICE = 7000 * 10**18;
-    uint256 public constant MIN_PRICE = 1000 * 10**18;
-    uint256 public constant COUNT = 6000;
-    uint256 public constant STEP = (MAX_PRICE - MIN_PRICE) / COUNT;
+    uint256 public constant MIN_PRICE = 1 * 10**18;
+    uint256 public constant COUNT = 7000;
 
     IERC20 public immutable collateral;
     IERC20 public immutable quoteToken;
@@ -61,6 +62,11 @@ contract ERC20Pool is IPool {
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
+
+    uint256 public borrowerInflator = Maths.wad(1);
+    uint256 public lastBorrowerInflatorUpdate = block.timestamp;
+    uint256 public previousRate = Maths.wdiv(5, 100);
+    uint256 public previousRateUpdate = block.timestamp;
 
     uint256 public totalCollateral;
     uint256 public totalQuoteToken;
@@ -133,6 +139,7 @@ contract ERC20Pool is IPool {
         totalCollateral += _amount;
 
         collateral.safeTransferFrom(msg.sender, address(this), _amount);
+        updateBorrowerInflator();
         emit AddCollateral(msg.sender, _amount);
     }
 
@@ -157,24 +164,35 @@ contract ERC20Pool is IPool {
             "ajna/not-enough-liquidity"
         );
 
+        BorrowerInfo storage borrower = borrowers[msg.sender];
+
+        require(
+            borrower.collateralDeposited > borrower.collateralEncumbered,
+            "ajna/not-enough-collateral"
+        );
+
         // if first loan then borrow at hdp
+        uint256 loanCost;
         if (lup == 0) {
-            lup = buckets.borrow(_amount, _stopPrice, hdp);
+            (lup, loanCost) = buckets.borrow(_amount, _stopPrice, hdp);
         } else {
-            lup = buckets.borrow(_amount, _stopPrice, lup);
+            (lup, loanCost) = buckets.borrow(_amount, _stopPrice, lup);
         }
 
-        BorrowerInfo storage borrower = borrowers[msg.sender];
         require(
             borrower.collateralDeposited - borrower.collateralEncumbered >
-                Maths.wdiv(_amount, lup),
+                loanCost,
             "ajna/not-enough-collateral"
         );
         borrower.debt += _amount;
-        borrower.collateralEncumbered += Maths.wdiv(_amount, lup);
+        borrower.collateralEncumbered += loanCost;
+        updateBorrowerInflator();
+        if (borrower.inflatorSnapshot == 0) {
+            borrower.inflatorSnapshot = borrowerInflator;
+        }
 
         totalDebt += _amount;
-        totalEncumberedCollateral += Maths.wdiv(_amount, lup);
+        totalEncumberedCollateral += loanCost;
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit Borrow(msg.sender, lup, _amount);
@@ -216,6 +234,8 @@ contract ERC20Pool is IPool {
         emit PayBack(msg.sender, poolPrice, _amount);
     }
 
+    // -------------------- Bucket related functions --------------------
+
     function isBucketInitialized(uint256 _price) public view returns (bool) {
         return BitMaps.get(bitmap, _price);
     }
@@ -230,35 +250,19 @@ contract ERC20Pool is IPool {
     }
 
     function getNextValidPrice(uint256 _price) public view returns (uint256) {
-        uint256 next = _price + STEP;
+        // dummy implementation, should calculate using maths library
+        uint256 next = _price + 1;
         if (next > MAX_PRICE) {
             return 0;
         }
         return next;
     }
 
-    function estimatePriceForLoan(uint256 _amount)
-        public
-        view
-        returns (uint256)
-    {
-        if (_amount > totalQuoteToken - totalDebt) {
-            return 0;
-        }
-
-        if (lup == 0) {
-            return buckets.estimatePrice(_amount, hdp);
-        }
-
-        return buckets.estimatePrice(_amount, lup);
-    }
+    // -------------------- Pool state related functions --------------------
 
     function isValidPrice(uint256 _price) public pure returns (bool) {
-        if ((_price - MIN_PRICE) % STEP > 0) {
-            return false;
-        }
-        uint256 index = (_price - MIN_PRICE) / STEP;
-        return (index >= 0 && index < COUNT);
+        // dummy implementation, should validate using maths library
+        return (_price >= MIN_PRICE && _price < MAX_PRICE);
     }
 
     function getPoolPrice() public view returns (uint256) {
@@ -276,27 +280,101 @@ contract ERC20Pool is IPool {
     }
 
     function getPoolCollateralization() public view returns (uint256) {
-        return Maths.wdiv(totalCollateral, totalEncumberedCollateral);
+        if (totalDebt > 0) {
+            return Maths.wdiv(totalCollateral, totalEncumberedCollateral);
+        }
+        return Maths.wad(1);
     }
 
-    function getCollateralization(address _borrower)
+    function getPoolActualUtilization() public view returns (uint256) {
+        return Maths.wdiv(totalDebt, totalQuoteToken);
+    }
+
+    function getPoolTargetUtilization() public view returns (uint256) {
+        uint256 poolCollateralization = getPoolCollateralization();
+        if (poolCollateralization > 0) {
+            return Maths.wdiv(Maths.wad(1), getPoolCollateralization());
+        }
+        return Maths.wad(1);
+    }
+
+    function updateBorrowerInflator() internal {
+        if (block.timestamp - lastBorrowerInflatorUpdate == 0) {
+            return;
+        }
+
+        borrowerInflator = nextBorrowerInflator();
+        lastBorrowerInflatorUpdate = block.timestamp;
+    }
+
+    function nextBorrowerInflator() public view returns (uint256 inflator) {
+        uint256 secondsSinceLastUpdate = block.timestamp -
+            lastBorrowerInflatorUpdate;
+        uint256 spr = previousRate / SECONDS_PER_YEAR;
+        inflator = Maths.wmul(
+            borrowerInflator,
+            Maths.wad(1) + (spr * secondsSinceLastUpdate)
+        );
+    }
+
+    // -------------------- Borrower related functions --------------------
+
+    function getBorrowerInfo(address _borrower)
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        BorrowerInfo memory borrower = borrowers[_borrower];
+        uint256 collateralization = Maths.wdiv(
+            borrower.collateralDeposited,
+            borrower.collateralEncumbered
+        ) - Maths.wad(1);
+
+        return (
+            borrower.debt,
+            borrower.collateralDeposited,
+            borrower.collateralEncumbered,
+            collateralization,
+            borrower.inflatorSnapshot
+        );
+    }
+
+    function getPendingEncumberedCollateral(address _borrower)
         public
         view
         returns (uint256)
     {
+        BorrowerInfo memory borrower = borrowers[_borrower];
+        uint256 interestAdjustment = Maths.wad(1) +
+            nextBorrowerInflator() -
+            borrower.inflatorSnapshot;
+
         return
-            Maths.wdiv(
-                borrowers[_borrower].collateralDeposited -
-                    borrowers[_borrower].collateralEncumbered,
-                getPoolPrice()
+            Maths.wmul(
+                borrowers[_borrower].collateralEncumbered,
+                interestAdjustment
             );
     }
 
-    function getActualUtilization() public view returns (uint256) {
-        return Maths.wdiv(totalQuoteToken, totalDebt + totalQuoteToken);
-    }
+    function estimatePriceForLoan(uint256 _amount)
+        public
+        view
+        returns (uint256)
+    {
+        if (_amount > totalQuoteToken - totalDebt) {
+            return 0;
+        }
 
-    function getTargetUtilization() public view returns (uint256) {
-        return Maths.wdiv(1, getPoolCollateralization());
+        if (lup == 0) {
+            return buckets.estimatePrice(_amount, hdp);
+        }
+
+        return buckets.estimatePrice(_amount, lup);
     }
 }
