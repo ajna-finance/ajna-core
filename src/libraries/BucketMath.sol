@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.10;
+pragma solidity 0.8.11;
 
 import "../../lib/prb-math/contracts/PRBMathUD60x18.sol";
 
@@ -49,13 +49,9 @@ library BucketMath {
         return x >= 0 ? uint256(x) : uint256(-x);
     }
 
-    // @notice Calculate the logarithm of a given int
-    function log(uint256 x) private pure returns (uint256) {
-
-    }
-
     // @notice Calculates the index for a given bucket price
     // @dev Throws if price exceeds maximum constant
+    // @dev Price expected to be inputted as a WAD
     function priceToIndex(uint256 price) public pure returns (uint256 index) {
         require(price <= MAX_PRICE && price > MIN_PRICE, 'Exceeds P Bounds');
 
@@ -65,10 +61,16 @@ library BucketMath {
         // V2
         // index = (log(FLOAT_STEP) * price) /  MAX_PRICE;
 
-        // V3
-        uint256 index = (PRBMathUD60x18.log2(PRBMathUD60x18.fromUint(price)) / PRBMathUD60x18.log2(PRBMathUD60x18.fromUint(FLOAT_STEP))) / WAD;
+        // V3        
+        // uint256 index = (PRBMathUD60x18.log2(price) / PRBMathUD60x18.log2(FLOAT_STEP));
+        // return index;
+
+        uint256 index = PRBMathUD60x18.div(PRBMathUD60x18.log2(price), PRBMathUD60x18.log2(FLOAT_STEP));
+        return PRBMathUD60x18.toUint(index);
+
+        // TODO: fix issue with price coming in with insufficient decimals to remove leading without having 0...
+        // uint256 index = PRBMathUD60x18.div(PRBMathUD60x18.log2(PRBMathUD60x18.fromUint(price)), PRBMathUD60x18.log2(FLOAT_STEP));
         // return PRBMathUD60x18.toUint(index);
-        return index;
 
     }
 
