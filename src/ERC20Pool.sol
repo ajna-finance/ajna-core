@@ -6,7 +6,7 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "./libraries/Maths.sol";
-import "./PriceBuckets.sol";
+import {IPriceBuckets, PriceBuckets} from "./PriceBuckets.sol";
 
 interface IPool {
     function addQuoteToken(uint256 _amount, uint256 _price) external;
@@ -45,7 +45,7 @@ contract ERC20Pool is IPool {
     uint256 public hdp;
     uint256 public lup;
 
-    PriceBuckets private immutable _buckets;
+    IPriceBuckets private immutable _buckets;
 
     // lenders book: lender address -> price bucket -> amount
     mapping(address => mapping(uint256 => uint256)) public lenders;
@@ -90,10 +90,7 @@ contract ERC20Pool is IPool {
         lenders[msg.sender][_price] += _amount;
         lenderBalance[msg.sender] += _amount;
 
-        // create bucket if not initialized yet
-        if (_buckets.isBucketInitialized(_price)) {
-            hdp = _buckets.initializeBucket(hdp, _price);
-        }
+        hdp = _buckets.ensureBucket(hdp, _price);
 
         // deposit amount
         _buckets.addToBucket(_price, _amount);
@@ -252,7 +249,7 @@ contract ERC20Pool is IPool {
             uint256 debt
         )
     {
-        return _buckets.at(_price);
+        return _buckets.bucketAt(_price);
     }
 
     function getNextValidPrice(uint256 _price) public pure returns (uint256) {
