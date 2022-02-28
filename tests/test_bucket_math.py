@@ -35,20 +35,29 @@ def test_index_to_price(bucket_math):
         assert price == indexToPricePy(i) * WAD
 
 def test_price_to_index(bucket_math):
-    price = 100
 
     price_to_index_test_cases = [
-        # .5,
-        # 1.0100249999999997,
+        .2,
+        1.5,
+        2.89995955,
         5,
+        5000,
         10000,
         450000
     ]
 
     for p in price_to_index_test_cases:
-
-        index = bucket_math.priceToIndex(p)
+        index = bucket_math.priceToIndex(int(p * WAD))
         index_py = priceToIndexPy(p)
 
         print(f"testing price: {p}", index, index_py)
         assert index == index_py
+
+def test_round_trip(bucket_math):
+
+    index = bucket_math.priceToIndex(5 * WAD)
+
+    assert index == 322
+
+    price = bucket_math.indexToPrice(index)
+    assert (int(math.ceil(price / WAD)) == 5)
