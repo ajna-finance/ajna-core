@@ -2,7 +2,8 @@
 
 pragma solidity 0.8.11;
 
-import "../../lib/prb-math/contracts/PRBMathUD60x18.sol";
+// import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
+import "../../lib/prb-math/contracts/PRBMathSD59x18.sol";
 
 // https://stackoverflow.com/questions/42738640/division-in-ethereum-solidity
 // https://medium.com/coinmonks/math-in-solidity-part-5-exponent-and-logarithm-9aef8515136e
@@ -16,25 +17,31 @@ import "../../lib/prb-math/contracts/PRBMathUD60x18.sol";
 // - Logs + other fx: https://github.com/barakman/solidity-math-utils
 // - Fixed Point (Open Source License): https://github.com/paulrberg/prb-math/tree/v1.0.3
 
+// TODO: figure out solution to numbers less than 1. Our bucket indices are fundamentally unbalanced. 
+// There is a greater diversity > 1, then there are fractions of a price.
+// 
+// Our equations result in negative numbers when calculating an index for a given price - representative of difference to the left of midpoint.
+// Question of how to treat the reciprocoal 
+
+
 // implement is Common
+// TODO: convert index to int24 for reduced storage costs
 library BucketMath {
 
     // TODO: Check need for higher decimal precision
-    uint256 public constant WAD = 10**18;
+    int256 public constant WAD = 10**18;
 
-    // TODO: import fixed-point math library for increased precision and efficiency
-    using PRBMathUD60x18 for uint256;
+    using PRBMathSD59x18 for int256;
 
     // constant price indices defining the min and max of the potential price range
-    uint256 internal constant MIN_PRICE_INDEX = 0;
-    uint256 internal constant MAX_PRICE_INDEX = 6926;
+    int256 internal constant MAX_PRICE_INDEX = 6926;
+    int256 internal constant MIN_PRICE_INDEX = -3232;
 
-    uint256 internal constant MIN_PRICE = uint256(1) * (WAD / 1000000);
-    // TODO: rounded down from .21 remainer -> switch to fixed-point math 
-    uint256 internal constant MAX_PRICE = 1004948313 * WAD;
+    int256 internal constant MIN_PRICE = 1000000000000;
+    int256 internal constant MAX_PRICE = 1004948313 * WAD;
 
     // step amounts in basis points. This is a constant across pools at .005, achieved by dividing by 10,000
-    uint256 public constant FLOAT_STEP = uint256(1005) * (WAD / 1000);
+    int256 public constant FLOAT_STEP_INT = 1005000000000000000;
 
     // info stored in each utilized price bucket
     // TODO: add LP tokens at per bucket level?
@@ -51,9 +58,9 @@ library BucketMath {
 
     // @notice Calculates the index for a given bucket price
     // @dev Throws if price exceeds maximum constant
-    // @dev Price expected to be inputted as a WAD
-    function priceToIndex(uint256 price) public pure returns (uint256 index) {
-        require(price <= MAX_PRICE && price > MIN_PRICE, 'Exceeds P Bounds');
+    // @dev Price expected to be inputted as a 18 decimal WAD
+    function priceToIndex(int256 price) public pure returns (int256 index) {
+        require(price <= MAX_PRICE && price >= MIN_PRICE, 'Exceeds P Bounds');
 
         // V1
         // index = (price - MIN_PRICE) / FLOAT_STEP;
@@ -61,25 +68,20 @@ library BucketMath {
         // V2
         // index = (log(FLOAT_STEP) * price) /  MAX_PRICE;
 
-        // V3        
-        // uint256 index = (PRBMathUD60x18.log2(price) / PRBMathUD60x18.log2(FLOAT_STEP));
-        // return index;
-
-        uint256 index = PRBMathUD60x18.div(PRBMathUD60x18.log2(price), PRBMathUD60x18.log2(FLOAT_STEP));
-        return PRBMathUD60x18.toUint(index);
-
-        // TODO: fix issue with price coming in with insufficient decimals to remove leading without having 0...
-        // uint256 index = PRBMathUD60x18.div(PRBMathUD60x18.log2(PRBMathUD60x18.fromUint(price)), PRBMathUD60x18.log2(FLOAT_STEP));
-        // return PRBMathUD60x18.toUint(index);
-
+        // V3
+        int256 index = PRBMathSD59x18.div(PRBMathSD59x18.log2(price), PRBMathSD59x18.log2(FLOAT_STEP_INT));
+        if (index < 0) {
+            return PRBMathSD59x18.toInt(index) - 1;
+        }
+        return PRBMathSD59x18.toInt(index);
     }
 
     // @notice Calculates the bucket price for a given index
     // @dev Throws if index exceeds maximum constant
     // @dev Uses fixed-point math to get around lack of floating point numbers in EVM
-    // TODO: convert index to int24 for reduced storage costs
-    function indexToPrice(uint256 index) public pure returns (uint256 price) {
-        require(index <= MAX_PRICE_INDEX && index > MIN_PRICE_INDEX, 'Exceeds I Bounds');
+    // @dev Price expected to be inputted as a 18 decimal WAD
+    function indexToPrice(int256 index) public pure returns (int256 price) {
+        require(index <= MAX_PRICE_INDEX && index >= MIN_PRICE_INDEX, 'Exceeds I Bounds');
 
         // V1
         // price = MIN_PRICE + (FLOAT_STEP * index);
@@ -89,22 +91,22 @@ library BucketMath {
 
         // V3
         // x^y = 2^(y*log_2(x))
-        uint256 price = PRBMathUD60x18.exp2(PRBMathUD60x18.mul(PRBMathUD60x18.fromUint(index), PRBMathUD60x18.log2(FLOAT_STEP)));
+        int256 price = PRBMathSD59x18.exp2(PRBMathSD59x18.mul(PRBMathSD59x18.fromInt(index), PRBMathSD59x18.log2(FLOAT_STEP_INT)));
         return price;
+    }
+
+    function priceToIndexBal(int256 price) public pure returns (int256 index) {
+        require(price <= MAX_PRICE && price > MIN_PRICE, 'Exceeds P Bounds');
 
     }
 
-    function isValidPrice(uint256 _price) public pure returns (bool) {
-        if (_price < MIN_PRICE || _price > MAX_PRICE) {
-            return false;
-        }
-        uint256 index = (_price - MIN_PRICE) / FLOAT_STEP;
-        return (index >= 0 && index < MAX_PRICE_INDEX);
+    function indexToPriceBal(int256 index) public pure returns (int256 price) {
+
     }
 
     // TODO: convert to modifier?
-    function isValidIndex(uint256 _index) public pure returns (bool) {
-        return (_index >= 0 && _index < MAX_PRICE_INDEX);
+    function isValidIndex(int256 _index) public pure returns (bool) {
+        return (_index >= MIN_PRICE_INDEX && _index <= MAX_PRICE_INDEX);
     }
 
     function roundToNearestBucket() public view returns (uint256 index) {

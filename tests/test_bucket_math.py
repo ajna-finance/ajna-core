@@ -12,12 +12,14 @@ def priceToIndexPy(price: int) -> int:
     index = math.log2(price) / math.log2(1.005)
     return math.floor(index)
 
-WAD = 10 ** 18
+PRB_SCALE = 10 ** 18
 
 def test_index_to_price(bucket_math):
 
     index_to_price_test_cases = [
-        # 1,
+        -3232,
+        -322,
+        1,
         2,
         3,
         4,
@@ -32,12 +34,14 @@ def test_index_to_price(bucket_math):
         price = bucket_math.indexToPrice(i)
 
         print(f"testing index: {i}", price, indexToPricePy(i))
-        assert price == indexToPricePy(i) * WAD
+        assert price == indexToPricePy(i) * PRB_SCALE
 
 def test_price_to_index(bucket_math):
 
     price_to_index_test_cases = [
+        .0000001,
         .2,
+        .5,
         1.5,
         2.89995955,
         5,
@@ -47,7 +51,8 @@ def test_price_to_index(bucket_math):
     ]
 
     for p in price_to_index_test_cases:
-        index = bucket_math.priceToIndex(int(p * WAD))
+
+        index = bucket_math.priceToIndex(int(p * PRB_SCALE))
         index_py = priceToIndexPy(p)
 
         print(f"testing price: {p}", index, index_py)
@@ -55,9 +60,9 @@ def test_price_to_index(bucket_math):
 
 def test_round_trip(bucket_math):
 
-    index = bucket_math.priceToIndex(5 * WAD)
+    index = bucket_math.priceToIndex(5 * PRB_SCALE)
 
     assert index == 322
 
     price = bucket_math.indexToPrice(index)
-    assert (int(math.ceil(price / WAD)) == 5)
+    assert (int(math.ceil(price / PRB_SCALE)) == 5)
