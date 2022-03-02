@@ -19,7 +19,7 @@ interface IPool {
 
     function borrow(uint256 _amount, uint256 _stopPrice) external;
 
-    function payBack(uint256 _amount) external;
+    function repay(uint256 _amount) external;
 
     function getNextValidPrice(uint256 _price) external returns (uint256);
 }
@@ -75,7 +75,7 @@ contract ERC20Pool is IPool {
     event AddCollateral(address borrower, uint256 amount);
     event RemoveCollateral(address borrower, uint256 amount);
     event Borrow(address borrower, uint256 price, uint256 amount);
-    event PayBack(address borrower, uint256 price, uint256 amount);
+    event Repay(address borrower, uint256 price, uint256 amount);
 
     constructor(IERC20 _collateral, IERC20 _quoteToken) {
         collateral = _collateral;
@@ -84,7 +84,26 @@ contract ERC20Pool is IPool {
         _buckets = new PriceBuckets();
     }
 
-    function addQuoteToken(uint256 _amount, uint256 _price) external {
+    modifier updateInflator() {
+        if (block.timestamp - lastBorrowerInflatorUpdate == 0) {
+            return;
+        }
+
+        uint256 secondsSinceLastUpdate = block.timestamp -
+            lastBorrowerInflatorUpdate;
+        uint256 spr = previousRate / SECONDS_PER_YEAR;
+        borrowerInflator = Maths.wmul(
+            borrowerInflator,
+            Maths.wad(1) + (spr * secondsSinceLastUpdate)
+        );
+        lastBorrowerInflatorUpdate = block.timestamp;
+        _;
+    }
+
+    function addQuoteToken(uint256 _amount, uint256 _price)
+        external
+        updateInflator
+    {
         require(isValidPrice(_price), "ajna/invalid-bucket-price");
 
         lenders[msg.sender][_price] += _amount;
@@ -125,20 +144,19 @@ contract ERC20Pool is IPool {
         emit RemoveQuoteToken(msg.sender, _price, _amount);
     }
 
-    function addCollateral(uint256 _amount) external {
+    function addCollateral(uint256 _amount) external updateInflator {
         borrowers[msg.sender].collateralDeposited += _amount;
         totalCollateral += _amount;
 
         collateral.safeTransferFrom(msg.sender, address(this), _amount);
-        updateBorrowerInflator();
         emit AddCollateral(msg.sender, _amount);
     }
 
-    function removeCollateral(uint256 _amount) external {
+    function removeCollateral(uint256 _amount) external updateInflator {
         BorrowerInfo storage borrower = borrowers[msg.sender];
 
         uint256 interestAdjustment = Maths.wad(1) +
-            nextBorrowerInflator() -
+            borrowerInflator -
             borrower.inflatorSnapshot;
 
         uint256 collateralEncumberedPending = Maths.wmul(
@@ -159,7 +177,10 @@ contract ERC20Pool is IPool {
         emit RemoveCollateral(msg.sender, _amount);
     }
 
-    function borrow(uint256 _amount, uint256 _stopPrice) external {
+    function borrow(uint256 _amount, uint256 _stopPrice)
+        external
+        updateInflator
+    {
         require(
             _amount <= totalQuoteToken - totalDebt,
             "ajna/not-enough-liquidity"
@@ -187,7 +208,6 @@ contract ERC20Pool is IPool {
         );
         borrower.debt += _amount;
         borrower.collateralEncumbered += loanCost;
-        updateBorrowerInflator();
         if (borrower.inflatorSnapshot == 0) {
             borrower.inflatorSnapshot = borrowerInflator;
         }
@@ -199,7 +219,7 @@ contract ERC20Pool is IPool {
         emit Borrow(msg.sender, lup, _amount);
     }
 
-    function payBack(uint256 _amount) external {
+    function repay(uint256 _amount) external updateInflator {
         require(
             _amount <= borrowers[msg.sender].debt,
             "Amount greater than debt"
@@ -232,8 +252,8 @@ contract ERC20Pool is IPool {
 
         totalDebt -= _amount;
 
-        quoteToken.safeTransfer(msg.sender, _amount);
-        emit PayBack(msg.sender, poolPrice, _amount);
+        quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
+        emit Repay(msg.sender, poolPrice, _amount);
     }
 
     // -------------------- Bucket related functions --------------------
@@ -301,25 +321,6 @@ contract ERC20Pool is IPool {
         return Maths.wad(1);
     }
 
-    function updateBorrowerInflator() internal {
-        if (block.timestamp - lastBorrowerInflatorUpdate == 0) {
-            return;
-        }
-
-        borrowerInflator = nextBorrowerInflator();
-        lastBorrowerInflatorUpdate = block.timestamp;
-    }
-
-    function nextBorrowerInflator() public view returns (uint256 inflator) {
-        uint256 secondsSinceLastUpdate = block.timestamp -
-            lastBorrowerInflatorUpdate;
-        uint256 spr = previousRate / SECONDS_PER_YEAR;
-        inflator = Maths.wmul(
-            borrowerInflator,
-            Maths.wad(1) + (spr * secondsSinceLastUpdate)
-        );
-    }
-
     // -------------------- Borrower related functions --------------------
 
     function getBorrowerInfo(address _borrower)
@@ -340,12 +341,20 @@ contract ERC20Pool is IPool {
             borrower.collateralEncumbered
         ) - Maths.wad(1);
 
+        uint256 secondsSinceLastUpdate = block.timestamp -
+            lastBorrowerInflatorUpdate;
+        uint256 spr = previousRate / SECONDS_PER_YEAR;
+        uint256 pendingBorrowerInflator = Maths.wmul(
+            borrowerInflator,
+            Maths.wad(1) + (spr * secondsSinceLastUpdate)
+        );
+
         uint256 interestAdjustment = Maths.wad(1) +
-            nextBorrowerInflator() -
+            pendingBorrowerInflator -
             borrower.inflatorSnapshot;
 
         uint256 collateralEncumberedPending = Maths.wmul(
-            borrowers[_borrower].collateralEncumbered,
+            borrower.collateralEncumbered,
             interestAdjustment
         );
 
