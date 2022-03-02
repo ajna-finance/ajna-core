@@ -30,7 +30,6 @@ contract ERC20Pool is IPool {
     struct BorrowerInfo {
         uint256 debt;
         uint256 collateralDeposited;
-        uint256 collateralEncumbered;
         uint256 inflatorSnapshot;
     }
 
@@ -63,7 +62,6 @@ contract ERC20Pool is IPool {
     uint256 public totalCollateral;
     uint256 public totalQuoteToken;
     uint256 public totalDebt;
-    uint256 public totalEncumberedCollateral;
 
     event AddQuoteToken(
         address lender,
@@ -85,18 +83,30 @@ contract ERC20Pool is IPool {
     }
 
     modifier updateInflator() {
-        if (block.timestamp - lastBorrowerInflatorUpdate == 0) {
-            return;
+        if (block.timestamp - lastBorrowerInflatorUpdate > 0) {
+            uint256 secondsSinceLastUpdate = block.timestamp -
+                lastBorrowerInflatorUpdate;
+            uint256 spr = previousRate / SECONDS_PER_YEAR;
+            borrowerInflator = Maths.wmul(
+                borrowerInflator,
+                Maths.wad(1) + (spr * secondsSinceLastUpdate)
+            );
+            lastBorrowerInflatorUpdate = block.timestamp;
         }
+        _;
+    }
 
-        uint256 secondsSinceLastUpdate = block.timestamp -
-            lastBorrowerInflatorUpdate;
-        uint256 spr = previousRate / SECONDS_PER_YEAR;
-        borrowerInflator = Maths.wmul(
-            borrowerInflator,
-            Maths.wad(1) + (spr * secondsSinceLastUpdate)
-        );
-        lastBorrowerInflatorUpdate = block.timestamp;
+    modifier accumulateBorrowerDebt() {
+        BorrowerInfo storage borrower = borrowers[msg.sender];
+        if (borrower.debt > 0) {
+            uint256 accumulatedDebt = Maths.wmul(
+                borrower.debt,
+                borrowerInflator - borrower.inflatorSnapshot
+            );
+            borrower.debt += accumulatedDebt;
+            totalDebt += accumulatedDebt;
+        }
+        borrower.inflatorSnapshot = borrowerInflator;
         _;
     }
 
@@ -116,8 +126,13 @@ contract ERC20Pool is IPool {
         totalQuoteToken += _amount;
 
         // reallocate debt if needed
-        if (totalDebt > 0 && _price > lup) {
-            lup = _buckets.reallocateDebt(_amount, _price, hdp, lup);
+        if (totalDebt > 0 && _price >= lup) {
+            lup = _buckets.reallocateDebt(
+                _amount,
+                _price,
+                lup,
+                borrowerInflator
+            );
         }
 
         quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -152,21 +167,20 @@ contract ERC20Pool is IPool {
         emit AddCollateral(msg.sender, _amount);
     }
 
-    function removeCollateral(uint256 _amount) external updateInflator {
+    function removeCollateral(uint256 _amount)
+        external
+        updateInflator
+        accumulateBorrowerDebt
+    {
         BorrowerInfo storage borrower = borrowers[msg.sender];
 
-        uint256 interestAdjustment = Maths.wad(1) +
-            borrowerInflator -
-            borrower.inflatorSnapshot;
-
-        uint256 collateralEncumberedPending = Maths.wmul(
-            borrower.collateralEncumbered,
-            interestAdjustment
-        );
+        uint256 encumberedCollateral;
+        if (borrower.debt > 0) {
+            encumberedCollateral = Maths.wdiv(borrower.debt, lup);
+        }
 
         require(
-            borrower.collateralDeposited - collateralEncumberedPending >=
-                _amount,
+            borrower.collateralDeposited - encumberedCollateral >= _amount,
             "ajna/not-enough-collateral"
         );
 
@@ -180,80 +194,85 @@ contract ERC20Pool is IPool {
     function borrow(uint256 _amount, uint256 _stopPrice)
         external
         updateInflator
+        accumulateBorrowerDebt
     {
         require(
             _amount <= totalQuoteToken - totalDebt,
             "ajna/not-enough-liquidity"
         );
 
+        // if first loan then borrow at hdp
+        uint256 curLup = lup;
+        if (curLup == 0) {
+            curLup = hdp;
+        }
+
         BorrowerInfo storage borrower = borrowers[msg.sender];
 
+        uint256 encumberedCollateral;
+        if (borrower.debt > 0) {
+            encumberedCollateral = Maths.wdiv(borrower.debt, lup);
+        }
         require(
-            borrower.collateralDeposited > borrower.collateralEncumbered,
+            borrower.collateralDeposited > encumberedCollateral,
             "ajna/not-enough-collateral"
         );
 
-        // if first loan then borrow at hdp
         uint256 loanCost;
-        if (lup == 0) {
-            (lup, loanCost) = _buckets.borrow(_amount, _stopPrice, hdp);
-        } else {
-            (lup, loanCost) = _buckets.borrow(_amount, _stopPrice, lup);
-        }
+        (lup, loanCost) = _buckets.borrow(
+            _amount,
+            _stopPrice,
+            curLup,
+            borrowerInflator
+        );
 
+        borrower.debt += _amount;
         require(
-            borrower.collateralDeposited - borrower.collateralEncumbered >
+            borrower.collateralDeposited > Maths.wdiv(borrower.debt, lup) &&
+                borrower.collateralDeposited - Maths.wdiv(borrower.debt, lup) >
                 loanCost,
             "ajna/not-enough-collateral"
         );
-        borrower.debt += _amount;
-        borrower.collateralEncumbered += loanCost;
-        if (borrower.inflatorSnapshot == 0) {
-            borrower.inflatorSnapshot = borrowerInflator;
-        }
-
         totalDebt += _amount;
-        totalEncumberedCollateral += loanCost;
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit Borrow(msg.sender, lup, _amount);
     }
 
-    function repay(uint256 _amount) external updateInflator {
-        require(
-            _amount <= borrowers[msg.sender].debt,
-            "Amount greater than debt"
-        );
-        borrowers[msg.sender].debt -= _amount;
-        uint256 poolPrice = getPoolPrice();
+    function repay(uint256 _amount)
+        external
+        updateInflator
+        accumulateBorrowerDebt
+    {
+        uint256 availableAmount = quoteToken.balanceOf(msg.sender);
+        require(availableAmount >= _amount, "ajna/no-funds-to-repay");
 
-        if (
-            borrowers[msg.sender].collateralEncumbered >=
-            Maths.wdiv(_amount, poolPrice)
-        ) {
-            // pay back entire amount
-            borrowers[msg.sender].collateralEncumbered -= Maths.wdiv(
-                _amount,
-                poolPrice
-            );
-            totalEncumberedCollateral -= Maths.wdiv(_amount, poolPrice);
-        } else {
-            // pay back only amount needed to cover encumbered collateral
-            _amount = Maths.wmul(
-                borrowers[msg.sender].collateralEncumbered,
-                poolPrice
-            );
-            totalEncumberedCollateral -= borrowers[msg.sender]
-                .collateralEncumbered;
-            borrowers[msg.sender].collateralEncumbered = 0;
+        BorrowerInfo storage borrower = borrowers[msg.sender];
+        require(borrower.debt > 0, "ajna/no-debt-to-repay");
+
+        // limit amount to pay to debt
+        if (_amount > borrower.debt) {
+            _amount = borrower.debt;
         }
 
-        _buckets.addToBucket(lup, _amount);
+        uint256 amountRemaining;
+        (lup, amountRemaining) = _buckets.repay(_amount, lup, borrowerInflator);
 
-        totalDebt -= _amount;
+        uint256 paidDebt = _amount - amountRemaining;
+        if (paidDebt > borrower.debt) {
+            borrower.debt = 0;
+        } else {
+            borrower.debt -= paidDebt;
+        }
 
-        quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
-        emit Repay(msg.sender, poolPrice, _amount);
+        if (paidDebt > totalDebt) {
+            totalDebt = 0;
+        } else {
+            totalDebt -= paidDebt;
+        }
+
+        quoteToken.safeTransferFrom(msg.sender, address(this), paidDebt);
+        emit Repay(msg.sender, lup, paidDebt);
     }
 
     // -------------------- Bucket related functions --------------------
@@ -266,7 +285,8 @@ contract ERC20Pool is IPool {
             uint256 up,
             uint256 down,
             uint256 amount,
-            uint256 debt
+            uint256 debt,
+            uint256 inflatorSnapshot
         )
     {
         return _buckets.bucketAt(_price);
@@ -289,9 +309,6 @@ contract ERC20Pool is IPool {
     }
 
     function getPoolPrice() public view returns (uint256) {
-        if (totalDebt > 0) {
-            return Maths.wdiv(totalDebt, totalEncumberedCollateral);
-        }
         return lup;
     }
 
@@ -304,7 +321,7 @@ contract ERC20Pool is IPool {
 
     function getPoolCollateralization() public view returns (uint256) {
         if (totalDebt > 0) {
-            return Maths.wdiv(totalCollateral, totalEncumberedCollateral);
+            return Maths.wdiv(totalCollateral, totalDebt / getPoolPrice());
         }
         return Maths.wad(1);
     }
@@ -332,39 +349,47 @@ contract ERC20Pool is IPool {
             uint256,
             uint256,
             uint256,
+            uint256,
             uint256
         )
     {
         BorrowerInfo memory borrower = borrowers[_borrower];
-        uint256 collateralization = Maths.wdiv(
-            borrower.collateralDeposited,
-            borrower.collateralEncumbered
-        ) - Maths.wad(1);
+        uint256 borrowerDebt = borrower.debt;
+        uint256 borrowerPendingDebt = borrower.debt;
+        uint256 collateralEncumbered;
+        uint256 collateralization;
 
-        uint256 secondsSinceLastUpdate = block.timestamp -
-            lastBorrowerInflatorUpdate;
-        uint256 spr = previousRate / SECONDS_PER_YEAR;
-        uint256 pendingBorrowerInflator = Maths.wmul(
-            borrowerInflator,
-            Maths.wad(1) + (spr * secondsSinceLastUpdate)
-        );
-
-        uint256 interestAdjustment = Maths.wad(1) +
-            pendingBorrowerInflator -
-            borrower.inflatorSnapshot;
-
-        uint256 collateralEncumberedPending = Maths.wmul(
-            borrower.collateralEncumbered,
-            interestAdjustment
-        );
+        if (borrower.debt > 0) {
+            uint256 secondsSinceLastUpdate = block.timestamp -
+                lastBorrowerInflatorUpdate;
+            uint256 spr = previousRate / SECONDS_PER_YEAR;
+            uint256 pendingInflator = Maths.wmul(
+                borrowerInflator,
+                Maths.wad(1) + (spr * secondsSinceLastUpdate)
+            );
+            borrowerDebt += Maths.wmul(
+                borrower.debt,
+                borrowerInflator - borrower.inflatorSnapshot
+            );
+            borrowerPendingDebt += Maths.wmul(
+                borrower.debt,
+                pendingInflator - borrower.inflatorSnapshot
+            );
+            collateralEncumbered = Maths.wdiv(borrowerPendingDebt, lup);
+            collateralization = Maths.wdiv(
+                borrower.collateralDeposited,
+                collateralEncumbered
+            );
+        }
 
         return (
-            borrower.debt,
+            borrowerDebt,
+            borrowerPendingDebt,
             borrower.collateralDeposited,
-            borrower.collateralEncumbered,
-            collateralEncumberedPending,
+            collateralEncumbered,
             collateralization,
-            borrower.inflatorSnapshot
+            borrower.inflatorSnapshot,
+            borrowerInflator
         );
     }
 

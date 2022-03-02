@@ -12,7 +12,7 @@ def main():
     dai = Contract("0x6b175474e89094c44da98b954eedeac495271d0f")
     mkr = Contract("0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2")
     Maths.deploy({"from": deployer})
-    Buckets.deploy({"from": deployer})
+    PriceBuckets.deploy({"from": deployer})
     contract = ERC20Pool.deploy(
         mkr,
         dai,
@@ -35,25 +35,27 @@ def main():
             0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
             {"from": accounts[i]},
         )
+        dai.approve(
+            contract,
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+            {"from": accounts[i]},
+        )
 
-    contract.addQuoteToken(100000 * 1e18, 4000 * 1e18, {"from": lender})
-    contract.addQuoteToken(100000 * 1e18, 2000 * 1e18, {"from": lender})
-    contract.addQuoteToken(100000 * 1e18, 1500 * 1e18, {"from": lender})
-    contract.addQuoteToken(100000 * 1e18, 1000 * 1e18, {"from": lender})
+    contract.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
+    contract.addQuoteToken(10_000 * 1e18, 2000 * 1e18, {"from": lender})
+    contract.addQuoteToken(10_000 * 1e18, 1500 * 1e18, {"from": lender})
+    contract.addQuoteToken(10_000 * 1e18, 1000 * 1e18, {"from": lender})
     contract.addCollateral(100 * 1e18, {"from": borrower1})
-    contract.addCollateral(200 * 1e18, {"from": borrower2})
+    contract.addCollateral(10 * 1e18, {"from": borrower2})
     contract.addCollateral(300 * 1e18, {"from": borrower3})
     contract.addCollateral(400 * 1e18, {"from": borrower4})
     contract.addCollateral(500 * 1e18, {"from": borrower5})
-    contract.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower1})
-    contract.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower2})
+    contract.borrow(5_000 * 1e18, 4000 * 1e18, {"from": borrower1})
+    contract.borrow(10_000 * 1e18, 2000 * 1e18, {"from": borrower2})
     return (
         lender,
         borrower1,
         borrower2,
-        borrower3,
-        borrower4,
-        borrower5,
         dai,
         mkr,
         contract,
