@@ -1,5 +1,5 @@
 import pytest
-from brownie import Contract, ERC20Pool, Maths, Buckets, BucketMath
+from brownie import Contract, ERC20Pool, Maths, PriceBuckets, BucketMath
 
 
 @pytest.fixture
@@ -27,7 +27,7 @@ def bucket_math(deployer):
 @pytest.fixture
 def mkr_dai_pool(bucket_math, mkr, dai, deployer):
     Maths.deploy({"from": deployer})
-    Buckets.deploy({"from": deployer})
+    PriceBuckets.deploy({"from": deployer})
     daiPool = ERC20Pool.deploy(mkr, dai, {"from": deployer})
     yield daiPool
 

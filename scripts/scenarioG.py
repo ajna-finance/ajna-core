@@ -46,16 +46,6 @@ def main():
     pool.addQuoteToken(40_000 * 1e18, 13.537 * 1e18, {"from": lenders[3]})
     pool.addQuoteToken(10_000 * 1e18, 14.214 * 1e18, {"from": lenders[3]})
 
-    # pool.addQuoteToken(100000 * 1e18, 2000 * 1e18, {"from": lender})
-    # pool.addQuoteToken(100000 * 1e18, 1500 * 1e18, {"from": lender})
-    # pool.addQuoteToken(100000 * 1e18, 1000 * 1e18, {"from": lender})
-    # pool.addCollateral(100 * 1e18, {"from": borrower1})
-    # pool.addCollateral(200 * 1e18, {"from": borrower2})
-    # pool.addCollateral(300 * 1e18, {"from": borrower3})
-    # pool.addCollateral(400 * 1e18, {"from": borrower4})
-    # pool.addCollateral(500 * 1e18, {"from": borrower5})
-    # pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower1})
-    # pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower2})
     return (
         lenders,
         borrowers,
