@@ -24,8 +24,6 @@ import "../../lib/prb-math/contracts/PRBMathSD59x18.sol";
 // Question of how to treat the reciprocoal 
 
 
-// implement is Common
-// TODO: convert index to int24 for reduced storage costs
 library BucketMath {
 
     // TODO: Check need for higher decimal precision
@@ -37,7 +35,7 @@ library BucketMath {
     int256 internal constant MAX_PRICE_INDEX = 6926;
     int256 internal constant MIN_PRICE_INDEX = -3232;
 
-    int256 internal constant MIN_PRICE = 1000000000000;
+    int256 internal constant MIN_PRICE = 100000000000;
     int256 internal constant MAX_PRICE = 1004948313 * WAD;
 
     // step amounts in basis points. This is a constant across pools at .005, achieved by dividing by 10,000
@@ -93,15 +91,6 @@ library BucketMath {
         // x^y = 2^(y*log_2(x))
         int256 price = PRBMathSD59x18.exp2(PRBMathSD59x18.mul(PRBMathSD59x18.fromInt(index), PRBMathSD59x18.log2(FLOAT_STEP_INT)));
         return price;
-    }
-
-    function priceToIndexBal(int256 price) public pure returns (int256 index) {
-        require(price <= MAX_PRICE && price > MIN_PRICE, 'Exceeds P Bounds');
-
-    }
-
-    function indexToPriceBal(int256 index) public pure returns (int256 price) {
-
     }
 
     // TODO: convert to modifier?

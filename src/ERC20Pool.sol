@@ -8,6 +8,7 @@ import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import "./libraries/Maths.sol";
 import "./libraries/Buckets.sol";
+import "./libraries/BucketMath.sol";
 
 interface IPool {
     function addQuoteToken(uint256 _amount, uint256 _price) external;
