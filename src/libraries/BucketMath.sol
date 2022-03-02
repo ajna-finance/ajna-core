@@ -2,8 +2,7 @@
 
 pragma solidity 0.8.11;
 
-// import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
-import "../../lib/prb-math/contracts/PRBMathSD59x18.sol";
+import {PRBMathSD59x18} from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 // https://stackoverflow.com/questions/42738640/division-in-ethereum-solidity
 // https://medium.com/coinmonks/math-in-solidity-part-5-exponent-and-logarithm-9aef8515136e
@@ -16,12 +15,6 @@ import "../../lib/prb-math/contracts/PRBMathSD59x18.sol";
 // - Decimal Math: https://github.com/HQ20/contracts/tree/master/contracts/math
 // - Logs + other fx: https://github.com/barakman/solidity-math-utils
 // - Fixed Point (Open Source License): https://github.com/paulrberg/prb-math/tree/v1.0.3
-
-// TODO: figure out solution to numbers less than 1. Our bucket indices are fundamentally unbalanced. 
-// There is a greater diversity > 1, then there are fractions of a price.
-// 
-// Our equations result in negative numbers when calculating an index for a given price - representative of difference to the left of midpoint.
-// Question of how to treat the reciprocoal 
 
 
 library BucketMath {
