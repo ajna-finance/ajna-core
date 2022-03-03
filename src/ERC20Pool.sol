@@ -213,35 +213,33 @@ contract ERC20Pool is IPool {
         uint256 availableAmount = quoteToken.balanceOf(msg.sender);
         require(availableAmount >= _amount, "ajna/no-funds-to-repay");
 
-        updateInflator();
-
         BorrowerInfo storage borrower = borrowers[msg.sender];
         require(borrower.debt > 0, "ajna/no-debt-to-repay");
+        updateInflator();
         accumulateBorrowerDebt(borrower);
 
-        // limit amount to pay to debt
-        if (_amount > borrower.debt) {
-            _amount = borrower.debt;
+        uint256 debtToPay;
+        (lup, debtToPay) = _buckets.repay(_amount, lup, borrowerInflator);
+
+        if (debtToPay < borrower.debt && _amount >= borrower.debt) {
+            debtToPay = borrower.debt;
         }
 
-        uint256 amountRemaining;
-        (lup, amountRemaining) = _buckets.repay(_amount, lup, borrowerInflator);
-
-        uint256 paidDebt = _amount - amountRemaining;
-        if (paidDebt > borrower.debt) {
+        if (debtToPay >= borrower.debt) {
             borrower.debt = 0;
+            borrower.inflatorSnapshot = 0;
         } else {
-            borrower.debt -= paidDebt;
+            borrower.debt -= debtToPay;
         }
 
-        if (paidDebt > totalDebt) {
+        if (debtToPay > totalDebt) {
             totalDebt = 0;
         } else {
-            totalDebt -= paidDebt;
+            totalDebt -= debtToPay;
         }
 
-        quoteToken.safeTransferFrom(msg.sender, address(this), paidDebt);
-        emit Repay(msg.sender, lup, paidDebt);
+        quoteToken.safeTransferFrom(msg.sender, address(this), debtToPay);
+        emit Repay(msg.sender, lup, debtToPay);
     }
 
     function updateInflator() private {
@@ -353,7 +351,7 @@ contract ERC20Pool is IPool {
         uint256 collateralEncumbered;
         uint256 collateralization;
 
-        if (borrower.debt > 0) {
+        if (borrower.debt > 0 && borrower.inflatorSnapshot > 0) {
             uint256 secondsSinceLastUpdate = block.timestamp -
                 lastBorrowerInflatorUpdate;
             uint256 spr = previousRate / SECONDS_PER_YEAR;

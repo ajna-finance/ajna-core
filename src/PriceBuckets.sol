@@ -180,6 +180,7 @@ contract PriceBuckets is IPriceBuckets {
         uint256 _inflator
     ) public returns (uint256, uint256) {
         Bucket storage curLup = buckets[_lup];
+        uint256 debtToPay;
 
         while (true) {
             // accumulate bucket interest
@@ -192,11 +193,13 @@ contract PriceBuckets is IPriceBuckets {
 
                 if (_amount > curLup.debt) {
                     // pay entire debt on this bucket
+                    debtToPay += curLup.debt;
                     _amount -= curLup.debt;
                     curLup.debt = 0;
                 } else {
                     // pay as much debt as possible and exit
                     curLup.debt -= _amount;
+                    debtToPay += _amount;
                     _amount = 0;
                     break;
                 }
@@ -210,7 +213,7 @@ contract PriceBuckets is IPriceBuckets {
             curLup = buckets[curLup.up];
         }
 
-        return (curLup.price, _amount);
+        return (curLup.price, debtToPay);
     }
 
     function estimatePrice(uint256 _amount, uint256 _hdp)
