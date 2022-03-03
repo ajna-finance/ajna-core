@@ -16,9 +16,7 @@ import {PRBMathSD59x18} from "@prb-math/contracts/PRBMathSD59x18.sol";
 // - Logs + other fx: https://github.com/barakman/solidity-math-utils
 // - Fixed Point (Open Source License): https://github.com/paulrberg/prb-math/tree/v1.0.3
 
-
 library BucketMath {
-
     int256 public constant WAD = 10**18;
 
     using PRBMathSD59x18 for int256;
@@ -41,7 +39,7 @@ library BucketMath {
     // @dev Throws if price exceeds maximum constant
     // @dev Price expected to be inputted as a 18 decimal WAD
     function priceToIndex(int256 price) public pure returns (int256 index) {
-        require(price <= MAX_PRICE && price >= MIN_PRICE, 'Exceeds P Bounds');
+        require(price <= MAX_PRICE && price >= MIN_PRICE, "Exceeds P Bounds");
 
         // V1
         // index = (price - MIN_PRICE) / FLOAT_STEP;
@@ -50,10 +48,14 @@ library BucketMath {
         // index = (log(FLOAT_STEP) * price) /  MAX_PRICE;
 
         // V3
-        int256 index = PRBMathSD59x18.div(PRBMathSD59x18.log2(price), PRBMathSD59x18.log2(FLOAT_STEP_INT));
+        index = PRBMathSD59x18.div(
+            PRBMathSD59x18.log2(price),
+            PRBMathSD59x18.log2(FLOAT_STEP_INT)
+        );
         if (index < 0) {
             return PRBMathSD59x18.toInt(index) - 1;
         }
+
         return PRBMathSD59x18.toInt(index);
     }
 
@@ -62,7 +64,10 @@ library BucketMath {
     // @dev Uses fixed-point math to get around lack of floating point numbers in EVM
     // @dev Price expected to be inputted as a 18 decimal WAD
     function indexToPrice(int256 index) public pure returns (int256 price) {
-        require(index <= MAX_PRICE_INDEX && index >= MIN_PRICE_INDEX, 'Exceeds I Bounds');
+        require(
+            index <= MAX_PRICE_INDEX && index >= MIN_PRICE_INDEX,
+            "Exceeds I Bounds"
+        );
 
         // V1
         // price = MIN_PRICE + (FLOAT_STEP * index);
@@ -72,12 +77,15 @@ library BucketMath {
 
         // V3
         // x^y = 2^(y*log_2(x))
-        int256 price = PRBMathSD59x18.exp2(PRBMathSD59x18.mul(PRBMathSD59x18.fromInt(index), PRBMathSD59x18.log2(FLOAT_STEP_INT)));
-        return price;
+        price = PRBMathSD59x18.exp2(
+            PRBMathSD59x18.mul(
+                PRBMathSD59x18.fromInt(index),
+                PRBMathSD59x18.log2(FLOAT_STEP_INT)
+            )
+        );
     }
 
     function isValidIndex(int256 _index) public pure returns (bool) {
         return (_index >= MIN_PRICE_INDEX && _index <= MAX_PRICE_INDEX);
     }
-
 }
