@@ -82,39 +82,10 @@ contract ERC20Pool is IPool {
         _buckets = new PriceBuckets();
     }
 
-    modifier updateInflator() {
-        if (block.timestamp - lastBorrowerInflatorUpdate > 0) {
-            uint256 secondsSinceLastUpdate = block.timestamp -
-                lastBorrowerInflatorUpdate;
-            uint256 spr = previousRate / SECONDS_PER_YEAR;
-            borrowerInflator = Maths.wmul(
-                borrowerInflator,
-                Maths.wad(1) + (spr * secondsSinceLastUpdate)
-            );
-            lastBorrowerInflatorUpdate = block.timestamp;
-        }
-        _;
-    }
-
-    modifier accumulateBorrowerDebt() {
-        BorrowerInfo storage borrower = borrowers[msg.sender];
-        if (borrower.debt > 0) {
-            uint256 accumulatedDebt = Maths.wmul(
-                borrower.debt,
-                borrowerInflator - borrower.inflatorSnapshot
-            );
-            borrower.debt += accumulatedDebt;
-            totalDebt += accumulatedDebt;
-        }
-        borrower.inflatorSnapshot = borrowerInflator;
-        _;
-    }
-
-    function addQuoteToken(uint256 _amount, uint256 _price)
-        external
-        updateInflator
-    {
+    function addQuoteToken(uint256 _amount, uint256 _price) external {
         require(isValidPrice(_price), "ajna/invalid-bucket-price");
+
+        updateInflator();
 
         lenders[msg.sender][_price] += _amount;
         lenderBalance[msg.sender] += _amount;
@@ -159,7 +130,8 @@ contract ERC20Pool is IPool {
         emit RemoveQuoteToken(msg.sender, _price, _amount);
     }
 
-    function addCollateral(uint256 _amount) external updateInflator {
+    function addCollateral(uint256 _amount) external {
+        updateInflator();
         borrowers[msg.sender].collateralDeposited += _amount;
         totalCollateral += _amount;
 
@@ -167,12 +139,11 @@ contract ERC20Pool is IPool {
         emit AddCollateral(msg.sender, _amount);
     }
 
-    function removeCollateral(uint256 _amount)
-        external
-        updateInflator
-        accumulateBorrowerDebt
-    {
+    function removeCollateral(uint256 _amount) external {
+        updateInflator();
+
         BorrowerInfo storage borrower = borrowers[msg.sender];
+        accumulateBorrowerDebt(borrower);
 
         uint256 encumberedCollateral;
         if (borrower.debt > 0) {
@@ -191,23 +162,22 @@ contract ERC20Pool is IPool {
         emit RemoveCollateral(msg.sender, _amount);
     }
 
-    function borrow(uint256 _amount, uint256 _stopPrice)
-        external
-        updateInflator
-        accumulateBorrowerDebt
-    {
+    function borrow(uint256 _amount, uint256 _stopPrice) external {
         require(
             _amount <= totalQuoteToken - totalDebt,
             "ajna/not-enough-liquidity"
         );
+
+        updateInflator();
+
+        BorrowerInfo storage borrower = borrowers[msg.sender];
+        accumulateBorrowerDebt(borrower);
 
         // if first loan then borrow at hdp
         uint256 curLup = lup;
         if (curLup == 0) {
             curLup = hdp;
         }
-
-        BorrowerInfo storage borrower = borrowers[msg.sender];
 
         uint256 encumberedCollateral;
         if (borrower.debt > 0) {
@@ -239,16 +209,15 @@ contract ERC20Pool is IPool {
         emit Borrow(msg.sender, lup, _amount);
     }
 
-    function repay(uint256 _amount)
-        external
-        updateInflator
-        accumulateBorrowerDebt
-    {
+    function repay(uint256 _amount) external {
         uint256 availableAmount = quoteToken.balanceOf(msg.sender);
         require(availableAmount >= _amount, "ajna/no-funds-to-repay");
 
+        updateInflator();
+
         BorrowerInfo storage borrower = borrowers[msg.sender];
         require(borrower.debt > 0, "ajna/no-debt-to-repay");
+        accumulateBorrowerDebt(borrower);
 
         // limit amount to pay to debt
         if (_amount > borrower.debt) {
@@ -273,6 +242,31 @@ contract ERC20Pool is IPool {
 
         quoteToken.safeTransferFrom(msg.sender, address(this), paidDebt);
         emit Repay(msg.sender, lup, paidDebt);
+    }
+
+    function updateInflator() private {
+        if (block.timestamp - lastBorrowerInflatorUpdate > 0) {
+            uint256 secondsSinceLastUpdate = block.timestamp -
+                lastBorrowerInflatorUpdate;
+            uint256 spr = previousRate / SECONDS_PER_YEAR;
+            borrowerInflator = Maths.wmul(
+                borrowerInflator,
+                Maths.wad(1) + (spr * secondsSinceLastUpdate)
+            );
+            lastBorrowerInflatorUpdate = block.timestamp;
+        }
+    }
+
+    function accumulateBorrowerDebt(BorrowerInfo storage borrower) private {
+        if (borrower.debt > 0) {
+            uint256 accumulatedDebt = Maths.wmul(
+                borrower.debt,
+                borrowerInflator - borrower.inflatorSnapshot
+            );
+            borrower.debt += accumulatedDebt;
+            totalDebt += accumulatedDebt;
+        }
+        borrower.inflatorSnapshot = borrowerInflator;
     }
 
     // -------------------- Bucket related functions --------------------
