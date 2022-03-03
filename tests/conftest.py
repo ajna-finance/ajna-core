@@ -45,7 +45,7 @@ def lenders(dai, mkr_dai_pool, accounts):
 
 
 @pytest.fixture
-def borrowers(mkr, mkr_dai_pool, accounts):
+def borrowers(mkr, dai, mkr_dai_pool, accounts):
     amount = 100 * 10**18  # 100 MKR for each borrower
     reserve = accounts.at("0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB", force=True)
     borrowers = []
@@ -53,6 +53,11 @@ def borrowers(mkr, mkr_dai_pool, accounts):
         borrower = accounts.add()
         mkr.transfer(borrower, amount, {"from": reserve})
         mkr.approve(
+            mkr_dai_pool,
+            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
+            {"from": borrower},
+        )
+        dai.approve(
             mkr_dai_pool,
             0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
             {"from": borrower},
