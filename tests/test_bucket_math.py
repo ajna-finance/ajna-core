@@ -12,6 +12,9 @@ def priceToIndexPy(price: int) -> int:
     index = math.log2(price) / math.log2(1.005)
     return math.floor(index)
 
+def get_first_12_digits(number: int) -> int:
+    return int(str(number)[:12])
+
 PRB_SCALE = 10 ** 18
 
 def test_index_to_price(bucket_math):
@@ -34,7 +37,8 @@ def test_index_to_price(bucket_math):
         price = bucket_math.indexToPrice(i)
 
         print(f"testing index: {i}", price, indexToPricePy(i))
-        assert price == indexToPricePy(i) * PRB_SCALE
+        # python and solidity approaches match up to a precision of 12 digits
+        assert get_first_12_digits(price) == get_first_12_digits(int(indexToPricePy(i) * PRB_SCALE))
 
 def test_price_to_index(bucket_math):
 
