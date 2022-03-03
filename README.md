@@ -16,11 +16,6 @@ To get the latest `forge` or `cast` binaries, tun
 foundryup
 ```
 
-Install submodules
-```
-git submodule update --init --recursive
-```
-
 #### Project Setup
 
 ```bash

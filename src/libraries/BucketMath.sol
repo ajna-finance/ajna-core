@@ -19,7 +19,6 @@ import {PRBMathSD59x18} from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 library BucketMath {
 
-    // TODO: Check need for higher decimal precision
     int256 public constant WAD = 10**18;
 
     using PRBMathSD59x18 for int256;
@@ -31,17 +30,8 @@ library BucketMath {
     int256 internal constant MIN_PRICE = 100000000000;
     int256 internal constant MAX_PRICE = 1004948313 * WAD;
 
-    // step amounts in basis points. This is a constant across pools at .005, achieved by dividing by 10,000
+    // step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
     int256 public constant FLOAT_STEP_INT = 1005000000000000000;
-
-    // info stored in each utilized price bucket
-    // TODO: add LP tokens at per bucket level?
-    struct Bucket {
-        uint256 price; // current bucket price
-        uint256 next; // next utilizable bucket price
-        uint256 amount; // total quote deposited in bucket
-        uint256 debt; // accumulated bucket debt
-    }
 
     function abs(int256 x) private pure returns (uint256) {
         return x >= 0 ? uint256(x) : uint256(-x);
@@ -86,13 +76,8 @@ library BucketMath {
         return price;
     }
 
-    // TODO: convert to modifier?
     function isValidIndex(int256 _index) public pure returns (bool) {
         return (_index >= MIN_PRICE_INDEX && _index <= MAX_PRICE_INDEX);
-    }
-
-    function roundToNearestBucket() public view returns (uint256 index) {
-
     }
 
 }
