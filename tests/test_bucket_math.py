@@ -4,6 +4,8 @@ import pytest
 import math
 
 
+PRB_SCALE = 10 ** 18
+
 def indexToPricePy(index: int) -> int:
     # x^y = 2^(y*log_2(x))
     return 2 ** (index * math.log2(1.005))
@@ -15,7 +17,20 @@ def priceToIndexPy(price: int) -> int:
 def get_first_12_digits(number: int) -> int:
     return int(str(number)[:12])
 
-PRB_SCALE = 10 ** 18
+def find_precision(number_1: int, number_2: int) -> int:
+    # find the matching precision of two numbers
+    assert isinstance(number_1, int)
+    assert isinstance(number_2, int)
+
+    i = 1
+    matches = True
+
+    while matches:
+        if int(str(number_1)[:i]) == int(str(number_2)[:i]):
+            i += 1
+        else:
+            matches = False
+    return i - 1
 
 def test_index_to_price(bucket_math):
 
