@@ -7,6 +7,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import "./libraries/Maths.sol";
 import {IPriceBuckets, PriceBuckets} from "./PriceBuckets.sol";
+import "./libraries/BucketMath.sol";
 
 interface IPool {
     function addQuoteToken(uint256 _amount, uint256 _price) external;

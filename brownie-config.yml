@@ -21,4 +21,5 @@ compiler:
       - "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts"
       - "@std=lib/forge-std/src/"
       - "@solmate=lib/solmate/src/"
+      - "@prb-math=lib/prb-math/"
 

@@ -1,5 +1,5 @@
 import pytest
-from brownie import Contract, ERC20Pool, Maths, PriceBuckets
+from brownie import Contract, ERC20Pool, Maths, PriceBuckets, BucketMath
 
 
 @pytest.fixture
@@ -18,9 +18,14 @@ def mkr():
     token_address = "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"
     yield Contract(token_address)
 
+# TODO: convert to deploying all necessary libraries "libraries(deployer)"
+@pytest.fixture
+def bucket_math(deployer):
+    bucket_math = BucketMath.deploy({"from": deployer})
+    yield bucket_math
 
 @pytest.fixture
-def mkr_dai_pool(mkr, dai, deployer):
+def mkr_dai_pool(bucket_math, mkr, dai, deployer):
     Maths.deploy({"from": deployer})
     PriceBuckets.deploy({"from": deployer})
     daiPool = ERC20Pool.deploy(mkr, dai, {"from": deployer})

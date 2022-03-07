@@ -39,6 +39,7 @@ make test
 - Install Brownie [instructions](https://eth-brownie.readthedocs.io/en/stable/install.html)
 - Make a copy of .env.example and name it .env. Add the values for ETHERSCAN_TOKEN and WEB3_INFURA_PROJECT_ID
 - Run `brownie console`
+- Install ganache-cli `npm i -g ganache-cli`
 
 ### Brownie integration tests
 

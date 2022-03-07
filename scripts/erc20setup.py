@@ -9,6 +9,7 @@ def main():
     borrower3 = accounts[4]
     borrower4 = accounts[5]
     borrower5 = accounts[6]
+    BucketMath.deploy({"from": deployer})
     dai = Contract("0x6b175474e89094c44da98b954eedeac495271d0f")
     mkr = Contract("0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2")
     Maths.deploy({"from": deployer})
