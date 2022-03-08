@@ -5,9 +5,18 @@ import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./libraries/Maths.sol";
 
 interface IPriceBuckets {
-    function addToBucket(uint256 _price, uint256 _amount) external;
+    function addToBucket(
+        uint256 _price,
+        uint256 _amount,
+        uint256 _inflator
+    ) external returns (uint256 lptokens);
 
-    function subtractFromBucket(uint256 _price, uint256 _amount) external;
+    function subtractFromBucket(
+        uint256 _price,
+        uint256 _amount,
+        uint256 _balance,
+        uint256 _inflator
+    ) external returns (uint256 lptokens);
 
     function reallocateDebt(
         uint256 _amount,
@@ -51,7 +60,8 @@ interface IPriceBuckets {
             uint256 down,
             uint256 amount,
             uint256 debt,
-            uint256 inflatorSnapshot
+            uint256 inflatorSnapshot,
+            uint256 lpOutstanding
         );
 }
 
@@ -63,17 +73,98 @@ contract PriceBuckets is IPriceBuckets {
         uint256 amount; // total quote deposited in bucket
         uint256 debt; // accumulated bucket debt
         uint256 inflatorSnapshot; // bucket inflator snapshot
+        uint256 lpOutstanding;
     }
 
     mapping(uint256 => Bucket) private buckets;
     BitMaps.BitMap private bitmap;
 
-    function addToBucket(uint256 _price, uint256 _amount) public {
-        buckets[_price].amount += _amount;
+    function addToBucket(
+        uint256 _price,
+        uint256 _amount,
+        uint256 _inflator
+    ) public returns (uint256 lpTokens) {
+        Bucket storage bucket = buckets[_price];
+
+        // accumulate bucket interest
+        if (bucket.debt > 0) {
+            bucket.debt += Maths.wmul(
+                _inflator - bucket.inflatorSnapshot,
+                bucket.debt
+            );
+        }
+        bucket.inflatorSnapshot = _inflator;
+
+        lpTokens = Maths.wdiv(_amount, bucket.inflatorSnapshot);
+        bucket.amount += _amount;
+        bucket.lpOutstanding += lpTokens;
     }
 
-    function subtractFromBucket(uint256 _price, uint256 _amount) public {
-        buckets[_price].amount -= _amount;
+    function subtractFromBucket(
+        uint256 _price,
+        uint256 _amount,
+        uint256 _balance,
+        uint256 _inflator
+    ) public returns (uint256 lpTokens) {
+        Bucket storage bucket = buckets[_price];
+
+        // accumulate bucket interest
+        if (bucket.debt > 0) {
+            bucket.debt += Maths.wmul(
+                _inflator - bucket.inflatorSnapshot,
+                bucket.debt
+            );
+            bucket.inflatorSnapshot = _inflator;
+        }
+
+        uint256 exchangeRate;
+        if (bucket.lpOutstanding > 0) {
+            exchangeRate = Maths.wdiv(bucket.amount, bucket.lpOutstanding);
+        } else {
+            exchangeRate = Maths.wad(1);
+        }
+
+        require(
+            _amount < Maths.wmul(_balance, exchangeRate) &&
+                bucket.amount >= bucket.debt,
+            "ajna/amount-greater-than-claimable"
+        );
+
+        // debt reallocation
+        uint256 onDeposit = bucket.amount - bucket.debt;
+        if (_amount > onDeposit) {
+            uint256 reallocation = _amount - onDeposit;
+            if (bucket.down > 0) {
+                Bucket storage toBucket = buckets[bucket.down];
+                uint256 toBucketOnDeposit;
+                while (true) {
+                    toBucketOnDeposit = toBucket.amount - toBucket.debt;
+                    if (reallocation < toBucketOnDeposit) {
+                        // reallocate all and exit
+                        bucket.debt -= reallocation;
+                        toBucket.debt += reallocation;
+                        toBucket.inflatorSnapshot = _inflator;
+                        break;
+                    } else {
+                        reallocation -= toBucketOnDeposit;
+                        bucket.debt -= toBucketOnDeposit;
+                        toBucket.debt += toBucketOnDeposit;
+                        toBucket.inflatorSnapshot = _inflator;
+                    }
+
+                    if (toBucket.down == 0) {
+                        // nowhere to go
+                        break;
+                    }
+
+                    toBucket = buckets[toBucket.down];
+                }
+            }
+        }
+
+        lpTokens = Maths.wdiv(_amount, exchangeRate);
+        bucket.amount -= _amount;
+        bucket.lpOutstanding -= lpTokens;
     }
 
     function reallocateDebt(
@@ -264,7 +355,8 @@ contract PriceBuckets is IPriceBuckets {
             uint256 down,
             uint256 amount,
             uint256 debt,
-            uint256 inflatorSnapshot
+            uint256 inflatorSnapshot,
+            uint256 lpOutstanding
         )
     {
         Bucket memory bucket = buckets[_price];
@@ -275,6 +367,7 @@ contract PriceBuckets is IPriceBuckets {
         amount = bucket.amount;
         debt = bucket.debt;
         inflatorSnapshot = bucket.inflatorSnapshot;
+        lpOutstanding = bucket.lpOutstanding;
     }
 
     function isBucketInitialized(uint256 _price) public view returns (bool) {
