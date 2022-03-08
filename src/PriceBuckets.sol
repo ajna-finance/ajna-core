@@ -12,14 +12,21 @@ interface IPriceBuckets {
     function reallocateDebt(
         uint256 _amount,
         uint256 _price,
-        uint256 _hdp,
-        uint256 _lup
+        uint256 _lup,
+        uint256 _inflator
     ) external returns (uint256 price);
 
     function borrow(
         uint256 _amount,
         uint256 _stop,
-        uint256 _lup
+        uint256 _lup,
+        uint256 _inflator
+    ) external returns (uint256 lup, uint256 amountUsed);
+
+    function repay(
+        uint256 _amount,
+        uint256 _lup,
+        uint256 _inflator
     ) external returns (uint256 lup, uint256 loanCost);
 
     function ensureBucket(uint256 _hdp, uint256 _price)
@@ -43,7 +50,8 @@ interface IPriceBuckets {
             uint256 up,
             uint256 down,
             uint256 amount,
-            uint256 debt
+            uint256 debt,
+            uint256 inflatorSnapshot
         );
 }
 
@@ -54,6 +62,7 @@ contract PriceBuckets is IPriceBuckets {
         uint256 down; // next utilizable bucket price
         uint256 amount; // total quote deposited in bucket
         uint256 debt; // accumulated bucket debt
+        uint256 inflatorSnapshot; // bucket inflator snapshot
     }
 
     mapping(uint256 => Bucket) private buckets;
@@ -70,18 +79,21 @@ contract PriceBuckets is IPriceBuckets {
     function reallocateDebt(
         uint256 _amount,
         uint256 _price,
-        uint256 _hdp,
-        uint256 _lup
+        uint256 _lup,
+        uint256 _inflator
     ) public returns (uint256 price) {
-        Bucket memory bucket = buckets[_price];
+        Bucket storage bucket = buckets[_price];
         Bucket storage curLup = buckets[_lup];
 
         uint256 curLupDebt;
-        uint256 debtReallocated;
 
         while (true) {
-            if (curLup.price == _hdp) {
-                break;
+            // accumulate bucket interest
+            if (curLup.debt > 0) {
+                curLup.debt += Maths.wmul(
+                    _inflator - curLup.inflatorSnapshot,
+                    curLup.debt
+                );
             }
 
             curLupDebt = curLup.debt;
@@ -90,25 +102,34 @@ contract PriceBuckets is IPriceBuckets {
                 bucket.debt += curLupDebt;
                 _amount -= curLupDebt;
                 curLup.debt = 0;
-                debtReallocated += curLupDebt;
+                curLup.inflatorSnapshot = _inflator;
+                if (curLup.price == curLup.up) {
+                    // nowhere to go
+                    break;
+                }
             } else {
                 bucket.debt += _amount;
                 curLup.debt -= _amount;
-                debtReallocated += _amount;
+                curLup.inflatorSnapshot = _inflator;
+                break;
+            }
+
+            if (curLup.up == _price) {
+                // nowhere to go
                 break;
             }
 
             curLup = buckets[curLup.up];
         }
 
-        buckets[_price] = bucket;
         return curLup.price;
     }
 
     function borrow(
         uint256 _amount,
         uint256 _stop,
-        uint256 _lup
+        uint256 _lup,
+        uint256 _inflator
     ) public returns (uint256 lup, uint256 loanCost) {
         Bucket storage curLup = buckets[_lup];
         uint256 amountRemaining = _amount;
@@ -117,18 +138,29 @@ contract PriceBuckets is IPriceBuckets {
         while (true) {
             require(curLup.price >= _stop, "ajna/stop-price-exceeded");
 
-            curLupDeposit = curLup.amount - curLup.debt;
+            // accumulate bucket interest
+            if (curLup.debt > 0) {
+                curLup.debt += Maths.wmul(
+                    _inflator - curLup.inflatorSnapshot,
+                    curLup.debt
+                );
+            }
 
-            if (amountRemaining > curLupDeposit) {
-                // take all on deposit from this bucket
-                curLup.debt += curLupDeposit;
-                amountRemaining -= curLupDeposit;
-                loanCost += Maths.wdiv(curLupDeposit, curLup.price);
-            } else {
-                // take all remaining amount for loan from this bucket and exit
-                curLup.debt += amountRemaining;
-                loanCost += Maths.wdiv(amountRemaining, curLup.price);
-                break;
+            if (curLup.amount > curLup.debt) {
+                curLup.inflatorSnapshot = _inflator;
+                curLupDeposit = curLup.amount - curLup.debt;
+
+                if (amountRemaining > curLupDeposit) {
+                    // take all on deposit from this bucket
+                    curLup.debt += curLupDeposit;
+                    amountRemaining -= curLupDeposit;
+                    loanCost += Maths.wdiv(curLupDeposit, curLup.price);
+                } else {
+                    // take all remaining amount for loan from this bucket and exit
+                    curLup.debt += amountRemaining;
+                    loanCost += Maths.wdiv(amountRemaining, curLup.price);
+                    break;
+                }
             }
 
             // move to next bucket
@@ -140,6 +172,48 @@ contract PriceBuckets is IPriceBuckets {
         }
 
         return (_lup, loanCost);
+    }
+
+    function repay(
+        uint256 _amount,
+        uint256 _lup,
+        uint256 _inflator
+    ) public returns (uint256, uint256) {
+        Bucket storage curLup = buckets[_lup];
+        uint256 debtToPay;
+
+        while (true) {
+            // accumulate bucket interest
+            if (curLup.debt > 0) {
+                curLup.debt += Maths.wmul(
+                    _inflator - curLup.inflatorSnapshot,
+                    curLup.debt
+                );
+                curLup.inflatorSnapshot = _inflator;
+
+                if (_amount > curLup.debt) {
+                    // pay entire debt on this bucket
+                    debtToPay += curLup.debt;
+                    _amount -= curLup.debt;
+                    curLup.debt = 0;
+                } else {
+                    // pay as much debt as possible and exit
+                    curLup.debt -= _amount;
+                    debtToPay += _amount;
+                    _amount = 0;
+                    break;
+                }
+            }
+
+            if (curLup.price == curLup.up) {
+                // nowhere to go
+                break;
+            }
+            // move to upper bucket
+            curLup = buckets[curLup.up];
+        }
+
+        return (curLup.price, debtToPay);
     }
 
     function estimatePrice(uint256 _amount, uint256 _hdp)
@@ -189,7 +263,8 @@ contract PriceBuckets is IPriceBuckets {
             uint256 up,
             uint256 down,
             uint256 amount,
-            uint256 debt
+            uint256 debt,
+            uint256 inflatorSnapshot
         )
     {
         Bucket memory bucket = buckets[_price];
@@ -199,6 +274,7 @@ contract PriceBuckets is IPriceBuckets {
         down = bucket.down;
         amount = bucket.amount;
         debt = bucket.debt;
+        inflatorSnapshot = bucket.inflatorSnapshot;
     }
 
     function isBucketInitialized(uint256 _price) public view returns (bool) {

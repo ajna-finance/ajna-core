@@ -32,6 +32,7 @@ def test_quote_deposit(
         bucket_down_price,
         bucket_deposit,
         bucket_debt,
+        _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_price == 4000 * 1e18
     assert bucket_up_price == 4000 * 1e18
@@ -67,6 +68,7 @@ def test_quote_deposit(
         bucket_down_price,
         bucket_deposit,
         bucket_debt,
+        _,
     ) = mkr_dai_pool.bucketAt(2000 * 1e18)
     assert bucket_price == 2000 * 1e18
     assert bucket_up_price == 4000 * 1e18
@@ -78,6 +80,7 @@ def test_quote_deposit(
         _,
         _,
         bucket_down_price,
+        _,
         _,
         _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
@@ -112,6 +115,7 @@ def test_quote_deposit(
         bucket_down_price,
         bucket_deposit,
         bucket_debt,
+        _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     assert bucket_price == 3000 * 1e18
     assert bucket_up_price == 4000 * 1e18
@@ -125,11 +129,13 @@ def test_quote_deposit(
         bucket_down_price,
         _,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_down_price == 3000 * 1e18
     (
         _,
         bucket_up_price,
+        _,
         _,
         _,
         _,
@@ -164,6 +170,7 @@ def test_quote_deposit(
         bucket_down_price,
         bucket_deposit,
         bucket_debt,
+        _,
     ) = mkr_dai_pool.bucketAt(5000 * 1e18)
     assert bucket_price == 5000 * 1e18
     assert bucket_up_price == 5000 * 1e18
