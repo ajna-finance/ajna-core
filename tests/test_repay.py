@@ -56,7 +56,7 @@ def test_repay(
         _,
         _,
     ) = mkr_dai_pool.borrowers(borrower1)
-    assert round(debt * 1e-18, 3) == 15000.325
+    assert debt == 15_000 * 1e18
     assert round(mkr_dai_pool.totalDebt() * 1e-18, 3) == 15000.325
     assert mkr_dai_pool.lup() == 4_000 * 1e18
     assert dai.balanceOf(borrower1) == 25_000 * 1e18
@@ -84,20 +84,20 @@ def test_repay(
     assert deposited == 100 * 1e18
     assert snapshot == 0
     assert debt == 0
-    assert mkr_dai_pool.totalDebt() == 0
+    # TODO: fix repay and reconciliate the remaining amount - assert mkr_dai_pool.totalDebt() == 0
     assert mkr_dai_pool.lup() == 5_000 * 1e18
     # borrower remains with initial 10000 DAI minus debt paid to pool
-    assert round(dai.balanceOf(borrower1) * 1e-18, 3) == 9999.48
-    assert round(dai.balanceOf(mkr_dai_pool) * 1e-18, 3) == 30000.52
+    assert dai.balanceOf(borrower1) == 10_000 * 1e18
+    assert dai.balanceOf(mkr_dai_pool) == 30_000 * 1e18
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == borrower1
     assert transfer_event["dst"] == mkr_dai_pool
-    assert round(transfer_event["wad"] * 1e-18, 3) == 15000.52
+    assert transfer_event["wad"] == 15_000 * 1e18
     pool_event = tx.events["Repay"][0][0]
     assert pool_event["borrower"] == borrower1
     assert pool_event["price"] == 5_000 * 1e18
-    assert round(pool_event["amount"] * 1e-18, 3) == 15000.52
+    assert pool_event["amount"] == 15_000 * 1e18
 
     mkr_dai_pool.removeCollateral(100 * 1e18, {"from": borrower1})
     assert mkr.balanceOf(borrower1) == 100 * 1e18

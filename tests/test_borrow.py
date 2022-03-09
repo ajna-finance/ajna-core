@@ -68,6 +68,7 @@ def test_borrow(
         bucket_deposit,
         bucket_debt,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     assert bucket_deposit - bucket_debt == 9_000 * 1e18
     assert mkr_dai_pool.totalDebt() == 21_000 * 1e18
@@ -96,7 +97,7 @@ def test_borrow(
     assert mkr_dai_pool.hdp() == 4000 * 1e18
 
     # check debt paid in 2500 DAI bucket
-    assert mkr_dai_pool.lup() == 2500 * 1e18
+    assert mkr_dai_pool.lup() == 3000 * 1e18
     (
         _,
         _,
@@ -104,8 +105,9 @@ def test_borrow(
         bucket_deposit,
         bucket_debt,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(2500 * 1e18)
-    assert round(bucket_debt * 1e-18, 3) == 0.013
+    assert bucket_debt == 0
     # check debt paid in 3000 DAI bucket
     (
         _,
@@ -113,6 +115,7 @@ def test_borrow(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     assert bucket_debt == 10_000 * 1e18
@@ -124,6 +127,7 @@ def test_borrow(
         bucket_deposit,
         bucket_debt,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(3500 * 1e18)
     assert bucket_debt == 10_000 * 1e18
     # check debt paid in 4000 DAI bucket
@@ -134,12 +138,13 @@ def test_borrow(
         bucket_deposit,
         bucket_debt,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_debt == 10_000 * 1e18
     assert round(mkr_dai_pool.totalDebt() * 1e-18, 3) == 30000.273
     # check borrower
     (debt, col_deposited, _) = mkr_dai_pool.borrowers(borrower1)
-    assert round(debt * 1e-18, 3) == 30000.273
+    assert debt == 30_000 * 1e18
     assert col_deposited == 100 * 1e18
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
@@ -148,7 +153,7 @@ def test_borrow(
     assert transfer_event["wad"] == 9_000 * 1e18
     pool_event = tx.events["Borrow"][0][0]
     assert pool_event["borrower"] == borrower1
-    assert pool_event["price"] == 2500 * 1e18
+    assert pool_event["price"] == 3000 * 1e18
     assert pool_event["amount"] == 9_000 * 1e18
 
     # deposit at 5000 and pay back entire debt
@@ -161,6 +166,7 @@ def test_borrow(
         bucket_deposit,
         bucket_debt,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(2500 * 1e18)
     assert bucket_deposit == 10_000 * 1e18
     assert bucket_debt == 0
@@ -171,6 +177,7 @@ def test_borrow(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     assert bucket_deposit == 10_000 * 1e18
@@ -183,6 +190,7 @@ def test_borrow(
         bucket_deposit,
         bucket_debt,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(3500 * 1e18)
     assert bucket_deposit == 10_000 * 1e18
     assert bucket_debt == 0
@@ -193,6 +201,7 @@ def test_borrow(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_deposit == 10_000 * 1e18
@@ -205,9 +214,10 @@ def test_borrow(
         bucket_deposit,
         bucket_debt,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(5000 * 1e18)
     assert bucket_deposit == 40_000 * 1e18
-    assert round(bucket_debt * 1e-18, 3) == 30000.273
+    assert bucket_debt == 30_000 * 1e18
 
 
 def test_borrow_gas(
