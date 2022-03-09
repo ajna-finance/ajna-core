@@ -46,13 +46,13 @@ def main():
     contract.addQuoteToken(10_000 * 1e18, 2000 * 1e18, {"from": lender})
     contract.addQuoteToken(10_000 * 1e18, 1500 * 1e18, {"from": lender})
     contract.addQuoteToken(10_000 * 1e18, 1000 * 1e18, {"from": lender})
-    contract.addCollateral(100 * 1e18, {"from": borrower1})
-    contract.addCollateral(10 * 1e18, {"from": borrower2})
+    contract.addCollateral(500 * 1e18, {"from": borrower1})
+    contract.addCollateral(500 * 1e18, {"from": borrower2})
     contract.addCollateral(300 * 1e18, {"from": borrower3})
     contract.addCollateral(400 * 1e18, {"from": borrower4})
     contract.addCollateral(500 * 1e18, {"from": borrower5})
-    contract.borrow(5_000 * 1e18, 4000 * 1e18, {"from": borrower1})
-    contract.borrow(10_000 * 1e18, 2000 * 1e18, {"from": borrower2})
+    contract.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower1})
+    contract.borrow(5_000 * 1e18, 2000 * 1e18, {"from": borrower2})
     return (
         lender,
         borrower1,
