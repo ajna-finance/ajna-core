@@ -72,3 +72,30 @@ def calculate_inflator(mkr_dai_pool, block_time):
     spr = Decimal(mkr_dai_pool.previousRate()) / (3600 * 24 * 365)
 
     return Decimal(mkr_dai_pool.borrowerInflator() * (1 + spr * secs_elapsed))
+
+WAD = 10 ** 18
+
+def calculate_inflator_v2(spr: int, secs: int):
+    assert isinstance(spr, int)
+    assert isinstance(secs, int)
+
+    return (1 + (spr / (WAD))) ** secs
+
+
+def test_calculate_inflator_two(mkr_dai_pool, chain):
+    chain.sleep(8200)
+    chain.mine()
+    block_time = chain.time()
+
+    secs_elapsed = block_time - mkr_dai_pool.lastBorrowerInflatorUpdate()
+    secs_in_year = 3600 * 24 * 365
+    spr = int(mkr_dai_pool.previousRate() / secs_in_year) # (secs_in_year * 10**18))
+    print(f"prev rate: {mkr_dai_pool.previousRate()}")
+    print(f"spr: {int(spr)}")
+    print(f"secs_elapsed: {secs_elapsed}")
+
+    inflator_py = calculate_inflator_v2(spr, secs_elapsed)
+    print(f"python calculated inflator: {inflator_py}")
+    
+    assert mkr_dai_pool.testInflatorTwo(spr, secs_elapsed) > 0
+    # return Decimal(mkr_dai_pool.borrowerInflator() * (1 + spr * secs_elapsed))

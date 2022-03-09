@@ -8,6 +8,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import "./libraries/Maths.sol";
 import {IPriceBuckets, PriceBuckets} from "./PriceBuckets.sol";
 import "./libraries/BucketMath.sol";
+import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 interface IPool {
     function addQuoteToken(uint256 _amount, uint256 _price) external;
@@ -33,6 +34,8 @@ contract ERC20Pool is IPool {
         uint256 collateralDeposited;
         uint256 inflatorSnapshot; // last updated inflator rate for a given borrower
     }
+
+    // TODO: add returns to position modifiers to enable usage by a proxy layer
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
     uint256 public constant MAX_PRICE = 7000 * 10**18;
@@ -112,6 +115,8 @@ contract ERC20Pool is IPool {
     }
 
     // @notice Called by lenders to remove an amount of credit at a specified price bucket
+    // @param _amount The amount of quote token to be removed by a lender
+    // @param _price The bucket from which quote tokens will be removed
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
         require(isValidPrice(_price), "Not a valid bucket price");
         require(
@@ -137,7 +142,7 @@ contract ERC20Pool is IPool {
         borrowers[msg.sender].collateralDeposited += _amount;
         totalCollateral += _amount;
 
-        // TODO: verify that the pool address is the holder of any token balances
+        // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
         collateral.safeTransferFrom(msg.sender, address(this), _amount);
         emit AddCollateral(msg.sender, _amount);
     }
@@ -169,7 +174,7 @@ contract ERC20Pool is IPool {
 
     // @notice Called by a borrower to open or expand a position
     // @param _amount The amount of quote token to borrow
-    // @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a position
+    // @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
         require(
             _amount <= totalQuoteToken - totalDebt,
@@ -268,6 +273,11 @@ contract ERC20Pool is IPool {
         }
     }
 
+    function testInflatorTwo(uint256 spr, uint256 secs) public pure returns (uint256) {
+        // (1 + spr) ** seconds 
+        return PRBMathUD60x18.pow(spr, secs);
+    }
+
     // @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
     // @dev Only adds debt if a borrower has already initiated a debt position
     function accumulateBorrowerDebt(BorrowerInfo storage borrower) private {
@@ -312,6 +322,7 @@ contract ERC20Pool is IPool {
     // -------------------- Pool state related functions --------------------
 
     function isValidPrice(uint256 _price) public pure returns (bool) {
+        // TODO: move to BucketMath && sync math libraries
         // dummy implementation, should validate using maths library
         return (_price >= MIN_PRICE && _price < MAX_PRICE);
     }
