@@ -292,13 +292,13 @@ contract ERC20Pool is IPool {
     }
 
     function accumulateBorrowerDebt(BorrowerInfo storage borrower) private {
-        if (borrower.debt > 0) {
-            uint256 accumulatedDebt = Maths.wmul(
+        if (borrower.debt > 0 && borrower.inflatorSnapshot > 0) {
+            uint256 pendingInterest = Maths.wmul(
                 borrower.debt,
-                inflatorSnapshot - borrower.inflatorSnapshot
+                inflatorSnapshot / borrower.inflatorSnapshot - 1
             );
-            borrower.debt += accumulatedDebt;
-            totalDebt += accumulatedDebt;
+            borrower.debt += pendingInterest;
+            totalDebt += pendingInterest;
         }
         borrower.inflatorSnapshot = inflatorSnapshot;
     }

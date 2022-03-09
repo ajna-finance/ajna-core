@@ -86,14 +86,7 @@ contract PriceBuckets is IPriceBuckets {
     ) public returns (uint256 lpTokens) {
         Bucket storage bucket = buckets[_price];
 
-        // accumulate bucket interest
-        if (bucket.debt > 0) {
-            bucket.debt += Maths.wmul(
-                _inflator - bucket.inflatorSnapshot,
-                bucket.debt
-            );
-        }
-        bucket.inflatorSnapshot = _inflator;
+        accumulateBucketInterest(bucket, _inflator);
 
         lpTokens = Maths.wdiv(_amount, bucket.inflatorSnapshot);
         bucket.amount += _amount;
@@ -108,14 +101,7 @@ contract PriceBuckets is IPriceBuckets {
     ) public returns (uint256 lpTokens) {
         Bucket storage bucket = buckets[_price];
 
-        // accumulate bucket interest
-        if (bucket.debt > 0) {
-            bucket.debt += Maths.wmul(
-                _inflator - bucket.inflatorSnapshot,
-                bucket.debt
-            );
-            bucket.inflatorSnapshot = _inflator;
-        }
+        accumulateBucketInterest(bucket, _inflator);
 
         uint256 exchangeRate;
         if (bucket.lpOutstanding > 0) {
@@ -180,12 +166,7 @@ contract PriceBuckets is IPriceBuckets {
 
         while (true) {
             // accumulate bucket interest
-            if (curLup.debt > 0) {
-                curLup.debt += Maths.wmul(
-                    _inflator - curLup.inflatorSnapshot,
-                    curLup.debt
-                );
-            }
+            accumulateBucketInterest(curLup, _inflator);
 
             curLupDebt = curLup.debt;
 
@@ -193,7 +174,6 @@ contract PriceBuckets is IPriceBuckets {
                 bucket.debt += curLupDebt;
                 _amount -= curLupDebt;
                 curLup.debt = 0;
-                curLup.inflatorSnapshot = _inflator;
                 if (curLup.price == curLup.up) {
                     // nowhere to go
                     break;
@@ -201,7 +181,6 @@ contract PriceBuckets is IPriceBuckets {
             } else {
                 bucket.debt += _amount;
                 curLup.debt -= _amount;
-                curLup.inflatorSnapshot = _inflator;
                 break;
             }
 
@@ -230,12 +209,7 @@ contract PriceBuckets is IPriceBuckets {
             require(curLup.price >= _stop, "ajna/stop-price-exceeded");
 
             // accumulate bucket interest
-            if (curLup.debt > 0) {
-                curLup.debt += Maths.wmul(
-                    _inflator - curLup.inflatorSnapshot,
-                    curLup.debt
-                );
-            }
+            accumulateBucketInterest(curLup, _inflator);
 
             if (curLup.amount > curLup.debt) {
                 curLup.inflatorSnapshot = _inflator;
@@ -276,11 +250,7 @@ contract PriceBuckets is IPriceBuckets {
         while (true) {
             // accumulate bucket interest
             if (curLup.debt > 0) {
-                curLup.debt += Maths.wmul(
-                    _inflator - curLup.inflatorSnapshot,
-                    curLup.debt
-                );
-                curLup.inflatorSnapshot = _inflator;
+                accumulateBucketInterest(curLup, _inflator);
 
                 if (_amount > curLup.debt) {
                     // pay entire debt on this bucket
@@ -305,6 +275,18 @@ contract PriceBuckets is IPriceBuckets {
         }
 
         return (curLup.price, debtToPay);
+    }
+
+    function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator)
+        private
+    {
+        if (bucket.debt > 0 && bucket.inflatorSnapshot > 1) {
+            bucket.debt += Maths.wmul(
+                bucket.debt,
+                _inflator / bucket.inflatorSnapshot - 1
+            );
+        }
+        bucket.inflatorSnapshot = _inflator;
     }
 
     function estimatePrice(uint256 _amount, uint256 _hdp)
