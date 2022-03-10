@@ -95,7 +95,7 @@ contract ERC20Pool is IPool {
     function addQuoteToken(uint256 _amount, uint256 _price) external {
         require(isValidPrice(_price), "ajna/invalid-bucket-price");
 
-        updateInflator();
+        accumulatePoolInterest();
 
         // create bucket if doesn't exist
         hdp = _buckets.ensureBucket(hdp, _price);
@@ -141,7 +141,7 @@ contract ERC20Pool is IPool {
         LenderInfo storage lender = lenders[msg.sender][_price];
         require(lender.amount >= _amount, "ajna/lended-amount-excedeed");
 
-        updateInflator();
+        accumulatePoolInterest();
 
         // remove from bucket
         uint256 lpTokens = _buckets.subtractFromBucket(
@@ -161,7 +161,7 @@ contract ERC20Pool is IPool {
     }
 
     function addCollateral(uint256 _amount) external {
-        updateInflator();
+        accumulatePoolInterest();
         borrowers[msg.sender].collateralDeposited += _amount;
         totalCollateral += _amount;
 
@@ -173,10 +173,10 @@ contract ERC20Pool is IPool {
     // @notice Called by borrowers to remove an amount of collateral
     // @param _amount The amount of collateral in deposit tokens to be removed from a position
     function removeCollateral(uint256 _amount) external {
-        updateInflator();
+        accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
-        accumulateBorrowerDebt(borrower);
+        accumulateBorrowerInterest(borrower);
 
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt > 0) {
@@ -205,10 +205,10 @@ contract ERC20Pool is IPool {
             "ajna/not-enough-liquidity"
         );
 
-        updateInflator();
+        accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
-        accumulateBorrowerDebt(borrower);
+        accumulateBorrowerInterest(borrower);
 
         // if first loan then borrow at hdp
         uint256 curLup = lup;
@@ -234,13 +234,14 @@ contract ERC20Pool is IPool {
             inflatorSnapshot
         );
 
-        borrower.debt += _amount;
         require(
-            borrower.collateralDeposited > Maths.wdiv(borrower.debt, lup) &&
+            borrower.collateralDeposited >
+                Maths.wdiv(borrower.debt + _amount, lup) &&
                 borrower.collateralDeposited - Maths.wdiv(borrower.debt, lup) >
                 loanCost,
             "ajna/not-enough-collateral"
         );
+        borrower.debt += _amount;
         totalDebt += _amount;
         encumberedCollateral += loanCost;
 
@@ -254,11 +255,16 @@ contract ERC20Pool is IPool {
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
         require(borrower.debt > 0, "ajna/no-debt-to-repay");
-        updateInflator();
-        accumulateBorrowerDebt(borrower);
+        accumulatePoolInterest();
+        accumulateBorrowerInterest(borrower);
 
         uint256 debtToPay;
-        (lup, debtToPay) = _buckets.repay(_amount, lup, inflatorSnapshot);
+        uint256 reclaimedCollateral;
+        (lup, debtToPay, reclaimedCollateral) = _buckets.repay(
+            _amount,
+            lup,
+            inflatorSnapshot
+        );
 
         if (debtToPay < borrower.debt && _amount >= borrower.debt) {
             debtToPay = borrower.debt;
@@ -271,11 +277,11 @@ contract ERC20Pool is IPool {
             borrower.debt -= debtToPay;
         }
 
-        if (debtToPay > totalDebt) {
-            totalDebt = 0;
-        } else {
-            totalDebt -= debtToPay;
-        }
+        totalDebt -= Maths.min(totalDebt, debtToPay);
+        encumberedCollateral -= Maths.min(
+            encumberedCollateral,
+            reclaimedCollateral
+        );
 
         quoteToken.safeTransferFrom(msg.sender, address(this), debtToPay);
         emit Repay(msg.sender, lup, debtToPay);
@@ -283,7 +289,7 @@ contract ERC20Pool is IPool {
 
     // @notice Update the global borrower inflator
     // @dev Requires time to have passed between update calls
-    function updateInflator() private {
+    function accumulatePoolInterest() private {
         if (block.timestamp - lastBorrowerInflatorUpdate > 0) {
             uint256 secondsSinceLastUpdate = block.timestamp -
                 lastBorrowerInflatorUpdate;
@@ -314,7 +320,7 @@ contract ERC20Pool is IPool {
 
     // @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
     // @dev Only adds debt if a borrower has already initiated a debt position
-    function accumulateBorrowerDebt(BorrowerInfo storage borrower) private {
+    function accumulateBorrowerInterest(BorrowerInfo storage borrower) private {
         if (borrower.debt > 0 && borrower.inflatorSnapshot > 0) {
             uint256 pendingInterest = Maths.wmul(
                 borrower.debt,
@@ -375,7 +381,7 @@ contract ERC20Pool is IPool {
 
     function getPoolCollateralization() public view returns (uint256) {
         if (totalDebt > 0) {
-            return Maths.wdiv(totalCollateral, totalDebt / getPoolPrice());
+            return Maths.wdiv(totalCollateral, encumberedCollateral);
         }
         return Maths.wad(1);
     }
