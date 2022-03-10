@@ -4,6 +4,8 @@ import pytest
 from decimal import *
 
 
+WAD = 10 ** 18
+
 def test_inflator(
     lenders,
     borrowers,
@@ -66,16 +68,13 @@ def test_inflator(
         mkr_dai_pool, block_time
     )
 
-
-def calculate_inflator(mkr_dai_pool, block_time):
+def calculate_inflator(mkr_dai_pool, block_time) -> Decimal:
     secs_elapsed = block_time - mkr_dai_pool.lastBorrowerInflatorUpdate()
-    spr = Decimal(mkr_dai_pool.previousRate()) / (3600 * 24 * 365)
+    spr = int(mkr_dai_pool.previousRate() / (3600 * 24 * 365))
 
-    return Decimal(mkr_dai_pool.inflatorSnapshot() * (1 + spr * secs_elapsed))
+    return Decimal(mkr_dai_pool.inflatorSnapshot() * calculate_pending_inflator(spr, secs_elapsed))
 
-WAD = 10 ** 18
-
-def calculate_pending_inflator(spr: int, secs: int):
+def calculate_pending_inflator(spr: int, secs: int) -> int:
     assert isinstance(spr, int)
     assert isinstance(secs, int)
 
@@ -97,5 +96,5 @@ def test_calculate_pending_inflator(mkr_dai_pool, chain):
     inflator_py = calculate_pending_inflator(spr, secs_elapsed)
     print(f"python calculated inflator: {inflator_py}")
     
-    assert mkr_dai_pool.getPendingInflator(spr, secs_elapsed) > 0
-    assert mkr_dai_pool.getPendingInflator(spr, secs_elapsed) > calculate_pending_inflator(spr, secs_elapsed)
+    assert mkr_dai_pool.getPendingInflator() > 0
+    assert mkr_dai_pool.getPendingInflator() > calculate_pending_inflator(spr, secs_elapsed)
