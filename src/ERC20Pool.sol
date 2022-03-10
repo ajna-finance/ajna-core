@@ -222,13 +222,14 @@ contract ERC20Pool is IPool {
             inflatorSnapshot
         );
 
-        borrower.debt += _amount;
         require(
-            borrower.collateralDeposited > Maths.wdiv(borrower.debt, lup) &&
+            borrower.collateralDeposited >
+                Maths.wdiv(borrower.debt + _amount, lup) &&
                 borrower.collateralDeposited - Maths.wdiv(borrower.debt, lup) >
                 loanCost,
             "ajna/not-enough-collateral"
         );
+        borrower.debt += _amount;
         totalDebt += _amount;
         encumberedCollateral += loanCost;
 
@@ -246,7 +247,12 @@ contract ERC20Pool is IPool {
         accumulateBorrowerDebt(borrower);
 
         uint256 debtToPay;
-        (lup, debtToPay) = _buckets.repay(_amount, lup, inflatorSnapshot);
+        uint256 reclaimedCollateral;
+        (lup, debtToPay, reclaimedCollateral) = _buckets.repay(
+            _amount,
+            lup,
+            inflatorSnapshot
+        );
 
         if (debtToPay < borrower.debt && _amount >= borrower.debt) {
             debtToPay = borrower.debt;
@@ -259,11 +265,11 @@ contract ERC20Pool is IPool {
             borrower.debt -= debtToPay;
         }
 
-        if (debtToPay > totalDebt) {
-            totalDebt = 0;
-        } else {
-            totalDebt -= debtToPay;
-        }
+        totalDebt -= Maths.min(totalDebt, debtToPay);
+        encumberedCollateral -= Maths.min(
+            encumberedCollateral,
+            reclaimedCollateral
+        );
 
         quoteToken.safeTransferFrom(msg.sender, address(this), debtToPay);
         emit Repay(msg.sender, lup, debtToPay);
@@ -350,7 +356,7 @@ contract ERC20Pool is IPool {
 
     function getPoolCollateralization() public view returns (uint256) {
         if (totalDebt > 0) {
-            return Maths.wdiv(totalCollateral, totalDebt / getPoolPrice());
+            return Maths.wdiv(totalCollateral, encumberedCollateral);
         }
         return Maths.wad(1);
     }
