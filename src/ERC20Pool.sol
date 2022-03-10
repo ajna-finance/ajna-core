@@ -296,10 +296,7 @@ contract ERC20Pool is IPool {
 
             // calculate annualized interest rate
             uint256 spr = previousRate / SECONDS_PER_YEAR;
-            uint256 pendingInflator = Maths.wmul(
-                inflatorSnapshot,
-                Maths.wad(1) + (spr * secondsSinceLastUpdate)
-            );
+            uint256 pendingInflator = getPendingInflator(spr, secondsSinceLastUpdate);
 
             uint256 inflatorDelta = pendingInflator - inflatorSnapshot;
             totalDebt += Maths.wmul(inflatorDelta, totalDebt);
@@ -313,9 +310,8 @@ contract ERC20Pool is IPool {
         }
     }
 
-    function testInflatorTwo(uint256 spr, uint256 secs) public pure returns (uint256) {
-        // (1 + spr) ** seconds 
-        return PRBMathUD60x18.pow(spr, secs);
+    function getPendingInflator(uint256 spr, uint256 secondsSinceLastUpdate) public pure returns (uint256) {
+        return PRBMathUD60x18.pow(Maths.wad(1) + spr, secondsSinceLastUpdate);
     }
 
     // @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
@@ -423,10 +419,7 @@ contract ERC20Pool is IPool {
             uint256 secondsSinceLastUpdate = block.timestamp -
                 lastBorrowerInflatorUpdate;
             uint256 spr = previousRate / SECONDS_PER_YEAR;
-            uint256 pendingInflator = Maths.wmul(
-                inflatorSnapshot,
-                Maths.wad(1) + (spr * secondsSinceLastUpdate)
-            );
+            uint256 pendingInflator = getPendingInflator(spr, secondsSinceLastUpdate);
             borrowerDebt += Maths.wmul(
                 borrower.debt,
                 inflatorSnapshot - borrower.inflatorSnapshot

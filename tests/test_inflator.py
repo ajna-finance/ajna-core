@@ -75,14 +75,14 @@ def calculate_inflator(mkr_dai_pool, block_time):
 
 WAD = 10 ** 18
 
-def calculate_inflator_v2(spr: int, secs: int):
+def calculate_pending_inflator(spr: int, secs: int):
     assert isinstance(spr, int)
     assert isinstance(secs, int)
 
-    return (1 + (spr / (WAD))) ** secs
+    return (((1 * WAD) + spr) / WAD) ** secs
 
 
-def test_calculate_inflator_two(mkr_dai_pool, chain):
+def test_calculate_pending_inflator(mkr_dai_pool, chain):
     chain.sleep(8200)
     chain.mine()
     block_time = chain.time()
@@ -94,8 +94,8 @@ def test_calculate_inflator_two(mkr_dai_pool, chain):
     print(f"spr: {int(spr)}")
     print(f"secs_elapsed: {secs_elapsed}")
 
-    inflator_py = calculate_inflator_v2(spr, secs_elapsed)
+    inflator_py = calculate_pending_inflator(spr, secs_elapsed)
     print(f"python calculated inflator: {inflator_py}")
     
-    assert mkr_dai_pool.testInflatorTwo(spr, secs_elapsed) > 0
-    # return Decimal(mkr_dai_pool.borrowerInflator() * (1 + spr * secs_elapsed))
+    assert mkr_dai_pool.getPendingInflator(spr, secs_elapsed) > 0
+    assert mkr_dai_pool.getPendingInflator(spr, secs_elapsed) > calculate_pending_inflator(spr, secs_elapsed)
