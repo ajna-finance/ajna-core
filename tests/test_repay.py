@@ -30,6 +30,9 @@ def test_repay(
 
     # take loan of 25000 DAI from 3 buckets
     mkr_dai_pool.borrow(25_000 * 1e18, 2500 * 1e18, {"from": borrower1})
+    assert format(mkr_dai_pool.encumberedCollateral() / 1e18, ".2f") == format(
+        6.166666666666666667, ".2f"
+    )
 
     # should fail if amount not available
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
@@ -61,6 +64,9 @@ def test_repay(
     assert mkr_dai_pool.lup() == 4_000 * 1e18
     assert dai.balanceOf(borrower1) == 25_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 15_000 * 1e18
+    assert format(mkr_dai_pool.encumberedCollateral() / 1e18, ".2f") == format(
+        3.250080182705945727, ".2f"
+    )
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == borrower1
@@ -86,6 +92,10 @@ def test_repay(
     assert debt == 0
     # TODO: fix repay and reconciliate the remaining amount - assert mkr_dai_pool.totalDebt() == 0
     assert mkr_dai_pool.lup() == 5_000 * 1e18
+    # TODO: reconciliate remaining amount
+    assert format(mkr_dai_pool.encumberedCollateral() / 1e18, ".6f") == format(
+        0.000122427819371403, ".6f"
+    )
     # borrower remains with initial 10000 DAI minus debt paid to pool
     assert dai.balanceOf(borrower1) == 10_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 30_000 * 1e18

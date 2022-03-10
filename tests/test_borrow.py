@@ -220,6 +220,26 @@ def test_borrow(
     assert bucket_debt == 30_000 * 1e18
 
 
+def test_collateral_validation(
+    lenders,
+    borrowers,
+    mkr_dai_pool,
+    dai,
+    mkr,
+    chain,
+):
+    lender = lenders[0]
+    borrower1 = borrowers[0]
+
+    # lender deposits 10000 DAI in 5 buckets each
+    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 13.537 * 1e18, {"from": lender})
+    mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower1})
+
+    tx = mkr_dai_pool.borrow(1_000 * 1e18, 13.537 * 1e18, {"from": borrower1})
+    # should not fail
+    assert tx.status.value == 1
+
+
 def test_borrow_gas(
     lenders,
     borrowers,
