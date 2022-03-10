@@ -7,8 +7,9 @@ def main():
     quote_token = Contract("0x6b175474e89094c44da98b954eedeac495271d0f")
     # collateral is COMP
     collateral = Contract("0xc00e94Cb662C3520282E6f5717214004A7f26888")
+    BucketMath.deploy({"from": deployer})
     Maths.deploy({"from": deployer})
-    Buckets.deploy({"from": deployer})
+    PriceBuckets.deploy({"from": deployer})
     pool = ERC20Pool.deploy(
         collateral,
         quote_token,

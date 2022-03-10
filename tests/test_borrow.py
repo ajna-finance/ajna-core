@@ -97,7 +97,7 @@ def test_borrow(
     assert mkr_dai_pool.hdp() == 4000 * 1e18
 
     # check debt paid in 2500 DAI bucket
-    assert mkr_dai_pool.lup() == 3000 * 1e18
+    assert mkr_dai_pool.lup() == 2500 * 1e18
     (
         _,
         _,
@@ -107,7 +107,7 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(2500 * 1e18)
-    assert bucket_debt == 0
+    assert format(bucket_debt / 1e18, ".3f") == format(0.013, ".3f")
     # check debt paid in 3000 DAI bucket
     (
         _,
@@ -153,7 +153,7 @@ def test_borrow(
     assert transfer_event["wad"] == 9_000 * 1e18
     pool_event = tx.events["Borrow"][0][0]
     assert pool_event["borrower"] == borrower1
-    assert pool_event["price"] == 3000 * 1e18
+    assert pool_event["price"] == 2500 * 1e18
     assert pool_event["amount"] == 9_000 * 1e18
 
     # deposit at 5000 and pay back entire debt
@@ -217,7 +217,7 @@ def test_borrow(
         _,
     ) = mkr_dai_pool.bucketAt(5000 * 1e18)
     assert bucket_deposit == 40_000 * 1e18
-    assert bucket_debt == 30_000 * 1e18
+    assert format(bucket_debt / 1e18, ".3f") == format(30000.273, ".3f")
 
 
 def test_collateral_validation(

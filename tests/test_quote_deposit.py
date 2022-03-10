@@ -40,7 +40,7 @@ def test_quote_deposit(
     assert bucket_down_price == 0
     assert bucket_deposit == 10_000 * 1e18
     assert bucket_debt == 0
-    assert snapshot == mkr_dai_pool.inflatorSnapshot()
+    assert snapshot == 1 * 1e18
     expected_lps = 10_000 * 1e18 / snapshot
     assert format(lpOutstanding / 1e18, ".3f") == format(expected_lps, ".3f")
     (amount, lp) = mkr_dai_pool.lenders(lender, 4000 * 1e18)
@@ -82,7 +82,7 @@ def test_quote_deposit(
     assert bucket_down_price == 0
     assert bucket_deposit == 20_000 * 1e18
     assert bucket_debt == 0
-    assert snapshot == mkr_dai_pool.inflatorSnapshot()
+    assert snapshot == 1 * 1e18
     expected_lps = 20_000 * 1e18 / snapshot
     assert format(lpOutstanding / 1e18, ".3f") == format(expected_lps, ".3f")
     (amount, lp) = mkr_dai_pool.lenders(lender, 2000 * 1e18)
@@ -136,7 +136,7 @@ def test_quote_deposit(
     assert bucket_down_price == 2000 * 1e18
     assert bucket_deposit == 30_000 * 1e18
     assert bucket_debt == 0
-    assert snapshot == mkr_dai_pool.inflatorSnapshot()
+    assert snapshot == 1 * 1e18
     expected_lps = 30_000 * 1e18 / snapshot
     assert format(lpOutstanding / 1e18, ".3f") == format(expected_lps, ".3f")
     (amount, lp) = mkr_dai_pool.lenders(lender, 3000 * 1e18)
@@ -199,7 +199,7 @@ def test_quote_deposit(
     assert bucket_down_price == 4000 * 1e18
     assert bucket_deposit == 40_000 * 1e18
     assert bucket_debt == 0
-    assert snapshot == mkr_dai_pool.inflatorSnapshot()
+    assert snapshot == 1 * 1e18
     expected_lps = 40_000 * 1e18 / snapshot
     assert format(lpOutstanding / 1e18, ".3f") == format(expected_lps, ".3f")
     (amount, lp) = mkr_dai_pool.lenders(lender, 5000 * 1e18)

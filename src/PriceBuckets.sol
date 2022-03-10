@@ -299,13 +299,13 @@ contract PriceBuckets is IPriceBuckets {
     function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator)
         private
     {
-        if (bucket.debt > 0 && bucket.inflatorSnapshot > 1) {
+        if (bucket.debt > 0) {
             bucket.debt += Maths.wmul(
                 bucket.debt,
-                _inflator / bucket.inflatorSnapshot - 1
+                Maths.wdiv(_inflator, bucket.inflatorSnapshot) - Maths.wad(1)
             );
+            bucket.inflatorSnapshot = _inflator;
         }
-        bucket.inflatorSnapshot = _inflator;
     }
 
     function estimatePrice(uint256 _amount, uint256 _hdp)
@@ -381,6 +381,7 @@ contract PriceBuckets is IPriceBuckets {
     {
         Bucket storage bucket = buckets[_price];
         bucket.price = _price;
+        bucket.inflatorSnapshot = Maths.wad(1);
 
         if (_price > _hdp) {
             bucket.down = _hdp;
