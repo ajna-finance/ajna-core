@@ -66,7 +66,6 @@ contract ERC20Pool is IPool {
     uint256 public previousRateUpdate = block.timestamp;
 
     uint256 public totalCollateral;
-    uint256 public encumberedCollateral;
 
     uint256 public totalQuoteToken;
     uint256 public totalDebt;
@@ -231,7 +230,6 @@ contract ERC20Pool is IPool {
         );
         borrower.debt += _amount;
         totalDebt += _amount;
-        encumberedCollateral += loanCost;
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit Borrow(msg.sender, lup, _amount);
@@ -247,12 +245,7 @@ contract ERC20Pool is IPool {
         accumulateBorrowerInterest(borrower);
 
         uint256 debtToPay;
-        uint256 reclaimedCollateral;
-        (lup, debtToPay, reclaimedCollateral) = _buckets.repay(
-            _amount,
-            lup,
-            inflatorSnapshot
-        );
+        (lup, debtToPay) = _buckets.repay(_amount, lup, inflatorSnapshot);
 
         if (debtToPay < borrower.debt && _amount >= borrower.debt) {
             debtToPay = borrower.debt;
@@ -266,10 +259,6 @@ contract ERC20Pool is IPool {
         }
 
         totalDebt -= Maths.min(totalDebt, debtToPay);
-        encumberedCollateral -= Maths.min(
-            encumberedCollateral,
-            reclaimedCollateral
-        );
 
         quoteToken.safeTransferFrom(msg.sender, address(this), debtToPay);
         emit Repay(msg.sender, lup, debtToPay);
@@ -285,11 +274,9 @@ contract ERC20Pool is IPool {
                 Maths.wad(1) + (spr * secondsSinceLastUpdate)
             );
 
-            uint256 inflatorDelta = pendingInflator - inflatorSnapshot;
-            totalDebt += Maths.wmul(inflatorDelta, totalDebt);
-            encumberedCollateral += Maths.wmul(
-                inflatorDelta,
-                encumberedCollateral
+            totalDebt += Maths.wmul(
+                totalDebt,
+                Maths.wdiv(pendingInflator, inflatorSnapshot) - Maths.wad(1)
             );
 
             inflatorSnapshot = pendingInflator;
@@ -343,22 +330,26 @@ contract ERC20Pool is IPool {
         return (_price >= MIN_PRICE && _price < MAX_PRICE);
     }
 
-    function getPoolPrice() public view returns (uint256) {
-        return lup;
-    }
-
     function getMinimumPoolPrice() public view returns (uint256) {
         if (totalDebt > 0) {
             return Maths.wdiv(totalDebt, totalCollateral);
         }
-        return lup;
+        return 0;
     }
 
     function getPoolCollateralization() public view returns (uint256) {
-        if (totalDebt > 0) {
+        uint256 encumberedCollateral = getEncumberedCollateral();
+        if (encumberedCollateral > 0) {
             return Maths.wdiv(totalCollateral, encumberedCollateral);
         }
         return Maths.wad(1);
+    }
+
+    function getEncumberedCollateral() public view returns (uint256) {
+        if (lup > 0) {
+            return Maths.wdiv(totalDebt, lup);
+        }
+        return 0;
     }
 
     function getPoolActualUtilization() public view returns (uint256) {
