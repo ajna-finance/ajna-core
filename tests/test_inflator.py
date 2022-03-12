@@ -18,52 +18,47 @@ def test_inflator(
 
     assert mkr_dai_pool.inflatorSnapshot() == 1 * 1e18
 
-    block_time = chain.time()
     # check inflator update on quote token deposit
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
-    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == block_time
+    tx = mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
+    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == tx.timestamp
     assert Decimal(mkr_dai_pool.inflatorSnapshot()) == calculate_inflator(
-        mkr_dai_pool, block_time
+        mkr_dai_pool, tx.timestamp
     )
 
     chain.sleep(8200)
     chain.mine()
-    block_time = chain.time()
     # check inflator update on collateral deposit
-    mkr_dai_pool.addCollateral(10 * 1e18, {"from": borrower1})
-    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == block_time
+    tx = mkr_dai_pool.addCollateral(10 * 1e18, {"from": borrower1})
+    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == tx.timestamp
     assert Decimal(mkr_dai_pool.inflatorSnapshot()) == calculate_inflator(
-        mkr_dai_pool, block_time
+        mkr_dai_pool, tx.timestamp
     )
 
     chain.sleep(8200)
     chain.mine()
-    block_time = chain.time()
     # check inflator update on loan
-    mkr_dai_pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower1})
-    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == block_time
+    tx = mkr_dai_pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower1})
+    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == tx.timestamp
     assert Decimal(mkr_dai_pool.inflatorSnapshot()) == calculate_inflator(
-        mkr_dai_pool, block_time
+        mkr_dai_pool, tx.timestamp
     )
 
     chain.sleep(8200)
     chain.mine()
-    block_time = chain.time()
     # check inflator update on repay
-    mkr_dai_pool.repay(1_000 * 1e18, {"from": borrower1})
-    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == block_time
+    tx = mkr_dai_pool.repay(1_000 * 1e18, {"from": borrower1})
+    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == tx.timestamp
     assert Decimal(mkr_dai_pool.inflatorSnapshot()) == calculate_inflator(
-        mkr_dai_pool, block_time
+        mkr_dai_pool, tx.timestamp
     )
 
     chain.sleep(8200)
     chain.mine()
-    block_time = chain.time()
     # check inflator update on collateral remove
-    mkr_dai_pool.removeCollateral(1 * 1e18, {"from": borrower1})
-    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == block_time
+    tx = mkr_dai_pool.removeCollateral(1 * 1e18, {"from": borrower1})
+    assert mkr_dai_pool.lastBorrowerInflatorUpdate() == tx.timestamp
     assert Decimal(mkr_dai_pool.inflatorSnapshot()) == calculate_inflator(
-        mkr_dai_pool, block_time
+        mkr_dai_pool, tx.timestamp
     )
 
 
