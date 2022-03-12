@@ -104,7 +104,7 @@ contract PriceBuckets is IPriceBuckets {
         accumulateBucketInterest(bucket, _inflator);
 
         uint256 exchangeRate;
-        if (bucket.amount > 0 && bucket.lpOutstanding > 0) {
+        if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
             exchangeRate = Maths.wdiv(bucket.amount, bucket.lpOutstanding);
         } else {
             exchangeRate = Maths.wad(1);
@@ -120,7 +120,7 @@ contract PriceBuckets is IPriceBuckets {
         uint256 onDeposit = bucket.amount - bucket.debt;
         if (_amount > onDeposit) {
             uint256 reallocation = _amount - onDeposit;
-            if (bucket.down > 0) {
+            if (bucket.down != 0) {
                 Bucket storage toBucket = buckets[bucket.down];
                 uint256 toBucketOnDeposit;
                 while (true) {
@@ -249,7 +249,7 @@ contract PriceBuckets is IPriceBuckets {
 
         while (true) {
             // accumulate bucket interest
-            if (curLup.debt > 0) {
+            if (curLup.debt != 0) {
                 accumulateBucketInterest(curLup, _inflator);
 
                 if (_amount > curLup.debt) {
@@ -280,7 +280,7 @@ contract PriceBuckets is IPriceBuckets {
     function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator)
         private
     {
-        if (bucket.debt > 0) {
+        if (bucket.debt != 0) {
             bucket.debt += Maths.wmul(
                 bucket.debt,
                 Maths.wdiv(_inflator, bucket.inflatorSnapshot) - Maths.wad(1)
