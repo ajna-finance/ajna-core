@@ -297,9 +297,17 @@ contract ERC20Pool is IPool {
     function getPendingInflator() public view returns (uint256) {
         // calculate annualized interest rate
         uint256 spr = previousRate / SECONDS_PER_YEAR;
-        uint256 secondsSinceLastUpdate = block.timestamp - lastBorrowerInflatorUpdate;
+        uint256 secondsSinceLastUpdate = block.timestamp -
+            lastBorrowerInflatorUpdate;
 
-        return PRBMathUD60x18.mul(inflatorSnapshot, PRBMathUD60x18.pow(PRBMathUD60x18.fromUint(1) + spr, PRBMathUD60x18.fromUint(secondsSinceLastUpdate)));
+        return
+            PRBMathUD60x18.mul(
+                inflatorSnapshot,
+                PRBMathUD60x18.pow(
+                    PRBMathUD60x18.fromUint(1) + spr,
+                    PRBMathUD60x18.fromUint(secondsSinceLastUpdate)
+                )
+            );
     }
 
     /// @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
@@ -337,7 +345,6 @@ contract ERC20Pool is IPool {
     {
         return _buckets.bucketAt(_price);
     }
-
 
     // -------------------- Pool state related functions --------------------
 
