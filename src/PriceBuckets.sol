@@ -36,13 +36,7 @@ interface IPriceBuckets {
         uint256 _amount,
         uint256 _lup,
         uint256 _inflator
-    )
-        external
-        returns (
-            uint256 lup,
-            uint256 debtToPay,
-            uint256 reclaimedCollateral
-        );
+    ) external returns (uint256 lup, uint256 debtToPay);
 
     function ensureBucket(uint256 _hdp, uint256 _price)
         external
@@ -110,7 +104,7 @@ contract PriceBuckets is IPriceBuckets {
         accumulateBucketInterest(bucket, _inflator);
 
         uint256 exchangeRate;
-        if (bucket.lpOutstanding > 0) {
+        if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
             exchangeRate = Maths.wdiv(bucket.amount, bucket.lpOutstanding);
         } else {
             exchangeRate = Maths.wad(1);
@@ -126,7 +120,7 @@ contract PriceBuckets is IPriceBuckets {
         uint256 onDeposit = bucket.amount - bucket.debt;
         if (_amount > onDeposit) {
             uint256 reallocation = _amount - onDeposit;
-            if (bucket.down > 0) {
+            if (bucket.down != 0) {
                 Bucket storage toBucket = buckets[bucket.down];
                 uint256 toBucketOnDeposit;
                 while (true) {
@@ -249,37 +243,24 @@ contract PriceBuckets is IPriceBuckets {
         uint256 _amount,
         uint256 _lup,
         uint256 _inflator
-    )
-        public
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    ) public returns (uint256, uint256) {
         Bucket storage curLup = buckets[_lup];
         uint256 debtToPay;
-        uint256 reclaimedCollateral;
 
         while (true) {
             // accumulate bucket interest
-            if (curLup.debt > 0) {
+            if (curLup.debt != 0) {
                 accumulateBucketInterest(curLup, _inflator);
 
                 if (_amount > curLup.debt) {
                     // pay entire debt on this bucket
                     debtToPay += curLup.debt;
                     _amount -= curLup.debt;
-                    reclaimedCollateral += Maths.wdiv(
-                        curLup.debt,
-                        curLup.price
-                    );
                     curLup.debt = 0;
                 } else {
                     // pay as much debt as possible and exit
                     curLup.debt -= _amount;
                     debtToPay += _amount;
-                    reclaimedCollateral += Maths.wdiv(_amount, curLup.price);
                     _amount = 0;
                     break;
                 }
@@ -293,13 +274,13 @@ contract PriceBuckets is IPriceBuckets {
             curLup = buckets[curLup.up];
         }
 
-        return (curLup.price, debtToPay, reclaimedCollateral);
+        return (curLup.price, debtToPay);
     }
 
     function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator)
         private
     {
-        if (bucket.debt > 0) {
+        if (bucket.debt != 0) {
             bucket.debt += Maths.wmul(
                 bucket.debt,
                 Maths.wdiv(_inflator, bucket.inflatorSnapshot) - Maths.wad(1)

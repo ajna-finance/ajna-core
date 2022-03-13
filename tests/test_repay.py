@@ -30,8 +30,8 @@ def test_repay(
 
     # take loan of 25000 DAI from 3 buckets
     mkr_dai_pool.borrow(25_000 * 1e18, 2500 * 1e18, {"from": borrower1})
-    assert format(mkr_dai_pool.encumberedCollateral() / 1e18, ".2f") == format(
-        6.166666666666666667, ".2f"
+    assert format(mkr_dai_pool.getEncumberedCollateral() / 1e18, ".2f") == format(
+        8.333333333333333333, ".2f"
     )
 
     # should fail if amount not available
@@ -64,8 +64,8 @@ def test_repay(
     assert mkr_dai_pool.lup() == 4_000 * 1e18
     assert dai.balanceOf(borrower1) == 25_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 15_000 * 1e18
-    assert format(mkr_dai_pool.encumberedCollateral() / 1e18, ".2f") == format(
-        3.250080182705945727, ".2f"
+    assert format(mkr_dai_pool.getEncumberedCollateral() / 1e18, ".2f") == format(
+        3.750081256341948750, ".2f"
     )
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
@@ -93,7 +93,7 @@ def test_repay(
     assert mkr_dai_pool.lup() == 5_000 * 1e18
     # TODO: fix total debt and encumbered collateral dust reconciliation
     assert mkr_dai_pool.totalDebt() < 0.000003 * 1e18
-    assert mkr_dai_pool.encumberedCollateral() < 0.0000000006 * 1e18
+    assert mkr_dai_pool.getEncumberedCollateral() < 0.0000000006 * 1e18
     # borrower remains with initial 10000 DAI minus debt paid to pool
     assert format(dai.balanceOf(borrower1) / 1e18, ".2f") == format(
         9999.479955185868416953, ".2f"
