@@ -107,7 +107,7 @@ contract PriceBuckets is IPriceBuckets {
         if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
             exchangeRate = Maths.wdiv(bucket.amount, bucket.lpOutstanding);
         } else {
-            exchangeRate = Maths.wad(1);
+            exchangeRate = Maths.ONE_WAD;
         }
 
         require(
@@ -283,7 +283,7 @@ contract PriceBuckets is IPriceBuckets {
         if (bucket.debt != 0) {
             bucket.debt += Maths.wmul(
                 bucket.debt,
-                Maths.wdiv(_inflator, bucket.inflatorSnapshot) - Maths.wad(1)
+                Maths.wdiv(_inflator, bucket.inflatorSnapshot) - Maths.ONE_WAD
             );
             bucket.inflatorSnapshot = _inflator;
         }
@@ -362,7 +362,7 @@ contract PriceBuckets is IPriceBuckets {
     {
         Bucket storage bucket = buckets[_price];
         bucket.price = _price;
-        bucket.inflatorSnapshot = Maths.wad(1);
+        bucket.inflatorSnapshot = Maths.ONE_WAD;
 
         if (_price > _hdp) {
             bucket.down = _hdp;
