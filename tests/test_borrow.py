@@ -220,6 +220,34 @@ def test_borrow(
     assert format(bucket_debt / 1e18, ".3f") == format(30000.273, ".3f")
 
 
+def test_pool_undercollateralization(
+    lenders,
+    borrowers,
+    mkr_dai_pool,
+    dai,
+    mkr,
+    chain,
+):
+
+    lender = lenders[0]
+    borrower1 = borrowers[0]
+    borrower2 = borrowers[1]
+
+    # lender deposits 100000 DAI in 2 buckets each
+    mkr_dai_pool.addQuoteToken(100_000 * 1e18, 2000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(50_000 * 1e18, 1000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(50_000 * 1e18, 500 * 1e18, {"from": lender})
+
+    mkr_dai_pool.addCollateral(51 * 1e18, {"from": borrower1})
+    mkr_dai_pool.borrow(100_000 * 1e18, 1000 * 1e18, {"from": borrower1})
+    mkr_dai_pool.addCollateral(51 * 1e18, {"from": borrower2})
+    # should fail when taking a loan of 50000 DAI that will drive pool undercollateralized
+
+    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
+        mkr_dai_pool.borrow(50_000 * 1e18, 1000 * 1e18, {"from": borrower2})
+    assert exc.value.revert_msg == "ajna/pool-undercollateralized"
+
+
 def test_collateral_validation(
     lenders,
     borrowers,

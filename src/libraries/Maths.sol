@@ -4,6 +4,7 @@ pragma solidity 0.8.11;
 
 library Maths {
     uint256 public constant WAD = 10**18;
+    uint256 public constant ONE_WAD = 1 * WAD;
 
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require((z = x + y) >= x, "ds-math-add-overflow");

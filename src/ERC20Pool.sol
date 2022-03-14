@@ -57,7 +57,7 @@ contract ERC20Pool is IPool {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
 
-    uint256 public inflatorSnapshot = Maths.wad(1);
+    uint256 public inflatorSnapshot = Maths.ONE_WAD;
     uint256 public lastBorrowerInflatorUpdate = block.timestamp;
     uint256 public previousRate = Maths.wdiv(5, 100);
     uint256 public previousRateUpdate = block.timestamp;
@@ -139,6 +139,12 @@ contract ERC20Pool is IPool {
         require(lender.amount >= _amount, "ajna/lended-amount-excedeed");
 
         accumulatePoolInterest();
+
+        totalQuoteToken -= _amount;
+        require(
+            getPoolCollateralization() > Maths.ONE_WAD,
+            "ajna/pool-undercollateralized"
+        );
 
         // remove from bucket
         uint256 lpTokens = _buckets.subtractFromBucket(
@@ -239,7 +245,12 @@ contract ERC20Pool is IPool {
             "ajna/not-enough-collateral"
         );
         borrower.debt += _amount;
+
         totalDebt += _amount;
+        require(
+            getPoolCollateralization() > Maths.ONE_WAD,
+            "ajna/pool-undercollateralized"
+        );
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit Borrow(msg.sender, lup, _amount);
@@ -284,7 +295,7 @@ contract ERC20Pool is IPool {
 
             totalDebt += Maths.wmul(
                 totalDebt,
-                Maths.wdiv(pendingInflator, inflatorSnapshot) - Maths.wad(1)
+                Maths.wdiv(pendingInflator, inflatorSnapshot) - Maths.ONE_WAD
             );
 
             inflatorSnapshot = pendingInflator;
@@ -364,7 +375,7 @@ contract ERC20Pool is IPool {
         if (encumberedCollateral != 0) {
             return Maths.wdiv(totalCollateral, encumberedCollateral);
         }
-        return Maths.wad(1);
+        return Maths.ONE_WAD;
     }
 
     function getEncumberedCollateral() public view returns (uint256) {
@@ -381,9 +392,9 @@ contract ERC20Pool is IPool {
     function getPoolTargetUtilization() public view returns (uint256) {
         uint256 poolCollateralization = getPoolCollateralization();
         if (poolCollateralization != 0) {
-            return Maths.wdiv(Maths.wad(1), getPoolCollateralization());
+            return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
         }
-        return Maths.wad(1);
+        return Maths.ONE_WAD;
     }
 
     // -------------------- Borrower related functions --------------------
