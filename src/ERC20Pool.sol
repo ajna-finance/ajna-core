@@ -4,9 +4,10 @@ pragma solidity 0.8.11;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
+import {IPriceBuckets, PriceBuckets} from "./PriceBuckets.sol";
 
 import "./libraries/Maths.sol";
-import {IPriceBuckets, PriceBuckets} from "./PriceBuckets.sol";
 import "./libraries/BucketMath.sol";
 
 interface IPool {
@@ -21,8 +22,6 @@ interface IPool {
     function borrow(uint256 _amount, uint256 _stopPrice) external;
 
     function repay(uint256 _amount) external;
-
-    function getNextValidPrice(uint256 _price) external returns (uint256);
 }
 
 contract ERC20Pool is IPool {
@@ -31,18 +30,16 @@ contract ERC20Pool is IPool {
     struct BorrowerInfo {
         uint256 debt;
         uint256 collateralDeposited;
-        uint256 inflatorSnapshot;
+        uint256 inflatorSnapshot; // last updated inflator rate for a given borrower
     }
 
+    // TODO: add returns to position modifiers to enable usage by a proxy layer
     struct LenderInfo {
         uint256 amount;
         uint256 lpTokens;
     }
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
-    uint256 public constant MAX_PRICE = 7000 * 10**18;
-    uint256 public constant MIN_PRICE = 1 * 10**18;
-    uint256 public constant COUNT = 7000;
 
     IERC20 public immutable collateral;
     IERC20 public immutable quoteToken;
@@ -89,8 +86,11 @@ contract ERC20Pool is IPool {
         _buckets = new PriceBuckets();
     }
 
+    /// @notice Called by lenders to add an amount of credit at a specified price bucket
+    /// @param _amount The amount of quote token to be added by a lender
+    /// @param _price The bucket to which the quote tokens will be added
     function addQuoteToken(uint256 _amount, uint256 _price) external {
-        require(isValidPrice(_price), "ajna/invalid-bucket-price");
+        require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
         accumulatePoolInterest();
 
@@ -129,8 +129,11 @@ contract ERC20Pool is IPool {
         emit AddQuoteToken(msg.sender, _price, _amount, lup);
     }
 
+    /// @notice Called by lenders to remove an amount of credit at a specified price bucket
+    /// @param _amount The amount of quote token to be removed by a lender
+    /// @param _price The bucket from which quote tokens will be removed
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
-        require(isValidPrice(_price), "ajna/invalid-bucket-price");
+        require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
         LenderInfo storage lender = lenders[msg.sender][_price];
         require(lender.amount >= _amount, "ajna/lended-amount-excedeed");
@@ -159,10 +162,13 @@ contract ERC20Pool is IPool {
         borrowers[msg.sender].collateralDeposited += _amount;
         totalCollateral += _amount;
 
+        // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
         collateral.safeTransferFrom(msg.sender, address(this), _amount);
         emit AddCollateral(msg.sender, _amount);
     }
 
+    /// @notice Called by borrowers to remove an amount of collateral
+    /// @param _amount The amount of collateral in deposit tokens to be removed from a position
     function removeCollateral(uint256 _amount) external {
         accumulatePoolInterest();
 
@@ -187,6 +193,9 @@ contract ERC20Pool is IPool {
         emit RemoveCollateral(msg.sender, _amount);
     }
 
+    /// @notice Called by a borrower to open or expand a position
+    /// @param _amount The amount of quote token to borrow
+    /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
         require(
             _amount <= totalQuoteToken - totalDebt,
@@ -204,6 +213,7 @@ contract ERC20Pool is IPool {
             curLup = hdp;
         }
 
+        // TODO: make value explicit for use in comparison operator against collateralDeposited below
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
             encumberedBorrowerCollateral = Maths.wdiv(borrower.debt, lup);
@@ -235,6 +245,8 @@ contract ERC20Pool is IPool {
         emit Borrow(msg.sender, lup, _amount);
     }
 
+    /// @notice Called by a borrower to repay some amount of their borrowed quote tokens
+    /// @param _amount The amount of quote token to repay
     function repay(uint256 _amount) external {
         uint256 availableAmount = quoteToken.balanceOf(msg.sender);
         require(availableAmount >= _amount, "ajna/no-funds-to-repay");
@@ -264,15 +276,11 @@ contract ERC20Pool is IPool {
         emit Repay(msg.sender, lup, debtToPay);
     }
 
+    /// @notice Update the global borrower inflator
+    /// @dev Requires time to have passed between update calls
     function accumulatePoolInterest() private {
         if (block.timestamp - lastBorrowerInflatorUpdate != 0) {
-            uint256 secondsSinceLastUpdate = block.timestamp -
-                lastBorrowerInflatorUpdate;
-            uint256 spr = previousRate / SECONDS_PER_YEAR;
-            uint256 pendingInflator = Maths.wmul(
-                inflatorSnapshot,
-                Maths.wad(1) + (spr * secondsSinceLastUpdate)
-            );
+            uint256 pendingInflator = getPendingInflator();
 
             totalDebt += Maths.wmul(
                 totalDebt,
@@ -284,6 +292,26 @@ contract ERC20Pool is IPool {
         }
     }
 
+    /// @notice Calculate the pending inflator based upon previous rate and last update
+    /// @return The new pending inflator value
+    function getPendingInflator() public view returns (uint256) {
+        // calculate annualized interest rate
+        uint256 spr = previousRate / SECONDS_PER_YEAR;
+        uint256 secondsSinceLastUpdate = block.timestamp -
+            lastBorrowerInflatorUpdate;
+
+        return
+            PRBMathUD60x18.mul(
+                inflatorSnapshot,
+                PRBMathUD60x18.pow(
+                    PRBMathUD60x18.fromUint(1) + spr,
+                    PRBMathUD60x18.fromUint(secondsSinceLastUpdate)
+                )
+            );
+    }
+
+    /// @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
+    /// @dev Only adds debt if a borrower has already initiated a debt position
     function accumulateBorrowerInterest(BorrowerInfo storage borrower) private {
         if (borrower.debt != 0 && borrower.inflatorSnapshot != 0) {
             uint256 pendingInterest = Maths.wmul(
@@ -298,6 +326,10 @@ contract ERC20Pool is IPool {
 
     // -------------------- Bucket related functions --------------------
 
+    // TODO: rename bucketAtPrice & add bucketAtIndex
+    // TODO: add return type
+    /// @notice Get a bucket struct for a given price
+    /// @param _price The price of the bucket to retrieve
     function bucketAt(uint256 _price)
         public
         view
@@ -314,20 +346,10 @@ contract ERC20Pool is IPool {
         return _buckets.bucketAt(_price);
     }
 
-    function getNextValidPrice(uint256 _price) public pure returns (uint256) {
-        // dummy implementation, should calculate using maths library
-        uint256 next = _price + 1;
-        if (next > MAX_PRICE) {
-            return 0;
-        }
-        return next;
-    }
-
     // -------------------- Pool state related functions --------------------
 
-    function isValidPrice(uint256 _price) public pure returns (bool) {
-        // dummy implementation, should validate using maths library
-        return (_price >= MIN_PRICE && _price < MAX_PRICE);
+    function getPoolPrice() public view returns (uint256) {
+        return lup;
     }
 
     function getMinimumPoolPrice() public view returns (uint256) {
@@ -385,14 +407,8 @@ contract ERC20Pool is IPool {
         uint256 collateralEncumbered;
         uint256 collateralization;
 
-        if (borrower.debt != 0 && borrower.inflatorSnapshot != 0) {
-            uint256 secondsSinceLastUpdate = block.timestamp -
-                lastBorrowerInflatorUpdate;
-            uint256 spr = previousRate / SECONDS_PER_YEAR;
-            uint256 pendingInflator = Maths.wmul(
-                inflatorSnapshot,
-                Maths.wad(1) + (spr * secondsSinceLastUpdate)
-            );
+        if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
+            uint256 pendingInflator = getPendingInflator();
             borrowerDebt += Maths.wmul(
                 borrower.debt,
                 inflatorSnapshot - borrower.inflatorSnapshot
