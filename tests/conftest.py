@@ -1,5 +1,4 @@
 import pytest
-from brownie import Contract, ERC20Pool, Maths, PriceBuckets, BucketMath
 from scripts.sdk import init as sdkInit, AjnaSdk, DAI_ADDRESS, MKR_ADDRESS
 
 
@@ -35,9 +34,10 @@ def mkr_dai_pool(sdk):
 
 
 @pytest.fixture
-def lenders(sdk, dai, mkr_dai_pool, accounts):
+def lenders(sdk, mkr_dai_pool):
     amount = 200_000 * 10**18  # 200,000 DAI for each lender
 
+    lenders = []
     for index in range(10):
         lender = sdk.get_lender(index)
         token = sdk.tokens[DAI_ADDRESS]
@@ -51,9 +51,10 @@ def lenders(sdk, dai, mkr_dai_pool, accounts):
 
 
 @pytest.fixture
-def borrowers(sdk, mkr, dai, mkr_dai_pool, accounts):
+def borrowers(sdk, mkr_dai_pool):
     amount = 100 * 10**18  # 100 MKR for each borrower
 
+    borrowers = []
     for index in range(10):
         borrower = sdk.get_borrower(index)
         mkr_token = sdk.tokens[MKR_ADDRESS]
