@@ -6,6 +6,7 @@ from decimal import *
 
 def test_quote_deposit(
     lenders,
+    bucket_math,
     mkr_dai_pool,
     dai,
     mkr,
@@ -14,7 +15,7 @@ def test_quote_deposit(
     lender = lenders[0]
     # revert when depositing at invalid price
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        mkr_dai_pool.addQuoteToken(100000 * 1e18, 8000 * 1e18, {"from": lender})
+        mkr_dai_pool.addQuoteToken(100000 * 1e18, bucket_math.MAX_PRICE() + 1, {"from": lender})
     assert exc.value.revert_msg == "ajna/invalid-bucket-price"
 
     assert mkr_dai_pool.hdp() == 0

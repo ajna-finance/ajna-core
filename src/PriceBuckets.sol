@@ -197,8 +197,8 @@ contract PriceBuckets is IPriceBuckets {
 
     function borrow(
         uint256 _amount,
-        uint256 _stop,
-        uint256 _lup,
+        uint256 _stop, // lowest price desired to borrow at
+        uint256 _lup, // lowest utilized price
         uint256 _inflator
     ) public returns (uint256 lup, uint256 loanCost) {
         Bucket storage curLup = buckets[_lup];
