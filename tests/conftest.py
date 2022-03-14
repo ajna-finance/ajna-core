@@ -4,33 +4,33 @@ from scripts.sdk import init as sdkInit, AjnaSdk, DAI_ADDRESS, MKR_ADDRESS
 
 @pytest.fixture
 def sdk() -> AjnaSdk:
-    yield sdkInit()
+    return sdkInit()
 
 
 @pytest.fixture
 def deployer(sdk):
-    yield sdk.deployer
+    return sdk.deployer
 
 
 @pytest.fixture
 def dai(sdk):
-    yield sdk.tokens[DAI_ADDRESS].contract
+    return sdk.tokens[DAI_ADDRESS].contract
 
 
 @pytest.fixture
-def mkr():
-    yield sdk.tokens[MKR_ADDRESS].contract
+def mkr(sdk):
+    return sdk.tokens[MKR_ADDRESS].contract
 
 
 # TODO: convert to deploying all necessary libraries "libraries(deployer)"
 @pytest.fixture
 def bucket_math(sdk):
-    yield sdk.bucket_math
+    return sdk.bucket_math
 
 
 @pytest.fixture
 def mkr_dai_pool(sdk):
-    yield sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS, force_deploy=True)
+    return sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS, force_deploy=True)
 
 
 @pytest.fixture
@@ -43,11 +43,11 @@ def lenders(sdk, mkr_dai_pool):
         token = sdk.tokens[DAI_ADDRESS]
 
         token.top_up(lender, amount)
-        token.approveMax(mkr_dai_pool, lender)
+        token.approve_max(mkr_dai_pool, lender)
 
         lenders.append(lender)
 
-    yield lenders
+    return lenders
 
 
 @pytest.fixture
@@ -61,13 +61,13 @@ def borrowers(sdk, mkr_dai_pool):
         dai_token = sdk.tokens[DAI_ADDRESS]
 
         mkr_token.top_up(borrower, amount)
-        mkr_token.approveMax(mkr_dai_pool, borrower)
+        mkr_token.approve_max(mkr_dai_pool, borrower)
 
-        dai_token.approveMax(mkr_dai_pool, borrower)
+        dai_token.approve_max(mkr_dai_pool, borrower)
 
         borrowers.append(borrower)
 
-    yield borrowers
+    return borrowers
 
 
 class TestUtils:

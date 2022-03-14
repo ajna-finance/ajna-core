@@ -15,7 +15,7 @@ DAI_ADDRESS = "0x6b175474e89094c44da98b954eedeac495271d0f"
 DAI_RESERVE_ADDRESS = "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643"
 
 MKR_ADDRESS = "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"
-MKR_RESERVE_ADDRESS = "0x2775b1c75658be0f640272ccb8c72ac986009e38"
+MKR_RESERVE_ADDRESS = "0x0a3f6849f78076aefadf113f5bed87720274ddc0"
 
 USDC_ADDRESS = "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"
 USDC_RESERVE_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
@@ -44,7 +44,7 @@ class Token:
     def balance(self, user: LocalAccount) -> int:
         return self.contract.balanceOf(user)
 
-    def approveMax(self, spender: LocalAccount, owner: LocalAccount):
+    def approve_max(self, spender: LocalAccount, owner: LocalAccount):
         self.contract.approve(
             spender,
             0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
@@ -157,8 +157,8 @@ class AjnaSdk:
         pool.repay(amount, {"from": borrower})
 
 
-def init() -> AjnaSdk:
-    sdk = AjnaSdk()
+def init(*, no_of_lenders=10, no_of_borrowers=10) -> AjnaSdk:
+    sdk = AjnaSdk(no_leders=no_of_lenders, no_borrowers=no_of_borrowers)
 
     sdk.deploy_erc20_pool(MKR_ADDRESS, DAI_ADDRESS)
     sdk.deploy_erc20_pool(DAI_ADDRESS, USDC_ADDRESS)
