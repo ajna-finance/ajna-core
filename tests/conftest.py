@@ -1,75 +1,71 @@
 import pytest
 from brownie import Contract, ERC20Pool, Maths, PriceBuckets, BucketMath
+from scripts.sdk import init as sdkInit, AjnaSdk, DAI_ADDRESS, MKR_ADDRESS
 
 
 @pytest.fixture
-def deployer(accounts):
-    yield accounts[0]
+def sdk() -> AjnaSdk:
+    yield sdkInit()
 
 
 @pytest.fixture
-def dai():
-    token_address = "0x6b175474e89094c44da98b954eedeac495271d0f"
-    yield Contract(token_address)
+def deployer(sdk):
+    yield sdk.deployer
+
+
+@pytest.fixture
+def dai(sdk):
+    yield sdk.tokens[DAI_ADDRESS].contract
 
 
 @pytest.fixture
 def mkr():
-    token_address = "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"
-    yield Contract(token_address)
+    yield sdk.tokens[MKR_ADDRESS].contract
 
 
 # TODO: convert to deploying all necessary libraries "libraries(deployer)"
 @pytest.fixture
-def bucket_math(deployer):
-    bucket_math = BucketMath.deploy({"from": deployer})
-    yield bucket_math
+def bucket_math(sdk):
+    yield sdk.bucket_math
 
 
 @pytest.fixture
-def mkr_dai_pool(bucket_math, mkr, dai, deployer):
-    Maths.deploy({"from": deployer})
-    PriceBuckets.deploy({"from": deployer})
-    daiPool = ERC20Pool.deploy(mkr, dai, {"from": deployer})
-    yield daiPool
+def mkr_dai_pool(sdk):
+    yield sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS, force_deploy=True)
 
 
 @pytest.fixture
-def lenders(dai, mkr_dai_pool, accounts):
-    amount = 200_000 * 10**18  # 100000 DAI for each lender
-    reserve = accounts.at("0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643", force=True)
-    lenders = []
+def lenders(sdk, dai, mkr_dai_pool, accounts):
+    amount = 200_000 * 10**18  # 200,000 DAI for each lender
+
     for index in range(10):
-        lender = accounts.add()
-        dai.transfer(lender, amount, {"from": reserve})
-        dai.approve(
-            mkr_dai_pool,
-            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
-            {"from": lender},
-        )
+        lender = sdk.get_lender(index)
+        token = sdk.tokens[DAI_ADDRESS]
+
+        token.top_up(lender, amount)
+        token.approveMax(mkr_dai_pool, lender)
+
         lenders.append(lender)
+
     yield lenders
 
 
 @pytest.fixture
-def borrowers(mkr, dai, mkr_dai_pool, accounts):
+def borrowers(sdk, mkr, dai, mkr_dai_pool, accounts):
     amount = 100 * 10**18  # 100 MKR for each borrower
-    reserve = accounts.at("0xBE8E3e3618f7474F8cB1d074A26afFef007E98FB", force=True)
-    borrowers = []
+
     for index in range(10):
-        borrower = accounts.add()
-        mkr.transfer(borrower, amount, {"from": reserve})
-        mkr.approve(
-            mkr_dai_pool,
-            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
-            {"from": borrower},
-        )
-        dai.approve(
-            mkr_dai_pool,
-            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
-            {"from": borrower},
-        )
+        borrower = sdk.get_borrower(index)
+        mkr_token = sdk.tokens[MKR_ADDRESS]
+        dai_token = sdk.tokens[DAI_ADDRESS]
+
+        mkr_token.top_up(borrower, amount)
+        mkr_token.approveMax(mkr_dai_pool, borrower)
+
+        dai_token.approveMax(mkr_dai_pool, borrower)
+
         borrowers.append(borrower)
+
     yield borrowers
 
 
