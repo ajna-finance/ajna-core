@@ -15,6 +15,11 @@ def test_add_remove_collateral(
 
     borrower1 = borrowers[0]
 
+    # remove collateral should fail if address not a borrower / no collateral deposited
+    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
+        mkr_dai_pool.removeCollateral(10 * 1e18, {"from": lender})
+    assert exc.value.revert_msg == "ajna/not-enough-collateral"
+
     # test deposit collateral
     assert mkr.balanceOf(borrower1) == 100 * 1e18
     tx = mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower1})
