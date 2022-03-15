@@ -350,7 +350,11 @@ contract PriceBuckets is IPriceBuckets {
 
     function getExchangeRate(Bucket storage bucket) internal returns (uint256) {
         if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
-            return Maths.wdiv(bucket.amount, bucket.lpOutstanding);
+            return
+                Maths.wdiv(
+                    Maths.max(bucket.amount, bucket.debt),
+                    bucket.lpOutstanding
+                );
         }
         return Maths.ONE_WAD;
     }
