@@ -88,7 +88,7 @@ contract PriceBuckets is IPriceBuckets {
 
         accumulateBucketInterest(bucket, _inflator);
 
-        lpTokens = Maths.wdiv(_amount, bucket.inflatorSnapshot);
+        lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
         bucket.amount += _amount;
         bucket.lpOutstanding += lpTokens;
     }
@@ -103,16 +103,12 @@ contract PriceBuckets is IPriceBuckets {
 
         accumulateBucketInterest(bucket, _inflator);
 
-        uint256 exchangeRate;
-        if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
-            exchangeRate = Maths.wdiv(bucket.amount, bucket.lpOutstanding);
-        } else {
-            exchangeRate = Maths.ONE_WAD;
-        }
+        uint256 exchangeRate = getExchangeRate(bucket);
 
         require(
-            _amount < Maths.wmul(_balance, exchangeRate) &&
-                bucket.amount >= bucket.debt,
+            _amount <= Maths.wmul(_balance, exchangeRate) &&
+                bucket.amount >= bucket.debt &&
+                _amount <= bucket.amount - bucket.debt,
             "ajna/amount-greater-than-claimable"
         );
 
@@ -350,6 +346,17 @@ contract PriceBuckets is IPriceBuckets {
         debt = bucket.debt;
         inflatorSnapshot = bucket.inflatorSnapshot;
         lpOutstanding = bucket.lpOutstanding;
+    }
+
+    function getExchangeRate(Bucket storage bucket) internal returns (uint256) {
+        if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
+            return
+                Maths.wdiv(
+                    Maths.max(bucket.amount, bucket.debt),
+                    bucket.lpOutstanding
+                );
+        }
+        return Maths.ONE_WAD;
     }
 
     function isBucketInitialized(uint256 _price) public view returns (bool) {

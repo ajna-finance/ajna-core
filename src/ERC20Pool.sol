@@ -142,7 +142,7 @@ contract ERC20Pool is IPool {
 
         totalQuoteToken -= _amount;
         require(
-            getPoolCollateralization() > Maths.ONE_WAD,
+            getPoolCollateralization() >= Maths.ONE_WAD,
             "ajna/pool-undercollateralized"
         );
 
@@ -248,7 +248,7 @@ contract ERC20Pool is IPool {
 
         totalDebt += _amount;
         require(
-            getPoolCollateralization() > Maths.ONE_WAD,
+            getPoolCollateralization() >= Maths.ONE_WAD,
             "ajna/pool-undercollateralized"
         );
 
