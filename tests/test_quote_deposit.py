@@ -265,6 +265,9 @@ def test_quote_deposit_gas_above_hdp(
         print("\n==================================")
         print("Gas estimations (deposit above hdp):")
         print("==================================")
+        for line in brownie.test.output._build_gas_profile_output():
+            if (line.find('addCollateral') != -1):
+                print(line)
         for i in range(len(txes)):
             print(
                 f"Transaction: {i} | Gas used: {test_utils.get_gas_usage(txes[i].gas_used)}"

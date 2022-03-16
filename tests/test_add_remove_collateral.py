@@ -1,6 +1,7 @@
 import brownie
 from brownie import Contract
 import pytest
+from pprint import pprint
 
 
 def test_add_remove_collateral(
@@ -101,6 +102,7 @@ def test_collateral_gas(
 ):
     mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lenders[0]})
     tx_add_collateral = mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
+
     mkr_dai_pool.borrow(20_000 * 1e18, 2500 * 1e18, {"from": borrowers[0]})
     tx_remove_collateral = mkr_dai_pool.removeCollateral(
         10 * 1e18, {"from": borrowers[0]}
@@ -110,6 +112,9 @@ def test_collateral_gas(
         print("\n==================================")
         print("Gas estimations:")
         print("==================================")
+        for line in brownie.test.output._build_gas_profile_output():
+            if (line.find('addCollateral') != -1):
+                print(line)
         print(
             f"Add collateral          - {test_utils.get_gas_usage(tx_add_collateral.gas_used)}\n"
             f"Remove collateral       - {test_utils.get_gas_usage(tx_remove_collateral.gas_used)}"

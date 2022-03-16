@@ -151,6 +151,9 @@ def test_repay_gas(
         print("\n==================================")
         print("Gas estimations:")
         print("==================================")
+        for line in brownie.test.output._build_gas_profile_output():
+            if (line.find('addCollateral') != -1):
+                print(line)
         print(
             f"Repay single bucket          - {test_utils.get_gas_usage(tx_repay_to_one_bucket.gas_used)}\n"
             f"Repay multiple buckets (11)  - {test_utils.get_gas_usage(tx_repay_to_11_buckets.gas_used)}"
