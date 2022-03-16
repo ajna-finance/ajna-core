@@ -58,7 +58,7 @@ contract ERC20Pool is IPool {
     mapping(address => BorrowerInfo) public borrowers;
 
     uint256 public inflatorSnapshot = Maths.ONE_WAD;
-    uint256 public lastBorrowerInflatorUpdate = block.timestamp;
+    uint256 public lastInflatorSnapshotUpdate = block.timestamp;
     uint256 public previousRate = Maths.wdiv(5, 100);
     uint256 public previousRateUpdate = block.timestamp;
 
@@ -287,10 +287,25 @@ contract ERC20Pool is IPool {
         emit Repay(msg.sender, lup, debtToPay);
     }
 
+    /// @notice Called by lenders to update interest rate of the pool when actual > target utilization
+    function updateInterestRate() external {
+        uint256 actualUtilization = getPoolActualUtilization();
+        if (actualUtilization != 0 && previousRateUpdate < block.timestamp) {
+            accumulatePoolInterest();
+
+            previousRate = Maths.wmul(
+                previousRate,
+                (Maths.sub(actualUtilization, getPoolTargetUtilization()) +
+                    Maths.ONE_WAD)
+            );
+            previousRateUpdate = block.timestamp;
+        }
+    }
+
     /// @notice Update the global borrower inflator
     /// @dev Requires time to have passed between update calls
     function accumulatePoolInterest() private {
-        if (block.timestamp - lastBorrowerInflatorUpdate != 0) {
+        if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
             uint256 pendingInflator = getPendingInflator();
 
             totalDebt += Maths.wmul(
@@ -299,7 +314,7 @@ contract ERC20Pool is IPool {
             );
 
             inflatorSnapshot = pendingInflator;
-            lastBorrowerInflatorUpdate = block.timestamp;
+            lastInflatorSnapshotUpdate = block.timestamp;
         }
     }
 
@@ -309,7 +324,7 @@ contract ERC20Pool is IPool {
         // calculate annualized interest rate
         uint256 spr = previousRate / SECONDS_PER_YEAR;
         uint256 secondsSinceLastUpdate = block.timestamp -
-            lastBorrowerInflatorUpdate;
+            lastInflatorSnapshotUpdate;
 
         return
             PRBMathUD60x18.mul(
@@ -386,7 +401,10 @@ contract ERC20Pool is IPool {
     }
 
     function getPoolActualUtilization() public view returns (uint256) {
-        return Maths.wdiv(totalDebt, totalQuoteToken);
+        if (totalDebt != 0) {
+            return Maths.wdiv(totalDebt, totalQuoteToken);
+        }
+        return 0;
     }
 
     function getPoolTargetUtilization() public view returns (uint256) {
