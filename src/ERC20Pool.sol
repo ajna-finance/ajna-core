@@ -58,7 +58,7 @@ contract ERC20Pool is IPool {
     mapping(address => BorrowerInfo) public borrowers;
 
     uint256 public inflatorSnapshot = Maths.ONE_WAD;
-    uint256 public lastBorrowerInflatorUpdate = block.timestamp;
+    uint256 public lastInflatorSnapshotUpdate = block.timestamp;
     uint256 public previousRate = Maths.wdiv(5, 100);
     uint256 public previousRateUpdate = block.timestamp;
 
@@ -307,7 +307,7 @@ contract ERC20Pool is IPool {
     /// @notice Update the global borrower inflator
     /// @dev Requires time to have passed between update calls
     function accumulatePoolInterest() private {
-        if (block.timestamp - lastBorrowerInflatorUpdate != 0) {
+        if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
             uint256 pendingInflator = getPendingInflator();
 
             totalDebt += Maths.wmul(
@@ -316,7 +316,7 @@ contract ERC20Pool is IPool {
             );
 
             inflatorSnapshot = pendingInflator;
-            lastBorrowerInflatorUpdate = block.timestamp;
+            lastInflatorSnapshotUpdate = block.timestamp;
         }
     }
 
@@ -326,7 +326,7 @@ contract ERC20Pool is IPool {
         // calculate annualized interest rate
         uint256 spr = previousRate / SECONDS_PER_YEAR;
         uint256 secondsSinceLastUpdate = block.timestamp -
-            lastBorrowerInflatorUpdate;
+            lastInflatorSnapshotUpdate;
 
         return
             PRBMathUD60x18.mul(
