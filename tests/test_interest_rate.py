@@ -16,11 +16,13 @@ def test_update_interest_rate(
     borrower1 = borrowers[0]
 
     assert mkr_dai_pool.previousRate() == 0.05 * 1e18
+    update_time = mkr_dai_pool.previousRateUpdate()
 
-    # should fail when actual utilization is 0
-    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        mkr_dai_pool.updateInterestRate({"from": lender})
-    assert exc.value.revert_msg == "ajna/interest-rate-not-updatable"
+    # should silently not update when actual utilization is 0
+    tx = mkr_dai_pool.updateInterestRate({"from": lender})
+    assert tx.status.value == 1
+    assert mkr_dai_pool.previousRate() == 0.05 * 1e18
+    assert mkr_dai_pool.previousRateUpdate() == update_time
 
     # raise pool utilization
     # lender deposits 10000 DAI in 3 buckets each

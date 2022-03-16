@@ -290,19 +290,16 @@ contract ERC20Pool is IPool {
     /// @notice Called by lenders to update interest rate of the pool when actual > target utilization
     function updateInterestRate() external {
         uint256 actualUtilization = getPoolActualUtilization();
-        require(
-            actualUtilization != 0 && previousRateUpdate < block.timestamp,
-            "ajna/interest-rate-not-updatable"
-        );
+        if (actualUtilization != 0 && previousRateUpdate < block.timestamp) {
+            accumulatePoolInterest();
 
-        accumulatePoolInterest();
-
-        previousRate = Maths.wmul(
-            previousRate,
-            (Maths.sub(actualUtilization, getPoolTargetUtilization()) +
-                Maths.ONE_WAD)
-        );
-        previousRateUpdate = block.timestamp;
+            previousRate = Maths.wmul(
+                previousRate,
+                (Maths.sub(actualUtilization, getPoolTargetUtilization()) +
+                    Maths.ONE_WAD)
+            );
+            previousRateUpdate = block.timestamp;
+        }
     }
 
     /// @notice Update the global borrower inflator
