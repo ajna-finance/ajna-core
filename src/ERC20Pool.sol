@@ -136,22 +136,32 @@ contract ERC20Pool is IPool {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
         LenderInfo storage lender = lenders[msg.sender][_price];
-        require(lender.amount >= _amount, "ajna/lended-amount-excedeed");
+        require(
+            lender.amount >= _amount && totalQuoteToken - totalDebt >= _amount,
+            "ajna/amount-greater-than-claimable"
+        );
 
         accumulatePoolInterest();
+
+        // remove from bucket
+        uint256 lpTokens;
+        uint256 newLup;
+        (newLup, lpTokens) = _buckets.subtractFromBucket(
+            _price,
+            _amount,
+            lender.lpTokens,
+            inflatorSnapshot
+        );
+
+        // move lup down only if removal happened at lup and new lup different than current
+        if (_price == lup && newLup < lup) {
+            lup = newLup;
+        }
 
         totalQuoteToken -= _amount;
         require(
             getPoolCollateralization() >= Maths.ONE_WAD,
             "ajna/pool-undercollateralized"
-        );
-
-        // remove from bucket
-        uint256 lpTokens = _buckets.subtractFromBucket(
-            _price,
-            _amount,
-            lender.amount,
-            inflatorSnapshot
         );
 
         lender.amount -= _amount;
@@ -160,7 +170,7 @@ contract ERC20Pool is IPool {
         lenderBalance[msg.sender] -= _amount;
 
         quoteToken.safeTransfer(msg.sender, _amount);
-        emit RemoveQuoteToken(msg.sender, _price, _amount);
+        emit RemoveQuoteToken(msg.sender, lup, _amount);
     }
 
     function addCollateral(uint256 _amount) external {
