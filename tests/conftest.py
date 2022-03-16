@@ -1,10 +1,18 @@
 import pytest
-from scripts.sdk import init as sdkInit, AjnaSdk, DAI_ADDRESS, MKR_ADDRESS
+from sdk import *
 
 
-@pytest.fixture
+@pytest.fixture()
 def sdk() -> AjnaSdk:
-    return sdkInit()
+    options_builder = (
+        SdkOptionsBuilder()
+        .add_token(MKR_ADDRESS, MKR_RESERVE_ADDRESS)
+        .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
+        .deploy_pool(MKR_ADDRESS, DAI_ADDRESS)
+    )
+
+    sdk = AjnaSdk(options_builder.build())
+    return sdk
 
 
 @pytest.fixture
@@ -14,12 +22,12 @@ def deployer(sdk):
 
 @pytest.fixture
 def dai(sdk):
-    return sdk.tokens[DAI_ADDRESS].contract
+    return sdk.get_token(DAI_ADDRESS).contract
 
 
 @pytest.fixture
 def mkr(sdk):
-    return sdk.tokens[MKR_ADDRESS].contract
+    return sdk.get_token(MKR_ADDRESS).contract
 
 
 # TODO: convert to deploying all necessary libraries "libraries(deployer)"
@@ -30,7 +38,7 @@ def bucket_math(sdk):
 
 @pytest.fixture
 def mkr_dai_pool(sdk):
-    return sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS, force_deploy=True)
+    return sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS)
 
 
 @pytest.fixture
@@ -38,9 +46,9 @@ def lenders(sdk, mkr_dai_pool):
     amount = 200_000 * 10**18  # 200,000 DAI for each lender
 
     lenders = []
-    for index in range(10):
-        lender = sdk.get_lender(index)
-        token = sdk.tokens[DAI_ADDRESS]
+    for _ in range(10):
+        lender = sdk.add_lender()
+        token = sdk.get_pool_quote_token(mkr_dai_pool)
 
         token.top_up(lender, amount)
         token.approve_max(mkr_dai_pool, lender)
@@ -55,14 +63,13 @@ def borrowers(sdk, mkr_dai_pool):
     amount = 100 * 10**18  # 100 MKR for each borrower
 
     borrowers = []
-    for index in range(10):
-        borrower = sdk.get_borrower(index)
-        mkr_token = sdk.tokens[MKR_ADDRESS]
-        dai_token = sdk.tokens[DAI_ADDRESS]
+    for _ in range(10):
+        borrower = sdk.add_borrower()
+        dai_token = sdk.get_pool_quote_token(mkr_dai_pool)
+        mkr_token = sdk.get_pool_collateral_token(mkr_dai_pool)
 
         mkr_token.top_up(borrower, amount)
         mkr_token.approve_max(mkr_dai_pool, borrower)
-
         dai_token.approve_max(mkr_dai_pool, borrower)
 
         borrowers.append(borrower)
