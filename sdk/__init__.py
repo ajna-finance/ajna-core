@@ -26,19 +26,17 @@ def create_sdk(
         .deploy_pool(collateral_address, quote_address)
     )
 
-    for _ in range(number_of_borrowers):
-        (
-            options_builder.with_borrower()
-            .with_token(collateral_address, collateral_amount, approve_max=True)
-            .add()
-        )
+    (
+        options_builder.with_borrowers(number_of_borrowers)
+        .with_token(collateral_address, collateral_amount, approve_max=True)
+        .add()
+    )
 
-    for _ in range(number_of_lenders):
-        (
-            options_builder.with_lender()
-            .with_token(quote_address, quote_amount, approve_max=True)
-            .add()
-        )
+    (
+        options_builder.with_lenders(number_of_lenders)
+        .with_token(quote_address, quote_amount, approve_max=True)
+        .add()
+    )
 
     sdk = AjnaSdk(options_builder.build())
     return sdk
