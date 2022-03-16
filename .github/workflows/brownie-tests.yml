@@ -61,4 +61,7 @@ jobs:
       env:
         ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN }}
         WEB3_INFURA_PROJECT_ID: ${{ secrets.WEB3_INFURA_PROJECT_ID }}
-      run: brownie test --gas
+      run: brownie test tests/test_add_remove_collateral.py --gas
+      run: brownie test tests/test_borrow.py --gas
+      run: brownie test tests/test_quote_deposit.py --gas
+      run: brownie test tests/test_repay.py --gas
