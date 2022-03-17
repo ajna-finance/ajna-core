@@ -24,26 +24,26 @@ def main():
     lenders = pool.get_lenders()
     borrowers = pool.get_borrowers()
 
-    sdk.deposit_quote_token(pool, 10_000 * 1e18, 4000 * 1e18, 0)
-    sdk.deposit_quote_token(pool, 10_000 * 1e18, 2000 * 1e18, 0)
-    sdk.deposit_quote_token(pool, 10_000 * 1e18, 1500 * 1e18, 0)
-    sdk.deposit_quote_token(pool, 10_000 * 1e18, 1000 * 1e18, 0)
+    pool.deposit_quote_token(10_000 * 1e18, 4000 * 1e18, 0)
+    pool.deposit_quote_token(10_000 * 1e18, 2000 * 1e18, 0)
+    pool.deposit_quote_token(10_000 * 1e18, 1500 * 1e18, 0)
+    pool.deposit_quote_token(10_000 * 1e18, 1000 * 1e18, 0)
 
-    sdk.deposit_collateral(pool, 500 * 1e18, 0)
-    sdk.deposit_collateral(pool, 500 * 1e18, 1)
-    sdk.deposit_collateral(pool, 300 * 1e18, 2)
-    sdk.deposit_collateral(pool, 400 * 1e18, 3)
-    sdk.deposit_collateral(pool, 500 * 1e18, 4)
+    pool.deposit_collateral(500 * 1e18, 0)
+    pool.deposit_collateral(500 * 1e18, 1)
+    pool.deposit_collateral(300 * 1e18, 2)
+    pool.deposit_collateral(400 * 1e18, 3)
+    pool.deposit_collateral(500 * 1e18, 4)
 
-    sdk.borrow(pool, 10_000 * 1e18, 4000 * 1e18, 0)
-    sdk.borrow(pool, 5_000 * 1e18, 2000 * 1e18, 1)
+    pool.borrow(10_000 * 1e18, 4000 * 1e18, 0)
+    pool.borrow(5_000 * 1e18, 2000 * 1e18, 1)
 
     return (
         sdk,
         lenders[0],
         borrowers[0],
         borrowers[1],
-        sdk.get_pool_quote_token(pool).contract,
-        sdk.get_pool_collateral_token(pool).contract,
-        pool,
+        pool.get_pool_quote_token().get_contract(),
+        pool.get_pool_collateral_token().get_contract(),
+        pool.get_contract(),
     )

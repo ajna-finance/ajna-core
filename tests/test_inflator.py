@@ -11,8 +11,6 @@ def test_inflator(
     lenders,
     borrowers,
     mkr_dai_pool,
-    dai,
-    mkr,
     chain,
 ):
 

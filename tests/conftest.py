@@ -22,12 +22,12 @@ def deployer(sdk):
 
 @pytest.fixture
 def dai(sdk):
-    return sdk.get_token(DAI_ADDRESS).contract
+    return sdk.get_token(DAI_ADDRESS).get_contract()
 
 
 @pytest.fixture
 def mkr(sdk):
-    return sdk.get_token(MKR_ADDRESS).contract
+    return sdk.get_token(MKR_ADDRESS).get_contract()
 
 
 # TODO: convert to deploying all necessary libraries "libraries(deployer)"
@@ -38,7 +38,7 @@ def bucket_math(sdk):
 
 @pytest.fixture
 def mkr_dai_pool(sdk):
-    return sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS)
+    return sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
 
 
 @pytest.fixture

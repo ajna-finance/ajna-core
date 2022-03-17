@@ -1,6 +1,7 @@
 # Open `brownie console` with SDK
 ```bash
 brownie console
+
 from sdk import *
 
 sdk = create_default_sdk()
@@ -47,7 +48,7 @@ quote_token_address = DAI_ADDRESS
 pool = sdk.deploy_erc20_pool(collateral_address, quote_token_address)
 ```
 
-# Get ERC20 pool using SDK
+# Get ERC20 pool wrapper using SDK
 ```bash
 collateral_address = MKR_ADDRESS
 quote_token_address = DAI_ADDRESS
@@ -58,20 +59,40 @@ pool = sdk.get_pool(collateral_address, quote_token_address)
 pool = sdk.get_pool(collateral_address, quote_token_address, force_deploy=True)
 ```
 
+# Get ERC20 pool contract from pool wrapper
+```bash
+pool_contract = pool.get_contract()
+```
+
 # Interact with ERC20 pool using SDK
 ## Deposit quote token from lender
 ```bash
 sdk.deposit_quote_token(pool, amount, price, lender_index)
+
+# Or 
+
+pool = sdk.get_pool(collateral_address, quote_token_address)
+pool.deposit_quote_token(amount, price, lender_index)
 ```
 
 ## Withdraw quote token from pool as lender
 ```bash
 sdk.withdraw_quote_token(pool, amount, price, lender_index)
+
+# Or 
+
+pool = sdk.get_pool(collateral_address, quote_token_address)
+pool.withdraw_quote_token(amount, price, lender_index)
 ```
 
 ## Deposit collateral token from pool as borrower
 ```bash
 sdk.deposit_collateral(pool, amount, borrower_index)
+
+# Or 
+
+pool = sdk.get_pool(collateral_address, quote_token_address)
+pool.deposit_collateral(amount, price, borrower_index)
 ```
 
 ## Withdraw collateral token from pool as borrower
@@ -82,11 +103,21 @@ sdk.withdraw_collateral(pool, amount, borrower_index)
 ## Borrow from pool as borrower
 ```bash
 sdk.borrow(pool, amount, stop_price, borrower_index)
+
+# Or 
+
+pool = sdk.get_pool(collateral_address, quote_token_address)
+pool.borrow(amount, price, borrower_index)
 ```
 
 ## Repay to pool as borrower
 ```bash
 sdk.repay(pool, amount, borrower_index)
+
+# Or 
+
+pool = sdk.get_pool(collateral_address, quote_token_address)
+pool.repay(amount, price, borrower_index)
 ```
 
 # Token wrapper

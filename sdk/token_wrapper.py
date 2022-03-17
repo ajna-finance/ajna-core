@@ -10,11 +10,14 @@ class TokenWrapper:
         self.token_address = token_address
         self.reserve_address = reserve_address
 
-        self.contract = Contract(token_address)
-        self.reserve = Accounts().at(reserve_address, force=True)
+        self._contract = Contract(token_address)
+        self._reserve = Accounts().at(reserve_address, force=True)
+
+    def get_contract(self) -> Contract:
+        return self._contract
 
     def top_up(self, to: LocalAccount, amount: int):
-        tx = self.contract.transfer(to, amount, {"from": self.reserve})
+        tx = self._contract.transfer(to, amount, {"from": self._reserve})
 
         if bool(tx.revert_msg):
             raise Exception(
@@ -22,7 +25,7 @@ class TokenWrapper:
             )
 
     def transfer(self, from_: LocalAccount, to: LocalAccount, amount: int):
-        tx = self.contract.transfer(to, amount, {"from": from_})
+        tx = self._contract.transfer(to, amount, {"from": from_})
 
         if bool(tx.revert_msg):
             raise Exception(
@@ -30,7 +33,7 @@ class TokenWrapper:
             )
 
     def approve(self, spender: LocalAccount, amount: int, owner: LocalAccount):
-        tx = self.contract.approve(spender, amount, {"from": owner})
+        tx = self._contract.approve(spender, amount, {"from": owner})
 
         if bool(tx.revert_msg):
             raise Exception(
@@ -38,10 +41,10 @@ class TokenWrapper:
             )
 
     def balance(self, user: LocalAccount) -> int:
-        return self.contract.balanceOf(user)
+        return self._contract.balanceOf(user)
 
     def approve_max(self, spender: LocalAccount, owner: LocalAccount):
-        tx = self.contract.approve(
+        tx = self._contract.approve(
             spender,
             0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
             {"from": owner},

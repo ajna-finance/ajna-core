@@ -117,7 +117,7 @@ class AccountBuilder:
 
 
 class AccountsBuilder:
-    def __init__(self, amount: int, builder: SdkOptionsBuilder, accounts: List):
+    def __init__(self, builder: SdkOptionsBuilder, accounts: List, amount: int):
         self._account_params = AccountParams()
         self._builder = builder
         self._accounts = accounts

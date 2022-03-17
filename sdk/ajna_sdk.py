@@ -13,6 +13,7 @@ from brownie.network.account import Accounts, LocalAccount
 
 from .sdk_options import *
 from .token_wrapper import TokenWrapper
+from .pool_wrapper import PoolWrapper
 
 
 class AjnaSdk:
@@ -49,7 +50,7 @@ class AjnaSdk:
 
                 if token_options.approve_max:
                     for pool in self.pools:
-                        token.approve_max(pool.address, lender)
+                        token.approve_max(pool.get_contract(), lender)
 
             self.lenders.append(lender)
 
@@ -63,11 +64,11 @@ class AjnaSdk:
 
                 if token_options.approve_max:
                     for pool in self.pools:
-                        token.approve_max(pool.address, borrower)
+                        token.approve_max(pool.get_contract(), borrower)
 
             self.borrowers.append(borrower)
 
-    def deploy_erc20_pool(self, collateral_address, quote_token_address) -> ERC20Pool:
+    def deploy_erc20_pool(self, collateral_address, quote_token_address) -> PoolWrapper:
         deploy_tx = self.ajna_factory.deployPool(
             collateral_address,
             quote_token_address,
@@ -84,7 +85,7 @@ class AjnaSdk:
 
         pool = ERC20Pool.at(pool_address)
 
-        return pool
+        return PoolWrapper(self, pool)
 
     def add_token(self, token_address: str, reserve_address: str) -> None:
         self._tokens[token_address.lower()] = TokenWrapper(
@@ -107,14 +108,15 @@ class AjnaSdk:
 
     def get_pool(
         self, collateral_address, quote_token_address, *, force_deploy=False
-    ) -> ERC20Pool:
+    ) -> PoolWrapper:
         pool_address = self.ajna_factory.calculatePoolAddress(
             collateral_address, quote_token_address
         )
 
         is_deployed = self.ajna_factory.isPoolDeployed(pool_address)
         if is_deployed:
-            return ERC20Pool.at(pool_address)
+            pool_contract = ERC20Pool.at(pool_address)
+            return PoolWrapper(self, pool_contract)
 
         if force_deploy:
             return self.deploy_erc20_pool(collateral_address, quote_token_address)
@@ -144,21 +146,30 @@ class AjnaSdk:
                 f"Token {token_address} not found. Add it first with corresponding reserve address"
             )
 
-    def get_pool_quote_token(self, pool: ERC20Pool) -> TokenWrapper:
+    def get_pool_quote_token(self, pool) -> TokenWrapper:
+        if isinstance(pool, PoolWrapper):
+            pool = pool.get_contract()
+
         return self.get_token(pool.quoteToken())
 
-    def get_pool_collateral_token(self, pool: ERC20Pool) -> TokenWrapper:
+    def get_pool_collateral_token(self, pool) -> TokenWrapper:
+        if isinstance(pool, PoolWrapper):
+            pool = pool.get_contract()
+
         return self.get_token(pool.collateral())
 
     def deposit_quote_token(
         self,
-        pool: ERC20Pool,
+        pool,
         amount: int,
         price: int,
         lender_index: int,
         ensure_approval=False,
         ensure_passes=True,
     ) -> None:
+        if isinstance(pool, PoolWrapper):
+            pool = pool.get_contract()
+
         lender = self.lenders[lender_index]
 
         if ensure_approval:
@@ -173,12 +184,15 @@ class AjnaSdk:
 
     def withdraw_quote_token(
         self,
-        pool: ERC20Pool,
+        pool,
         amount: int,
         price: int,
         lender_index: int,
         ensure_passes=True,
     ) -> None:
+        if isinstance(pool, PoolWrapper):
+            pool = pool.get_contract()
+
         lender = self.lenders[lender_index]
         tx = pool.removeQuoteToken(amount, price, {"from": lender})
         if ensure_passes and bool(tx.revert_msg):
@@ -188,12 +202,15 @@ class AjnaSdk:
 
     def deposit_collateral(
         self,
-        pool: ERC20Pool,
+        pool,
         amount: int,
         borrower_index: int,
         ensure_approval=False,
         ensure_passes=True,
     ) -> None:
+        if isinstance(pool, PoolWrapper):
+            pool = pool.get_contract()
+
         borrower = self.borrowers[borrower_index]
 
         if ensure_approval:
@@ -205,8 +222,11 @@ class AjnaSdk:
             raise Exception(f"Failed to add collateral: {tx.revert_msg}")
 
     def withdraw_collateral(
-        self, pool: ERC20Pool, amount: int, borrower_index: int, ensure_passes=True
+        self, pool, amount: int, borrower_index: int, ensure_passes=True
     ) -> None:
+        if isinstance(pool, PoolWrapper):
+            pool = pool.get_contract()
+
         borrower = self.borrowers[borrower_index]
         tx = pool.removeCollateral(amount, {"from": borrower})
         if ensure_passes and bool(tx.revert_msg):
@@ -214,12 +234,15 @@ class AjnaSdk:
 
     def borrow(
         self,
-        pool: ERC20Pool,
+        pool,
         amount: int,
         stop_price: int,
         borrower_index: int,
         ensure_passes=True,
     ) -> None:
+        if isinstance(pool, PoolWrapper):
+            pool = pool.get_contract()
+
         borrower = self.borrowers[borrower_index]
         tx = pool.borrow(amount, stop_price, {"from": borrower})
         if ensure_passes and bool(tx.revert_msg):
@@ -227,11 +250,14 @@ class AjnaSdk:
 
     def repay(
         self,
-        pool: ERC20Pool,
+        pool,
         amount: int,
         borrower_index: int,
         ensure_passes=True,
     ) -> None:
+        if isinstance(pool, PoolWrapper):
+            pool = pool.get_contract()
+
         borrower = self.borrowers[borrower_index]
         tx = pool.repay(amount, {"from": borrower})
         if ensure_passes and bool(tx.revert_msg):
