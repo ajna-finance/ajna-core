@@ -14,9 +14,9 @@ interface IPriceBuckets {
     function subtractFromBucket(
         uint256 _price,
         uint256 _amount,
-        uint256 _balance,
+        uint256 _lpBalance,
         uint256 _inflator
-    ) external returns (uint256 lptokens);
+    ) external returns (uint256 lup, uint256 lptokens);
 
     function reallocateDebt(
         uint256 _amount,
@@ -88,7 +88,7 @@ contract PriceBuckets is IPriceBuckets {
 
         accumulateBucketInterest(bucket, _inflator);
 
-        lpTokens = Maths.wdiv(_amount, bucket.inflatorSnapshot);
+        lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
         bucket.amount += _amount;
         bucket.lpOutstanding += lpTokens;
     }
@@ -96,25 +96,22 @@ contract PriceBuckets is IPriceBuckets {
     function subtractFromBucket(
         uint256 _price,
         uint256 _amount,
-        uint256 _balance,
+        uint256 _lpBalance,
         uint256 _inflator
-    ) public returns (uint256 lpTokens) {
+    ) public returns (uint256 lup, uint256 lpTokens) {
         Bucket storage bucket = buckets[_price];
 
         accumulateBucketInterest(bucket, _inflator);
 
-        uint256 exchangeRate;
-        if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
-            exchangeRate = Maths.wdiv(bucket.amount, bucket.lpOutstanding);
-        } else {
-            exchangeRate = Maths.ONE_WAD;
-        }
+        uint256 exchangeRate = getExchangeRate(bucket);
 
         require(
-            _amount < Maths.wmul(_balance, exchangeRate) &&
+            _amount <= Maths.wmul(_lpBalance, exchangeRate) &&
                 bucket.amount >= bucket.debt,
             "ajna/amount-greater-than-claimable"
         );
+
+        lup = bucket.price;
 
         // debt reallocation
         uint256 onDeposit = bucket.amount - bucket.debt;
@@ -124,22 +121,24 @@ contract PriceBuckets is IPriceBuckets {
                 Bucket storage toBucket = buckets[bucket.down];
                 uint256 toBucketOnDeposit;
                 while (true) {
+                    accumulateBucketInterest(toBucket, _inflator);
+
                     toBucketOnDeposit = toBucket.amount - toBucket.debt;
                     if (reallocation < toBucketOnDeposit) {
                         // reallocate all and exit
                         bucket.debt -= reallocation;
                         toBucket.debt += reallocation;
-                        toBucket.inflatorSnapshot = _inflator;
+                        lup = toBucket.price;
                         break;
                     } else {
                         reallocation -= toBucketOnDeposit;
                         bucket.debt -= toBucketOnDeposit;
                         toBucket.debt += toBucketOnDeposit;
-                        toBucket.inflatorSnapshot = _inflator;
                     }
 
                     if (toBucket.down == 0) {
                         // nowhere to go
+                        lup = toBucket.price;
                         break;
                     }
 
@@ -350,6 +349,17 @@ contract PriceBuckets is IPriceBuckets {
         debt = bucket.debt;
         inflatorSnapshot = bucket.inflatorSnapshot;
         lpOutstanding = bucket.lpOutstanding;
+    }
+
+    function getExchangeRate(Bucket storage bucket) internal returns (uint256) {
+        if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
+            return
+                Maths.wdiv(
+                    Maths.max(bucket.amount, bucket.debt),
+                    bucket.lpOutstanding
+                );
+        }
+        return Maths.ONE_WAD;
     }
 
     function isBucketInitialized(uint256 _price) public view returns (bool) {

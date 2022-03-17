@@ -5,13 +5,8 @@ from pprint import pprint
 from typing import Dict
 
 
-def test_add_remove_collateral(
-    lenders,
-    borrowers,
-    mkr_dai_pool,
-    dai,
-    mkr,
-):
+def test_add_remove_collateral(lenders, borrowers, mkr_dai_pool, dai, mkr):
+
     lender = lenders[0]
     mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lender})
 
