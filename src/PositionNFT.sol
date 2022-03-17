@@ -12,7 +12,6 @@ interface IPositionNFT {
     function tokenURI(uint256 tokenId) external view returns (string memory);
 }
 
-// https://github.com/Uniswap/v3-periphery/blob/9ca9575d09b0b8d985cc4d9a0f689f7a4470ecb7/contracts/base/ERC721Permit.sol
 abstract contract PositionNFT is ERC721, ERC721Enumerable {
 
     constructor(string memory name, string memory symbol, string memory version) ERC721(name, symbol) {}

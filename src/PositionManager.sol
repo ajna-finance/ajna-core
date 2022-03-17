@@ -28,7 +28,6 @@ interface IPositionManager {
 
 }
 
-// https://github.com/Uniswap/v3-periphery/blob/main/contracts/NonfungiblePositionManager.sol
 contract PositionManager is IPositionManager, PositionNFT {
 
     event Mint(address lender, uint256 price, uint256 amount);

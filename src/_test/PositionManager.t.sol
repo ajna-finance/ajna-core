@@ -49,4 +49,8 @@ contract PositionManagerTest is DSTestPlus {
 
     function testNFTTransfer() public {}
 
+    function testBurn() public {}
+
+    function testRedeem() public {}
+
 }
