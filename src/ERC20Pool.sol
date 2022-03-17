@@ -49,16 +49,14 @@ contract ERC20Pool is IPool {
 
     IPriceBuckets private immutable _buckets;
 
-    // lenders book: lender address -> price bucket -> lender info struct
-    mapping(address => mapping(uint256 => LenderInfo)) public lenders;
-    // lender balance: lender address -> total amount
-    mapping(address => uint256) public lenderBalance;
+    // lenders lp token balances: lender address -> price bucket -> lender lp
+    mapping(address => mapping(uint256 => uint256)) public lpBalance;
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
 
-    uint256 public inflatorSnapshot = Maths.wad(1);
-    uint256 public lastBorrowerInflatorUpdate = block.timestamp;
+    uint256 public inflatorSnapshot = Maths.ONE_WAD;
+    uint256 public lastInflatorSnapshotUpdate = block.timestamp;
     uint256 public previousRate = Maths.wdiv(5, 100);
     uint256 public previousRateUpdate = block.timestamp;
 
@@ -104,13 +102,8 @@ contract ERC20Pool is IPool {
             inflatorSnapshot
         );
 
-        // update lender info for current price bucket
-        LenderInfo storage lender = lenders[msg.sender][_price];
-        lender.amount += _amount;
-        lender.lpTokens += lpTokens;
-
-        // update lender balance
-        lenderBalance[msg.sender] += _amount;
+        // update lender lp balance for current price bucket
+        lpBalance[msg.sender][_price] += lpTokens;
 
         // update quote token accumulator
         totalQuoteToken += _amount;
@@ -135,26 +128,38 @@ contract ERC20Pool is IPool {
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
-        LenderInfo storage lender = lenders[msg.sender][_price];
-        require(lender.amount >= _amount, "ajna/lended-amount-excedeed");
+        require(
+            totalQuoteToken - totalDebt >= _amount,
+            "ajna/amount-greater-than-claimable"
+        );
 
         accumulatePoolInterest();
 
         // remove from bucket
-        uint256 lpTokens = _buckets.subtractFromBucket(
+        uint256 lpTokens;
+        uint256 newLup;
+        (newLup, lpTokens) = _buckets.subtractFromBucket(
             _price,
             _amount,
-            lender.amount,
+            lpBalance[msg.sender][_price],
             inflatorSnapshot
         );
 
-        lender.amount -= _amount;
-        lender.lpTokens -= lpTokens;
+        // move lup down only if removal happened at lup and new lup different than current
+        if (_price == lup && newLup < lup) {
+            lup = newLup;
+        }
 
-        lenderBalance[msg.sender] -= _amount;
+        totalQuoteToken -= _amount;
+        require(
+            getPoolCollateralization() >= Maths.ONE_WAD,
+            "ajna/pool-undercollateralized"
+        );
+
+        lpBalance[msg.sender][_price] -= lpTokens;
 
         quoteToken.safeTransfer(msg.sender, _amount);
-        emit RemoveQuoteToken(msg.sender, _price, _amount);
+        emit RemoveQuoteToken(msg.sender, lup, _amount);
     }
 
     function addCollateral(uint256 _amount) external {
@@ -239,7 +244,12 @@ contract ERC20Pool is IPool {
             "ajna/not-enough-collateral"
         );
         borrower.debt += _amount;
+
         totalDebt += _amount;
+        require(
+            getPoolCollateralization() >= Maths.ONE_WAD,
+            "ajna/pool-undercollateralized"
+        );
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit Borrow(msg.sender, lup, _amount);
@@ -276,19 +286,34 @@ contract ERC20Pool is IPool {
         emit Repay(msg.sender, lup, debtToPay);
     }
 
+    /// @notice Called by lenders to update interest rate of the pool when actual > target utilization
+    function updateInterestRate() external {
+        uint256 actualUtilization = getPoolActualUtilization();
+        if (actualUtilization != 0 && previousRateUpdate < block.timestamp) {
+            accumulatePoolInterest();
+
+            previousRate = Maths.wmul(
+                previousRate,
+                (Maths.sub(actualUtilization, getPoolTargetUtilization()) +
+                    Maths.ONE_WAD)
+            );
+            previousRateUpdate = block.timestamp;
+        }
+    }
+
     /// @notice Update the global borrower inflator
     /// @dev Requires time to have passed between update calls
     function accumulatePoolInterest() private {
-        if (block.timestamp - lastBorrowerInflatorUpdate != 0) {
+        if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
             uint256 pendingInflator = getPendingInflator();
 
             totalDebt += Maths.wmul(
                 totalDebt,
-                Maths.wdiv(pendingInflator, inflatorSnapshot) - Maths.wad(1)
+                Maths.wdiv(pendingInflator, inflatorSnapshot) - Maths.ONE_WAD
             );
 
             inflatorSnapshot = pendingInflator;
-            lastBorrowerInflatorUpdate = block.timestamp;
+            lastInflatorSnapshotUpdate = block.timestamp;
         }
     }
 
@@ -298,7 +323,7 @@ contract ERC20Pool is IPool {
         // calculate annualized interest rate
         uint256 spr = previousRate / SECONDS_PER_YEAR;
         uint256 secondsSinceLastUpdate = block.timestamp -
-            lastBorrowerInflatorUpdate;
+            lastInflatorSnapshotUpdate;
 
         return
             PRBMathUD60x18.mul(
@@ -364,7 +389,7 @@ contract ERC20Pool is IPool {
         if (encumberedCollateral != 0) {
             return Maths.wdiv(totalCollateral, encumberedCollateral);
         }
-        return Maths.wad(1);
+        return Maths.ONE_WAD;
     }
 
     function getEncumberedCollateral() public view returns (uint256) {
@@ -375,15 +400,18 @@ contract ERC20Pool is IPool {
     }
 
     function getPoolActualUtilization() public view returns (uint256) {
-        return Maths.wdiv(totalDebt, totalQuoteToken);
+        if (totalDebt != 0) {
+            return Maths.wdiv(totalDebt, totalQuoteToken);
+        }
+        return 0;
     }
 
     function getPoolTargetUtilization() public view returns (uint256) {
         uint256 poolCollateralization = getPoolCollateralization();
         if (poolCollateralization != 0) {
-            return Maths.wdiv(Maths.wad(1), getPoolCollateralization());
+            return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
         }
-        return Maths.wad(1);
+        return Maths.ONE_WAD;
     }
 
     // -------------------- Borrower related functions --------------------

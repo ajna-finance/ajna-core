@@ -3,17 +3,17 @@ from brownie import Contract
 import pytest
 
 
-def test_add_remove_collateral(
-    lenders,
-    borrowers,
-    mkr_dai_pool,
-    dai,
-    mkr,
-):
+def test_add_remove_collateral(lenders, borrowers, mkr_dai_pool, dai, mkr):
+
     lender = lenders[0]
     mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lender})
 
     borrower1 = borrowers[0]
+
+    # remove collateral should fail if address not a borrower / no collateral deposited
+    with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
+        mkr_dai_pool.removeCollateral(10 * 1e18, {"from": lender})
+    assert exc.value.revert_msg == "ajna/not-enough-collateral"
 
     # test deposit collateral
     assert mkr.balanceOf(borrower1) == 100 * 1e18

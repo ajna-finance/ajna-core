@@ -1,91 +1,54 @@
 from brownie import *
+from sdk import *
 
 
 def main():
-    deployer = accounts[0]
-    # quote is DAI
-    quote_token = Contract("0x6b175474e89094c44da98b954eedeac495271d0f")
-    # collateral is COMP
-    collateral = Contract("0xc00e94Cb662C3520282E6f5717214004A7f26888")
-    BucketMath.deploy({"from": deployer})
-    Maths.deploy({"from": deployer})
-    PriceBuckets.deploy({"from": deployer})
-    pool = ERC20Pool.deploy(
-        collateral,
-        quote_token,
-        {"from": deployer},
+    sdk_options = (
+        SdkOptionsBuilder()
+        .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
+        .add_token(COMP_ADDRESS, COMP_RESERVE_ADDRESS)
+        .deploy_pool(COMP_ADDRESS, DAI_ADDRESS)
     )
 
-    lenders = get_lenders(quote_token, pool, accounts)
-    borrowers = get_borrowers(collateral, pool, accounts)
+    sdk_options.with_borrowers(10).with_token(COMP_ADDRESS, 20_000 * 10**18).add()
+    sdk_options.with_lenders(5).with_token(DAI_ADDRESS, 600_000 * 10**18).add()
 
-    pool.addQuoteToken(20_000 * 1e18, 11.694 * 1e18, {"from": lenders[0]})
-    pool.addQuoteToken(50_000 * 1e18, 12.278 * 1e18, {"from": lenders[0]})
-    pool.addQuoteToken(100_000 * 1e18, 12.892 * 1e18, {"from": lenders[0]})
-    pool.addQuoteToken(50_000 * 1e18, 13.537 * 1e18, {"from": lenders[0]})
-    pool.addQuoteToken(60_000 * 1e18, 14.214 * 1e18, {"from": lenders[0]})
+    sdk = AjnaSdk(sdk_options.build())
+    pool = sdk.get_pool(COMP_ADDRESS, DAI_ADDRESS)
 
-    pool.addQuoteToken(10_000 * 1e18, 11.137 * 1e18, {"from": lenders[1]})
-    pool.addQuoteToken(10_000 * 1e18, 11.694 * 1e18, {"from": lenders[1]})
-    pool.addQuoteToken(70_000 * 1e18, 12.278 * 1e18, {"from": lenders[1]})
-    pool.addQuoteToken(60_000 * 1e18, 12.892 * 1e18, {"from": lenders[1]})
-    pool.addQuoteToken(60_000 * 1e18, 13.537 * 1e18, {"from": lenders[1]})
-    pool.addQuoteToken(50_000 * 1e18, 14.214 * 1e18, {"from": lenders[1]})
-    pool.addQuoteToken(10_000 * 1e18, 14.924 * 1e18, {"from": lenders[1]})
+    pool.deposit_quote_token(20_000 * 1e18, 11.694 * 1e18, 0)
+    pool.deposit_quote_token(50_000 * 1e18, 12.278 * 1e18, 0)
+    pool.deposit_quote_token(100_000 * 1e18, 12.892 * 1e18, 0)
+    pool.deposit_quote_token(50_000 * 1e18, 13.537 * 1e18, 0)
+    pool.deposit_quote_token(60_000 * 1e18, 14.214 * 1e18, 0)
 
-    pool.addQuoteToken(40_000 * 1e18, 11.694 * 1e18, {"from": lenders[2]})
-    pool.addQuoteToken(60_000 * 1e18, 12.278 * 1e18, {"from": lenders[2]})
-    pool.addQuoteToken(90_000 * 1e18, 12.892 * 1e18, {"from": lenders[2]})
-    pool.addQuoteToken(30_000 * 1e18, 13.537 * 1e18, {"from": lenders[2]})
-    pool.addQuoteToken(10_000 * 1e18, 14.214 * 1e18, {"from": lenders[2]})
-    pool.addQuoteToken(10_000 * 1e18, 14.924 * 1e18, {"from": lenders[2]})
+    pool.deposit_quote_token(10_000 * 1e18, 11.137 * 1e18, 1)
+    pool.deposit_quote_token(10_000 * 1e18, 11.694 * 1e18, 1)
+    pool.deposit_quote_token(70_000 * 1e18, 12.278 * 1e18, 1)
+    pool.deposit_quote_token(60_000 * 1e18, 12.892 * 1e18, 1)
+    pool.deposit_quote_token(60_000 * 1e18, 13.537 * 1e18, 1)
+    pool.deposit_quote_token(50_000 * 1e18, 14.214 * 1e18, 1)
+    pool.deposit_quote_token(10_000 * 1e18, 14.924 * 1e18, 1)
 
-    pool.addQuoteToken(10_000 * 1e18, 11.137 * 1e18, {"from": lenders[3]})
-    pool.addQuoteToken(30_000 * 1e18, 11.694 * 1e18, {"from": lenders[3]})
-    pool.addQuoteToken(70_000 * 1e18, 12.278 * 1e18, {"from": lenders[3]})
-    pool.addQuoteToken(50_000 * 1e18, 12.892 * 1e18, {"from": lenders[3]})
-    pool.addQuoteToken(40_000 * 1e18, 13.537 * 1e18, {"from": lenders[3]})
-    pool.addQuoteToken(10_000 * 1e18, 14.214 * 1e18, {"from": lenders[3]})
+    pool.deposit_quote_token(40_000 * 1e18, 11.694 * 1e18, 2)
+    pool.deposit_quote_token(60_000 * 1e18, 12.278 * 1e18, 2)
+    pool.deposit_quote_token(90_000 * 1e18, 12.892 * 1e18, 2)
+    pool.deposit_quote_token(30_000 * 1e18, 13.537 * 1e18, 2)
+    pool.deposit_quote_token(10_000 * 1e18, 14.214 * 1e18, 2)
+    pool.deposit_quote_token(10_000 * 1e18, 14.924 * 1e18, 2)
+
+    pool.deposit_quote_token(10_000 * 1e18, 11.137 * 1e18, 3)
+    pool.deposit_quote_token(30_000 * 1e18, 11.694 * 1e18, 3)
+    pool.deposit_quote_token(70_000 * 1e18, 12.278 * 1e18, 3)
+    pool.deposit_quote_token(50_000 * 1e18, 12.892 * 1e18, 3)
+    pool.deposit_quote_token(40_000 * 1e18, 13.537 * 1e18, 3)
+    pool.deposit_quote_token(10_000 * 1e18, 14.214 * 1e18, 3)
 
     return (
-        lenders,
-        borrowers,
-        quote_token,
-        collateral,
-        pool,
+        sdk,
+        sdk.lenders,
+        sdk.borrowers,
+        pool.get_pool_quote_token().get_contract(),
+        pool.get_pool_collateral_token().get_contract(),
+        pool.get_contract(),
     )
-
-
-def get_lenders(quote_token, pool, accounts):
-    amount = 500_000 * 10**18  # 500000 quote tokens for each lender
-    quote_reserve = accounts.at(
-        "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643", force=True
-    )
-    lenders = []
-    for index in range(5):
-        lender = accounts.add()
-        quote_token.transfer(lender, amount, {"from": quote_reserve})
-        quote_token.approve(
-            pool,
-            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
-            {"from": lender},
-        )
-        lenders.append(lender)
-    return lenders
-
-
-def get_borrowers(collateral, pool, accounts):
-    amount = 20_000 * 10**18  # 20000 collateral for each borrower
-    # reserve is COMP Reservoir
-    reserve = accounts.at("0x2775b1c75658be0f640272ccb8c72ac986009e38", force=True)
-    borrowers = []
-    for index in range(10):
-        borrower = accounts.add()
-        collateral.transfer(borrower, amount, {"from": reserve})
-        collateral.approve(
-            pool,
-            0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,
-            {"from": borrower},
-        )
-        borrowers.append(borrower)
-    return borrowers
