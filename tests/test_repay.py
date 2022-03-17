@@ -155,5 +155,7 @@ def test_repay_gas(
             f"Repay single bucket          - {test_utils.get_gas_usage(tx_repay_to_one_bucket.gas_used)}\n"
             f"Repay multiple buckets (11)  - {test_utils.get_gas_usage(tx_repay_to_11_buckets.gas_used)}"
         )
+        test_utils.GasStats.print(['repay', 'borrow'])
+        test_utils.GasStats.clear()
         print("==================================")
     assert True

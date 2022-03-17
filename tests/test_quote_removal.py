@@ -246,6 +246,8 @@ def test_quote_removal_from_lup_with_reallocation(
         print(
             f"Remove quote token from lup (reallocate to one bucket)           - {test_utils.get_gas_usage(tx.gas_used)}"
         )
+        test_utils.GasStats.print(['removeQuoteToken', 'addCollateral', 'addQuoteToken'])
+        test_utils.GasStats.clear()
         print("==================================")
 
 
@@ -326,6 +328,8 @@ def test_quote_removal_below_lup(
         print(
             f"Remove quote token bellow lup           - {test_utils.get_gas_usage(tx.gas_used)}"
         )
+        test_utils.GasStats.print(['removeQuoteToken', 'addCollateral', 'addQuoteToken'])
+        test_utils.GasStats.clear()
         print("==================================")
 
 

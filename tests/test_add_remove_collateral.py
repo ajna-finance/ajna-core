@@ -109,5 +109,7 @@ def test_collateral_gas(
             f"Add collateral          - {test_utils.get_gas_usage(tx_add_collateral.gas_used)}\n"
             f"Remove collateral       - {test_utils.get_gas_usage(tx_remove_collateral.gas_used)}"
         )
+        test_utils.GasStats.print(['addQuoteToken', 'addCollateral', 'removeCollateral'])
+        test_utils.GasStats.clear()
         print("==================================")
     assert True

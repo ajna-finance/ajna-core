@@ -1,5 +1,6 @@
 import pytest
 from sdk import *
+from brownie import test, network
 
 
 @pytest.fixture()
@@ -78,6 +79,27 @@ def borrowers(sdk, mkr_dai_pool):
 
 
 class TestUtils:
+
+    class GasStats:
+
+        # @notice Called by the tester to print the gas statistics of the txs collected since last cleared
+        # @param method_names optional array of the method names to print gas stats for
+        @staticmethod
+        def print(method_names=None):
+            if method_names:
+                for line in test.output._build_gas_profile_output():
+                    for method in method_names:
+                        if method in line:
+                            print(line)
+
+            else:
+                for line in test.output._build_gas_profile_output():
+                    print(line)
+
+        @staticmethod
+        def clear():
+            network.state.TxHistory().gas_profile.clear()
+
     @staticmethod
     def get_gas_usage(gas) -> str:
         in_eth = gas * 100 * 10e-9

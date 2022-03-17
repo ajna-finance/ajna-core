@@ -241,6 +241,8 @@ def test_quote_deposit_gas_below_hdp(
         for i in range(len(txes)):
             print(f"Transaction: {i} | {test_utils.get_gas_usage(txes[i].gas_used)}")
         print("==================================")
+        test_utils.GasStats.print(['addQuoteToken'])
+        test_utils.GasStats.clear()
     assert True
 
 
@@ -268,4 +270,6 @@ def test_quote_deposit_gas_above_hdp(
                 f"Transaction: {i} | Gas used: {test_utils.get_gas_usage(txes[i].gas_used)}"
             )
         print("==================================")
+        test_utils.GasStats.print(['addQuoteToken'])
+        test_utils.GasStats.clear()
     assert True

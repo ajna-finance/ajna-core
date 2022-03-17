@@ -316,5 +316,7 @@ def test_borrow_gas(
             f"Borrow from multiple buckets (11)      - {test_utils.get_gas_usage(tx_11_buckets.gas_used)}\n"
             f"Reallocate debt multiple buckets (11)  - {test_utils.get_gas_usage(tx_reallocate_debt_11_buckets.gas_used)}"
         )
+        test_utils.GasStats.print(['borrow', 'addCollateral', 'addQuoteToken'])
+        test_utils.GasStats.clear()
         print("==================================")
     assert True
