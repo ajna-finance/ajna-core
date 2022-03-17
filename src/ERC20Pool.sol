@@ -65,13 +65,8 @@ contract ERC20Pool is IPool {
     uint256 public totalQuoteToken;
     uint256 public totalDebt;
 
-    event AddQuoteToken(
-        address lender,
-        uint256 price,
-        uint256 amount,
-        uint256 lup
-    );
-    event RemoveQuoteToken(address lender, uint256 price, uint256 amount);
+    event AddQuoteToken(address lender, uint256 price, uint256 amount, uint256 lup);
+    event RemoveQuoteToken(address lender, uint256 price, uint256 amount, uint256 lup);
     event AddCollateral(address borrower, uint256 amount);
     event RemoveCollateral(address borrower, uint256 amount);
     event Borrow(address borrower, uint256 price, uint256 amount);
@@ -159,7 +154,7 @@ contract ERC20Pool is IPool {
         lpBalance[msg.sender][_price] -= lpTokens;
 
         quoteToken.safeTransfer(msg.sender, _amount);
-        emit RemoveQuoteToken(msg.sender, lup, _amount);
+        emit RemoveQuoteToken(msg.sender, _price, _amount, lup);
     }
 
     function addCollateral(uint256 _amount) external {
