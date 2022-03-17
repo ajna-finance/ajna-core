@@ -159,4 +159,6 @@ def test_repay_gas(
             f"Repay multiple buckets (11)  - {test_utils.get_gas_usage(tx_repay_to_11_buckets.gas_used)}"
         )
         print("==================================")
+
+    brownie.network.state.TxHistory().clear()
     assert True

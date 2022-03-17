@@ -120,4 +120,9 @@ def test_collateral_gas(
             f"Remove collateral       - {test_utils.get_gas_usage(tx_remove_collateral.gas_used)}"
         )
         print("==================================")
+        print(brownie.network.state.TxHistory()._list)
+        brownie.network.history.clear()
+        print("==================================")
+        print(brownie.network.state.TxHistory()._list)
     assert True
+

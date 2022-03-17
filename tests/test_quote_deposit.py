@@ -273,4 +273,5 @@ def test_quote_deposit_gas_above_hdp(
                 f"Transaction: {i} | Gas used: {test_utils.get_gas_usage(txes[i].gas_used)}"
             )
         print("==================================")
+    brownie.network.state.TxHistory().clear()
     assert True
