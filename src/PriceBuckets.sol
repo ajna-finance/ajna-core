@@ -14,9 +14,9 @@ interface IPriceBuckets {
     function subtractFromBucket(
         uint256 _price,
         uint256 _amount,
-        uint256 _balance,
+        uint256 _lpBalance,
         uint256 _inflator
-    ) external returns (uint256 lptokens);
+    ) external returns (uint256 lup, uint256 lptokens);
 
     function reallocateDebt(
         uint256 _amount,
@@ -96,9 +96,9 @@ contract PriceBuckets is IPriceBuckets {
     function subtractFromBucket(
         uint256 _price,
         uint256 _amount,
-        uint256 _balance,
+        uint256 _lpBalance,
         uint256 _inflator
-    ) public returns (uint256 lpTokens) {
+    ) public returns (uint256 lup, uint256 lpTokens) {
         Bucket storage bucket = buckets[_price];
 
         accumulateBucketInterest(bucket, _inflator);
@@ -106,11 +106,12 @@ contract PriceBuckets is IPriceBuckets {
         uint256 exchangeRate = getExchangeRate(bucket);
 
         require(
-            _amount <= Maths.wmul(_balance, exchangeRate) &&
-                bucket.amount >= bucket.debt &&
-                _amount <= bucket.amount - bucket.debt,
+            _amount <= Maths.wmul(_lpBalance, exchangeRate) &&
+                bucket.amount >= bucket.debt,
             "ajna/amount-greater-than-claimable"
         );
+
+        lup = bucket.price;
 
         // debt reallocation
         uint256 onDeposit = bucket.amount - bucket.debt;
@@ -120,22 +121,24 @@ contract PriceBuckets is IPriceBuckets {
                 Bucket storage toBucket = buckets[bucket.down];
                 uint256 toBucketOnDeposit;
                 while (true) {
+                    accumulateBucketInterest(toBucket, _inflator);
+
                     toBucketOnDeposit = toBucket.amount - toBucket.debt;
                     if (reallocation < toBucketOnDeposit) {
                         // reallocate all and exit
                         bucket.debt -= reallocation;
                         toBucket.debt += reallocation;
-                        toBucket.inflatorSnapshot = _inflator;
+                        lup = toBucket.price;
                         break;
                     } else {
                         reallocation -= toBucketOnDeposit;
                         bucket.debt -= toBucketOnDeposit;
                         toBucket.debt += toBucketOnDeposit;
-                        toBucket.inflatorSnapshot = _inflator;
                     }
 
                     if (toBucket.down == 0) {
                         // nowhere to go
+                        lup = toBucket.price;
                         break;
                     }
 

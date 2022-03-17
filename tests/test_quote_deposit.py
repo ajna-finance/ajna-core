@@ -15,7 +15,9 @@ def test_quote_deposit(
     lender = lenders[0]
     # revert when depositing at invalid price
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        mkr_dai_pool.addQuoteToken(100000 * 1e18, bucket_math.MAX_PRICE() + 1, {"from": lender})
+        mkr_dai_pool.addQuoteToken(
+            100000 * 1e18, bucket_math.MAX_PRICE() + 1, {"from": lender}
+        )
     assert exc.value.revert_msg == "ajna/invalid-bucket-price"
 
     assert mkr_dai_pool.hdp() == 0
@@ -23,7 +25,6 @@ def test_quote_deposit(
     # test 10000 DAI deposit at price of 1 MKR = 4000 DAI
     tx = mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
     # check pool balance
-    assert mkr_dai_pool.lenderBalance(lender) == 10_000 * 1e18
     assert mkr_dai_pool.totalQuoteToken() == 10_000 * 1e18
     assert mkr_dai_pool.hdp() == 4000 * 1e18
     # check bucket balance
@@ -44,8 +45,8 @@ def test_quote_deposit(
     assert snapshot == 1 * 1e18
     expected_lps = 10_000 * 1e18 / snapshot
     assert format(lpOutstanding / 1e18, ".3f") == format(expected_lps, ".3f")
-    (amount, lp) = mkr_dai_pool.lenders(lender, 4000 * 1e18)
-    assert amount == 10_000 * 1e18
+
+    lp = mkr_dai_pool.lpBalance(lender, 4000 * 1e18)
     assert format(lp / 1e18, ".3f") == format(expected_lps, ".3f")
     # check tokens transfered
     assert dai.balanceOf(mkr_dai_pool) == 10_000 * 1e18
@@ -65,7 +66,6 @@ def test_quote_deposit(
     # hdp should remain same 4000 DAI
     tx = mkr_dai_pool.addQuoteToken(20_000 * 1e18, 2000 * 1e18, {"from": lender})
     # check pool balance
-    assert mkr_dai_pool.lenderBalance(lender) == 30_000 * 1e18
     assert mkr_dai_pool.totalQuoteToken() == 30_000 * 1e18
     assert mkr_dai_pool.hdp() == 4000 * 1e18
     # check new bucket balance
@@ -86,8 +86,8 @@ def test_quote_deposit(
     assert snapshot == 1 * 1e18
     expected_lps = 20_000 * 1e18 / snapshot
     assert format(lpOutstanding / 1e18, ".3f") == format(expected_lps, ".3f")
-    (amount, lp) = mkr_dai_pool.lenders(lender, 2000 * 1e18)
-    assert amount == 20_000 * 1e18
+
+    lp = mkr_dai_pool.lpBalance(lender, 2000 * 1e18)
     assert format(lp / 1e18, ".3f") == format(expected_lps, ".3f")
     # check hdp next price pointer updated
     (
@@ -119,7 +119,6 @@ def test_quote_deposit(
     # next price for 3000 DAI bucket should be 2000 DAI
     tx = mkr_dai_pool.addQuoteToken(30_000 * 1e18, 3000 * 1e18, {"from": lender})
     # check pool balance
-    assert mkr_dai_pool.lenderBalance(lender) == 60_000 * 1e18
     assert mkr_dai_pool.totalQuoteToken() == 60_000 * 1e18
     assert mkr_dai_pool.hdp() == 4000 * 1e18
     # check new bucket balance
@@ -140,8 +139,8 @@ def test_quote_deposit(
     assert snapshot == 1 * 1e18
     expected_lps = 30_000 * 1e18 / snapshot
     assert format(lpOutstanding / 1e18, ".3f") == format(expected_lps, ".3f")
-    (amount, lp) = mkr_dai_pool.lenders(lender, 3000 * 1e18)
-    assert amount == 30_000 * 1e18
+
+    lp = mkr_dai_pool.lpBalance(lender, 3000 * 1e18)
     assert format(lp / 1e18, ".3f") == format(expected_lps, ".3f")
     # check hdp bucket next price pointer updated
     (
@@ -182,7 +181,6 @@ def test_quote_deposit(
     # hdp should be updated to 5000 DAI and hdp next price should be 4000 DAI
     tx = mkr_dai_pool.addQuoteToken(40_000 * 1e18, 5000 * 1e18, {"from": lender})
     # check pool balance
-    assert mkr_dai_pool.lenderBalance(lender) == 100_000 * 1e18
     assert mkr_dai_pool.totalQuoteToken() == 100_000 * 1e18
     assert mkr_dai_pool.hdp() == 5000 * 1e18
     # check new bucket balance
@@ -203,8 +201,8 @@ def test_quote_deposit(
     assert snapshot == 1 * 1e18
     expected_lps = 40_000 * 1e18 / snapshot
     assert format(lpOutstanding / 1e18, ".3f") == format(expected_lps, ".3f")
-    (amount, lp) = mkr_dai_pool.lenders(lender, 5000 * 1e18)
-    assert amount == 40_000 * 1e18
+
+    lp = mkr_dai_pool.lpBalance(lender, 5000 * 1e18)
     assert format(lp / 1e18, ".3f") == format(expected_lps, ".3f")
     # check tokens transfered
     assert dai.balanceOf(mkr_dai_pool) == 100_000 * 1e18
