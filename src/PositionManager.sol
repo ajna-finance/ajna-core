@@ -2,12 +2,17 @@
 pragma solidity 0.8.11;
 
 import {PositionNFT} from './PositionNFT.sol';
+import {IPool} from './ERC20Pool.sol';
 
 interface IPositionManager {
 
     struct MintParams {
-        address collateral;
-        address quoteToken;
+        address recipient;
+        // address collateral;
+        // address quoteToken;
+        address pool;
+        uint256 amount;
+        uint256 price;
     }
 
     function mint(MintParams calldata params) external payable returns (uint256 tokenId);
@@ -30,9 +35,15 @@ contract PositionManager is IPositionManager, PositionNFT {
     event Burn(address lender, uint256 price);
     event Redeem(address lender, uint256 price, uint256 amount);
 
-    constructor(address factory) PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {
+    constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {
 
     }
+
+    /// @dev Mapping of tokenIds to Position information
+    mapping(uint256 => Position) private positions;
+
+    /// @dev The ID of the next token that will be minted. Skips 0
+    uint176 private _nextId = 1;
 
     /// @dev Details about Ajna positions - used for both Borrowers and Lenders
     struct Position {
@@ -42,12 +53,27 @@ contract PositionManager is IPositionManager, PositionNFT {
         address pool; // address of the pool contract the position is associated to
     }
 
-    /// @dev Mapping of tokenIds to Position information
-    mapping(uint256 => Position) private positions;
-
     // TODO: finish implementing
     function mint (MintParams calldata params) external payable returns (uint256 tokenId) {
-        // TODO: implement call to addQuoteToken
+        IPool pool;
+
+        // TODO: add return type based upon dynamic shift of price / amount
+        // call out to pool contract to add quote tokens
+        pool.addQuoteToken(params.amount, params.price);
+
+        // TODO: add require check to ensure addQuoteToken call succeeds
+
+        _safeMint(params.recipient, (tokenId = _nextId++));
+
+        positions[tokenId] = Position(
+            params.recipient,
+            params.price,
+            params.amount, // TODO: fix to be returned from addQuoteToken
+            params.pool
+        );
+
+        emit Mint(params.recipient, params.price, params.amount);
+        return tokenId;
     }
 
     // TODO: finish implementing
