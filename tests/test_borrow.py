@@ -308,9 +308,7 @@ def test_borrow_gas(
         print("\n==================================")
         print("Gas estimations:")
         print("==================================")
-        for line in brownie.test.output._build_gas_profile_output():
-            if (line.find('addCollateral') != -1):
-                print(line)
+        test_utils.GasStats.print(['borrow', 'addCollateral', 'addQuoteToken'])
         print(
             f"Borrow single bucket           - {test_utils.get_gas_usage(tx_one_bucket.gas_used)}\n"
             f"Reallocate debt single bucket  - {test_utils.get_gas_usage(tx_reallocate_debt_one_bucket.gas_used)}"
@@ -320,5 +318,5 @@ def test_borrow_gas(
             f"Reallocate debt multiple buckets (11)  - {test_utils.get_gas_usage(tx_reallocate_debt_11_buckets.gas_used)}"
         )
         print("==================================")
-    brownie.network.state.TxHistory().clear()
+        test_utils.GasStats.clear()
     assert True

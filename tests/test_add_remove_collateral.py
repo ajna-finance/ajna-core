@@ -2,6 +2,7 @@ import brownie
 from brownie import Contract
 import pytest
 from pprint import pprint
+from typing import Dict
 
 
 def test_add_remove_collateral(
@@ -112,17 +113,12 @@ def test_collateral_gas(
         print("\n==================================")
         print("Gas estimations:")
         print("==================================")
-        for line in brownie.test.output._build_gas_profile_output():
-            if (line.find('addCollateral') != -1):
-                print(line)
+        test_utils.GasStats.print(['addQuoteToken', 'addCollateral', 'removeCollateral'])
         print(
             f"Add collateral          - {test_utils.get_gas_usage(tx_add_collateral.gas_used)}\n"
             f"Remove collateral       - {test_utils.get_gas_usage(tx_remove_collateral.gas_used)}"
         )
         print("==================================")
-        print(brownie.network.state.TxHistory()._list)
-        brownie.network.history.clear()
-        print("==================================")
-        print(brownie.network.state.TxHistory()._list)
+        test_utils.GasStats.clear()
     assert True
 

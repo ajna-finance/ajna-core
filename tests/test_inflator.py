@@ -85,7 +85,7 @@ def calculate_pending_inflator(spr: int, secs: int) -> int:
     return (((1 * WAD) + spr) / WAD) ** secs
 
 
-def test_calculate_pending_inflator(mkr_dai_pool, chain):
+def test_calculate_pending_inflator(mkr_dai_pool, chain, test_utils):
     chain.sleep(8200)
     chain.mine()
     block_time = chain.time()
@@ -100,6 +100,8 @@ def test_calculate_pending_inflator(mkr_dai_pool, chain):
     inflator_py = calculate_pending_inflator(spr, secs_elapsed)
     print(f"python calculated inflator: {inflator_py}")
 
-    brownie.network.state.TxHistory().clear()
+    for line in brownie.test.output._build_gas_profile_output():
+        print(line)
+    test_utils.GasStats.clear()
     assert mkr_dai_pool.getPendingInflator() > 0
     assert mkr_dai_pool.getPendingInflator() > calculate_pending_inflator(spr, secs_elapsed)

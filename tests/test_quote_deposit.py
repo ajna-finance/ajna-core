@@ -242,6 +242,8 @@ def test_quote_deposit_gas_below_hdp(
         print("==================================")
         for i in range(len(txes)):
             print(f"Transaction: {i} | {test_utils.get_gas_usage(txes[i].gas_used)}")
+        test_utils.GasStats.print(['addQuoteToken'])
+        test_utils.GasStats.clear()
         print("==================================")
     assert True
 
@@ -265,13 +267,11 @@ def test_quote_deposit_gas_above_hdp(
         print("\n==================================")
         print("Gas estimations (deposit above hdp):")
         print("==================================")
-        for line in brownie.test.output._build_gas_profile_output():
-            if (line.find('addCollateral') != -1):
-                print(line)
         for i in range(len(txes)):
             print(
                 f"Transaction: {i} | Gas used: {test_utils.get_gas_usage(txes[i].gas_used)}"
             )
+        test_utils.GasStats.print(['addQuoteToken'])
+        test_utils.GasStats.clear()
         print("==================================")
-    brownie.network.state.TxHistory().clear()
     assert True
