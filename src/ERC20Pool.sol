@@ -49,10 +49,8 @@ contract ERC20Pool is IPool {
 
     IPriceBuckets private immutable _buckets;
 
-    // lenders book: lender address -> price bucket -> lender info struct
-    mapping(address => mapping(uint256 => LenderInfo)) public lenders;
-    // lender balance: lender address -> total amount
-    mapping(address => uint256) public lenderBalance;
+    // lenders lp token balances: lender address -> price bucket -> lender lp
+    mapping(address => mapping(uint256 => uint256)) public lpBalance;
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
@@ -104,13 +102,8 @@ contract ERC20Pool is IPool {
             inflatorSnapshot
         );
 
-        // update lender info for current price bucket
-        LenderInfo storage lender = lenders[msg.sender][_price];
-        lender.amount += _amount;
-        lender.lpTokens += lpTokens;
-
-        // update lender balance
-        lenderBalance[msg.sender] += _amount;
+        // update lender lp balance for current price bucket
+        lpBalance[msg.sender][_price] += lpTokens;
 
         // update quote token accumulator
         totalQuoteToken += _amount;
@@ -135,9 +128,8 @@ contract ERC20Pool is IPool {
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
-        LenderInfo storage lender = lenders[msg.sender][_price];
         require(
-            lender.amount >= _amount && totalQuoteToken - totalDebt >= _amount,
+            totalQuoteToken - totalDebt >= _amount,
             "ajna/amount-greater-than-claimable"
         );
 
@@ -149,7 +141,7 @@ contract ERC20Pool is IPool {
         (newLup, lpTokens) = _buckets.subtractFromBucket(
             _price,
             _amount,
-            lender.lpTokens,
+            lpBalance[msg.sender][_price],
             inflatorSnapshot
         );
 
@@ -164,10 +156,7 @@ contract ERC20Pool is IPool {
             "ajna/pool-undercollateralized"
         );
 
-        lender.amount -= _amount;
-        lender.lpTokens -= lpTokens;
-
-        lenderBalance[msg.sender] -= _amount;
+        lpBalance[msg.sender][_price] -= lpTokens;
 
         quoteToken.safeTransfer(msg.sender, _amount);
         emit RemoveQuoteToken(msg.sender, lup, _amount);

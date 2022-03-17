@@ -121,19 +121,19 @@ contract PriceBuckets is IPriceBuckets {
                 Bucket storage toBucket = buckets[bucket.down];
                 uint256 toBucketOnDeposit;
                 while (true) {
+                    accumulateBucketInterest(toBucket, _inflator);
+
                     toBucketOnDeposit = toBucket.amount - toBucket.debt;
                     if (reallocation < toBucketOnDeposit) {
                         // reallocate all and exit
                         bucket.debt -= reallocation;
                         toBucket.debt += reallocation;
-                        toBucket.inflatorSnapshot = _inflator;
                         lup = toBucket.price;
                         break;
                     } else {
                         reallocation -= toBucketOnDeposit;
                         bucket.debt -= toBucketOnDeposit;
                         toBucket.debt += toBucketOnDeposit;
-                        toBucket.inflatorSnapshot = _inflator;
                     }
 
                     if (toBucket.down == 0) {

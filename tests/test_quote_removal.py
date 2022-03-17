@@ -17,7 +17,6 @@ def test_quote_removal_no_loan(
     mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert dai.balanceOf(mkr_dai_pool) == 10_000 * 1e18
     assert dai.balanceOf(lender) == 190_000 * 1e18
-    assert mkr_dai_pool.lenderBalance(lender) == 10_000 * 1e18
     assert mkr_dai_pool.totalQuoteToken() == 10_000 * 1e18
 
     # should fail if trying to remove more than lended
@@ -33,7 +32,6 @@ def test_quote_removal_no_loan(
     tx = mkr_dai_pool.removeQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert dai.balanceOf(mkr_dai_pool) == 0
     assert dai.balanceOf(lender) == 200_000 * 1e18
-    assert mkr_dai_pool.lenderBalance(lender) == 0
     assert mkr_dai_pool.totalQuoteToken() == 0
     # check bucket balance
     (
@@ -48,11 +46,9 @@ def test_quote_removal_no_loan(
     assert bucket_deposit == 0
     assert snapshot == 1 * 1e18
     assert lpOutstanding == 0
-    (amount, lp) = mkr_dai_pool.lenders(lender, 4000 * 1e18)
-    assert amount == 0
 
     # bucket wasn't used so lender won't receive lp tokens
-    assert lp == 0
+    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 0
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == mkr_dai_pool
@@ -79,11 +75,8 @@ def test_quote_removal_loan_not_paid_back(
     mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert dai.balanceOf(mkr_dai_pool) == 10_000 * 1e18
     assert dai.balanceOf(lender) == 190_000 * 1e18
-    assert mkr_dai_pool.lenderBalance(lender) == 10_000 * 1e18
     assert mkr_dai_pool.totalQuoteToken() == 10_000 * 1e18
-    (amount, lp) = mkr_dai_pool.lenders(lender, 4000 * 1e18)
-    assert amount == 10_000 * 1e18
-    assert lp == 10_000 * 1e18
+    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 10_000 * 1e18
 
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})
     mkr_dai_pool.borrow(5_000 * 1e18, 4000 * 1e18, {"from": borrower})
@@ -97,7 +90,6 @@ def test_quote_removal_loan_not_paid_back(
     tx = mkr_dai_pool.removeQuoteToken(4_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert dai.balanceOf(mkr_dai_pool) == 1_000 * 1e18
     assert dai.balanceOf(lender) == 194_000 * 1e18
-    assert mkr_dai_pool.lenderBalance(lender) == 6_000 * 1e18
     assert mkr_dai_pool.totalQuoteToken() == 6_000 * 1e18
     # check bucket balance
     (
@@ -111,9 +103,7 @@ def test_quote_removal_loan_not_paid_back(
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_deposit == 6_000 * 1e18
     assert lpOutstanding == 6_000 * 1e18
-    (amount, lp) = mkr_dai_pool.lenders(lender, 4000 * 1e18)
-    assert amount == 6_000 * 1e18
-    assert lp == 6_000 * 1e18
+    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 6_000 * 1e18
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == mkr_dai_pool
@@ -153,7 +143,6 @@ def test_quote_removal_loan_paid_back(
     tx = mkr_dai_pool.removeQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert format(dai.balanceOf(mkr_dai_pool) / 1e18, ".3f") == format(0, ".3f")
     assert dai.balanceOf(lender) == 200_000 * 1e18
-    assert mkr_dai_pool.lenderBalance(lender) == 0
     assert mkr_dai_pool.totalQuoteToken() == 0
     # check bucket balance
     (
@@ -167,9 +156,7 @@ def test_quote_removal_loan_paid_back(
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_deposit == 0
     assert lpOutstanding == 0
-    (amount, lp) = mkr_dai_pool.lenders(lender, 4000 * 1e18)
-    assert amount == 0
-    assert lp == 0
+    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 0
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == mkr_dai_pool
@@ -207,7 +194,6 @@ def test_quote_removal_from_lup_with_reallocation(
     tx = mkr_dai_pool.removeQuoteToken(1_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert dai.balanceOf(mkr_dai_pool) == 2_800 * 1e18
     assert dai.balanceOf(lender) == 194_200 * 1e18
-    assert mkr_dai_pool.lenderBalance(lender) == 5_800 * 1e18
     assert mkr_dai_pool.totalQuoteToken() == 5_800 * 1e18
 
     # check lup moved down to 3000
@@ -225,9 +211,7 @@ def test_quote_removal_from_lup_with_reallocation(
     assert bucket_debt == 2_400 * 1e18
     assert bucket_deposit == 2_400 * 1e18
     assert lpOutstanding == 2_400 * 1e18
-    (amount, lp) = mkr_dai_pool.lenders(lender, 4000 * 1e18)
-    assert amount == 2_400 * 1e18
-    assert lp == 2_400 * 1e18
+    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 2_400 * 1e18
 
     # check 3000 bucket balance
     (
@@ -243,9 +227,7 @@ def test_quote_removal_from_lup_with_reallocation(
     compare_first_16_digits(Decimal(bucket_debt), Decimal(600000004756468767000))
     assert bucket_deposit == 3_400 * 1e18
     assert lpOutstanding == 3_400 * 1e18
-    (amount, lp) = mkr_dai_pool.lenders(lender, 3000 * 1e18)
-    assert amount == 3_400 * 1e18
-    assert lp == 3_400 * 1e18
+    assert mkr_dai_pool.lpBalance(lender, 3000 * 1e18) == 3_400 * 1e18
 
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
@@ -293,7 +275,6 @@ def test_quote_removal_below_lup(
     # lender removes 1000 DAI
     tx = mkr_dai_pool.removeQuoteToken(1_000 * 1e18, 3000 * 1e18, {"from": lender})
     assert dai.balanceOf(mkr_dai_pool) == 11_000 * 1e18
-    assert mkr_dai_pool.lenderBalance(lender) == 14_000 * 1e18
     assert mkr_dai_pool.totalQuoteToken() == 14_000 * 1e18
 
     # check lup same 4000
@@ -320,9 +301,7 @@ def test_quote_removal_below_lup(
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_debt == 3_000 * 1e18
     assert bucket_deposit == 5_000 * 1e18
-    (amount, lp) = mkr_dai_pool.lenders(lender, 4000 * 1e18)
-    assert amount == 5_000 * 1e18
-    assert lp == 5_000 * 1e18
+    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 5_000 * 1e18
 
     # check 3000 bucket balance
     (
@@ -338,9 +317,7 @@ def test_quote_removal_below_lup(
     compare_first_16_digits(Decimal(bucket_debt), Decimal(600000004756468767000))
     assert bucket_deposit == 4_000 * 1e18
     assert lpOutstanding == 4_000 * 1e18
-    (amount, lp) = mkr_dai_pool.lenders(lender, 3000 * 1e18)
-    assert amount == 4_000 * 1e18
-    assert lp == 4_000 * 1e18
+    assert mkr_dai_pool.lpBalance(lender, 3000 * 1e18) == 4_000 * 1e18
 
     with capsys.disabled():
         print("\n==================================")
