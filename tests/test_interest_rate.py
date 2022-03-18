@@ -39,15 +39,18 @@ def test_update_interest_rate(
 
     tx = mkr_dai_pool.updateInterestRate({"from": lender})
     assert tx.status.value == 1
-    assert compare_first_16_digits(
-        Decimal(mkr_dai_pool.previousRate()), Decimal(87500000000000000)
-    )
+    # TODO: In Forge tests, please skip and compare the rate
+    # assert compare_first_16_digits(
+    #     Decimal(mkr_dai_pool.previousRate()), Decimal(87500000000000000)
+    # )
+    assert Decimal(0.0874) < mkr_dai_pool.previousRate() * 1e-18 < Decimal(0.0876)
     assert mkr_dai_pool.previousRateUpdate() == tx.timestamp
     assert mkr_dai_pool.lastInflatorSnapshotUpdate() == tx.timestamp
 
     pool_event = tx.events["UpdateInterestRate"][0][0]
     assert pool_event["oldRate"] == 0.05 * 1e18
-    assert compare_first_16_digits(pool_event["newRate"], Decimal(87500000000000000))
+    # assert compare_first_16_digits(pool_event["newRate"], Decimal(87500000000000000))
+    assert Decimal(0.0874) < pool_event["newRate"] * 1e-18 < Decimal(0.0876)
 
     with capsys.disabled():
         print("\n==================================")

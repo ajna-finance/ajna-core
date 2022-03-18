@@ -329,7 +329,7 @@ def test_quote_removal_below_lup(
         print("Gas estimations:")
         print("==================================")
         print(
-            f"Remove quote token bellow lup           - {test_utils.get_gas_usage(tx.gas_used)}"
+            f"Remove quote token below lup            - {test_utils.get_gas_usage(tx.gas_used)}"
         )
         print("==================================")
 
