@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
+
 import {DSTestPlus} from "./utils/DSTestPlus.sol";
 import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
 import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
@@ -46,7 +47,7 @@ contract ERC20PoolTest is DSTestPlus {
         );
 
         skip(8200);
-        borrower.addCollteral(pool, 10 * 1e18);
+        borrower.addCollateral(pool, 10 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             inflatorSnapshot,
@@ -113,13 +114,17 @@ contract ERC20PoolTest is DSTestPlus {
         view
         returns (uint256 calculatedInflator)
     {
-        uint256 secsElapsed = block.timestamp -
+        uint256 secondsSinceLastUpdate = block.timestamp -
             pool.lastInflatorSnapshotUpdate();
 
         uint256 spr = pool.previousRate() / (3600 * 24 * 365);
 
-        calculatedInflator =
-            pool.inflatorSnapshot() *
-            (((((1 * 1e18) + spr) / 1) * 1e18)**secsElapsed);
+        calculatedInflator = PRBMathUD60x18.mul(
+            pool.inflatorSnapshot(),
+            PRBMathUD60x18.pow(
+                PRBMathUD60x18.fromUint(1) + spr,
+                PRBMathUD60x18.fromUint(secondsSinceLastUpdate)
+            )
+        );
     }
 }
