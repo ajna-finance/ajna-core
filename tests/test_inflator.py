@@ -13,7 +13,7 @@ def test_inflator(
     mkr_dai_pool,
     chain,
 ):
-
+    old_inflator = mkr_dai_pool.inflatorSnapshot()
     lender = lenders[0]
     borrower1 = borrowers[0]
 
@@ -21,11 +21,11 @@ def test_inflator(
 
     # check inflator update on quote token deposit
     tx = mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
+
     assert mkr_dai_pool.lastInflatorSnapshotUpdate() == tx.timestamp
-    assert compare_first_16_digits(
-        Decimal(mkr_dai_pool.inflatorSnapshot()),
-        calculate_inflator(mkr_dai_pool, tx.timestamp),
-    )
+
+    assert mkr_dai_pool.inflatorSnapshot() >= old_inflator
+    old_inflator = mkr_dai_pool.inflatorSnapshot()
 
     # check inflator update on collateral deposit
     tx = mkr_dai_pool.addCollateral(10 * 1e18, {"from": borrower1})
