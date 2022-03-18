@@ -33,6 +33,14 @@ contract UserWithCollateral {
     ) public {
         pool.borrow(amount, price);
     }
+
+    function repay(ERC20Pool pool, uint256 amount) public {
+        pool.repay(amount);
+    }
+
+    function removeCollateral(ERC20Pool pool, uint256 amount) public {
+        pool.removeCollateral(amount);
+    }
 }
 
 contract UserWithQuoteToken {
