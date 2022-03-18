@@ -66,16 +66,22 @@ contract ERC20Pool is IPool {
     uint256 public totalDebt;
 
     event AddQuoteToken(
-        address lender,
-        uint256 price,
+        address indexed lender,
+        uint256 indexed price,
         uint256 amount,
         uint256 lup
     );
-    event RemoveQuoteToken(address lender, uint256 price, uint256 amount);
-    event AddCollateral(address borrower, uint256 amount);
-    event RemoveCollateral(address borrower, uint256 amount);
-    event Borrow(address borrower, uint256 price, uint256 amount);
-    event Repay(address borrower, uint256 price, uint256 amount);
+    event RemoveQuoteToken(
+        address indexed lender,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lup
+    );
+    event AddCollateral(address indexed borrower, uint256 amount);
+    event RemoveCollateral(address indexed borrower, uint256 amount);
+    event Borrow(address indexed borrower, uint256 lup, uint256 amount);
+    event Repay(address indexed borrower, uint256 lup, uint256 amount);
+    event UpdateInterestRate(uint256 oldRate, uint256 newRate);
 
     constructor(IERC20 _collateral, IERC20 _quoteToken) {
         collateral = _collateral;
@@ -159,7 +165,7 @@ contract ERC20Pool is IPool {
         lpBalance[msg.sender][_price] -= lpTokens;
 
         quoteToken.safeTransfer(msg.sender, _amount);
-        emit RemoveQuoteToken(msg.sender, lup, _amount);
+        emit RemoveQuoteToken(msg.sender, _price, _amount, lup);
     }
 
     function addCollateral(uint256 _amount) external {
@@ -290,6 +296,7 @@ contract ERC20Pool is IPool {
     function updateInterestRate() external {
         uint256 actualUtilization = getPoolActualUtilization();
         if (actualUtilization != 0 && previousRateUpdate < block.timestamp) {
+            uint256 oldRate = previousRate;
             accumulatePoolInterest();
 
             previousRate = Maths.wmul(
@@ -298,6 +305,7 @@ contract ERC20Pool is IPool {
                     Maths.ONE_WAD)
             );
             previousRateUpdate = block.timestamp;
+            emit UpdateInterestRate(oldRate, previousRate);
         }
     }
 

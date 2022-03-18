@@ -75,7 +75,7 @@ def test_repay(
     pool_event = tx.events["Repay"][0][0]
     print(pool_event)
     assert pool_event["borrower"] == borrower1
-    assert pool_event["price"] == 4_000 * 1e18
+    assert pool_event["lup"] == 4_000 * 1e18
     assert pool_event["amount"] == 10_000 * 1e18
 
     # repay remaining 15000 DAI plus accumulated debt
@@ -111,7 +111,7 @@ def test_repay(
     )
     pool_event = tx.events["Repay"][0][0]
     assert pool_event["borrower"] == borrower1
-    assert pool_event["price"] == 5_000 * 1e18
+    assert pool_event["lup"] == 5_000 * 1e18
     assert format(pool_event["amount"] / 1e18, ".2f") == format(
         15000.520044814131593047, ".2f"
     )
