@@ -66,21 +66,21 @@ contract ERC20Pool is IPool {
     uint256 public totalDebt;
 
     event AddQuoteToken(
-        address lender,
-        uint256 price,
+        address indexed lender,
+        uint256 indexed price,
         uint256 amount,
         uint256 lup
     );
     event RemoveQuoteToken(
-        address lender,
-        uint256 price,
+        address indexed lender,
+        uint256 indexed price,
         uint256 amount,
         uint256 lup
     );
-    event AddCollateral(address borrower, uint256 amount);
-    event RemoveCollateral(address borrower, uint256 amount);
-    event Borrow(address borrower, uint256 lup, uint256 amount);
-    event Repay(address borrower, uint256 lup, uint256 amount);
+    event AddCollateral(address indexed borrower, uint256 amount);
+    event RemoveCollateral(address indexed borrower, uint256 amount);
+    event Borrow(address indexed borrower, uint256 lup, uint256 amount);
+    event Repay(address indexed borrower, uint256 lup, uint256 amount);
     event UpdateInterestRate(uint256 oldRate, uint256 newRate);
 
     constructor(IERC20 _collateral, IERC20 _quoteToken) {
