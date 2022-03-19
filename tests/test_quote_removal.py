@@ -47,7 +47,7 @@ def test_quote_removal_no_loan(
     assert snapshot == 1 * 1e18
     assert lpOutstanding == 0
 
-    # bucket wasn't used so lender won't receive lp tokens
+    # lender removed their entire quote, so shouldn't have LP tokens
     assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 0
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
@@ -57,7 +57,8 @@ def test_quote_removal_no_loan(
     pool_event = tx.events["RemoveQuoteToken"][0][0]
     assert pool_event["amount"] == 10_000 * 1e18
     assert pool_event["lender"] == lender
-    assert pool_event["price"] == 0
+    assert pool_event["price"] == 4000 * 1e18
+    assert pool_event["lup"] == 0
 
 
 def test_quote_removal_loan_not_paid_back(
@@ -113,6 +114,7 @@ def test_quote_removal_loan_not_paid_back(
     assert pool_event["amount"] == 4_000 * 1e18
     assert pool_event["lender"] == lender
     assert pool_event["price"] == 4000 * 1e18
+    assert pool_event["lup"] == 4000 * 1e18
 
 
 def test_quote_removal_loan_paid_back(
@@ -166,6 +168,7 @@ def test_quote_removal_loan_paid_back(
     assert pool_event["amount"] == 10_000 * 1e18
     assert pool_event["lender"] == lender
     assert pool_event["price"] == 4000 * 1e18
+    assert pool_event["lup"] == 4000 * 1e18
 
 
 def test_quote_removal_from_lup_with_reallocation(
@@ -225,7 +228,7 @@ def test_quote_removal_from_lup_with_reallocation(
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     # debt should be 600 DAI + accumulated interest
     # TODO: properly check in forge tests
-    assert Decimal(600.0000046) < bucket_debt * 1e-18 < Decimal(600.0000048)
+    assert Decimal(600) <= bucket_debt * 1e-18 <= Decimal(601)
     assert bucket_deposit == 3_400 * 1e18
     assert lpOutstanding == 3_400 * 1e18
     assert mkr_dai_pool.lpBalance(lender, 3000 * 1e18) == 3_400 * 1e18
@@ -238,7 +241,8 @@ def test_quote_removal_from_lup_with_reallocation(
     pool_event = tx.events["RemoveQuoteToken"][0][0]
     assert pool_event["amount"] == 1_000 * 1e18
     assert pool_event["lender"] == lender
-    assert pool_event["price"] == 3_000 * 1e18
+    assert pool_event["price"] == 4_000 * 1e18
+    assert pool_event["lup"] == 3_000 * 1e18
 
     with capsys.disabled():
         print("\n==================================")
@@ -289,7 +293,8 @@ def test_quote_removal_below_lup(
     pool_event = tx.events["RemoveQuoteToken"][0][0]
     assert pool_event["amount"] == 1_000 * 1e18
     assert pool_event["lender"] == lender
-    assert pool_event["price"] == 4_000 * 1e18
+    assert pool_event["price"] == 3_000 * 1e18
+    assert pool_event["lup"] == 4_000 * 1e18
     # check 4000 bucket balance
     (
         _,
@@ -324,7 +329,7 @@ def test_quote_removal_below_lup(
         print("Gas estimations:")
         print("==================================")
         print(
-            f"Remove quote token bellow lup           - {test_utils.get_gas_usage(tx.gas_used)}"
+            f"Remove quote token below lup            - {test_utils.get_gas_usage(tx.gas_used)}"
         )
         print("==================================")
 

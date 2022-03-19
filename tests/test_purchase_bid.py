@@ -127,9 +127,10 @@ def test_purchase_bid(
     assert transfer_quote["wad"] == 2_000 * 1e18
     # custom purchase event
     pool_event = tx.events["Purchase"][0][0]
-    assert pool_event["sender"] == bidder
+    assert pool_event["bidder"] == bidder
     assert pool_event["amount"] == 2_000 * 1e18
     assert pool_event["price"] == 4_000 * 1e18
+    assert pool_event["collateral"] == 0.5 * 1e18
 
     with capsys.disabled():
         print("\n==================================")

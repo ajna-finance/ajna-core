@@ -22,7 +22,7 @@ contract UserWithCollateral {
         token.approve(spender, amount);
     }
 
-    function addCollteral(ERC20Pool pool, uint256 amount) public {
+    function addCollateral(ERC20Pool pool, uint256 amount) public {
         pool.addCollateral(amount);
     }
 
@@ -32,6 +32,14 @@ contract UserWithCollateral {
         uint256 price
     ) public {
         pool.borrow(amount, price);
+    }
+
+    function repay(ERC20Pool pool, uint256 amount) public {
+        pool.repay(amount);
+    }
+
+    function removeCollateral(ERC20Pool pool, uint256 amount) public {
+        pool.removeCollateral(amount);
     }
 }
 
