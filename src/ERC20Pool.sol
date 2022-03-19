@@ -78,7 +78,7 @@ contract ERC20Pool is IPool {
     event RemoveQuoteToken(address lender, uint256 price, uint256 amount);
     event AddCollateral(address borrower, uint256 amount);
     event RemoveCollateral(address borrower, uint256 amount);
-    event ClaimCollateral(address lender, uint256 amount, uint256 lpTokens);
+    event ClaimCollateral(address claimer, uint256 amount, uint256 lps);
     event Borrow(address borrower, uint256 price, uint256 amount);
     event Repay(address borrower, uint256 price, uint256 amount);
     event Purchase(
@@ -215,7 +215,7 @@ contract ERC20Pool is IPool {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
         uint256 maxClaim = lpBalance[msg.sender][_price];
-        require(maxClaim > 0, "ajna/no-claim-to-bucket");
+        require(maxClaim != 0, "ajna/no-claim-to-bucket");
 
         uint256 claimedLpTokens = _buckets.claimCollateral(
             _price,

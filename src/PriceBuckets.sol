@@ -138,24 +138,25 @@ contract PriceBuckets is IPriceBuckets {
         uint256 _price,
         uint256 _amount,
         uint256 _lpBalance
-    ) public returns (uint256 lpTokens) {
+    ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
 
         require(
-            bucket.collateral > 0 && _amount > bucket.collateral,
+            bucket.collateral > 0 && _amount <= bucket.collateral,
             "ajna/insufficient-amount-to-claim"
         );
 
         uint256 exchangeRate = getExchangeRate(bucket);
-        uint256 lpTokens = Maths.wdiv(
-            Maths.wmul(bucket.amount, bucket.price),
+        uint256 lpRedemption = Maths.wdiv(
+            Maths.wmul(_amount, bucket.price),
             exchangeRate
         );
 
-        require(lpTokens > _lpBalance, "ajna/insufficient-lp-balance");
+        require(lpRedemption <= _lpBalance, "ajna/insufficient-lp-balance");
 
         bucket.collateral -= _amount;
-        bucket.lpOutstanding -= lpTokens;
+        bucket.lpOutstanding -= lpRedemption;
+        return lpRedemption;
     }
 
     function borrow(
@@ -249,13 +250,7 @@ contract PriceBuckets is IPriceBuckets {
         Bucket storage bucket = buckets[_price];
         accumulateBucketInterest(bucket, _inflator);
 
-        require(_collateral <= bucket.collateral, "ajna/not-enough-collateral");
-
-        require(
-            bucket.amount > bucket.debt &&
-                _amount < bucket.amount - bucket.debt,
-            "ajna/not-enough-quote-token"
-        );
+        require(_amount <= bucket.amount, "ajna/not-enough-quote-token");
 
         lup = reallocateDown(bucket, _amount, _inflator);
 
@@ -270,7 +265,10 @@ contract PriceBuckets is IPriceBuckets {
     ) private returns (uint256 lup) {
         lup = _bucket.price;
         // debt reallocation
-        uint256 onDeposit = _bucket.amount - _bucket.debt;
+        uint256 onDeposit;
+        if (_bucket.amount > _bucket.debt) {
+            onDeposit = _bucket.amount - _bucket.debt;
+        }
         if (_amount > onDeposit) {
             uint256 reallocation = _amount - onDeposit;
             if (_bucket.down != 0) {
@@ -425,9 +423,10 @@ contract PriceBuckets is IPriceBuckets {
         if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
             return
                 Maths.wdiv(
-                    Maths.max(bucket.amount, bucket.debt),
+                    Maths.max(bucket.amount, bucket.debt) +
+                        Maths.wmul(bucket.collateral, bucket.price),
                     bucket.lpOutstanding
-                ) + Maths.wmul(bucket.collateral, bucket.price);
+                );
         }
         return Maths.ONE_WAD;
     }
