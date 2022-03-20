@@ -2,7 +2,6 @@ import pytest
 from sdk import *
 from brownie import test, network
 import inspect
-from pprint import pprint
 
 @pytest.fixture()
 def sdk() -> AjnaSdk:
