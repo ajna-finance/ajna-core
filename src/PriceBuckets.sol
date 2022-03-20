@@ -273,11 +273,15 @@ contract PriceBuckets is IPriceBuckets {
             uint256 reallocation = _amount - onDeposit;
             if (_bucket.down != 0) {
                 Bucket storage toBucket = buckets[_bucket.down];
-                uint256 toBucketOnDeposit;
+
                 while (true) {
                     accumulateBucketInterest(toBucket, _inflator);
 
-                    toBucketOnDeposit = toBucket.amount - toBucket.debt;
+                    uint256 toBucketOnDeposit;
+                    if (toBucket.amount > toBucket.debt) {
+                        toBucketOnDeposit = toBucket.amount - toBucket.debt;
+                    }
+
                     if (reallocation < toBucketOnDeposit) {
                         // reallocate all and exit
                         _bucket.debt -= reallocation;
@@ -285,13 +289,16 @@ contract PriceBuckets is IPriceBuckets {
                         lup = toBucket.price;
                         break;
                     } else {
-                        reallocation -= toBucketOnDeposit;
-                        _bucket.debt -= toBucketOnDeposit;
-                        toBucket.debt += toBucketOnDeposit;
+                        if (toBucketOnDeposit != 0) {
+                            reallocation -= toBucketOnDeposit;
+                            _bucket.debt -= toBucketOnDeposit;
+                            toBucket.debt += toBucketOnDeposit;
+                        }
                     }
 
                     if (toBucket.down == 0) {
-                        // nowhere to go
+                        // last bucket, nowhere to go, guard against reallocation failures
+                        require(reallocation == 0, "ajna/failed-to-reallocate");
                         lup = toBucket.price;
                         break;
                     }

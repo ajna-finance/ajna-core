@@ -338,6 +338,11 @@ contract ERC20Pool is IPool {
 
         accumulatePoolInterest();
 
+        require(
+            _amount <= totalQuoteToken - totalDebt,
+            "ajna/not-enough-liquidity"
+        );
+
         uint256 newLup = _buckets.purchaseBid(
             _price,
             _amount,
@@ -345,8 +350,8 @@ contract ERC20Pool is IPool {
             inflatorSnapshot
         );
 
-        // move lup down only if removal happened at lup and new lup different than current
-        if (_price == lup && newLup < lup) {
+        // move lup down only if removal happened at lup or higher and new lup different than current
+        if (_price >= lup && newLup < lup) {
             lup = newLup;
         }
 
