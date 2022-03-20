@@ -2,16 +2,17 @@ import brownie
 from brownie import Contract
 import pytest
 from decimal import *
-
+import inspect
 
 def test_update_interest_rate(
     lenders,
     borrowers,
     mkr_dai_pool,
     capsys,
-    test_utils,
+    gas_utils,
 ):
 
+    gas_utils.start_profiling()
     lender = lenders[0]
     borrower1 = borrowers[0]
 
@@ -47,11 +48,13 @@ def test_update_interest_rate(
 
     with capsys.disabled():
         print("\n==================================")
-        print("Gas estimations:")
+        print(f"Gas estimations({inspect.stack()[0][3]}):")
         print("==================================")
         print(
-            f"Update interest rate           - {test_utils.get_gas_usage(tx.gas_used)}"
+            f"Update interest rate           - {gas_utils.get_usage(tx.gas_used)}"
         )
+        gas_utils.print()
+        gas_utils.end_profiling()
         print("==================================")
 
 

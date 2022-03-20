@@ -2,6 +2,7 @@ from multiprocessing import pool
 import brownie
 from brownie import Contract
 import pytest
+import inspect
 
 
 def test_repay(
@@ -126,8 +127,9 @@ def test_repay_gas(
     mkr_dai_pool,
     dai,
     capsys,
-    test_utils,
+    gas_utils,
 ):
+    gas_utils.start_profiling()
     for i in range(12):
         mkr_dai_pool.addQuoteToken(
             10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
@@ -149,13 +151,13 @@ def test_repay_gas(
 
     with capsys.disabled():
         print("\n==================================")
-        print("Gas estimations:")
+        print(f"Gas estimations({inspect.stack()[0][3]}):")
         print("==================================")
         print(
-            f"Repay single bucket          - {test_utils.get_gas_usage(tx_repay_to_one_bucket.gas_used)}\n"
-            f"Repay multiple buckets (11)  - {test_utils.get_gas_usage(tx_repay_to_11_buckets.gas_used)}"
+            f"Repay single bucket          - {gas_utils.get_usage(tx_repay_to_one_bucket.gas_used)}\n"
+            f"Repay multiple buckets (11)  - {gas_utils.get_usage(tx_repay_to_11_buckets.gas_used)}"
         )
-        test_utils.GasStats.print(['repay', 'borrow'])
-        test_utils.GasStats.clear()
+        gas_utils.print(['repay', 'borrow'])
+        gas_utils.end_profiling()
         print("==================================")
     assert True

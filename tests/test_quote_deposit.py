@@ -2,6 +2,7 @@ import brownie
 from brownie import Contract
 import pytest
 from decimal import *
+import inspect
 
 
 def test_quote_deposit(
@@ -226,8 +227,9 @@ def test_quote_deposit_gas_below_hdp(
     dai,
     mkr,
     capsys,
-    test_utils,
+    gas_utils,
 ):
+    gas_utils.start_profiling()
     txes = []
     for i in range(20):
         tx = mkr_dai_pool.addQuoteToken(
@@ -236,13 +238,13 @@ def test_quote_deposit_gas_below_hdp(
         txes.append(tx)
     with capsys.disabled():
         print("\n==================================")
-        print("Gas estimations (deposit below hdp):")
+        print(f"Gas estimations({inspect.stack()[0][3]})(deposit below hdp):")
         print("==================================")
         for i in range(len(txes)):
-            print(f"Transaction: {i} | {test_utils.get_gas_usage(txes[i].gas_used)}")
+            print(f"Transaction: {i} | {gas_utils.get_usage(txes[i].gas_used)}")
+        gas_utils.print(['addQuoteToken'])
+        gas_utils.end_profiling()
         print("==================================")
-        test_utils.GasStats.print(['addQuoteToken'])
-        test_utils.GasStats.clear()
     assert True
 
 
@@ -253,8 +255,9 @@ def test_quote_deposit_gas_above_hdp(
     dai,
     mkr,
     capsys,
-    test_utils,
+    gas_utils,
 ):
+    gas_utils.start_profiling()
     txes = []
     for i in range(20):
         tx = mkr_dai_pool.addQuoteToken(
@@ -263,13 +266,13 @@ def test_quote_deposit_gas_above_hdp(
         txes.append(tx)
     with capsys.disabled():
         print("\n==================================")
-        print("Gas estimations (deposit above hdp):")
+        print(f"Gas estimations({inspect.stack()[0][3]})(deposit above hdp):")
         print("==================================")
         for i in range(len(txes)):
             print(
-                f"Transaction: {i} | Gas used: {test_utils.get_gas_usage(txes[i].gas_used)}"
+                f"Transaction: {i} | Gas used: {gas_utils.get_usage(txes[i].gas_used)}"
             )
+        gas_utils.print(['addQuoteToken'])
+        gas_utils.end_profiling()
         print("==================================")
-        test_utils.GasStats.print(['addQuoteToken'])
-        test_utils.GasStats.clear()
     assert True

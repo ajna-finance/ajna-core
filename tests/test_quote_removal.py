@@ -2,6 +2,7 @@ import brownie
 from brownie import Contract
 import pytest
 from decimal import *
+import inspect
 
 
 def test_quote_removal_no_loan(
@@ -174,9 +175,9 @@ def test_quote_removal_from_lup_with_reallocation(
     mkr_dai_pool,
     dai,
     capsys,
-    test_utils,
+    gas_utils,
 ):
-
+    gas_utils.start_profiling()
     lender = lenders[0]
     borrower = borrowers[0]
 
@@ -241,13 +242,13 @@ def test_quote_removal_from_lup_with_reallocation(
 
     with capsys.disabled():
         print("\n==================================")
-        print("Gas estimations:")
+        print(f"Gas estimations({inspect.stack()[0][3]}):")
         print("==================================")
         print(
-            f"Remove quote token from lup (reallocate to one bucket)           - {test_utils.get_gas_usage(tx.gas_used)}"
+            f"Remove quote token from lup (reallocate to one bucket)           - {gas_utils.get_usage(tx.gas_used)}"
         )
-        test_utils.GasStats.print(['removeQuoteToken', 'addCollateral', 'addQuoteToken'])
-        test_utils.GasStats.clear()
+        gas_utils.print(['removeQuoteToken', 'addCollateral', 'addQuoteToken'])
+        gas_utils.end_profiling()
         print("==================================")
 
 
@@ -257,9 +258,10 @@ def test_quote_removal_below_lup(
     mkr_dai_pool,
     dai,
     capsys,
-    test_utils,
+    gas_utils,
 ):
 
+    gas_utils.start_profiling()
     lender = lenders[0]
     borrower = borrowers[0]
 
@@ -322,14 +324,14 @@ def test_quote_removal_below_lup(
     assert mkr_dai_pool.lpBalance(lender, 3000 * 1e18) == 4_000 * 1e18
 
     with capsys.disabled():
-        print("\n==================================")
-        print("Gas estimations:")
+        print("\n================================")
+        print(f"Gas estimations({inspect.stack()[0][3]}):")
         print("==================================")
         print(
-            f"Remove quote token bellow lup           - {test_utils.get_gas_usage(tx.gas_used)}"
+            f"Remove quote token bellow lup           - {gas_utils.get_usage(tx.gas_used)}"
         )
-        test_utils.GasStats.print(['removeQuoteToken', 'addCollateral', 'addQuoteToken'])
-        test_utils.GasStats.clear()
+        gas_utils.print(['removeQuoteToken', 'addCollateral', 'addQuoteToken'])
+        gas_utils.end_profiling()
         print("==================================")
 
 

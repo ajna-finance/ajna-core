@@ -2,6 +2,7 @@ import brownie
 from brownie import Contract
 import pytest
 from decimal import *
+import inspect
 
 
 def test_borrow(
@@ -12,7 +13,6 @@ def test_borrow(
     mkr,
     chain,
 ):
-
     lender = lenders[0]
     borrower1 = borrowers[0]
 
@@ -275,8 +275,9 @@ def test_borrow_gas(
     dai,
     mkr,
     capsys,
-    test_utils,
+    gas_utils,
 ):
+    gas_utils.start_profiling()
     txes = []
     for i in range(12):
         mkr_dai_pool.addQuoteToken(
@@ -306,17 +307,17 @@ def test_borrow_gas(
 
     with capsys.disabled():
         print("\n==================================")
-        print("Gas estimations:")
+        print(f"Gas estimations({inspect.stack()[0][3]}):")
         print("==================================")
         print(
-            f"Borrow single bucket           - {test_utils.get_gas_usage(tx_one_bucket.gas_used)}\n"
-            f"Reallocate debt single bucket  - {test_utils.get_gas_usage(tx_reallocate_debt_one_bucket.gas_used)}"
+            f"Borrow single bucket           - {gas_utils.get_usage(tx_one_bucket.gas_used)}\n"
+            f"Reallocate debt single bucket  - {gas_utils.get_usage(tx_reallocate_debt_one_bucket.gas_used)}"
         )
         print(
-            f"Borrow from multiple buckets (11)      - {test_utils.get_gas_usage(tx_11_buckets.gas_used)}\n"
-            f"Reallocate debt multiple buckets (11)  - {test_utils.get_gas_usage(tx_reallocate_debt_11_buckets.gas_used)}"
+            f"Borrow from multiple buckets (11)      - {gas_utils.get_usage(tx_11_buckets.gas_used)}\n"
+            f"Reallocate debt multiple buckets (11)  - {gas_utils.get_usage(tx_reallocate_debt_11_buckets.gas_used)}"
         )
-        test_utils.GasStats.print(['borrow', 'addCollateral', 'addQuoteToken'])
-        test_utils.GasStats.clear()
+        gas_utils.print(['borrow', 'addCollateral', 'addQuoteToken'])
+        gas_utils.end_profiling()
         print("==================================")
     assert True
