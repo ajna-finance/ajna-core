@@ -83,7 +83,7 @@ def test_borrow(
     assert transfer_event["wad"] == 21_000 * 1e18
     pool_event = tx.events["Borrow"][0][0]
     assert pool_event["borrower"] == borrower1
-    assert pool_event["price"] == 3000 * 1e18
+    assert pool_event["lup"] == 3000 * 1e18
     assert pool_event["amount"] == 21_000 * 1e18
 
     chain.sleep(8200)
@@ -153,7 +153,7 @@ def test_borrow(
     assert transfer_event["wad"] == 9_000 * 1e18
     pool_event = tx.events["Borrow"][0][0]
     assert pool_event["borrower"] == borrower1
-    assert pool_event["price"] == 2500 * 1e18
+    assert pool_event["lup"] == 2500 * 1e18
     assert pool_event["amount"] == 9_000 * 1e18
 
     # deposit at 5000 and pay back entire debt
