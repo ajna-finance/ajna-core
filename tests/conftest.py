@@ -78,12 +78,21 @@ def borrowers(sdk, mkr_dai_pool):
     return borrowers
 
 
-class GasStats:
-    is_initialized = False
-    self_ref = None
+class GasStatTracer(object):
 
-    def __init__(self):
-        self._cached = {}
+    def __init__(self, imported_cache, args):
+        self._cached = imported_cache
+        print(f'cache here -- {self._cached}')
+        print(f'args here -- {args}')
+
+    def __enter__(self):
+        self.start_profiling()
+        return GasStatTracer
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.print()
+        self.end_profiling()
+        return GasStatTracer
 
     # @notice print the gas statistics of the txs collected since last cleared
     # @param method_names optional array of the method names to print gas stats for
@@ -142,12 +151,24 @@ class GasStats:
         in_fiat = in_eth * 3000
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
 
+class GasProfile:
+    is_initialized = False
+    self_ref = None
+
+    def __init__(self):
+        self.cached = {}
 
 @pytest.fixture
 def gas_utils():
-    if GasStats.is_initialized:
-        return GasStats.self_ref
+    if GasProfile.is_initialized:
+        return {
+            'cache': GasProfile.self_ref.cached,
+            'Trace': GasStatTracer
+        }
     else:
-        GasStats.is_initialized = True
-        GasStats.self_ref = GasStats()
-        return GasStats.self_ref
+        GasProfile.is_initialized = True
+        GasProfile.self_ref = GasProfile()
+        return {
+            'cache': GasProfile.self_ref.cached,
+            'Trace': GasStatTracer
+        }
