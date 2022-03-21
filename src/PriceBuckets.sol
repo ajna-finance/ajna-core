@@ -5,25 +5,26 @@ import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import "./libraries/Maths.sol";
 
 interface IPriceBuckets {
-    function addToBucket(
+    function addQuoteToken(
         uint256 _price,
         uint256 _amount,
-        uint256 _inflator
-    ) external returns (uint256 lptokens);
+        uint256 _lup,
+        uint256 _inflator,
+        bool _reallocate
+    ) external returns (uint256 lup, uint256 lptokens);
 
-    function subtractFromBucket(
+    function removeQuoteToken(
         uint256 _price,
         uint256 _amount,
         uint256 _lpBalance,
         uint256 _inflator
     ) external returns (uint256 lup, uint256 lptokens);
 
-    function reallocateDebt(
-        uint256 _amount,
+    function claimCollateral(
         uint256 _price,
-        uint256 _lup,
-        uint256 _inflator
-    ) external returns (uint256 price);
+        uint256 _amount,
+        uint256 _lpBalance
+    ) external returns (uint256 lptokens);
 
     function borrow(
         uint256 _amount,
@@ -37,6 +38,13 @@ interface IPriceBuckets {
         uint256 _lup,
         uint256 _inflator
     ) external returns (uint256 lup, uint256 debtToPay);
+
+    function purchaseBid(
+        uint256 _price,
+        uint256 _amount,
+        uint256 _collateral,
+        uint256 _inflator
+    ) external returns (uint256 lup);
 
     function ensureBucket(uint256 _hdp, uint256 _price)
         external
@@ -74,26 +82,34 @@ contract PriceBuckets is IPriceBuckets {
         uint256 debt; // accumulated bucket debt
         uint256 inflatorSnapshot; // bucket inflator snapshot
         uint256 lpOutstanding;
+        uint256 collateral;
     }
 
     mapping(uint256 => Bucket) private buckets;
     BitMaps.BitMap private bitmap;
 
-    function addToBucket(
+    function addQuoteToken(
         uint256 _price,
         uint256 _amount,
-        uint256 _inflator
-    ) public returns (uint256 lpTokens) {
+        uint256 _lup,
+        uint256 _inflator,
+        bool _reallocate
+    ) public returns (uint256 lup, uint256 lpTokens) {
         Bucket storage bucket = buckets[_price];
 
         accumulateBucketInterest(bucket, _inflator);
+
+        lup = _lup;
+        if (_reallocate) {
+            lup = reallocateUp(_price, _amount, _lup, _inflator);
+        }
 
         lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
         bucket.amount += _amount;
         bucket.lpOutstanding += lpTokens;
     }
 
-    function subtractFromBucket(
+    function removeQuoteToken(
         uint256 _price,
         uint256 _amount,
         uint256 _lpBalance,
@@ -111,87 +127,36 @@ contract PriceBuckets is IPriceBuckets {
             "ajna/amount-greater-than-claimable"
         );
 
-        lup = bucket.price;
-
-        // debt reallocation
-        uint256 onDeposit = bucket.amount - bucket.debt;
-        if (_amount > onDeposit) {
-            uint256 reallocation = _amount - onDeposit;
-            if (bucket.down != 0) {
-                Bucket storage toBucket = buckets[bucket.down];
-                uint256 toBucketOnDeposit;
-                while (true) {
-                    accumulateBucketInterest(toBucket, _inflator);
-
-                    toBucketOnDeposit = toBucket.amount - toBucket.debt;
-                    if (reallocation < toBucketOnDeposit) {
-                        // reallocate all and exit
-                        bucket.debt -= reallocation;
-                        toBucket.debt += reallocation;
-                        lup = toBucket.price;
-                        break;
-                    } else {
-                        reallocation -= toBucketOnDeposit;
-                        bucket.debt -= toBucketOnDeposit;
-                        toBucket.debt += toBucketOnDeposit;
-                    }
-
-                    if (toBucket.down == 0) {
-                        // nowhere to go
-                        lup = toBucket.price;
-                        break;
-                    }
-
-                    toBucket = buckets[toBucket.down];
-                }
-            }
-        }
+        lup = reallocateDown(bucket, _amount, _inflator);
 
         lpTokens = Maths.wdiv(_amount, exchangeRate);
         bucket.amount -= _amount;
         bucket.lpOutstanding -= lpTokens;
     }
 
-    function reallocateDebt(
-        uint256 _amount,
+    function claimCollateral(
         uint256 _price,
-        uint256 _lup,
-        uint256 _inflator
-    ) public returns (uint256 price) {
+        uint256 _amount,
+        uint256 _lpBalance
+    ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
-        Bucket storage curLup = buckets[_lup];
 
-        uint256 curLupDebt;
+        require(
+            bucket.collateral > 0 && _amount <= bucket.collateral,
+            "ajna/insufficient-amount-to-claim"
+        );
 
-        while (true) {
-            // accumulate bucket interest
-            accumulateBucketInterest(curLup, _inflator);
+        uint256 exchangeRate = getExchangeRate(bucket);
+        uint256 lpRedemption = Maths.wdiv(
+            Maths.wmul(_amount, bucket.price),
+            exchangeRate
+        );
 
-            curLupDebt = curLup.debt;
+        require(lpRedemption <= _lpBalance, "ajna/insufficient-lp-balance");
 
-            if (_amount > curLupDebt) {
-                bucket.debt += curLupDebt;
-                _amount -= curLupDebt;
-                curLup.debt = 0;
-                if (curLup.price == curLup.up) {
-                    // nowhere to go
-                    break;
-                }
-            } else {
-                bucket.debt += _amount;
-                curLup.debt -= _amount;
-                break;
-            }
-
-            if (curLup.up == _price) {
-                // nowhere to go
-                break;
-            }
-
-            curLup = buckets[curLup.up];
-        }
-
-        return curLup.price;
+        bucket.collateral -= _amount;
+        bucket.lpOutstanding -= lpRedemption;
+        return lpRedemption;
     }
 
     function borrow(
@@ -276,6 +241,116 @@ contract PriceBuckets is IPriceBuckets {
         return (curLup.price, debtToPay);
     }
 
+    function purchaseBid(
+        uint256 _price,
+        uint256 _amount,
+        uint256 _collateral,
+        uint256 _inflator
+    ) public returns (uint256 lup) {
+        Bucket storage bucket = buckets[_price];
+        accumulateBucketInterest(bucket, _inflator);
+
+        require(_amount <= bucket.amount, "ajna/not-enough-quote-token");
+
+        lup = reallocateDown(bucket, _amount, _inflator);
+
+        bucket.amount -= _amount;
+        bucket.collateral += _collateral;
+    }
+
+    function reallocateDown(
+        Bucket storage _bucket,
+        uint256 _amount,
+        uint256 _inflator
+    ) private returns (uint256 lup) {
+        lup = _bucket.price;
+        // debt reallocation
+        uint256 onDeposit;
+        if (_bucket.amount > _bucket.debt) {
+            onDeposit = _bucket.amount - _bucket.debt;
+        }
+        if (_amount > onDeposit) {
+            uint256 reallocation = _amount - onDeposit;
+            if (_bucket.down != 0) {
+                Bucket storage toBucket = buckets[_bucket.down];
+
+                while (true) {
+                    accumulateBucketInterest(toBucket, _inflator);
+
+                    uint256 toBucketOnDeposit;
+                    if (toBucket.amount > toBucket.debt) {
+                        toBucketOnDeposit = toBucket.amount - toBucket.debt;
+                    }
+
+                    if (reallocation < toBucketOnDeposit) {
+                        // reallocate all and exit
+                        _bucket.debt -= reallocation;
+                        toBucket.debt += reallocation;
+                        lup = toBucket.price;
+                        break;
+                    } else {
+                        if (toBucketOnDeposit != 0) {
+                            reallocation -= toBucketOnDeposit;
+                            _bucket.debt -= toBucketOnDeposit;
+                            toBucket.debt += toBucketOnDeposit;
+                        }
+                    }
+
+                    if (toBucket.down == 0) {
+                        // last bucket, nowhere to go, guard against reallocation failures
+                        require(reallocation == 0, "ajna/failed-to-reallocate");
+                        lup = toBucket.price;
+                        break;
+                    }
+
+                    toBucket = buckets[toBucket.down];
+                }
+            }
+        }
+    }
+
+    function reallocateUp(
+        uint256 _price,
+        uint256 _amount,
+        uint256 _lup,
+        uint256 _inflator
+    ) private returns (uint256) {
+        Bucket storage bucket = buckets[_price];
+        Bucket storage curLup = buckets[_lup];
+
+        uint256 curLupDebt;
+
+        while (true) {
+            // accumulate bucket interest
+            accumulateBucketInterest(curLup, _inflator);
+
+            curLupDebt = curLup.debt;
+
+            if (_amount > curLupDebt) {
+                bucket.debt += curLupDebt;
+                _amount -= curLupDebt;
+                curLup.debt = 0;
+                if (curLup.price == curLup.up) {
+                    // nowhere to go
+                    break;
+                }
+            } else {
+                bucket.debt += _amount;
+                curLup.debt -= _amount;
+                break;
+            }
+
+            if (curLup.up == _price) {
+                // nowhere to go
+                break;
+            }
+
+            curLup = buckets[curLup.up];
+        }
+
+        return curLup.price;
+    }
+
     function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator)
         private
     {
@@ -355,7 +430,8 @@ contract PriceBuckets is IPriceBuckets {
         if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
             return
                 Maths.wdiv(
-                    Maths.max(bucket.amount, bucket.debt),
+                    Maths.max(bucket.amount, bucket.debt) +
+                        Maths.wmul(bucket.collateral, bucket.price),
                     bucket.lpOutstanding
                 );
         }
