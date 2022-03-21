@@ -34,6 +34,14 @@ contract UserWithCollateral {
         pool.borrow(amount, price);
     }
 
+    function purchaseBid(
+        ERC20Pool pool,
+        uint256 amount,
+        uint256 price
+    ) public {
+        pool.purchaseBid(amount, price);
+    }
+
     function repay(ERC20Pool pool, uint256 amount) public {
         pool.repay(amount);
     }
@@ -50,6 +58,30 @@ contract UserWithQuoteToken {
         uint256 price
     ) public {
         pool.addQuoteToken(amount, price);
+    }
+
+    function removeQuoteToken(
+        ERC20Pool pool,
+        uint256 amount,
+        uint256 price
+    ) public {
+        pool.removeQuoteToken(amount, price);
+    }
+
+    function borrow(
+        ERC20Pool pool,
+        uint256 amount,
+        uint256 stopPrice
+    ) public {
+        pool.borrow(amount, stopPrice);
+    }
+
+    function claimCollateral(
+        ERC20Pool pool,
+        uint256 amount,
+        uint256 price
+    ) public {
+        pool.claimCollateral(amount, price);
     }
 
     function approveToken(
