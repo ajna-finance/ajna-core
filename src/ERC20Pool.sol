@@ -235,7 +235,6 @@ contract ERC20Pool is IPool {
         );
 
         lpBalance[msg.sender][_price] -= claimedLpTokens;
-        totalCollateral -= _amount;
 
         collateral.safeTransfer(msg.sender, _amount);
         emit ClaimCollateral(msg.sender, _price, _amount, claimedLpTokens);

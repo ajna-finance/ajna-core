@@ -69,7 +69,7 @@ def test_claim_collateral(
     assert dai.balanceOf(lender) == 188_000 * 1e18
     assert mkr.balanceOf(mkr_dai_pool) == 100.5 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 6_500 * 1e18
-    assert mkr_dai_pool.totalCollateral() == 100.5 * 1e18
+    assert mkr_dai_pool.totalCollateral() == 100 * 1e18
 
     # should fail if claiming a larger amount than available in bucket
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
