@@ -83,13 +83,18 @@ contract ERC20Pool is IPool {
     );
     event AddCollateral(address indexed borrower, uint256 amount);
     event RemoveCollateral(address indexed borrower, uint256 amount);
-    event ClaimCollateral(address indexed claimer, uint256 amount, uint256 lps);
+    event ClaimCollateral(
+        address indexed claimer,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lps
+    );
     event Borrow(address indexed borrower, uint256 lup, uint256 amount);
     event Repay(address indexed borrower, uint256 lup, uint256 amount);
     event UpdateInterestRate(uint256 oldRate, uint256 newRate);
     event Purchase(
         address indexed bidder,
-        uint256 price,
+        uint256 indexed price,
         uint256 amount,
         uint256 collateral
     );
@@ -233,7 +238,7 @@ contract ERC20Pool is IPool {
         totalCollateral -= _amount;
 
         collateral.safeTransfer(msg.sender, _amount);
-        emit ClaimCollateral(msg.sender, _amount, claimedLpTokens);
+        emit ClaimCollateral(msg.sender, _price, _amount, claimedLpTokens);
     }
 
     /// @notice Called by a borrower to open or expand a position
@@ -356,7 +361,6 @@ contract ERC20Pool is IPool {
         }
 
         totalQuoteToken -= _amount;
-        totalCollateral += collateralRequired;
         require(
             getPoolCollateralization() >= Maths.ONE_WAD,
             "ajna/pool-undercollateralized"

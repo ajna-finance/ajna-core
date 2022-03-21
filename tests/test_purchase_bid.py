@@ -48,6 +48,8 @@ def test_purchase_bid_partial_amount(
     assert mkr.balanceOf(mkr_dai_pool) == 100 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 5_000 * 1e18
 
+    assert mkr_dai_pool.totalCollateral() == 100 * 1e18
+
     # check 4000 bucket balance before purchase bid
     (
         _,
@@ -124,6 +126,8 @@ def test_purchase_bid_partial_amount(
     assert mkr.balanceOf(mkr_dai_pool) == 100.5 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 3_000 * 1e18
 
+    assert mkr_dai_pool.totalCollateral() == 100 * 1e18
+
     # check tx events
     # event for transfer 0.5 collateral from bidder to pool
     transfer_collateral = tx.events["Transfer"][0][0]
@@ -182,6 +186,7 @@ def test_purchase_bid_entire_amount(
     assert dai.balanceOf(bidder) == 0
     assert mkr.balanceOf(mkr_dai_pool) == 100 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 5_000 * 1e18
+    assert mkr_dai_pool.totalCollateral() == 100 * 1e18
 
     # check 4000 bucket balance before purchase bid
     (
@@ -260,6 +265,8 @@ def test_purchase_bid_entire_amount(
     assert dai.balanceOf(bidder) == 1_000 * 1e18
     assert mkr.balanceOf(mkr_dai_pool) == 100.25 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 4_000 * 1e18
+    # total collateral should not be incremented
+    assert mkr_dai_pool.totalCollateral() == 100 * 1e18
 
 
 def test_purchase_bid_not_enough_liquidity(

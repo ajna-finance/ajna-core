@@ -112,6 +112,7 @@ def test_claim_collateral(
     # custom claim event
     pool_event = tx.events["ClaimCollateral"][0][0]
     assert pool_event["claimer"] == lender
+    assert pool_event["price"] == 3_000 * 1e18
     assert pool_event["amount"] == 0.5 * 1e18
     assert pool_event["lps"] == 1_500 * 1e18
 
