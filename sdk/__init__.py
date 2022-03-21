@@ -1,6 +1,7 @@
 from brownie import *
 from .ajna_sdk import *
 from .sdk_options import *
+from .strategies import *
 
 
 def create_default_sdk():
@@ -29,6 +30,7 @@ def create_sdk(
     (
         options_builder.with_borrowers(number_of_borrowers)
         .with_token(collateral_address, collateral_amount, approve_max=True)
+        .with_token(quote_address, 0, approve_max=True)
         .add()
     )
 

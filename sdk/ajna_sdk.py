@@ -262,3 +262,13 @@ class AjnaSdk:
         tx = pool.repay(amount, {"from": borrower})
         if ensure_passes and bool(tx.revert_msg):
             raise Exception(f"Failed to repay: {tx.revert_msg}")
+
+    def get_borrower_info(self, pool, borrower_index: int) -> dict:
+        if isinstance(pool, PoolWrapper):
+            pool = pool.get_contract()
+
+        borrower = self.borrowers[borrower_index]
+        return pool.getBorrowerInfo(borrower)
+
+    def get_price_for_index(self, price_index: int) -> int:
+        return self.bucket_math.indexToPrice(price_index)

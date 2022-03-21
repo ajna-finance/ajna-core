@@ -75,3 +75,29 @@ class PoolWrapper:
         ensure_passes=True,
     ) -> None:
         self._sdk.repay(self.pool_contract, amount, borrower_index, ensure_passes)
+
+    def get_borrower_debt(self, borrower_index: int) -> int:
+        (
+            borrower_debt,
+            _,
+            _,
+            _,
+            _,
+            _,
+            _,
+        ) = self._sdk.get_borrower_info(self.pool_contract, borrower_index)
+
+        return borrower_debt
+
+    def get_borrower_collateral_available_to_withdraw(self, borrower_index: int) -> int:
+        (
+            _,
+            _,
+            collateral_deposited,
+            collateral_encumbered,
+            _,
+            _,
+            _,
+        ) = self._sdk.get_borrower_info(self.pool_contract, borrower_index)
+
+        return collateral_deposited - collateral_encumbered
