@@ -7,6 +7,7 @@ import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
 import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 
 import {ERC20Pool} from "../ERC20Pool.sol";
+import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
 contract ERC20PoolTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -26,7 +27,8 @@ contract ERC20PoolTest is DSTestPlus {
 
         quote = new QuoteToken();
 
-        pool = new ERC20Pool(collateral, quote);
+        ERC20PoolFactory factory = new ERC20PoolFactory();
+        pool = factory.deployPool(collateral, quote);
     }
 
     function testDeploy() public {

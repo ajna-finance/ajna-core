@@ -6,6 +6,7 @@ import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
 import {CollateralToken, CollateralTokenWith6Decimals, QuoteToken, QuoteTokenWith6Decimals} from "./utils/Tokens.sol";
 
 import {ERC20Pool} from "../ERC20Pool.sol";
+import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
 contract ERC20PoolPrecisionTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -31,7 +32,8 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
     }
 
     function init() internal {
-        pool = new ERC20Pool(collateral, quote);
+        ERC20PoolFactory factory = new ERC20PoolFactory();
+        pool = factory.deployPool(collateral, quote);
 
         borrower = new UserWithCollateral();
         collateral.mint(address(borrower), 100 * collateralPrecision);
