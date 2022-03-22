@@ -74,10 +74,9 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(debt, 1_000 * 1e18);
 
         // purchase 2000 bid - lower than total amount in 4000 bucket
-        vm.expectEmit(true, true, true, true);
-        emit Transfer(address(pool), address(lender), 0.5 * 1e18);
-        emit Transfer(address(pool), address(lender), 0.5 * 1e18);
-        emit Purchase(address(bidder), 4_000 * 1e18, 0.5 * 1e18, 2_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Purchase(address(bidder), 4_000 * 1e18, 2_000 * 1e18, 0.5 * 1e18);
+        emit Transfer(address(bidder), address(pool), 0.5 * 1e18);
         bidder.purchaseBid(pool, 2_000 * 1e18, 4_000 * 1e18);
 
         assertEq(pool.lup(), 1_000 * 1e18);
@@ -133,9 +132,8 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         // purchase 1000 bid - entire amount in 4000 bucket
         vm.expectEmit(true, false, false, true);
-        emit Transfer(address(pool), address(lender), 0.5 * 1e18);
-        emit Transfer(address(pool), address(lender), 0.5 * 1e18);
-        emit Purchase(address(lender), 3_000 * 1e18, 0.5 * 1e18, 1_500 * 1e18);
+        emit Purchase(address(bidder), 4_000 * 1e18, 1_000 * 1e18, 0.25 * 1e18);
+        emit Transfer(address(bidder), address(pool), 0.25 * 1e18);
         bidder.purchaseBid(pool, 1_000 * 1e18, 4_000 * 1e18);
 
         // lup should be pushed downwards
