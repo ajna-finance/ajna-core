@@ -37,12 +37,6 @@ contract ERC20Pool is IPool {
         uint256 inflatorSnapshot; // last updated inflator rate for a given borrower
     }
 
-    // TODO: add returns to position modifiers to enable usage by a proxy layer
-    struct LenderInfo {
-        uint256 amount;
-        uint256 lpTokens;
-    }
-
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
     ERC20 public immutable collateral;

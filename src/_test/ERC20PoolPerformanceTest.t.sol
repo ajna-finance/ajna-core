@@ -7,6 +7,7 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 
 import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Pool} from "../ERC20Pool.sol";
+import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
 contract ERC20PoolPerformanceTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -23,7 +24,8 @@ contract ERC20PoolPerformanceTest is DSTestPlus {
         collateral = new CollateralToken();
         quote = new QuoteToken();
 
-        pool = new ERC20Pool(collateral, quote);
+        ERC20PoolFactory factory = new ERC20PoolFactory();
+        pool = factory.deployPool(collateral, quote);
 
         for (uint256 i; i < MAX_USERS; ++i) {
             UserWithCollateral user = new UserWithCollateral();
