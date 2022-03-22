@@ -11,10 +11,22 @@ contract CollateralToken is ERC20 {
     }
 }
 
+contract CollateralTokenWith6Decimals is CollateralToken {
+    function decimals() public view virtual override returns (uint8) {
+        return 6;
+    }
+}
+
 contract QuoteToken is ERC20 {
     constructor() ERC20("Quote", "Q") {}
 
     function mint(address to, uint256 amount) public {
         _mint(to, amount);
+    }
+}
+
+contract QuoteTokenWith6Decimals is QuoteToken {
+    function decimals() public view virtual override returns (uint8) {
+        return 6;
     }
 }

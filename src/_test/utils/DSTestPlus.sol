@@ -13,6 +13,36 @@ contract DSTestPlus is DSTest, stdCheats {
 
     event Mint(address lender, uint256 amount, uint256 price);
     event Burn(address lender, uint256 price);
+    event Transfer(address indexed src, address indexed dst, uint256 wad);
+    event AddQuoteToken(
+        address indexed lender,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lup
+    );
+    event RemoveQuoteToken(
+        address indexed lender,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lup
+    );
+    event AddCollateral(address indexed borrower, uint256 amount);
+    event RemoveCollateral(address indexed borrower, uint256 amount);
+    event ClaimCollateral(
+        address indexed claimer,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lps
+    );
+    event Borrow(address indexed borrower, uint256 lup, uint256 amount);
+    event Repay(address indexed borrower, uint256 lup, uint256 amount);
+    event UpdateInterestRate(uint256 oldRate, uint256 newRate);
+    event Purchase(
+        address indexed bidder,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 collateral
+    );
 
     function assertERC20Eq(ERC20 erc1, ERC20 erc2) internal {
         assertEq(address(erc1), address(erc2));
