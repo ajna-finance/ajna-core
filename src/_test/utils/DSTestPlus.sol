@@ -11,6 +11,9 @@ contract DSTestPlus is DSTest, stdCheats {
     /// @dev Use forge-std Vm logic
     Vm public constant vm = Vm(HEVM_ADDRESS);
 
+    event Mint(address lender, uint256 amount, uint256 price);
+    event Burn(address lender, uint256 price);
+
     function assertERC20Eq(ERC20 erc1, ERC20 erc2) internal {
         assertEq(address(erc1), address(erc2));
     }
