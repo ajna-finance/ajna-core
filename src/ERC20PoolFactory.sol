@@ -2,13 +2,13 @@
 
 pragma solidity 0.8.11;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {ERC20Pool} from "./ERC20Pool.sol";
 
 contract ERC20PoolFactory {
     event PoolCreated(ERC20Pool pool);
 
-    function deployPool(IERC20 collateral, IERC20 quote)
+    function deployPool(ERC20 collateral, ERC20 quote)
         external
         returns (ERC20Pool pool)
     {
@@ -23,7 +23,7 @@ contract ERC20PoolFactory {
         return address(pool).code.length > 0;
     }
 
-    function calculatePoolAddress(IERC20 collateral, IERC20 quote)
+    function calculatePoolAddress(ERC20 collateral, ERC20 quote)
         public
         view
         returns (address predictedAddress)

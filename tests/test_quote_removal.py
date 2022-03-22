@@ -228,7 +228,8 @@ def test_quote_removal_from_lup_with_reallocation(
             lpOutstanding,
         ) = mkr_dai_pool.bucketAt(3000 * 1e18)
         # debt should be 600 DAI + accumulated interest
-        compare_first_16_digits(Decimal(bucket_debt), Decimal(600000004756468767000))
+        # TODO: properly check in forge tests
+        assert Decimal(600) <= bucket_debt * 1e-18 <= Decimal(601)
         assert bucket_deposit == 3_400 * 1e18
         assert lpOutstanding == 3_400 * 1e18
         assert mkr_dai_pool.lpBalance(lender, 3000 * 1e18) == 3_400 * 1e18
@@ -246,12 +247,11 @@ def test_quote_removal_from_lup_with_reallocation(
 
         with capsys.disabled():
             print("\n==================================")
-            print(f"Gas estimations({inspect.stack()[0][3]}):")
+            print("Gas estimations:")
             print("==================================")
             print(
                 f"Remove quote token from lup (reallocate to one bucket)           - {test_utils.get_usage(tx.gas_used)}"
             )
-            print("==================================")
 
 
 def test_quote_removal_below_lup(
@@ -262,8 +262,7 @@ def test_quote_removal_below_lup(
     capsys,
     test_utils,
 ):
-
-    with test_utils.GasWatcher():
+    with test_utils.GasWatcher(['removeQuoteToken', 'addCollateral', 'addQuoteToken', 'borrow']):
         lender = lenders[0]
         borrower = borrowers[0]
 
@@ -320,18 +319,17 @@ def test_quote_removal_below_lup(
             _,
             lpOutstanding,
         ) = mkr_dai_pool.bucketAt(3000 * 1e18)
-        # debt should be 600 DAI + accumulated interest
-        compare_first_16_digits(Decimal(bucket_debt), Decimal(600000004756468767000))
+        assert bucket_debt == 0
         assert bucket_deposit == 4_000 * 1e18
         assert lpOutstanding == 4_000 * 1e18
         assert mkr_dai_pool.lpBalance(lender, 3000 * 1e18) == 4_000 * 1e18
 
         with capsys.disabled():
-            print("\n================================")
-            print(f"Gas estimations({inspect.stack()[0][3]}):")
+            print("\n==================================")
+            print("Gas estimations:")
             print("==================================")
             print(
-                f"Remove quote token bellow lup           - {test_utils.get_usage(tx.gas_used)}"
+                f"Remove quote token below lup            - {test_utils.get_usage(tx.gas_used)}"
             )
 
 
@@ -357,7 +355,3 @@ def test_quote_removal_undercollateralized_pool(
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
         mkr_dai_pool.removeQuoteToken(2_000 * 1e18, 1000 * 1e18, {"from": lender})
     assert exc.value.revert_msg == "ajna/pool-undercollateralized"
-
-
-def compare_first_16_digits(number_1: Decimal, number_2: Decimal) -> bool:
-    return int(str(number_1)[:16]) == int(str(number_2)[:16])

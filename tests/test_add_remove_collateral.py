@@ -101,7 +101,6 @@ def test_collateral_gas(
         tx_remove_collateral = mkr_dai_pool.removeCollateral(
             10 * 1e18, {"from": borrowers[0]}
         )
-
         with capsys.disabled():
             print("\n==================================")
             print(f"Gas estimations({inspect.stack()[0][3]}):")

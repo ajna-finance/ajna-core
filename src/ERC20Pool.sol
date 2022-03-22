@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.11;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
 import {IPriceBuckets, PriceBuckets} from "./PriceBuckets.sol";
@@ -19,13 +19,17 @@ interface IPool {
 
     function removeCollateral(uint256 _amount) external;
 
+    function claimCollateral(uint256 _amount, uint256 _price) external;
+
     function borrow(uint256 _amount, uint256 _stopPrice) external;
 
     function repay(uint256 _amount) external;
+
+    function purchaseBid(uint256 _amount, uint256 _price) external;
 }
 
 contract ERC20Pool is IPool {
-    using SafeERC20 for IERC20;
+    using SafeERC20 for ERC20;
 
     struct BorrowerInfo {
         uint256 debt;
@@ -33,16 +37,12 @@ contract ERC20Pool is IPool {
         uint256 inflatorSnapshot; // last updated inflator rate for a given borrower
     }
 
-    // TODO: add returns to position modifiers to enable usage by a proxy layer
-    struct LenderInfo {
-        uint256 amount;
-        uint256 lpTokens;
-    }
-
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
-    IERC20 public immutable collateral;
-    IERC20 public immutable quoteToken;
+    ERC20 public immutable collateral;
+    uint256 public immutable collateralScale;
+    ERC20 public immutable quoteToken;
+    uint256 public immutable quoteTokenScale;
 
     uint256 public hdp;
     uint256 public lup;
@@ -79,13 +79,28 @@ contract ERC20Pool is IPool {
     );
     event AddCollateral(address indexed borrower, uint256 amount);
     event RemoveCollateral(address indexed borrower, uint256 amount);
+    event ClaimCollateral(
+        address indexed claimer,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 lps
+    );
     event Borrow(address indexed borrower, uint256 lup, uint256 amount);
     event Repay(address indexed borrower, uint256 lup, uint256 amount);
     event UpdateInterestRate(uint256 oldRate, uint256 newRate);
+    event Purchase(
+        address indexed bidder,
+        uint256 indexed price,
+        uint256 amount,
+        uint256 collateral
+    );
 
-    constructor(IERC20 _collateral, IERC20 _quoteToken) {
+    constructor(ERC20 _collateral, ERC20 _quoteToken) {
         collateral = _collateral;
+        collateralScale = 10**(18 - collateral.decimals());
+
         quoteToken = _quoteToken;
+        quoteTokenScale = 10**(18 - quoteToken.decimals());
 
         _buckets = new PriceBuckets();
     }
@@ -102,11 +117,18 @@ contract ERC20Pool is IPool {
         hdp = _buckets.ensureBucket(hdp, _price);
 
         // deposit amount
-        uint256 lpTokens = _buckets.addToBucket(
+        bool reallocate = (totalDebt != 0 && _price >= lup);
+        (uint256 newLup, uint256 lpTokens) = _buckets.addQuoteToken(
             _price,
             _amount,
-            inflatorSnapshot
+            lup,
+            inflatorSnapshot,
+            reallocate
         );
+
+        if (reallocate) {
+            lup = newLup;
+        }
 
         // update lender lp balance for current price bucket
         lpBalance[msg.sender][_price] += lpTokens;
@@ -114,17 +136,11 @@ contract ERC20Pool is IPool {
         // update quote token accumulator
         totalQuoteToken += _amount;
 
-        // reallocate debt if needed
-        if (totalDebt != 0 && _price >= lup) {
-            lup = _buckets.reallocateDebt(
-                _amount,
-                _price,
-                lup,
-                inflatorSnapshot
-            );
-        }
-
-        quoteToken.safeTransferFrom(msg.sender, address(this), _amount);
+        quoteToken.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount / quoteTokenScale
+        );
         emit AddQuoteToken(msg.sender, _price, _amount, lup);
     }
 
@@ -142,9 +158,7 @@ contract ERC20Pool is IPool {
         accumulatePoolInterest();
 
         // remove from bucket
-        uint256 lpTokens;
-        uint256 newLup;
-        (newLup, lpTokens) = _buckets.subtractFromBucket(
+        (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
             _price,
             _amount,
             lpBalance[msg.sender][_price],
@@ -164,7 +178,7 @@ contract ERC20Pool is IPool {
 
         lpBalance[msg.sender][_price] -= lpTokens;
 
-        quoteToken.safeTransfer(msg.sender, _amount);
+        quoteToken.safeTransfer(msg.sender, _amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, _price, _amount, lup);
     }
 
@@ -174,7 +188,11 @@ contract ERC20Pool is IPool {
         totalCollateral += _amount;
 
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
-        collateral.safeTransferFrom(msg.sender, address(this), _amount);
+        collateral.safeTransferFrom(
+            msg.sender,
+            address(this),
+            _amount / collateralScale
+        );
         emit AddCollateral(msg.sender, _amount);
     }
 
@@ -200,8 +218,29 @@ contract ERC20Pool is IPool {
         borrower.collateralDeposited -= _amount;
         totalCollateral -= _amount;
 
-        collateral.safeTransfer(msg.sender, _amount);
+        collateral.safeTransfer(msg.sender, _amount / collateralScale);
         emit RemoveCollateral(msg.sender, _amount);
+    }
+
+    /// @notice Called by lenders to claim unencumbered collateral from a price bucket
+    /// @param _amount The amount of unencumbered collateral to claim
+    /// @param _price The bucket from which unencumbered collateral will be claimed
+    function claimCollateral(uint256 _amount, uint256 _price) external {
+        require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
+
+        uint256 maxClaim = lpBalance[msg.sender][_price];
+        require(maxClaim != 0, "ajna/no-claim-to-bucket");
+
+        uint256 claimedLpTokens = _buckets.claimCollateral(
+            _price,
+            _amount,
+            maxClaim
+        );
+
+        lpBalance[msg.sender][_price] -= claimedLpTokens;
+
+        collateral.safeTransfer(msg.sender, _amount / collateralScale);
+        emit ClaimCollateral(msg.sender, _price, _amount, claimedLpTokens);
     }
 
     /// @notice Called by a borrower to open or expand a position
@@ -257,14 +296,15 @@ contract ERC20Pool is IPool {
             "ajna/pool-undercollateralized"
         );
 
-        quoteToken.safeTransfer(msg.sender, _amount);
+        quoteToken.safeTransfer(msg.sender, _amount / quoteTokenScale);
         emit Borrow(msg.sender, lup, _amount);
     }
 
     /// @notice Called by a borrower to repay some amount of their borrowed quote tokens
     /// @param _amount The amount of quote token to repay
     function repay(uint256 _amount) external {
-        uint256 availableAmount = quoteToken.balanceOf(msg.sender);
+        uint256 availableAmount = quoteToken.balanceOf(msg.sender) *
+            quoteTokenScale;
         require(availableAmount >= _amount, "ajna/no-funds-to-repay");
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
@@ -288,8 +328,62 @@ contract ERC20Pool is IPool {
 
         totalDebt -= Maths.min(totalDebt, debtToPay);
 
-        quoteToken.safeTransferFrom(msg.sender, address(this), debtToPay);
+        quoteToken.safeTransferFrom(
+            msg.sender,
+            address(this),
+            debtToPay / quoteTokenScale
+        );
         emit Repay(msg.sender, lup, debtToPay);
+    }
+
+    /// @notice Exchanges collateral for quote token
+    /// @param _amount The amount of quote token to purchase
+    /// @param _price The purchasing price of quote token
+    function purchaseBid(uint256 _amount, uint256 _price) external {
+        require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
+
+        uint256 collateralRequired = Maths.wdiv(_amount, _price);
+        require(
+            collateral.balanceOf(msg.sender) * collateralScale >=
+                collateralRequired,
+            "ajna/not-enough-collateral-balance"
+        );
+
+        accumulatePoolInterest();
+
+        require(
+            _amount <= totalQuoteToken - totalDebt,
+            "ajna/not-enough-liquidity"
+        );
+
+        uint256 newLup = _buckets.purchaseBid(
+            _price,
+            _amount,
+            collateralRequired,
+            inflatorSnapshot
+        );
+
+        // move lup down only if removal happened at lup or higher and new lup different than current
+        if (_price >= lup && newLup < lup) {
+            lup = newLup;
+        }
+
+        totalQuoteToken -= _amount;
+        require(
+            getPoolCollateralization() >= Maths.ONE_WAD,
+            "ajna/pool-undercollateralized"
+        );
+
+        // move required collateral from sender to pool
+        collateral.safeTransferFrom(
+            msg.sender,
+            address(this),
+            collateralRequired / collateralScale
+        );
+
+        // move quote token amount from pool to sender
+        quoteToken.safeTransfer(msg.sender, _amount / quoteTokenScale);
+        emit Purchase(msg.sender, _price, _amount, collateralRequired);
     }
 
     /// @notice Called by lenders to update interest rate of the pool when actual > target utilization

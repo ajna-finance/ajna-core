@@ -104,7 +104,6 @@ class TestUtils:
         def __exit__(self, exc_type, exc_value, exc_traceback):
             self._print()
             self._end_profiling()
-            return TestUtils.GasWatcher
 
         # @notice print the gas statistics of the txs collected since last cleared
         # @param method_names optional array of the method names to print gas stats for
