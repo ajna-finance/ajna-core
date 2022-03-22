@@ -275,49 +275,46 @@ def test_borrow_gas(
     dai,
     mkr,
     capsys,
-    gas_utils,
+    test_utils,
 ):
-    gas_utils.start_profiling()
-    txes = []
-    for i in range(12):
-        mkr_dai_pool.addQuoteToken(
-            10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
+    with test_utils.GasWatcher(['borrow', 'addCollateral', 'addQuoteToken']):
+        txes = []
+        for i in range(12):
+            mkr_dai_pool.addQuoteToken(
+                10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
+            )
+
+        mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
+
+        # borrow 10_000 DAI from single bucket (LUP)
+        tx_one_bucket = mkr_dai_pool.borrow(
+            10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]}
         )
-
-    mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
-
-    # borrow 10_000 DAI from single bucket (LUP)
-    tx_one_bucket = mkr_dai_pool.borrow(
-        10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]}
-    )
-    tx_reallocate_debt_one_bucket = mkr_dai_pool.addQuoteToken(
-        10_000 * 1e18, 5000 * 1e18, {"from": lenders[0]}
-    )
-    txes.append(tx_one_bucket)
-    txes.append(tx_reallocate_debt_one_bucket)
-
-    # borrow 101_000 DAI from 11 buckets
-    tx_11_buckets = mkr_dai_pool.borrow(
-        101_000 * 1e18, 1000 * 1e18, {"from": borrowers[0]}
-    )
-    tx_reallocate_debt_11_buckets = mkr_dai_pool.addQuoteToken(
-        150_000 * 1e18, 6000 * 1e18, {"from": lenders[1]}
-    )
-    txes.append(tx_11_buckets)
-
-    with capsys.disabled():
-        print("\n==================================")
-        print(f"Gas estimations({inspect.stack()[0][3]}):")
-        print("==================================")
-        print(
-            f"Borrow single bucket           - {gas_utils.get_usage(tx_one_bucket.gas_used)}\n"
-            f"Reallocate debt single bucket  - {gas_utils.get_usage(tx_reallocate_debt_one_bucket.gas_used)}"
+        tx_reallocate_debt_one_bucket = mkr_dai_pool.addQuoteToken(
+            10_000 * 1e18, 5000 * 1e18, {"from": lenders[0]}
         )
-        print(
-            f"Borrow from multiple buckets (11)      - {gas_utils.get_usage(tx_11_buckets.gas_used)}\n"
-            f"Reallocate debt multiple buckets (11)  - {gas_utils.get_usage(tx_reallocate_debt_11_buckets.gas_used)}"
+        txes.append(tx_one_bucket)
+        txes.append(tx_reallocate_debt_one_bucket)
+
+        # borrow 101_000 DAI from 11 buckets
+        tx_11_buckets = mkr_dai_pool.borrow(
+            101_000 * 1e18, 1000 * 1e18, {"from": borrowers[0]}
         )
-        gas_utils.print(['borrow', 'addCollateral', 'addQuoteToken'])
-        gas_utils.end_profiling()
-        print("==================================")
+        tx_reallocate_debt_11_buckets = mkr_dai_pool.addQuoteToken(
+            150_000 * 1e18, 6000 * 1e18, {"from": lenders[1]}
+        )
+        txes.append(tx_11_buckets)
+
+        with capsys.disabled():
+            print("\n==================================")
+            print(f"Gas estimations({inspect.stack()[0][3]}):")
+            print("==================================")
+            print(
+                f"Borrow single bucket           - {test_utils.get_usage(tx_one_bucket.gas_used)}\n"
+                f"Reallocate debt single bucket  - {test_utils.get_usage(tx_reallocate_debt_one_bucket.gas_used)}"
+            )
+            print(
+                f"Borrow from multiple buckets (11)      - {test_utils.get_usage(tx_11_buckets.gas_used)}\n"
+                f"Reallocate debt multiple buckets (11)  - {test_utils.get_usage(tx_reallocate_debt_11_buckets.gas_used)}"
+            )
     assert True

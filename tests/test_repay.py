@@ -127,37 +127,34 @@ def test_repay_gas(
     mkr_dai_pool,
     dai,
     capsys,
-    gas_utils,
+    test_utils,
 ):
-    gas_utils.start_profiling()
-    for i in range(12):
-        mkr_dai_pool.addQuoteToken(
-            10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
-        )
+    with test_utils.GasWatcher(['repay', 'borrow']):
+        for i in range(12):
+            mkr_dai_pool.addQuoteToken(
+                10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
+            )
 
-    # borrower starts with 10000 DAI and deposit 100 collateral
-    dai.transfer(borrowers[0], 10_000 * 1e18, {"from": lenders[0]})
-    assert dai.balanceOf(borrowers[0]) == 10_000 * 1e18
-    mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
+        # borrower starts with 10000 DAI and deposit 100 collateral
+        dai.transfer(borrowers[0], 10_000 * 1e18, {"from": lenders[0]})
+        assert dai.balanceOf(borrowers[0]) == 10_000 * 1e18
+        mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
 
-    # borrow 10_000 DAI from single bucket (LUP)
-    mkr_dai_pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]})
-    assert dai.balanceOf(borrowers[0]) == 20_000 * 1e18
-    tx_repay_to_one_bucket = mkr_dai_pool.repay(10_001 * 1e18, {"from": borrowers[0]})
+        # borrow 10_000 DAI from single bucket (LUP)
+        mkr_dai_pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]})
+        assert dai.balanceOf(borrowers[0]) == 20_000 * 1e18
+        tx_repay_to_one_bucket = mkr_dai_pool.repay(10_001 * 1e18, {"from": borrowers[0]})
 
-    # borrow 101_000 DAI from 11 buckets
-    mkr_dai_pool.borrow(101_000 * 1e18, 1000 * 1e18, {"from": borrowers[0]})
-    tx_repay_to_11_buckets = mkr_dai_pool.repay(101_001 * 1e18, {"from": borrowers[0]})
+        # borrow 101_000 DAI from 11 buckets
+        mkr_dai_pool.borrow(101_000 * 1e18, 1000 * 1e18, {"from": borrowers[0]})
+        tx_repay_to_11_buckets = mkr_dai_pool.repay(101_001 * 1e18, {"from": borrowers[0]})
 
-    with capsys.disabled():
-        print("\n==================================")
-        print(f"Gas estimations({inspect.stack()[0][3]}):")
-        print("==================================")
-        print(
-            f"Repay single bucket          - {gas_utils.get_usage(tx_repay_to_one_bucket.gas_used)}\n"
-            f"Repay multiple buckets (11)  - {gas_utils.get_usage(tx_repay_to_11_buckets.gas_used)}"
-        )
-        gas_utils.print(['repay', 'borrow'])
-        gas_utils.end_profiling()
-        print("==================================")
-    assert True
+        with capsys.disabled():
+            print("\n==================================")
+            print(f"Gas estimations({inspect.stack()[0][3]}):")
+            print("==================================")
+            print(
+                f"Repay single bucket          - {test_utils.get_usage(tx_repay_to_one_bucket.gas_used)}\n"
+                f"Repay multiple buckets (11)  - {test_utils.get_usage(tx_repay_to_11_buckets.gas_used)}"
+            )
+        assert True

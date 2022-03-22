@@ -92,26 +92,23 @@ def test_collateral_gas(
     borrowers,
     mkr_dai_pool,
     capsys,
-    gas_utils
+    test_utils
 ):
-    with capsys.disabled():
-        with gas_utils['Trace'](gas_utils['cache'], ['addCollateral', 'removeCollateral']) as gas_stats:
-            print(f'gas utils here -- {gas_stats}')
-            mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lenders[0]})
-            tx_add_collateral = mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
-            mkr_dai_pool.borrow(20_000 * 1e18, 2500 * 1e18, {"from": borrowers[0]})
-            tx_remove_collateral = mkr_dai_pool.removeCollateral(
-                10 * 1e18, {"from": borrowers[0]}
-            )
+    with test_utils.GasWatcher(['addQuoteToken', 'removeCollateral']):
+        mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lenders[0]})
+        tx_add_collateral = mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
+        mkr_dai_pool.borrow(20_000 * 1e18, 2500 * 1e18, {"from": borrowers[0]})
+        tx_remove_collateral = mkr_dai_pool.removeCollateral(
+            10 * 1e18, {"from": borrowers[0]}
+        )
 
+        with capsys.disabled():
             print("\n==================================")
             print(f"Gas estimations({inspect.stack()[0][3]}):")
             print("==================================")
             print(
-                f"Add collateral          - {gas_stats.get_usage(tx_add_collateral.gas_used)}\n"
-                f"Remove collateral       - {gas_stats.get_usage(tx_remove_collateral.gas_used)}"
+               f"Add collateral          - {test_utils.get_usage(tx_add_collateral.gas_used)}\n"
+               f"Remove collateral       - {test_utils.get_usage(tx_remove_collateral.gas_used)}"
             )
-            gas_stats.print()
-            print("==================================")
 
-        assert True
+            assert True
