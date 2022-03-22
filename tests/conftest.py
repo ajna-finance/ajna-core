@@ -1,5 +1,4 @@
 import pytest
-import inspect
 from sdk import *
 from brownie import test, network
 
