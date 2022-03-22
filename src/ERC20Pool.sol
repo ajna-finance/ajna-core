@@ -118,10 +118,8 @@ contract ERC20Pool is IPool {
         hdp = _buckets.ensureBucket(hdp, _price);
 
         // deposit amount
-        uint256 lpTokens;
-        uint256 newLup;
         bool reallocate = (totalDebt != 0 && _price >= lup);
-        (newLup, lpTokens) = _buckets.addQuoteToken(
+        (uint256 newLup, uint256 lpTokens) = _buckets.addQuoteToken(
             _price,
             _amount,
             lup,
@@ -157,9 +155,7 @@ contract ERC20Pool is IPool {
         accumulatePoolInterest();
 
         // remove from bucket
-        uint256 lpTokens;
-        uint256 newLup;
-        (newLup, lpTokens) = _buckets.removeQuoteToken(
+        (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
             _price,
             _amount,
             lpBalance[msg.sender][_price],

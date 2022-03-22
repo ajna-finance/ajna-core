@@ -9,7 +9,7 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 
 import {ERC20Pool} from "../ERC20Pool.sol";
 
-contract ERC20PoolTest is DSTestPlus {
+contract ERC20PoolInflatorTest is DSTestPlus {
     ERC20Pool internal pool;
     CollateralToken internal collateral;
     QuoteToken internal quote;
