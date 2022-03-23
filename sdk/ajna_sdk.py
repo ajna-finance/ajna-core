@@ -79,7 +79,7 @@ class AjnaSdk:
                 f"Failed to deploy pool collateral {collateral_address} - quote {quote_token_address}. Revert reason: {deploy_tx.revert_msg}"
             )
 
-        pool_address = self.ajna_factory.calculatePoolAddress(
+        pool_address = self.ajna_factory.deployedPools(
             collateral_address, quote_token_address
         )
 
@@ -109,11 +109,14 @@ class AjnaSdk:
     def get_pool(
         self, collateral_address, quote_token_address, *, force_deploy=False
     ) -> PoolWrapper:
-        pool_address = self.ajna_factory.calculatePoolAddress(
+        pool_address = self.ajna_factory.deployedPools(
             collateral_address, quote_token_address
         )
 
-        is_deployed = self.ajna_factory.isPoolDeployed(pool_address)
+        is_deployed = self.ajna_factory.isPoolDeployed(
+            collateral_address, quote_token_address
+        )
+
         if is_deployed:
             pool_contract = ERC20Pool.at(pool_address)
             return PoolWrapper(self, pool_contract)

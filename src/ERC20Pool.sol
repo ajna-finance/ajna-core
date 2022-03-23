@@ -5,6 +5,8 @@ pragma solidity 0.8.11;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
+import {Clone} from "@clones/Clone.sol";
+
 import {IPriceBuckets, PriceBuckets} from "./PriceBuckets.sol";
 
 import "./libraries/Maths.sol";
@@ -28,7 +30,7 @@ interface IPool {
     function purchaseBid(uint256 _amount, uint256 _price) external;
 }
 
-contract ERC20Pool is IPool {
+contract ERC20Pool is IPool, Clone {
     using SafeERC20 for ERC20;
 
     struct BorrowerInfo {
@@ -39,15 +41,12 @@ contract ERC20Pool is IPool {
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
-    ERC20 public immutable collateral;
-    uint256 public immutable collateralScale;
-    ERC20 public immutable quoteToken;
-    uint256 public immutable quoteTokenScale;
+    IPriceBuckets private _buckets;
+    uint256 public collateralScale;
+    uint256 public quoteTokenScale;
 
     uint256 public hdp;
     uint256 public lup;
-
-    IPriceBuckets private immutable _buckets;
 
     // lenders lp token balances: lender address -> price bucket -> lender lp
     mapping(address => mapping(uint256 => uint256)) public lpBalance;
@@ -55,10 +54,10 @@ contract ERC20Pool is IPool {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
 
-    uint256 public inflatorSnapshot = Maths.ONE_WAD;
-    uint256 public lastInflatorSnapshotUpdate = block.timestamp;
-    uint256 public previousRate = Maths.wdiv(5, 100);
-    uint256 public previousRateUpdate = block.timestamp;
+    uint256 public inflatorSnapshot;
+    uint256 public lastInflatorSnapshotUpdate;
+    uint256 public previousRate;
+    uint256 public previousRateUpdate;
 
     uint256 public totalCollateral;
 
@@ -95,14 +94,23 @@ contract ERC20Pool is IPool {
         uint256 collateral
     );
 
-    constructor(ERC20 _collateral, ERC20 _quoteToken) {
-        collateral = _collateral;
-        collateralScale = 10**(18 - collateral.decimals());
-
-        quoteToken = _quoteToken;
-        quoteTokenScale = 10**(18 - quoteToken.decimals());
+    function initialize() external {
+        collateralScale = 10**(18 - collateral().decimals());
+        quoteTokenScale = 10**(18 - quoteToken().decimals());
 
         _buckets = new PriceBuckets();
+        inflatorSnapshot = Maths.ONE_WAD;
+        lastInflatorSnapshotUpdate = block.timestamp;
+        previousRate = Maths.wdiv(5, 100);
+        previousRateUpdate = block.timestamp;
+    }
+
+    function collateral() public pure returns (ERC20 collateral) {
+        return ERC20(_getArgAddress(0));
+    }
+
+    function quoteToken() public pure returns (ERC20 quoteToken) {
+        return ERC20(_getArgAddress(0x14));
     }
 
     /// @notice Called by lenders to add an amount of credit at a specified price bucket
@@ -136,7 +144,7 @@ contract ERC20Pool is IPool {
         // update quote token accumulator
         totalQuoteToken += _amount;
 
-        quoteToken.safeTransferFrom(
+        quoteToken().safeTransferFrom(
             msg.sender,
             address(this),
             _amount / quoteTokenScale
@@ -178,7 +186,7 @@ contract ERC20Pool is IPool {
 
         lpBalance[msg.sender][_price] -= lpTokens;
 
-        quoteToken.safeTransfer(msg.sender, _amount / quoteTokenScale);
+        quoteToken().safeTransfer(msg.sender, _amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, _price, _amount, lup);
     }
 
@@ -188,7 +196,7 @@ contract ERC20Pool is IPool {
         totalCollateral += _amount;
 
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
-        collateral.safeTransferFrom(
+        collateral().safeTransferFrom(
             msg.sender,
             address(this),
             _amount / collateralScale
@@ -218,7 +226,7 @@ contract ERC20Pool is IPool {
         borrower.collateralDeposited -= _amount;
         totalCollateral -= _amount;
 
-        collateral.safeTransfer(msg.sender, _amount / collateralScale);
+        collateral().safeTransfer(msg.sender, _amount / collateralScale);
         emit RemoveCollateral(msg.sender, _amount);
     }
 
@@ -239,7 +247,7 @@ contract ERC20Pool is IPool {
 
         lpBalance[msg.sender][_price] -= claimedLpTokens;
 
-        collateral.safeTransfer(msg.sender, _amount / collateralScale);
+        collateral().safeTransfer(msg.sender, _amount / collateralScale);
         emit ClaimCollateral(msg.sender, _price, _amount, claimedLpTokens);
     }
 
@@ -296,14 +304,14 @@ contract ERC20Pool is IPool {
             "ajna/pool-undercollateralized"
         );
 
-        quoteToken.safeTransfer(msg.sender, _amount / quoteTokenScale);
+        quoteToken().safeTransfer(msg.sender, _amount / quoteTokenScale);
         emit Borrow(msg.sender, lup, _amount);
     }
 
     /// @notice Called by a borrower to repay some amount of their borrowed quote tokens
     /// @param _amount The amount of quote token to repay
     function repay(uint256 _amount) external {
-        uint256 availableAmount = quoteToken.balanceOf(msg.sender) *
+        uint256 availableAmount = quoteToken().balanceOf(msg.sender) *
             quoteTokenScale;
         require(availableAmount >= _amount, "ajna/no-funds-to-repay");
 
@@ -328,7 +336,7 @@ contract ERC20Pool is IPool {
 
         totalDebt -= Maths.min(totalDebt, debtToPay);
 
-        quoteToken.safeTransferFrom(
+        quoteToken().safeTransferFrom(
             msg.sender,
             address(this),
             debtToPay / quoteTokenScale
@@ -344,7 +352,7 @@ contract ERC20Pool is IPool {
 
         uint256 collateralRequired = Maths.wdiv(_amount, _price);
         require(
-            collateral.balanceOf(msg.sender) * collateralScale >=
+            collateral().balanceOf(msg.sender) * collateralScale >=
                 collateralRequired,
             "ajna/not-enough-collateral-balance"
         );
@@ -375,14 +383,14 @@ contract ERC20Pool is IPool {
         );
 
         // move required collateral from sender to pool
-        collateral.safeTransferFrom(
+        collateral().safeTransferFrom(
             msg.sender,
             address(this),
             collateralRequired / collateralScale
         );
 
         // move quote token amount from pool to sender
-        quoteToken.safeTransfer(msg.sender, _amount / quoteTokenScale);
+        quoteToken().safeTransfer(msg.sender, _amount / quoteTokenScale);
         emit Purchase(msg.sender, _price, _amount, collateralRequired);
     }
 
