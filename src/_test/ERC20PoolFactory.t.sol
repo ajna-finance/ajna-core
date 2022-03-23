@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import "@ds-test/test.sol";
+import {DSTestPlus} from "./utils/DSTestPlus.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import "../ERC20Pool.sol";
 import "../ERC20PoolFactory.sol";
 
-contract PoolFactoryTest is DSTest {
+contract PoolFactoryTest is DSTestPlus {
     ERC20PoolFactory internal factory;
     ERC20 internal collateral;
     ERC20 internal quote;
@@ -27,22 +27,10 @@ contract PoolFactoryTest is DSTest {
         assertEq(address(quote), address(pool.quoteToken()));
     }
 
-    function testFailDeploySamePoolTwice() public {
+    function testDeploySamePoolTwice() public {
         factory.deployPool(collateral, quote);
+
+        vm.expectRevert("ajna/pool-deployed");
         factory.deployPool(collateral, quote);
     }
-
-    // function testPredictDeployedAddress() public {
-    //     address predictedAddress = factory.calculatePoolAddress(
-    //         collateral,
-    //         quote
-    //     );
-
-    //     assert(false == factory.isPoolDeployed(ERC20Pool(predictedAddress)));
-
-    //     ERC20Pool pool = factory.deployPool(collateral, quote);
-
-    //     assertEq(address(pool), predictedAddress);
-    //     assert(true == factory.isPoolDeployed(ERC20Pool(predictedAddress)));
-    // }
 }
