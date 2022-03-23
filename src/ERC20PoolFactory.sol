@@ -11,6 +11,7 @@ contract ERC20PoolFactory {
     using ClonesWithImmutableArgs for address;
 
     ERC20Pool public implementation;
+    mapping(address => mapping(address => bool)) public deployedPools;
 
     event PoolCreated(ERC20Pool pool);
 
@@ -22,11 +23,17 @@ contract ERC20PoolFactory {
         external
         returns (ERC20Pool pool)
     {
+        require(
+            !deployedPools[address(collateral)][address(quote)],
+            "ajna/pool-deployed"
+        );
+
         bytes memory data = abi.encodePacked(collateral, quote);
 
         pool = ERC20Pool(address(implementation).clone(data));
         pool.initialize();
 
+        deployedPools[address(collateral)][address(quote)] = true;
         emit PoolCreated(pool);
     }
 }
