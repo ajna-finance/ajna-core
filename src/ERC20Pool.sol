@@ -109,7 +109,6 @@ contract ERC20Pool is IPool, Clone {
         return ERC20(_getArgAddress(0));
     }
 
-    /// @notice The token being staked in the pool
     function quoteToken() public pure returns (ERC20 quoteToken) {
         return ERC20(_getArgAddress(0x14));
     }

@@ -20,14 +20,14 @@ contract PoolFactoryTest is DSTestPlus {
         quote = new ERC20("Quote", "Q");
     }
 
-    function testDeploy() public {
+    function testDeployPool() public {
         ERC20Pool pool = factory.deployPool(collateral, quote);
 
         assertEq(address(collateral), address(pool.collateral()));
         assertEq(address(quote), address(pool.quoteToken()));
     }
 
-    function testDeploySamePoolTwice() public {
+    function testDeployPoolTwice() public {
         factory.deployPool(collateral, quote);
 
         vm.expectRevert("ajna/pool-deployed");
