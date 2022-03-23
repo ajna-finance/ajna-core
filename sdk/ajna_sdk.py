@@ -52,8 +52,6 @@ class AjnaSdk:
                     for pool in self.pools:
                         token.approve_max(pool.get_contract(), lender)
 
-            self.lenders.append(lender)
-
         self.borrowers = []
         for borrower_options in params.borrowers:
             borrower = self.add_borrower()
@@ -65,8 +63,6 @@ class AjnaSdk:
                 if token_options.approve_max:
                     for pool in self.pools:
                         token.approve_max(pool.get_contract(), borrower)
-
-            self.borrowers.append(borrower)
 
     def deploy_erc20_pool(self, collateral_address, quote_token_address) -> PoolWrapper:
         deploy_tx = self.ajna_factory.deployPool(

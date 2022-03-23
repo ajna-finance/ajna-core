@@ -28,6 +28,8 @@ interface IPool {
     function repay(uint256 _amount) external;
 
     function purchaseBid(uint256 _amount, uint256 _price) external;
+
+    function liquidate(address _borrower) external;
 }
 
 contract ERC20Pool is IPool, Clone {
@@ -93,6 +95,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 amount,
         uint256 collateral
     );
+    event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
 
     function initialize() external {
         collateralScale = 10**(18 - collateral().decimals());
@@ -392,6 +395,47 @@ contract ERC20Pool is IPool, Clone {
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, _amount / quoteTokenScale);
         emit Purchase(msg.sender, _price, _amount, collateralRequired);
+    }
+
+    /// @notice Liquidates position for given borrower
+    function liquidate(address _borrower) external {
+        (
+            uint256 debt,
+            ,
+            uint256 collateral,
+            ,
+            uint256 collateralization,
+            ,
+
+        ) = getBorrowerInfo(_borrower);
+        require(debt != 0, "ajna/no-debt-to-liquidate");
+        require(
+            collateralization <= Maths.ONE_WAD,
+            "ajna/borrower-collateralized"
+        );
+
+        accumulatePoolInterest();
+
+        BorrowerInfo storage borrower = borrowers[_borrower];
+        accumulateBorrowerInterest(borrower);
+
+        uint256 requiredCollateral = _buckets.liquidate(
+            debt,
+            collateral,
+            hdp,
+            inflatorSnapshot
+        );
+
+        // pool level accounting
+        totalDebt -= borrower.debt;
+        totalQuoteToken -= borrower.debt;
+        totalCollateral -= requiredCollateral;
+
+        // borrower accounting
+        borrower.debt = 0;
+        borrower.collateralDeposited -= requiredCollateral;
+
+        emit Liquidate(_borrower, debt, requiredCollateral);
     }
 
     /// @notice Called by lenders to update interest rate of the pool when actual > target utilization

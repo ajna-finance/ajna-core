@@ -46,6 +46,13 @@ interface IPriceBuckets {
         uint256 _inflator
     ) external returns (uint256 lup);
 
+    function liquidate(
+        uint256 _debt,
+        uint256 _collateral,
+        uint256 _hdp,
+        uint256 _inflator
+    ) external returns (uint256 requiredCollateral);
+
     function ensureBucket(uint256 _hdp, uint256 _price)
         external
         returns (uint256 hdp);
@@ -256,6 +263,51 @@ contract PriceBuckets is IPriceBuckets {
 
         bucket.amount -= _amount;
         bucket.collateral += _collateral;
+    }
+
+    function liquidate(
+        uint256 _debt,
+        uint256 _collateral,
+        uint256 _hdp,
+        uint256 _inflator
+    ) public returns (uint256 requiredCollateral) {
+        Bucket storage bucket = buckets[_hdp];
+        accumulateBucketInterest(bucket, _inflator);
+
+        while (true) {
+            uint256 bucketRequiredCollateral = Maths.min(
+                Maths.min(Maths.wdiv(_debt, bucket.price), _collateral),
+                Maths.wdiv(bucket.debt, bucket.price)
+            );
+
+            uint256 bucketDebtToPurchase = Maths.wmul(
+                bucketRequiredCollateral,
+                bucket.price
+            );
+
+            bucketDebtToPurchase = Maths.min(_debt, bucketDebtToPurchase);
+            bucketRequiredCollateral = Maths.min(
+                _collateral,
+                bucketRequiredCollateral
+            );
+
+            _debt -= bucketDebtToPurchase;
+            _collateral -= bucketRequiredCollateral;
+            requiredCollateral += bucketRequiredCollateral;
+
+            // bucket accounting
+            bucket.debt -= bucketDebtToPurchase;
+            bucket.collateral += bucketRequiredCollateral;
+
+            // stop if all debt reconciliated or at the last bucket
+            if (_debt == 0 || bucket.down == 0) {
+                break;
+            }
+
+            bucket = buckets[bucket.down];
+        }
+
+        require(_debt == 0, "ajna/unable-to-fully-liquidate");
     }
 
     function reallocateDown(
