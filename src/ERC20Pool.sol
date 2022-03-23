@@ -54,10 +54,10 @@ contract ERC20Pool is IPool, Clone {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
 
-    uint256 public inflatorSnapshot = Maths.ONE_WAD;
-    uint256 public lastInflatorSnapshotUpdate = block.timestamp;
-    uint256 public previousRate = Maths.wdiv(5, 100);
-    uint256 public previousRateUpdate = block.timestamp;
+    uint256 public inflatorSnapshot;
+    uint256 public lastInflatorSnapshotUpdate;
+    uint256 public previousRate;
+    uint256 public previousRateUpdate;
 
     uint256 public totalCollateral;
 
@@ -99,6 +99,10 @@ contract ERC20Pool is IPool, Clone {
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
         _buckets = new PriceBuckets();
+        inflatorSnapshot = Maths.ONE_WAD;
+        lastInflatorSnapshotUpdate = block.timestamp;
+        previousRate = Maths.wdiv(5, 100);
+        previousRateUpdate = block.timestamp;
     }
 
     function collateral() public pure returns (ERC20 collateral) {

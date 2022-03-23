@@ -17,9 +17,9 @@ import {PRBMathSD59x18} from "@prb-math/contracts/PRBMathSD59x18.sol";
 // - Fixed Point (Open Source License): https://github.com/paulrberg/prb-math/tree/v1.0.3
 
 library BucketMath {
-    int256 public constant WAD = 10**18;
-
     using PRBMathSD59x18 for int256;
+
+    int256 public constant WAD = 10**18;
 
     // constant price indices defining the min and max of the potential price range
     int256 public constant MAX_PRICE_INDEX = 6926;
