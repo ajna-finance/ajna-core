@@ -2,6 +2,7 @@ import brownie
 from brownie import Contract
 import pytest
 from decimal import *
+import inspect
 
 
 def test_quote_deposit(
@@ -228,20 +229,20 @@ def test_quote_deposit_gas_below_hdp(
     capsys,
     test_utils,
 ):
-    txes = []
-    for i in range(20):
-        tx = mkr_dai_pool.addQuoteToken(
-            100 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
-        )
-        txes.append(tx)
-    with capsys.disabled():
-        print("\n==================================")
-        print("Gas estimations (deposit below hdp):")
-        print("==================================")
-        for i in range(len(txes)):
-            print(f"Transaction: {i} | {test_utils.get_gas_usage(txes[i].gas_used)}")
-        print("==================================")
-    assert True
+    with test_utils.GasWatcher(['addQuoteToken']):
+        txes = []
+        for i in range(20):
+            tx = mkr_dai_pool.addQuoteToken(
+                100 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
+            )
+            txes.append(tx)
+        with capsys.disabled():
+            print("\n==================================")
+            print(f"Gas estimations({inspect.stack()[0][3]})(deposit below hdp):")
+            print("==================================")
+            for i in range(len(txes)):
+                print(f"Transaction: {i} | {test_utils.get_usage(txes[i].gas_used)}")
+        assert True
 
 
 def test_quote_deposit_gas_above_hdp(
@@ -253,19 +254,19 @@ def test_quote_deposit_gas_above_hdp(
     capsys,
     test_utils,
 ):
-    txes = []
-    for i in range(20):
-        tx = mkr_dai_pool.addQuoteToken(
-            100 * 1e18, (2000 + 10 * i) * 1e18, {"from": lenders[0]}
-        )
-        txes.append(tx)
-    with capsys.disabled():
-        print("\n==================================")
-        print("Gas estimations (deposit above hdp):")
-        print("==================================")
-        for i in range(len(txes)):
-            print(
-                f"Transaction: {i} | Gas used: {test_utils.get_gas_usage(txes[i].gas_used)}"
+    with test_utils.GasWatcher(['addQuoteToken']):
+        txes = []
+        for i in range(20):
+            tx = mkr_dai_pool.addQuoteToken(
+                100 * 1e18, (2000 + 10 * i) * 1e18, {"from": lenders[0]}
             )
-        print("==================================")
-    assert True
+            txes.append(tx)
+        with capsys.disabled():
+            print("\n==================================")
+            print(f"Gas estimations({inspect.stack()[0][3]})(deposit above hdp):")
+            print("==================================")
+            for i in range(len(txes)):
+                print(
+                    f"Transaction: {i} | Gas used: {test_utils.get_usage(txes[i].gas_used)}"
+                )
+        assert True

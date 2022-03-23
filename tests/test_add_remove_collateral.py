@@ -1,10 +1,10 @@
 import brownie
 from brownie import Contract
 import pytest
+import inspect
 
 
 def test_add_remove_collateral(lenders, borrowers, mkr_dai_pool, dai, mkr):
-
     lender = lenders[0]
     mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lender})
 
@@ -92,22 +92,22 @@ def test_collateral_gas(
     borrowers,
     mkr_dai_pool,
     capsys,
-    test_utils,
+    test_utils
 ):
-    mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lenders[0]})
-    tx_add_collateral = mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
-    mkr_dai_pool.borrow(20_000 * 1e18, 2500 * 1e18, {"from": borrowers[0]})
-    tx_remove_collateral = mkr_dai_pool.removeCollateral(
-        10 * 1e18, {"from": borrowers[0]}
-    )
-
-    with capsys.disabled():
-        print("\n==================================")
-        print("Gas estimations:")
-        print("==================================")
-        print(
-            f"Add collateral          - {test_utils.get_gas_usage(tx_add_collateral.gas_used)}\n"
-            f"Remove collateral       - {test_utils.get_gas_usage(tx_remove_collateral.gas_used)}"
+    with test_utils.GasWatcher(['addQuoteToken', 'removeCollateral']):
+        mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lenders[0]})
+        tx_add_collateral = mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
+        mkr_dai_pool.borrow(20_000 * 1e18, 2500 * 1e18, {"from": borrowers[0]})
+        tx_remove_collateral = mkr_dai_pool.removeCollateral(
+            10 * 1e18, {"from": borrowers[0]}
         )
-        print("==================================")
-    assert True
+        with capsys.disabled():
+            print("\n==================================")
+            print(f"Gas estimations({inspect.stack()[0][3]}):")
+            print("==================================")
+            print(
+               f"Add collateral          - {test_utils.get_usage(tx_add_collateral.gas_used)}\n"
+               f"Remove collateral       - {test_utils.get_usage(tx_remove_collateral.gas_used)}"
+            )
+
+            assert True
