@@ -20,18 +20,43 @@ USDT_RESERVE_ADDRESS = "0x5754284f345afc66a98fbb0a0afe71e0f007b949"
 
 @dataclass
 class TokenUsedInAjnaProtocolDefinition:
+    """
+    Token used in AjnaProtocol. Definition is used to create ERC20TokenClient.
+
+    Attributes:
+        token_address: address of ERC20 token contract
+        reserve_address: address of account with huge amount of token balance used to top up token balance for Ajna users
+    """
+
     token_address: str
     reserve_address: str
 
 
 @dataclass
 class AjnaDeployedPoolsDefinition:
+    """
+    Definition of Ajna pool to be deployed.
+
+    Attributes:
+        collateral_address: address of ERC20 token contract
+        quote_token_address: address of ERC20 token contract
+    """
+
     collateral_address: str
     quote_token_address: str
 
 
 @dataclass
 class InitialUserTokenBalanceDefinition:
+    """
+    Definition of initial token balance for Ajna user.
+
+    Attributes:
+        token_address: address of ERC20 token contract
+        amount: amount of token to be added to Ajna user
+        approve_max: if True, Ajna user can pre-approve maximum amount of tokens to any Ajna Pool contract
+    """
+
     token_address: str
     amount: int
     approve_max: bool = False
@@ -39,13 +64,32 @@ class InitialUserTokenBalanceDefinition:
 
 @dataclass
 class AjnaUserDefinition:
+    """
+    Definition of Ajna user.
+
+    Attributes:
+        token_balances: list of definitions of initial token balances for Ajna user
+    """
+
     token_balances: List[InitialUserTokenBalanceDefinition] = field(
         default_factory=list
     )
 
 
 @dataclass
-class AjnaProtocolDefinition:
+class AjnaProtocolStateDefinition:
+    """
+    Protocol definition for AjnaProtocol.
+
+    It can be used by AjnaProtocolRunner to prepare AjnaProtocol to desired state.
+
+    Attributes:
+        - tokens: list of TokenUsedInAjnaProtocolDefinition, list of tokens used in AjnaProtocol
+        - deploy_pools: list of AjnaDeployedPoolsDefinition, which defines pools to deploy
+        - lenders: list of AjnaUserDefinition, which defines how many tokens each user initially has
+        - borrowers: list of AjnaUserDefinition, which defines how many tokens each user initially has
+    """
+
     lenders: List[AjnaUserDefinition] = field(default_factory=list)
     borrowers: List[AjnaUserDefinition] = field(default_factory=list)
     tokens: List[TokenUsedInAjnaProtocolDefinition] = field(default_factory=list)
@@ -53,10 +97,20 @@ class AjnaProtocolDefinition:
 
     @staticmethod
     def DEFAULT():
-        options = AjnaProtocolDefinitionBuilder()
+        """
+        Returns default AjnaProtocolStateDefinition.
+
+        Default is:
+            - a single Lender with 100 ETH and 0 tokens
+            - a single Borrower with 100 ETH and 0 tokens
+            - a MKR token wrapper
+            - a DAI token wrapper
+            - a single Pool for MKR and DAI pair
+        """
+        options = AjnaProtocolStateDefinitionBuilder()
         for _ in range(10):
             options.with_lender().add()
-            options.with_lender().add()
+            options.with_borrower().add()
 
         options.add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
         options.add_token(MKR_ADDRESS, MKR_RESERVE_ADDRESS)
@@ -66,37 +120,66 @@ class AjnaProtocolDefinition:
         return options.build()
 
 
-class AjnaProtocolDefinitionBuilder:
+class AjnaProtocolStateDefinitionBuilder:
     def __init__(self) -> None:
-        self._options = AjnaProtocolDefinition()
+        self._options = AjnaProtocolStateDefinition()
 
-    def build(self) -> AjnaProtocolDefinition:
+    def build(self) -> AjnaProtocolStateDefinition:
         return self._options
 
-    def with_lender(self) -> "AjnaUserDefinitionBuilder":
-        return AjnaUserDefinitionBuilder(self, self._options.lenders)
+    def with_lender(self) -> "AjnaUserStateDefinitionBuilder":
+        """
+        Starts definition builder for Ajna Lender.
+        """
+        return AjnaUserStateDefinitionBuilder(self, self._options.lenders)
 
     def with_lenders(
         self, number_of_lenders: int
-    ) -> "AjnaMultipleUserDefinitionBuilder":
-        return AjnaMultipleUserDefinitionBuilder(
+    ) -> "AjnaMultipleUsersStateDefinitionBuilder":
+        """
+        Starts definition builder for multiple Ajna Lenders with same definition.
+
+        Args:
+            number_of_lenders: number of lenders to be added
+        """
+
+        return AjnaMultipleUsersStateDefinitionBuilder(
             self, self._options.lenders, number_of_lenders
         )
 
-    def with_borrower(self) -> "AjnaUserDefinitionBuilder":
-        account_builder = AjnaUserDefinitionBuilder(self, self._options.borrowers)
+    def with_borrower(self) -> "AjnaUserStateDefinitionBuilder":
+        """
+        Starts definition builder for Ajna Borrower.
+        """
+
+        account_builder = AjnaUserStateDefinitionBuilder(self, self._options.borrowers)
         return account_builder
 
     def with_borrowers(
         self, number_of_borrowers: int
-    ) -> "AjnaMultipleUserDefinitionBuilder":
-        return AjnaMultipleUserDefinitionBuilder(
+    ) -> "AjnaMultipleUsersStateDefinitionBuilder":
+        """
+        Starts definition builder for multiple Ajna Borrowers with same definition.
+
+        Args:
+            number_of_borrowers: number of Borrowers to be added
+        """
+
+        return AjnaMultipleUsersStateDefinitionBuilder(
             self, self._options.borrowers, number_of_borrowers
         )
 
     def add_token(
         self, address: str, reserve_address: str
-    ) -> "AjnaProtocolDefinitionBuilder":
+    ) -> "AjnaProtocolStateDefinitionBuilder":
+        """
+        Adds token definition to be used in AjnaProtocol.
+
+        Args:
+            address: address of ERC20 token contract
+            reserve_address: address of account with huge amount of token balance used to top up token balance for Ajna users
+        """
+
         self._options.tokens.append(
             TokenUsedInAjnaProtocolDefinition(address, reserve_address)
         )
@@ -104,42 +187,59 @@ class AjnaProtocolDefinitionBuilder:
 
     def deploy_pool(
         self, collateral_address: str, quote_token_address: str
-    ) -> "AjnaProtocolDefinitionBuilder":
+    ) -> "AjnaProtocolStateDefinitionBuilder":
         self._options.deploy_pools.append(
             AjnaDeployedPoolsDefinition(collateral_address, quote_token_address)
         )
         return self
 
 
-class AjnaUserDefinitionBuilder:
-    def __init__(self, builder: AjnaProtocolDefinitionBuilder, accounts: List):
+class AjnaUserStateDefinitionBuilder:
+    def __init__(self, builder: AjnaProtocolStateDefinitionBuilder, accounts: List):
         self._account_params = AjnaUserDefinition()
         self._builder = builder
         self._accounts = accounts
 
-    def add(self) -> AjnaProtocolDefinitionBuilder:
+    def add(self) -> AjnaProtocolStateDefinitionBuilder:
+        """
+        Finalizes AjnaUserDefinition and adds it to AjnaProtocolStateDefinition.
+        """
+
         self._accounts.append(self._account_params)
         return self._builder
 
     def with_token(
         self, address: str, amount: int, *, approve_max=True
-    ) -> "AjnaUserDefinitionBuilder":
+    ) -> "AjnaUserStateDefinitionBuilder":
+        """
+        Adds token balance definition to AjnaUserDefinition.
+
+        Args:
+            address: address of ERC20 token contract
+            amount: amount of token to be added to Ajna user
+            approve_max: if True, Ajna user can pre-approve maximum amount of tokens to any Ajna Pool contract
+        """
+
         self._account_params.token_balances.append(
             InitialUserTokenBalanceDefinition(address, amount, approve_max)
         )
         return self
 
 
-class AjnaMultipleUserDefinitionBuilder:
+class AjnaMultipleUsersStateDefinitionBuilder:
     def __init__(
-        self, builder: AjnaProtocolDefinitionBuilder, accounts: List, amount: int
+        self, builder: AjnaProtocolStateDefinitionBuilder, accounts: List, amount: int
     ):
         self._account_params = AjnaUserDefinition()
         self._builder = builder
         self._accounts = accounts
         self._amount = amount
 
-    def add(self) -> AjnaProtocolDefinitionBuilder:
+    def add(self) -> AjnaProtocolStateDefinitionBuilder:
+        """
+        Finalizes AjnaUserDefinition and adds multiple copies of it to AjnaProtocolStateDefinition.
+        """
+
         for _ in range(self._amount):
             self._accounts.append(self._account_params)
 
@@ -147,7 +247,15 @@ class AjnaMultipleUserDefinitionBuilder:
 
     def with_token(
         self, address: str, amount: int, *, approve_max=True
-    ) -> "AjnaUserDefinitionBuilder":
+    ) -> "AjnaUserStateDefinitionBuilder":
+        """
+        Adds token balance definition to AjnaUserDefinition.
+
+        Args:
+            address: address of ERC20 token contract
+            amount: amount of token to be added to Ajna user
+            approve_max: if True, Ajna user can pre-approve maximum amount of tokens to any Ajna Pool contract
+        """
         self._account_params.token_balances.append(
             InitialUserTokenBalanceDefinition(address, amount, approve_max)
         )

@@ -14,9 +14,21 @@ class ERC20TokenClient:
         self._reserve = Accounts().at(reserve_address, force=True)
 
     def get_contract(self) -> Contract:
+        """
+        Returns ERC20 token contract used by this client.
+        """
+
         return self._contract
 
     def top_up(self, to: LocalAccount, amount: int):
+        """
+        Sends `amount` tokens to `to` account from predefined reserve account.
+
+        Args:
+            to: account address to top up
+            amount: amount of tokens to top up
+        """
+
         tx = self._contract.transfer(to, amount, {"from": self._reserve})
 
         if bool(tx.revert_msg):
@@ -25,6 +37,14 @@ class ERC20TokenClient:
             )
 
     def transfer(self, from_: LocalAccount, to: LocalAccount, amount: int):
+        """
+        Transfers `amount` tokens from `from_` account to `to` account.
+
+        Args:
+            from_: account address to transfer from
+            to: account address to transfer to
+            amount: amount of tokens to transfer
+        """
         tx = self._contract.transfer(to, amount, {"from": from_})
 
         if bool(tx.revert_msg):
@@ -33,6 +53,15 @@ class ERC20TokenClient:
             )
 
     def approve(self, spender: LocalAccount, amount: int, owner: LocalAccount):
+        """
+        Approves `spender` to spend `amount` tokens from `owner` account.
+
+        Args:
+            spender: account address to approve
+            amount: amount of tokens to approve
+            owner: account address to approve from
+        """
+
         tx = self._contract.approve(spender, amount, {"from": owner})
 
         if bool(tx.revert_msg):
@@ -41,9 +70,23 @@ class ERC20TokenClient:
             )
 
     def balance(self, user: LocalAccount) -> int:
+        """
+        Returns current balance of `user` account.
+
+        Args:
+            user: account address to check balance
+        """
         return self._contract.balanceOf(user)
 
     def approve_max(self, spender: LocalAccount, owner: LocalAccount):
+        """
+        Approves `spender` to spend all tokens from `owner` account.
+
+        Args:
+            spender: account address to approve
+            owner: account address to approve from
+        """
+
         tx = self._contract.approve(
             spender,
             0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF,

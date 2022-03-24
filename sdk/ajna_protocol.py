@@ -19,7 +19,6 @@ from .ajna_protocol_runner import AjnaProtocolRunner
 
 class AjnaProtocol:
     def __init__(self) -> None:
-
         self._accounts = Accounts()
         self._tokens = {}
         self.deployer = self._accounts[0]
@@ -37,11 +36,26 @@ class AjnaProtocol:
         self.protocol_runner = AjnaProtocolRunner(self)
 
     def get_runner(self) -> AjnaProtocolRunner:
+        """
+        Returns the protocol runner used to put Protocol to desired state
+        """
         return self.protocol_runner
 
     def deploy_erc20_pool(
         self, collateral_address, quote_token_address
     ) -> AjnaPoolClient:
+        """
+        Deploys ERC20 contract pool for given `collateral` and `quote` token addresses contract
+        and returns AjnaPoolClient. Adds pool to list of pools stored in AjnaProtocol.
+
+        Args:
+            collateral_address: address of ERC20 token contract
+            quote_token_address: address of ERC20 token contract
+
+        Returns:
+            AjnaPoolClient
+        """
+
         deploy_tx = self.ajna_factory.deployPool(
             collateral_address,
             quote_token_address,
@@ -64,11 +78,27 @@ class AjnaProtocol:
         return pool
 
     def add_token(self, token_address: str, reserve_address: str) -> None:
+        """
+        Adds ERC20 token to AjnaProtocol as an ERC20 token client.
+
+        Args:
+            token_address: ERC20 token address
+            reserve_address: address of account with high balance of ERC20 token.
+            Used to top up token to lenders and borrowers.
+        """
+
         self._tokens[token_address.lower()] = ERC20TokenClient(
             token_address, reserve_address
         )
 
     def add_borrower(self, *, borrower: LocalAccount = None) -> None:
+        """
+        Adds borrower to AjnaProtocol.
+
+        Args:
+            borrower: borrower account. If None, new account is created.
+        """
+
         if borrower is None:
             borrower = self._accounts.add()
 
@@ -76,6 +106,12 @@ class AjnaProtocol:
         return borrower
 
     def add_lender(self, *, lender: LocalAccount = None) -> None:
+        """
+        Adds lender to AjnaProtocol.
+
+        Args:
+            lender: lender account. If None, new account is created.
+        """
         if lender is None:
             lender = self._accounts.add()
 
@@ -85,6 +121,18 @@ class AjnaProtocol:
     def get_pool(
         self, collateral_address, quote_token_address, *, force_deploy=False
     ) -> AjnaPoolClient:
+        """
+        Returns AjnaPoolClient for given `collateral` and `quote` token addresses contract.
+
+        Args:
+            collateral_address: address of ERC20 token contract
+            quote_token_address: address of ERC20 token contract
+            force_deploy: if True, pool is deployed if it is not found.
+
+        Returns:
+            AjnaPoolClient
+        """
+
         pool_address = self.ajna_factory.deployedPools(
             collateral_address, quote_token_address
         )
@@ -105,17 +153,41 @@ class AjnaProtocol:
             )
 
     def get_borrower(self, index) -> LocalAccount:
+        """
+        Returns borrower account at given index.
+
+        Args:
+            index: index of borrower account
+
+        Returns:
+            LocalAccount
+        """
         return self.borrowers[index]
 
     def get_lender(self, index) -> LocalAccount:
+        """
+        Returns lender account at given index.
+
+        Args:
+            index: index of lender account
+
+        Returns:
+            LocalAccount
+        """
         return self.lenders[index]
 
-    def top_up_erc20_token(
-        self, user: LocalAccount, token_address: str, amount: int
-    ) -> None:
-        self.get_token(token_address).top_up(user, amount)
-
     def get_token(self, token_address: str) -> ERC20TokenClient:
+        """
+        Returns ERC20 token client for given token address.
+        It has to be added to AjnaProtocol first using `add_token` method.
+
+        Args:
+            token_address: ERC20 token address
+
+        Returns:
+            ERC20TokenClient
+        """
+
         token_address = token_address.lower()
 
         if token_address in self._tokens:
