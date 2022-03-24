@@ -20,7 +20,9 @@ def create_default_sdk():
     protocol_definition = AjnaProtocolStateDefinition.DEFAULT()
 
     sdk = AjnaProtocol()
-    sdk.prepare_protocol_to_state_by_definition(protocol_definition.build())
+    sdk.get_runner().prepare_protocol_to_state_by_definition(
+        protocol_definition.build()
+    )
     return sdk
 
 
@@ -72,7 +74,9 @@ def create_sdk(
     )
 
     sdk = AjnaProtocol()
-    sdk.prepare_protocol_to_state_by_definition(protocol_definition.build())
+    sdk.get_runner().prepare_protocol_to_state_by_definition(
+        protocol_definition.build()
+    )
 
     return sdk
 

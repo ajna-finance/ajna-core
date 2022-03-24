@@ -1,3 +1,4 @@
+from brownie.network.transaction import TransactionReceipt
 from .ajna_protocol import *
 
 
@@ -42,7 +43,7 @@ class AjnaPoolClient:
         lender_index: int,
         ensure_approval=False,
         ensure_passes=True,
-    ) -> None:
+    ) -> TransactionReceipt:
         """
         Deposits quote token into the pool for the specified amount and price by the specified lender
 
@@ -68,13 +69,15 @@ class AjnaPoolClient:
                 f"Failed to deposit quote token to pool {pool_contract.address}. Revert message: {tx.revert_msg}"
             )
 
+        return tx
+
     def withdraw_quote_token(
         self,
         amount: int,
         price: int,
         lender_index: int,
         ensure_passes=True,
-    ) -> None:
+    ) -> TransactionReceipt:
         """
         Withdraws quote token from the pool for the specified amount and price by the specified lender
 
@@ -95,13 +98,15 @@ class AjnaPoolClient:
                 f"Failed to remove quote token from pool {pool_contract.address}. Revert message: {tx.revert_msg}"
             )
 
+        return tx
+
     def deposit_collateral(
         self,
         amount: int,
         borrower_index: int,
         ensure_approval=False,
         ensure_passes=True,
-    ) -> None:
+    ) -> TransactionReceipt:
         """
         Deposits collateral into the pool for the specified amount by the specified borrower
 
@@ -123,9 +128,11 @@ class AjnaPoolClient:
         if ensure_passes and bool(tx.revert_msg):
             raise Exception(f"Failed to add collateral: {tx.revert_msg}")
 
+        return tx
+
     def withdraw_collateral(
         self, amount: int, borrower_index: int, ensure_passes=True
-    ) -> None:
+    ) -> TransactionReceipt:
         """
         Withdraws collateral from the pool for the specified amount by the specified borrower
 
@@ -142,6 +149,8 @@ class AjnaPoolClient:
         if ensure_passes and bool(tx.revert_msg):
             raise Exception(f"Failed to withdraw collateral: {tx.revert_msg}")
 
+        return tx
+
     def borrow(
         self,
         amount: int,
@@ -149,7 +158,7 @@ class AjnaPoolClient:
         stop_price: int,
         ensure_approval=False,
         ensure_passes=True,
-    ) -> None:
+    ) -> TransactionReceipt:
         """
         Borrows the specified amount of quote token by the specified borrower
 
@@ -173,13 +182,15 @@ class AjnaPoolClient:
         if ensure_passes and bool(tx.revert_msg):
             raise Exception(f"Failed to borrow: {tx.revert_msg}")
 
+        return tx
+
     def repay(
         self,
         amount: int,
         borrower_index: int,
         ensure_approval=False,
         ensure_passes=True,
-    ) -> None:
+    ) -> TransactionReceipt:
         """
         Repays the specified amount of quote token by the specified borrower
 
@@ -201,3 +212,5 @@ class AjnaPoolClient:
         tx = pool_contract.repay(amount, {"from": borrower})
         if ensure_passes and bool(tx.revert_msg):
             raise Exception(f"Failed to repay: {tx.revert_msg}")
+
+        return tx

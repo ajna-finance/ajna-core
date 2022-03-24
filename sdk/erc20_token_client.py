@@ -2,6 +2,7 @@ from brownie import *
 from brownie import (
     Contract,
 )
+from brownie.network.transaction import TransactionReceipt
 from brownie.network.account import Accounts, LocalAccount
 
 
@@ -20,7 +21,7 @@ class ERC20TokenClient:
 
         return self._contract
 
-    def top_up(self, to: LocalAccount, amount: int):
+    def top_up(self, to: LocalAccount, amount: int) -> TransactionReceipt:
         """
         Sends `amount` tokens to `to` account from predefined reserve account.
 
@@ -36,7 +37,11 @@ class ERC20TokenClient:
                 f"Failed to top up {self.token_address} to {to.address}. Revert message: {tx.revert_msg}"
             )
 
-    def transfer(self, from_: LocalAccount, to: LocalAccount, amount: int):
+        return tx
+
+    def transfer(
+        self, from_: LocalAccount, to: LocalAccount, amount: int
+    ) -> TransactionReceipt:
         """
         Transfers `amount` tokens from `from_` account to `to` account.
 
@@ -52,7 +57,11 @@ class ERC20TokenClient:
                 f"Failed to transfer {amount} tokens from {from_.address} to {to.address}. Revert message: {tx.revert_msg}"
             )
 
-    def approve(self, spender: LocalAccount, amount: int, owner: LocalAccount):
+        return tx
+
+    def approve(
+        self, spender: LocalAccount, amount: int, owner: LocalAccount
+    ) -> TransactionReceipt:
         """
         Approves `spender` to spend `amount` tokens from `owner` account.
 
@@ -69,6 +78,8 @@ class ERC20TokenClient:
                 f"Failed to approve {amount} tokens to {spender.address}. Revert message: {tx.revert_msg}"
             )
 
+        return tx
+
     def balance(self, user: LocalAccount) -> int:
         """
         Returns current balance of `user` account.
@@ -78,7 +89,9 @@ class ERC20TokenClient:
         """
         return self._contract.balanceOf(user)
 
-    def approve_max(self, spender: LocalAccount, owner: LocalAccount):
+    def approve_max(
+        self, spender: LocalAccount, owner: LocalAccount
+    ) -> TransactionReceipt:
         """
         Approves `spender` to spend all tokens from `owner` account.
 
@@ -97,3 +110,5 @@ class ERC20TokenClient:
             raise Exception(
                 f"Failed to approve max amount. Revert message: {tx.revert_msg}"
             )
+
+        return tx
