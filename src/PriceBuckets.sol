@@ -300,6 +300,12 @@ contract PriceBuckets is IPriceBuckets {
             bucket.debt -= bucketDebtToPurchase;
             bucket.collateral += bucketRequiredCollateral;
 
+            // forgive the debt when borrower has no remaining collateral but still has debt
+            if (_debt != 0 && _collateral == 0) {
+                bucket.debt = 0;
+                break;
+            }
+
             // stop if all debt reconciliated or at the last bucket
             if (_debt == 0 || bucket.down == 0) {
                 break;
@@ -307,8 +313,6 @@ contract PriceBuckets is IPriceBuckets {
 
             bucket = buckets[bucket.down];
         }
-
-        require(_debt == 0, "ajna/unable-to-fully-liquidate");
     }
 
     function reallocateDown(
