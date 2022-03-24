@@ -4,8 +4,8 @@ from sdk import *
 
 def main():
 
-    sdk_options = (
-        SdkOptionsBuilder()
+    protocol_definition = (
+        AjnaProtocolDefinitionBuilder()
         .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
         .add_token(MKR_ADDRESS, MKR_RESERVE_ADDRESS)
         .deploy_pool(MKR_ADDRESS, DAI_ADDRESS)
@@ -18,9 +18,12 @@ def main():
         .add()
     )
 
-    sdk = AjnaSdk(sdk_options.build())
+    ajna_protocol = AjnaProtocol()
+    ajna_protocol.get_runner().prepare_protocol_to_state_by_definition(
+        protocol_definition.build()
+    )
 
-    pool = sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS)
+    pool = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS)
     lenders = pool.get_lenders()
     borrowers = pool.get_borrowers()
 
@@ -39,11 +42,11 @@ def main():
     pool.borrow(5_000 * 1e18, 2000 * 1e18, 1)
 
     return (
-        sdk,
+        ajna_protocol,
         lenders[0],
         borrowers[0],
         borrowers[1],
-        pool.get_pool_quote_token().get_contract(),
-        pool.get_pool_collateral_token().get_contract(),
+        pool.get_quote_token().get_contract(),
+        pool.get_collateral_token().get_contract(),
         pool.get_contract(),
     )

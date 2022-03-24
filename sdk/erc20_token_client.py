@@ -5,7 +5,7 @@ from brownie import (
 from brownie.network.account import Accounts, LocalAccount
 
 
-class TokenWrapper:
+class ERC20TokenClient:
     def __init__(self, token_address, reserve_address):
         self.token_address = token_address
         self.reserve_address = reserve_address

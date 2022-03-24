@@ -1,11 +1,13 @@
 from brownie import *
-from .ajna_sdk import *
-from .sdk_options import *
+from .ajna_protocol import *
+from .protocol_definition import *
 
 
 def create_default_sdk():
-    options = AjnaSdkOptions.DEFAULT()
-    sdk = AjnaSdk(options)
+    protocol_definition = AjnaProtocolDefinition.DEFAULT()
+
+    sdk = AjnaProtocol()
+    sdk.prepare_protocol_to_state_by_definition(protocol_definition.build())
     return sdk
 
 
@@ -19,26 +21,28 @@ def create_sdk(
     number_of_lenders=10,
     number_of_borrowers=10,
 ):
-    options_builder = (
-        SdkOptionsBuilder()
+    protocol_definition = (
+        AjnaProtocolDefinitionBuilder()
         .add_token(collateral_address, collateral_reserve)
         .add_token(quote_address, quote_reserve)
         .deploy_pool(collateral_address, quote_address)
     )
 
     (
-        options_builder.with_borrowers(number_of_borrowers)
+        protocol_definition.with_borrowers(number_of_borrowers)
         .with_token(collateral_address, collateral_amount, approve_max=True)
         .add()
     )
 
     (
-        options_builder.with_lenders(number_of_lenders)
+        protocol_definition.with_lenders(number_of_lenders)
         .with_token(quote_address, quote_amount, approve_max=True)
         .add()
     )
 
-    sdk = AjnaSdk(options_builder.build())
+    sdk = AjnaProtocol()
+    sdk.prepare_protocol_to_state_by_definition(protocol_definition.build())
+
     return sdk
 
 

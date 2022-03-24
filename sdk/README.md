@@ -27,17 +27,17 @@ sdk = create_sdk(
     )
 
 
-sdk_options = (
+protocol_definition = (
     SdkOptionsBuilder()
     .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
     .add_token(COMP_ADDRESS, COMP_RESERVE_ADDRESS)
     .deploy_pool(COMP_ADDRESS, DAI_ADDRESS)
 )
 
-sdk_options.with_borrowers(10).with_token(COMP_ADDRESS, 20_000 * 10**18).add()
-sdk_options.with_lenders(5).with_token(DAI_ADDRESS, 600_000 * 10**18).add()
+protocol_definition.with_borrowers(10).with_token(COMP_ADDRESS, 20_000 * 10**18).add()
+protocol_definition.with_lenders(5).with_token(DAI_ADDRESS, 600_000 * 10**18).add()
 
-sdk = AjnaSdk(sdk_options.build())
+sdk = AjnaSdk(protocol_definition.build())
 ```
 
 # Deploy ERC20 pool using SDK
