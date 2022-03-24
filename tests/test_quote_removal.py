@@ -42,6 +42,7 @@ def test_quote_removal_no_loan(
         _,
         snapshot,
         lpOutstanding,
+        _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_deposit == 0
     assert snapshot == 1 * 1e18
@@ -101,6 +102,7 @@ def test_quote_removal_loan_not_paid_back(
         _,
         _,
         lpOutstanding,
+        _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_deposit == 6_000 * 1e18
     assert lpOutstanding == 6_000 * 1e18
@@ -155,6 +157,7 @@ def test_quote_removal_loan_paid_back(
         _,
         _,
         lpOutstanding,
+        _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_deposit == 0
     assert lpOutstanding == 0
@@ -210,6 +213,7 @@ def test_quote_removal_from_lup_with_reallocation(
         bucket_debt,
         _,
         lpOutstanding,
+        _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_debt == 2_400 * 1e18
     assert bucket_deposit == 2_400 * 1e18
@@ -225,6 +229,7 @@ def test_quote_removal_from_lup_with_reallocation(
         bucket_debt,
         _,
         lpOutstanding,
+        _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     # debt should be 600 DAI + accumulated interest
     # TODO: properly check in forge tests
@@ -304,6 +309,7 @@ def test_quote_removal_below_lup(
         bucket_debt,
         _,
         lpOutstanding,
+        _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
     assert bucket_debt == 3_000 * 1e18
     assert bucket_deposit == 5_000 * 1e18
@@ -318,6 +324,7 @@ def test_quote_removal_below_lup(
         bucket_debt,
         _,
         lpOutstanding,
+        _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     assert bucket_debt == 0
     assert bucket_deposit == 4_000 * 1e18

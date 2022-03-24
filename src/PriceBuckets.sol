@@ -76,7 +76,8 @@ interface IPriceBuckets {
             uint256 amount,
             uint256 debt,
             uint256 inflatorSnapshot,
-            uint256 lpOutstanding
+            uint256 lpOutstanding,
+            uint256 collateral
         );
 }
 
@@ -464,7 +465,8 @@ contract PriceBuckets is IPriceBuckets {
             uint256 amount,
             uint256 debt,
             uint256 inflatorSnapshot,
-            uint256 lpOutstanding
+            uint256 lpOutstanding,
+            uint256 collateral
         )
     {
         Bucket memory bucket = buckets[_price];
@@ -476,6 +478,7 @@ contract PriceBuckets is IPriceBuckets {
         debt = bucket.debt;
         inflatorSnapshot = bucket.inflatorSnapshot;
         lpOutstanding = bucket.lpOutstanding;
+        collateral = bucket.collateral;
     }
 
     function getExchangeRate(Bucket storage bucket) internal returns (uint256) {

@@ -519,7 +519,8 @@ contract ERC20Pool is IPool, Clone {
             uint256 amount,
             uint256 debt,
             uint256 inflatorSnapshot,
-            uint256 lpOutstanding
+            uint256 lpOutstanding,
+            uint256 collateral
         )
     {
         return _buckets.bucketAt(_price);

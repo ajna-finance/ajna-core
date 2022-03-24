@@ -59,6 +59,7 @@ def test_purchase_bid_partial_amount(
         bucket_debt,
         _,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(4_000 * 1e18)
     assert bucket_debt == 3_000 * 1e18
     assert bucket_deposit == 3_000 * 1e18
@@ -70,6 +71,7 @@ def test_purchase_bid_partial_amount(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3_000 * 1e18)
@@ -89,6 +91,7 @@ def test_purchase_bid_partial_amount(
         bucket_debt,
         _,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(4_000 * 1e18)
     # TODO: properly check in forge tests
     assert 1_000 * 1e18 <= bucket_debt <= 1_001 * 1e18
@@ -103,6 +106,7 @@ def test_purchase_bid_partial_amount(
         bucket_debt,
         _,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(3_000 * 1e18)
     assert bucket_debt == 3_000 * 1e18
     assert bucket_deposit == 3_000 * 1e18
@@ -114,6 +118,7 @@ def test_purchase_bid_partial_amount(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
         _,
     ) = mkr_dai_pool.bucketAt(1_000 * 1e18)
@@ -197,6 +202,7 @@ def test_purchase_bid_entire_amount(
         bucket_debt,
         _,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(4_000 * 1e18)
     # TODO: properly check in forge tests
     assert 1_000 * 1e18 <= bucket_debt <= 1_001 * 1e18
@@ -209,6 +215,7 @@ def test_purchase_bid_entire_amount(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3_000 * 1e18)
@@ -229,6 +236,7 @@ def test_purchase_bid_entire_amount(
         bucket_debt,
         _,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(4_000 * 1e18)
     assert 0 <= bucket_debt <= 0.1 * 1e18
     assert bucket_deposit == 0
@@ -240,6 +248,7 @@ def test_purchase_bid_entire_amount(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3_000 * 1e18)
@@ -254,6 +263,7 @@ def test_purchase_bid_entire_amount(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
         _,
     ) = mkr_dai_pool.bucketAt(2_000 * 1e18)
