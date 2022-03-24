@@ -44,7 +44,6 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         lender.addQuoteToken(pool, 10_000 * 1e18, 4000 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            inflatorSnapshot,
             lastInflatorSnapshotUpdate
         );
 
@@ -52,7 +51,6 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         borrower.addCollateral(pool, 10 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            inflatorSnapshot,
             lastInflatorSnapshotUpdate
         );
 
@@ -60,7 +58,6 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         borrower.borrow(pool, 10_000 * 1e18, 4000 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            inflatorSnapshot,
             lastInflatorSnapshotUpdate
         );
 
@@ -69,7 +66,6 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         borrower.repay(pool, 1_000 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            inflatorSnapshot,
             lastInflatorSnapshotUpdate
         );
 
@@ -77,7 +73,6 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         borrower.removeCollateral(pool, 1 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            inflatorSnapshot,
             lastInflatorSnapshotUpdate
         );
     }
@@ -92,10 +87,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         assertGt(pool.getPendingInflator(), calculatedInflator);
     }
 
-    function assertPoolInflator(
-        uint256 inflatorSnapshot,
-        uint256 lastInflatorSnapshotUpdate
-    )
+    function assertPoolInflator(uint256 lastInflatorSnapshotUpdate)
         internal
         returns (
             uint256 newInflatorSnapshot,

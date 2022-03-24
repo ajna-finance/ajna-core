@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.11;
 
 import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
@@ -58,8 +60,6 @@ interface IPriceBuckets {
         returns (uint256 hdp);
 
     function isBucketInitialized(uint256 _price) external view returns (bool);
-
-    function onDeposit(uint256 _price) external view returns (uint256);
 
     function estimatePrice(uint256 amount, uint256 hdp)
         external
@@ -450,11 +450,6 @@ contract PriceBuckets is IPriceBuckets {
         }
     }
 
-    function onDeposit(uint256 _price) public view returns (uint256) {
-        Bucket storage cur = buckets[_price];
-        return cur.amount - cur.debt;
-    }
-
     function bucketAt(uint256 _price)
         public
         view
@@ -481,7 +476,11 @@ contract PriceBuckets is IPriceBuckets {
         collateral = bucket.collateral;
     }
 
-    function getExchangeRate(Bucket storage bucket) internal returns (uint256) {
+    function getExchangeRate(Bucket storage bucket)
+        internal
+        view
+        returns (uint256)
+    {
         if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
             return
                 Maths.wdiv(

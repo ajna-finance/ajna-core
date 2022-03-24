@@ -108,11 +108,11 @@ contract ERC20Pool is IPool, Clone {
         previousRateUpdate = block.timestamp;
     }
 
-    function collateral() public pure returns (ERC20 collateral) {
+    function collateral() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0));
     }
 
-    function quoteToken() public pure returns (ERC20 quoteToken) {
+    function quoteToken() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0x14));
     }
 
@@ -402,7 +402,7 @@ contract ERC20Pool is IPool, Clone {
         (
             uint256 debt,
             ,
-            uint256 collateral,
+            uint256 borrowerCollateral,
             ,
             uint256 collateralization,
             ,
@@ -421,7 +421,7 @@ contract ERC20Pool is IPool, Clone {
 
         uint256 requiredCollateral = _buckets.liquidate(
             debt,
-            collateral,
+            borrowerCollateral,
             hdp,
             inflatorSnapshot
         );
@@ -518,9 +518,9 @@ contract ERC20Pool is IPool, Clone {
             uint256 down,
             uint256 amount,
             uint256 debt,
-            uint256 inflatorSnapshot,
+            uint256 bucketInflator,
             uint256 lpOutstanding,
-            uint256 collateral
+            uint256 bucketCollateral
         )
     {
         return _buckets.bucketAt(_price);
