@@ -13,7 +13,7 @@ contract AjnaToken is ERC20("AjnaToken", "AJNA") {
         address from,
         address,
         uint256
-    ) internal override {
+    ) internal view override {
         // This can be achived by setting _balances[address(this)] to the max value uint256.
         // But _balances are private variable in the OpenZeppelin ERC20 contract implementation.
 

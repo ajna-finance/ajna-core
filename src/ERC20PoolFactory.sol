@@ -39,8 +39,9 @@ contract ERC20PoolFactory {
 
     function isPoolDeployed(ERC20 collateral, ERC20 quote)
         external
-        returns (bool deployed)
+        view
+        returns (bool)
     {
-        deployedPools[address(collateral)][address(quote)] != address(0);
+        return deployedPools[address(collateral)][address(quote)] != address(0);
     }
 }
