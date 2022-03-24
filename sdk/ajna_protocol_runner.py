@@ -3,17 +3,9 @@ from typing import List
 from brownie import *
 from brownie import (
     Contract,
-    ERC20PoolFactory,
-    ERC20Pool,
-    BucketMath,
-    Maths,
-    PriceBuckets,
 )
-from brownie.network.account import Accounts, LocalAccount
 
 from .protocol_definition import *
-from .erc20_token_client import ERC20TokenClient
-from .ajna_pool_client import AjnaPoolClient
 
 
 class AjnaProtocolRunner:

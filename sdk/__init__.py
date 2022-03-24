@@ -3,6 +3,10 @@ from .ajna_protocol import *
 from .protocol_definition import *
 
 
+def create_empty_sdk():
+    return AjnaProtocol()
+
+
 def create_default_sdk():
     protocol_definition = AjnaProtocolDefinition.DEFAULT()
 
