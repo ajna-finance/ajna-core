@@ -93,7 +93,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(
             address(borrower)
         );
-        assertEq(borrowerDebt, 15_000 * 1e18);
+        assertEq(borrowerDebt, 15_000.325027478522625000 * 1e18);
         assertEq(depositedCollateral, 100 * 1e18);
 
         // repay remaining 15_000 DAI plus accumulated debt

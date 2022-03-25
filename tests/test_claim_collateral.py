@@ -56,6 +56,7 @@ def test_claim_collateral(
         bucket_debt,
         _,
         lpOutstanding,
+        _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     # TODO: properly check in forge tests
     assert 1_000 * 1e18 <= bucket_debt <= 1_001 * 1e18
@@ -87,6 +88,7 @@ def test_claim_collateral(
         bucket_debt,
         _,
         lpOutstanding,
+        _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     # TODO: properly check in forge tests
     assert 1_000 * 1e18 <= bucket_debt <= 1_001 * 1e18
