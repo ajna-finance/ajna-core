@@ -2,86 +2,9 @@
 
 pragma solidity 0.8.11;
 
-import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+import "./Maths.sol";
 
-import "./libraries/Maths.sol";
-
-interface IPriceBuckets {
-    function addQuoteToken(
-        uint256 _price,
-        uint256 _amount,
-        uint256 _lup,
-        uint256 _inflator,
-        bool _reallocate
-    ) external returns (uint256 lup, uint256 lptokens);
-
-    function removeQuoteToken(
-        uint256 _price,
-        uint256 _amount,
-        uint256 _lpBalance,
-        uint256 _inflator
-    ) external returns (uint256 lup, uint256 lptokens);
-
-    function claimCollateral(
-        uint256 _price,
-        uint256 _amount,
-        uint256 _lpBalance
-    ) external returns (uint256 lptokens);
-
-    function borrow(
-        uint256 _amount,
-        uint256 _stop,
-        uint256 _lup,
-        uint256 _inflator
-    ) external returns (uint256 lup, uint256 amountUsed);
-
-    function repay(
-        uint256 _amount,
-        uint256 _lup,
-        uint256 _inflator
-    ) external returns (uint256 lup, uint256 debtToPay);
-
-    function purchaseBid(
-        uint256 _price,
-        uint256 _amount,
-        uint256 _collateral,
-        uint256 _inflator
-    ) external returns (uint256 lup);
-
-    function liquidate(
-        uint256 _debt,
-        uint256 _collateral,
-        uint256 _hdp,
-        uint256 _inflator
-    ) external returns (uint256 requiredCollateral);
-
-    function ensureBucket(uint256 _hdp, uint256 _price)
-        external
-        returns (uint256 hdp);
-
-    function isBucketInitialized(uint256 _price) external view returns (bool);
-
-    function estimatePrice(uint256 amount, uint256 hdp)
-        external
-        view
-        returns (uint256 price);
-
-    function bucketAt(uint256 _price)
-        external
-        view
-        returns (
-            uint256 price,
-            uint256 up,
-            uint256 down,
-            uint256 amount,
-            uint256 debt,
-            uint256 inflatorSnapshot,
-            uint256 lpOutstanding,
-            uint256 collateral
-        );
-}
-
-contract PriceBuckets is IPriceBuckets {
+library Buckets {
     struct Bucket {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
@@ -93,10 +16,8 @@ contract PriceBuckets is IPriceBuckets {
         uint256 collateral;
     }
 
-    mapping(uint256 => Bucket) private buckets;
-    BitMaps.BitMap private bitmap;
-
     function addQuoteToken(
+        mapping(uint256 => Bucket) storage buckets,
         uint256 _price,
         uint256 _amount,
         uint256 _lup,
@@ -109,7 +30,7 @@ contract PriceBuckets is IPriceBuckets {
 
         lup = _lup;
         if (_reallocate) {
-            lup = reallocateUp(_price, _amount, _lup, _inflator);
+            lup = reallocateUp(buckets, _price, _amount, _lup, _inflator);
         }
 
         lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
@@ -118,6 +39,7 @@ contract PriceBuckets is IPriceBuckets {
     }
 
     function removeQuoteToken(
+        mapping(uint256 => Bucket) storage buckets,
         uint256 _price,
         uint256 _amount,
         uint256 _lpBalance,
@@ -135,7 +57,7 @@ contract PriceBuckets is IPriceBuckets {
             "ajna/amount-greater-than-claimable"
         );
 
-        lup = reallocateDown(bucket, _amount, _inflator);
+        lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
         lpTokens = Maths.wdiv(_amount, exchangeRate);
         bucket.amount -= _amount;
@@ -143,6 +65,7 @@ contract PriceBuckets is IPriceBuckets {
     }
 
     function claimCollateral(
+        mapping(uint256 => Bucket) storage buckets,
         uint256 _price,
         uint256 _amount,
         uint256 _lpBalance
@@ -168,6 +91,7 @@ contract PriceBuckets is IPriceBuckets {
     }
 
     function borrow(
+        mapping(uint256 => Bucket) storage buckets,
         uint256 _amount,
         uint256 _stop, // lowest price desired to borrow at
         uint256 _lup, // lowest utilized price
@@ -212,6 +136,7 @@ contract PriceBuckets is IPriceBuckets {
     }
 
     function repay(
+        mapping(uint256 => Bucket) storage buckets,
         uint256 _amount,
         uint256 _lup,
         uint256 _inflator
@@ -250,6 +175,7 @@ contract PriceBuckets is IPriceBuckets {
     }
 
     function purchaseBid(
+        mapping(uint256 => Bucket) storage buckets,
         uint256 _price,
         uint256 _amount,
         uint256 _collateral,
@@ -260,13 +186,14 @@ contract PriceBuckets is IPriceBuckets {
 
         require(_amount <= bucket.amount, "ajna/not-enough-quote-token");
 
-        lup = reallocateDown(bucket, _amount, _inflator);
+        lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
         bucket.amount -= _amount;
         bucket.collateral += _collateral;
     }
 
     function liquidate(
+        mapping(uint256 => Bucket) storage buckets,
         uint256 _debt,
         uint256 _collateral,
         uint256 _hdp,
@@ -306,6 +233,7 @@ contract PriceBuckets is IPriceBuckets {
     }
 
     function reallocateDown(
+        mapping(uint256 => Bucket) storage buckets,
         Bucket storage _bucket,
         uint256 _amount,
         uint256 _inflator
@@ -357,6 +285,7 @@ contract PriceBuckets is IPriceBuckets {
     }
 
     function reallocateUp(
+        mapping(uint256 => Bucket) storage buckets,
         uint256 _price,
         uint256 _amount,
         uint256 _lup,
@@ -410,11 +339,11 @@ contract PriceBuckets is IPriceBuckets {
         }
     }
 
-    function estimatePrice(uint256 _amount, uint256 _hdp)
-        public
-        view
-        returns (uint256)
-    {
+    function estimatePrice(
+        mapping(uint256 => Bucket) storage buckets,
+        uint256 _amount,
+        uint256 _hdp
+    ) public view returns (uint256) {
         Bucket memory curLup = buckets[_hdp];
         uint256 curLupDeposit;
 
@@ -433,18 +362,10 @@ contract PriceBuckets is IPriceBuckets {
         return 0;
     }
 
-    function ensureBucket(uint256 _hdp, uint256 _price)
-        public
-        returns (uint256)
-    {
-        if (isBucketInitialized(_price)) {
-            return _hdp;
-        } else {
-            return _initializeBucket(_hdp, _price);
-        }
-    }
-
-    function bucketAt(uint256 _price)
+    function bucketAt(
+        mapping(uint256 => Bucket) storage buckets,
+        uint256 _price
+    )
         public
         view
         returns (
@@ -486,14 +407,11 @@ contract PriceBuckets is IPriceBuckets {
         return Maths.ONE_WAD;
     }
 
-    function isBucketInitialized(uint256 _price) public view returns (bool) {
-        return BitMaps.get(bitmap, _price);
-    }
-
-    function _initializeBucket(uint256 _hdp, uint256 _price)
-        internal
-        returns (uint256)
-    {
+    function initializeBucket(
+        mapping(uint256 => Bucket) storage buckets,
+        uint256 _hdp,
+        uint256 _price
+    ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
         bucket.price = _price;
         bucket.inflatorSnapshot = Maths.ONE_WAD;
@@ -520,8 +438,6 @@ contract PriceBuckets is IPriceBuckets {
             down = buckets[cur].down;
             up = buckets[cur].up;
         }
-
-        BitMaps.setTo(bitmap, _price, true);
         return _hdp;
     }
 }

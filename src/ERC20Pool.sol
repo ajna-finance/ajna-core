@@ -3,14 +3,14 @@
 pragma solidity 0.8.11;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
 import {Clone} from "@clones/Clone.sol";
 
-import {IPriceBuckets, PriceBuckets} from "./PriceBuckets.sol";
-
 import "./libraries/Maths.sol";
 import "./libraries/BucketMath.sol";
+import "./libraries/Buckets.sol";
 
 interface IPool {
     function addQuoteToken(uint256 _amount, uint256 _price) external;
@@ -34,6 +34,7 @@ interface IPool {
 
 contract ERC20Pool is IPool, Clone {
     using SafeERC20 for ERC20;
+    using Buckets for mapping(uint256 => Buckets.Bucket);
 
     struct BorrowerInfo {
         uint256 debt;
@@ -43,7 +44,9 @@ contract ERC20Pool is IPool, Clone {
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
-    IPriceBuckets private _buckets;
+    mapping(uint256 => Buckets.Bucket) private _buckets;
+    BitMaps.BitMap private bitmap;
+
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
 
@@ -101,7 +104,6 @@ contract ERC20Pool is IPool, Clone {
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
-        _buckets = new PriceBuckets();
         inflatorSnapshot = Maths.ONE_WAD;
         lastInflatorSnapshotUpdate = block.timestamp;
         previousRate = Maths.wdiv(5, 100);
@@ -125,7 +127,10 @@ contract ERC20Pool is IPool, Clone {
         accumulatePoolInterest();
 
         // create bucket if doesn't exist
-        hdp = _buckets.ensureBucket(hdp, _price);
+        if (!BitMaps.get(bitmap, _price)) {
+            hdp = _buckets.initializeBucket(hdp, _price);
+            BitMaps.setTo(bitmap, _price, true);
+        }
 
         // deposit amount
         bool reallocate = (totalDebt != 0 && _price >= lup);
@@ -405,12 +410,12 @@ contract ERC20Pool is IPool, Clone {
         accumulateBorrowerInterest(borrower);
 
         uint256 debt = borrower.debt;
-        uint256 collateral = borrower.collateralDeposited;
+        uint256 collateralDeposited = borrower.collateralDeposited;
 
         require(debt != 0, "ajna/no-debt-to-liquidate");
 
         uint256 collateralization = Maths.wdiv(
-            collateral,
+            collateralDeposited,
             Maths.wdiv(debt, lup)
         );
         require(
@@ -420,7 +425,7 @@ contract ERC20Pool is IPool, Clone {
 
         uint256 requiredCollateral = _buckets.liquidate(
             debt,
-            collateral,
+            collateralDeposited,
             hdp,
             inflatorSnapshot
         );
@@ -521,6 +526,10 @@ contract ERC20Pool is IPool, Clone {
         )
     {
         return _buckets.bucketAt(_price);
+    }
+
+    function isBucketInitialized(uint256 _price) public view returns (bool) {
+        return BitMaps.get(bitmap, _price);
     }
 
     // -------------------- Pool state related functions --------------------

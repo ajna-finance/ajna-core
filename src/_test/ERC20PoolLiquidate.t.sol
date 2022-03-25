@@ -37,7 +37,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
-    function testLiquidateStd() public {
+    function testLiquidate() public {
         // lender deposit in 3 buckets, price spaced
         lender.addQuoteToken(pool, 10_000 * 1e18, 10_000 * 1e18);
         lender.addQuoteToken(pool, 1_000 * 1e18, 9_000 * 1e18);
@@ -181,7 +181,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
     }
 
-    function testLiquidateNoTimeWarp() public {
+    function testLiquidateScenario1NoTimeWarp() public {
         // lender deposit in 3 buckets, price spaced
         lender.addQuoteToken(pool, 10_000 * 1e18, 10_000 * 1e18);
         lender.addQuoteToken(pool, 1_000 * 1e18, 9_000 * 1e18);
@@ -201,44 +201,8 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_000
         borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);
 
-        // check bucket 10_000, 9_000 and 8_000 debt and collateral
-        (, , , , uint256 debt, , , uint256 bucketCollateral) = pool.bucketAt(
-            10_000 * 1e18
-        );
-        assertEq(debt, 10_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(9_000 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(8_000 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(100 * 1e18);
-        assertEq(debt, 0);
-        assertEq(bucketCollateral, 0 * 1e18);
-
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100
         borrower2.borrow(pool, 1_000 * 1e18, 100 * 1e18);
-
-        // check bucket 10_000, 9_000 and 8_000 debt and collateral after time passes and 2nd loan
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(10_000 * 1e18);
-        assertEq(debt, 10_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(9_000 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(8_000 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(100 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
 
         // check borrower 1 is undercollateralized and collateral not enough to cover debt
         (
@@ -260,6 +224,26 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // liquidate borrower
         lender.liquidate(pool, address(borrower));
 
+        // check bucket 10_000, 9_000 and 8_000 debt and collateral after liquidation
+        (, , , , uint256 debt, , , uint256 bucketCollateral) = pool.bucketAt(
+            10_000 * 1e18
+        );
+        assertEq(debt, 0);
+        assertEq(bucketCollateral, 1 * 1e18);
+
+        (, , , , debt, , , bucketCollateral) = pool.bucketAt(9_000 * 1e18);
+        assertEq(debt, 0);
+        assertEq(bucketCollateral, 0.111111111111111111 * 1e18);
+
+        (, , , , debt, , , bucketCollateral) = pool.bucketAt(8_000 * 1e18);
+        assertEq(debt, 0 * 1e18);
+        assertEq(bucketCollateral, 0.125 * 1e18);
+
+        (, , , , debt, , , bucketCollateral) = pool.bucketAt(100 * 1e18);
+        assertEq(debt, 1_000 * 1e18);
+
+        // check borrower after liquidation
+        assertEq(bucketCollateral, 0);
         (
             borrowerDebt,
             borrowerPendingDebt,
@@ -275,26 +259,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(collateralEncumbered, 0);
         assertEq(collateralization, 0);
         assertEq(borrowerInflator, 1 * 1e18);
-
-        // check bucket 10_000, 9_000 and 8_000 debt and collateral
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(10_000 * 1e18);
-        assertEq(debt, 0);
-        assertEq(bucketCollateral, 1 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(9_000 * 1e18);
-        assertEq(debt, 0);
-        assertEq(bucketCollateral, 0.111111111111111111 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(8_000 * 1e18);
-        assertEq(debt, 0 * 1e18);
-        assertEq(bucketCollateral, 0.125 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(100 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0);
     }
 
-    function testLiquidateTimeWarp() public {
+    function testLiquidateScenario1TimeWarp() public {
         // lender deposit in 3 buckets, price spaced
         lender.addQuoteToken(pool, 10_000 * 1e18, 10_000 * 1e18);
         lender.addQuoteToken(pool, 1_000 * 1e18, 9_000 * 1e18);
@@ -314,46 +281,11 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_000
         borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);
 
-        // check bucket 10_000, 9_000 and 8_000 debt and collateral
-        (, , , , uint256 debt, , , uint256 bucketCollateral) = pool.bucketAt(
-            10_000 * 1e18
-        );
-        assertEq(debt, 10_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(9_000 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(8_000 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(100 * 1e18);
-        assertEq(debt, 0);
-        assertEq(bucketCollateral, 0 * 1e18);
-
+        // time warp
         skip(100000000);
 
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100
         borrower2.borrow(pool, 1_000 * 1e18, 100 * 1e18);
-
-        // check bucket 10_000, 9_000 and 8_000 debt and collateral after time passes and 2nd loan
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(10_000 * 1e18);
-        assertEq(debt, 10_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(9_000 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(8_000 * 1e18);
-        assertEq(debt, 1_171.809293279796920000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(100 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0 * 1e18);
 
         // check borrower 1 is undercollateralized and collateral not enough to cover debt
         (
@@ -375,6 +307,26 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // liquidate borrower
         lender.liquidate(pool, address(borrower));
 
+        // check bucket 10_000, 9_000 and 8_000 debt and collateral after liquidation
+        (, , , , uint256 debt, , , uint256 bucketCollateral) = pool.bucketAt(
+            10_000 * 1e18
+        );
+        assertEq(debt, 0);
+        assertEq(bucketCollateral, 1.171809293279796920 * 1e18);
+
+        (, , , , debt, , , bucketCollateral) = pool.bucketAt(9_000 * 1e18);
+        assertEq(debt, 0);
+        assertEq(bucketCollateral, 0.130201032586644102 * 1e18);
+
+        (, , , , debt, , , bucketCollateral) = pool.bucketAt(8_000 * 1e18);
+        assertEq(debt, 0);
+        assertEq(bucketCollateral, 0.146476161659974615 * 1e18);
+
+        (, , , , debt, , , bucketCollateral) = pool.bucketAt(100 * 1e18);
+        assertEq(debt, 1_000 * 1e18);
+        assertEq(bucketCollateral, 0);
+
+        // check borrower after liquidation
         (
             borrowerDebt,
             borrowerPendingDebt,
@@ -390,22 +342,5 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(collateralEncumbered, 0);
         assertEq(collateralization, 0);
         assertEq(borrowerInflator, 1.171809293279796920 * 1e18);
-
-        // check bucket 10_000, 9_000 and 8_000 debt and collateral
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(10_000 * 1e18);
-        assertEq(debt, 0);
-        assertEq(bucketCollateral, 1.171809293279796920 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(9_000 * 1e18);
-        // assertEq(debt, 0);
-        assertEq(bucketCollateral, 0.130201032586644102 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(8_000 * 1e18);
-        assertEq(debt, 0);
-        assertEq(bucketCollateral, 0.146476161659974615 * 1e18);
-
-        (, , , , debt, , , bucketCollateral) = pool.bucketAt(100 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0);
     }
 }
