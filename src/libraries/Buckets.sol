@@ -204,8 +204,9 @@ library Buckets {
         while (true) {
             accumulateBucketInterest(bucket, _inflator);
             uint256 bucketDebtToPurchase = Maths.min(_debt, bucket.debt);
+
             uint256 bucketRequiredCollateral = Maths.min(
-                _collateral,
+                Maths.min(Maths.wdiv(_debt, bucket.price), _collateral),
                 Maths.wdiv(bucket.debt, bucket.price)
             );
 
