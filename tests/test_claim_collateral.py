@@ -120,5 +120,5 @@ def test_claim_collateral(
         print("\n==================================")
         print("Gas estimations:")
         print("==================================")
-        print(f"Claim collateral           - {test_utils.get_gas_usage(tx.gas_used)}")
+        print(f"Claim collateral           - {test_utils.get_usage(tx.gas_used)}")
         print("==================================")

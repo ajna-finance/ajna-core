@@ -22,4 +22,5 @@ compiler:
       - "@std=lib/forge-std/src/"
       - "@solmate=lib/solmate/src/"
       - "@prb-math=lib/prb-math/"
+      - "@clones=lib/clones-with-immutable-args/src/"
 
