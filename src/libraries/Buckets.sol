@@ -223,8 +223,8 @@ library Buckets {
                 break;
             }
 
-            // stop if all debt reconciliated or at the last bucket
-            if (_debt == 0 || bucket.down == 0) {
+            // stop if all debt reconciliated
+            if (_debt == 0) {
                 break;
             }
 
