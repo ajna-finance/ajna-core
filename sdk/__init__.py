@@ -17,7 +17,7 @@ def create_default_sdk():
     Deploys MKR/DAI pool.
     Creates clients for MKR and DAI tokens.
     """
-    protocol_definition = AjnaProtocolStateDefinition.DEFAULT()
+    protocol_definition = InitialProtocolState.DEFAULT()
 
     sdk = AjnaProtocol()
     sdk.get_runner().prepare_protocol_to_state_by_definition(
@@ -54,7 +54,7 @@ def create_sdk(
 
     """
     protocol_definition = (
-        AjnaProtocolStateDefinitionBuilder()
+        InitialProtocolStateBuilder()
         .add_token(collateral_address, collateral_reserve)
         .add_token(quote_address, quote_reserve)
         .deploy_pool(collateral_address, quote_address)

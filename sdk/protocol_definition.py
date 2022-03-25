@@ -19,7 +19,7 @@ USDT_RESERVE_ADDRESS = "0x5754284f345afc66a98fbb0a0afe71e0f007b949"
 
 
 @dataclass
-class TokenUsedInAjnaProtocolDefinition:
+class TokenWithReserve:
     """
     Token used in AjnaProtocol. Definition is used to create ERC20TokenClient.
 
@@ -33,7 +33,7 @@ class TokenUsedInAjnaProtocolDefinition:
 
 
 @dataclass
-class AjnaDeployedPoolsDefinition:
+class PoolsToDeploy:
     """
     Definition of Ajna pool to be deployed.
 
@@ -47,7 +47,7 @@ class AjnaDeployedPoolsDefinition:
 
 
 @dataclass
-class InitialUserTokenBalanceDefinition:
+class InitialUserTokenBalance:
     """
     Definition of initial token balance for Ajna user.
 
@@ -63,7 +63,7 @@ class InitialUserTokenBalanceDefinition:
 
 
 @dataclass
-class AjnaUserQuoteTokenDepositsDefinition:
+class QuoteTokenDeposits:
     """
     Definition of quote token deposits for Ajna user.
 
@@ -79,7 +79,7 @@ class AjnaUserQuoteTokenDepositsDefinition:
 
 
 @dataclass
-class AjnaUserCollateralTokenDepositsDefinition:
+class CollateralTokenDeposits:
     """
     Definition of collateral token deposits for Ajna user.
 
@@ -93,22 +93,18 @@ class AjnaUserCollateralTokenDepositsDefinition:
 
 
 @dataclass
-class AjnaUserPoolInteractionsDefinition:
+class PoolInteractions:
     """ """
 
     quote_token_address: str
     collateral_address: str
 
-    quote_deposits: List[AjnaUserQuoteTokenDepositsDefinition] = field(
-        default_factory=list
-    )
-    collateral_deposits: List[AjnaUserCollateralTokenDepositsDefinition] = field(
-        default_factory=list
-    )
+    quote_deposits: List[QuoteTokenDeposits] = field(default_factory=list)
+    collateral_deposits: List[CollateralTokenDeposits] = field(default_factory=list)
 
 
 @dataclass
-class AjnaUserDefinition:
+class AjnaUser:
     """
     Definition of Ajna user.
 
@@ -116,17 +112,13 @@ class AjnaUserDefinition:
         token_balances: list of definitions of initial token balances for Ajna user
     """
 
-    token_balances: List[InitialUserTokenBalanceDefinition] = field(
-        default_factory=list
-    )
+    token_balances: List[InitialUserTokenBalance] = field(default_factory=list)
 
-    pool_interactions: List[AjnaUserPoolInteractionsDefinition] = field(
-        default_factory=list
-    )
+    pool_interactions: List[PoolInteractions] = field(default_factory=list)
 
 
 @dataclass
-class AjnaProtocolStateDefinition:
+class InitialProtocolState:
     """
     Protocol definition for AjnaProtocol.
 
@@ -139,10 +131,10 @@ class AjnaProtocolStateDefinition:
         - borrowers: list of AjnaUserDefinition, which defines how many tokens each user initially has
     """
 
-    lenders: List[AjnaUserDefinition] = field(default_factory=list)
-    borrowers: List[AjnaUserDefinition] = field(default_factory=list)
-    tokens: List[TokenUsedInAjnaProtocolDefinition] = field(default_factory=list)
-    deploy_pools: List[AjnaDeployedPoolsDefinition] = field(default_factory=list)
+    lenders: List[AjnaUser] = field(default_factory=list)
+    borrowers: List[AjnaUser] = field(default_factory=list)
+    tokens: List[TokenWithReserve] = field(default_factory=list)
+    deploy_pools: List[PoolsToDeploy] = field(default_factory=list)
 
     @staticmethod
     def DEFAULT():
@@ -156,7 +148,7 @@ class AjnaProtocolStateDefinition:
             - a DAI token wrapper
             - a single Pool for MKR and DAI pair
         """
-        options = AjnaProtocolStateDefinitionBuilder()
+        options = InitialProtocolStateBuilder()
         for _ in range(10):
             options.with_lender().add()
             options.with_borrower().add()
@@ -169,22 +161,20 @@ class AjnaProtocolStateDefinition:
         return options.build()
 
 
-class AjnaProtocolStateDefinitionBuilder:
+class InitialProtocolStateBuilder:
     def __init__(self) -> None:
-        self._options = AjnaProtocolStateDefinition()
+        self._options = InitialProtocolState()
 
-    def build(self) -> AjnaProtocolStateDefinition:
+    def build(self) -> InitialProtocolState:
         return self._options
 
-    def with_lender(self) -> "AjnaUserStateDefinitionBuilder":
+    def with_lender(self) -> "AjnaUserBuilder":
         """
         Starts definition builder for Ajna Lender.
         """
-        return AjnaUserStateDefinitionBuilder(self, self._options.lenders)
+        return AjnaUserBuilder(self, self._options.lenders)
 
-    def with_lenders(
-        self, number_of_lenders: int
-    ) -> "AjnaMultipleUsersStateDefinitionBuilder":
+    def with_lenders(self, number_of_lenders: int) -> "MultipleAjnaUsersBuilder":
         """
         Starts definition builder for multiple Ajna Lenders with same definition.
 
@@ -192,21 +182,17 @@ class AjnaProtocolStateDefinitionBuilder:
             number_of_lenders: number of lenders to be added
         """
 
-        return AjnaMultipleUsersStateDefinitionBuilder(
-            self, self._options.lenders, number_of_lenders
-        )
+        return MultipleAjnaUsersBuilder(self, self._options.lenders, number_of_lenders)
 
-    def with_borrower(self) -> "AjnaUserStateDefinitionBuilder":
+    def with_borrower(self) -> "AjnaUserBuilder":
         """
         Starts definition builder for Ajna Borrower.
         """
 
-        account_builder = AjnaUserStateDefinitionBuilder(self, self._options.borrowers)
+        account_builder = AjnaUserBuilder(self, self._options.borrowers)
         return account_builder
 
-    def with_borrowers(
-        self, number_of_borrowers: int
-    ) -> "AjnaMultipleUsersStateDefinitionBuilder":
+    def with_borrowers(self, number_of_borrowers: int) -> "MultipleAjnaUsersBuilder":
         """
         Starts definition builder for multiple Ajna Borrowers with same definition.
 
@@ -214,13 +200,13 @@ class AjnaProtocolStateDefinitionBuilder:
             number_of_borrowers: number of Borrowers to be added
         """
 
-        return AjnaMultipleUsersStateDefinitionBuilder(
+        return MultipleAjnaUsersBuilder(
             self, self._options.borrowers, number_of_borrowers
         )
 
     def add_token(
         self, address: str, reserve_address: str
-    ) -> "AjnaProtocolStateDefinitionBuilder":
+    ) -> "InitialProtocolStateBuilder":
         """
         Adds token definition to be used in AjnaProtocol.
 
@@ -229,27 +215,25 @@ class AjnaProtocolStateDefinitionBuilder:
             reserve_address: address of account with huge amount of token balance used to top up token balance for Ajna users
         """
 
-        self._options.tokens.append(
-            TokenUsedInAjnaProtocolDefinition(address, reserve_address)
-        )
+        self._options.tokens.append(TokenWithReserve(address, reserve_address))
         return self
 
     def deploy_pool(
         self, collateral_address: str, quote_token_address: str
-    ) -> "AjnaProtocolStateDefinitionBuilder":
+    ) -> "InitialProtocolStateBuilder":
         self._options.deploy_pools.append(
-            AjnaDeployedPoolsDefinition(collateral_address, quote_token_address)
+            PoolsToDeploy(collateral_address, quote_token_address)
         )
         return self
 
 
-class AjnaUserStateDefinitionBuilder:
-    def __init__(self, builder: AjnaProtocolStateDefinitionBuilder, accounts: List):
-        self._account_params = AjnaUserDefinition()
+class AjnaUserBuilder:
+    def __init__(self, builder: InitialProtocolStateBuilder, accounts: List):
+        self._account_params = AjnaUser()
         self._builder = builder
         self._accounts = accounts
 
-    def add(self) -> AjnaProtocolStateDefinitionBuilder:
+    def add(self) -> InitialProtocolStateBuilder:
         """
         Finalizes AjnaUserDefinition and adds it to AjnaProtocolStateDefinition.
         """
@@ -259,7 +243,7 @@ class AjnaUserStateDefinitionBuilder:
 
     def with_token(
         self, address: str, amount: int, *, approve_max=True
-    ) -> "AjnaUserStateDefinitionBuilder":
+    ) -> "AjnaUserBuilder":
         """
         Adds token balance definition to AjnaUserDefinition.
 
@@ -270,27 +254,27 @@ class AjnaUserStateDefinitionBuilder:
         """
 
         self._account_params.token_balances.append(
-            InitialUserTokenBalanceDefinition(address, amount, approve_max)
+            InitialUserTokenBalance(address, amount, approve_max)
         )
         return self
 
     def interacts_with_pool(
-        self, pool_interactions_definition: AjnaUserPoolInteractionsDefinition
-    ) -> "AjnaUserStateDefinitionBuilder":
+        self, pool_interactions_definition: PoolInteractions
+    ) -> "AjnaUserBuilder":
         self._account_params.pool_interactions.append(pool_interactions_definition)
         return self
 
 
-class AjnaMultipleUsersStateDefinitionBuilder:
+class MultipleAjnaUsersBuilder:
     def __init__(
-        self, builder: AjnaProtocolStateDefinitionBuilder, accounts: List, amount: int
+        self, builder: InitialProtocolStateBuilder, accounts: List, amount: int
     ):
-        self._account_params = AjnaUserDefinition()
+        self._account_params = AjnaUser()
         self._builder = builder
         self._accounts = accounts
         self._amount = amount
 
-    def add(self) -> AjnaProtocolStateDefinitionBuilder:
+    def add(self) -> InitialProtocolStateBuilder:
         """
         Finalizes AjnaUserDefinition and adds multiple copies of it to AjnaProtocolStateDefinition.
         """
@@ -302,7 +286,7 @@ class AjnaMultipleUsersStateDefinitionBuilder:
 
     def with_token(
         self, address: str, amount: int, *, approve_max=True
-    ) -> "AjnaUserStateDefinitionBuilder":
+    ) -> "AjnaUserBuilder":
         """
         Adds token balance definition to AjnaUserDefinition.
 
@@ -312,12 +296,12 @@ class AjnaMultipleUsersStateDefinitionBuilder:
             approve_max: if True, Ajna user can pre-approve maximum amount of tokens to any Ajna Pool contract
         """
         self._account_params.token_balances.append(
-            InitialUserTokenBalanceDefinition(address, amount, approve_max)
+            InitialUserTokenBalance(address, amount, approve_max)
         )
         return self
 
     def interacts_with_pool(
-        self, pool_interactions_definition: AjnaUserPoolInteractionsDefinition
-    ) -> "AjnaUserStateDefinitionBuilder":
+        self, pool_interactions_definition: PoolInteractions
+    ) -> "AjnaUserBuilder":
         self._account_params.pool_interactions.append(pool_interactions_definition)
         return self

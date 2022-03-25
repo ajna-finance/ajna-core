@@ -13,7 +13,7 @@ class AjnaProtocolRunner:
         self.protocol = protocol
 
     def prepare_protocol_to_state_by_definition(
-        self, protocol_definition: AjnaProtocolStateDefinition = None
+        self, protocol_definition: InitialProtocolState = None
     ):
         """
         Prepares AjnaProtocol to desired state by given protocol definition defined in AjnaProtocolStateDefinition by hand or using AjnaProtocolStateDefinitionBuilder.
@@ -31,7 +31,7 @@ class AjnaProtocolRunner:
         options = (
             protocol_definition
             if protocol_definition
-            else AjnaProtocolStateDefinition.DEFAULT()
+            else InitialProtocolState.DEFAULT()
         )
 
         self.deploy_pools_according_by_definition(options)
@@ -47,7 +47,7 @@ class AjnaProtocolRunner:
         )
 
     def create_erc20_token_clients_by_definition(
-        self, protocol_definition: AjnaProtocolStateDefinition
+        self, protocol_definition: InitialProtocolState
     ):
         """
         Creates ERC20TokenClient for each tokens defined in protocol_definition.
@@ -60,7 +60,7 @@ class AjnaProtocolRunner:
             )
 
     def deploy_pools_according_by_definition(
-        self, protocol_definition: AjnaProtocolStateDefinition
+        self, protocol_definition: InitialProtocolState
     ):
         """
         Deploys ERC20Pool for each pair of tokens defined in protocol_definition.
@@ -71,9 +71,7 @@ class AjnaProtocolRunner:
                 pool_options.collateral_address, pool_options.quote_token_address
             )
 
-    def prepare_borrowers_by_definition(
-        self, protocol_definition: AjnaDeployedPoolsDefinition
-    ):
+    def prepare_borrowers_by_definition(self, protocol_definition: PoolsToDeploy):
         """
         Prepares Borrowers according to given protocol_definition.
 
@@ -95,9 +93,7 @@ class AjnaProtocolRunner:
 
             self.protocol.borrowers.append(borrower)
 
-    def prepare_lenders_by_definition(
-        self, protocol_definition: AjnaProtocolStateDefinition
-    ):
+    def prepare_lenders_by_definition(self, protocol_definition: InitialProtocolState):
         """
         Prepares Lenders according to given protocol_definition.
 
@@ -120,7 +116,7 @@ class AjnaProtocolRunner:
             self.protocol.lenders.append(lender)
 
     def perform_lenders_initial_pool_interactions_by_definition(
-        self, protocol_definition: AjnaProtocolStateDefinition
+        self, protocol_definition: InitialProtocolState
     ):
         """
         Perform  initial lenders deposits for each pool defined in the protocol definition.
@@ -132,7 +128,7 @@ class AjnaProtocolRunner:
             )
 
     def perform_borrowers_initial_pool_interactions_by_definition(
-        self, protocol_definition: AjnaProtocolStateDefinition
+        self, protocol_definition: InitialProtocolState
     ):
         """
         Perform  initial borrowers deposits for each pool defined in the protocol definition.
@@ -144,7 +140,7 @@ class AjnaProtocolRunner:
             )
 
     def _perform_initial_pool_interactions_for_lender(
-        self, lender_options: AjnaUserPoolInteractionsDefinition, lender_index: int
+        self, lender_options: PoolInteractions, lender_index: int
     ):
         """
         Performs initial quote token deposits for each pool defined in .
@@ -167,7 +163,7 @@ class AjnaProtocolRunner:
                 pool.deposit_quote_token(amount, price, lender_index)
 
     def _perform_initial_pool_interactions_for_borrower(
-        self, borrower_options: AjnaUserPoolInteractionsDefinition, borrower_index: int
+        self, borrower_options: PoolInteractions, borrower_index: int
     ):
         for interactions in borrower_options.pool_interactions:
             pool = self.protocol.get_pool(

@@ -4,7 +4,7 @@ from sdk import *
 
 def main():
     protocol_definition = (
-        AjnaProtocolStateDefinitionBuilder()
+        InitialProtocolStateBuilder()
         .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
         .add_token(COMP_ADDRESS, COMP_RESERVE_ADDRESS)
         .deploy_pool(COMP_ADDRESS, DAI_ADDRESS)
