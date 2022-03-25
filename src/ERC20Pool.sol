@@ -37,6 +37,12 @@ contract ERC20Pool is IPool {
         uint256 inflatorSnapshot; // last updated inflator rate for a given borrower
     }
 
+    struct LenderInfo {
+        uint256 price;
+        uint256 amount;
+        uint256 lpOutstanding; // TODO: convert to lp outstanding from current status of bucket and lender amounts
+    }
+
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
     ERC20 public immutable collateral;
@@ -54,6 +60,7 @@ contract ERC20Pool is IPool {
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
+    mapping(address => LenderInfo) public lenders;
 
     uint256 public inflatorSnapshot = Maths.ONE_WAD;
     uint256 public lastInflatorSnapshotUpdate = block.timestamp;

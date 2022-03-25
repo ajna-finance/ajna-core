@@ -1,5 +1,6 @@
 import pytest
 from sdk import *
+from brownie import PositionManager
 
 
 @pytest.fixture()
@@ -30,7 +31,6 @@ def mkr(sdk):
     return sdk.get_token(MKR_ADDRESS).get_contract()
 
 
-# TODO: convert to deploying all necessary libraries "libraries(deployer)"
 @pytest.fixture
 def bucket_math(sdk):
     return sdk.bucket_math
@@ -40,6 +40,10 @@ def bucket_math(sdk):
 def mkr_dai_pool(sdk):
     return sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
 
+@pytest.fixture
+def position_manager(deployer):
+    position_manager = PositionManager.deploy({"from": deployer})
+    yield position_manager
 
 @pytest.fixture
 def lenders(sdk, mkr_dai_pool):
