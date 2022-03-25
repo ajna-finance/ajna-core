@@ -134,7 +134,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(
             address(borrower)
         );
-        assertEq(borrowerDebt, 30_000 * 1e18);
+        assertEq(borrowerDebt, 30_000.273023081959005000 * 1e18);
         assertEq(depositedCollateral, 100 * 1e18);
 
         // deposit at 5_000 price and reallocate entire debt

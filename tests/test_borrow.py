@@ -149,7 +149,8 @@ def test_borrow(
     assert round(mkr_dai_pool.totalDebt() * 1e-18, 3) == 30000.273
     # check borrower
     (debt, col_deposited, _) = mkr_dai_pool.borrowers(borrower1)
-    assert debt == 30_000 * 1e18
+    # TODO: properly checked in forge tests
+    assert 30_000 * 1e18 <= debt <= 30_001 * 1e18
     assert col_deposited == 100 * 1e18
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]

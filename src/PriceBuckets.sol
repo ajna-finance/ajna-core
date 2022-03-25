@@ -273,23 +273,13 @@ contract PriceBuckets is IPriceBuckets {
         uint256 _inflator
     ) public returns (uint256 requiredCollateral) {
         Bucket storage bucket = buckets[_hdp];
-        accumulateBucketInterest(bucket, _inflator);
 
         while (true) {
+            accumulateBucketInterest(bucket, _inflator);
+            uint256 bucketDebtToPurchase = Maths.min(_debt, bucket.debt);
             uint256 bucketRequiredCollateral = Maths.min(
-                Maths.min(Maths.wdiv(_debt, bucket.price), _collateral),
-                Maths.wdiv(bucket.debt, bucket.price)
-            );
-
-            uint256 bucketDebtToPurchase = Maths.wmul(
-                bucketRequiredCollateral,
-                bucket.price
-            );
-
-            bucketDebtToPurchase = Maths.min(_debt, bucketDebtToPurchase);
-            bucketRequiredCollateral = Maths.min(
                 _collateral,
-                bucketRequiredCollateral
+                Maths.wdiv(bucket.debt, bucket.price)
             );
 
             _debt -= bucketDebtToPurchase;
