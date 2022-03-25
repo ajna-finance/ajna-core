@@ -1,4 +1,4 @@
-from typing import List
+import random
 
 from brownie import *
 from brownie import (
@@ -39,7 +39,16 @@ class AjnaProtocolRunner:
         self.prepare_lenders_by_definition(protocol_definition)
         self.prepare_borrowers_by_definition(protocol_definition)
 
-    def create_erc20_token_clients_by_definition(self, protocol_definition):
+        self.perform_lenders_initial_pool_interactions_by_definition(
+            protocol_definition
+        )
+        self.perform_borrowers_initial_pool_interactions_by_definition(
+            protocol_definition
+        )
+
+    def create_erc20_token_clients_by_definition(
+        self, protocol_definition: AjnaProtocolStateDefinition
+    ):
         """
         Creates ERC20TokenClient for each tokens defined in protocol_definition.
         Token clients are used to simplify interaction with standard ERC20 tokens.
@@ -50,7 +59,9 @@ class AjnaProtocolRunner:
                 token_options.token_address, token_options.reserve_address
             )
 
-    def deploy_pools_according_by_definition(self, protocol_definition):
+    def deploy_pools_according_by_definition(
+        self, protocol_definition: AjnaProtocolStateDefinition
+    ):
         """
         Deploys ERC20Pool for each pair of tokens defined in protocol_definition.
         """
@@ -60,14 +71,15 @@ class AjnaProtocolRunner:
                 pool_options.collateral_address, pool_options.quote_token_address
             )
 
-    def prepare_borrowers_by_definition(self, protocol_definition):
+    def prepare_borrowers_by_definition(
+        self, protocol_definition: AjnaDeployedPoolsDefinition
+    ):
         """
         Prepares Borrowers according to given protocol_definition.
 
         Each Borrower has 100 ETH.
         Each Borrower can have multiple ERC20 tokens.
         The initial amount of each ERC20 token is defined by protocol_definition.
-        Using `approve_max` allows Borrower to pre-approve maximum amount of tokens to any Ajna Pool contract.
         """
 
         for borrower_options in protocol_definition.borrowers:
@@ -83,14 +95,15 @@ class AjnaProtocolRunner:
 
             self.protocol.borrowers.append(borrower)
 
-    def prepare_lenders_by_definition(self, protocol_definition):
+    def prepare_lenders_by_definition(
+        self, protocol_definition: AjnaProtocolStateDefinition
+    ):
         """
         Prepares Lenders according to given protocol_definition.
 
         Each Lender has 100 ETH.
         Each Lender can have multiple ERC20 tokens.
         The initial amount of each ERC20 token is defined by protocol_definition.
-        Using `approve_max` allows Lender to pre-approve maximum amount of tokens to any Ajna Pool contract.
         """
 
         for lender_options in protocol_definition.lenders:
@@ -105,3 +118,64 @@ class AjnaProtocolRunner:
                         token.approve_max(pool.get_contract(), lender)
 
             self.protocol.lenders.append(lender)
+
+    def perform_lenders_initial_pool_interactions_by_definition(
+        self, protocol_definition: AjnaProtocolStateDefinition
+    ):
+        """
+        Perform  initial lenders deposits for each pool defined in the protocol definition.
+        """
+        for lender, lender_index in enumerate(self.protocol.lenders):
+            lender_options = protocol_definition.lenders[lender]
+            self._perform_initial_pool_interactions_for_lender(
+                lender_options, lender_index
+            )
+
+    def perform_borrowers_initial_pool_interactions_by_definition(
+        self, protocol_definition: AjnaProtocolStateDefinition
+    ):
+        """
+        Perform  initial borrowers deposits for each pool defined in the protocol definition.
+        """
+        for borrower, borrower_index in enumerate(self.protocol.borrowers):
+            borrower_options = protocol_definition.borrowers[borrower]
+            self._perform_initial_pool_interactions_for_borrower(
+                borrower_options, borrower_index
+            )
+
+    def _perform_initial_pool_interactions_for_lender(
+        self, lender_options: AjnaUserPoolInteractionsDefinition, lender_index: int
+    ):
+        """
+        Performs initial quote token deposits for each pool defined in .
+        """
+        for interactions in lender_options.pool_interactions:
+            pool = self.protocol.get_pool(
+                interactions.collateral_address, interactions.quote_token_address
+            )
+
+            for quote_deposits_definition in interactions.quote_deposits:
+                min_amount = quote_deposits_definition.min_deposit_amount
+                max_amount = quote_deposits_definition.max_deposit_amount
+                amount = random.randrange(min_amount, max_amount)
+
+                min_price_index = quote_deposits_definition.min_deposit_price_index
+                max_price_index = quote_deposits_definition.max_deposit_price_index
+                price_index = random.randrange(min_price_index, max_price_index)
+                price = self.protocol.bucket_math.indexToPrice(price_index)
+
+                pool.deposit_quote_token(amount, price, lender_index)
+
+    def _perform_initial_pool_interactions_for_borrower(
+        self, borrower_options: AjnaUserPoolInteractionsDefinition, borrower_index: int
+    ):
+        for interactions in borrower_options.pool_interactions:
+            pool = self.protocol.get_pool(
+                interactions.collateral_address, interactions.quote_token_address
+            )
+            for collateral_deposits_definition in interactions.collateral_deposits:
+                min_amount = collateral_deposits_definition.min_deposit_amount
+                max_amount = collateral_deposits_definition.max_deposit_amount
+
+                amount = random.randint(min_amount, max_amount)
+                pool.deposit_collateral_token(amount, borrower_index)

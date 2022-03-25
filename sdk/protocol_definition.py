@@ -63,6 +63,51 @@ class InitialUserTokenBalanceDefinition:
 
 
 @dataclass
+class AjnaUserQuoteTokenDepositsDefinition:
+    """
+    Definition of quote token deposits for Ajna user.
+
+    Attributes:
+        token_address: address of ERC20 token contract
+        amount: amount of token to be added to Ajna user
+    """
+
+    min_deposit_amount: int
+    max_deposit_amount: int
+    min_deposit_price_index: int
+    max_deposit_price_index: int
+
+
+@dataclass
+class AjnaUserCollateralTokenDepositsDefinition:
+    """
+    Definition of collateral token deposits for Ajna user.
+
+    Attributes:
+        token_address: address of ERC20 token contract
+        amount: amount of token to be added to Ajna user
+    """
+
+    min_deposit_amount: int
+    max_deposit_amount: int
+
+
+@dataclass
+class AjnaUserPoolInteractionsDefinition:
+    """ """
+
+    quote_token_address: str
+    collateral_address: str
+
+    quote_deposits: List[AjnaUserQuoteTokenDepositsDefinition] = field(
+        default_factory=list
+    )
+    collateral_deposits: List[AjnaUserCollateralTokenDepositsDefinition] = field(
+        default_factory=list
+    )
+
+
+@dataclass
 class AjnaUserDefinition:
     """
     Definition of Ajna user.
@@ -72,6 +117,10 @@ class AjnaUserDefinition:
     """
 
     token_balances: List[InitialUserTokenBalanceDefinition] = field(
+        default_factory=list
+    )
+
+    pool_interactions: List[AjnaUserPoolInteractionsDefinition] = field(
         default_factory=list
     )
 
@@ -225,6 +274,12 @@ class AjnaUserStateDefinitionBuilder:
         )
         return self
 
+    def interacts_with_pool(
+        self, pool_interactions_definition: AjnaUserPoolInteractionsDefinition
+    ) -> "AjnaUserStateDefinitionBuilder":
+        self._account_params.pool_interactions.append(pool_interactions_definition)
+        return self
+
 
 class AjnaMultipleUsersStateDefinitionBuilder:
     def __init__(
@@ -259,4 +314,10 @@ class AjnaMultipleUsersStateDefinitionBuilder:
         self._account_params.token_balances.append(
             InitialUserTokenBalanceDefinition(address, amount, approve_max)
         )
+        return self
+
+    def interacts_with_pool(
+        self, pool_interactions_definition: AjnaUserPoolInteractionsDefinition
+    ) -> "AjnaUserStateDefinitionBuilder":
+        self._account_params.pool_interactions.append(pool_interactions_definition)
         return self
