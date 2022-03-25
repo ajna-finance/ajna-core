@@ -215,6 +215,7 @@ library Buckets {
 
             // bucket accounting
             bucket.debt -= bucketDebtToPurchase;
+            bucket.amount -= Maths.min(bucket.amount, bucketDebtToPurchase);
             bucket.collateral += bucketRequiredCollateral;
 
             // forgive the debt when borrower has no remaining collateral but still has debt
