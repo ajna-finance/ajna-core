@@ -423,7 +423,7 @@ contract ERC20Pool is IPool, Clone {
             "ajna/borrower-collateralized"
         );
 
-        uint256 requiredCollateral = _buckets.liquidate(
+        (uint256 lentTokens, uint256 requiredCollateral) = _buckets.liquidate(
             debt,
             collateralDeposited,
             hdp,
@@ -432,6 +432,7 @@ contract ERC20Pool is IPool, Clone {
 
         // pool level accounting
         totalDebt -= borrower.debt;
+        totalQuoteToken -= lentTokens;
         totalCollateral -= requiredCollateral;
 
         // borrower accounting

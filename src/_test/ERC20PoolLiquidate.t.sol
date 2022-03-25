@@ -92,7 +92,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
 
         assertEq(pool.lastInflatorSnapshotUpdate(), 0);
 
-        // check 10_000 bucket balance before purchase bid
+        // check 10_000 bucket balance before liquidate
         (
             ,
             ,
@@ -107,7 +107,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(deposit, 10_000 * 1e18);
         assertEq(bucketCollateral, 0);
 
-        // check 9_000 bucket balance before purchase bid
+        // check 9_000 bucket balance before liquidate
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             9_000 * 1e18
         );
@@ -115,7 +115,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(deposit, 1_000 * 1e18);
         assertEq(bucketCollateral, 0);
 
-        // check 100 bucket balance before purchase bid
+        // check 100 bucket balance before liquidate
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(100 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(deposit, 10_000 * 1e18);
@@ -150,7 +150,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerInflator, 1.000013001099140905 * 1e18);
 
         // check pool balance and that interest accumulated
-        assertEq(pool.totalQuoteToken(), 21_000 * 1e18);
+        assertEq(pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(pool.totalDebt(), 1000.013001099140905000 * 1e18);
         assertEq(pool.totalCollateral(), 200.888874443223176772 * 1e18);
         assertEq(pool.inflatorSnapshot(), 1.000013001099140905 * 1e18);
@@ -275,6 +275,11 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(collateralEncumbered, 0);
         assertEq(collateralization, 0);
         assertEq(borrowerInflator, 1 * 1e18);
+
+        // check pool balance
+        assertEq(pool.totalQuoteToken(), 1_000 * 1e18);
+        assertEq(pool.totalDebt(), 1_000 * 1e18);
+        assertEq(pool.totalCollateral(), 200.763888888888888889 * 1e18);
     }
 
     function testLiquidateScenario1TimeWarp() public {
@@ -373,5 +378,10 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(collateralEncumbered, 0);
         assertEq(collateralization, 0);
         assertEq(borrowerInflator, 1.171809293279796920 * 1e18);
+
+        // check pool balance
+        assertEq(pool.totalQuoteToken(), 1_000 * 1e18);
+        assertEq(pool.totalDebt(), 1_000 * 1e18);
+        assertEq(pool.totalCollateral(), 200.551513512473584363 * 1e18);
     }
 }

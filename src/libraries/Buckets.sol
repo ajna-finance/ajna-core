@@ -198,7 +198,7 @@ library Buckets {
         uint256 _collateral,
         uint256 _hdp,
         uint256 _inflator
-    ) public returns (uint256 requiredCollateral) {
+    ) public returns (uint256 lentTokens, uint256 requiredCollateral) {
         Bucket storage bucket = buckets[_hdp];
 
         while (true) {
@@ -210,13 +210,20 @@ library Buckets {
                 Maths.wdiv(bucket.debt, bucket.price)
             );
 
+            uint256 bucketLentTokens = Maths.min(
+                bucket.amount,
+                bucketDebtToPurchase
+            );
+
             _debt -= bucketDebtToPurchase;
             _collateral -= bucketRequiredCollateral;
             requiredCollateral += bucketRequiredCollateral;
 
+            lentTokens += bucketLentTokens;
+
             // bucket accounting
             bucket.debt -= bucketDebtToPurchase;
-            bucket.amount -= Maths.min(bucket.amount, bucketDebtToPurchase);
+            bucket.amount -= bucketLentTokens;
             bucket.collateral += bucketRequiredCollateral;
 
             // forgive the debt when borrower has no remaining collateral but still has debt
