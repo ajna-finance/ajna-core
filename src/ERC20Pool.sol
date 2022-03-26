@@ -166,11 +166,6 @@ contract ERC20Pool is IPool, Clone {
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
-        require(
-            totalQuoteToken - totalDebt >= _amount,
-            "ajna/amount-greater-than-claimable"
-        );
-
         accumulatePoolInterest();
 
         // remove from bucket
@@ -264,8 +259,7 @@ contract ERC20Pool is IPool, Clone {
     /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
         require(
-            _amount <= totalQuoteToken - totalDebt,
-            "ajna/not-enough-liquidity"
+            _amount <= totalQuoteToken, "ajna/not-enough-liquidity"
         );
 
         accumulatePoolInterest();
@@ -306,6 +300,7 @@ contract ERC20Pool is IPool, Clone {
         );
         borrower.debt += _amount;
 
+        totalQuoteToken -= _amount;
         totalDebt += _amount;
         require(
             getPoolCollateralization() >= Maths.ONE_WAD,
@@ -342,6 +337,7 @@ contract ERC20Pool is IPool, Clone {
             borrower.debt -= debtToPay;
         }
 
+        totalQuoteToken += debtToPay;
         totalDebt -= Maths.min(totalDebt, debtToPay);
 
         quoteToken().safeTransferFrom(
@@ -366,11 +362,6 @@ contract ERC20Pool is IPool, Clone {
         );
 
         accumulatePoolInterest();
-
-        require(
-            _amount <= totalQuoteToken - totalDebt,
-            "ajna/not-enough-liquidity"
-        );
 
         uint256 newLup = _buckets.purchaseBid(
             _price,
@@ -432,7 +423,6 @@ contract ERC20Pool is IPool, Clone {
 
         // pool level accounting
         totalDebt -= borrower.debt;
-        totalQuoteToken -= lentTokens;
         totalCollateral -= requiredCollateral;
 
         // borrower accounting
@@ -563,8 +553,8 @@ contract ERC20Pool is IPool, Clone {
     }
 
     function getPoolActualUtilization() public view returns (uint256) {
-        if (totalDebt != 0) {
-            return Maths.wdiv(totalDebt, totalQuoteToken);
+        if (totalQuoteToken != 0) {
+            return Maths.wdiv(totalDebt, (totalQuoteToken + totalDebt));
         }
         return 0;
     }
