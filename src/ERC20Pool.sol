@@ -99,6 +99,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 collateral
     );
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
+    error InvalidPrice(uint256 price);
 
     function initialize() external {
         collateralScale = 10**(18 - collateral().decimals());
@@ -122,7 +123,9 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of quote token to be added by a lender
     /// @param _price The bucket to which the quote tokens will be added
     function addQuoteToken(uint256 _amount, uint256 _price) external {
-        require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
+        if (!BucketMath.isValidPrice(_price)) {
+            revert InvalidPrice({price: _price});
+        }
 
         accumulatePoolInterest();
 
