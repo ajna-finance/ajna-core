@@ -127,11 +127,20 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(pool.lup(), 3_000 * 1e18);
 
         // check 3000 bucket balance before purchase Bid
-        (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding) = pool
-            .bucketAt(3_000 * 1e18);
+        (
+            ,
+            ,
+            ,
+            uint256 deposit,
+            uint256 debt,
+            ,
+            uint256 lpOutstanding,
+            uint256 bucketCollateral
+        ) = pool.bucketAt(3_000 * 1e18);
         assertEq(deposit, 4_000 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(lpOutstanding, 4_000 * 1e18);
+        assertEq(bucketCollateral, 0);
         assertEq(pool.lpBalance(address(lender), 3_000 * 1e18), 4_000 * 1e18);
 
         // purchase bid
@@ -161,10 +170,12 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         lender.claimCollateral(pool, 0.5 * 1e18, 3_000 * 1e18);
 
         // check 3000 bucket balance after collateral claimed
-        (, , , deposit, debt, , lpOutstanding) = pool.bucketAt(3_000 * 1e18);
+        (, , , deposit, debt, , lpOutstanding, bucketCollateral) = pool
+            .bucketAt(3_000 * 1e18);
         assertEq(deposit, 2_500 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(lpOutstanding, 2_500 * 1e18);
+        assertEq(bucketCollateral, 0);
         assertEq(pool.lpBalance(address(lender), 3_000 * 1e18), 2_500 * 1e18);
 
         // claimer lp tokens for pool should be diminished
