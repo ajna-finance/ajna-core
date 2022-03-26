@@ -1,6 +1,7 @@
 import pytest
 from sdk import *
-from brownie import test, network
+from brownie.network.state import TxHistory
+from brownie.utils import color
 
 @pytest.fixture(autouse=True)
 def get_capsys(capsys):
@@ -105,23 +106,65 @@ class TestUtils:
             self._end_profiling()
 
         # @notice print the gas statistics of the txs collected since last cleared
-        # @param method_names optional array of the method names to print gas stats for
         def _print(self):
             with TestUtils.capsys.disabled():
-                if self._method_names:
-                    for line in test.output._build_gas_profile_output():
-                        for method in self._method_names:
-                            if method in line:
-                                print(line)
-                else:
-                    for line in test.output._build_gas_profile_output():
-                        print(line)
+                for line in self._build_cust_output():
+                    print(line)
 
                 print("==================================")
 
+        def _filter_methods(self, gas):
+            def by_methods(x):
+                contract, function = x[0].split(".", 1)
+                for method in self._method_names:
+                    if method in function:
+                        return x
+
+            return filter(by_methods, gas)
+
+        def _build_cust_output(self):
+            gas = network.state.TxHistory().gas_profile
+
+            sorted_gas = self._filter_methods(sorted(gas.items())) if self._method_names else sorted(gas.items())
+
+            grouped_by_contract = {}
+            padding = {}
+
+            lines = [""]
+
+            for full_name, values in sorted_gas:
+                contract, function = full_name.split(".", 1)
+                # calculate padding to get table-like formatting
+                padding["fn"] = max(padding.get("fn", 0), len(str(function)))
+                for k, v in values.items():
+                    padding[k] = max(padding.get(k, 0), len(str(v)))
+
+                # group functions with payload by contract name
+                if contract in grouped_by_contract.keys():
+                    grouped_by_contract[contract][function] = values
+                else:
+                    grouped_by_contract[contract] = {function: values}
+
+            for contract, functions in grouped_by_contract.items():
+                lines.append(f"{color('bright magenta')}{contract}{color} <Contract>")
+                sorted_functions = dict(
+                    sorted(functions.items(), key=lambda value: value[1]["avg"], reverse=True)
+                )
+                for ix, (fn_name, values) in enumerate(sorted_functions.items()):
+                    prefix = "\u2514\u2500" if ix == len(functions) - 1 else "\u251c\u2500"
+                    fn_name = fn_name.ljust(padding["fn"])
+                    values["avg"] = int(values["avg"])
+                    values = {k: str(v).rjust(padding[k]) for k, v in values.items()}
+                    lines.append(
+                        f"   {prefix} {fn_name} -  avg: {values['avg']}  avg (confirmed):"
+                        f" {values['avg_success']}  low: {values['low']}  high: {values['high']}"
+                    )
+
+            return lines + [""]
+
         def _start_profiling(self):
-            TestUtils.GasWatcher._cache = network.state.TxHistory().gas_profile.copy()
-            network.state.TxHistory().gas_profile.clear()
+            TestUtils.GasWatcher._cache = TxHistory().gas_profile.copy()
+            TxHistory().gas_profile.clear()
 
         def _combined_mean(self, old_avg, old_count, new_avg, new_count):
             prod_count_avgs = old_count * old_avg + new_count * new_avg
@@ -152,11 +195,11 @@ class TestUtils:
                     overlap[method]['count_success'] = old[method]['count_success'] + new[method]['count_success']
 
             # include unique methods, overlap overwrites all duplicates
-            return {**old,**new,**overlap}
+            return {**old, **new, **overlap}
 
         def _end_profiling(self):
-            network.state.TxHistory().gas_profile = self._combine_profiles(TestUtils.GasWatcher._cache,
-                                                                          network.state.TxHistory().gas_profile)
+            TxHistory().gas_profile = self._combine_profiles(TestUtils.GasWatcher._cache,
+                                                             TxHistory().gas_profile)
 
 @pytest.fixture
 def test_utils():
