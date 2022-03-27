@@ -570,11 +570,7 @@ contract ERC20Pool is IPool, Clone {
     }
 
     function getPoolTargetUtilization() public view returns (uint256) {
-        uint256 poolCollateralization = getPoolCollateralization();
-        if (poolCollateralization != 0) {
-            return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
-        }
-        return Maths.ONE_WAD;
+        return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
     }
 
     // -------------------- Borrower related functions --------------------
