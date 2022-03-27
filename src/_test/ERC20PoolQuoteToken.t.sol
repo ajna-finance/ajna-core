@@ -34,13 +34,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
     function testDepositQuoteToken() public {
         // should revert when depositing at invalid price
-        vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.InvalidPrice.selector, 1004948314 * 1e18)
-        );
+        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
         lender.addQuoteToken(pool, 10_000 * 1e18, 1004948314 * 1e18);
 
         assertEq(pool.hdp(), 0);
-
         // test 10000 DAI deposit at price of 1 MKR = 4000 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(lender), address(pool), 10_000 * 1e18);
@@ -174,14 +171,13 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(lpOutstanding, 40_000 * 1e18);
         assertEq(pool.lpBalance(address(lender), 5_000 * 1e18), 40_000 * 1e18);
     }
-
     function testRemoveQuoteTokenNoLoan() public {
         // lender deposit 10000 DAI at price 4000
         lender.addQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // should revert if trying to remove more than lended
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.AmountExceedsAvailableQuoteToken.selector, 1004948314 * 1e18)
+            abi.encodeWithSelector(ERC20Pool.AmountExceedsTotalClaimableQuoteToken.selector, pool.totalQuoteToken() - pool.totalDebt())
         );
         lender.removeQuoteToken(pool, 20_000 * 1e18, 4_000 * 1e18);
 
@@ -219,7 +215,6 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(lpOutstanding, 0 * 1e18);
         assertEq(pool.lpBalance(address(lender), 4_000 * 1e18), 0 * 1e18);
     }
-
     function testRemoveQuoteTokenUnpaidLoan() public {
         // lender deposit 10000 DAI at price 4000
         lender.addQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
@@ -236,7 +231,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.borrow(pool, 5_000 * 1e18, 4_000 * 1e18);
 
         // should revert if trying to remove entire amount lended
-        vm.expectRevert("ajna/amount-greater-than-claimable");
+        vm.expectRevert(
+            abi.encodeWithSelector(ERC20Pool.AmountExceedsTotalClaimableQuoteToken.selector, pool.totalQuoteToken() - pool.totalDebt())
+        );
         lender.removeQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // remove 4000 DAI at price of 1 MKR = 4000 DAI
@@ -401,7 +398,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(pool.lup(), 1_000 * 1e18);
 
         // repay should revert if pool remains undercollateralized
-        vm.expectRevert("ajna/pool-undercollateralized");
+        vm.expectRevert(
+            abi.encodeWithSelector(ERC20Pool.PoolUndercollateralized.selector, pool.getPoolCollateralization())
+        );
         lender.removeQuoteToken(pool, 2_000 * 1e18, 1_000 * 1e18);
     }
 }
