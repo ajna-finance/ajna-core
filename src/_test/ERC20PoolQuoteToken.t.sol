@@ -180,7 +180,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender.addQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // should revert if trying to remove more than lended
-        vm.expectRevert("ajna/amount-greater-than-claimable");
+        vm.expectRevert(
+            abi.encodeWithSelector(ERC20Pool.AmountExceedsAvailableQuoteToken.selector, 1004948314 * 1e18)
+        );
         lender.removeQuoteToken(pool, 20_000 * 1e18, 4_000 * 1e18);
 
         skip(8200);
