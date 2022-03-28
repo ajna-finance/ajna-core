@@ -84,6 +84,10 @@ contract UserWithQuoteToken {
         pool.claimCollateral(amount, price);
     }
 
+    function liquidate(ERC20Pool pool, address borrower) public {
+        pool.liquidate(borrower);
+    }
+
     function approveToken(
         IERC20 token,
         address spender,

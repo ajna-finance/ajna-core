@@ -13,7 +13,8 @@ def test_purchase_bid_partial_amount(
     capsys,
     test_utils,
 ):
-    with test_utils.GasWatcher(['purchaseBid']):
+
+    with test_utils.GasWatcher(["purchaseBid"]):
         lender = lenders[0]
         borrower = borrowers[0]
         bidder = borrowers[1]
@@ -60,6 +61,7 @@ def test_purchase_bid_partial_amount(
             bucket_debt,
             _,
             _,
+            _,
         ) = mkr_dai_pool.bucketAt(4_000 * 1e18)
         assert bucket_debt == 3_000 * 1e18
         assert bucket_deposit == 3_000 * 1e18
@@ -71,6 +73,7 @@ def test_purchase_bid_partial_amount(
             _,
             bucket_deposit,
             bucket_debt,
+            _,
             _,
             _,
         ) = mkr_dai_pool.bucketAt(3_000 * 1e18)
@@ -90,6 +93,7 @@ def test_purchase_bid_partial_amount(
             bucket_debt,
             _,
             _,
+            _,
         ) = mkr_dai_pool.bucketAt(4_000 * 1e18)
         # TODO: properly check in forge tests
         assert 1_000 * 1e18 <= bucket_debt <= 1_001 * 1e18
@@ -104,6 +108,7 @@ def test_purchase_bid_partial_amount(
             bucket_debt,
             _,
             _,
+            _,
         ) = mkr_dai_pool.bucketAt(3_000 * 1e18)
         assert bucket_debt == 3_000 * 1e18
         assert bucket_deposit == 3_000 * 1e18
@@ -115,6 +120,7 @@ def test_purchase_bid_partial_amount(
             _,
             bucket_deposit,
             bucket_debt,
+            _,
             _,
             _,
         ) = mkr_dai_pool.bucketAt(1_000 * 1e18)
@@ -197,6 +203,7 @@ def test_purchase_bid_entire_amount(
         bucket_debt,
         _,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(4_000 * 1e18)
     # TODO: properly check in forge tests
     assert 1_000 * 1e18 <= bucket_debt <= 1_001 * 1e18
@@ -209,6 +216,7 @@ def test_purchase_bid_entire_amount(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3_000 * 1e18)
@@ -229,6 +237,7 @@ def test_purchase_bid_entire_amount(
         bucket_debt,
         _,
         _,
+        _,
     ) = mkr_dai_pool.bucketAt(4_000 * 1e18)
     assert 0 <= bucket_debt <= 0.1 * 1e18
     assert bucket_deposit == 0
@@ -240,6 +249,7 @@ def test_purchase_bid_entire_amount(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3_000 * 1e18)
@@ -254,6 +264,7 @@ def test_purchase_bid_entire_amount(
         _,
         bucket_deposit,
         bucket_debt,
+        _,
         _,
         _,
     ) = mkr_dai_pool.bucketAt(2_000 * 1e18)
@@ -294,7 +305,7 @@ def test_purchase_bid_not_enough_liquidity(
     # should fail if trying to bid more than available liquidity (1000 vs 500)
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
         mkr_dai_pool.purchaseBid(1_000 * 1e18, 4000 * 1e18, {"from": bidder})
-    assert exc.value.revert_msg == "ajna/not-enough-liquidity"
+    assert exc.value.revert_msg == "ajna/failed-to-reallocate"
 
 
 def test_purchase_bid_undercollateralized(
