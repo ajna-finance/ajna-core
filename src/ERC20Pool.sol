@@ -465,9 +465,10 @@ contract ERC20Pool is IPool, Clone {
         if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
             uint256 pendingInflator = getPendingInflator();
 
-            totalDebt += Maths.wmul(
+            totalDebt += getPendingInterest(
                 totalDebt,
-                Maths.wdiv(pendingInflator, inflatorSnapshot) - Maths.ONE_WAD
+                pendingInflator,
+                inflatorSnapshot
             );
 
             inflatorSnapshot = pendingInflator;
@@ -495,16 +496,29 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
     /// @dev Only adds debt if a borrower has already initiated a debt position
-    function accumulateBorrowerInterest(BorrowerInfo storage borrower) private {
-        if (borrower.debt != 0 && borrower.inflatorSnapshot != 0) {
-            uint256 pendingInterest = Maths.wmul(
-                borrower.debt,
-                Maths.wdiv(inflatorSnapshot, borrower.inflatorSnapshot) -
-                    Maths.ONE_WAD
+    function accumulateBorrowerInterest(BorrowerInfo storage _borrower)
+        private
+    {
+        if (_borrower.debt != 0 && _borrower.inflatorSnapshot != 0) {
+            _borrower.debt += getPendingInterest(
+                _borrower.debt,
+                inflatorSnapshot,
+                _borrower.inflatorSnapshot
             );
-            borrower.debt += pendingInterest;
         }
-        borrower.inflatorSnapshot = inflatorSnapshot;
+        _borrower.inflatorSnapshot = inflatorSnapshot;
+    }
+
+    function getPendingInterest(
+        uint256 _debt,
+        uint256 _pengingInflator,
+        uint256 _currentInflator
+    ) private pure returns (uint256) {
+        return
+            Maths.wmul(
+                _debt,
+                Maths.wdiv(_pengingInflator, _currentInflator) - Maths.ONE_WAD
+            );
     }
 
     // -------------------- Bucket related functions --------------------
@@ -595,16 +609,15 @@ contract ERC20Pool is IPool, Clone {
         uint256 collateralization;
 
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
-            uint256 pendingInflator = getPendingInflator();
-            borrowerDebt += Maths.wmul(
+            borrowerDebt += getPendingInterest(
                 borrower.debt,
-                Maths.wdiv(inflatorSnapshot, borrower.inflatorSnapshot) -
-                    Maths.ONE_WAD
+                inflatorSnapshot,
+                borrower.inflatorSnapshot
             );
-            borrowerPendingDebt += Maths.wmul(
+            borrowerPendingDebt += getPendingInterest(
                 borrower.debt,
-                Maths.wdiv(pendingInflator, borrower.inflatorSnapshot) -
-                    Maths.ONE_WAD
+                getPendingInflator(),
+                borrower.inflatorSnapshot
             );
             collateralEncumbered = Maths.wdiv(borrowerPendingDebt, lup);
             collateralization = Maths.wdiv(
