@@ -17,6 +17,12 @@ class TokenWrapper:
         return self._contract
 
     def top_up(self, to: LocalAccount, amount: int):
+        reserve_balance = self._contract.balanceOf(self._reserve)
+        if reserve_balance < amount:
+            raise Exception(
+                f"Not enough funds to transfer {amount} tokens from reserve to {to.address}. Only {reserve_balance} tokens available in reserve."
+            )
+
         tx = self._contract.transfer(to, amount, {"from": self._reserve})
 
         if bool(tx.revert_msg):
@@ -25,6 +31,7 @@ class TokenWrapper:
             )
 
     def transfer(self, from_: LocalAccount, to: LocalAccount, amount: int):
+
         tx = self._contract.transfer(to, amount, {"from": from_})
 
         if bool(tx.revert_msg):

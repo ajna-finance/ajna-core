@@ -13,7 +13,7 @@ def main():
         .with_token(DAI_ADDRESS, 500_000 * 10**18)
         .add()
         .with_borrowers(10)
-        .with_token(MKR_ADDRESS, 20_000 * 10**18)
+        .with_token(MKR_ADDRESS, 5_000 * 10**18)
         .with_token(DAI_ADDRESS, 0, approve_max=True)
         .add()
     )
