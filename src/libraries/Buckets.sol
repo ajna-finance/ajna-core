@@ -9,7 +9,7 @@ library Buckets {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
         uint256 down; // next utilizable bucket price
-        uint256 amount; // total quote deposited in bucket
+        uint256 amount; // quote token on deposit in bucket
         uint256 debt; // accumulated bucket debt
         uint256 inflatorSnapshot; // bucket inflator snapshot
         uint256 lpOutstanding;
@@ -109,15 +109,18 @@ library Buckets {
 
             if (curLup.amount > curLup.debt) {
                 curLup.inflatorSnapshot = _inflator;
-                curLupDeposit = curLup.amount - curLup.debt;
+                // TODO: cleanup; variable no longer needed
+                curLupDeposit = curLup.amount;
 
                 if (amountRemaining > curLupDeposit) {
                     // take all on deposit from this bucket
+                    curLup.amount -= curLupDeposit;
                     curLup.debt += curLupDeposit;
                     amountRemaining -= curLupDeposit;
                     loanCost += Maths.wdiv(curLupDeposit, curLup.price);
                 } else {
                     // take all remaining amount for loan from this bucket and exit
+                    curLup.amount -= amountRemaining;
                     curLup.debt += amountRemaining;
                     loanCost += Maths.wdiv(amountRemaining, curLup.price);
                     break;
@@ -153,9 +156,11 @@ library Buckets {
                     // pay entire debt on this bucket
                     debtToPay += curLup.debt;
                     _amount -= curLup.debt;
+                    curLup.amount += curLup.debt;
                     curLup.debt = 0;
                 } else {
                     // pay as much debt as possible and exit
+                    curLup.amount += _amount;
                     curLup.debt -= _amount;
                     debtToPay += _amount;
                     _amount = 0;
@@ -184,11 +189,17 @@ library Buckets {
         Bucket storage bucket = buckets[_price];
         accumulateBucketInterest(bucket, _inflator);
 
-        require(_amount <= bucket.amount, "ajna/not-enough-quote-token");
+        require(
+            _amount <= bucket.amount + bucket.debt, 
+            "ajna/insufficient-bucket-size"
+        );
+
+        // TODO: Handle (unusual) case where some of the bucket is on deposit 
+        // and the whole amount does not need to be reallocated.
 
         lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
-        bucket.amount -= _amount;
+        bucket.debt -= _amount;
         bucket.collateral += _collateral;
     }
 
@@ -223,7 +234,6 @@ library Buckets {
 
             // bucket accounting
             bucket.debt -= bucketDebtToPurchase;
-            bucket.amount -= bucketLentTokens;
             bucket.collateral += bucketRequiredCollateral;
 
             // forgive the debt when borrower has no remaining collateral but still has debt
@@ -250,9 +260,8 @@ library Buckets {
         lup = _bucket.price;
         // debt reallocation
         uint256 onDeposit;
-        if (_bucket.amount > _bucket.debt) {
-            onDeposit = _bucket.amount - _bucket.debt;
-        }
+        // TODO: remove unnecessary variable
+        onDeposit = _bucket.amount;
         if (_amount > onDeposit) {
             uint256 reallocation = _amount - onDeposit;
             if (_bucket.down != 0) {

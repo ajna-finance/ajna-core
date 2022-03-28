@@ -71,7 +71,7 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
-    assert bucket_deposit - bucket_debt == 9_000 * 1e18
+    assert bucket_deposit == 9_000 * 1e18
     assert mkr_dai_pool.totalDebt() == 21_000 * 1e18
     # check borrower
     (debt, col_deposited, _) = mkr_dai_pool.borrowers(borrower1)
