@@ -166,11 +166,6 @@ contract ERC20Pool is IPool, Clone {
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
-        require(
-            totalQuoteToken - totalDebt >= _amount,
-            "ajna/amount-greater-than-claimable"
-        );
-
         accumulatePoolInterest();
 
         // remove from bucket
@@ -264,8 +259,7 @@ contract ERC20Pool is IPool, Clone {
     /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
         require(
-            _amount <= totalQuoteToken - totalDebt,
-            "ajna/not-enough-liquidity"
+            _amount <= totalQuoteToken, "ajna/not-enough-liquidity"
         );
 
         accumulatePoolInterest();
@@ -306,6 +300,7 @@ contract ERC20Pool is IPool, Clone {
         );
         borrower.debt += _amount;
 
+        totalQuoteToken -= _amount;
         totalDebt += _amount;
         require(
             getPoolCollateralization() >= Maths.ONE_WAD,
@@ -317,11 +312,11 @@ contract ERC20Pool is IPool, Clone {
     }
 
     /// @notice Called by a borrower to repay some amount of their borrowed quote tokens
-    /// @param _amount The amount of quote token to repay
-    function repay(uint256 _amount) external {
+    /// @param _maxAmount The maximum amount of quote token to repay
+    function repay(uint256 _maxAmount) external {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) *
             quoteTokenScale;
-        require(availableAmount >= _amount, "ajna/no-funds-to-repay");
+        require(availableAmount >= _maxAmount, "ajna/no-funds-to-repay");
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
         require(borrower.debt != 0, "ajna/no-debt-to-repay");
@@ -329,9 +324,9 @@ contract ERC20Pool is IPool, Clone {
         accumulateBorrowerInterest(borrower);
 
         uint256 debtToPay;
-        (lup, debtToPay) = _buckets.repay(_amount, lup, inflatorSnapshot);
+        (lup, debtToPay) = _buckets.repay(_maxAmount, lup, inflatorSnapshot);
 
-        if (debtToPay < borrower.debt && _amount >= borrower.debt) {
+        if (debtToPay < borrower.debt && _maxAmount >= borrower.debt) {
             debtToPay = borrower.debt;
         }
 
@@ -342,6 +337,7 @@ contract ERC20Pool is IPool, Clone {
             borrower.debt -= debtToPay;
         }
 
+        totalQuoteToken += debtToPay;
         totalDebt -= Maths.min(totalDebt, debtToPay);
 
         quoteToken().safeTransferFrom(
@@ -366,11 +362,6 @@ contract ERC20Pool is IPool, Clone {
         );
 
         accumulatePoolInterest();
-
-        require(
-            _amount <= totalQuoteToken - totalDebt,
-            "ajna/not-enough-liquidity"
-        );
 
         uint256 newLup = _buckets.purchaseBid(
             _price,
@@ -432,7 +423,6 @@ contract ERC20Pool is IPool, Clone {
 
         // pool level accounting
         totalDebt -= borrower.debt;
-        totalQuoteToken -= lentTokens;
         totalCollateral -= requiredCollateral;
 
         // borrower accounting
@@ -577,8 +567,8 @@ contract ERC20Pool is IPool, Clone {
     }
 
     function getPoolActualUtilization() public view returns (uint256) {
-        if (totalDebt != 0) {
-            return Maths.wdiv(totalDebt, totalQuoteToken);
+        if (totalQuoteToken != 0) {
+            return Maths.wdiv(totalDebt, (totalQuoteToken + totalDebt));
         }
         return 0;
     }

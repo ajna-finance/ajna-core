@@ -305,7 +305,7 @@ def test_purchase_bid_not_enough_liquidity(
     # should fail if trying to bid more than available liquidity (1000 vs 500)
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
         mkr_dai_pool.purchaseBid(1_000 * 1e18, 4000 * 1e18, {"from": bidder})
-    assert exc.value.revert_msg == "ajna/not-enough-liquidity"
+    assert exc.value.revert_msg == "ajna/failed-to-reallocate"
 
 
 def test_purchase_bid_undercollateralized(
