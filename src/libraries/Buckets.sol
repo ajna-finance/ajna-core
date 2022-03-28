@@ -16,6 +16,8 @@ library Buckets {
         uint256 collateral;
     }
 
+    uint256 constant MINIMUM_LP_LIQUIDITY = 1 * 1e18;
+
     function addQuoteToken(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _price,
@@ -32,6 +34,11 @@ library Buckets {
         if (_reallocate) {
             lup = reallocateUp(buckets, _price, _amount, _lup, _inflator);
         }
+
+        // TODO: move lp creation logic to seperate function
+        // if (bucket.lpOutstanding == 0) {
+        //     bucket.lpOutstanding = MINIMUM_LP_LIQUIDITY;
+        // }
 
         lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
         bucket.amount += _amount;
@@ -349,7 +356,11 @@ library Buckets {
         lpOutstanding = bucket.lpOutstanding;
     }
 
-    function getExchangeRate(Bucket storage bucket) internal view returns (uint256) {
+    function getExchangeRate(Bucket storage bucket)
+        internal
+        view
+        returns (uint256)
+    {
         if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
             return
                 Maths.wdiv(

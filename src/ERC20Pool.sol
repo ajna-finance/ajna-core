@@ -515,7 +515,15 @@ contract ERC20Pool is IPool, Clone {
     {
         require(BucketMath.isValidPrice(price), "ajna/invalid-bucket-price");
 
-        (, , , uint256 quote, uint256 collateral, , uint256 lpOutstanding) = bucketAt(price);
+        (
+            ,
+            ,
+            ,
+            uint256 quote,
+            uint256 collateral,
+            ,
+            uint256 lpOutstanding
+        ) = bucketAt(price);
 
         // calculate lpTokens share of all outstanding lpTokens for the bucket
         uint256 lenderShare = PRBMathUD60x18.div(lpTokens, lpOutstanding);
@@ -523,7 +531,6 @@ contract ERC20Pool is IPool, Clone {
         collateralTokens = PRBMathUD60x18.mul(collateral, lenderShare);
         quoteTokens = PRBMathUD60x18.mul(quote, lenderShare);
     }
-
 
     // -------------------- Bucket related functions --------------------
 
