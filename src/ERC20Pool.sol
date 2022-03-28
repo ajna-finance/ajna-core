@@ -511,13 +511,13 @@ contract ERC20Pool is IPool, Clone {
 
     function getPendingInterest(
         uint256 _debt,
-        uint256 _pengingInflator,
+        uint256 _pendingInflator,
         uint256 _currentInflator
     ) private pure returns (uint256) {
         return
             Maths.wmul(
                 _debt,
-                Maths.wdiv(_pengingInflator, _currentInflator) - Maths.ONE_WAD
+                Maths.wdiv(_pendingInflator, _currentInflator) - Maths.ONE_WAD
             );
     }
 
