@@ -232,9 +232,8 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.borrow(pool, 5_000 * 1e18, 4_000 * 1e18);
 
         // should revert if trying to remove entire amount lended
-        // FIXME: This should revert because 5_000 debt could not be reallocated
-        // vm.expectRevert("ajna/failed-to-reallocate");
-        // lender.removeQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
+        vm.expectRevert("ajna/failed-to-reallocate");
+        lender.removeQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // remove 4000 DAI at price of 1 MKR = 4000 DAI
         vm.expectEmit(true, true, false, true);

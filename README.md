@@ -47,6 +47,17 @@ make test
 brownie test
 ```
 
+#### Debugging Brownie integration tests
+
+To drop into the console upon test failure:
+```bash
+brownie test --interactive
+```
+
+From there, use `chain.undo` to roll back the most recent transaction.
+Copy/paste the failed transaction prefixed with `tx = ` and you can interact 
+with the transaction receipt as desired.
+
 ### ERC20 pool manual test
 
 - Running following command will deploy ERC20 MKR/DAI pool
