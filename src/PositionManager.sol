@@ -10,11 +10,25 @@ import "../lib/hardhat/packages/hardhat-core/console.sol";
 interface IPositionManager {
     struct MintParams {
         address recipient;
-        // address collateral;
-        // address quoteToken;
         address pool;
         uint256 amount;
         uint256 price;
+    }
+
+    struct IncreaseLiquidityParams {
+        uint256 tokenId;
+        address recipient; // TODO: potentially remove in favor of msg.sender
+        address pool;
+        uint256 amount;
+        uint256 price;
+    }
+
+    struct DecreaseLiquidityParams {
+        uint256 tokenId;
+        address recipient; // TODO: potentially remove in favor of msg.sender
+        address pool;
+        uint256 price;
+        uint256 lpTokens;
     }
 
     function mint(MintParams calldata params)
@@ -24,17 +38,21 @@ interface IPositionManager {
 
     function burn(uint256 tokenId) external payable;
 
-    function redeem() external payable;
+    function increaseLiquidity(IncreaseLiquidityParams calldata params)
+        external
+        payable;
 
-    function modifyPosition() external payable;
+    function decreaseLiquidity(DecreaseLiquidityParams calldata params)
+        external
+        payable;
 
-    // function getPosition(uint256 tokenId) external view returns (Position position);
 }
 
 contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
     event Mint(address lender, uint256 amount, uint256 price);
     event Burn(address lender, uint256 price);
-    event Redeem(address lender, uint256 price, uint256 amount);
+    event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
+    event DecreaseLiquidity(address lender, uint256 collateral, uint256 quote, uint256 price);
 
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
@@ -48,10 +66,13 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
     struct Position {
         address owner; // owner of a position
         uint256 price; // price bucket a position is associated with
-        uint256 liquidity; // the amount
+        uint256 lpTokens; // tokens representing the share of a bucket owned by a position
         address pool; // address of the pool contract the position is associated to
     }
 
+    // TODO: add the ability to mint across multiple price buckets?
+    /// @notice Called by lenders to add quote tokens and receive a representative NFT
+    /// @param params Calldata struct supplying inputs required to add quote tokens, and receive the NFT
     function mint(MintParams calldata params)
         external
         payable
@@ -60,20 +81,23 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
         address pool = params.pool;
 
         // call out to pool contract to add quote tokens
-        // bytes4(keccak256("addQuoteToken(uint256,uint256)")));
-        // seth sig $(seth --from-ascii "addQuoteToken(uint256,uint256)")
-        (bool success, bytes memory returnedData) = pool.delegatecall(abi.encodeWithSelector(0x438d1ff0, params.amount, params.price));
-        require(success, string(returnedData));
+        uint256 lpTokensAdded = IPool(params.pool).addQuoteToken(
+            params.recipient,
+            params.amount,
+            params.price
+        );
+        require(lpTokensAdded != 0, "No liquidity added");
 
         _safeMint(params.recipient, (tokenId = _nextId++));
 
         positions[tokenId] = Position(
             params.recipient,
             params.price,
-            params.amount, // TODO: fix to be returned from addQuoteToken
+            lpTokensAdded,
             params.pool
         );
 
+        // TODO: update Mint() event to emit lp added
         emit Mint(params.recipient, params.amount, params.price);
         return tokenId;
     }
@@ -81,25 +105,86 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
     // TODO: finish implementing
     function burn(uint256 tokenId) external payable {
         Position storage position = positions[tokenId];
-        require(position.liquidity == 0, "Not Redeemed");
+        require(position.lpTokens == 0, "Not Redeemed");
         delete positions[tokenId];
         emit Burn(msg.sender, position.price);
     }
 
-    // TODO: finish implementing
-    function redeem() external payable {}
+    /// @notice Called by lenders to add liquidity to an existing position
+    /// @param params Calldata struct supplying inputs required to update the underlying assets owed to an NFT
+    function increaseLiquidity(IncreaseLiquidityParams calldata params)
+        external
+        payable
+    {
+        Position storage position = positions[params.tokenId];
 
-    function modifyPosition() external payable {}
+        uint256 lpTokensAdded = IPool(params.pool).addQuoteToken(
+            params.recipient,
+            params.amount,
+            params.price
+        );
+        require(lpTokensAdded != 0, "No liquidity added");
+
+        positions[params.tokenId].lpTokens += lpTokensAdded;
+
+        // TODO: update collateral accrued accounting
+
+        // TODO: update to position.liquidity
+        // position.amount += params.amount;
+
+        // TODO: check if price bucket changes at all from reallocation
+        // position.price = returnedData.price;
+
+        emit IncreaseLiquidity(params.recipient, params.amount, params.price);
+    }
+
+    // TODO: finish implementing -> what happens if liquidity goes to 0...
+    // TODO: add multicall support here
+    function decreaseLiquidity(DecreaseLiquidityParams calldata params)
+        external
+        payable
+    {
+        Position storage position = positions[params.tokenId];
+
+        IPool pool = IPool(params.pool);
+
+        // calulate equivalent underlying assets for given lpTokens
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool
+            .getLPTokenExchangeValue(params.lpTokens, params.price);
+
+        // TODO: update lp token equation with a minimum factor to avoid rounding issues and provide base
+        pool.removeQuoteToken(
+            params.recipient,
+            quoteTokenToRemove,
+            params.price
+        );
+
+        // require(quoteTokensRemoved != 0, "No quote tokens removed");
+
+        // enable lenders to remove quote token from a bucket that no debt is added to
+        if (collateralToRemove != 0) {
+            // TODO: transfer collateral received to the recipient address
+            pool.claimCollateral(collateralToRemove, params.price);
+            // TODO: check that collateral was > 0
+        }
+
+        positions[params.tokenId].lpTokens -= params.lpTokens;
+
+        // TODO: check if price updates
+
+        // TOdO: update this to emit both the quote and collateral amounts claimed... OR lpTokens
+        emit DecreaseLiquidity(params.recipient, collateralToRemove, quoteTokenToRemove, params.price);
+    }
 
     // -------------------- Position State View functions --------------------
 
+    // TODO: remove in favor of default getter?
     function getPosition(uint256 tokenId)
         public
         view
         returns (Position memory position)
     {
         Position memory position = positions[tokenId];
-        require(position.liquidity != 0, "Invalid position");
         return position;
     }
 
@@ -119,7 +204,10 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
 
     // TODO: finish implementing to enable the reception of collateral tokens -> and/or does this need to be added to the pool?
     // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
-    function onERC721Received(address operator, address from, uint256 tokenId, bytes memory data) external returns (bytes4) {
-
-    }
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes memory data
+    ) external returns (bytes4) {}
 }

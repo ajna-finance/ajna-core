@@ -57,7 +57,7 @@ contract UserWithQuoteToken {
         uint256 amount,
         uint256 price
     ) public {
-        pool.addQuoteToken(amount, price);
+        pool.addQuoteToken(msg.sender, amount, price);
     }
 
     function removeQuoteToken(
@@ -65,7 +65,7 @@ contract UserWithQuoteToken {
         uint256 amount,
         uint256 price
     ) public {
-        pool.removeQuoteToken(amount, price);
+        pool.removeQuoteToken(msg.sender, amount, price);
     }
 
     function borrow(

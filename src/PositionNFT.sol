@@ -23,15 +23,19 @@ abstract contract PositionNFT is ERC721, ERC721Enumerable {
         returns (string memory)
     {
         require(_exists(tokenId), "not exist");
-        string memory name = string(abi.encodePacked('Ajna Token #', Strings.toString(tokenId)));
+        string memory name = string(
+            abi.encodePacked("Ajna Token #", Strings.toString(tokenId))
+        );
         // string memory image = Base64.encode(bytes(generateSVGofTokenById(tokenId)));
         return name;
     }
 
     // TODO: finish implementing: https://github.com/scaffold-eth/scaffold-eth/blob/sipping-oe/packages/hardhat/contracts/OldEnglish.sol#L112-L234
-    function generateSVGofTokenById(uint256 id) internal view returns (string memory) {
-
-    }
+    function generateSVGofTokenById(uint256 id)
+        internal
+        view
+        returns (string memory)
+    {}
 
     /// @dev Override required by solidity to use ERC721Enumerable library
     function _beforeTokenTransfer(
