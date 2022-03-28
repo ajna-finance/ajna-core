@@ -312,11 +312,11 @@ contract ERC20Pool is IPool, Clone {
     }
 
     /// @notice Called by a borrower to repay some amount of their borrowed quote tokens
-    /// @param _amount The amount of quote token to repay
-    function repay(uint256 _amount) external {
+    /// @param _maxAmount The maximum amount of quote token to repay
+    function repay(uint256 _maxAmount) external {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) *
             quoteTokenScale;
-        require(availableAmount >= _amount, "ajna/no-funds-to-repay");
+        require(availableAmount >= _maxAmount, "ajna/no-funds-to-repay");
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
         require(borrower.debt != 0, "ajna/no-debt-to-repay");
@@ -324,9 +324,9 @@ contract ERC20Pool is IPool, Clone {
         accumulateBorrowerInterest(borrower);
 
         uint256 debtToPay;
-        (lup, debtToPay) = _buckets.repay(_amount, lup, inflatorSnapshot);
+        (lup, debtToPay) = _buckets.repay(_maxAmount, lup, inflatorSnapshot);
 
-        if (debtToPay < borrower.debt && _amount >= borrower.debt) {
+        if (debtToPay < borrower.debt && _maxAmount >= borrower.debt) {
             debtToPay = borrower.debt;
         }
 

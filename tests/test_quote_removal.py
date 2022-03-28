@@ -141,8 +141,6 @@ def test_quote_removal_loan_paid_back(
 
     dai.transfer(borrower, 1 * 1e18, {"from": lenders[1]})
     mkr_dai_pool.repay(10_001 * 1e18, {"from": borrower})
-    # FIXME: Should expect 10_001 quote token in pool; issue in Buckets.repay
-    assert 10_000 * 1e18 <= mkr_dai_pool.totalQuoteToken() <= 10_001 * 1e18
 
     # forward time so lp tokens to accumulate
     chain.sleep(82000)
@@ -152,8 +150,6 @@ def test_quote_removal_loan_paid_back(
     tx = mkr_dai_pool.removeQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert format(dai.balanceOf(mkr_dai_pool) / 1e18, ".3f") == format(0, ".3f")
     assert dai.balanceOf(lender) == 200_000 * 1e18
-    # FIXME: After above error is resolved, 1 quote token should remain.
-    assert 0 <= mkr_dai_pool.totalQuoteToken() <= 1 * 1e18
     # check bucket balance
     (
         _,
