@@ -102,6 +102,8 @@ contract ERC20Pool is IPool, Clone {
 
     error InvalidPrice();
     error NoClaimToBucket();
+    error InsufficientCollateralBalance();
+    error InsufficientLiquidity(uint256 amountAvailable);
     error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error PoolUndercollateralized(uint256 collateralization);
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
@@ -376,17 +378,25 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of quote token to purchase
     /// @param _price The purchasing price of quote token
     function purchaseBid(uint256 _amount, uint256 _price) external {
-        require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
+        if (!BucketMath.isValidPrice(_price)) {
+            revert InvalidPrice();
+        }
 
         uint256 collateralRequired = Maths.wdiv(_amount, _price);
-        require(
-            collateral().balanceOf(msg.sender) * collateralScale >=
-                collateralRequired,
-            "ajna/not-enough-collateral-balance"
-        );
+        if (
+            collateral().balanceOf(msg.sender) * collateralScale <
+            collateralRequired
+        ) {
+            revert InsufficientCollateralBalance();
+        }
 
         accumulatePoolInterest();
 
+        if (_amount > totalQuoteToken - totalDebt) {
+            revert InsufficientLiquidity({
+                amountAvailable: totalQuoteToken - totalDebt
+            });
+        }
         require(
             _amount <= totalQuoteToken - totalDebt,
             "ajna/not-enough-liquidity"

@@ -7,6 +7,7 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import {Buckets} from "../libraries/Buckets.sol";
 
 contract ERC20PoolBidTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -48,15 +49,21 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(pool.lup(), 3_000 * 1e18);
 
         // should revert if invalid price
-        vm.expectRevert("ajna/invalid-bucket-price");
+        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
         bidder.purchaseBid(pool, 1 * 1e18, 1_000);
 
         // should revert if bidder doesn't have enough collateral
-        vm.expectRevert("ajna/not-enough-collateral-balance");
+        vm.expectRevert(ERC20Pool.InsufficientCollateralBalance.selector);
         bidder.purchaseBid(pool, 2_000_000 * 1e18, 4000 * 1e18);
 
         // should revert if trying to purchase more than on bucket
-        vm.expectRevert("ajna/not-enough-quote-token");
+        (, , , uint256 amount, , , , ) = pool.bucketAt(4_000 * 1e18);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Buckets.InsufficientBucketLiquidity.selector,
+                amount
+            )
+        );
         bidder.purchaseBid(pool, 4_000 * 1e18, 4_000 * 1e18);
 
         // check bidder and pool balances
@@ -218,7 +225,13 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(pool.lup(), 3_000 * 1e18);
 
         // should revert if trying to bid more than available liquidity (1000 vs 500)
-        vm.expectRevert("ajna/not-enough-liquidity");
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20Pool.InsufficientLiquidity.selector,
+                pool.totalQuoteToken() - pool.totalDebt()
+            )
+        );
         bidder.purchaseBid(pool, 1_000 * 1e18, 4_000 * 1e18);
     }
 

@@ -130,7 +130,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Buckets.InsufficentLpBalance.selector,
+                Buckets.InsufficientLpBalance.selector,
                 pool.lpBalance(address(lender), 4_000 * 1e18)
             )
         );

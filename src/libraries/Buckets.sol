@@ -6,7 +6,8 @@ import "./Maths.sol";
 
 library Buckets {
     error ClaimExceedsCollateral(uint256 collateralAmount);
-    error InsufficentLpBalance(uint256 balance);
+    error InsufficientLpBalance(uint256 balance);
+    error InsufficientBucketLiquidity(uint256 amountAvailable);
 
     struct Bucket {
         uint256 price; // current bucket price
@@ -88,7 +89,7 @@ library Buckets {
         );
 
         if (lpRedemption > _lpBalance) {
-            revert InsufficentLpBalance({balance: _lpBalance});
+            revert InsufficientLpBalance({balance: _lpBalance});
         }
 
         bucket.collateral -= _amount;
@@ -190,7 +191,11 @@ library Buckets {
         Bucket storage bucket = buckets[_price];
         accumulateBucketInterest(bucket, _inflator);
 
-        require(_amount <= bucket.amount, "ajna/not-enough-quote-token");
+        if (_amount > bucket.amount) {
+            revert InsufficientBucketLiquidity({
+                amountAvailable: bucket.amount
+            });
+        }
 
         lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
