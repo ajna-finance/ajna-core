@@ -100,9 +100,8 @@ contract ERC20Pool is IPool, Clone {
     );
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
 
-    event Debug_1(address borrower);
-
     error InvalidPrice();
+    error NoClaimToBucket();
     error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error PoolUndercollateralized(uint256 collateralization);
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
@@ -173,13 +172,14 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of quote token to be removed by a lender
     /// @param _price The bucket from which quote tokens will be removed
     function removeQuoteToken(uint256 _amount, uint256 _price) external {
-
         if (!BucketMath.isValidPrice(_price)) {
             revert InvalidPrice();
         }
 
         if (totalQuoteToken - totalDebt < _amount) {
-            revert AmountExceedsTotalClaimableQuoteToken({totalClaimable: totalQuoteToken - totalDebt});
+            revert AmountExceedsTotalClaimableQuoteToken({
+                totalClaimable: totalQuoteToken - totalDebt
+            });
         }
 
         accumulatePoolInterest();
@@ -199,7 +199,9 @@ contract ERC20Pool is IPool, Clone {
 
         totalQuoteToken -= _amount;
         if (getPoolCollateralization() < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({collateralization: getPoolCollateralization()});
+            revert PoolUndercollateralized({
+                collateralization: getPoolCollateralization()
+            });
         }
 
         lpBalance[msg.sender][_price] -= lpTokens;
@@ -230,19 +232,20 @@ contract ERC20Pool is IPool, Clone {
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
-        // getBorrowerInfo()
-        emit Debug_1(address(msg.sender));
-
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
             encumberedBorrowerCollateral = Maths.wdiv(borrower.debt, lup);
         }
 
-        if (borrower.collateralDeposited - encumberedBorrowerCollateral <
-            _amount) {
-            revert AmountExceedsAvailableCollateral({availableCollateral: borrower.collateralDeposited});
+        if (
+            borrower.collateralDeposited - encumberedBorrowerCollateral <
+            _amount
+        ) {
+            revert AmountExceedsAvailableCollateral({
+                availableCollateral: borrower.collateralDeposited -
+                    encumberedBorrowerCollateral
+            });
         }
-
 
         borrower.collateralDeposited -= _amount;
         totalCollateral -= _amount;
@@ -255,10 +258,14 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of unencumbered collateral to claim
     /// @param _price The bucket from which unencumbered collateral will be claimed
     function claimCollateral(uint256 _amount, uint256 _price) external {
-        require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
+        if (!BucketMath.isValidPrice(_price)) {
+            revert InvalidPrice();
+        }
 
         uint256 maxClaim = lpBalance[msg.sender][_price];
-        require(maxClaim != 0, "ajna/no-claim-to-bucket");
+        if (maxClaim == 0) {
+            revert NoClaimToBucket();
+        }
 
         uint256 claimedLpTokens = _buckets.claimCollateral(
             _price,

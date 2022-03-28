@@ -7,6 +7,7 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import {Buckets} from "../libraries/Buckets.sol";
 
 contract ERC20PoolCollateralTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -46,7 +47,6 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             )
         );
         borrower.removeCollateral(pool, 10 * 1e18);
-        /*
         // lender deposits 10000 DAI in 5 buckets each
         lender.addQuoteToken(pool, 20_000 * 1e18, 5_000 * 1e18);
 
@@ -78,7 +78,12 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(encumbered, 4 * 1e18);
 
         // should revert if trying to remove all collateral deposited
-        vm.expectRevert("ajna/not-enough-collateral");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20Pool.AmountExceedsAvailableCollateral.selector,
+                deposited - encumbered
+            )
+        );
         borrower.removeCollateral(pool, 100 * 1e18);
 
         // borrower pays back entire loan and accumulated debt
@@ -96,23 +101,21 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(collateral.balanceOf(address(borrower)), 100 * 1e18);
         assertEq(collateral.balanceOf(address(pool)), 0);
         assertEq(pool.totalCollateral(), 0);
-
         // check borrower
         (, , deposited, encumbered, , , ) = pool.getBorrowerInfo(
             address(borrower)
         );
         assertEq(deposited, 0);
         assertEq(encumbered, 0);
-        */
     }
 
     function testClaimCollateral() public {
         // should fail if invalid price
-        vm.expectRevert("ajna/invalid-bucket-price");
+        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
         lender.claimCollateral(pool, 10_000 * 1e18, 1004948314 * 1e18);
 
         // should revert if no lp tokens in bucket
-        vm.expectRevert("ajna/no-claim-to-bucket");
+        vm.expectRevert(ERC20Pool.NoClaimToBucket.selector);
         lender.claimCollateral(pool, 1 * 1e18, 4_000 * 1e18);
 
         // lender deposit DAI in 3 buckets
@@ -124,7 +127,13 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(pool.lpBalance(address(lender), 1_000 * 1e18), 5_000 * 1e18);
 
         // should revert when claiming collateral if no purchase bid was done on bucket
-        vm.expectRevert("ajna/insufficient-amount-to-claim");
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Buckets.InsufficentLpBalance.selector,
+                pool.lpBalance(address(lender), 4_000 * 1e18)
+            )
+        );
         lender.claimCollateral(pool, 1 * 1e18, 4_000 * 1e18);
 
         // borrower takes a loan of 4000 DAI
@@ -161,7 +170,13 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(pool.totalCollateral(), 100 * 1e18);
 
         // should revert if claiming a larger amount than available in bucket
-        vm.expectRevert("ajna/insufficient-amount-to-claim");
+        (, , , , , , , bucketCollateral) = pool.bucketAt(3_000 * 1e18);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Buckets.ClaimExceedsCollateral.selector,
+                bucketCollateral
+            )
+        );
         lender.claimCollateral(pool, 2 * 1e18, 3_000 * 1e18);
 
         // claim 0.5 collateral

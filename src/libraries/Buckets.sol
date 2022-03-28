@@ -5,6 +5,9 @@ pragma solidity 0.8.11;
 import "./Maths.sol";
 
 library Buckets {
+    error ClaimExceedsCollateral(uint256 collateralAmount);
+    error InsufficentLpBalance(uint256 balance);
+
     struct Bucket {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
@@ -72,10 +75,11 @@ library Buckets {
     ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
 
-        require(
-            bucket.collateral > 0 && _amount <= bucket.collateral,
-            "ajna/insufficient-amount-to-claim"
-        );
+        if (bucket.collateral > 0 && _amount > bucket.collateral) {
+            revert ClaimExceedsCollateral({
+                collateralAmount: bucket.collateral
+            });
+        }
 
         uint256 exchangeRate = getExchangeRate(bucket);
         uint256 lpRedemption = Maths.wdiv(
@@ -83,7 +87,9 @@ library Buckets {
             exchangeRate
         );
 
-        require(lpRedemption <= _lpBalance, "ajna/insufficient-lp-balance");
+        if (lpRedemption > _lpBalance) {
+            revert InsufficentLpBalance({balance: _lpBalance});
+        }
 
         bucket.collateral -= _amount;
         bucket.lpOutstanding -= lpRedemption;
