@@ -97,8 +97,9 @@ def test_borrow(
     assert dai.balanceOf(mkr_dai_pool) == 20_000 * 1e18
     assert mkr_dai_pool.hdp() == 4000 * 1e18
 
+    # lup is 3000, hup is 2500
+    assert mkr_dai_pool.lup() == 3000 * 1e18
     # check debt paid in 2500 DAI bucket
-    assert mkr_dai_pool.lup() == 2500 * 1e18
     (
         _,
         _,
