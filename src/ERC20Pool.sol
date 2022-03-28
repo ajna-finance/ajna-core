@@ -465,9 +465,10 @@ contract ERC20Pool is IPool, Clone {
         if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
             uint256 pendingInflator = getPendingInflator();
 
-            totalDebt += Maths.wmul(
+            totalDebt += getPendingInterest(
                 totalDebt,
-                Maths.wdiv(pendingInflator, inflatorSnapshot) - Maths.ONE_WAD
+                pendingInflator,
+                inflatorSnapshot
             );
 
             inflatorSnapshot = pendingInflator;
@@ -497,14 +498,25 @@ contract ERC20Pool is IPool, Clone {
     /// @dev Only adds debt if a borrower has already initiated a debt position
     function accumulateBorrowerInterest(BorrowerInfo storage borrower) private {
         if (borrower.debt != 0 && borrower.inflatorSnapshot != 0) {
-            uint256 pendingInterest = Maths.wmul(
+            borrower.debt += getPendingInterest(
                 borrower.debt,
-                Maths.wdiv(inflatorSnapshot, borrower.inflatorSnapshot) -
-                    Maths.ONE_WAD
+                inflatorSnapshot,
+                borrower.inflatorSnapshot
             );
-            borrower.debt += pendingInterest;
         }
         borrower.inflatorSnapshot = inflatorSnapshot;
+    }
+
+    function getPendingInterest(
+        uint256 debt,
+        uint256 pengingInflator,
+        uint256 currentInflator
+    ) private view returns (uint256) {
+        return
+            Maths.wmul(
+                debt,
+                Maths.wdiv(pengingInflator, currentInflator) - Maths.ONE_WAD
+            );
     }
 
     // -------------------- Bucket related functions --------------------
@@ -599,16 +611,15 @@ contract ERC20Pool is IPool, Clone {
         uint256 collateralization;
 
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
-            uint256 pendingInflator = getPendingInflator();
-            borrowerDebt += Maths.wmul(
+            borrowerDebt += getPendingInterest(
                 borrower.debt,
-                Maths.wdiv(inflatorSnapshot, borrower.inflatorSnapshot) -
-                    Maths.ONE_WAD
+                inflatorSnapshot,
+                borrower.inflatorSnapshot
             );
-            borrowerPendingDebt += Maths.wmul(
+            borrowerPendingDebt += getPendingInterest(
                 borrower.debt,
-                Maths.wdiv(pendingInflator, borrower.inflatorSnapshot) -
-                    Maths.ONE_WAD
+                getPendingInflator(),
+                borrower.inflatorSnapshot
             );
             collateralEncumbered = Maths.wdiv(borrowerPendingDebt, lup);
             collateralization = Maths.wdiv(
