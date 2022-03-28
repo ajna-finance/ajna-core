@@ -8,6 +8,8 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
+import "../libraries/Maths.sol";
+
 contract ERC20PoolQuoteTokenTest is DSTestPlus {
     ERC20Pool internal pool;
     CollateralToken internal collateral;
@@ -397,9 +399,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.borrow(pool, 4_000 * 1e18, 1_000 * 1e18);
         assertEq(pool.lup(), 1_000 * 1e18);
 
-        // repay should revert if pool remains undercollateralized
+        // removal should revert if pool remains undercollateralized
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.PoolUndercollateralized.selector, pool.getPoolCollateralization())
+            abi.encodeWithSelector(ERC20Pool.PoolUndercollateralized.selector, 1.275 * 1e17)
         );
         lender.removeQuoteToken(pool, 2_000 * 1e18, 1_000 * 1e18);
     }

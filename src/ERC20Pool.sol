@@ -100,9 +100,12 @@ contract ERC20Pool is IPool, Clone {
     );
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
 
+    event Debug_1(address borrower);
+
     error InvalidPrice();
     error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error PoolUndercollateralized(uint256 collateralization);
+    error AmountExceedsAvailableCollateral(uint256 availableCollateral);
 
     function initialize() external {
         collateralScale = 10**(18 - collateral().decimals());
@@ -227,16 +230,19 @@ contract ERC20Pool is IPool, Clone {
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
+        // getBorrowerInfo()
+        emit Debug_1(address(msg.sender));
+
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
             encumberedBorrowerCollateral = Maths.wdiv(borrower.debt, lup);
         }
 
-        require(
-            borrower.collateralDeposited - encumberedBorrowerCollateral >=
-                _amount,
-            "ajna/not-enough-collateral"
-        );
+        if (borrower.collateralDeposited - encumberedBorrowerCollateral <
+            _amount) {
+            revert AmountExceedsAvailableCollateral({availableCollateral: borrower.collateralDeposited});
+        }
+
 
         borrower.collateralDeposited -= _amount;
         totalCollateral -= _amount;
