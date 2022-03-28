@@ -6,7 +6,7 @@ import inspect
 
 def test_add_remove_collateral(lenders, borrowers, mkr_dai_pool, dai, mkr):
     lender = lenders[0]
-    mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 20_000 * 1e18, 5000 * 1e18, {"from": lender})
 
     borrower1 = borrowers[0]
 
@@ -95,7 +95,7 @@ def test_collateral_gas(
     test_utils
 ):
     with test_utils.GasWatcher(['addQuoteToken', 'removeCollateral']):
-        mkr_dai_pool.addQuoteToken(20_000 * 1e18, 5000 * 1e18, {"from": lenders[0]})
+        mkr_dai_pool.addQuoteToken(lenders[0], 20_000 * 1e18, 5000 * 1e18, {"from": lenders[0]})
         tx_add_collateral = mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
         mkr_dai_pool.borrow(20_000 * 1e18, 2500 * 1e18, {"from": borrowers[0]})
         tx_remove_collateral = mkr_dai_pool.removeCollateral(
