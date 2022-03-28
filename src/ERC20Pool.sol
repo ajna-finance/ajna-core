@@ -43,7 +43,11 @@ interface IPool {
 
     function removeCollateral(uint256 _amount) external;
 
-    function claimCollateral(uint256 _amount, uint256 _price) external;
+    function claimCollateral(
+        address recipient,
+        uint256 _amount,
+        uint256 _price
+    ) external;
 
     function borrow(uint256 _amount, uint256 _stopPrice) external;
 
@@ -129,7 +133,6 @@ contract ERC20Pool is IPool, Clone {
 
     // TODO: add onlyFactory modifier
     function initialize() external {
-        // function initialize() external {
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
@@ -277,10 +280,14 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Called by lenders to claim unencumbered collateral from a price bucket
     /// @param _amount The amount of unencumbered collateral to claim
     /// @param _price The bucket from which unencumbered collateral will be claimed
-    function claimCollateral(uint256 _amount, uint256 _price) external {
+    function claimCollateral(
+        address recipient,
+        uint256 _amount,
+        uint256 _price
+    ) external {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
-        uint256 maxClaim = lpBalance[msg.sender][_price];
+        uint256 maxClaim = lpBalance[recipient][_price];
         require(maxClaim != 0, "ajna/no-claim-to-bucket");
 
         uint256 claimedLpTokens = _buckets.claimCollateral(
@@ -289,19 +296,17 @@ contract ERC20Pool is IPool, Clone {
             maxClaim
         );
 
-        lpBalance[msg.sender][_price] -= claimedLpTokens;
+        lpBalance[recipient][_price] -= claimedLpTokens;
 
-        collateral().safeTransfer(msg.sender, _amount / collateralScale);
-        emit ClaimCollateral(msg.sender, _price, _amount, claimedLpTokens);
+        collateral().safeTransfer(recipient, _amount / collateralScale);
+        emit ClaimCollateral(recipient, _price, _amount, claimedLpTokens);
     }
 
     /// @notice Called by a borrower to open or expand a position
     /// @param _amount The amount of quote token to borrow
     /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
-        require(
-            _amount <= totalQuoteToken, "ajna/not-enough-liquidity"
-        );
+        require(_amount <= totalQuoteToken, "ajna/not-enough-liquidity");
 
         accumulatePoolInterest();
 
@@ -570,6 +575,7 @@ contract ERC20Pool is IPool, Clone {
             uint256 collateral,
             ,
             uint256 lpOutstanding,
+
         ) = bucketAt(price);
 
         // calculate lpTokens share of all outstanding lpTokens for the bucket
