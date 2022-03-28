@@ -150,6 +150,7 @@ def test_quote_removal_loan_paid_back(
     tx = mkr_dai_pool.removeQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert format(dai.balanceOf(mkr_dai_pool) / 1e18, ".3f") == format(0, ".3f")
     assert dai.balanceOf(lender) == 200_000 * 1e18
+    assert 0 <= mkr_dai_pool.totalQuoteToken() <= 1 * 1e18
     # check bucket balance
     (
         _,
