@@ -39,9 +39,14 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
 
     function testLiquidate() public {
         // lender deposit in 3 buckets, price spaced
-        lender.addQuoteToken(pool, 10_000 * 1e18, 10_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 9_000 * 1e18);
-        lender.addQuoteToken(pool, 10_000 * 1e18, 100 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            10_000 * 1e18
+        );
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 9_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 100 * 1e18);
 
         // should revert when no debt
         vm.expectRevert("ajna/no-debt-to-liquidate");
@@ -183,10 +188,15 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
 
     function testLiquidateScenario1NoTimeWarp() public {
         // lender deposit in 3 buckets, price spaced
-        lender.addQuoteToken(pool, 10_000 * 1e18, 10_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 9_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 8_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 100 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            10_000 * 1e18
+        );
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 9_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 8_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 100 * 1e18);
 
         // borrowers deposit collateral
         borrower.addCollateral(pool, 2 * 1e18);
@@ -284,10 +294,15 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
 
     function testLiquidateScenario1TimeWarp() public {
         // lender deposit in 3 buckets, price spaced
-        lender.addQuoteToken(pool, 10_000 * 1e18, 10_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 9_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 8_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 100 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            10_000 * 1e18
+        );
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 9_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 8_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 100 * 1e18);
 
         // borrowers deposit collateral
         borrower.addCollateral(pool, 2 * 1e18);

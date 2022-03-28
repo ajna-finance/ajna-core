@@ -47,18 +47,30 @@ contract PositionManagerTest is DSTestPlus {
         positionManager = new PositionManager();
     }
 
-    function mintAndApproveTokens(
+    function mintAndApproveQuoteTokens(
         address operator,
         uint256 mintAmount,
         uint256 approvalAmount
     ) private {
-        quote.mint(operator, 30000000000 * 1e18);
-        // quote.mint(address(bob), 10000000 * 1e18);
+        quote.mint(operator, mintAmount * 1e18);
 
         vm.prank(operator);
         quote.approve(address(pool), approvalAmount);
         vm.prank(operator);
         quote.approve(address(positionManager), approvalAmount);
+    }
+
+    function mintAndApproveCollateralTokens(
+        address operator,
+        uint256 mintAmount,
+        uint256 approvalAmount
+    ) private {
+        collateral.mint(operator, mintAmount * 1e18);
+
+        vm.prank(operator);
+        collateral.approve(address(pool), approvalAmount);
+        vm.prank(operator);
+        collateral.approve(address(positionManager), approvalAmount);
     }
 
     // abstract away NFT Minting logic for use by multiple tests
@@ -122,7 +134,7 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 mintAmount = 10000 * 1e18;
         uint256 mintPrice = 1000 * 10**18;
-        mintAndApproveTokens(testAddress, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
 
         vm.prank(testAddress);
 
@@ -161,14 +173,13 @@ contract PositionManagerTest is DSTestPlus {
         assert(updatedPosition.lpTokens > originalPosition.lpTokens);
     }
 
-    // TODO: add collateral to the pool as well
     function testDecreaseLiquidityNoDebt() public {
         // generate a new address
         address testAddress = generateAddress();
 
         uint256 mintAmount = 10000 * 1e18;
         uint256 mintPrice = 1000 * 10**18;
-        mintAndApproveTokens(testAddress, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
 
         vm.prank(testAddress);
 
@@ -186,11 +197,19 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 lpTokensToRemove = originalPosition.lpTokens / 4;
 
-        (uint256 collateralTokensToBeRemoved, uint256 quoteTokensToBeRemoved) = pool.getLPTokenExchangeValue(lpTokensToRemove, mintPrice);
+        (
+            uint256 collateralTokensToBeRemoved,
+            uint256 quoteTokensToBeRemoved
+        ) = pool.getLPTokenExchangeValue(lpTokensToRemove, mintPrice);
 
         vm.prank(testAddress);
         vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(testAddress, collateralTokensToBeRemoved, quoteTokensToBeRemoved, mintPrice);
+        emit DecreaseLiquidity(
+            testAddress,
+            collateralTokensToBeRemoved,
+            quoteTokensToBeRemoved,
+            mintPrice
+        );
 
         // TODO: finish implementing
         IPositionManager.DecreaseLiquidityParams
@@ -204,12 +223,34 @@ contract PositionManagerTest is DSTestPlus {
                 );
 
         positionManager.decreaseLiquidity(decreaseLiquidityParams);
-
-        // check balance of collateral and quote
     }
 
     function testDecreaseLiquidityWithDebt() public {
+        // generate new EOAs
+        address testLender = generateAddress();
+        address testBorrower = generateAddress();
 
+        uint256 mintAmount = 10000 * 1e18;
+        uint256 mintPrice = 1000 * 10**18;
+        mintAndApproveQuoteTokens(testLender, mintAmount, approveBig);
+
+        vm.prank(testLender);
+
+        IPositionManager.MintParams memory mintParams = IPositionManager
+            .MintParams(testLender, address(pool), mintAmount, mintPrice);
+
+        // test emitted Mint event
+        vm.expectEmit(true, true, true, true);
+        emit Mint(testLender, mintAmount, mintPrice);
+
+        uint256 tokenId = positionManager.mint(mintParams);
+
+        PositionManager.Position memory originalPosition = positionManager
+            .getPosition(tokenId);
+
+        uint256 lpTokensToRemove = originalPosition.lpTokens / 4;
+
+        // check balance of collateral and quote
     }
 
     function testGetLPTokenExchangeValue() public {

@@ -54,18 +54,20 @@ contract UserWithCollateral {
 contract UserWithQuoteToken {
     function addQuoteToken(
         ERC20Pool pool,
+        address recipient,
         uint256 amount,
         uint256 price
     ) public {
-        pool.addQuoteToken(msg.sender, amount, price);
+        pool.addQuoteToken(recipient, amount, price);
     }
 
     function removeQuoteToken(
         ERC20Pool pool,
+        address recipient,
         uint256 amount,
         uint256 price
     ) public {
-        pool.removeQuoteToken(msg.sender, amount, price);
+        pool.removeQuoteToken(recipient, amount, price);
     }
 
     function borrow(
@@ -78,10 +80,11 @@ contract UserWithQuoteToken {
 
     function claimCollateral(
         ERC20Pool pool,
+        address recipient,
         uint256 amount,
         uint256 price
     ) public {
-        pool.claimCollateral(amount, price);
+        pool.claimCollateral(recipient, amount, price);
     }
 
     function liquidate(ERC20Pool pool, address borrower) public {
@@ -95,4 +98,12 @@ contract UserWithQuoteToken {
     ) public {
         token.approve(spender, amount);
     }
+
+    // TODO: implement to enable test user to receive LP NFT in case of contract not EOA callers
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes memory data
+    ) external returns (bytes4) {}
 }

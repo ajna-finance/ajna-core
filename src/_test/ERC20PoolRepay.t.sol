@@ -34,9 +34,24 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
     function testRepay() public {
         // lender deposits 10000 DAI in 3 buckets each
-        lender.addQuoteToken(pool, 10_000 * 1e18, 5_000 * 1e18);
-        lender.addQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
-        lender.addQuoteToken(pool, 10_000 * 1e18, 3_000 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            5_000 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            4_000 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            3_000 * 1e18
+        );
 
         // borrower starts with 10_000 DAI and deposit 100 collateral
         quote.mint(address(borrower), 10_000 * 1e18);
