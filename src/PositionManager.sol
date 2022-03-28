@@ -45,14 +45,18 @@ interface IPositionManager {
     function decreaseLiquidity(DecreaseLiquidityParams calldata params)
         external
         payable;
-
 }
 
 contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
     event Mint(address lender, uint256 amount, uint256 price);
     event Burn(address lender, uint256 price);
     event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
-    event DecreaseLiquidity(address lender, uint256 collateral, uint256 quote, uint256 price);
+    event DecreaseLiquidity(
+        address lender,
+        uint256 collateral,
+        uint256 quote,
+        uint256 price
+    );
 
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
@@ -159,12 +163,14 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
             params.price
         );
 
-        // require(quoteTokensRemoved != 0, "No quote tokens removed");
-
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
             // TODO: transfer collateral received to the recipient address
-            pool.claimCollateral(collateralToRemove, params.price);
+            pool.claimCollateral(
+                params.recipient,
+                collateralToRemove,
+                params.price
+            );
             // TODO: check that collateral was > 0
         }
 
@@ -173,7 +179,12 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
         // TODO: check if price updates
 
         // TOdO: update this to emit both the quote and collateral amounts claimed... OR lpTokens
-        emit DecreaseLiquidity(params.recipient, collateralToRemove, quoteTokenToRemove, params.price);
+        emit DecreaseLiquidity(
+            params.recipient,
+            collateralToRemove,
+            quoteTokenToRemove,
+            params.price
+        );
     }
 
     // -------------------- Position State View functions --------------------
