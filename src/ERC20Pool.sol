@@ -496,26 +496,28 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
     /// @dev Only adds debt if a borrower has already initiated a debt position
-    function accumulateBorrowerInterest(BorrowerInfo storage borrower) private {
-        if (borrower.debt != 0 && borrower.inflatorSnapshot != 0) {
-            borrower.debt += getPendingInterest(
-                borrower.debt,
+    function accumulateBorrowerInterest(BorrowerInfo storage _borrower)
+        private
+    {
+        if (_borrower.debt != 0 && _borrower.inflatorSnapshot != 0) {
+            _borrower.debt += getPendingInterest(
+                _borrower.debt,
                 inflatorSnapshot,
-                borrower.inflatorSnapshot
+                _borrower.inflatorSnapshot
             );
         }
-        borrower.inflatorSnapshot = inflatorSnapshot;
+        _borrower.inflatorSnapshot = inflatorSnapshot;
     }
 
     function getPendingInterest(
-        uint256 debt,
-        uint256 pengingInflator,
-        uint256 currentInflator
-    ) private view returns (uint256) {
+        uint256 _debt,
+        uint256 _pengingInflator,
+        uint256 _currentInflator
+    ) private pure returns (uint256) {
         return
             Maths.wmul(
-                debt,
-                Maths.wdiv(pengingInflator, currentInflator) - Maths.ONE_WAD
+                _debt,
+                Maths.wdiv(_pengingInflator, _currentInflator) - Maths.ONE_WAD
             );
     }
 
