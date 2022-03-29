@@ -8,6 +8,7 @@ library Buckets {
     error ClaimExceedsCollateral(uint256 collateralAmount);
     error InsufficientLpBalance(uint256 balance);
     error InsufficientBucketLiquidity(uint256 amountAvailable);
+    error BorrowPriceBelowStopPrice(uint256 borrowPrice);
 
     struct Bucket {
         uint256 price; // current bucket price
@@ -109,7 +110,9 @@ library Buckets {
         uint256 curLupDeposit;
 
         while (true) {
-            require(curLup.price >= _stop, "ajna/stop-price-exceeded");
+            if (curLup.price < _stop) {
+                revert BorrowPriceBelowStopPrice({borrowPrice: curLup.price});
+            }
 
             // accumulate bucket interest
             accumulateBucketInterest(curLup, _inflator);

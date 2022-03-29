@@ -104,6 +104,7 @@ contract ERC20Pool is IPool, Clone {
     error NoClaimToBucket();
     error InsufficientCollateralBalance();
     error InsufficientLiquidity(uint256 amountAvailable);
+    error InsufficientCollateralForBorrow();
     error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error PoolUndercollateralized(uint256 collateralization);
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
@@ -285,10 +286,11 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of quote token to borrow
     /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
-        require(
-            _amount <= totalQuoteToken - totalDebt,
-            "ajna/not-enough-liquidity"
-        );
+        if (_amount > totalQuoteToken - totalDebt) {
+            revert InsufficientLiquidity({
+                amountAvailable: totalQuoteToken - totalDebt
+            });
+        }
 
         accumulatePoolInterest();
 
@@ -306,10 +308,10 @@ contract ERC20Pool is IPool, Clone {
         if (borrower.debt != 0) {
             encumberedBorrowerCollateral = Maths.wdiv(borrower.debt, lup);
         }
-        require(
-            borrower.collateralDeposited > encumberedBorrowerCollateral,
-            "ajna/not-enough-collateral"
-        );
+
+        if (borrower.collateralDeposited <= encumberedBorrowerCollateral) {
+            revert InsufficientCollateralForBorrow();
+        }
 
         uint256 loanCost;
         (lup, loanCost) = _buckets.borrow(
@@ -319,20 +321,25 @@ contract ERC20Pool is IPool, Clone {
             inflatorSnapshot
         );
 
-        require(
-            borrower.collateralDeposited >
-                Maths.wdiv(borrower.debt + _amount, lup) &&
-                borrower.collateralDeposited - Maths.wdiv(borrower.debt, lup) >
-                loanCost,
-            "ajna/not-enough-collateral"
-        );
+        // if collateralDeposited <= collateralSupportingDebt + newdebt
+        // && unencumberedCollateral < loanCollateralCost
+        if (
+            borrower.collateralDeposited <=
+            Maths.wdiv(borrower.debt + _amount, lup) &&
+            borrower.collateralDeposited - Maths.wdiv(borrower.debt, lup) <
+            loanCost
+        ) {
+            revert InsufficientCollateralForBorrow();
+        }
+
         borrower.debt += _amount;
 
         totalDebt += _amount;
-        require(
-            getPoolCollateralization() >= Maths.ONE_WAD,
-            "ajna/pool-undercollateralized"
-        );
+        if (getPoolCollateralization() < Maths.ONE_WAD) {
+            revert PoolUndercollateralized({
+                collateralization: getPoolCollateralization()
+            });
+        }
 
         quoteToken().safeTransfer(msg.sender, _amount / quoteTokenScale);
         emit Borrow(msg.sender, lup, _amount);
