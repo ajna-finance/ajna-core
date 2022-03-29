@@ -165,13 +165,11 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
 
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
-            // TODO: transfer collateral received to the recipient address
             pool.claimCollateral(
                 params.recipient,
                 collateralToRemove,
                 params.price
             );
-            // TODO: check that collateral was > 0
         }
 
         positions[params.tokenId].lpTokens -= params.lpTokens;
@@ -221,4 +219,7 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
         uint256 tokenId,
         bytes memory data
     ) external returns (bytes4) {}
+
+    // TODO: implement
+    receive() external payable {}
 }

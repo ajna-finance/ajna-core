@@ -221,7 +221,7 @@ contract PositionManagerTest is DSTestPlus {
         address testLender = generateAddress();
         uint256 testBucketPrice = 10000 * 10**18;
 
-        uint256 mintAmount = 10000 * 1e18;
+        uint256 mintAmount = 50000 * 1e18;
         mintAndApproveQuoteTokens(testLender, mintAmount, approveBig);
 
         uint256 tokenId = mintNFT(testLender, mintAmount, testBucketPrice);
@@ -231,15 +231,22 @@ contract PositionManagerTest is DSTestPlus {
 
         // Borrow against the pool
         UserWithCollateral testBorrower = new UserWithCollateral();
-        uint256 collateralToMint = 500 * 1e18;
+        uint256 collateralToMint = 5000 * 1e18;
         mintAndApproveCollateralTokens(testBorrower, collateralToMint);
 
-        // TODO: finish implementing
-        // testBorrower.borrow(pool, collateralToMint, testBucketPrice);
-        // assertEq(pool.totalDebt(), collateralToMint);
+        testBorrower.addCollateral(pool, collateralToMint);
+
+        testBorrower.borrow(pool, collateralToMint / 2, testBucketPrice);
+        assertEq(pool.lup(), testBucketPrice);
+        assertEq(pool.hdp(), testBucketPrice);
+        assertEq(pool.totalDebt(), collateralToMint / 2);
+
+        UserWithCollateral testBidder = new UserWithCollateral();
+        mintAndApproveCollateralTokens(testBidder, 50000 * 1e18);
+
+        testBidder.purchaseBid(pool, 1 * 1e18, testBucketPrice);
 
         uint256 lpTokensToRemove = originalPosition.lpTokens / 4;
-
         (
             uint256 collateralTokensToBeRemoved,
             uint256 quoteTokensToBeRemoved
@@ -270,9 +277,8 @@ contract PositionManagerTest is DSTestPlus {
         PositionManager.Position memory updatedPosition = positionManager
             .getPosition(tokenId);
 
-        assert(updatedPosition.lpTokens < originalPosition.lpTokens);
+        assertTrue(updatedPosition.lpTokens < originalPosition.lpTokens);
 
-        // TODO: test balance of collateral and quote vs expected
     }
 
     // TODO: implement test case where users transfer NFTs to another user, and that user Redeems it
