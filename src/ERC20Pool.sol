@@ -103,12 +103,14 @@ contract ERC20Pool is IPool, Clone {
     error InvalidPrice();
     error NoClaimToBucket();
     error NoDebtToRepay();
+    error NoDebtToLiquidate();
     error InsufficientBalanceForRepay();
     error InsufficientCollateralBalance();
-    error InsufficientLiquidity(uint256 amountAvailable);
     error InsufficientCollateralForBorrow();
-    error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
+    error InsufficientLiquidity(uint256 amountAvailable);
     error PoolUndercollateralized(uint256 collateralization);
+    error BorrowerIsCollateralized(uint256 collateralization);
+    error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
 
     function initialize() external {
@@ -455,16 +457,19 @@ contract ERC20Pool is IPool, Clone {
         uint256 debt = borrower.debt;
         uint256 collateralDeposited = borrower.collateralDeposited;
 
-        require(debt != 0, "ajna/no-debt-to-liquidate");
+        if (debt == 0) {
+            revert NoDebtToLiquidate();
+        }
 
         uint256 collateralization = Maths.wdiv(
             collateralDeposited,
             Maths.wdiv(debt, lup)
         );
-        require(
-            collateralization <= Maths.ONE_WAD,
-            "ajna/borrower-collateralized"
-        );
+        if (collateralization > Maths.ONE_WAD) {
+            revert BorrowerIsCollateralized({
+                collateralization: collateralization
+            });
+        }
 
         (uint256 lentTokens, uint256 requiredCollateral) = _buckets.liquidate(
             debt,

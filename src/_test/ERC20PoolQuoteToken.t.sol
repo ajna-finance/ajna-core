@@ -173,13 +173,17 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(lpOutstanding, 40_000 * 1e18);
         assertEq(pool.lpBalance(address(lender), 5_000 * 1e18), 40_000 * 1e18);
     }
+
     function testRemoveQuoteTokenNoLoan() public {
         // lender deposit 10000 DAI at price 4000
         lender.addQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // should revert if trying to remove more than lended
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.AmountExceedsTotalClaimableQuoteToken.selector, pool.totalQuoteToken() - pool.totalDebt())
+            abi.encodeWithSelector(
+                ERC20Pool.AmountExceedsTotalClaimableQuoteToken.selector,
+                pool.totalQuoteToken() - pool.totalDebt()
+            )
         );
         lender.removeQuoteToken(pool, 20_000 * 1e18, 4_000 * 1e18);
 
@@ -217,6 +221,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(lpOutstanding, 0 * 1e18);
         assertEq(pool.lpBalance(address(lender), 4_000 * 1e18), 0 * 1e18);
     }
+
     function testRemoveQuoteTokenUnpaidLoan() public {
         // lender deposit 10000 DAI at price 4000
         lender.addQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
@@ -234,7 +239,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // should revert if trying to remove entire amount lended
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.AmountExceedsTotalClaimableQuoteToken.selector, pool.totalQuoteToken() - pool.totalDebt())
+            abi.encodeWithSelector(
+                ERC20Pool.AmountExceedsTotalClaimableQuoteToken.selector,
+                pool.totalQuoteToken() - pool.totalDebt()
+            )
         );
         lender.removeQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
 
@@ -401,7 +409,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // removal should revert if pool remains undercollateralized
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.PoolUndercollateralized.selector, 1.275 * 1e17)
+            abi.encodeWithSelector(
+                ERC20Pool.PoolUndercollateralized.selector,
+                1.275 * 1e17
+            )
         );
         lender.removeQuoteToken(pool, 2_000 * 1e18, 1_000 * 1e18);
     }
