@@ -35,7 +35,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
     function testDepositQuoteToken() public {
         // should revert when depositing at invalid price
         vm.expectRevert("ajna/invalid-bucket-price");
-        lender.addQuoteToken(pool, 10_000 * 1e18, 1004948314 * 1e18);
+        lender.addQuoteToken(pool, 10_000 * 1e18, 1004968988 * 1e18);
 
         assertEq(pool.hdp(), 0);
 

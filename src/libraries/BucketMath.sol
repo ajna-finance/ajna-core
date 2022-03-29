@@ -22,11 +22,11 @@ library BucketMath {
     int256 public constant WAD = 10**18;
 
     // constant price indices defining the min and max of the potential price range
-    int256 public constant MAX_PRICE_INDEX = 6926;
+    int256 public constant MAX_PRICE_INDEX = 4156;
     int256 public constant MIN_PRICE_INDEX = -3232;
 
-    int256 public constant MIN_PRICE = 100000000000;
-    int256 public constant MAX_PRICE = 1004948313 * WAD;
+    int256 public constant MIN_PRICE = 99836282890;
+    int256 public constant MAX_PRICE = 1004968987.606512354182109771 * 10**18;
 
     // step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
     int256 public constant FLOAT_STEP_INT = 1005000000000000000;
@@ -52,11 +52,14 @@ library BucketMath {
             PRBMathSD59x18.log2(price),
             PRBMathSD59x18.log2(FLOAT_STEP_INT)
         );
+        int256 ceilIndex = PRBMathSD59x18.ceil(index);
         if (index < 0) {
-            return PRBMathSD59x18.toInt(index) - 1;
+            if (ceilIndex - index > 0.5 * 1e18) {
+                return PRBMathSD59x18.toInt(ceilIndex) - 1;
+            }
+            return PRBMathSD59x18.toInt(ceilIndex);
         }
-
-        return PRBMathSD59x18.toInt(index);
+        return PRBMathSD59x18.toInt(ceilIndex);
     }
 
     /// @notice Calculates the bucket price for a given index

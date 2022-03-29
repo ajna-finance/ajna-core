@@ -103,7 +103,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
     function testClaimCollateral() public {
         // should fail if invalid price
         vm.expectRevert("ajna/invalid-bucket-price");
-        lender.claimCollateral(pool, 10_000 * 1e18, 1004948314 * 1e18);
+        lender.claimCollateral(pool, 10_000 * 1e18, 1004968988 * 1e18);
 
         // should revert if no lp tokens in bucket
         vm.expectRevert("ajna/no-claim-to-bucket");
