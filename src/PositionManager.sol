@@ -106,12 +106,13 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
         return tokenId;
     }
 
-    // TODO: finish implementing
+    // TODO: add support for ERC721Burnable?
     function burn(uint256 tokenId) external payable {
         Position storage position = positions[tokenId];
         require(position.lpTokens == 0, "Not Redeemed");
-        delete positions[tokenId];
         emit Burn(msg.sender, position.price);
+        delete positions[tokenId];
+
     }
 
     /// @notice Called by lenders to add liquidity to an existing position

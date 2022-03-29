@@ -66,10 +66,11 @@ contract PositionManagerTest is DSTestPlus {
     }
 
     // abstract away NFT Minting logic for use by multiple tests
-    function mintNFT(address minter, uint256 mintAmount, uint256 mintPrice)
-        private
-        returns (uint256 tokenId)
-    {
+    function mintNFT(
+        address minter,
+        uint256 mintAmount,
+        uint256 mintPrice
+    ) private returns (uint256 tokenId) {
         IPositionManager.MintParams memory mintParams = IPositionManager
             .MintParams(minter, address(pool), mintAmount, mintPrice);
 
@@ -114,14 +115,10 @@ contract PositionManagerTest is DSTestPlus {
     }
 
     // TODO: implement test case where multiple users mints multiple NFTs
-    function testMintMultiple() public {
-
-    }
+    function testMintMultiple() public {}
 
     // TODO: implement test case where caller is not an EOA
-    function testMintToContract() public {
-
-    }
+    function testMintToContract() public {}
 
     function testIncreaseLiquidity() public {
         // generate a new address
@@ -194,7 +191,6 @@ contract PositionManagerTest is DSTestPlus {
                     lpTokensToRemove
                 );
 
-
         vm.expectEmit(true, true, true, true);
         emit DecreaseLiquidity(
             testAddress,
@@ -262,7 +258,6 @@ contract PositionManagerTest is DSTestPlus {
                     lpTokensToRemove
                 );
 
-
         vm.expectEmit(true, true, true, true);
         emit DecreaseLiquidity(
             testLender,
@@ -278,7 +273,6 @@ contract PositionManagerTest is DSTestPlus {
             .getPosition(tokenId);
 
         assertTrue(updatedPosition.lpTokens < originalPosition.lpTokens);
-
     }
 
     // TODO: implement test case where users transfer NFTs to another user, and that user Redeems it
@@ -287,6 +281,62 @@ contract PositionManagerTest is DSTestPlus {
     }
 
     // TODO: implement
-    function testBurn() public {}
+    function testBurn() public {
+        // generate a new address
+        address testAddress = generateAddress();
 
+        uint256 mintAmount = 10000 * 1e18;
+        uint256 mintPrice = 1000 * 10**18;
+        mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
+
+        uint256 tokenId = mintNFT(testAddress, mintAmount, mintPrice);
+
+        PositionManager.Position memory originalPosition = positionManager
+            .getPosition(tokenId);
+
+        uint256 lpTokensToRemove = originalPosition.lpTokens;
+
+        (
+            uint256 collateralTokensToBeRemoved,
+            uint256 quoteTokensToBeRemoved
+        ) = pool.getLPTokenExchangeValue(lpTokensToRemove, mintPrice);
+
+        IPositionManager.DecreaseLiquidityParams
+            memory decreaseLiquidityParams = IPositionManager
+                .DecreaseLiquidityParams(
+                    tokenId,
+                    testAddress,
+                    address(pool),
+                    mintPrice,
+                    lpTokensToRemove
+                );
+
+        vm.expectEmit(true, true, true, true);
+        emit DecreaseLiquidity(
+            testAddress,
+            collateralTokensToBeRemoved,
+            quoteTokensToBeRemoved,
+            mintPrice
+        );
+
+        vm.prank(testAddress);
+        positionManager.decreaseLiquidity(decreaseLiquidityParams);
+
+        assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensToBeRemoved);
+
+        PositionManager.Position memory updatedPosition = positionManager
+            .getPosition(tokenId);
+
+        vm.expectEmit(true, true, true, true);
+        emit Burn(testAddress, updatedPosition.price);
+
+        vm.prank(testAddress);
+        positionManager.burn(tokenId);
+
+        PositionManager.Position memory burntPosition = positionManager
+            .getPosition(tokenId);
+
+        assertEq(burntPosition.owner, 0x0000000000000000000000000000000000000000);
+
+    }
 }
