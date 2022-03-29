@@ -44,9 +44,8 @@ def encode_calldata(self, web3: Web3, fn_signature: str, arguments: list, contra
     return Calldata.from_contract_abi(web3, fn_signature, arguments, contract_abi)
 
 
-# TODO: add web3 access and abi parsing
-
-def test_mint(position_manager, lenders):
+# TODO: Finish Implementing: add web3 access and abi parsing
+def xtest_mint(position_manager, lenders):
     mint_params = [
         lenders[0],
         lenders[1],
