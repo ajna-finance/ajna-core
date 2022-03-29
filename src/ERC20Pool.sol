@@ -102,6 +102,8 @@ contract ERC20Pool is IPool, Clone {
 
     error InvalidPrice();
     error NoClaimToBucket();
+    error NoDebtToRepay();
+    error InsufficientBalanceForRepay();
     error InsufficientCollateralBalance();
     error InsufficientLiquidity(uint256 amountAvailable);
     error InsufficientCollateralForBorrow();
@@ -350,10 +352,14 @@ contract ERC20Pool is IPool, Clone {
     function repay(uint256 _amount) external {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) *
             quoteTokenScale;
-        require(availableAmount >= _amount, "ajna/no-funds-to-repay");
+        if (availableAmount < _amount) {
+            revert InsufficientBalanceForRepay();
+        }
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
-        require(borrower.debt != 0, "ajna/no-debt-to-repay");
+        if (borrower.debt == 0) {
+            revert NoDebtToRepay();
+        }
         accumulatePoolInterest();
         accumulateBorrowerInterest(borrower);
 
