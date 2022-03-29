@@ -81,8 +81,6 @@ contract PositionManager is IPositionManager, PositionNFT {
         payable
         returns (uint256 tokenId)
     {
-        address pool = params.pool;
-
         // call out to pool contract to add quote tokens
         uint256 lpTokensAdded = IPool(params.pool).addQuoteToken(
             params.recipient,
@@ -100,7 +98,6 @@ contract PositionManager is IPositionManager, PositionNFT {
             params.pool
         );
 
-        // TODO: update Mint() event to emit lp added
         emit Mint(params.recipient, params.amount, params.price);
         return tokenId;
     }
@@ -187,29 +184,26 @@ contract PositionManager is IPositionManager, PositionNFT {
 
     // -------------------- Position State View functions --------------------
 
-    // TODO: remove in favor of default getter?
     function getPosition(uint256 tokenId)
-        public
+        external
         view
         returns (Position memory position)
     {
-        Position memory position = positions[tokenId];
-        return position;
+        return positions[tokenId];
     }
 
-    // TODO: implement
-    function getPositionOwnedCollateral(uint256 tokenId)
-        public
-        view
-        returns (uint256 collateral)
-    {}
+    /// @notice Called to determine the amount of quote and collateral tokens, in quote terms, represented by a given tokenId
+    /// @return quoteTokens The value of a NFT in terms of the pools quote token
+    function getPositionValueInQuoteTokens(uint256 tokenId) external view returns (uint256 quoteTokens) {
+        Position memory position = positions[tokenId];
 
-    // TODO: implement
-    function getPositionOwnedQuoteTokens(uint256 tokenId)
-        public
-        view
-        returns (uint256 quoteTokens)
-    {}
+        uint256 lpTokens = position.lpTokens;
+        uint256 positionPrice = position.price;
+
+        (uint256 collateral, uint256 quote) = IPool(position.pool).getLPTokenExchangeValue(lpTokens, positionPrice);
+
+        return quote + (collateral * positionPrice);
+    }
 
     // TODO: implement
     receive() external payable {}
