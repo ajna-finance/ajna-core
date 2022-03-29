@@ -60,9 +60,10 @@ def test_claim_collateral(
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     # TODO: properly check in forge tests
     assert 1_000 * 1e18 <= bucket_debt <= 1_001 * 1e18
-    assert bucket_deposit == 4_000 * 1e18
+    assert bucket_deposit == 3_000 * 1e18
     assert lpOutstanding == 4_000 * 1e18
 
+    # bidder purchases some of the middle bucket
     mkr_dai_pool.purchaseBid(1_500 * 1e18, 3000 * 1e18, {"from": bidder})
 
     assert mkr_dai_pool.lpBalance(lender, 3_000 * 1e18) == 4_000 * 1e18
@@ -77,6 +78,7 @@ def test_claim_collateral(
         mkr_dai_pool.claimCollateral(2 * 1e18, 3000 * 1e18, {"from": lender})
     assert exc.value.revert_msg == "ajna/insufficient-amount-to-claim"
 
+    # lender claims 0.5 collateral
     tx = mkr_dai_pool.claimCollateral(0.5 * 1e18, 3_000 * 1e18, {"from": lender})
 
     # check 3000 bucket balance after claim collateral
@@ -92,7 +94,7 @@ def test_claim_collateral(
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
     # TODO: properly check in forge tests
     assert 1_000 * 1e18 <= bucket_debt <= 1_001 * 1e18
-    assert bucket_deposit == 2_500 * 1e18
+    assert bucket_deposit == 1_500 * 1e18
     assert lpOutstanding == 2_500 * 1e18
 
     # claimer lp tokens for pool should be diminished

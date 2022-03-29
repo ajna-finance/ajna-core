@@ -28,13 +28,13 @@ library Buckets {
 
         accumulateBucketInterest(bucket, _inflator);
 
+        bucket.amount += _amount;
         lup = _lup;
         if (_reallocate) {
             lup = reallocateUp(buckets, _price, _amount, _lup, _inflator);
         }
 
         lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
-        bucket.amount += _amount;
         bucket.lpOutstanding += lpTokens;
     }
 
@@ -194,12 +194,14 @@ library Buckets {
             "ajna/insufficient-bucket-size"
         );
 
-        // TODO: Handle (unusual) case where some of the bucket is on deposit 
-        // and the whole amount does not need to be reallocated.
+        // Exchange collateral for quote token on deposit
+        uint256 purchaseFromDeposit = Maths.min(_amount, bucket.amount);
+        bucket.amount -= purchaseFromDeposit;
+        _amount -= purchaseFromDeposit;
 
+        // Exchange collateral for debt
         lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
-        bucket.debt -= _amount;
         bucket.collateral += _collateral;
     }
 
@@ -259,9 +261,8 @@ library Buckets {
     ) private returns (uint256 lup) {
         lup = _bucket.price;
         // debt reallocation
-        uint256 onDeposit;
         // TODO: remove unnecessary variable
-        onDeposit = _bucket.amount;
+        uint256 onDeposit = _bucket.amount;
         if (_amount > onDeposit) {
             uint256 reallocation = _amount - onDeposit;
             if (_bucket.down != 0) {
@@ -325,15 +326,19 @@ library Buckets {
 
             if (_amount > curLupDebt) {
                 bucket.debt += curLupDebt;
+                bucket.amount -= curLupDebt;
                 _amount -= curLupDebt;
                 curLup.debt = 0;
+                curLup.amount += curLupDebt;
                 if (curLup.price == curLup.up) {
                     // nowhere to go
                     break;
                 }
             } else {
                 bucket.debt += _amount;
+                bucket.amount -= _amount;
                 curLup.debt -= _amount;
+                curLup.amount += _amount;
                 break;
             }
 
@@ -417,13 +422,10 @@ library Buckets {
         view
         returns (uint256)
     {
-        if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
-            return
-                Maths.wdiv(
-                    Maths.max(bucket.amount, bucket.debt) +
-                        Maths.wmul(bucket.collateral, bucket.price),
-                    bucket.lpOutstanding
-                );
+        uint256 size = bucket.amount + bucket.debt + 
+            Maths.wmul(bucket.collateral, bucket.price);
+        if (size != 0 && bucket.lpOutstanding != 0) {
+            return Maths.wdiv(size, bucket.lpOutstanding);
         }
         return Maths.ONE_WAD;
     }
