@@ -249,7 +249,12 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(pool.lup(), 3_000 * 1e18);
 
         // should revert when leave pool undercollateralized
-        vm.expectRevert("ajna/pool-undercollateralized");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20Pool.PoolUndercollateralized.selector,
+                0.05 * 1e18
+            )
+        );
         bidder.purchaseBid(pool, 1_000 * 1e18, 4_000 * 1e18);
     }
 }

@@ -412,10 +412,6 @@ contract ERC20Pool is IPool, Clone {
                 amountAvailable: totalQuoteToken - totalDebt
             });
         }
-        require(
-            _amount <= totalQuoteToken - totalDebt,
-            "ajna/not-enough-liquidity"
-        );
 
         uint256 newLup = _buckets.purchaseBid(
             _price,
@@ -430,10 +426,11 @@ contract ERC20Pool is IPool, Clone {
         }
 
         totalQuoteToken -= _amount;
-        require(
-            getPoolCollateralization() >= Maths.ONE_WAD,
-            "ajna/pool-undercollateralized"
-        );
+        if (getPoolCollateralization() < Maths.ONE_WAD) {
+            revert PoolUndercollateralized({
+                collateralization: getPoolCollateralization()
+            });
+        }
 
         // move required collateral from sender to pool
         collateral().safeTransferFrom(
