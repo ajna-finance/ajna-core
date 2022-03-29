@@ -199,7 +199,7 @@ library Buckets {
         bucket.amount -= purchaseFromDeposit;
         _amount -= purchaseFromDeposit;
 
-        // Exchange collateral for debt
+        // Reallocate debt to exchange for collateral
         lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
         bucket.collateral += _collateral;
@@ -270,16 +270,14 @@ library Buckets {
 
                 while (true) {
                     accumulateBucketInterest(toBucket, _inflator);
-                    
-                    uint256 toBucketOnDeposit;
-                    if (toBucket.amount > toBucket.debt) {
-                        toBucketOnDeposit = toBucket.amount - toBucket.debt;
-                    }
+                    // TODO: remove unnecessary variable
+                    uint256 toBucketOnDeposit = toBucket.amount;
 
                     if (reallocation < toBucketOnDeposit) {
                         // reallocate all and exit
                         _bucket.debt -= reallocation;
                         toBucket.debt += reallocation;
+                        toBucket.amount -= reallocation;
                         lup = toBucket.price;
                         break;
                     } else {
@@ -287,6 +285,7 @@ library Buckets {
                             reallocation -= toBucketOnDeposit;
                             _bucket.debt -= toBucketOnDeposit;
                             toBucket.debt += toBucketOnDeposit;
+                            toBucket.amount -= toBucketOnDeposit;
                         }
                     }
 

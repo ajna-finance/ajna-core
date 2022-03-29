@@ -137,7 +137,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             uint256 lpOutstanding,
             uint256 bucketCollateral
         ) = pool.bucketAt(3_000 * 1e18);
-        assertEq(deposit, 4_000 * 1e18);
+        assertEq(deposit, 3_000 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(lpOutstanding, 4_000 * 1e18);
         assertEq(bucketCollateral, 0);
@@ -172,7 +172,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         // check 3000 bucket balance after collateral claimed
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = pool
             .bucketAt(3_000 * 1e18);
-        assertEq(deposit, 2_500 * 1e18);
+        assertEq(deposit, 1_500 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(lpOutstanding, 2_500 * 1e18);
         assertEq(bucketCollateral, 0);
