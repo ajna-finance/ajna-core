@@ -154,7 +154,9 @@ contract PositionManager is IPositionManager, PositionNFT {
         (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool
             .getLPTokenExchangeValue(params.lpTokens, params.price);
 
-        // TODO: update lp token equation with a minimum factor to avoid rounding issues and provide base
+        // TODO: update lp token equation with a minimum factor to avoid rounding issues and provide base - similar to UNISWAP
+        // uint256 constant MINIMUM_LP_LIQUIDITY = 1 * 1e18;
+
         pool.removeQuoteToken(
             params.recipient,
             quoteTokenToRemove,

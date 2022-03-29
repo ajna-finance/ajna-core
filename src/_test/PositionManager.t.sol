@@ -28,7 +28,6 @@ contract PositionManagerTest is DSTestPlus {
     uint16 nonce = 0;
 
     function setUp() public {
-        // alice = new UserWithQuoteToken();
         alice = 0x02B9219F667d91fBe64F8f77F691dE3D1000F223;
 
         collateral = new CollateralToken();

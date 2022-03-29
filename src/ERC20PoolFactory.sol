@@ -44,4 +44,7 @@ contract ERC20PoolFactory {
     {
         return deployedPools[address(collateral)][address(quote)] != address(0);
     }
+
+    // https://ethereum.stackexchange.com/questions/100025/calculate-deterministic-address-with-create2-when-cloning-contract-with-factory
+    // function predictCloneAddress()
 }
