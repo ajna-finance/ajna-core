@@ -12,20 +12,6 @@ import "./libraries/Maths.sol";
 import "./libraries/BucketMath.sol";
 import "./libraries/Buckets.sol";
 
-// TODO: REMOVE - FOR TESTING ONLY
-import "../lib/hardhat/packages/hardhat-core/console.sol";
-
-// abstract contract InitializeGuard {
-
-//     // deploy this contract after factory and before pool.
-//     address factoryAddress = 0x
-
-//     modifier onlyFactory() {
-//         require(msg.sender == factoryAddress);
-//         _;
-//     }
-// }
-
 interface IPool {
     function addQuoteToken(
         address recipient,

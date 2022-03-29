@@ -100,6 +100,7 @@ contract UserWithQuoteToken {
     }
 
     // TODO: implement to enable test user to receive LP NFT in case of contract not EOA callers
+    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
     function onERC721Received(
         address operator,
         address from,

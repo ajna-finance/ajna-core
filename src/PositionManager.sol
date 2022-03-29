@@ -4,7 +4,6 @@ pragma solidity 0.8.11;
 import {PositionNFT} from "./PositionNFT.sol";
 import {IPool} from "./ERC20Pool.sol";
 
-import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "../lib/hardhat/packages/hardhat-core/console.sol";
 
 interface IPositionManager {
@@ -17,7 +16,7 @@ interface IPositionManager {
 
     struct IncreaseLiquidityParams {
         uint256 tokenId;
-        address recipient; // TODO: potentially remove in favor of msg.sender
+        address recipient;
         address pool;
         uint256 amount;
         uint256 price;
@@ -25,7 +24,7 @@ interface IPositionManager {
 
     struct DecreaseLiquidityParams {
         uint256 tokenId;
-        address recipient; // TODO: potentially remove in favor of msg.sender
+        address recipient;
         address pool;
         uint256 price;
         uint256 lpTokens;
@@ -47,7 +46,7 @@ interface IPositionManager {
         payable;
 }
 
-contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
+contract PositionManager is IPositionManager, PositionNFT {
     event Mint(address lender, uint256 amount, uint256 price);
     event Burn(address lender, uint256 price);
     event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
@@ -134,17 +133,15 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
 
         // TODO: update collateral accrued accounting
 
-        // TODO: update to position.liquidity
-        // position.amount += params.amount;
-
         // TODO: check if price bucket changes at all from reallocation
         // position.price = returnedData.price;
 
         emit IncreaseLiquidity(params.recipient, params.amount, params.price);
     }
 
-    // TODO: finish implementing -> what happens if liquidity goes to 0...
     // TODO: add multicall support here
+    /// @notice Called by lenders to remove liquidity from an existing position
+    /// @param params Calldata struct supplying inputs required to update the underlying assets owed to an NFT
     function decreaseLiquidity(DecreaseLiquidityParams calldata params)
         external
         payable
@@ -166,6 +163,7 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
 
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
+            // claim any unencumbered collateral accrued to the price bucket
             pool.claimCollateral(
                 params.recipient,
                 collateralToRemove,
@@ -177,7 +175,6 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
 
         // TODO: check if price updates
 
-        // TOdO: update this to emit both the quote and collateral amounts claimed... OR lpTokens
         emit DecreaseLiquidity(
             params.recipient,
             collateralToRemove,
@@ -211,15 +208,6 @@ contract PositionManager is IPositionManager, PositionNFT, IERC721Receiver {
         view
         returns (uint256 quoteTokens)
     {}
-
-    // TODO: finish implementing to enable the reception of collateral tokens -> and/or does this need to be added to the pool?
-    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
-    function onERC721Received(
-        address operator,
-        address from,
-        uint256 tokenId,
-        bytes memory data
-    ) external returns (bytes4) {}
 
     // TODO: implement
     receive() external payable {}
