@@ -370,15 +370,17 @@ library Buckets {
         uint256 curLupDeposit;
 
         while (true) {
-            curLupDeposit = curLup.onDeposit - curLup.debt;
-
-            if (_amount > curLupDeposit) {
-                _amount -= curLupDeposit;
-            } else if (_amount <= curLupDeposit) {
+            if (_amount > curLup.onDeposit) {
+                _amount -= curLup.onDeposit;
+            } else if (_amount <= curLup.onDeposit) {
                 return curLup.price;
             }
 
-            curLup = buckets[curLup.down];
+            if (curLup.down == 0) {
+                return 0;
+            } else {
+                curLup = buckets[curLup.down];
+            }
         }
 
         return 0;

@@ -174,9 +174,15 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         lender.addQuoteToken(pool, 50_000 * 1e18, 500 * 1e18);
 
         // borrower1 takes a loan on 100_000 DAI
+        assertEq(pool.estimatePriceForLoan(75_000 * 1e18), 2_000 * 1e18);
+        assertEq(pool.estimatePriceForLoan(125_000 * 1e18), 1_000 * 1e18);
+        assertEq(pool.estimatePriceForLoan(175_000 * 1e18), 500 * 1e18);
         borrower.addCollateral(pool, 51 * 1e18);
         borrower.borrow(pool, 100_000 * 1e18, 1_000 * 1e18);
 
+        assertEq(pool.estimatePriceForLoan(25_000 * 1e18), 1_000 * 1e18);
+        assertEq(pool.estimatePriceForLoan(75_000 * 1e18), 500 * 1e18);
+        assertEq(pool.estimatePriceForLoan(175_000 * 1e18), 0);
         borrower2.addCollateral(pool, 51 * 1e18);
         // should revert when taking a loan of 50_000 DAI that will drive pool undercollateralized
         vm.expectRevert("ajna/pool-undercollateralized");
