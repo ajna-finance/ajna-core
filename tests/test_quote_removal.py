@@ -101,14 +101,18 @@ def test_quote_removal_loan_not_paid_back(
         _,
         _,
         bucket_deposit,
-        _,
+        bucket_debt,
         _,
         lpOutstanding,
         _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
-    assert bucket_deposit == 6_000 * 1e18
-    assert lpOutstanding == 6_000 * 1e18
-    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 6_000 * 1e18
+    assert bucket_deposit == 1_000 * 1e18
+    # tested without delay in forge
+    assert 5_000 * 1e18 <= bucket_debt <= 5_001 * 1e18
+    # due to delay in brownie, the removeQuoteToken call required slightly less 
+    # LP to withdraw quote; tested without delay in forge
+    assert 6_000 * 1e18 <= lpOutstanding <= 6_001 * 1e18
+    assert 6_000 * 1e18 <= mkr_dai_pool.lpBalance(lender, 4000 * 1e18) <= 6_001 * 1e18
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == mkr_dai_pool
@@ -142,7 +146,7 @@ def test_quote_removal_loan_paid_back(
     dai.transfer(borrower, 1 * 1e18, {"from": lenders[1]})
     mkr_dai_pool.repay(10_001 * 1e18, {"from": borrower})
 
-    # forward time so lp tokens to accumulate
+    # forward time
     chain.sleep(82000)
     chain.mine()
 
@@ -157,14 +161,16 @@ def test_quote_removal_loan_paid_back(
         _,
         _,
         bucket_deposit,
-        _,
+        bucket_debt,
         _,
         lpOutstanding,
         _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
-    assert bucket_deposit == 0
-    assert lpOutstanding == 0
-    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 0
+    # in forge test, no time passes between borrow and repayment
+    assert bucket_deposit < 0.0001 * 1e18
+    assert bucket_debt == 0
+    assert lpOutstanding < 0.0001 * 1e18
+    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) < 0.0001 * 1e18
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == mkr_dai_pool
@@ -219,10 +225,11 @@ def test_quote_removal_from_lup_with_reallocation(
             lpOutstanding,
             _,
         ) = mkr_dai_pool.bucketAt(4000 * 1e18)
-        assert bucket_debt == 2_400 * 1e18
-        assert bucket_deposit == 2_400 * 1e18
-        assert lpOutstanding == 2_400 * 1e18
-        assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 2_400 * 1e18
+        # tested without delay in forge
+        assert 2_400 * 1e18 <= bucket_debt <= 2_401 * 1e18
+        assert bucket_deposit == 0
+        assert 2_400 * 1e18 <= lpOutstanding <= 2_401 * 1e18
+        assert 2_400 * 1e18 <= mkr_dai_pool.lpBalance(lender, 4000 * 1e18) <= 2_401 * 1e18
 
         # check 3000 bucket balance
         (
@@ -238,7 +245,7 @@ def test_quote_removal_from_lup_with_reallocation(
         # debt should be 600 DAI + accumulated interest
         # TODO: properly check in forge tests
         assert Decimal(600) <= bucket_debt * 1e-18 <= Decimal(601)
-        assert bucket_deposit == 3_400 * 1e18
+        assert bucket_deposit == 2_800 * 1e18
         assert lpOutstanding == 3_400 * 1e18
         assert mkr_dai_pool.lpBalance(lender, 3000 * 1e18) == 3_400 * 1e18
 
@@ -318,7 +325,7 @@ def test_quote_removal_below_lup(
             _,
         ) = mkr_dai_pool.bucketAt(4000 * 1e18)
         assert bucket_debt == 3_000 * 1e18
-        assert bucket_deposit == 5_000 * 1e18
+        assert bucket_deposit == 2_000 * 1e18
         assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 5_000 * 1e18
 
         # check 3000 bucket balance

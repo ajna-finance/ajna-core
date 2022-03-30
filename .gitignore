@@ -4,6 +4,7 @@ node_modules/*
 node_modules
 .env
 .env.prod
+.idea/
 .vscode/*.log
 __pycache__/
 reports/
