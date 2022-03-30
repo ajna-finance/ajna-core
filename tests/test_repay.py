@@ -60,7 +60,8 @@ def test_repay(
         _,
         _,
     ) = mkr_dai_pool.borrowers(borrower1)
-    assert debt == 15_000 * 1e18
+    # TODO: properly checked in forge tests
+    assert 15_000 * 1e18 <= debt <= 15_001 * 1e18
     assert round(mkr_dai_pool.totalDebt() * 1e-18, 3) == 15000.325
     assert mkr_dai_pool.lup() == 4_000 * 1e18
     assert dai.balanceOf(borrower1) == 25_000 * 1e18

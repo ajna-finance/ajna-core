@@ -28,6 +28,8 @@ interface IPool {
     function repay(uint256 _amount) external;
 
     function purchaseBid(uint256 _amount, uint256 _price) external;
+
+    function liquidate(address _borrower) external;
 }
 
 contract ERC20Pool is IPool, Clone {
@@ -96,6 +98,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 amount,
         uint256 collateral
     );
+    event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
 
     function initialize() external {
         collateralScale = 10**(18 - collateral().decimals());
@@ -399,6 +402,46 @@ contract ERC20Pool is IPool, Clone {
         emit Purchase(msg.sender, _price, _amount, collateralRequired);
     }
 
+    /// @notice Liquidates position for given borrower
+    function liquidate(address _borrower) external {
+        accumulatePoolInterest();
+
+        BorrowerInfo storage borrower = borrowers[_borrower];
+        accumulateBorrowerInterest(borrower);
+
+        uint256 debt = borrower.debt;
+        uint256 collateralDeposited = borrower.collateralDeposited;
+
+        require(debt != 0, "ajna/no-debt-to-liquidate");
+
+        uint256 collateralization = Maths.wdiv(
+            collateralDeposited,
+            Maths.wdiv(debt, lup)
+        );
+        require(
+            collateralization <= Maths.ONE_WAD,
+            "ajna/borrower-collateralized"
+        );
+
+        (uint256 lentTokens, uint256 requiredCollateral) = _buckets.liquidate(
+            debt,
+            collateralDeposited,
+            hdp,
+            inflatorSnapshot
+        );
+
+        // pool level accounting
+        totalDebt -= borrower.debt;
+        totalQuoteToken -= lentTokens;
+        totalCollateral -= requiredCollateral;
+
+        // borrower accounting
+        borrower.debt = 0;
+        borrower.collateralDeposited -= requiredCollateral;
+
+        emit Liquidate(_borrower, debt, requiredCollateral);
+    }
+
     /// @notice Called by lenders to update interest rate of the pool when actual > target utilization
     function updateInterestRate() external {
         uint256 actualUtilization = getPoolActualUtilization();
@@ -456,10 +499,10 @@ contract ERC20Pool is IPool, Clone {
         if (borrower.debt != 0 && borrower.inflatorSnapshot != 0) {
             uint256 pendingInterest = Maths.wmul(
                 borrower.debt,
-                inflatorSnapshot / borrower.inflatorSnapshot - 1
+                Maths.wdiv(inflatorSnapshot, borrower.inflatorSnapshot) -
+                    Maths.ONE_WAD
             );
             borrower.debt += pendingInterest;
-            totalDebt += pendingInterest;
         }
         borrower.inflatorSnapshot = inflatorSnapshot;
     }
@@ -479,8 +522,9 @@ contract ERC20Pool is IPool, Clone {
             uint256 down,
             uint256 amount,
             uint256 debt,
-            uint256 bucketSnapshot,
-            uint256 lpOutstanding
+            uint256 bucketInflator,
+            uint256 lpOutstanding,
+            uint256 bucketCollateral
         )
     {
         return _buckets.bucketAt(_price);
@@ -558,11 +602,13 @@ contract ERC20Pool is IPool, Clone {
             uint256 pendingInflator = getPendingInflator();
             borrowerDebt += Maths.wmul(
                 borrower.debt,
-                inflatorSnapshot - borrower.inflatorSnapshot
+                Maths.wdiv(inflatorSnapshot, borrower.inflatorSnapshot) -
+                    Maths.ONE_WAD
             );
             borrowerPendingDebt += Maths.wmul(
                 borrower.debt,
-                pendingInflator - borrower.inflatorSnapshot
+                Maths.wdiv(pendingInflator, borrower.inflatorSnapshot) -
+                    Maths.ONE_WAD
             );
             collateralEncumbered = Maths.wdiv(borrowerPendingDebt, lup);
             collateralization = Maths.wdiv(

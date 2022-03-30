@@ -192,6 +192,55 @@ library Buckets {
         bucket.collateral += _collateral;
     }
 
+    function liquidate(
+        mapping(uint256 => Bucket) storage buckets,
+        uint256 _debt,
+        uint256 _collateral,
+        uint256 _hdp,
+        uint256 _inflator
+    ) public returns (uint256 lentTokens, uint256 requiredCollateral) {
+        Bucket storage bucket = buckets[_hdp];
+
+        while (true) {
+            accumulateBucketInterest(bucket, _inflator);
+            uint256 bucketDebtToPurchase = Maths.min(_debt, bucket.debt);
+
+            uint256 bucketRequiredCollateral = Maths.min(
+                Maths.min(Maths.wdiv(_debt, bucket.price), _collateral),
+                Maths.wdiv(bucket.debt, bucket.price)
+            );
+
+            uint256 bucketLentTokens = Maths.min(
+                bucket.amount,
+                bucketDebtToPurchase
+            );
+
+            _debt -= bucketDebtToPurchase;
+            _collateral -= bucketRequiredCollateral;
+            requiredCollateral += bucketRequiredCollateral;
+
+            lentTokens += bucketLentTokens;
+
+            // bucket accounting
+            bucket.debt -= bucketDebtToPurchase;
+            bucket.amount -= bucketLentTokens;
+            bucket.collateral += bucketRequiredCollateral;
+
+            // forgive the debt when borrower has no remaining collateral but still has debt
+            if (_debt != 0 && _collateral == 0) {
+                bucket.debt = 0;
+                break;
+            }
+
+            // stop if all debt reconciliated
+            if (_debt == 0) {
+                break;
+            }
+
+            bucket = buckets[bucket.down];
+        }
+    }
+
     function reallocateDown(
         mapping(uint256 => Bucket) storage buckets,
         Bucket storage _bucket,
@@ -335,7 +384,8 @@ library Buckets {
             uint256 amount,
             uint256 debt,
             uint256 inflatorSnapshot,
-            uint256 lpOutstanding
+            uint256 lpOutstanding,
+            uint256 collateral
         )
     {
         Bucket memory bucket = buckets[_price];
@@ -347,9 +397,14 @@ library Buckets {
         debt = bucket.debt;
         inflatorSnapshot = bucket.inflatorSnapshot;
         lpOutstanding = bucket.lpOutstanding;
+        collateral = bucket.collateral;
     }
 
-    function getExchangeRate(Bucket storage bucket) internal view returns (uint256) {
+    function getExchangeRate(Bucket storage bucket)
+        internal
+        view
+        returns (uint256)
+    {
         if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
             return
                 Maths.wdiv(
