@@ -632,10 +632,6 @@ contract ERC20Pool is IPool, Clone {
         view
         returns (uint256)
     {
-        if (_amount > totalQuoteToken - totalDebt) {
-            return 0;
-        }
-
         if (lup == 0) {
             return _buckets.estimatePrice(_amount, hdp);
         }

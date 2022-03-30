@@ -9,7 +9,7 @@ library Buckets {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
         uint256 down; // next utilizable bucket price
-        uint256 amount; // total quote deposited in bucket
+        uint256 onDeposit; // quote token on deposit in bucket
         uint256 debt; // accumulated bucket debt
         uint256 inflatorSnapshot; // bucket inflator snapshot
         uint256 lpOutstanding;
@@ -28,13 +28,13 @@ library Buckets {
 
         accumulateBucketInterest(bucket, _inflator);
 
+        bucket.onDeposit += _amount;
         lup = _lup;
         if (_reallocate) {
             lup = reallocateUp(buckets, _price, _amount, _lup, _inflator);
         }
 
         lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
-        bucket.amount += _amount;
         bucket.lpOutstanding += lpTokens;
     }
 
@@ -50,17 +50,20 @@ library Buckets {
         accumulateBucketInterest(bucket, _inflator);
 
         uint256 exchangeRate = getExchangeRate(bucket);
-
         require(
-            _amount <= Maths.wmul(_lpBalance, exchangeRate) &&
-                bucket.amount >= bucket.debt,
+            _amount <= Maths.wmul(_lpBalance, exchangeRate),
             "ajna/amount-greater-than-claimable"
         );
-
-        lup = reallocateDown(buckets, bucket, _amount, _inflator);
-
         lpTokens = Maths.wdiv(_amount, exchangeRate);
-        bucket.amount -= _amount;
+
+        // Remove from deposit first
+        uint256 removeFromDeposit = Maths.min(_amount, bucket.onDeposit);
+        bucket.onDeposit -= removeFromDeposit;
+        _amount -= removeFromDeposit;
+
+        // Reallocate debt to fund remaining withdrawal
+        lup = reallocateDown(buckets, bucket, _amount, _inflator);
+        
         bucket.lpOutstanding -= lpTokens;
     }
 
@@ -107,17 +110,18 @@ library Buckets {
             // accumulate bucket interest
             accumulateBucketInterest(curLup, _inflator);
 
-            if (curLup.amount > curLup.debt) {
+            if (curLup.onDeposit > curLup.debt) {
                 curLup.inflatorSnapshot = _inflator;
-                curLupDeposit = curLup.amount - curLup.debt;
 
-                if (amountRemaining > curLupDeposit) {
+                if (amountRemaining > curLup.onDeposit) {
                     // take all on deposit from this bucket
-                    curLup.debt += curLupDeposit;
-                    amountRemaining -= curLupDeposit;
-                    loanCost += Maths.wdiv(curLupDeposit, curLup.price);
+                    curLup.debt += curLup.onDeposit;
+                    amountRemaining -= curLup.onDeposit;
+                    loanCost += Maths.wdiv(curLup.onDeposit, curLup.price);
+                    curLup.onDeposit -= curLup.onDeposit;
                 } else {
                     // take all remaining amount for loan from this bucket and exit
+                    curLup.onDeposit -= amountRemaining;
                     curLup.debt += amountRemaining;
                     loanCost += Maths.wdiv(amountRemaining, curLup.price);
                     break;
@@ -153,9 +157,11 @@ library Buckets {
                     // pay entire debt on this bucket
                     debtToPay += curLup.debt;
                     _amount -= curLup.debt;
+                    curLup.onDeposit += curLup.debt;
                     curLup.debt = 0;
                 } else {
                     // pay as much debt as possible and exit
+                    curLup.onDeposit += _amount;
                     curLup.debt -= _amount;
                     debtToPay += _amount;
                     _amount = 0;
@@ -184,11 +190,19 @@ library Buckets {
         Bucket storage bucket = buckets[_price];
         accumulateBucketInterest(bucket, _inflator);
 
-        require(_amount <= bucket.amount, "ajna/not-enough-quote-token");
+        require(
+            _amount <= bucket.onDeposit + bucket.debt,
+            "ajna/insufficient-bucket-size"
+        );
 
+        // Exchange collateral for quote token on deposit
+        uint256 purchaseFromDeposit = Maths.min(_amount, bucket.onDeposit);
+        bucket.onDeposit -= purchaseFromDeposit;
+        _amount -= purchaseFromDeposit;
+
+        // Reallocate debt to exchange for collateral
         lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
-        bucket.amount -= _amount;
         bucket.collateral += _collateral;
     }
 
@@ -211,7 +225,7 @@ library Buckets {
             );
 
             uint256 bucketLentTokens = Maths.min(
-                bucket.amount,
+                bucket.onDeposit,
                 bucketDebtToPurchase
             );
 
@@ -223,7 +237,6 @@ library Buckets {
 
             // bucket accounting
             bucket.debt -= bucketDebtToPurchase;
-            bucket.amount -= bucketLentTokens;
             bucket.collateral += bucketRequiredCollateral;
 
             // forgive the debt when borrower has no remaining collateral but still has debt
@@ -249,34 +262,27 @@ library Buckets {
     ) private returns (uint256 lup) {
         lup = _bucket.price;
         // debt reallocation
-        uint256 onDeposit;
-        if (_bucket.amount > _bucket.debt) {
-            onDeposit = _bucket.amount - _bucket.debt;
-        }
-        if (_amount > onDeposit) {
-            uint256 reallocation = _amount - onDeposit;
+        if (_amount > _bucket.onDeposit) {
+            uint256 reallocation = _amount - _bucket.onDeposit;
             if (_bucket.down != 0) {
                 Bucket storage toBucket = buckets[_bucket.down];
 
                 while (true) {
                     accumulateBucketInterest(toBucket, _inflator);
-                    
-                    uint256 toBucketOnDeposit;
-                    if (toBucket.amount > toBucket.debt) {
-                        toBucketOnDeposit = toBucket.amount - toBucket.debt;
-                    }
 
-                    if (reallocation < toBucketOnDeposit) {
+                    if (reallocation < toBucket.onDeposit) {
                         // reallocate all and exit
                         _bucket.debt -= reallocation;
                         toBucket.debt += reallocation;
+                        toBucket.onDeposit -= reallocation;
                         lup = toBucket.price;
                         break;
                     } else {
-                        if (toBucketOnDeposit != 0) {
-                            reallocation -= toBucketOnDeposit;
-                            _bucket.debt -= toBucketOnDeposit;
-                            toBucket.debt += toBucketOnDeposit;
+                        if (toBucket.onDeposit != 0) {
+                            reallocation -= toBucket.onDeposit;
+                            _bucket.debt -= toBucket.onDeposit;
+                            toBucket.debt += toBucket.onDeposit;
+                            toBucket.onDeposit -= toBucket.onDeposit;
                         }
                     }
 
@@ -316,15 +322,19 @@ library Buckets {
 
             if (_amount > curLupDebt) {
                 bucket.debt += curLupDebt;
+                bucket.onDeposit -= curLupDebt;
                 _amount -= curLupDebt;
                 curLup.debt = 0;
+                curLup.onDeposit += curLupDebt;
                 if (curLup.price == curLup.up) {
                     // nowhere to go
                     break;
                 }
             } else {
                 bucket.debt += _amount;
+                bucket.onDeposit -= _amount;
                 curLup.debt -= _amount;
+                curLup.onDeposit += _amount;
                 break;
             }
 
@@ -360,15 +370,17 @@ library Buckets {
         uint256 curLupDeposit;
 
         while (true) {
-            curLupDeposit = curLup.amount - curLup.debt;
-
-            if (_amount > curLupDeposit) {
-                _amount -= curLupDeposit;
-            } else if (_amount <= curLupDeposit) {
+            if (_amount > curLup.onDeposit) {
+                _amount -= curLup.onDeposit;
+            } else if (_amount <= curLup.onDeposit) {
                 return curLup.price;
             }
 
-            curLup = buckets[curLup.down];
+            if (curLup.down == 0) {
+                return 0;
+            } else {
+                curLup = buckets[curLup.down];
+            }
         }
 
         return 0;
@@ -396,7 +408,7 @@ library Buckets {
         price = bucket.price;
         up = bucket.up;
         down = bucket.down;
-        amount = bucket.amount;
+        amount = bucket.onDeposit;
         debt = bucket.debt;
         inflatorSnapshot = bucket.inflatorSnapshot;
         lpOutstanding = bucket.lpOutstanding;
@@ -408,13 +420,10 @@ library Buckets {
         view
         returns (uint256)
     {
-        if (bucket.amount != 0 && bucket.lpOutstanding != 0) {
-            return
-                Maths.wdiv(
-                    Maths.max(bucket.amount, bucket.debt) +
-                        Maths.wmul(bucket.collateral, bucket.price),
-                    bucket.lpOutstanding
-                );
+        uint256 size = bucket.onDeposit + bucket.debt +
+            Maths.wmul(bucket.collateral, bucket.price);
+        if (size != 0 && bucket.lpOutstanding != 0) {
+            return Maths.wdiv(size, bucket.lpOutstanding);
         }
         return Maths.ONE_WAD;
     }

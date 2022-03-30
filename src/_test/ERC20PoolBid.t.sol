@@ -56,7 +56,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         bidder.purchaseBid(pool, 2_000_000 * 1e18, 4000 * 1e18);
 
         // should revert if trying to purchase more than on bucket
-        vm.expectRevert("ajna/not-enough-quote-token");
+        vm.expectRevert("ajna/insufficient-bucket-size");
         bidder.purchaseBid(pool, 4_000 * 1e18, 4_000 * 1e18);
 
         // check bidder and pool balances
@@ -77,17 +77,17 @@ contract ERC20PoolBidTest is DSTestPlus {
             ,
             uint256 bucketCollateral
         ) = pool.bucketAt(4_000 * 1e18);
-        assertEq(deposit, 3_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(debt, 3_000 * 1e18);
         // check 3000 bucket balance before purchase bid
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             3_000 * 1e18
         );
-        assertEq(deposit, 3_000 * 1e18);
+        assertEq(deposit, 2_000 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(bucketCollateral, 0);
 
-        // purchase 2000 bid - lower than total amount in 4000 bucket
+        // purchase 2000 bid from 4000 bucket
         vm.expectEmit(true, true, false, true);
         emit Purchase(address(bidder), 4_000 * 1e18, 2_000 * 1e18, 0.5 * 1e18);
         emit Transfer(address(bidder), address(pool), 0.5 * 1e18);
@@ -98,14 +98,14 @@ contract ERC20PoolBidTest is DSTestPlus {
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             4_000 * 1e18
         );
-        assertEq(deposit, 1_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(debt, 1_000 * 1e18);
         assertEq(bucketCollateral, 0.5 * 1e18);
         // check 3000 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             3_000 * 1e18
         );
-        assertEq(deposit, 3_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(debt, 3_000 * 1e18);
         assertEq(bucketCollateral, 0);
         // check 1000 bucket balance after purchase bid
@@ -154,16 +154,22 @@ contract ERC20PoolBidTest is DSTestPlus {
             ,
             uint256 bucketCollateral
         ) = pool.bucketAt(4_000 * 1e18);
-        assertEq(deposit, 1_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(debt, 1_000 * 1e18);
         assertEq(bucketCollateral, 0);
-
         // check 3000 bucket balance before purchase bid
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             3_000 * 1e18
         );
-        assertEq(deposit, 1_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(debt, 1_000 * 1e18);
+        assertEq(bucketCollateral, 0);
+        // check 2000 bucket balance before purchase bid
+        (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
+            2_000 * 1e18
+        );
+        assertEq(deposit, 5_000 * 1e18);
+        assertEq(debt, 0);
         assertEq(bucketCollateral, 0);
 
         // purchase 1000 bid - entire amount in 4000 bucket
@@ -174,25 +180,25 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         // lup should be pushed downwards
         assertEq(pool.lup(), 2_000 * 1e18);
-        // check 4000 bucket balance before purchase Bid
+        // check 4000 bucket balance after purchase Bid
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             4_000 * 1e18
         );
         assertEq(deposit, 0);
         assertEq(debt, 0);
         assertEq(bucketCollateral, 0.25 * 1e18);
-        // check 3000 bucket balance before purchase Bid
+        // check 3000 bucket balance
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             3_000 * 1e18
         );
-        assertEq(deposit, 1_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(debt, 1_000 * 1e18);
         assertEq(bucketCollateral, 0);
-        // check 2000 bucket balance before purchase Bid
+        // check 2000 bucket balance
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             2_000 * 1e18
         );
-        assertEq(deposit, 5_000 * 1e18);
+        assertEq(deposit, 4_000 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(bucketCollateral, 0);
 

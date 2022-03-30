@@ -71,7 +71,7 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
-    assert bucket_deposit - bucket_debt == 9_000 * 1e18
+    assert bucket_deposit == 9_000 * 1e18
     assert mkr_dai_pool.totalDebt() == 21_000 * 1e18
     # check borrower
     (debt, col_deposited, _) = mkr_dai_pool.borrowers(borrower1)
@@ -97,8 +97,9 @@ def test_borrow(
     assert dai.balanceOf(mkr_dai_pool) == 20_000 * 1e18
     assert mkr_dai_pool.hdp() == 4000 * 1e18
 
-    # check debt paid in 2500 DAI bucket
-    assert mkr_dai_pool.lup() == 2500 * 1e18
+    # lup is 3000, hup is 2500
+    assert mkr_dai_pool.lup() == 3000 * 1e18
+    # check debt in 2500 DAI bucket
     (
         _,
         _,
@@ -109,8 +110,8 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(2500 * 1e18)
-    assert format(bucket_debt / 1e18, ".3f") == format(0.013, ".3f")
-    # check debt paid in 3000 DAI bucket
+    assert bucket_debt == 0
+    # check debt in 3000 DAI bucket
     (
         _,
         _,
@@ -121,8 +122,8 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
-    assert bucket_debt == 10_000 * 1e18
-    # check debt paid in 3500 DAI bucket
+    assert 10_000 * 1e18 <= bucket_debt <= 10_001 * 1e18
+    # check debt in 3500 DAI bucket
     (
         _,
         _,
@@ -133,7 +134,7 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3500 * 1e18)
-    assert bucket_debt == 10_000 * 1e18
+    assert 10_000 * 1e18 <= bucket_debt <= 10_001 * 1e18
     # check debt paid in 4000 DAI bucket
     (
         _,
@@ -145,7 +146,7 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
-    assert bucket_debt == 10_000 * 1e18
+    assert 10_000 * 1e18 <= bucket_debt <= 10_001 * 1e18
     assert round(mkr_dai_pool.totalDebt() * 1e-18, 3) == 30000.273
     # check borrower
     (debt, col_deposited, _) = mkr_dai_pool.borrowers(borrower1)
@@ -159,12 +160,12 @@ def test_borrow(
     assert transfer_event["wad"] == 9_000 * 1e18
     pool_event = tx.events["Borrow"][0][0]
     assert pool_event["borrower"] == borrower1
-    assert pool_event["lup"] == 2500 * 1e18
+    assert pool_event["lup"] == 3000 * 1e18
     assert pool_event["amount"] == 9_000 * 1e18
 
-    # deposit at 5000 and pay back entire debt
-    mkr_dai_pool.addQuoteToken(40_000 * 1e18, 5000 * 1e18, {"from": lender})
-    # check debt paid for 2500 DAI bucket
+    # deposit at 5000, reallocating debt upward
+    tx = mkr_dai_pool.addQuoteToken(40_000 * 1e18, 5000 * 1e18, {"from": lender})
+    # check balances for 2500 DAI bucket
     (
         _,
         _,
@@ -177,7 +178,7 @@ def test_borrow(
     ) = mkr_dai_pool.bucketAt(2500 * 1e18)
     assert bucket_deposit == 10_000 * 1e18
     assert bucket_debt == 0
-    # check debt paid for 3000 DAI bucket
+    # check balances for 3000 DAI bucket
     (
         _,
         _,
@@ -188,9 +189,9 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3000 * 1e18)
-    assert bucket_deposit == 10_000 * 1e18
+    assert format(bucket_deposit / 1e18, ".3f") == format(10000.013, ".3f")
     assert bucket_debt == 0
-    # check debt paid for 3500 DAI bucket
+    # check balances for 3500 DAI bucket
     (
         _,
         _,
@@ -201,9 +202,9 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(3500 * 1e18)
-    assert bucket_deposit == 10_000 * 1e18
+    assert format(bucket_deposit / 1e18, ".3f") == format(10000.130, ".3f")
     assert bucket_debt == 0
-    # check debt paid for 4000 DAI bucket
+    # check balances for 4000 DAI bucket
     (
         _,
         _,
@@ -214,9 +215,9 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(4000 * 1e18)
-    assert bucket_deposit == 10_000 * 1e18
+    assert format(bucket_deposit / 1e18, ".3f") == format(10000.130, ".3f")
     assert bucket_debt == 0
-    # check 5000 DAI bucket, accumulated all 30000 DAI debt, deposited 40000 DAI
+    # check 5000 DAI bucket, accumulated all 30000 DAI debt with interest
     (
         _,
         _,
@@ -227,7 +228,7 @@ def test_borrow(
         _,
         _,
     ) = mkr_dai_pool.bucketAt(5000 * 1e18)
-    assert bucket_deposit == 40_000 * 1e18
+    assert format(bucket_deposit / 1e18, ".3f") == format(9999.727, ".3f")
     assert format(bucket_debt / 1e18, ".3f") == format(30000.273, ".3f")
 
 
