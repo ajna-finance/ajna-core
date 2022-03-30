@@ -198,7 +198,7 @@ library Buckets {
         uint256 _collateral,
         uint256 _hdp,
         uint256 _inflator
-    ) public returns (uint256 lentTokens, uint256 requiredCollateral) {
+    ) public returns (uint256 requiredCollateral) {
         Bucket storage bucket = buckets[_hdp];
 
         while (true) {
@@ -218,8 +218,6 @@ library Buckets {
             _debt -= bucketDebtToPurchase;
             _collateral -= bucketRequiredCollateral;
             requiredCollateral += bucketRequiredCollateral;
-
-            lentTokens += bucketLentTokens;
 
             // bucket accounting
             bucket.debt -= bucketDebtToPurchase;
@@ -260,7 +258,7 @@ library Buckets {
 
                 while (true) {
                     accumulateBucketInterest(toBucket, _inflator);
-                    
+
                     uint256 toBucketOnDeposit;
                     if (toBucket.amount > toBucket.debt) {
                         toBucketOnDeposit = toBucket.amount - toBucket.debt;

@@ -53,8 +53,8 @@ contract ERC20Pool is IPool, Clone {
     uint256 public hdp;
     uint256 public lup;
 
-    // lenders lp token balances: lender address -> price bucket -> lender lp
-    mapping(address => mapping(uint256 => uint256)) public lpBalance;
+    // lenders lp token balances: lender address -> price bucket index -> lender lp
+    mapping(address => mapping(int256 => uint256)) public lpBalance;
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
@@ -147,7 +147,7 @@ contract ERC20Pool is IPool, Clone {
         }
 
         // update lender lp balance for current price bucket
-        lpBalance[msg.sender][price] += lpTokens;
+        lpBalance[msg.sender][_priceIndex] += lpTokens;
 
         // update quote token accumulator
         totalQuoteToken += _amount;
@@ -172,7 +172,7 @@ contract ERC20Pool is IPool, Clone {
         (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
             price,
             _amount,
-            lpBalance[msg.sender][price],
+            lpBalance[msg.sender][_priceIndex],
             inflatorSnapshot
         );
 
@@ -187,7 +187,7 @@ contract ERC20Pool is IPool, Clone {
             "ajna/pool-undercollateralized"
         );
 
-        lpBalance[msg.sender][price] -= lpTokens;
+        lpBalance[msg.sender][_priceIndex] -= lpTokens;
 
         quoteToken().safeTransfer(msg.sender, _amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, price, _amount, lup);
@@ -239,7 +239,7 @@ contract ERC20Pool is IPool, Clone {
     function claimCollateral(uint256 _amount, int256 _priceIndex) external {
         uint256 price = BucketMath.indexToPrice(_priceIndex);
 
-        uint256 maxClaim = lpBalance[msg.sender][price];
+        uint256 maxClaim = lpBalance[msg.sender][_priceIndex];
         require(maxClaim != 0, "ajna/no-claim-to-bucket");
 
         uint256 claimedLpTokens = _buckets.claimCollateral(
@@ -248,7 +248,7 @@ contract ERC20Pool is IPool, Clone {
             maxClaim
         );
 
-        lpBalance[msg.sender][price] -= claimedLpTokens;
+        lpBalance[msg.sender][_priceIndex] -= claimedLpTokens;
 
         collateral().safeTransfer(msg.sender, _amount / collateralScale);
         emit ClaimCollateral(msg.sender, price, _amount, claimedLpTokens);
@@ -258,9 +258,7 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of quote token to borrow
     /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
-        require(
-            _amount <= totalQuoteToken, "ajna/not-enough-liquidity"
-        );
+        require(_amount <= totalQuoteToken, "ajna/not-enough-liquidity");
 
         accumulatePoolInterest();
 
@@ -414,7 +412,7 @@ contract ERC20Pool is IPool, Clone {
             "ajna/borrower-collateralized"
         );
 
-        (uint256 lentTokens, uint256 requiredCollateral) = _buckets.liquidate(
+        uint256 requiredCollateral = _buckets.liquidate(
             debt,
             collateralDeposited,
             hdp,
