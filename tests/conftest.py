@@ -1,60 +1,67 @@
 import pytest
 from sdk import *
+from brownie import test, network
 from brownie.network.state import TxHistory
 from brownie.utils import color
+
 
 @pytest.fixture(autouse=True)
 def get_capsys(capsys):
     if not TestUtils.capsys:
         TestUtils.capsys = capsys
 
+
 @pytest.fixture()
-def sdk() -> AjnaSdk:
-    options_builder = (
-        SdkOptionsBuilder()
+def ajna_protocol() -> AjnaProtocol:
+    protocol_definition = (
+        InitialProtocolStateBuilder()
         .add_token(MKR_ADDRESS, MKR_RESERVE_ADDRESS)
         .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
         .deploy_pool(MKR_ADDRESS, DAI_ADDRESS)
     )
 
-    sdk = AjnaSdk(options_builder.build())
-    return sdk
+    ajna_protocol = AjnaProtocol()
+    ajna_protocol.get_runner().prepare_protocol_to_state_by_definition(
+        protocol_definition.build()
+    )
+
+    return ajna_protocol
 
 
 @pytest.fixture
-def deployer(sdk):
-    return sdk.deployer
+def deployer(ajna_protocol):
+    return ajna_protocol.deployer
 
 
 @pytest.fixture
-def dai(sdk):
-    return sdk.get_token(DAI_ADDRESS).get_contract()
+def dai(ajna_protocol):
+    return ajna_protocol.get_token(DAI_ADDRESS).get_contract()
 
 
 @pytest.fixture
-def mkr(sdk):
-    return sdk.get_token(MKR_ADDRESS).get_contract()
+def mkr(ajna_protocol):
+    return ajna_protocol.get_token(MKR_ADDRESS).get_contract()
 
 
 # TODO: convert to deploying all necessary libraries "libraries(deployer)"
 @pytest.fixture
-def bucket_math(sdk):
-    return sdk.bucket_math
+def bucket_math(ajna_protocol):
+    return ajna_protocol.bucket_math
 
 
 @pytest.fixture
-def mkr_dai_pool(sdk):
-    return sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
+def mkr_dai_pool(ajna_protocol):
+    return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
 
 
 @pytest.fixture
-def lenders(sdk, mkr_dai_pool):
+def lenders(ajna_protocol, mkr_dai_pool):
     amount = 200_000 * 10**18  # 200,000 DAI for each lender
+    token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_quote_token()
 
     lenders = []
     for _ in range(10):
-        lender = sdk.add_lender()
-        token = sdk.get_pool_quote_token(mkr_dai_pool)
+        lender = ajna_protocol.add_lender()
 
         token.top_up(lender, amount)
         token.approve_max(mkr_dai_pool, lender)
@@ -65,14 +72,14 @@ def lenders(sdk, mkr_dai_pool):
 
 
 @pytest.fixture
-def borrowers(sdk, mkr_dai_pool):
+def borrowers(ajna_protocol, mkr_dai_pool):
     amount = 100 * 10**18  # 100 MKR for each borrower
+    dai_token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_quote_token()
+    mkr_token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_collateral_token()
 
     borrowers = []
     for _ in range(10):
-        borrower = sdk.add_borrower()
-        dai_token = sdk.get_pool_quote_token(mkr_dai_pool)
-        mkr_token = sdk.get_pool_collateral_token(mkr_dai_pool)
+        borrower = ajna_protocol.add_borrower()
 
         mkr_token.top_up(borrower, amount)
         mkr_token.approve_max(mkr_dai_pool, borrower)
@@ -81,6 +88,7 @@ def borrowers(sdk, mkr_dai_pool):
         borrowers.append(borrower)
 
     return borrowers
+
 
 class TestUtils:
     capsys = None
@@ -177,29 +185,41 @@ class TestUtils:
                 if new.get(method):
                     overlap[method] = {}
 
-                    overlap[method]['high'] = max(old[method]['high'], new[method]['high'])
-                    overlap[method]['low'] = min(old[method]['low'], new[method]['low'])
+                    overlap[method]["high"] = max(
+                        old[method]["high"], new[method]["high"]
+                    )
+                    overlap[method]["low"] = min(old[method]["low"], new[method]["low"])
 
                     # avg
-                    overlap[method]['avg'] = self._combined_mean(old[method]['avg'],
-                                                             old[method]['count'],
-                                                             new[method]['avg'],
-                                                             new[method]['count'])
+                    overlap[method]["avg"] = self._combined_mean(
+                        old[method]["avg"],
+                        old[method]["count"],
+                        new[method]["avg"],
+                        new[method]["count"],
+                    )
 
-                    overlap[method]['avg_success'] = self._combined_mean(old[method]['avg_success'],
-                                                                     old[method]['count_success'],
-                                                                     new[method]['avg_success'],
-                                                                     new[method]['count_success'])
+                    overlap[method]["avg_success"] = self._combined_mean(
+                        old[method]["avg_success"],
+                        old[method]["count_success"],
+                        new[method]["avg_success"],
+                        new[method]["count_success"],
+                    )
 
-                    overlap[method]['count'] = old[method]['count'] + new[method]['count']
-                    overlap[method]['count_success'] = old[method]['count_success'] + new[method]['count_success']
+                    overlap[method]["count"] = (
+                        old[method]["count"] + new[method]["count"]
+                    )
+                    overlap[method]["count_success"] = (
+                        old[method]["count_success"] + new[method]["count_success"]
+                    )
 
             # include unique methods, overlap overwrites all duplicates
             return {**old, **new, **overlap}
 
         def _end_profiling(self):
-            TxHistory().gas_profile = self._combine_profiles(TestUtils.GasWatcher._cache,
-                                                             TxHistory().gas_profile)
+            network.state.TxHistory().gas_profile = self._combine_profiles(
+                TestUtils.GasWatcher._cache, network.state.TxHistory().gas_profile
+            )
+
 
 @pytest.fixture
 def test_utils():
