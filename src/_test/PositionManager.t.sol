@@ -106,11 +106,28 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), mintAmount);
 
         // check position info
-        PositionManager.Position memory position = positionManager.getPosition(
-            tokenId
-        );
-        assertEq(position.owner, alice);
-        assert(position.lpTokens != 0);
+        (address owner, ) = positionManager.positions(tokenId);
+        uint256 lpTokens = positionManager.getLPTokens(tokenId, mintPrice);
+
+        assertEq(owner, alice);
+        assert(lpTokens != 0);
+    }
+
+    function testMintPermissions() public {
+        address recipient = generateAddress();
+        address externalCaller = generateAddress();
+        uint256 mintAmount = 50 * 1e18;
+        uint256 mintPrice = 1000 * 10**18;
+
+        mintAndApproveQuoteTokens(recipient, mintAmount, approveBig);
+
+        IPositionManager.MintParams memory mintParams = IPositionManager
+            .MintParams(recipient, address(pool), mintAmount, mintPrice);
+
+        // should revert if called by a non-recipient address
+        vm.prank(externalCaller);
+        vm.expectRevert("Ajna/wrong-caller");
+        positionManager.mint(mintParams);
     }
 
     // TODO: implement test case where multiple users mints multiple NFTs
@@ -129,11 +146,12 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 tokenId = mintNFT(testAddress, mintAmount, mintPrice);
 
-        PositionManager.Position memory originalPosition = positionManager
-            .getPosition(tokenId);
+        // check position info
+        (address originalPositionOwner, ) = positionManager.positions(tokenId);
+        uint256 originalLPTokens = positionManager.getLPTokens(tokenId, mintPrice);
 
-        assertEq(originalPosition.owner, testAddress);
-        assert(originalPosition.lpTokens != 0);
+        assertEq(originalPositionOwner, testAddress);
+        assert(originalLPTokens != 0);
 
         uint256 amountToAdd = 50000;
 
@@ -155,9 +173,10 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(pool.totalQuoteToken(), mintAmount + amountToAdd);
 
-        PositionManager.Position memory updatedPosition = positionManager
-            .getPosition(tokenId);
-        assert(updatedPosition.lpTokens > originalPosition.lpTokens);
+        (address updatedPositionOwner, ) = positionManager.positions(tokenId);
+        uint256 updatedLPTokens = positionManager.getLPTokens(tokenId, mintPrice);
+
+        assert(updatedLPTokens > originalLPTokens);
     }
 
     function testDecreaseLiquidityNoDebt() public {
@@ -170,10 +189,11 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 tokenId = mintNFT(testAddress, mintAmount, mintPrice);
 
-        PositionManager.Position memory originalPosition = positionManager
-            .getPosition(tokenId);
+        // check position info
+        (address originalPositionOwner, ) = positionManager.positions(tokenId);
+        uint256 originalLPTokens = positionManager.getLPTokens(tokenId, mintPrice);
 
-        uint256 lpTokensToRemove = originalPosition.lpTokens / 4;
+        uint256 lpTokensToRemove = originalLPTokens / 4;
 
         (
             uint256 collateralTokensToBeRemoved,
@@ -203,10 +223,10 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensToBeRemoved);
 
-        PositionManager.Position memory updatedPosition = positionManager
-            .getPosition(tokenId);
+        (address updatedPositionOwner, ) = positionManager.positions(tokenId);
+        uint256 updatedLPTokens = positionManager.getLPTokens(tokenId, mintPrice);
 
-        assert(updatedPosition.lpTokens < originalPosition.lpTokens);
+        assert(updatedLPTokens < originalLPTokens);
 
         // TODO: check balance of collateral and quote
     }
@@ -221,8 +241,8 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 tokenId = mintNFT(testLender, mintAmount, testBucketPrice);
 
-        PositionManager.Position memory originalPosition = positionManager
-            .getPosition(tokenId);
+        // check position info
+        uint256 originalLPTokens = positionManager.getLPTokens(tokenId, testBucketPrice);
 
         // Borrow against the pool
         UserWithCollateral testBorrower = new UserWithCollateral();
@@ -241,7 +261,7 @@ contract PositionManagerTest is DSTestPlus {
 
         testBidder.purchaseBid(pool, 1 * 1e18, testBucketPrice);
 
-        uint256 lpTokensToRemove = originalPosition.lpTokens / 4;
+        uint256 lpTokensToRemove = originalLPTokens / 4;
         (
             uint256 collateralTokensToBeRemoved,
             uint256 quoteTokensToBeRemoved
@@ -268,10 +288,9 @@ contract PositionManagerTest is DSTestPlus {
         vm.prank(testLender);
         positionManager.decreaseLiquidity(decreaseLiquidityParams);
 
-        PositionManager.Position memory updatedPosition = positionManager
-            .getPosition(tokenId);
+        uint256 updatedLPTokens = positionManager.getLPTokens(tokenId, testBucketPrice);
 
-        assertTrue(updatedPosition.lpTokens < originalPosition.lpTokens);
+        assertTrue(updatedLPTokens < originalLPTokens);
     }
 
     // TODO: implement test case where users transfer NFTs to another user, and that user Redeems it
@@ -290,10 +309,7 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 tokenId = mintNFT(testAddress, mintAmount, mintPrice);
 
-        PositionManager.Position memory originalPosition = positionManager
-            .getPosition(tokenId);
-
-        uint256 lpTokensToRemove = originalPosition.lpTokens;
+        uint256 lpTokensToRemove = positionManager.getLPTokens(tokenId, mintPrice);
 
         (
             uint256 collateralTokensToBeRemoved,
@@ -323,19 +339,28 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensToBeRemoved);
 
-        PositionManager.Position memory updatedPosition = positionManager
-            .getPosition(tokenId);
+        // construct BurnParams
+        IPositionManager.BurnParams
+            memory burnParams = IPositionManager
+                .BurnParams(
+                    tokenId,
+                    testAddress,
+                    mintPrice
+                );
 
         vm.expectEmit(true, true, true, true);
-        emit Burn(testAddress, updatedPosition.price);
+        emit Burn(testAddress, mintPrice);
 
         vm.prank(testAddress);
-        positionManager.burn(tokenId);
+        positionManager.burn(burnParams);
 
-        PositionManager.Position memory burntPosition = positionManager
-            .getPosition(tokenId);
+        (address burntPositionOwner, ) = positionManager.positions(tokenId);
 
-        assertEq(burntPosition.owner, 0x0000000000000000000000000000000000000000);
-
+        assertEq(
+            burntPositionOwner,
+            0x0000000000000000000000000000000000000000
+        );
     }
+
+    function testGetPositionValueInQuoteTokens() public {}
 }

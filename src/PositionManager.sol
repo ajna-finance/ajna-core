@@ -14,6 +14,12 @@ interface IPositionManager {
         uint256 price;
     }
 
+    struct BurnParams {
+        uint256 tokenId;
+        address recipient;
+        uint256 price;
+    }
+
     struct IncreaseLiquidityParams {
         uint256 tokenId;
         address recipient;
@@ -35,7 +41,7 @@ interface IPositionManager {
         payable
         returns (uint256 tokenId);
 
-    function burn(uint256 tokenId) external payable;
+    function burn(BurnParams calldata params) external payable;
 
     function increaseLiquidity(IncreaseLiquidityParams calldata params)
         external
@@ -59,18 +65,24 @@ contract PositionManager is IPositionManager, PositionNFT {
 
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
-    /// @dev Mapping of tokenIds to Position information
-    mapping(uint256 => Position) private positions;
+    /// @dev Mapping of tokenIds to Position struct
+    mapping(uint256 => Position) public positions;
+
+    /// @dev Details about Ajna positions - used by Lenders interacting through PositionManager instead of directly with the Pool
+    struct Position {
+        address owner; // owner of a position
+        address pool; // address of the pool contract the position is associated to
+        mapping(uint256 => uint256) lpTokens; // priceIndex => lpTokens
+    }
 
     /// @dev The ID of the next token that will be minted. Skips 0
     uint176 private _nextId = 1;
 
-    /// @dev Details about Ajna positions - used for both Borrowers and Lenders
-    struct Position {
-        address owner; // owner of a position
-        uint256 price; // price bucket a position is associated with
-        uint256 lpTokens; // tokens representing the share of a bucket owned by a position
-        address pool; // address of the pool contract the position is associated to
+    // TODO: add allowedCallers list to enable either recipient, or listed address to execute operations?
+    // TODO: compare w/ uniswap approach (decre, burn, collect - rest transfer from msg.sender) https://github.com/Uniswap/v3-periphery/blob/main/contracts/NonfungiblePositionManager.sol#L184 
+    modifier onlyRecipient(address recipient) {
+        require(msg.sender == recipient, "Ajna/wrong-caller");
+        _;
     }
 
     // TODO: add the ability to mint across multiple price buckets?
@@ -79,6 +91,7 @@ contract PositionManager is IPositionManager, PositionNFT {
     function mint(MintParams calldata params)
         external
         payable
+        onlyRecipient(params.recipient)
         returns (uint256 tokenId)
     {
         // call out to pool contract to add quote tokens
@@ -91,24 +104,22 @@ contract PositionManager is IPositionManager, PositionNFT {
 
         _safeMint(params.recipient, (tokenId = _nextId++));
 
-        positions[tokenId] = Position(
-            params.recipient,
-            params.price,
-            lpTokensAdded,
-            params.pool
-        );
+        // create a new position associated with the newly minted tokenId
+        Position storage position = positions[tokenId];
+        position.owner = params.recipient;
+        position.pool = params.pool;
+        position.lpTokens[params.price] = lpTokensAdded;
 
         emit Mint(params.recipient, params.amount, params.price);
         return tokenId;
     }
 
     // TODO: add support for ERC721Burnable?
-    function burn(uint256 tokenId) external payable {
-        Position storage position = positions[tokenId];
-        require(position.lpTokens == 0, "Not Redeemed");
-        emit Burn(msg.sender, position.price);
-        delete positions[tokenId];
-
+    function burn(BurnParams calldata params) external payable onlyRecipient(params.recipient) {
+        Position storage position = positions[params.tokenId];
+        require(position.lpTokens[params.price] == 0, "Not Redeemed");
+        emit Burn(msg.sender, params.price);
+        delete positions[params.tokenId];
     }
 
     /// @notice Called by lenders to add liquidity to an existing position
@@ -116,6 +127,7 @@ contract PositionManager is IPositionManager, PositionNFT {
     function increaseLiquidity(IncreaseLiquidityParams calldata params)
         external
         payable
+        onlyRecipient(params.recipient)
     {
         Position storage position = positions[params.tokenId];
 
@@ -126,22 +138,18 @@ contract PositionManager is IPositionManager, PositionNFT {
         );
         require(lpTokensAdded != 0, "No liquidity added");
 
-        positions[params.tokenId].lpTokens += lpTokensAdded;
-
-        // TODO: update collateral accrued accounting
-
-        // TODO: check if price bucket changes at all from reallocation
-        // position.price = returnedData.price;
+        // update position with newly added lp shares
+        position.lpTokens[params.price] += lpTokensAdded;
 
         emit IncreaseLiquidity(params.recipient, params.amount, params.price);
     }
 
-    // TODO: add multicall support here
     /// @notice Called by lenders to remove liquidity from an existing position
     /// @param params Calldata struct supplying inputs required to update the underlying assets owed to an NFT
     function decreaseLiquidity(DecreaseLiquidityParams calldata params)
         external
         payable
+        onlyRecipient(params.recipient)
     {
         Position storage position = positions[params.tokenId];
 
@@ -150,9 +158,6 @@ contract PositionManager is IPositionManager, PositionNFT {
         // calulate equivalent underlying assets for given lpTokens
         (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool
             .getLPTokenExchangeValue(params.lpTokens, params.price);
-
-        // TODO: update lp token equation with a minimum factor to avoid rounding issues and provide base - similar to UNISWAP
-        // uint256 constant MINIMUM_LP_LIQUIDITY = 1 * 1e18;
 
         pool.removeQuoteToken(
             params.recipient,
@@ -170,7 +175,8 @@ contract PositionManager is IPositionManager, PositionNFT {
             );
         }
 
-        positions[params.tokenId].lpTokens -= params.lpTokens;
+        // update position with newly removed lp shares
+        position.lpTokens[params.price] -= params.lpTokens;
 
         // TODO: check if price updates
 
@@ -184,25 +190,27 @@ contract PositionManager is IPositionManager, PositionNFT {
 
     // -------------------- Position State View functions --------------------
 
-    function getPosition(uint256 tokenId)
-        external
-        view
-        returns (Position memory position)
-    {
-        return positions[tokenId];
+    /// @notice Returns the lpTokens accrued to a given tokenId, price pairing
+    /// @dev Nested mappings aren't returned normally as part of the default getter for a mapping
+    function getLPTokens(uint256 tokenId, uint256 price) external view returns (uint256 lpTokens) {
+        return positions[tokenId].lpTokens[price];
     }
 
     /// @notice Called to determine the amount of quote and collateral tokens, in quote terms, represented by a given tokenId
     /// @return quoteTokens The value of a NFT in terms of the pools quote token
-    function getPositionValueInQuoteTokens(uint256 tokenId) external view returns (uint256 quoteTokens) {
-        Position memory position = positions[tokenId];
+    function getPositionValueInQuoteTokens(uint256 tokenId, uint256 price)
+        external
+        view
+        returns (uint256 quoteTokens)
+    {
+        Position storage position = positions[tokenId];
 
-        uint256 lpTokens = position.lpTokens;
-        uint256 positionPrice = position.price;
+        uint256 lpTokens = position.lpTokens[price];
 
-        (uint256 collateral, uint256 quote) = IPool(position.pool).getLPTokenExchangeValue(lpTokens, positionPrice);
+        (uint256 collateral, uint256 quote) = IPool(position.pool)
+            .getLPTokenExchangeValue(lpTokens, price);
 
-        return quote + (collateral * positionPrice);
+        return quote + (collateral * price);
     }
 
     // TODO: implement
