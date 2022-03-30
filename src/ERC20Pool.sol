@@ -329,7 +329,7 @@ contract ERC20Pool is IPool, Clone {
         // && unencumberedCollateral < loanCollateralCost
         if (
             borrower.collateralDeposited <=
-            Maths.wdiv(borrower.debt + _amount, lup) &&
+            Maths.wdiv(borrower.debt + _amount, lup) ||
             borrower.collateralDeposited - Maths.wdiv(borrower.debt, lup) <
             loanCost
         ) {
@@ -569,7 +569,8 @@ contract ERC20Pool is IPool, Clone {
             uint256 debt,
             uint256 bucketInflator,
             uint256 lpOutstanding,
-            uint256 bucketCollateral
+            uint256 bucketCollateral,
+            uint256 exchangeRate
         )
     {
         return _buckets.bucketAt(_price);

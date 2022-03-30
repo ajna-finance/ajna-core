@@ -9,6 +9,7 @@ library Buckets {
     error InsufficientLpBalance(uint256 balance);
     error InsufficientBucketLiquidity(uint256 amountAvailable);
     error BorrowPriceBelowStopPrice(uint256 borrowPrice);
+    error AmountExceedsClaimable(uint256 rightToClaim);
 
     struct Bucket {
         uint256 price; // current bucket price
@@ -56,11 +57,14 @@ library Buckets {
 
         uint256 exchangeRate = getExchangeRate(bucket);
 
-        require(
-            _amount <= Maths.wmul(_lpBalance, exchangeRate) &&
-                bucket.amount >= bucket.debt,
-            "ajna/amount-greater-than-claimable"
-        );
+        if (
+            _amount > Maths.wmul(_lpBalance, exchangeRate) ||
+            bucket.amount < bucket.debt
+        ) {
+            revert AmountExceedsClaimable({
+                rightToClaim: Maths.wmul(_lpBalance, exchangeRate)
+            });
+        }
 
         lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
@@ -399,7 +403,8 @@ library Buckets {
             uint256 debt,
             uint256 inflatorSnapshot,
             uint256 lpOutstanding,
-            uint256 collateral
+            uint256 collateral,
+            uint256 exchangeRate
         )
     {
         Bucket memory bucket = buckets[_price];
@@ -412,6 +417,7 @@ library Buckets {
         inflatorSnapshot = bucket.inflatorSnapshot;
         lpOutstanding = bucket.lpOutstanding;
         collateral = bucket.collateral;
+        exchangeRate = getExchangeRate(buckets[_price]);
     }
 
     function getExchangeRate(Bucket storage bucket)

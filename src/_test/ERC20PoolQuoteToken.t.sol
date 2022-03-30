@@ -9,6 +9,7 @@ import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
 import "../libraries/Maths.sol";
+import "../libraries/Buckets.sol";
 
 contract ERC20PoolQuoteTokenTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -17,6 +18,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
     UserWithCollateral internal borrower;
     UserWithQuoteToken internal lender;
+    UserWithQuoteToken internal lender2;
 
     function setUp() public {
         collateral = new CollateralToken();
@@ -32,6 +34,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender = new UserWithQuoteToken();
         quote.mint(address(lender), 200_000 * 1e18);
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
+
+        lender2 = new UserWithQuoteToken();
+        quote.mint(address(lender2), 200_000 * 1e18);
+        lender2.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
     function testDepositQuoteToken() public {
@@ -277,6 +283,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender.addQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
         assertEq(quote.balanceOf(address(lender)), 190_000 * 1e18);
 
+        // lender2 deposit 10000 DAI at price 4000
+        lender2.addQuoteToken(pool, 200 * 1e18, 4_000 * 1e18);
+        assertEq(quote.balanceOf(address(lender2)), 199_800 * 1e18);
+
         // borrower takes a loan of 10000 DAI
         borrower.addCollateral(pool, 100 * 1e18);
         borrower.borrow(pool, 10_000 * 1e18, 4_000 * 1e18);
@@ -289,6 +299,19 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.repay(pool, 10_001 * 1e18);
 
         skip(8200);
+
+        (, , , , , , , , uint256 exchangeRate) = pool.bucketAt(4_000 * 1e18);
+        uint256 lpBalance = pool.lpBalance(address(lender2))[4_000 * 1e18];
+
+        //exchange rate
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Buckets.AmountExceedsClaimable.selector,
+                Maths.wmul(lpBalance, exchangeRate)
+            )
+        );
+        lender2.removeQuoteToken(pool, 300 * 1e18, 4_000 * 1e18);
+
         // lender removes entire amount lended
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 10_000 * 1e18);
