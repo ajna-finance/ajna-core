@@ -7,21 +7,32 @@ import "../libraries/BucketMath.sol";
 
 contract BucketMathTest is DSTestPlus {
     function testPriceToIndex() public {
-        int256 priceToTest = 5 * 10**18;
+        uint256 priceToTest = 5 * 10**18;
 
         int256 index = BucketMath.priceToIndex(priceToTest);
 
         assertEq(index, 323);
     }
 
+    function testIsValidPrice() public {
+        assertTrue(BucketMath.isValidPrice(BucketMath.MAX_PRICE));
+        assertTrue(BucketMath.isValidPrice(BucketMath.MIN_PRICE));
+        assertTrue(BucketMath.isValidPrice(49_910.043670274810022205 * 10**18));
+        assertTrue(!BucketMath.isValidPrice(2_000 * 10**18));
+    }
+
     function testPriceIndexConversion() public {
-        int256 priceToTest = BucketMath.MAX_PRICE;
+        uint256 priceToTest = BucketMath.MAX_PRICE;
         assertEq(BucketMath.indexToPrice(4156), priceToTest);
         assertEq(BucketMath.priceToIndex(priceToTest), 4156);
 
         priceToTest = 49_910.043670274810022205 * 10**18;
         assertEq(BucketMath.indexToPrice(2169), priceToTest);
         assertEq(BucketMath.priceToIndex(priceToTest), 2169);
+
+        priceToTest = 2_000.221618840727700609 * 10**18;
+        assertEq(BucketMath.indexToPrice(1524), priceToTest);
+        assertEq(BucketMath.priceToIndex(priceToTest), 1524);
 
         priceToTest = 146.575625611106531706 * 10**18;
         assertEq(BucketMath.indexToPrice(1000), priceToTest);
@@ -82,13 +93,24 @@ contract BucketMathTest is DSTestPlus {
             i < BucketMath.MAX_PRICE_INDEX;
             i++
         ) {
-            int256 priceToTest = BucketMath.indexToPrice(i);
+            uint256 priceToTest = BucketMath.indexToPrice(i);
             assertEq(BucketMath.priceToIndex(priceToTest), i);
             assertEq(priceToTest, BucketMath.indexToPrice(i));
         }
     }
 
-    function testPriceToIndexFuzzy(int256 priceToIndex) public {
+    function testClosestPriceBucket() public {
+        uint256 priceToTest = 2_000 * 10**18;
+
+        (int256 index, uint256 price) = BucketMath.getClosestBucket(
+            priceToTest
+        );
+
+        assertEq(index, 1524);
+        assertEq(price, 2000.221618840727700609 * 1e18);
+    }
+
+    function testPriceToIndexFuzzy(uint256 priceToIndex) public {
         if (
             priceToIndex < BucketMath.MIN_PRICE ||
             priceToIndex >= BucketMath.MAX_PRICE
@@ -96,9 +118,11 @@ contract BucketMathTest is DSTestPlus {
             return;
         }
 
-        int256 index = BucketMath.priceToIndex(priceToIndex);
-        int256 price = BucketMath.indexToPrice(index);
+        (int256 index, uint256 price) = BucketMath.getClosestBucket(
+            priceToIndex
+        );
 
-        assertEq(price, priceToIndex);
+        assertEq(BucketMath.indexToPrice(index), price);
+        assertEq(BucketMath.priceToIndex(price), index);
     }
 }

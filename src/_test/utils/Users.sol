@@ -37,9 +37,9 @@ contract UserWithCollateral {
     function purchaseBid(
         ERC20Pool pool,
         uint256 amount,
-        uint256 price
+        int256 priceIndex
     ) public {
-        pool.purchaseBid(amount, price);
+        pool.purchaseBid(amount, priceIndex);
     }
 
     function repay(ERC20Pool pool, uint256 amount) public {
@@ -55,17 +55,17 @@ contract UserWithQuoteToken {
     function addQuoteToken(
         ERC20Pool pool,
         uint256 amount,
-        uint256 price
+        int256 priceIndex
     ) public {
-        pool.addQuoteToken(amount, price);
+        pool.addQuoteToken(amount, priceIndex);
     }
 
     function removeQuoteToken(
         ERC20Pool pool,
         uint256 amount,
-        uint256 price
+        int256 priceIndex
     ) public {
-        pool.removeQuoteToken(amount, price);
+        pool.removeQuoteToken(amount, priceIndex);
     }
 
     function borrow(
@@ -79,9 +79,9 @@ contract UserWithQuoteToken {
     function claimCollateral(
         ERC20Pool pool,
         uint256 amount,
-        uint256 price
+        int256 priceIndex
     ) public {
-        pool.claimCollateral(amount, price);
+        pool.claimCollateral(amount, priceIndex);
     }
 
     function liquidate(ERC20Pool pool, address borrower) public {
