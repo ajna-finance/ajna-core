@@ -4,7 +4,7 @@ pragma solidity 0.8.11;
 import {PositionNFT} from "./PositionNFT.sol";
 import {IPool} from "./ERC20Pool.sol";
 
-import "../lib/hardhat/packages/hardhat-core/console.sol";
+import {console} from "@hardhat/hardhat-core/console.sol";
 
 interface IPositionManager {
     struct MintParams {
