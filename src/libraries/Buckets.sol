@@ -50,17 +50,20 @@ library Buckets {
         accumulateBucketInterest(bucket, _inflator);
 
         uint256 exchangeRate = getExchangeRate(bucket);
-
         require(
-            _amount <= Maths.wmul(_lpBalance, exchangeRate) &&
-                bucket.amount >= bucket.debt,
+            _amount <= Maths.wmul(_lpBalance, exchangeRate),
             "ajna/amount-greater-than-claimable"
         );
-
-        lup = reallocateDown(buckets, bucket, _amount, _inflator);
-
         lpTokens = Maths.wdiv(_amount, exchangeRate);
-        bucket.amount -= _amount;
+
+        // Remove from deposit first
+        uint256 removeFromDeposit = Maths.min(_amount, bucket.amount);
+        bucket.amount -= removeFromDeposit;
+        _amount -= removeFromDeposit;
+
+        // Reallocate debt to fund remaining withdrawal
+        lup = reallocateDown(buckets, bucket, _amount, _inflator);
+        
         bucket.lpOutstanding -= lpTokens;
     }
 
