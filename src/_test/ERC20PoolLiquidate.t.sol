@@ -85,7 +85,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerInflator, 1 * 1e18);
 
         // check pool balance
-        assertEq(pool.totalQuoteToken(), 21_000 * 1e18);
+        assertEq(pool.totalQuoteToken(), 9_000 * 1e18);
         assertEq(pool.totalDebt(), 12_000 * 1e18);
         assertEq(pool.totalCollateral(), 202 * 1e18);
         assertEq(pool.lup(), 100.332368143282009890 * 1e18);
@@ -153,7 +153,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerInflator, 1.000013001099140905 * 1e18);
 
         // check pool balance and that interest accumulated
-        assertEq(pool.totalQuoteToken(), 10_000 * 1e18);
+        assertEq(pool.totalQuoteToken(), 9_000 * 1e18);
         assertEq(pool.totalDebt(), 1000.013001099140905000 * 1e18);
         assertEq(pool.totalCollateral(), 200.890773948998099718 * 1e18);
         assertEq(pool.inflatorSnapshot(), 1.000013001099140905 * 1e18);
@@ -286,7 +286,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerInflator, 1 * 1e18);
 
         // check pool balance
-        assertEq(pool.totalQuoteToken(), 1_000 * 1e18);
+        assertEq(pool.totalQuoteToken(), 0);
         assertEq(pool.totalDebt(), 1_000 * 1e18);
         assertEq(pool.totalCollateral(), 200.765832484960910633 * 1e18);
     }
@@ -393,7 +393,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerInflator, 1.171809293279796920 * 1e18);
 
         // check pool balance
-        assertEq(pool.totalQuoteToken(), 1_000 * 1e18);
+        assertEq(pool.totalQuoteToken(), 0);
         assertEq(pool.totalDebt(), 1_000 * 1e18);
         assertEq(pool.totalCollateral(), 200.553791036413161553 * 1e18);
     }

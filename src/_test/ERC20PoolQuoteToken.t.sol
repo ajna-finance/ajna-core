@@ -282,7 +282,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.borrow(pool, 5_000 * 1e18, 4_000 * 1e18);
 
         // should revert if trying to remove entire amount lended
-        vm.expectRevert("ajna/amount-greater-than-claimable");
+        vm.expectRevert("ajna/failed-to-reallocate");
         lender.removeQuoteToken(pool, 10_000 * 1e18, 1663);
 
         // remove 4000 DAI at price of 1 MKR = 4000 DAI
@@ -297,7 +297,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender.removeQuoteToken(pool, 4_000 * 1e18, 1663);
 
         // check pool balances
-        assertEq(pool.totalQuoteToken(), 6_000 * 1e18);
+        assertEq(pool.totalQuoteToken(), 1_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 1_000 * 1e18);
         // check lender balance
         assertEq(quote.balanceOf(address(lender)), 194_000 * 1e18);
@@ -374,7 +374,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // check lup moved down to 3_010.892022197881557845
         assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
         // check pool balances
-        assertEq(pool.totalQuoteToken(), 5_800 * 1e18);
+        assertEq(pool.totalQuoteToken(), 2_800 * 1e18);
         assertEq(pool.totalDebt(), 3_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 2_800 * 1e18);
         // check lender balance
@@ -404,7 +404,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         );
     }
 
-    function testRemoveQuoteTokenBellowLup() public {
+    function testRemoveQuoteTokenBelowLup() public {
         // lender deposit 5000 DAI in 3 buckets
         // (1663, 4_000.927678580567537368), (1606, 3_010.892022197881557845) and (1524, 2_000.221618840727700609)
         lender.addQuoteToken(pool, 5_000 * 1e18, 1663);
@@ -430,7 +430,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // check same lup
         assertEq(pool.lup(), 4_000.927678580567537368 * 1e18);
         // check pool balances
-        assertEq(pool.totalQuoteToken(), 14_000 * 1e18);
+        assertEq(pool.totalQuoteToken(), 11_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 11_000 * 1e18);
 
         // check 4000 bucket balance
