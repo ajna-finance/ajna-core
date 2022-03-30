@@ -294,6 +294,11 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(quote.balanceOf(address(pool)), 0);
         // check lender balance
         assertEq(quote.balanceOf(address(lender)), 200_000 * 1e18);
+        // check 4000 bucket balance
+        (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = pool
+            .bucketAt(4_000 * 1e18);
+        assertEq(deposit, 0);
+        assertEq(debt, 0);
     }
 
     function testRemoveQuoteTokenWithDebtReallocation() public {

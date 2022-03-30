@@ -143,7 +143,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
         assertEq(pool.lpBalance(address(lender), 3_000 * 1e18), 4_000 * 1e18);
 
-        // purchase bid
+        // bidder purchases some of the middle bucket
         bidder.purchaseBid(pool, 1_500 * 1e18, 3_000 * 1e18);
 
         // check balances
@@ -158,7 +158,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectRevert("ajna/insufficient-amount-to-claim");
         lender.claimCollateral(pool, 2 * 1e18, 3_000 * 1e18);
 
-        // claim 0.5 collateral
+        // lender claims 0.5 collateral
         vm.expectEmit(true, false, false, true);
         emit Transfer(address(pool), address(lender), 0.5 * 1e18);
         emit ClaimCollateral(

@@ -95,10 +95,12 @@ def test_claim_collateral(
     # TODO: properly check in forge tests
     assert 1_000 * 1e18 <= bucket_debt <= 1_001 * 1e18
     assert bucket_deposit == 1_500 * 1e18
-    assert lpOutstanding == 2_500 * 1e18
+    # due to delay in brownie, the claimCollateral call required slightly less 
+    # LP to claim the same amount of collateral; tested without delay in forge
+    assert 2_500 * 1e18 <= lpOutstanding <= 2_501 * 1e18
 
     # claimer lp tokens for pool should be diminished
-    assert mkr_dai_pool.lpBalance(lender, 3_000 * 1e18) == 2_500 * 1e18
+    assert 2_500 * 1e18 <= mkr_dai_pool.lpBalance(lender, 3_000 * 1e18) <= 2_501 * 1e18
     # claimer collateral balance should increase with claimed amount
     assert mkr.balanceOf(lender) == 0.5 * 1e18
     # claimer quote token balance should stay the same
@@ -118,7 +120,7 @@ def test_claim_collateral(
     assert pool_event["claimer"] == lender
     assert pool_event["price"] == 3_000 * 1e18
     assert pool_event["amount"] == 0.5 * 1e18
-    assert pool_event["lps"] == 1_500 * 1e18
+    assert 1_499 * 1e18 <= pool_event["lps"] <= 1_500 * 1e18
 
     with capsys.disabled():
         print("\n==================================")
