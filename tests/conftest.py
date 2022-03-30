@@ -16,8 +16,10 @@ def ajna_protocol() -> AjnaProtocol:
     protocol_definition = (
         InitialProtocolStateBuilder()
         .add_token(MKR_ADDRESS, MKR_RESERVE_ADDRESS)
+        .add_token(WETH_ADDRESS, WETH_RESERVE_ADDRESS)
         .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
         .deploy_pool(MKR_ADDRESS, DAI_ADDRESS)
+        .deploy_pool(WETH_ADDRESS, DAI_ADDRESS)
     )
 
     ajna_protocol = AjnaProtocol()
@@ -44,6 +46,12 @@ def mkr(ajna_protocol):
 
 
 @pytest.fixture
+def weth(ajna_protocol):
+    return ajna_protocol.get_token(WETH_ADDRESS).get_contract()
+
+
+# TODO: convert to deploying all necessary libraries "libraries(deployer)"
+@pytest.fixture
 def bucket_math(ajna_protocol):
     return ajna_protocol.bucket_math
 
@@ -52,10 +60,17 @@ def bucket_math(ajna_protocol):
 def mkr_dai_pool(ajna_protocol):
     return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
 
+
 @pytest.fixture
 def position_manager(deployer):
     position_manager = PositionManager.deploy({"from": deployer})
     yield position_manager
+
+
+@pytest.fixture
+def weth_dai_pool(ajna_protocol):
+    return ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS).get_contract()
+
 
 @pytest.fixture
 def lenders(ajna_protocol, mkr_dai_pool):
