@@ -169,8 +169,8 @@ def test_quote_removal_loan_paid_back(
     # in forge test, no time passes between borrow and repayment
     assert bucket_deposit < 0.0001 * 1e18
     assert bucket_debt == 0
-    assert lpOutstanding == 0
-    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) == 0
+    assert lpOutstanding < 0.0001 * 1e18
+    assert mkr_dai_pool.lpBalance(lender, 4000 * 1e18) < 0.0001 * 1e18
     # check tx events
     transfer_event = tx.events["Transfer"][0][0]
     assert transfer_event["src"] == mkr_dai_pool
