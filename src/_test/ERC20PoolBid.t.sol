@@ -204,7 +204,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(pool.totalCollateral(), 100 * 1e18);
     }
 
-    function testPurchaseBidNotEnoughLiquidity() public {
+    function testPurchaseBidCannotReallocate() public {
         lender.addQuoteToken(pool, 1_000 * 1e18, 4_000 * 1e18);
         lender.addQuoteToken(pool, 1_000 * 1e18, 3_000 * 1e18);
         lender.addQuoteToken(pool, 500 * 1e18, 2_000 * 1e18);
@@ -217,8 +217,8 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         assertEq(pool.lup(), 3_000 * 1e18);
 
-        // should revert if trying to bid more than available liquidity (1000 vs 500)
-        vm.expectRevert("ajna/not-enough-liquidity");
+        // should revert if debt cannot be reallocated
+        vm.expectRevert("ajna/failed-to-reallocate");
         bidder.purchaseBid(pool, 1_000 * 1e18, 4_000 * 1e18);
     }
 

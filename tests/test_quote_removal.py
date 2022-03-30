@@ -83,17 +83,18 @@ def test_quote_removal_loan_not_paid_back(
 
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})
     mkr_dai_pool.borrow(5_000 * 1e18, 4000 * 1e18, {"from": borrower})
+    assert mkr_dai_pool.totalQuoteToken() == 5_000 * 1e18
 
     # should fail if trying to remove entire amount lended
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
         mkr_dai_pool.removeQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
-    assert exc.value.revert_msg == "ajna/amount-greater-than-claimable"
+    assert exc.value.revert_msg == "ajna/failed-to-reallocate"
 
     # remove 4000 DAI at price of 1 MKR = 4000 DAI
     tx = mkr_dai_pool.removeQuoteToken(4_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert dai.balanceOf(mkr_dai_pool) == 1_000 * 1e18
     assert dai.balanceOf(lender) == 194_000 * 1e18
-    assert mkr_dai_pool.totalQuoteToken() == 6_000 * 1e18
+    assert mkr_dai_pool.totalQuoteToken() == 1_000 * 1e18
     # check bucket balance
     (
         _,
@@ -136,6 +137,7 @@ def test_quote_removal_loan_paid_back(
 
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})
     mkr_dai_pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrower})
+    assert mkr_dai_pool.totalQuoteToken() == 0
 
     dai.transfer(borrower, 1 * 1e18, {"from": lenders[1]})
     mkr_dai_pool.repay(10_001 * 1e18, {"from": borrower})
@@ -148,7 +150,7 @@ def test_quote_removal_loan_paid_back(
     tx = mkr_dai_pool.removeQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
     assert format(dai.balanceOf(mkr_dai_pool) / 1e18, ".3f") == format(0, ".3f")
     assert dai.balanceOf(lender) == 200_000 * 1e18
-    assert mkr_dai_pool.totalQuoteToken() == 0
+    assert 0 <= mkr_dai_pool.totalQuoteToken() <= 1 * 1e18
     # check bucket balance
     (
         _,
@@ -202,7 +204,7 @@ def test_quote_removal_from_lup_with_reallocation(
         tx = mkr_dai_pool.removeQuoteToken(1_000 * 1e18, 4000 * 1e18, {"from": lender})
         assert dai.balanceOf(mkr_dai_pool) == 2_800 * 1e18
         assert dai.balanceOf(lender) == 194_200 * 1e18
-        assert mkr_dai_pool.totalQuoteToken() == 5_800 * 1e18
+        assert mkr_dai_pool.totalQuoteToken() == 2_800 * 1e18
 
         # check lup moved down to 3000
         assert mkr_dai_pool.lup() == 3_000 * 1e18
@@ -289,7 +291,7 @@ def test_quote_removal_below_lup(
         # lender removes 1000 DAI
         tx = mkr_dai_pool.removeQuoteToken(1_000 * 1e18, 3000 * 1e18, {"from": lender})
         assert dai.balanceOf(mkr_dai_pool) == 11_000 * 1e18
-        assert mkr_dai_pool.totalQuoteToken() == 14_000 * 1e18
+        assert mkr_dai_pool.totalQuoteToken() == 11_000 * 1e18
 
         # check lup same 4000
         assert mkr_dai_pool.lup() == 4_000 * 1e18

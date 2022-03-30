@@ -260,7 +260,7 @@ library Buckets {
 
                 while (true) {
                     accumulateBucketInterest(toBucket, _inflator);
-
+                    
                     uint256 toBucketOnDeposit;
                     if (toBucket.amount > toBucket.debt) {
                         toBucketOnDeposit = toBucket.amount - toBucket.debt;
@@ -289,6 +289,9 @@ library Buckets {
 
                     toBucket = buckets[toBucket.down];
                 }
+            } else {
+                // lup started at the bottom
+                require(reallocation == 0, "ajna/failed-to-reallocate");
             }
         }
     }
