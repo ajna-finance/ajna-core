@@ -79,7 +79,7 @@ contract PositionManager is IPositionManager, PositionNFT {
     uint176 private _nextId = 1;
 
     // TODO: add allowedCallers list to enable either recipient, or listed address to execute operations?
-    // TODO: compare w/ uniswap approach (decre, burn, collect - rest transfer from msg.sender) https://github.com/Uniswap/v3-periphery/blob/main/contracts/NonfungiblePositionManager.sol#L184 
+    // TODO: compare w/ uniswap approach (decre, burn, collect - rest transfer from msg.sender) https://github.com/Uniswap/v3-periphery/blob/main/contracts/NonfungiblePositionManager.sol#L184
     modifier onlyRecipient(address recipient) {
         require(msg.sender == recipient, "Ajna/wrong-caller");
         _;
@@ -115,7 +115,11 @@ contract PositionManager is IPositionManager, PositionNFT {
     }
 
     // TODO: add support for ERC721Burnable?
-    function burn(BurnParams calldata params) external payable onlyRecipient(params.recipient) {
+    function burn(BurnParams calldata params)
+        external
+        payable
+        onlyRecipient(params.recipient)
+    {
         Position storage position = positions[params.tokenId];
         require(position.lpTokens[params.price] == 0, "Not Redeemed");
         emit Burn(msg.sender, params.price);
@@ -192,7 +196,11 @@ contract PositionManager is IPositionManager, PositionNFT {
 
     /// @notice Returns the lpTokens accrued to a given tokenId, price pairing
     /// @dev Nested mappings aren't returned normally as part of the default getter for a mapping
-    function getLPTokens(uint256 tokenId, uint256 price) external view returns (uint256 lpTokens) {
+    function getLPTokens(uint256 tokenId, uint256 price)
+        external
+        view
+        returns (uint256 lpTokens)
+    {
         return positions[tokenId].lpTokens[price];
     }
 

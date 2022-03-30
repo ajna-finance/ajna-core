@@ -148,7 +148,10 @@ contract PositionManagerTest is DSTestPlus {
 
         // check position info
         (address originalPositionOwner, ) = positionManager.positions(tokenId);
-        uint256 originalLPTokens = positionManager.getLPTokens(tokenId, mintPrice);
+        uint256 originalLPTokens = positionManager.getLPTokens(
+            tokenId,
+            mintPrice
+        );
 
         assertEq(originalPositionOwner, testAddress);
         assert(originalLPTokens != 0);
@@ -174,7 +177,10 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), mintAmount + amountToAdd);
 
         (address updatedPositionOwner, ) = positionManager.positions(tokenId);
-        uint256 updatedLPTokens = positionManager.getLPTokens(tokenId, mintPrice);
+        uint256 updatedLPTokens = positionManager.getLPTokens(
+            tokenId,
+            mintPrice
+        );
 
         assert(updatedLPTokens > originalLPTokens);
     }
@@ -191,7 +197,10 @@ contract PositionManagerTest is DSTestPlus {
 
         // check position info
         (address originalPositionOwner, ) = positionManager.positions(tokenId);
-        uint256 originalLPTokens = positionManager.getLPTokens(tokenId, mintPrice);
+        uint256 originalLPTokens = positionManager.getLPTokens(
+            tokenId,
+            mintPrice
+        );
 
         uint256 lpTokensToRemove = originalLPTokens / 4;
 
@@ -224,7 +233,10 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensToBeRemoved);
 
         (address updatedPositionOwner, ) = positionManager.positions(tokenId);
-        uint256 updatedLPTokens = positionManager.getLPTokens(tokenId, mintPrice);
+        uint256 updatedLPTokens = positionManager.getLPTokens(
+            tokenId,
+            mintPrice
+        );
 
         assert(updatedLPTokens < originalLPTokens);
 
@@ -242,7 +254,10 @@ contract PositionManagerTest is DSTestPlus {
         uint256 tokenId = mintNFT(testLender, mintAmount, testBucketPrice);
 
         // check position info
-        uint256 originalLPTokens = positionManager.getLPTokens(tokenId, testBucketPrice);
+        uint256 originalLPTokens = positionManager.getLPTokens(
+            tokenId,
+            testBucketPrice
+        );
 
         // Borrow against the pool
         UserWithCollateral testBorrower = new UserWithCollateral();
@@ -288,7 +303,10 @@ contract PositionManagerTest is DSTestPlus {
         vm.prank(testLender);
         positionManager.decreaseLiquidity(decreaseLiquidityParams);
 
-        uint256 updatedLPTokens = positionManager.getLPTokens(tokenId, testBucketPrice);
+        uint256 updatedLPTokens = positionManager.getLPTokens(
+            tokenId,
+            testBucketPrice
+        );
 
         assertTrue(updatedLPTokens < originalLPTokens);
     }
@@ -298,7 +316,6 @@ contract PositionManagerTest is DSTestPlus {
         emit log("testing transfer");
     }
 
-    // TODO: implement
     function testBurn() public {
         // generate a new address
         address testAddress = generateAddress();
@@ -309,7 +326,10 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 tokenId = mintNFT(testAddress, mintAmount, mintPrice);
 
-        uint256 lpTokensToRemove = positionManager.getLPTokens(tokenId, mintPrice);
+        uint256 lpTokensToRemove = positionManager.getLPTokens(
+            tokenId,
+            mintPrice
+        );
 
         (
             uint256 collateralTokensToBeRemoved,
@@ -340,13 +360,8 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensToBeRemoved);
 
         // construct BurnParams
-        IPositionManager.BurnParams
-            memory burnParams = IPositionManager
-                .BurnParams(
-                    tokenId,
-                    testAddress,
-                    mintPrice
-                );
+        IPositionManager.BurnParams memory burnParams = IPositionManager
+            .BurnParams(tokenId, testAddress, mintPrice);
 
         vm.expectEmit(true, true, true, true);
         emit Burn(testAddress, mintPrice);
