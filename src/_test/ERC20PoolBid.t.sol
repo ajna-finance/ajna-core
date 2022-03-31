@@ -47,10 +47,10 @@ contract ERC20PoolBidTest is DSTestPlus {
         // borrower takes a loan of 4000 DAI making bucket 4_000.927678580567537368 to be fully utilized
         borrower.addCollateral(pool, 100 * 1e18);
         borrower.borrow(pool, 4_000 * 1e18, 3_000 * 1e18);
-        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(pool.lup(), 1606);
 
         // should revert if invalid price
-        vm.expectRevert("ajna/invalid-index");
+        vm.expectRevert("ajna/no-quote-token-to-exchange");
         bidder.purchaseBid(pool, 1 * 1e18, 3_000 * 1e18);
 
         // should revert if bidder doesn't have enough collateral
@@ -104,7 +104,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         );
         bidder.purchaseBid(pool, 2_000 * 1e18, 1663);
 
-        assertEq(pool.lup(), 1_004.989662429170775094 * 1e18);
+        assertEq(pool.lup(), 1386);
         // check 4_000.927678580567537368 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             4_000.927678580567537368 * 1e18
@@ -160,7 +160,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(collateral.balanceOf(address(pool)), 100 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 5_000 * 1e18);
         assertEq(pool.totalCollateral(), 100 * 1e18);
-        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(pool.lup(), 1606);
 
         // check 4_000.927678580567537368 bucket balance before purchase Bid
         (
@@ -207,7 +207,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         bidder.purchaseBid(pool, 1_000 * 1e18, 1663);
 
         // lup should be pushed downwards
-        assertEq(pool.lup(), 2_000.221618840727700609 * 1e18);
+        assertEq(pool.lup(), 1524);
         // check 4000 bucket balance after purchase Bid
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             4_000.927678580567537368 * 1e18
@@ -257,7 +257,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         // borrower takes a loan of 1000 DAI from bucket 3000
         borrower.borrow(pool, 1_000 * 1e18, 3_000 * 1e18);
 
-        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(pool.lup(), 1606);
 
         // should revert if debt cannot be reallocated
         vm.expectRevert("ajna/failed-to-reallocate");
@@ -277,7 +277,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         // borrower takes a loan of 1000 DAI from bucket 3000
         borrower.borrow(pool, 1_000 * 1e18, 3_000 * 1e18);
 
-        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(pool.lup(), 1606);
 
         // should revert when leave pool undercollateralized
         vm.expectRevert("ajna/pool-undercollateralized");

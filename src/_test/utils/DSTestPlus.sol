@@ -16,13 +16,13 @@ contract DSTestPlus is DSTest, stdCheats {
         address indexed lender,
         uint256 indexed price,
         uint256 amount,
-        uint256 lup
+        int256 lup
     );
     event RemoveQuoteToken(
         address indexed lender,
         uint256 indexed price,
         uint256 amount,
-        uint256 lup
+        int256 lup
     );
     event AddCollateral(address indexed borrower, uint256 amount);
     event RemoveCollateral(address indexed borrower, uint256 amount);
@@ -32,8 +32,8 @@ contract DSTestPlus is DSTest, stdCheats {
         uint256 amount,
         uint256 lps
     );
-    event Borrow(address indexed borrower, uint256 lup, uint256 amount);
-    event Repay(address indexed borrower, uint256 lup, uint256 amount);
+    event Borrow(address indexed borrower, int256 lup, uint256 amount);
+    event Repay(address indexed borrower, int256 lup, uint256 amount);
     event UpdateInterestRate(uint256 oldRate, uint256 newRate);
     event Purchase(
         address indexed bidder,

@@ -56,7 +56,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 21_000 * 1e18);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.totalCollateral(), 202 * 1e18);
-        assertEq(pool.hdp(), 10_016.501589292607751220 * 1e18);
+        assertEq(pool.hdp(), 1847);
 
         // first borrower takes a loan of 11_000 DAI, pushing lup to 9_000
         borrower.borrow(pool, 11_000 * 1e18, 9_000 * 1e18);
@@ -88,7 +88,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 9_000 * 1e18);
         assertEq(pool.totalDebt(), 12_000 * 1e18);
         assertEq(pool.totalCollateral(), 202 * 1e18);
-        assertEq(pool.lup(), 100.332368143282009890 * 1e18);
+        assertEq(pool.lup(), 924);
         assertEq(quote.balanceOf(address(pool)), 9_000 * 1e18);
 
         assertEq(pool.lastInflatorSnapshotUpdate(), 0);
@@ -158,7 +158,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.totalCollateral(), 200.890773948998099718 * 1e18);
         assertEq(pool.inflatorSnapshot(), 1.000013001099140905 * 1e18);
         assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
-        assertEq(pool.lup(), 100.332368143282009890 * 1e18);
+        assertEq(pool.lup(), 924);
         assertEq(quote.balanceOf(address(pool)), 9_000 * 1e18);
 
         // check 10_016.501589292607751220 bucket balance after liquidate
@@ -203,7 +203,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 13_000 * 1e18);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.totalCollateral(), 202 * 1e18);
-        assertEq(pool.hdp(), 10_016.501589292607751220 * 1e18);
+        assertEq(pool.hdp(), 1847);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
         borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);
@@ -308,7 +308,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 13_000 * 1e18);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.totalCollateral(), 202 * 1e18);
-        assertEq(pool.hdp(), 10_016.501589292607751220 * 1e18);
+        assertEq(pool.hdp(), 1847);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_000
         borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);

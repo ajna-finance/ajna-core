@@ -51,7 +51,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check pool balance
         assertEq(pool.totalQuoteToken(), 50_000 * 1e18);
         assertEq(pool.totalDebt(), 0);
-        assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
+        assertEq(pool.hdp(), 1663);
 
         // should revert if borrower wants to borrow a greater amount than in pool
         vm.expectRevert("ajna/not-enough-liquidity");
@@ -82,17 +82,13 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         vm.expectEmit(true, false, false, true);
         emit Transfer(address(pool), address(borrower), 21_000 * 1e18);
-        emit Borrow(
-            address(borrower),
-            3_010.892022197881557845 * 1e18,
-            21_000 * 1e18
-        );
+        emit Borrow(address(borrower), 1606, 21_000 * 1e18);
         borrower.borrow(pool, 21_000 * 1e18, 2_500 * 1e18);
 
         assertEq(quote.balanceOf(address(borrower)), 21_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 29_000 * 1e18);
-        assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
-        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(pool.hdp(), 1663);
+        assertEq(pool.lup(), 1606);
 
         // check bucket deposit and debt at 3_010.892022197881557845
         (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(
@@ -114,17 +110,13 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // borrow remaining 9_000 DAI from LUP
         vm.expectEmit(true, false, false, true);
         emit Transfer(address(pool), address(borrower), 9_000 * 1e18);
-        emit Borrow(
-            address(borrower),
-            3_010.892022197881557845 * 1e18,
-            9_000 * 1e18
-        );
+        emit Borrow(address(borrower), 1606, 9_000 * 1e18);
         borrower.borrow(pool, 9_000 * 1e18, 2_500 * 1e18);
 
         assertEq(quote.balanceOf(address(borrower)), 30_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 20_000 * 1e18);
-        assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
-        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(pool.hdp(), 1663);
+        assertEq(pool.lup(), 1606);
 
         // check bucket debt at 2_503.519024294695168295
         (, , , deposit, debt, , , ) = pool.bucketAt(

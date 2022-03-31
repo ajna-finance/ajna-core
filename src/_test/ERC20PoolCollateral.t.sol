@@ -102,7 +102,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
     function testClaimCollateral() public {
         // should fail if invalid price
-        vm.expectRevert("ajna/invalid-index");
+        vm.expectRevert("ajna/no-claim-to-bucket");
         lender.claimCollateral(pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // should revert if no lp tokens in bucket
@@ -125,7 +125,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         // borrower takes a loan of 4000 DAI
         borrower.addCollateral(pool, 100 * 1e18);
         borrower.borrow(pool, 4_000 * 1e18, 3_000 * 1e18);
-        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(pool.lup(), 1606);
 
         // check 3_010.892022197881557845 bucket balance before purchase Bid
         (
