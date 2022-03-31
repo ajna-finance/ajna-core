@@ -91,8 +91,6 @@ class AjnaProtocolRunner:
                     for pool in self.protocol.pools:
                         token.approve_max(pool.get_contract(), borrower)
 
-            self.protocol.borrowers.append(borrower)
-
     def prepare_lenders_by_definition(self, protocol_definition: InitialProtocolState):
         """
         Prepares Lenders according to given protocol_definition.
@@ -112,8 +110,6 @@ class AjnaProtocolRunner:
                 if token_options.approve_max:
                     for pool in self.protocol.pools:
                         token.approve_max(pool.get_contract(), lender)
-
-            self.protocol.lenders.append(lender)
 
     def perform_lenders_initial_pool_interactions_by_definition(
         self, protocol_definition: InitialProtocolState
