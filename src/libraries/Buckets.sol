@@ -5,8 +5,6 @@ pragma solidity 0.8.11;
 import "./Maths.sol";
 
 library Buckets {
-    event debugLog(uint256 lup, uint256 stopPrice, uint256 amountRemaining);
-
     struct Bucket {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price

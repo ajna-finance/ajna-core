@@ -99,7 +99,6 @@ contract ERC20Pool is IPool, Clone {
         uint256 collateral
     );
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
-    event debugLup(uint256 lup);
 
     function initialize() external {
         collateralScale = 10**(18 - collateral().decimals());
