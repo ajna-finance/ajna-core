@@ -41,7 +41,10 @@ interface IPool {
 
     function purchaseBid(uint256 _amount, uint256 _price) external;
 
-    function getLPTokenBalance(address owner, uint256 _price) external view returns (uint256 lpTokens);
+    function getLPTokenBalance(address owner, uint256 _price)
+        external
+        view
+        returns (uint256 lpTokens);
 
     function getLPTokenExchangeValue(uint256 lpTokens, uint256 price)
         external
@@ -545,7 +548,11 @@ contract ERC20Pool is IPool, Clone {
             );
     }
 
-    function getLPTokenBalance(address owner, uint256 _price) external view returns (uint256 lpTokens) {
+    function getLPTokenBalance(address owner, uint256 _price)
+        external
+        view
+        returns (uint256 lpTokens)
+    {
         return lpBalance[owner][_price];
     }
 

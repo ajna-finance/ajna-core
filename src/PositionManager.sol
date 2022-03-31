@@ -12,12 +12,11 @@ interface IPositionManager {
         address pool;
     }
 
-    // TODO: set bounds for the number of positions that can be memorialized in one go / fix array size
     struct MemorializePositionsParams {
         uint256 tokenId;
         address owner;
         address pool;
-        uint[] prices;
+        uint256[] prices; // the array of price buckets with LP tokens to be tracked by a NFT
     }
 
     struct BurnParams {
@@ -47,7 +46,8 @@ interface IPositionManager {
         payable
         returns (uint256 tokenId);
 
-    function memorializePositions(MemorializePositionsParams calldata params) external; 
+    function memorializePositions(MemorializePositionsParams calldata params)
+        external;
 
     function burn(BurnParams calldata params) external payable;
 
@@ -94,16 +94,15 @@ contract PositionManager is IPositionManager, PositionNFT {
         _;
     }
 
-    // TODO: add the ability to mint across multiple price buckets?
     /// @notice Called by lenders to add quote tokens and receive a representative NFT
     /// @param params Calldata struct supplying inputs required to add quote tokens, and receive the NFT
+    /// @return tokenId The tokenId of the newly minted NFT
     function mint(MintParams calldata params)
         external
         payable
         onlyRecipient(params.recipient)
         returns (uint256 tokenId)
     {
-
         _safeMint(params.recipient, (tokenId = _nextId++));
 
         // create a new position associated with the newly minted tokenId
@@ -115,15 +114,18 @@ contract PositionManager is IPositionManager, PositionNFT {
         return tokenId;
     }
 
-    // TODO: add checks/requires
-    // TODO: set bounds for the number of positions that can be memorialized in one go
-    // called to memorialize existing positions with a given NFT
+    /// @notice Called to memorialize existing positions with a given NFT
     /// @dev The array of price is expected to be constructed off chain by scanning events for that lender
-    function memorializePositions(MemorializePositionsParams calldata params) external {
+    /// @dev The NFT must have already been created, and only TODO: (X) prices can be memorialized at a time
+    /// @param params Calldata struct supplying inputs required to conduct the memorialization
+    function memorializePositions(MemorializePositionsParams calldata params)
+        external
+    {
         Position storage position = positions[params.tokenId];
 
-        for (uint i = 0; i < params.prices.length; i++) {
-            position.lpTokens[params.prices[i]] = IPool(params.pool).getLPTokenBalance(params.owner, params.prices[i]);
+        for (uint256 i = 0; i < params.prices.length; i++) {
+            position.lpTokens[params.prices[i]] = IPool(params.pool)
+                .getLPTokenBalance(params.owner, params.prices[i]);
         }
 
         emit MemorializePosition(params.owner, params.tokenId);
