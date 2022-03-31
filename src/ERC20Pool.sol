@@ -99,6 +99,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 collateral
     );
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
+    event debugLup(uint256 lup);
 
     function initialize() external {
         collateralScale = 10**(18 - collateral().decimals());
@@ -258,9 +259,7 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of quote token to borrow
     /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
-        require(
-            _amount <= totalQuoteToken, "ajna/not-enough-liquidity"
-        );
+        require(_amount <= totalQuoteToken, "ajna/not-enough-liquidity");
 
         accumulatePoolInterest();
 
@@ -326,11 +325,8 @@ contract ERC20Pool is IPool, Clone {
         uint256 debtToPay;
         (lup, debtToPay) = _buckets.repay(_maxAmount, lup, inflatorSnapshot);
 
-        if (debtToPay < borrower.debt && _maxAmount >= borrower.debt) {
-            debtToPay = borrower.debt;
-        }
-
         if (debtToPay >= borrower.debt) {
+            debtToPay = borrower.debt;
             borrower.debt = 0;
             borrower.inflatorSnapshot = 0;
         } else {
@@ -414,7 +410,7 @@ contract ERC20Pool is IPool, Clone {
             "ajna/borrower-collateralized"
         );
 
-        (uint256 lentTokens, uint256 requiredCollateral) = _buckets.liquidate(
+        (, uint256 requiredCollateral) = _buckets.liquidate(
             debt,
             collateralDeposited,
             hdp,

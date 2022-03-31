@@ -5,6 +5,8 @@ pragma solidity 0.8.11;
 import "./Maths.sol";
 
 library Buckets {
+    event debugLog(uint256 lup, uint256 stopPrice, uint256 amountRemaining);
+
     struct Bucket {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
@@ -63,7 +65,7 @@ library Buckets {
 
         // Reallocate debt to fund remaining withdrawal
         lup = reallocateDown(buckets, bucket, _amount, _inflator);
-        
+
         bucket.lpOutstanding -= lpTokens;
     }
 
@@ -102,30 +104,26 @@ library Buckets {
     ) public returns (uint256 lup, uint256 loanCost) {
         Bucket storage curLup = buckets[_lup];
         uint256 amountRemaining = _amount;
-        uint256 curLupDeposit;
 
         while (true) {
             require(curLup.price >= _stop, "ajna/stop-price-exceeded");
 
             // accumulate bucket interest
             accumulateBucketInterest(curLup, _inflator);
+            curLup.inflatorSnapshot = _inflator;
 
-            if (curLup.onDeposit > curLup.debt) {
-                curLup.inflatorSnapshot = _inflator;
-
-                if (amountRemaining > curLup.onDeposit) {
-                    // take all on deposit from this bucket
-                    curLup.debt += curLup.onDeposit;
-                    amountRemaining -= curLup.onDeposit;
-                    loanCost += Maths.wdiv(curLup.onDeposit, curLup.price);
-                    curLup.onDeposit -= curLup.onDeposit;
-                } else {
-                    // take all remaining amount for loan from this bucket and exit
-                    curLup.onDeposit -= amountRemaining;
-                    curLup.debt += amountRemaining;
-                    loanCost += Maths.wdiv(amountRemaining, curLup.price);
-                    break;
-                }
+            if (amountRemaining > curLup.onDeposit) {
+                // take all on deposit from this bucket
+                curLup.debt += curLup.onDeposit;
+                amountRemaining -= curLup.onDeposit;
+                loanCost += Maths.wdiv(curLup.onDeposit, curLup.price);
+                curLup.onDeposit -= curLup.onDeposit;
+            } else {
+                // take all remaining amount for loan from this bucket and exit
+                curLup.onDeposit -= amountRemaining;
+                curLup.debt += amountRemaining;
+                loanCost += Maths.wdiv(amountRemaining, curLup.price);
+                break;
             }
 
             // move to next bucket
@@ -367,7 +365,6 @@ library Buckets {
         uint256 _hdp
     ) public view returns (uint256) {
         Bucket memory curLup = buckets[_hdp];
-        uint256 curLupDeposit;
 
         while (true) {
             if (_amount > curLup.onDeposit) {
@@ -420,7 +417,8 @@ library Buckets {
         view
         returns (uint256)
     {
-        uint256 size = bucket.onDeposit + bucket.debt +
+        uint256 size = bucket.onDeposit +
+            bucket.debt +
             Maths.wmul(bucket.collateral, bucket.price);
         if (size != 0 && bucket.lpOutstanding != 0) {
             return Maths.wdiv(size, bucket.lpOutstanding);
