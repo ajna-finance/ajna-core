@@ -238,6 +238,41 @@ class TestUtils:
                 TestUtils.GasWatcher._cache, network.state.TxHistory().gas_profile
             )
 
+    @staticmethod
+    def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926, with_headers=True, csv=False) -> str:
+        # formatting shortcuts
+        w = 12
+        def j(text):
+            return str.ljust(text, w)
+        def n(wad):
+            return wad/1e18
+        def f(wad):
+            return f"{n(wad):>{w}.3f}"
+
+        lines = []
+        if with_headers:
+            if csv:
+                lines.append("Price,Deposit,Debt,Collateral")
+            else:
+                lines.append(j('Price') + j('Deposit') + j('Debt') + j('Collatrl'))
+        for i in range(max_bucket_index, min_bucket_index, -1):
+            price = bucket_math.indexToPrice(i)
+            (
+                _,
+                _,
+                _,
+                bucket_deposit,
+                bucket_debt,
+                _,
+                _,
+                bucket_collateral,
+            ) = pool.bucketAt(price)
+            if csv:
+                lines.append(','.join([n(price), n(bucket_deposit), n(bucket_debt), n(bucket_collateral)]))
+            else:
+                lines.append(''.join([f(price), f(bucket_deposit), f(bucket_debt), f(bucket_collateral)]))
+        return '\n'.join(lines)
+
 
 @pytest.fixture
 def test_utils():
