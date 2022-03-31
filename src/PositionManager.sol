@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
+
 import {PositionNFT} from "./PositionNFT.sol";
 import {IPool} from "./ERC20Pool.sol";
-
-import {console} from "@hardhat/hardhat-core/console.sol";
 
 interface IPositionManager {
     struct MintParams {
@@ -138,7 +139,7 @@ contract PositionManager is IPositionManager, PositionNFT {
         onlyRecipient(params.recipient)
     {
         Position storage position = positions[params.tokenId];
-        require(position.lpTokens[params.price] == 0, "Not Redeemed");
+        require(position.lpTokens[params.price] == 0, "Ajna/liquidity-not-removed");
         emit Burn(msg.sender, params.price);
         delete positions[params.tokenId];
     }
@@ -208,6 +209,21 @@ contract PositionManager is IPositionManager, PositionNFT {
             quoteTokenToRemove,
             params.price
         );
+    }
+
+    // TODO: override safeTransfer as well?
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) public virtual override(ERC721) {
+        super.safeTransferFrom(from, to, tokenId);
+
+        // update position information for new owner
+        Position storage position = positions[tokenId];
+        position.owner = to;
+
+        // TODO: update modifier protecting liquidity operations
     }
 
     // -------------------- Position State View functions --------------------
