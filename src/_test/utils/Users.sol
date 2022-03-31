@@ -95,4 +95,8 @@ contract UserWithQuoteToken {
     ) public {
         token.approve(spender, amount);
     }
+
+    function updateInterestRate(ERC20Pool pool) public {
+        pool.updateInterestRate();
+    }
 }
