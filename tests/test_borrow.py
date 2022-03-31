@@ -17,11 +17,11 @@ def test_borrow(
     borrower1 = borrowers[0]
 
     # lender deposits 10000 DAI in 5 buckets each
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 3500 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 3000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 2500 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 2000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 4000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 3500 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 3000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 2500 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 2000 * 1e18, {"from": lender})
 
     # check pool balance
     assert mkr_dai_pool.totalQuoteToken() == 50_000 * 1e18
@@ -164,7 +164,7 @@ def test_borrow(
     assert pool_event["amount"] == 9_000 * 1e18
 
     # deposit at 5000, reallocating debt upward
-    tx = mkr_dai_pool.addQuoteToken(40_000 * 1e18, 5000 * 1e18, {"from": lender})
+    tx = mkr_dai_pool.addQuoteToken(lender, 40_000 * 1e18, 5000 * 1e18, {"from": lender})
     # check balances for 2500 DAI bucket
     (
         _,
@@ -246,9 +246,9 @@ def test_pool_undercollateralization(
     borrower2 = borrowers[1]
 
     # lender deposits 100000 DAI in 2 buckets each
-    mkr_dai_pool.addQuoteToken(100_000 * 1e18, 2000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(50_000 * 1e18, 1000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(50_000 * 1e18, 500 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 100_000 * 1e18, 2000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 50_000 * 1e18, 1000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 50_000 * 1e18, 500 * 1e18, {"from": lender})
 
     mkr_dai_pool.addCollateral(51 * 1e18, {"from": borrower1})
     mkr_dai_pool.borrow(100_000 * 1e18, 1000 * 1e18, {"from": borrower1})
@@ -272,7 +272,7 @@ def test_collateral_validation(
     borrower1 = borrowers[0]
 
     # lender deposits 10000 DAI in 5 buckets each
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 13.537 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 13.537 * 1e18, {"from": lender})
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower1})
 
     tx = mkr_dai_pool.borrow(1_000 * 1e18, 13.537 * 1e18, {"from": borrower1})
@@ -293,7 +293,7 @@ def test_borrow_gas(
         txes = []
         for i in range(12):
             mkr_dai_pool.addQuoteToken(
-                10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
+                lenders[0], 10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
             )
 
         mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
@@ -303,7 +303,7 @@ def test_borrow_gas(
             10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]}
         )
         tx_reallocate_debt_one_bucket = mkr_dai_pool.addQuoteToken(
-            10_000 * 1e18, 5000 * 1e18, {"from": lenders[0]}
+            lenders[0], 10_000 * 1e18, 5000 * 1e18, {"from": lenders[0]}
         )
         txes.append(tx_one_bucket)
         txes.append(tx_reallocate_debt_one_bucket)
@@ -313,7 +313,7 @@ def test_borrow_gas(
             101_000 * 1e18, 1000 * 1e18, {"from": borrowers[0]}
         )
         tx_reallocate_debt_11_buckets = mkr_dai_pool.addQuoteToken(
-            150_000 * 1e18, 6000 * 1e18, {"from": lenders[1]}
+            lenders[1], 150_000 * 1e18, 6000 * 1e18, {"from": lenders[1]}
         )
         txes.append(tx_11_buckets)
 

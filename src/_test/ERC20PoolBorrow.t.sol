@@ -39,11 +39,36 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
     function testBorrow() public {
         // lender deposits 10000 DAI in 5 buckets each
-        lender.addQuoteToken(pool, 10_000 * 1e18, 4_000 * 1e18);
-        lender.addQuoteToken(pool, 10_000 * 1e18, 3_500 * 1e18);
-        lender.addQuoteToken(pool, 10_000 * 1e18, 3_000 * 1e18);
-        lender.addQuoteToken(pool, 10_000 * 1e18, 2_500 * 1e18);
-        lender.addQuoteToken(pool, 10_000 * 1e18, 2_000 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            4_000 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            3_500 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            3_000 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            2_500 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            2_000 * 1e18
+        );
 
         // check pool balance
         assertEq(pool.totalQuoteToken(), 50_000 * 1e18);
@@ -140,7 +165,12 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(depositedCollateral, 100 * 1e18);
 
         // deposit at 5_000 price and reallocate entire debt
-        lender.addQuoteToken(pool, 40_000 * 1e18, 5_000 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            40_000 * 1e18,
+            5_000 * 1e18
+        );
 
         // check bucket debt at 2_500
         (, , , deposit, debt, , , ) = pool.bucketAt(2_500 * 1e18);
@@ -169,9 +199,19 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
     function testBorrowPoolUndercollateralization() public {
         // lender deposits 200_000 DAI in 3 buckets
-        lender.addQuoteToken(pool, 100_000 * 1e18, 2_000 * 1e18);
-        lender.addQuoteToken(pool, 50_000 * 1e18, 1_000 * 1e18);
-        lender.addQuoteToken(pool, 50_000 * 1e18, 500 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            100_000 * 1e18,
+            2_000 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            50_000 * 1e18,
+            1_000 * 1e18
+        );
+        lender.addQuoteToken(pool, address(lender), 50_000 * 1e18, 500 * 1e18);
 
         // borrower1 takes a loan on 100_000 DAI
         assertEq(pool.estimatePriceForLoan(75_000 * 1e18), 2_000 * 1e18);
@@ -191,7 +231,12 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
     function testBorrowTestCollateralValidation() public {
         // lender deposits 10_000 DAI at 13.537
-        lender.addQuoteToken(pool, 10_000 * 1e18, 13.537 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            13.537 * 1e18
+        );
         borrower.addCollateral(pool, 100 * 1e18);
         // should not revert when borrower takes a loan on 100_000 DAI
         borrower.borrow(pool, 1_000 * 1e18, 13.537 * 1e18);

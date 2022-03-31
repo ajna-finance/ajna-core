@@ -14,9 +14,9 @@ def test_repay(
     chain,
 ):
     lender = lenders[0]
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 5000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(10_000 * 1e18, 3000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 5000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 4000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 3000 * 1e18, {"from": lender})
 
     borrower1 = borrowers[0]
     # borrower starts with 10000 DAI and deposit 100 collateral
@@ -133,7 +133,7 @@ def test_repay_gas(
     with test_utils.GasWatcher(['repay', 'borrow']):
         for i in range(12):
             mkr_dai_pool.addQuoteToken(
-                10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
+                lenders[0], 10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
             )
 
         # borrower starts with 10000 DAI and deposit 100 collateral

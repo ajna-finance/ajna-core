@@ -38,9 +38,9 @@ contract ERC20PoolBidTest is DSTestPlus {
     }
 
     function testPurchaseBidPartialAmount() public {
-        lender.addQuoteToken(pool, 3_000 * 1e18, 4_000 * 1e18);
-        lender.addQuoteToken(pool, 3_000 * 1e18, 3_000 * 1e18);
-        lender.addQuoteToken(pool, 3_000 * 1e18, 1_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 3_000 * 1e18, 4_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 3_000 * 1e18, 3_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 3_000 * 1e18, 1_000 * 1e18);
 
         // borrower takes a loan of 4000 DAI making bucket 4000 to be fully utilized
         borrower.addCollateral(pool, 100 * 1e18);
@@ -125,9 +125,9 @@ contract ERC20PoolBidTest is DSTestPlus {
     }
 
     function testPurchaseBidEntireAmount() public {
-        lender.addQuoteToken(pool, 1_000 * 1e18, 4_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 3_000 * 1e18);
-        lender.addQuoteToken(pool, 5_000 * 1e18, 2_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 4_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 3_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 5_000 * 1e18, 2_000 * 1e18);
 
         // borrower takes a loan of 1000 DAI from bucket 4000
         borrower.addCollateral(pool, 100 * 1e18);
@@ -211,9 +211,9 @@ contract ERC20PoolBidTest is DSTestPlus {
     }
 
     function testPurchaseBidCannotReallocate() public {
-        lender.addQuoteToken(pool, 1_000 * 1e18, 4_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 3_000 * 1e18);
-        lender.addQuoteToken(pool, 500 * 1e18, 2_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 4_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 3_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 500 * 1e18, 2_000 * 1e18);
 
         // borrower takes a loan of 1000 DAI from bucket 4000
         borrower.addCollateral(pool, 100 * 1e18);
@@ -229,9 +229,9 @@ contract ERC20PoolBidTest is DSTestPlus {
     }
 
     function testPurchaseBidUndercollateralized() public {
-        lender.addQuoteToken(pool, 1_000 * 1e18, 4_000 * 1e18);
-        lender.addQuoteToken(pool, 1_000 * 1e18, 3_000 * 1e18);
-        lender.addQuoteToken(pool, 2_000 * 1e18, 1 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 4_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 3_000 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 2_000 * 1e18, 1 * 1e18);
 
         // borrower takes a loan of 1000 DAI from bucket 4000
         borrower.addCollateral(pool, 100 * 1e18);

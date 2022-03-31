@@ -1,6 +1,6 @@
 import pytest
 from sdk import *
-from brownie import test, network
+from brownie import test, network, PositionManager
 from brownie.network.state import TxHistory
 from brownie.utils import color
 
@@ -43,7 +43,6 @@ def mkr(ajna_protocol):
     return ajna_protocol.get_token(MKR_ADDRESS).get_contract()
 
 
-# TODO: convert to deploying all necessary libraries "libraries(deployer)"
 @pytest.fixture
 def bucket_math(ajna_protocol):
     return ajna_protocol.bucket_math
@@ -53,6 +52,10 @@ def bucket_math(ajna_protocol):
 def mkr_dai_pool(ajna_protocol):
     return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
 
+@pytest.fixture
+def position_manager(deployer):
+    position_manager = PositionManager.deploy({"from": deployer})
+    yield position_manager
 
 @pytest.fixture
 def lenders(ajna_protocol, mkr_dai_pool):

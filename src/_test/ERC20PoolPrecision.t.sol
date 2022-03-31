@@ -69,6 +69,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         emit Transfer(address(lender), address(pool), 20_000 * quotePrecision);
         lender.addQuoteToken(
             pool,
+            address(lender),
             20_000 * poolPrecision,
             2_000 * poolPrecision
         );
@@ -82,6 +83,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         emit Transfer(address(pool), address(lender), 10_000 * quotePrecision);
         lender.removeQuoteToken(
             pool,
+            address(lender),
             10_000 * poolPrecision,
             2_000 * poolPrecision
         );
@@ -160,6 +162,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         );
         lender.claimCollateral(
             pool,
+            address(lender),
             5 * (poolPrecision / 10),
             2_000 * poolPrecision
         );

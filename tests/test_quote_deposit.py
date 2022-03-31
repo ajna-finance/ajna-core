@@ -17,14 +17,14 @@ def test_quote_deposit(
     # revert when depositing at invalid price
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
         mkr_dai_pool.addQuoteToken(
-            100000 * 1e18, bucket_math.MAX_PRICE() + 1, {"from": lender}
+            lender, 100000 * 1e18, bucket_math.MAX_PRICE() + 1, {"from": lender}
         )
     assert exc.value.revert_msg == "ajna/invalid-bucket-price"
 
     assert mkr_dai_pool.hdp() == 0
 
     # test 10000 DAI deposit at price of 1 MKR = 4000 DAI
-    tx = mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
+    tx = mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 4000 * 1e18, {"from": lender})
     # check pool balance
     assert mkr_dai_pool.totalQuoteToken() == 10_000 * 1e18
     assert mkr_dai_pool.hdp() == 4000 * 1e18
@@ -66,7 +66,7 @@ def test_quote_deposit(
 
     # test 20000 DAI deposit at price of 1 MKR = 2000 DAI
     # hdp should remain same 4000 DAI
-    tx = mkr_dai_pool.addQuoteToken(20_000 * 1e18, 2000 * 1e18, {"from": lender})
+    tx = mkr_dai_pool.addQuoteToken(lender, 20_000 * 1e18, 2000 * 1e18, {"from": lender})
     # check pool balance
     assert mkr_dai_pool.totalQuoteToken() == 30_000 * 1e18
     assert mkr_dai_pool.hdp() == 4000 * 1e18
@@ -121,7 +121,7 @@ def test_quote_deposit(
     # test 30000 DAI deposit at price of 1 MKR = 3000 DAI
     # hdp should remain same 4000 DAI and hdp next price should be updated from 2000 to 3000 DAI
     # next price for 3000 DAI bucket should be 2000 DAI
-    tx = mkr_dai_pool.addQuoteToken(30_000 * 1e18, 3000 * 1e18, {"from": lender})
+    tx = mkr_dai_pool.addQuoteToken(lender, 30_000 * 1e18, 3000 * 1e18, {"from": lender})
     # check pool balance
     assert mkr_dai_pool.totalQuoteToken() == 60_000 * 1e18
     assert mkr_dai_pool.hdp() == 4000 * 1e18
@@ -186,7 +186,7 @@ def test_quote_deposit(
 
     # test 40000 DAI deposit at price of 1 MKR = 5000 DAI
     # hdp should be updated to 5000 DAI and hdp next price should be 4000 DAI
-    tx = mkr_dai_pool.addQuoteToken(40_000 * 1e18, 5000 * 1e18, {"from": lender})
+    tx = mkr_dai_pool.addQuoteToken(lender, 40_000 * 1e18, 5000 * 1e18, {"from": lender})
     # check pool balance
     assert mkr_dai_pool.totalQuoteToken() == 100_000 * 1e18
     assert mkr_dai_pool.hdp() == 5000 * 1e18
@@ -240,7 +240,7 @@ def test_quote_deposit_gas_below_hdp(
         txes = []
         for i in range(20):
             tx = mkr_dai_pool.addQuoteToken(
-                100 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
+                lenders[0], 100 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
             )
             txes.append(tx)
         with capsys.disabled():
@@ -265,7 +265,7 @@ def test_quote_deposit_gas_above_hdp(
         txes = []
         for i in range(20):
             tx = mkr_dai_pool.addQuoteToken(
-                100 * 1e18, (2000 + 10 * i) * 1e18, {"from": lenders[0]}
+                lenders[0], 100 * 1e18, (2000 + 10 * i) * 1e18, {"from": lenders[0]}
             )
             txes.append(tx)
         with capsys.disabled():

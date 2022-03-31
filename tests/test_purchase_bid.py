@@ -20,9 +20,9 @@ def test_purchase_bid_partial_amount(
         bidder = borrowers[1]
 
         assert dai.balanceOf(lender) == 200_000 * 1e18
-        mkr_dai_pool.addQuoteToken(3_000 * 1e18, 4000 * 1e18, {"from": lender})
-        mkr_dai_pool.addQuoteToken(3_000 * 1e18, 3000 * 1e18, {"from": lender})
-        mkr_dai_pool.addQuoteToken(3_000 * 1e18, 1000 * 1e18, {"from": lender})
+        mkr_dai_pool.addQuoteToken(lender, 3_000 * 1e18, 4000 * 1e18, {"from": lender})
+        mkr_dai_pool.addQuoteToken(lender, 3_000 * 1e18, 3000 * 1e18, {"from": lender})
+        mkr_dai_pool.addQuoteToken(lender, 3_000 * 1e18, 1000 * 1e18, {"from": lender})
 
         # borrower takes a loan of 4000 DAI making bucket 4000 to be fully utilized
         mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})
@@ -177,9 +177,9 @@ def test_purchase_bid_entire_amount(
     bidder = borrowers[1]
 
     assert dai.balanceOf(lender) == 200_000 * 1e18
-    mkr_dai_pool.addQuoteToken(1_000 * 1e18, 4000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(1_000 * 1e18, 3000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(5_000 * 1e18, 2000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 1_000 * 1e18, 4000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 1_000 * 1e18, 3000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 5_000 * 1e18, 2000 * 1e18, {"from": lender})
 
     # borrower takes a loan of 1000 DAI from bucket 4000
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})
@@ -292,9 +292,9 @@ def test_purchase_bid_not_enough_liquidity(
     bidder = borrowers[1]
 
     assert dai.balanceOf(lender) == 200_000 * 1e18
-    mkr_dai_pool.addQuoteToken(1_000 * 1e18, 4000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(1_000 * 1e18, 3000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(500 * 1e18, 2000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 1_000 * 1e18, 4000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 1_000 * 1e18, 3000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 500 * 1e18, 2000 * 1e18, {"from": lender})
 
     # borrower takes a loan of 1000 DAI from bucket 4000
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})
@@ -320,9 +320,9 @@ def test_purchase_bid_undercollateralized(
     bidder = borrowers[1]
 
     assert dai.balanceOf(lender) == 200_000 * 1e18
-    mkr_dai_pool.addQuoteToken(1_000 * 1e18, 4000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(1_000 * 1e18, 3000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(2_000 * 1e18, 1 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 1_000 * 1e18, 4000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 1_000 * 1e18, 3000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 2_000 * 1e18, 1 * 1e18, {"from": lender})
 
     # borrower takes a loan of 1000 DAI from bucket 4000
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})

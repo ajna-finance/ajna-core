@@ -27,9 +27,9 @@ def test_update_interest_rate(
 
         # raise pool utilization
         # lender deposits 10000 DAI in 3 buckets each
-        mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
-        mkr_dai_pool.addQuoteToken(10_000 * 1e18, 3500 * 1e18, {"from": lender})
-        mkr_dai_pool.addQuoteToken(10_000 * 1e18, 3000 * 1e18, {"from": lender})
+        mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 4000 * 1e18, {"from": lender})
+        mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 3500 * 1e18, {"from": lender})
+        mkr_dai_pool.addQuoteToken(lender, 10_000 * 1e18, 3000 * 1e18, {"from": lender})
 
         # borrower deposits 100 MKR collateral and draws debt
         mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower1})

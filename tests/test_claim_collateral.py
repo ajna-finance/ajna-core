@@ -20,18 +20,18 @@ def test_claim_collateral(
 
     # should fail if invalid price
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        mkr_dai_pool.claimCollateral(1_000 * 1e18, 1000, {"from": lender})
+        mkr_dai_pool.claimCollateral(lender, 1_000 * 1e18, 1000, {"from": lender})
     assert exc.value.revert_msg == "ajna/invalid-bucket-price"
 
     # should fail if no lp tokens in bucket
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        mkr_dai_pool.claimCollateral(1 * 1e18, 4000 * 1e18, {"from": lender})
+        mkr_dai_pool.claimCollateral(lender, 1 * 1e18, 4000 * 1e18, {"from": lender})
     assert exc.value.revert_msg == "ajna/no-claim-to-bucket"
 
     # deposit DAI in 3 buckets
-    mkr_dai_pool.addQuoteToken(3_000 * 1e18, 4000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(4_000 * 1e18, 3000 * 1e18, {"from": lender})
-    mkr_dai_pool.addQuoteToken(5_000 * 1e18, 1000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 3_000 * 1e18, 4000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 4_000 * 1e18, 3000 * 1e18, {"from": lender})
+    mkr_dai_pool.addQuoteToken(lender, 5_000 * 1e18, 1000 * 1e18, {"from": lender})
 
     assert mkr_dai_pool.lpBalance(lender, 4_000 * 1e18) == 3_000 * 1e18
     assert mkr_dai_pool.lpBalance(lender, 3_000 * 1e18) == 4_000 * 1e18
@@ -39,7 +39,7 @@ def test_claim_collateral(
 
     # should fail if claiming collateral if no purchase bid was done on bucket
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        mkr_dai_pool.claimCollateral(1 * 1e18, 4000 * 1e18, {"from": lender})
+        mkr_dai_pool.claimCollateral(lender, 1 * 1e18, 4000 * 1e18, {"from": lender})
     assert exc.value.revert_msg == "ajna/insufficient-amount-to-claim"
 
     # borrower takes a loan of 4000 DAI
@@ -75,11 +75,11 @@ def test_claim_collateral(
 
     # should fail if claiming a larger amount than available in bucket
     with pytest.raises(brownie.exceptions.VirtualMachineError) as exc:
-        mkr_dai_pool.claimCollateral(2 * 1e18, 3000 * 1e18, {"from": lender})
+        mkr_dai_pool.claimCollateral(lender, 2 * 1e18, 3000 * 1e18, {"from": lender})
     assert exc.value.revert_msg == "ajna/insufficient-amount-to-claim"
 
     # lender claims 0.5 collateral
-    tx = mkr_dai_pool.claimCollateral(0.5 * 1e18, 3_000 * 1e18, {"from": lender})
+    tx = mkr_dai_pool.claimCollateral(lender, 0.5 * 1e18, 3_000 * 1e18, {"from": lender})
 
     # check 3000 bucket balance after claim collateral
     (
