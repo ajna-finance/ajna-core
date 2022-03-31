@@ -105,7 +105,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             uint256 bucketCollateral
         ) = pool.bucketAt(10_016.501589292607751220 * 1e18);
         assertEq(debt, 10_000 * 1e18);
-        assertEq(deposit, 10_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(bucketCollateral, 0);
 
         // check 9_020.461710444470171420 bucket balance before liquidate
@@ -113,7 +113,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             9_020.461710444470171420 * 1e18
         );
         assertEq(debt, 1_000 * 1e18);
-        assertEq(deposit, 1_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(bucketCollateral, 0);
 
         // check 100.332368143282009890 bucket balance before liquidate
@@ -121,7 +121,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             100.332368143282009890 * 1e18
         );
         assertEq(debt, 1_000 * 1e18);
-        assertEq(deposit, 10_000 * 1e18);
+        assertEq(deposit, 9_000 * 1e18);
         assertEq(bucketCollateral, 0);
 
         skip(8200);
@@ -182,7 +182,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             100.332368143282009890 * 1e18
         );
         assertEq(debt, 1_000 * 1e18);
-        assertEq(deposit, 10_000 * 1e18);
+        assertEq(deposit, 9_000 * 1e18);
         assertEq(bucketCollateral, 0);
     }
 
@@ -264,7 +264,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             100.332368143282009890 * 1e18
         );
         assertEq(debt, 1_000 * 1e18);
-        assertEq(deposit, 1_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(bucketCollateral, 0);
 
         // check borrower after liquidation
@@ -372,7 +372,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             100.332368143282009890 * 1e18
         );
         assertEq(debt, 1_000 * 1e18);
-        assertEq(deposit, 1_000 * 1e18);
+        assertEq(deposit, 0);
         assertEq(bucketCollateral, 0);
 
         // check borrower after liquidation

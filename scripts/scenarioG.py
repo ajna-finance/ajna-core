@@ -3,18 +3,26 @@ from sdk import *
 
 
 def main():
-    sdk_options = (
-        SdkOptionsBuilder()
+    protocol_definition = (
+        InitialProtocolStateBuilder()
         .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
         .add_token(COMP_ADDRESS, COMP_RESERVE_ADDRESS)
         .deploy_pool(COMP_ADDRESS, DAI_ADDRESS)
     )
 
-    sdk_options.with_borrowers(10).with_token(COMP_ADDRESS, 20_000 * 10**18).add()
-    sdk_options.with_lenders(5).with_token(DAI_ADDRESS, 600_000 * 10**18).add()
+    protocol_definition.with_borrowers(10).with_token(
+        COMP_ADDRESS, 20_000 * 10**18
+    ).add()
+    protocol_definition.with_lenders(5).with_token(
+        DAI_ADDRESS, 600_000 * 10**18
+    ).add()
 
-    sdk = AjnaSdk(sdk_options.build())
-    pool = sdk.get_pool(COMP_ADDRESS, DAI_ADDRESS)
+    ajna_protocol = AjnaProtocol()
+    ajna_protocol.get_runner().prepare_protocol_to_state_by_definition(
+        protocol_definition.build()
+    )
+
+    pool = ajna_protocol.get_pool(COMP_ADDRESS, DAI_ADDRESS)
 
     pool.deposit_quote_token(20_000 * 1e18, 11.694 * 1e18, 0)
     pool.deposit_quote_token(50_000 * 1e18, 12.278 * 1e18, 0)
@@ -45,10 +53,10 @@ def main():
     pool.deposit_quote_token(10_000 * 1e18, 14.214 * 1e18, 3)
 
     return (
-        sdk,
-        sdk.lenders,
-        sdk.borrowers,
-        pool.get_pool_quote_token().get_contract(),
-        pool.get_pool_collateral_token().get_contract(),
+        ajna_protocol,
+        ajna_protocol.lenders,
+        ajna_protocol.borrowers,
+        pool.get_quote_token().get_contract(),
+        pool.get_collateral_token().get_contract(),
         pool.get_contract(),
     )

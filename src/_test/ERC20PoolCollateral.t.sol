@@ -138,13 +138,13 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             uint256 lpOutstanding,
             uint256 bucketCollateral
         ) = pool.bucketAt(3_010.892022197881557845 * 1e18);
-        assertEq(deposit, 4_000 * 1e18);
+        assertEq(deposit, 3_000 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(lpOutstanding, 4_000 * 1e18);
         assertEq(bucketCollateral, 0);
         assertEq(pool.lpBalance(address(lender), 1606), 4_000 * 1e18);
 
-        // purchase bid
+        // bidder purchases some of the middle bucket
         bidder.purchaseBid(pool, 1_500 * 1e18, 1606);
 
         // check balances
@@ -168,7 +168,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         );
         assertEq(bucketCollateral, 0.498191230021272793 * 1e18);
 
-        // claim 0.498191230021272793 collateral
+        // lender claims 0.498191230021272793 collateral
         vm.expectEmit(true, false, false, true);
         emit Transfer(
             address(pool),
@@ -186,7 +186,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         // check 3_010.892022197881557845 bucket balance after collateral claimed
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = pool
             .bucketAt(3_010.892022197881557845 * 1e18);
-        assertEq(deposit, 2_500 * 1e18);
+        assertEq(deposit, 1_500 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(lpOutstanding, 2_500.000000000000000569 * 1e18);
         assertEq(bucketCollateral, 0);
