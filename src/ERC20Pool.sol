@@ -44,7 +44,7 @@ contract ERC20Pool is IPool, Clone {
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
     // bucket index -> bucket struct mapping
-    mapping(int256 => Buckets.Bucket) private _buckets;
+    mapping(int256 => Buckets.Bucket) private buckets;
 
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
@@ -110,6 +110,11 @@ contract ERC20Pool is IPool, Clone {
 
         hdp = BucketMath.MIN_PRICE_INDEX;
         lup = BucketMath.MIN_PRICE_INDEX;
+
+        Buckets.Bucket storage minBucket = buckets[BucketMath.MIN_PRICE_INDEX];
+        minBucket.down = BucketMath.MIN_PRICE_INDEX;
+        minBucket.index = BucketMath.MIN_PRICE_INDEX;
+        minBucket.price = BucketMath.MIN_PRICE;
     }
 
     function collateral() public pure returns (ERC20) {
@@ -126,18 +131,19 @@ contract ERC20Pool is IPool, Clone {
     function addQuoteToken(uint256 _amount, int256 _priceIndex) external {
         accumulatePoolInterest();
 
-        Buckets.Bucket storage bucket = _buckets[_priceIndex];
+        Buckets.Bucket storage bucket = buckets[_priceIndex];
 
         // create bucket if doesn't exist
         if (bucket.price == 0) {
+            // getting index to price also checks if provided index is a valid one
             bucket.price = BucketMath.indexToPrice(_priceIndex);
             bucket.index = _priceIndex;
-            hdp = _buckets.initializeBucket(bucket, hdp);
+            hdp = buckets.initializeBucket(bucket, hdp);
         }
 
         // deposit amount
         bool reallocate = (totalDebt != 0 && _priceIndex >= lup);
-        (int256 newLup, uint256 lpTokens) = _buckets.addQuoteToken(
+        (int256 newLup, uint256 lpTokens) = buckets.addQuoteToken(
             bucket,
             _amount,
             lup,
@@ -169,10 +175,10 @@ contract ERC20Pool is IPool, Clone {
     function removeQuoteToken(uint256 _amount, int256 _priceIndex) external {
         accumulatePoolInterest();
 
-        Buckets.Bucket storage bucket = _buckets[_priceIndex];
+        Buckets.Bucket storage bucket = buckets[_priceIndex];
 
         // remove from bucket
-        (int256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
+        (int256 newLup, uint256 lpTokens) = buckets.removeQuoteToken(
             bucket,
             _amount,
             lpBalance[msg.sender][_priceIndex],
@@ -222,7 +228,7 @@ contract ERC20Pool is IPool, Clone {
         if (borrower.debt != 0) {
             encumberedBorrowerCollateral = Maths.wdiv(
                 borrower.debt,
-                BucketMath.indexToPrice(lup)
+                buckets[lup].price
             );
         }
 
@@ -246,8 +252,8 @@ contract ERC20Pool is IPool, Clone {
         uint256 maxClaim = lpBalance[msg.sender][_priceIndex];
         require(maxClaim != 0, "ajna/no-claim-to-bucket");
 
-        Buckets.Bucket storage bucket = _buckets[_priceIndex];
-        uint256 claimedLpTokens = _buckets.claimCollateral(
+        Buckets.Bucket storage bucket = buckets[_priceIndex];
+        uint256 claimedLpTokens = buckets.claimCollateral(
             bucket,
             _amount,
             maxClaim
@@ -275,18 +281,12 @@ contract ERC20Pool is IPool, Clone {
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
-        // if first loan then borrow at hdp
-        int256 curLup = lup;
-        if (curLup == BucketMath.MIN_PRICE_INDEX) {
-            curLup = hdp;
-        }
-
         // TODO: make value explicit for use in comparison operator against collateralDeposited below
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
             encumberedBorrowerCollateral = Maths.wdiv(
                 borrower.debt,
-                BucketMath.indexToPrice(lup)
+                buckets[lup].price
             );
         }
         require(
@@ -294,15 +294,21 @@ contract ERC20Pool is IPool, Clone {
             "ajna/not-enough-collateral"
         );
 
+        // if first loan then borrow at hdp
+        int256 curLup = lup;
+        if (curLup == BucketMath.MIN_PRICE_INDEX) {
+            curLup = hdp;
+        }
+
         uint256 loanCost;
-        (lup, loanCost) = _buckets.borrow(
+        (lup, loanCost) = buckets.borrow(
             _amount,
             _stopPrice,
             curLup,
             inflatorSnapshot
         );
 
-        uint256 lupPrice = BucketMath.indexToPrice(lup);
+        uint256 lupPrice = buckets[lup].price;
 
         require(
             borrower.collateralDeposited >
@@ -338,7 +344,7 @@ contract ERC20Pool is IPool, Clone {
         accumulateBorrowerInterest(borrower);
 
         uint256 debtToPay;
-        (lup, debtToPay) = _buckets.repay(_maxAmount, lup, inflatorSnapshot);
+        (lup, debtToPay) = buckets.repay(_maxAmount, lup, inflatorSnapshot);
 
         if (debtToPay < borrower.debt && _maxAmount >= borrower.debt) {
             debtToPay = borrower.debt;
@@ -366,7 +372,7 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of quote token to purchase
     /// @param _priceIndex The bucket index of purchasing price of quote token
     function purchaseBid(uint256 _amount, int256 _priceIndex) external {
-        Buckets.Bucket storage bucket = _buckets[_priceIndex];
+        Buckets.Bucket storage bucket = buckets[_priceIndex];
 
         require(bucket.price != 0, "ajna/no-quote-token-to-exchange");
 
@@ -379,7 +385,7 @@ contract ERC20Pool is IPool, Clone {
 
         accumulatePoolInterest();
 
-        int256 newLup = _buckets.purchaseBid(
+        int256 newLup = buckets.purchaseBid(
             bucket,
             _amount,
             collateralRequired,
@@ -423,14 +429,14 @@ contract ERC20Pool is IPool, Clone {
 
         uint256 collateralization = Maths.wdiv(
             collateralDeposited,
-            Maths.wdiv(debt, BucketMath.indexToPrice(lup))
+            Maths.wdiv(debt, buckets[lup].price)
         );
         require(
             collateralization <= Maths.ONE_WAD,
             "ajna/borrower-collateralized"
         );
 
-        uint256 requiredCollateral = _buckets.liquidate(
+        uint256 requiredCollateral = buckets.liquidate(
             debt,
             collateralDeposited,
             hdp,
@@ -547,17 +553,17 @@ contract ERC20Pool is IPool, Clone {
             uint256 bucketCollateral
         )
     {
-        return _buckets.bucketAt(_price);
+        return buckets.bucketAt(_price);
     }
 
     function isBucketInitialized(int256 _index) public view returns (bool) {
-        return _buckets[_index].price != 0;
+        return buckets[_index].price != 0;
     }
 
     // -------------------- Pool state related functions --------------------
 
     function getPoolPrice() public view returns (uint256) {
-        return BucketMath.indexToPrice(lup);
+        return buckets[lup].price;
     }
 
     function getMinimumPoolPrice() public view returns (uint256) {
@@ -577,7 +583,7 @@ contract ERC20Pool is IPool, Clone {
 
     function getEncumberedCollateral() public view returns (uint256) {
         if (lup != BucketMath.MIN_PRICE_INDEX) {
-            return Maths.wdiv(totalDebt, BucketMath.indexToPrice(lup));
+            return Maths.wdiv(totalDebt, buckets[lup].price);
         }
         return 0;
     }
@@ -627,7 +633,7 @@ contract ERC20Pool is IPool, Clone {
             );
             collateralEncumbered = Maths.wdiv(
                 borrowerPendingDebt,
-                BucketMath.indexToPrice(lup)
+                buckets[lup].price
             );
             collateralization = Maths.wdiv(
                 borrower.collateralDeposited,
@@ -652,9 +658,9 @@ contract ERC20Pool is IPool, Clone {
         returns (uint256)
     {
         if (lup == BucketMath.MIN_PRICE_INDEX) {
-            return _buckets.estimatePrice(_amount, hdp);
+            return buckets.estimatePrice(_amount, hdp);
         }
 
-        return _buckets.estimatePrice(_amount, lup);
+        return buckets.estimatePrice(_amount, lup);
     }
 }
