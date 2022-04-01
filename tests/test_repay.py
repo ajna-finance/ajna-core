@@ -5,21 +5,14 @@ import pytest
 import inspect
 
 
-def test_repay(
-    lenders,
-    borrowers,
-    mkr_dai_pool,
-    dai,
-    mkr,
-    chain,
-):
+def test_repay(lenders, borrowers, mkr_dai_pool, dai, mkr, chain):
     lender = lenders[0]
     mkr_dai_pool.addQuoteToken(10_000 * 1e18, 5000 * 1e18, {"from": lender})
     mkr_dai_pool.addQuoteToken(10_000 * 1e18, 4000 * 1e18, {"from": lender})
     mkr_dai_pool.addQuoteToken(10_000 * 1e18, 3000 * 1e18, {"from": lender})
 
     borrower1 = borrowers[0]
-    # borrower starts with 10000 DAI and deposit 100 collateral
+    # borrower starts with 10_000 DAI and deposit 100 collateral
     dai.transfer(borrower1, 10_000 * 1e18, {"from": lender})
     mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower1})
     assert mkr.balanceOf(borrower1) == 0
@@ -29,7 +22,7 @@ def test_repay(
         mkr_dai_pool.repay(10_000 * 1e18, {"from": borrower1})
     assert exc.value.revert_msg == "ajna/no-debt-to-repay"
 
-    # take loan of 25000 DAI from 3 buckets
+    # take loan of 25_000 DAI from 3 buckets
     mkr_dai_pool.borrow(25_000 * 1e18, 2500 * 1e18, {"from": borrower1})
     assert format(mkr_dai_pool.getEncumberedCollateral() / 1e18, ".2f") == format(
         8.333333333333333333, ".2f"
@@ -51,7 +44,7 @@ def test_repay(
     assert dai.balanceOf(borrower1) == 35_000 * 1e18
     assert dai.balanceOf(mkr_dai_pool) == 5_000 * 1e18
 
-    # repay partially 10000 DAI
+    # repay partially 10_000 DAI
     chain.sleep(8200)
     chain.mine()
     tx = mkr_dai_pool.repay(10_000 * 1e18, {"from": borrower1})
@@ -75,23 +68,38 @@ def test_repay(
     assert transfer_event["dst"] == mkr_dai_pool
     assert transfer_event["wad"] == 10_000 * 1e18
     pool_event = tx.events["Repay"][0][0]
-    print(pool_event)
     assert pool_event["borrower"] == borrower1
     assert pool_event["lup"] == 4_000 * 1e18
     assert pool_event["amount"] == 10_000 * 1e18
 
-    # repay remaining 15000 DAI plus accumulated debt
+    # overpay remaining 15_000 DAI plus accumulated debt
     chain.sleep(8200)
     chain.mine()
+
+    (
+        debt,
+        deposited,
+        snapshot,
+    ) = mkr_dai_pool.borrowers(borrower1)
+
+    print(f"debt before repay - {debt}")
+
     tx = mkr_dai_pool.repay(16_000 * 1e18, {"from": borrower1})
+    pool_event = tx.events["Repay"][0][0]
+    assert pool_event["borrower"] == borrower1
+    assert pool_event["lup"] == 5_000 * 1e18
+    print(f"pool event amount debt - {pool_event['amount']}")
+    assert 15_000 * 1e18 <= pool_event["amount"] <= 15_001 * 1e18
+
     (
         debt,
         deposited,
         snapshot,
     ) = mkr_dai_pool.borrowers(borrower1)
     assert deposited == 100 * 1e18
-    assert snapshot == 0
     assert debt == 0
+    assert snapshot == 0
+    print(f"debt after repay - {debt}")
     assert mkr_dai_pool.lup() == 5_000 * 1e18
     # TODO: fix total debt and encumbered collateral dust reconciliation
     assert mkr_dai_pool.totalDebt() < 0.000003 * 1e18
@@ -130,7 +138,7 @@ def test_repay_gas(
     capsys,
     test_utils,
 ):
-    with test_utils.GasWatcher(['repay', 'borrow']):
+    with test_utils.GasWatcher(["repay", "borrow"]):
         for i in range(12):
             mkr_dai_pool.addQuoteToken(
                 10_000 * 1e18, (4000 - 10 * i) * 1e18, {"from": lenders[0]}
@@ -144,11 +152,15 @@ def test_repay_gas(
         # borrow 10_000 DAI from single bucket (LUP)
         mkr_dai_pool.borrow(10_000 * 1e18, 4000 * 1e18, {"from": borrowers[0]})
         assert dai.balanceOf(borrowers[0]) == 20_000 * 1e18
-        tx_repay_to_one_bucket = mkr_dai_pool.repay(10_001 * 1e18, {"from": borrowers[0]})
+        tx_repay_to_one_bucket = mkr_dai_pool.repay(
+            10_001 * 1e18, {"from": borrowers[0]}
+        )
 
         # borrow 101_000 DAI from 11 buckets
         mkr_dai_pool.borrow(101_000 * 1e18, 1000 * 1e18, {"from": borrowers[0]})
-        tx_repay_to_11_buckets = mkr_dai_pool.repay(101_001 * 1e18, {"from": borrowers[0]})
+        tx_repay_to_11_buckets = mkr_dai_pool.repay(
+            101_001 * 1e18, {"from": borrowers[0]}
+        )
 
         with capsys.disabled():
             print("\n==================================")
