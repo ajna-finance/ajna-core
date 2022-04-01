@@ -338,7 +338,7 @@ contract ERC20Pool is IPool, Clone {
         quoteToken().safeTransferFrom(
             msg.sender,
             address(this),
-            debtToPay / quoteTokenScale
+            amount / quoteTokenScale
         );
         emit Repay(msg.sender, lup, amount);
     }
