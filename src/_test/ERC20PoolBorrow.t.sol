@@ -43,37 +43,37 @@ contract ERC20PoolBorrowTest is DSTestPlus {
             pool,
             address(lender),
             10_000 * 1e18,
-            4_000 * 1e18
+            4_000.927678580567537368 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
             10_000 * 1e18,
-            3_500 * 1e18
+            3_514.334495390401848927 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
             10_000 * 1e18,
-            3_000 * 1e18
+            3_010.892022197881557845 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
             10_000 * 1e18,
-            2_500 * 1e18
+            2_503.519024294695168295 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
             10_000 * 1e18,
-            2_000 * 1e18
+            2_000.221618840727700609 * 1e18
         );
 
         // check pool balance
         assertEq(pool.totalQuoteToken(), 50_000 * 1e18);
         assertEq(pool.totalDebt(), 0);
-        assertEq(pool.hdp(), 4_000 * 1e18);
+        assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
 
         // should revert if borrower wants to borrow a greater amount than in pool
         vm.expectRevert("ajna/not-enough-liquidity");
@@ -97,21 +97,28 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // borrower deposits additional 90 MKR collateral
         borrower.addCollateral(pool, 90 * 1e18);
         // get a 21_000 DAI loan from 3 buckets, loan price should be 3000 DAI
-        assertEq(pool.estimatePriceForLoan(21_000 * 1e18), 3_000 * 1e18);
+        assertEq(
+            pool.estimatePriceForLoan(21_000 * 1e18),
+            3_010.892022197881557845 * 1e18
+        );
 
         vm.expectEmit(true, false, false, true);
         emit Transfer(address(pool), address(borrower), 21_000 * 1e18);
-        emit Borrow(address(borrower), 3_000 * 1e18, 21_000 * 1e18);
+        emit Borrow(
+            address(borrower),
+            3_010.892022197881557845 * 1e18,
+            21_000 * 1e18
+        );
         borrower.borrow(pool, 21_000 * 1e18, 2_500 * 1e18);
 
         assertEq(quote.balanceOf(address(borrower)), 21_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 29_000 * 1e18);
-        assertEq(pool.hdp(), 4_000 * 1e18);
-        assertEq(pool.lup(), 3_000 * 1e18);
+        assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
+        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
 
-        // check bucket deposit and debt at 3_000
+        // check bucket deposit and debt at 3_010.892022197881557845
         (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(
-            3_000 * 1e18
+            3_010.892022197881557845 * 1e18
         );
         assertEq(deposit, 9_000 * 1e18);
         // check pool balances
@@ -129,28 +136,40 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // borrow remaining 9_000 DAI from LUP
         vm.expectEmit(true, false, false, true);
         emit Transfer(address(pool), address(borrower), 9_000 * 1e18);
-        emit Borrow(address(borrower), 2_500 * 1e18, 9_000 * 1e18);
-        borrower.borrow(pool, 9_000 * 1e18, 2_500 * 1e18);
+        emit Borrow(
+            address(borrower),
+            2_503.519024294695168295 * 1e18,
+            9_000 * 1e18
+        );
+        borrower.borrow(pool, 9_000 * 1e18, 2_503.519024294695168295 * 1e18);
 
         assertEq(quote.balanceOf(address(borrower)), 30_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 20_000 * 1e18);
-        assertEq(pool.hdp(), 4_000 * 1e18);
-        assertEq(pool.lup(), 3_000 * 1e18);
+        assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
+        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
 
-        // check bucket debt at 2_500
-        (, , , deposit, debt, , , ) = pool.bucketAt(2_500 * 1e18);
+        // check bucket debt at 2_503.519024294695168295
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            2_503.519024294695168295 * 1e18
+        );
         assertEq(debt, 0);
         assertEq(deposit, 10_000 * 1e18);
-        // check bucket debt at 3_000
-        (, , , deposit, debt, , , ) = pool.bucketAt(3_000 * 1e18);
+        // check bucket debt at 3_010.892022197881557845
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            3_010.892022197881557845 * 1e18
+        );
         assertEq(debt, 10000.013001099140905000 * 1e18);
         assertEq(deposit, 0);
-        // check bucket debt at 3_500
-        (, , , deposit, debt, , , ) = pool.bucketAt(3_500 * 1e18);
+        // check bucket debt at 3_514.334495390401848927
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            3_514.334495390401848927 * 1e18
+        );
         assertEq(debt, 10_000 * 1e18);
         assertEq(deposit, 0);
-        // check bucket debt at 4_000
-        (, , , deposit, debt, , , ) = pool.bucketAt(4_000 * 1e18);
+        // check bucket debt at 4_000.927678580567537368
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            4_000.927678580567537368 * 1e18
+        );
         assertEq(debt, 10_000 * 1e18);
         assertEq(deposit, 0);
         // check pool balances
@@ -164,32 +183,42 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(borrowerDebt, 30_000.273023081959005000 * 1e18);
         assertEq(depositedCollateral, 100 * 1e18);
 
-        // deposit at 5_000 price and reallocate entire debt
+        // deposit at 5_007.644384905151472283 price and reallocate entire debt
         lender.addQuoteToken(
             pool,
             address(lender),
             40_000 * 1e18,
-            5_000 * 1e18
+            5_007.644384905151472283 * 1e18
         );
 
-        // check bucket debt at 2_500
-        (, , , deposit, debt, , , ) = pool.bucketAt(2_500 * 1e18);
+        // check bucket debt at 2_503.519024294695168295
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            2_503.519024294695168295 * 1e18
+        );
         assertEq(debt, 0);
         assertEq(deposit, 10_000 * 1e18);
-        // check bucket debt at 3_000
-        (, , , deposit, debt, , , ) = pool.bucketAt(3_000 * 1e18);
+        // check bucket debt at 3_010.892022197881557845
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            3_010.892022197881557845 * 1e18
+        );
         assertEq(debt, 0);
         assertEq(deposit, 10000.013001099140905000 * 1e18);
-        // check bucket debt at 3_500
-        (, , , deposit, debt, , , ) = pool.bucketAt(3_500 * 1e18);
+        // check bucket debt at 3_514.334495390401848927
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            3_514.334495390401848927 * 1e18
+        );
         assertEq(debt, 0);
         assertEq(deposit, 10000.130010991409050000 * 1e18);
-        // check bucket debt at 4_000
-        (, , , deposit, debt, , , ) = pool.bucketAt(4_000 * 1e18);
+        // check bucket debt at 4_000.927678580567537368
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            4_000.927678580567537368 * 1e18
+        );
         assertEq(debt, 0);
         assertEq(deposit, 10000.130010991409050000 * 1e18);
-        // check bucket debt at 5_000
-        (, , , deposit, debt, , , ) = pool.bucketAt(5_000 * 1e18);
+        // check bucket debt at 5_007.644384905151472283
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            5_007.644384905151472283 * 1e18
+        );
         assertEq(debt, 30000.273023081959005000 * 1e18);
         assertEq(deposit, 9999.726976918040995000 * 1e18);
         // check pool balances
@@ -203,25 +232,45 @@ contract ERC20PoolBorrowTest is DSTestPlus {
             pool,
             address(lender),
             100_000 * 1e18,
-            2_000 * 1e18
+            2_000.221618840727700609 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
             50_000 * 1e18,
-            1_000 * 1e18
+            1_004.989662429170775094 * 1e18
         );
-        lender.addQuoteToken(pool, address(lender), 50_000 * 1e18, 500 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            50_000 * 1e18,
+            502.433988063349232760 * 1e18
+        );
 
         // borrower1 takes a loan on 100_000 DAI
-        assertEq(pool.estimatePriceForLoan(75_000 * 1e18), 2_000 * 1e18);
-        assertEq(pool.estimatePriceForLoan(125_000 * 1e18), 1_000 * 1e18);
-        assertEq(pool.estimatePriceForLoan(175_000 * 1e18), 500 * 1e18);
+        assertEq(
+            pool.estimatePriceForLoan(75_000 * 1e18),
+            2_000.221618840727700609 * 1e18
+        );
+        assertEq(
+            pool.estimatePriceForLoan(125_000 * 1e18),
+            1_004.989662429170775094 * 1e18
+        );
+        assertEq(
+            pool.estimatePriceForLoan(175_000 * 1e18),
+            502.433988063349232760 * 1e18
+        );
         borrower.addCollateral(pool, 51 * 1e18);
         borrower.borrow(pool, 100_000 * 1e18, 1_000 * 1e18);
 
-        assertEq(pool.estimatePriceForLoan(25_000 * 1e18), 1_000 * 1e18);
-        assertEq(pool.estimatePriceForLoan(75_000 * 1e18), 500 * 1e18);
+        assertEq(
+            pool.estimatePriceForLoan(25_000 * 1e18),
+            1_004.989662429170775094 * 1e18
+        );
+        assertEq(
+            pool.estimatePriceForLoan(75_000 * 1e18),
+            502.433988063349232760 * 1e18
+        );
         assertEq(pool.estimatePriceForLoan(175_000 * 1e18), 0);
         borrower2.addCollateral(pool, 51 * 1e18);
         // should revert when taking a loan of 50_000 DAI that will drive pool undercollateralized
@@ -230,12 +279,12 @@ contract ERC20PoolBorrowTest is DSTestPlus {
     }
 
     function testBorrowTestCollateralValidation() public {
-        // lender deposits 10_000 DAI at 13.537
+        // lender deposits 10_000 DAI at 13.578453165083418466 * 1e18
         lender.addQuoteToken(
             pool,
             address(lender),
             10_000 * 1e18,
-            13.537 * 1e18
+            13.578453165083418466 * 1e18
         );
         borrower.addCollateral(pool, 100 * 1e18);
         // should not revert when borrower takes a loan on 100_000 DAI
