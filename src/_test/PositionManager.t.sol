@@ -103,7 +103,7 @@ contract PositionManagerTest is DSTestPlus {
 
     function generateAddress() private returns (address addr) {
         // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        address addr = address(
+        addr = address(
             uint160(
                 uint256(
                     keccak256(abi.encodePacked(nonce, blockhash(block.number)))
@@ -111,12 +111,11 @@ contract PositionManagerTest is DSTestPlus {
             )
         );
         nonce++;
-        return addr;
     }
 
     function testMint() public {
         uint256 mintAmount = 50 * 1e18;
-        uint256 mintPrice = 1000 * 10**18;
+        uint256 mintPrice = 1_004.989662429170775094 * 10**18;
 
         mintAndApproveQuoteTokens(alice, mintAmount, approveBig);
 
@@ -156,9 +155,9 @@ contract PositionManagerTest is DSTestPlus {
         mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
 
         // call pool contract directly to add quote tokens
-        uint256 priceOne = 4_000 * 1e18;
-        uint256 priceTwo = 3_000 * 1e18;
-        uint256 priceThree = 1_000 * 1e18;
+        uint256 priceOne = 4_000.927678580567537368 * 1e18;
+        uint256 priceTwo = 3_010.892022197881557845 * 1e18;
+        uint256 priceThree = 1_004.989662429170775094 * 1e18;
 
         pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceOne);
         pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceTwo);
@@ -190,7 +189,6 @@ contract PositionManagerTest is DSTestPlus {
         positionManager.memorializePositions(memorializeParams);
 
         // check memorialization success
-        (address positionOwner, ) = positionManager.positions(tokenId);
         uint256 positionAtPriceOneLPTokens = positionManager.getLPTokens(
             tokenId,
             priceOne
@@ -218,7 +216,7 @@ contract PositionManagerTest is DSTestPlus {
         address testAddress = generateAddress();
 
         uint256 mintAmount = 10000 * 1e18;
-        uint256 mintPrice = 1000 * 10**18;
+        uint256 mintPrice = 1_004.989662429170775094 * 10**18;
         mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
 
         uint256 tokenId = mintNFT(testAddress, address(pool));
@@ -262,7 +260,6 @@ contract PositionManagerTest is DSTestPlus {
             mintPrice
         );
 
-        (address positionUpdatedTwice, ) = positionManager.positions(tokenId);
         uint256 positionUpdatedTwiceTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -272,7 +269,7 @@ contract PositionManagerTest is DSTestPlus {
         assert(positionUpdatedTwiceTokens > updatedLPTokens);
 
         // add liquidity to a different price, for same owner and tokenId
-        uint256 newPrice = 50000 * 1e18;
+        uint256 newPrice = 50_159.593888626183666006 * 1e18;
         increaseLiquidity(
             tokenId,
             testAddress,
@@ -288,7 +285,7 @@ contract PositionManagerTest is DSTestPlus {
         // generate a new address and set test params
         address testAddress = generateAddress();
         uint256 mintAmount = 10000 * 1e18;
-        uint256 mintPrice = 1000 * 10**18;
+        uint256 mintPrice = 1_004.989662429170775094 * 10**18;
 
         mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
 
@@ -304,7 +301,6 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // find number of lp tokens received
-        (address originalPositionOwner, ) = positionManager.positions(tokenId);
         uint256 originalLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -341,7 +337,6 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensToBeRemoved);
 
-        (address updatedPositionOwner, ) = positionManager.positions(tokenId);
         uint256 updatedLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -355,7 +350,7 @@ contract PositionManagerTest is DSTestPlus {
     function testDecreaseLiquidityWithDebt() public {
         // generate a new address and set test params
         address testLender = generateAddress();
-        uint256 testBucketPrice = 10000 * 10**18;
+        uint256 testBucketPrice = 10_016.501589292607751220 * 10**18;
         uint256 mintAmount = 50000 * 1e18;
 
         mintAndApproveQuoteTokens(testLender, mintAmount, approveBig);
@@ -440,7 +435,7 @@ contract PositionManagerTest is DSTestPlus {
         // generate a new address and set test params
         address testAddress = generateAddress();
         uint256 mintAmount = 10000 * 1e18;
-        uint256 mintPrice = 1000 * 10**18;
+        uint256 mintPrice = 1_004.989662429170775094 * 10**18;
 
         mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
 

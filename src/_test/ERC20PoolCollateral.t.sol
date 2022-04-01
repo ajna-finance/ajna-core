@@ -47,7 +47,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             pool,
             address(lender),
             20_000 * 1e18,
-            5_000 * 1e18
+            5_007.644384905151472283 * 1e18
         );
 
         // test deposit collateral
@@ -75,7 +75,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             address(borrower)
         );
         assertEq(deposited, 100 * 1e18);
-        assertEq(encumbered, 4 * 1e18);
+        assertEq(encumbered, 3.993893827662208276 * 1e18);
 
         // should revert if trying to remove all collateral deposited
         vm.expectRevert("ajna/not-enough-collateral");
@@ -112,31 +112,65 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             pool,
             address(lender),
             10_000 * 1e18,
-            1004948314 * 1e18
+            4_000 * 1e18
         );
 
         // should revert if no lp tokens in bucket
         vm.expectRevert("ajna/no-claim-to-bucket");
-        lender.claimCollateral(pool, address(lender), 1 * 1e18, 4_000 * 1e18);
+        lender.claimCollateral(
+            pool,
+            address(lender),
+            1 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
 
         // lender deposit DAI in 3 buckets
-        lender.addQuoteToken(pool, address(lender), 3_000 * 1e18, 4_000 * 1e18);
-        lender.addQuoteToken(pool, address(lender), 4_000 * 1e18, 3_000 * 1e18);
-        lender.addQuoteToken(pool, address(lender), 5_000 * 1e18, 1_000 * 1e18);
-        assertEq(pool.lpBalance(address(lender), 4_000 * 1e18), 3_000 * 1e18);
-        assertEq(pool.lpBalance(address(lender), 3_000 * 1e18), 4_000 * 1e18);
-        assertEq(pool.lpBalance(address(lender), 1_000 * 1e18), 5_000 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            3_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            4_000 * 1e18,
+            3_010.892022197881557845 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            5_000 * 1e18,
+            1_004.989662429170775094 * 1e18
+        );
+        assertEq(
+            pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18),
+            3_000 * 1e18
+        );
+        assertEq(
+            pool.lpBalance(address(lender), 3_010.892022197881557845 * 1e18),
+            4_000 * 1e18
+        );
+        assertEq(
+            pool.lpBalance(address(lender), 1_004.989662429170775094 * 1e18),
+            5_000 * 1e18
+        );
 
         // should revert when claiming collateral if no purchase bid was done on bucket
         vm.expectRevert("ajna/insufficient-amount-to-claim");
-        lender.claimCollateral(pool, address(lender), 1 * 1e18, 4_000 * 1e18);
+        lender.claimCollateral(
+            pool,
+            address(lender),
+            1 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
 
         // borrower takes a loan of 4000 DAI
         borrower.addCollateral(pool, 100 * 1e18);
         borrower.borrow(pool, 4_000 * 1e18, 3_000 * 1e18);
-        assertEq(pool.lup(), 3_000 * 1e18);
+        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
 
-        // check 3000 bucket balance before purchase Bid
+        // check 3_010.892022197881557845 bucket balance before purchase Bid
         (
             ,
             ,
@@ -146,52 +180,80 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             ,
             uint256 lpOutstanding,
             uint256 bucketCollateral
-        ) = pool.bucketAt(3_000 * 1e18);
+        ) = pool.bucketAt(3_010.892022197881557845 * 1e18);
         assertEq(deposit, 3_000 * 1e18);
         assertEq(debt, 1_000 * 1e18);
         assertEq(lpOutstanding, 4_000 * 1e18);
         assertEq(bucketCollateral, 0);
-        assertEq(pool.lpBalance(address(lender), 3_000 * 1e18), 4_000 * 1e18);
+        assertEq(
+            pool.lpBalance(address(lender), 3_010.892022197881557845 * 1e18),
+            4_000 * 1e18
+        );
 
         // bidder purchases some of the middle bucket
-        bidder.purchaseBid(pool, 1_500 * 1e18, 3_000 * 1e18);
+        bidder.purchaseBid(pool, 1_500 * 1e18, 3_010.892022197881557845 * 1e18);
 
         // check balances
-        assertEq(pool.lpBalance(address(lender), 3_000 * 1e18), 4_000 * 1e18);
+        assertEq(
+            pool.lpBalance(address(lender), 3_010.892022197881557845 * 1e18),
+            4_000 * 1e18
+        );
         assertEq(collateral.balanceOf(address(lender)), 0);
-        assertEq(collateral.balanceOf(address(pool)), 100.5 * 1e18);
+        assertEq(
+            collateral.balanceOf(address(pool)),
+            100.498191230021272793 * 1e18
+        );
         assertEq(quote.balanceOf(address(lender)), 188_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 6_500 * 1e18);
         assertEq(pool.totalCollateral(), 100 * 1e18);
 
         // should revert if claiming a larger amount than available in bucket
         vm.expectRevert("ajna/insufficient-amount-to-claim");
-        lender.claimCollateral(pool, address(lender), 2 * 1e18, 3_000 * 1e18);
+        lender.claimCollateral(
+            pool,
+            address(lender),
+            2 * 1e18,
+            3_010.892022197881557845 * 1e18
+        );
 
-        // lender claims 0.5 collateral
+        // lender claims 0.498191230021272793 collateral
         vm.expectEmit(true, false, false, true);
-        emit Transfer(address(pool), address(lender), 0.5 * 1e18);
+        emit Transfer(
+            address(pool),
+            address(lender),
+            0.498191230021272793 * 1e18
+        );
         emit ClaimCollateral(
             address(lender),
-            3_000 * 1e18,
-            0.5 * 1e18,
-            1_500 * 1e18
+            3_010.892022197881557845 * 1e18,
+            0.498191230021272793 * 1e18,
+            1_499.999999999999999431 * 1e18
         );
-        lender.claimCollateral(pool, address(lender), 0.5 * 1e18, 3_000 * 1e18);
+        lender.claimCollateral(
+            pool,
+            address(lender),
+            0.498191230021272793 * 1e18,
+            3_010.892022197881557845 * 1e18
+        );
 
-        // check 3000 bucket balance after collateral claimed
+        // check 3_010.892022197881557845 bucket balance after collateral claimed
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = pool
-            .bucketAt(3_000 * 1e18);
+            .bucketAt(3_010.892022197881557845 * 1e18);
         assertEq(deposit, 1_500 * 1e18);
         assertEq(debt, 1_000 * 1e18);
-        assertEq(lpOutstanding, 2_500 * 1e18);
+        assertEq(lpOutstanding, 2_500.000000000000000569 * 1e18);
         assertEq(bucketCollateral, 0);
-        assertEq(pool.lpBalance(address(lender), 3_000 * 1e18), 2_500 * 1e18);
 
         // claimer lp tokens for pool should be diminished
-        assertEq(pool.lpBalance(address(lender), 3_000 * 1e18), 2_500 * 1e18);
+        assertEq(
+            pool.lpBalance(address(lender), 3_010.892022197881557845 * 1e18),
+            2_500.000000000000000569 * 1e18
+        );
         // claimer collateral balance should increase with claimed amount
-        assertEq(collateral.balanceOf(address(lender)), 0.5 * 1e18);
+        assertEq(
+            collateral.balanceOf(address(lender)),
+            0.498191230021272793 * 1e18
+        );
         // claimer quote token balance should stay the same
         assertEq(quote.balanceOf(address(lender)), 188_000 * 1e18);
         assertEq(collateral.balanceOf(address(pool)), 100 * 1e18);
