@@ -322,12 +322,17 @@ contract ERC20Pool is IPool, Clone {
         accumulatePoolInterest();
         accumulateBorrowerInterest(borrower);
 
-        uint256 debtToPay;
-        (lup, debtToPay) = _buckets.repay(_maxAmount, lup, inflatorSnapshot);
+        uint256 amount;
+        if (_maxAmount > borrower.debt) {
+            amount = borrower.debt;
+        } else {
+            amount = _maxAmount;
+        }
 
-        emit debug_thing(debtToPay, borrower.debt);
+        uint256 debtToPay;
+        (lup, debtToPay) = _buckets.repay(amount, lup, inflatorSnapshot);
+
         if (debtToPay >= borrower.debt) {
-            debtToPay = borrower.debt;
             borrower.debt = 0;
             borrower.inflatorSnapshot = 0;
         } else {
