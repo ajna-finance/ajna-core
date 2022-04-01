@@ -100,12 +100,11 @@ def test_repay(lenders, borrowers, mkr_dai_pool, dai, mkr, chain):
     (
         debt,
         deposited,
-        snapshot,
+        _,
     ) = mkr_dai_pool.borrowers(borrower1)
     print(f"debt after repay - {debt}")
     assert deposited == 100 * 1e18
     assert debt == 0
-    assert snapshot == 0
     print(f"debt after repay - {debt}")
     assert mkr_dai_pool.lup() == 5_000 * 1e18
     # TODO: fix total debt and encumbered collateral dust reconciliation
