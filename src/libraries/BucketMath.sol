@@ -19,14 +19,14 @@ import {PRBMathSD59x18} from "@prb-math/contracts/PRBMathSD59x18.sol";
 library BucketMath {
     using PRBMathSD59x18 for int256;
 
-    int256 public constant WAD = 10**18;
+    uint256 public constant WAD = 10**18;
 
     // constant price indices defining the min and max of the potential price range
-    int256 public constant MAX_PRICE_INDEX = 6926;
+    int256 public constant MAX_PRICE_INDEX = 4156;
     int256 public constant MIN_PRICE_INDEX = -3232;
 
-    int256 public constant MIN_PRICE = 100000000000;
-    int256 public constant MAX_PRICE = 1004948313 * WAD;
+    uint256 public constant MIN_PRICE = 99836282890;
+    uint256 public constant MAX_PRICE = 1004968987.606512354182109771 * 10**18;
 
     // step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
     int256 public constant FLOAT_STEP_INT = 1005000000000000000;
@@ -38,8 +38,8 @@ library BucketMath {
     /// @notice Calculates the index for a given bucket price
     /// @dev Throws if price exceeds maximum constant
     /// @dev Price expected to be inputted as a 18 decimal WAD
-    function priceToIndex(int256 price) public pure returns (int256 index) {
-        require(price <= MAX_PRICE && price >= MIN_PRICE, "Exceeds P Bounds");
+    function priceToIndex(uint256 price) public pure returns (int256 index) {
+        require(price <= MAX_PRICE && price >= MIN_PRICE, "ajna/invalid-price");
 
         // V1
         // index = (price - MIN_PRICE) / FLOAT_STEP;
@@ -49,24 +49,27 @@ library BucketMath {
 
         // V3
         index = PRBMathSD59x18.div(
-            PRBMathSD59x18.log2(price),
+            PRBMathSD59x18.log2(int256(price)),
             PRBMathSD59x18.log2(FLOAT_STEP_INT)
         );
+        int256 ceilIndex = PRBMathSD59x18.ceil(index);
         if (index < 0) {
-            return PRBMathSD59x18.toInt(index) - 1;
+            if (ceilIndex - index > 0.5 * 1e18) {
+                return PRBMathSD59x18.toInt(ceilIndex) - 1;
+            }
+            return PRBMathSD59x18.toInt(ceilIndex);
         }
-
-        return PRBMathSD59x18.toInt(index);
+        return PRBMathSD59x18.toInt(ceilIndex);
     }
 
     /// @notice Calculates the bucket price for a given index
     /// @dev Throws if index exceeds maximum constant
     /// @dev Uses fixed-point math to get around lack of floating point numbers in EVM
     /// @dev Price expected to be inputted as a 18 decimal WAD
-    function indexToPrice(int256 index) public pure returns (int256 price) {
+    function indexToPrice(int256 index) public pure returns (uint256 price) {
         require(
             index <= MAX_PRICE_INDEX && index >= MIN_PRICE_INDEX,
-            "Exceeds I Bounds"
+            "ajna/invalid-index"
         );
 
         // V1
@@ -77,10 +80,12 @@ library BucketMath {
 
         // V3
         // x^y = 2^(y*log_2(x))
-        price = PRBMathSD59x18.exp2(
-            PRBMathSD59x18.mul(
-                PRBMathSD59x18.fromInt(index),
-                PRBMathSD59x18.log2(FLOAT_STEP_INT)
+        price = uint256(
+            PRBMathSD59x18.exp2(
+                PRBMathSD59x18.mul(
+                    PRBMathSD59x18.fromInt(index),
+                    PRBMathSD59x18.log2(FLOAT_STEP_INT)
+                )
             )
         );
     }
@@ -89,10 +94,10 @@ library BucketMath {
     /// @dev Price needs to be cast to int, since indices can be negative
     /// @return A boolean indicating if the given price is valid
     function isValidPrice(uint256 _price) public pure returns (bool) {
-        // cast uint256 price to int256 to enable comparison to int constants
-        int256 int_price = int256(_price);
+        int256 index = priceToIndex(_price);
+        uint256 price = indexToPrice(index);
 
-        return (int_price >= MIN_PRICE && int_price < MAX_PRICE);
+        return _price == price;
     }
 
     /// @notice Determine if a given index is within the constant range
@@ -101,13 +106,15 @@ library BucketMath {
         return (_index >= MIN_PRICE_INDEX && _index <= MAX_PRICE_INDEX);
     }
 
-    // TODO: finish implementing
-    // function getNextValidPrice(uint256 _price) public pure returns (uint256) {
-    //     // dummy implementation, should calculate using maths library
-    //     uint256 next = _price + 1;
-    //     if (next > MAX_PRICE) {
-    //         return 0;
-    //     }
-    //     return next;
-    // }
+    /// @notice Determine closest bucket index for a given price
+    /// @return index closest bucket index
+    /// @return price closest bucket price
+    function getClosestBucket(uint256 _price)
+        external
+        pure
+        returns (int256 index, uint256 price)
+    {
+        index = priceToIndex(_price);
+        price = indexToPrice(index);
+    }
 }

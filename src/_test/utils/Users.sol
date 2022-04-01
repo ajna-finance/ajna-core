@@ -107,4 +107,8 @@ contract UserWithQuoteToken {
         uint256 tokenId,
         bytes memory data
     ) external returns (bytes4) {}
+
+    function updateInterestRate(ERC20Pool pool) public {
+        pool.updateInterestRate();
+    }
 }
