@@ -86,16 +86,23 @@ def test_repay(lenders, borrowers, mkr_dai_pool, dai, mkr, chain):
 
     tx = mkr_dai_pool.repay(16_000 * 1e18, {"from": borrower1})
     pool_event = tx.events["Repay"][0][0]
+    pool_transfer_event = tx.events["Transfer"][0][0]
+    print(f"pool transfer event - {pool_transfer_event['wad']}")
+    # assert pool_transfer_event["wad"] == 15_000.520087829621078705
+
     assert pool_event["borrower"] == borrower1
     assert pool_event["lup"] == 5_000 * 1e18
-    print(f"pool event amount debt - {pool_event['amount']}")
+    print(f"pool repay event amount - {pool_event['amount']}")
     assert 15_000 * 1e18 <= pool_event["amount"] <= 15_001 * 1e18
+    print(f"debt before - payment = {debt - pool_event['amount']}")
+    print(f"payment - debt before = {pool_event['amount'] - debt}")
 
     (
         debt,
         deposited,
         snapshot,
     ) = mkr_dai_pool.borrowers(borrower1)
+    print(f"debt after repay - {debt}")
     assert deposited == 100 * 1e18
     assert debt == 0
     assert snapshot == 0

@@ -322,7 +322,7 @@ contract ERC20Pool is IPool, Clone {
         accumulateBorrowerInterest(borrower);
 
         uint256 amount;
-        if (_maxAmount > borrower.debt) {
+        if (_maxAmount >= borrower.debt) {
             amount = borrower.debt;
         } else {
             amount = _maxAmount;
