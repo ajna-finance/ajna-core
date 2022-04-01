@@ -108,23 +108,20 @@ library Buckets {
 
             // accumulate bucket interest
             accumulateBucketInterest(curLup, _inflator);
+            curLup.inflatorSnapshot = _inflator;
 
-            if (curLup.onDeposit > curLup.debt) {
-                curLup.inflatorSnapshot = _inflator;
-
-                if (amountRemaining > curLup.onDeposit) {
-                    // take all on deposit from this bucket
-                    curLup.debt += curLup.onDeposit;
-                    amountRemaining -= curLup.onDeposit;
-                    loanCost += Maths.wdiv(curLup.onDeposit, curLup.price);
-                    curLup.onDeposit -= curLup.onDeposit;
-                } else {
-                    // take all remaining amount for loan from this bucket and exit
-                    curLup.onDeposit -= amountRemaining;
-                    curLup.debt += amountRemaining;
-                    loanCost += Maths.wdiv(amountRemaining, curLup.price);
-                    break;
-                }
+            if (amountRemaining > curLup.onDeposit) {
+                // take all on deposit from this bucket
+                curLup.debt += curLup.onDeposit;
+                amountRemaining -= curLup.onDeposit;
+                loanCost += Maths.wdiv(curLup.onDeposit, curLup.price);
+                curLup.onDeposit -= curLup.onDeposit;
+            } else {
+                // take all remaining amount for loan from this bucket and exit
+                curLup.onDeposit -= amountRemaining;
+                curLup.debt += amountRemaining;
+                loanCost += Maths.wdiv(amountRemaining, curLup.price);
+                break;
             }
 
             // move to next bucket
