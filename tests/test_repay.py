@@ -67,10 +67,10 @@ def test_repay(lenders, borrowers, mkr_dai_pool, dai, mkr, chain):
     assert transfer_event["src"] == borrower1
     assert transfer_event["dst"] == mkr_dai_pool
     assert transfer_event["wad"] == 10_000 * 1e18
-    pool_event = tx.events["Repay"][0][0]
-    assert pool_event["borrower"] == borrower1
-    assert pool_event["lup"] == 4_000 * 1e18
-    assert pool_event["amount"] == 10_000 * 1e18
+    repay_event = tx.events["Repay"][0][0]
+    assert repay_event["borrower"] == borrower1
+    assert repay_event["lup"] == 4_000 * 1e18
+    assert repay_event["amount"] == 10_000 * 1e18
 
     # overpay remaining 15_000 DAI plus accumulated debt
     chain.sleep(8200)
@@ -82,30 +82,19 @@ def test_repay(lenders, borrowers, mkr_dai_pool, dai, mkr, chain):
         snapshot,
     ) = mkr_dai_pool.borrowers(borrower1)
 
-    print(f"debt before repay - {debt}")
-
     tx = mkr_dai_pool.repay(16_000 * 1e18, {"from": borrower1})
     pool_event = tx.events["Repay"][0][0]
-    pool_transfer_event = tx.events["Transfer"][0][0]
-    print(f"pool transfer event - {pool_transfer_event['wad']}")
-    # assert pool_transfer_event["wad"] == 15_000.520087829621078705
-
     assert pool_event["borrower"] == borrower1
     assert pool_event["lup"] == 5_000 * 1e18
-    print(f"pool repay event amount - {pool_event['amount']}")
     assert 15_000 * 1e18 <= pool_event["amount"] <= 15_001 * 1e18
-    print(f"debt before - payment = {debt - pool_event['amount']}")
-    print(f"payment - debt before = {pool_event['amount'] - debt}")
 
     (
         debt,
         deposited,
         _,
     ) = mkr_dai_pool.borrowers(borrower1)
-    print(f"debt after repay - {debt}")
     assert deposited == 100 * 1e18
     assert debt == 0
-    print(f"debt after repay - {debt}")
     assert mkr_dai_pool.lup() == 5_000 * 1e18
     # TODO: fix total debt and encumbered collateral dust reconciliation
     assert mkr_dai_pool.totalDebt() < 0.000003 * 1e18
