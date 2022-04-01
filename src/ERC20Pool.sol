@@ -99,6 +99,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 collateral
     );
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
+    event debug_thing(uint256 debtToPay, uint256 borrowerDebt);
 
     function initialize() external {
         collateralScale = 10**(18 - collateral().decimals());
@@ -324,6 +325,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 debtToPay;
         (lup, debtToPay) = _buckets.repay(_maxAmount, lup, inflatorSnapshot);
 
+        emit debug_thing(debtToPay, borrower.debt);
         if (debtToPay >= borrower.debt) {
             debtToPay = borrower.debt;
             borrower.debt = 0;
