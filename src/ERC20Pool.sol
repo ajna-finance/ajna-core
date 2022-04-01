@@ -331,22 +331,16 @@ contract ERC20Pool is IPool, Clone {
         uint256 debtToPay;
         (lup, debtToPay) = _buckets.repay(amount, lup, inflatorSnapshot);
 
-        if (debtToPay >= borrower.debt) {
-            borrower.debt = 0;
-            borrower.inflatorSnapshot = 0;
-        } else {
-            borrower.debt -= debtToPay;
-        }
-
-        totalQuoteToken += debtToPay;
-        totalDebt -= Maths.min(totalDebt, debtToPay);
+        borrower.debt -= Maths.min(borrower.debt, amount);
+        totalQuoteToken += amount;
+        totalDebt -= Maths.min(totalDebt, amount);
 
         quoteToken().safeTransferFrom(
             msg.sender,
             address(this),
             debtToPay / quoteTokenScale
         );
-        emit Repay(msg.sender, lup, debtToPay);
+        emit Repay(msg.sender, lup, amount);
     }
 
     /// @notice Exchanges collateral for quote token
