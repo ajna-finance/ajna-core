@@ -90,8 +90,8 @@ contract PositionManager is IPositionManager, PositionNFT {
 
     // TODO: add allowedCallers list to enable either recipient, or listed address to execute operations?
     // TODO: compare w/ uniswap approach (decre, burn, collect - rest transfer from msg.sender) https://github.com/Uniswap/v3-periphery/blob/main/contracts/NonfungiblePositionManager.sol#L184
-    modifier onlyRecipient(address recipient) {
-        require(msg.sender == recipient, "Ajna/wrong-caller");
+    modifier isAuthorizedForToken(uint256 tokenId) {
+        require(_isApprovedOrOwner(msg.sender, tokenId), "Ajna/not-approved");
         _;
     }
 
@@ -101,14 +101,12 @@ contract PositionManager is IPositionManager, PositionNFT {
     function mint(MintParams calldata params)
         external
         payable
-        onlyRecipient(params.recipient)
         returns (uint256 tokenId)
     {
         _safeMint(params.recipient, (tokenId = _nextId++));
 
         // create a new position associated with the newly minted tokenId
         Position storage position = positions[tokenId];
-        position.owner = params.recipient;
         position.pool = params.pool;
 
         emit Mint(params.recipient, params.pool, tokenId);
@@ -136,7 +134,7 @@ contract PositionManager is IPositionManager, PositionNFT {
     function burn(BurnParams calldata params)
         external
         payable
-        onlyRecipient(params.recipient)
+        isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
         require(position.lpTokens[params.price] == 0, "Ajna/liquidity-not-removed");
@@ -149,7 +147,7 @@ contract PositionManager is IPositionManager, PositionNFT {
     function increaseLiquidity(IncreaseLiquidityParams calldata params)
         external
         payable
-        onlyRecipient(params.recipient)
+        isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
 
@@ -172,7 +170,7 @@ contract PositionManager is IPositionManager, PositionNFT {
     function decreaseLiquidity(DecreaseLiquidityParams calldata params)
         external
         payable
-        onlyRecipient(params.recipient)
+        isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
 
@@ -211,19 +209,15 @@ contract PositionManager is IPositionManager, PositionNFT {
         );
     }
 
-    // TODO: override safeTransfer as well?
-    function safeTransferFrom(
+    /// @notice Override ERC721 afterTokenTransfer hook to ensure that transferred NFT's are properly tracked within the PositionManager data struct
+    /// @dev This call also executes upon Mint
+    function _afterTokenTransfer(
         address from,
         address to,
         uint256 tokenId
-    ) public virtual override(ERC721) {
-        super.safeTransferFrom(from, to, tokenId);
-
-        // update position information for new owner
+    ) internal virtual override(ERC721) {
         Position storage position = positions[tokenId];
         position.owner = to;
-
-        // TODO: update modifier protecting liquidity operations
     }
 
     // -------------------- Position State View functions --------------------

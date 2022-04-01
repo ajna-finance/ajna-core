@@ -178,19 +178,6 @@ contract PositionManagerTest is DSTestPlus {
         assert(lpTokens == 0);
     }
 
-    function testMintPermissions() public {
-        address recipient = generateAddress();
-        address externalCaller = generateAddress();
-
-        IPositionManager.MintParams memory mintParams = IPositionManager
-            .MintParams(recipient, address(pool));
-
-        // should revert if called by a non-recipient address
-        vm.prank(externalCaller);
-        vm.expectRevert("Ajna/wrong-caller");
-        positionManager.mint(mintParams);
-    }
-
     function testMemorializePositions() public {
         address testAddress = generateAddress();
         uint256 mintAmount = 10000 * 1e18;
@@ -326,6 +313,33 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), mintAmount);
     }
 
+    function testIncreaseLiquidityPermissions() public {
+        address recipient = generateAddress();
+        address externalCaller = generateAddress();
+
+        uint256 tokenId = mintNFT(recipient, address(pool));
+
+        uint256 mintAmount = 10000 * 1e18;
+        uint256 mintPrice = 1000 * 10**18;
+        mintAndApproveQuoteTokens(recipient, mintAmount, approveBig);
+
+        IPositionManager.IncreaseLiquidityParams
+            memory increaseLiquidityParams = IPositionManager
+                .IncreaseLiquidityParams(
+                    tokenId,
+                    recipient,
+                    address(pool),
+                    mintAmount / 4,
+                    mintPrice
+                );
+
+        // should revert if called by a non-recipient address
+        vm.prank(externalCaller);
+        vm.expectRevert("Ajna/not-approved");
+
+        positionManager.increaseLiquidity(increaseLiquidityParams);
+    }
+
     function testDecreaseLiquidityNoDebt() public {
         // generate a new address and set test params
         address testAddress = generateAddress();
@@ -448,7 +462,6 @@ contract PositionManagerTest is DSTestPlus {
         assertTrue(updatedLPTokens < originalLPTokens);
     }
 
-    // TODO: handle accounting discrepancy for NFTs transferred to a new address
     // TODO: implement test case where users transfer NFTs to another user, and that user Redeems it
     function testNFTTransfer() public {
         // generate addresses and set test params
@@ -488,14 +501,33 @@ contract PositionManagerTest is DSTestPlus {
         uint256 nextMintAmount = 50000 * 1e18;
         mintAndApproveQuoteTokens(originalOwner, nextMintAmount, approveBig);
 
-        vm.expectRevert("Ajna/wrong-caller");
-        increaseLiquidity(
+        IPositionManager.IncreaseLiquidityParams
+            memory increaseLiquidityParams = IPositionManager
+                .IncreaseLiquidityParams(
+                    tokenId,
+                    originalOwner,
+                    address(pool),
+                    mintAmount / 4,
+                    testBucketPrice
+                );
+
+        vm.expectRevert("Ajna/not-approved");
+        positionManager.increaseLiquidity(increaseLiquidityParams);
+
+        // TODO: check new owner can decreaseLiquidity
+        uint256 lpTokensToAttempt = positionManager.getLPTokens(
             tokenId,
-            originalOwner,
-            address(pool),
-            nextMintAmount,
             testBucketPrice
         );
+
+        decreaseLiquidity(
+            tokenId,
+            newOwner,
+            address(pool),
+            testBucketPrice,
+            lpTokensToAttempt
+        );
+
     }
 
     function testBurn() public {
