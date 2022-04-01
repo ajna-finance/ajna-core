@@ -10,7 +10,6 @@ import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 import {PositionManager, IPositionManager} from "../PositionManager.sol";
 
-// TODO: add multiple pools to tests
 contract PositionManagerTest is DSTestPlus {
     PositionManager internal positionManager;
     ERC20Pool internal pool;
@@ -234,11 +233,20 @@ contract PositionManagerTest is DSTestPlus {
         assert(positionAtWrongPriceLPTokens == 0);
     }
 
-    // TODO: implement test case where multiple users mints multiple NFTs
+    // TODO: implement test case where multiple users mints multiple NFTs to multiple pools
     function testMintMultiple() public {}
 
-    // TODO: implement test case where caller is not an EOA
-    function testMintToContract() public {}
+    function testMintToContract() public {
+        UserWithQuoteToken lender = new UserWithQuoteToken();
+        quote.mint(address(lender), 200_000 * 1e18);
+        lender.approveToken(quote, address(pool), 200_000 * 1e18);
+
+        // check that contract can successfully receive the NFT
+        vm.expectEmit(true, true, true, true);
+        emit Mint(address(lender), address(pool), 1);
+
+        uint256 tokenId = mintNFT(address(lender), address(pool));
+    }
 
     function testIncreaseLiquidity() public {
         // generate a new address
@@ -458,7 +466,6 @@ contract PositionManagerTest is DSTestPlus {
         assertTrue(updatedLPTokens < originalLPTokens);
     }
 
-    // TODO: implement test case where users transfer NFTs to another user, and that user Redeems it
     function testNFTTransfer() public {
         // generate addresses and set test params
         address testMinter = generateAddress();
@@ -510,7 +517,7 @@ contract PositionManagerTest is DSTestPlus {
         vm.expectRevert("Ajna/not-approved");
         positionManager.increaseLiquidity(increaseLiquidityParams);
 
-        // TODO: check new owner can decreaseLiquidity
+        // check new owner can decreaseLiquidity
         uint256 lpTokensToAttempt = positionManager.getLPTokens(
             tokenId,
             testBucketPrice
