@@ -243,7 +243,7 @@ class TestUtils:
         # formatting shortcuts
         w = 12
         def j(text):
-            return str.ljust(text, w)
+            return str.rjust(text, w)
         def n(wad):
             return wad/1e18
         def f(wad):
@@ -254,7 +254,7 @@ class TestUtils:
             if csv:
                 lines.append("Price,Deposit,Debt,Collateral")
             else:
-                lines.append(j('Price') + j('Deposit') + j('Debt') + j('Collatrl'))
+                lines.append(j('Price') + j('Deposit') + j('Debt') + j('Collateral'))
         for i in range(max_bucket_index, min_bucket_index, -1):
             price = bucket_math.indexToPrice(i)
             (
