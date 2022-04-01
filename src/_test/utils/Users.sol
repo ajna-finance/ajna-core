@@ -99,14 +99,16 @@ contract UserWithQuoteToken {
         token.approve(spender, amount);
     }
 
-    // TODO: implement to enable test user to receive LP NFT in case of contract not EOA callers
+    // Implementing this method allows contracts to receive ERC721 tokens
     // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
     function onERC721Received(
         address operator,
         address from,
         uint256 tokenId,
         bytes memory data
-    ) external returns (bytes4) {}
+    ) external returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
 
     function updateInterestRate(ERC20Pool pool) public {
         pool.updateInterestRate();

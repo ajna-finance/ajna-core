@@ -88,8 +88,6 @@ contract PositionManager is IPositionManager, PositionNFT {
     /// @dev The ID of the next token that will be minted. Skips 0
     uint176 private _nextId = 1;
 
-    // TODO: add allowedCallers list to enable either recipient, or listed address to execute operations?
-    // TODO: compare w/ uniswap approach (decre, burn, collect - rest transfer from msg.sender) https://github.com/Uniswap/v3-periphery/blob/main/contracts/NonfungiblePositionManager.sol#L184
     modifier isAuthorizedForToken(uint256 tokenId) {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Ajna/not-approved");
         _;
@@ -131,6 +129,9 @@ contract PositionManager is IPositionManager, PositionNFT {
     }
 
     // TODO: add support for ERC721Burnable?
+    /// @notice Called by lenders to burn an existing NFT
+    /// @dev Requires that all lp tokens have been removed from the NFT prior to calling
+    /// @param params Calldata struct supplying inputs required to update the underlying assets owed to an NFT
     function burn(BurnParams calldata params)
         external
         payable
@@ -157,7 +158,7 @@ contract PositionManager is IPositionManager, PositionNFT {
             params.amount,
             params.price
         );
-        require(lpTokensAdded != 0, "No liquidity added");
+        require(lpTokensAdded != 0, "Ajna/increase-liquidity-failed");
 
         // update position with newly added lp shares
         position.lpTokens[params.price] += lpTokensAdded;
