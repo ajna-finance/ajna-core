@@ -185,7 +185,6 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(borrowerDebt, 30_000.273023081959005000 * 1e18);
         assertEq(depositedCollateral, 100 * 1e18);
 
-        // FIXME: this blows up with an "Arithmetic over/underflow"
         // deposit at 5_007.644384905151472283 price and reallocate entire debt
         lender.addQuoteToken(
             pool,
