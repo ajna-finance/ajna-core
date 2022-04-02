@@ -515,7 +515,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             4_000.927678580567537368 * 1e18
         );
         // FIXME: Test works if this is a single 3k deposit, but if lender
-        // makes two deposits, their LP token is wildly off
+        // makes two deposits, bucket LP token is wildly off
         lender.addQuoteToken(
             pool,
             address(lender),
