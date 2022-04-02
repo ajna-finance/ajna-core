@@ -506,6 +506,62 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         );
     }
 
+    function testRemoveQuoteTokenEntirelyWithDebt() public {
+        // lender deposit into 2 buckets
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            3_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+        skip(14);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            6_000 * 1e18,
+            3_010.892022197881557845 * 1e18
+        );
+        skip(1340);
+
+        // borrower takes a loan of 4000 DAI
+        borrower.addCollateral(pool, 100 * 1e18);
+        borrower.borrow(pool, 4_000 * 1e18, 0);
+        (, , , uint256 deposit, uint256 debt, , , ) = pool
+            .bucketAt(4_000.927678580567537368 * 1e18);
+        assertEq(deposit, 0);
+        assertEq(debt, 3_000 * 1e18);
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            3_010.892022197881557845 * 1e18
+        );
+        assertEq(deposit, 5_000 * 1e18);
+        assertEq(debt, 1_000 * 1e18);
+        skip(1340);
+
+        // lender removes entire bid from 4_000.927678580567537368 bucket
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(pool), address(lender), 3_000 * 1e18);
+        emit RemoveQuoteToken(
+            address(lender),
+            4_000.927678580567537368 * 1e18,
+            3_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+        lender.removeQuoteToken(
+            pool,
+            address(lender),
+            3_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+
+        // confirm debt was reallocated
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            3_010.892022197881557845 * 1e18
+        );
+        assertEq(deposit, 2_000 * 1e18);
+        // some debt accumulated between loan and reallocation
+        assertEq(debt, 4000.002124558305730000 * 1e18);
+    }
+
     function testRemoveQuoteTokenBelowLup() public {
         // lender deposit 5000 DAI in 3 buckets
         lender.addQuoteToken(
