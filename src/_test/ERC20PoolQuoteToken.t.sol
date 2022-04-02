@@ -511,7 +511,15 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            3_000 * 1e18,
+            1_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+        // FIXME: Test works if this is a single 3k deposit, but if lender
+        // makes two deposits, their LP token is wildly off
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            2_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
         skip(14);
@@ -526,15 +534,17 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // borrower takes a loan of 4000 DAI
         borrower.addCollateral(pool, 100 * 1e18);
         borrower.borrow(pool, 4_000 * 1e18, 0);
-        (, , , uint256 deposit, uint256 debt, , , ) = pool
+        (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = pool
             .bucketAt(4_000.927678580567537368 * 1e18);
         assertEq(deposit, 0);
         assertEq(debt, 3_000 * 1e18);
-        (, , , deposit, debt, , , ) = pool.bucketAt(
+        assertEq(lpOutstanding, 3_000 * 1e18);
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(
             3_010.892022197881557845 * 1e18
         );
         assertEq(deposit, 5_000 * 1e18);
         assertEq(debt, 1_000 * 1e18);
+        assertEq(lpOutstanding, 6_000 * 1e18);
         skip(1340);
 
         // lender removes entire bid from 4_000.927678580567537368 bucket
@@ -554,7 +564,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         );
 
         // confirm debt was reallocated
-        (, , , deposit, debt, , , ) = pool.bucketAt(
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(
             3_010.892022197881557845 * 1e18
         );
         assertEq(deposit, 2_000 * 1e18);
