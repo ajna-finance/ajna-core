@@ -28,14 +28,14 @@ library Buckets {
 
         accumulateBucketInterest(bucket, _inflator);
 
+        lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
+        bucket.lpOutstanding += lpTokens;
+        bucket.onDeposit += _amount;
+
         lup = _lup;
         if (_reallocate) {
             lup = reallocateUp(buckets, _price, _amount, _lup, _inflator);
         }
-
-        lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
-        bucket.lpOutstanding += lpTokens;
-        bucket.onDeposit += _amount;
     }
 
     function removeQuoteToken(
