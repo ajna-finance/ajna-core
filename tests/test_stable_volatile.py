@@ -7,8 +7,8 @@ from decimal import *
 from sdk import AjnaPoolClient, AjnaProtocol
 
 
-MIN_BUCKET = 1543  # 2210.03602
-MAX_BUCKET = 1623  # 3293.70191
+MIN_BUCKET = 1543  # 2210.03602, lowest bucket involved in the test
+MAX_BUCKET = 1623  # 3293.70191, highest bucket for initial deposits, is exceeded after initialization
 
 
 @pytest.fixture
@@ -56,9 +56,12 @@ def pool1(pool_client, dai, weth, lenders, borrowers, bucket_math):
 
 def add_initial_liquidity(lenders, pool_client, bucket_math):
     # Lenders 10-99 add liquidity; lenders 0-9 reserved for the actual test
+    seed = 1648932463
     for i in range(10, len(lenders)-1):
         # determine how many buckets to deposit into
         for b in range(1, (i % 4)+1):
+            random.seed(seed)
+            seed += 1
             place_random_bid(i, pool_client, bucket_math)
 
 
@@ -100,16 +103,27 @@ def draw_debt(borrowers, pool, weth, limit_price=2210.03602 * 1e18):
         pool.borrow(borrow_amount, limit_price, {"from": borrowers[borrower_index]})
 
 
-def add_quote_token(lenders, pool, bucket_math):
+def add_quote_token(lenders, pool, bucket_math) -> dict:
     # Lenders 0-10 add liquidity
+    buckets_deposited = {}
     for lender_index in range(0, 10):
         hpb = pool.hdp()
         hpb_index = bucket_math.priceToIndex(hpb)
-        print(f"hpb is {hpb/1e18} at index {hpb_index}")
-        deposit_index_offset = ((lender_index % 6) - 2) * 2
-        deposit_price = bucket_math.indexToPrice(hpb_index + deposit_index_offset)
-        print(f"lender {lender_index} adding liquidity at {deposit_price/1e18}")
-        pool.addQuoteToken(200_000 * 1e18, deposit_price, {"from": lenders[lender_index]})
+        index_offset = ((lender_index % 6) - 2) * 2
+        price = bucket_math.indexToPrice(hpb_index + index_offset)
+        lender = lenders[lender_index]
+        print(f"lender {lender_index} adding liquidity at {price / 1e18}")
+        pool.addQuoteToken(lender, 200_000 * 1e18, price, {"from": lender})
+        buckets_deposited[lender_index] = price
+    return buckets_deposited
+
+
+def remove_quote_token(lenders, pool, buckets_deposited):
+    for lender_index, price in buckets_deposited.items():
+        print(f"lender {lender_index} removing liquidity at {price / 1e18}")
+        lender = lenders[lender_index]
+        # FIXME: getting ajna/amount-greater-than-claimable trying to withdraw full amount
+        pool.removeQuoteToken(lender, 105_000 * 1e18, price, {"from": lender})
 
 
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, capsys):
@@ -118,15 +132,16 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     assert len(lenders) == 100
     assert len(borrowers) == 100
     assert weth.balanceOf(borrowers[0]) >= 67 * 1e18
-    print("before:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, MAX_BUCKET))
     print(f"total quote token: {pool1.totalQuoteToken()/1e18}")
     print(f"actual utilization: {pool1.getPoolActualUtilization()/1e18}")
     assert pool1.totalQuoteToken() > 2_700_000 * 1e18  # 50% utilization
     assert pool1.getPoolActualUtilization() > 0.50 * 1e18
 
-    with test_utils.GasWatcher(['borrow', 'addQuoteToken']):
+    with test_utils.GasWatcher(['borrow', 'addQuoteToken', 'removeQuoteToken']):
         draw_debt(borrowers, pool1, weth)
-        add_quote_token(lenders, pool1, bucket_math)
+        buckets_deposited = add_quote_token(lenders, pool1, bucket_math)
+        hpb_index = bucket_math.priceToIndex(pool1.hdp())
+        print(test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
+        remove_quote_token(lenders, pool1, buckets_deposited)
 
-    print("after:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, MAX_BUCKET))
     # assert False
