@@ -340,7 +340,7 @@ contract PositionManagerTest is DSTestPlus {
 
         // should revert if called by a non-recipient address
         vm.prank(externalCaller);
-        vm.expectRevert("Ajna/not-approved");
+        vm.expectRevert("ajna/not-approved");
 
         positionManager.increaseLiquidity(increaseLiquidityParams);
     }
@@ -514,7 +514,7 @@ contract PositionManagerTest is DSTestPlus {
                     testBucketPrice
                 );
 
-        vm.expectRevert("Ajna/not-approved");
+        vm.expectRevert("ajna/not-approved");
         positionManager.increaseLiquidity(increaseLiquidityParams);
 
         // check new owner can decreaseLiquidity
@@ -557,7 +557,7 @@ contract PositionManagerTest is DSTestPlus {
             .BurnParams(tokenId, testAddress, mintPrice);
 
         // should revert if liquidity not removed
-        vm.expectRevert("Ajna/liquidity-not-removed");
+        vm.expectRevert("ajna/liquidity-not-removed");
         vm.prank(testAddress);
         positionManager.burn(burnParams);
 

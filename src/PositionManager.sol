@@ -95,7 +95,7 @@ contract PositionManager is IPositionManager, PositionNFT {
     uint176 private _nextId = 1;
 
     modifier isAuthorizedForToken(uint256 tokenId) {
-        require(_isApprovedOrOwner(msg.sender, tokenId), "Ajna/not-approved");
+        require(_isApprovedOrOwner(msg.sender, tokenId), "ajna/not-approved");
         _;
     }
 
@@ -162,7 +162,7 @@ contract PositionManager is IPositionManager, PositionNFT {
         isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
-        require(position.lpTokens[params.price] == 0, "Ajna/liquidity-not-removed");
+        require(position.lpTokens[params.price] == 0, "ajna/liquidity-not-removed");
         emit Burn(msg.sender, params.price);
         delete positions[params.tokenId];
     }
@@ -182,7 +182,7 @@ contract PositionManager is IPositionManager, PositionNFT {
             params.amount,
             params.price
         );
-        require(lpTokensAdded != 0, "Ajna/increase-liquidity-failed");
+        require(lpTokensAdded != 0, "ajna/increase-liquidity-failed");
 
         // update position with newly added lp shares
         position.lpTokens[params.price] += lpTokensAdded;
