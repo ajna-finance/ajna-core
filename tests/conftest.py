@@ -252,9 +252,9 @@ class TestUtils:
         lines = []
         if with_headers:
             if csv:
-                lines.append("Price,Deposit,Debt,Collateral")
+                lines.append("Price,Deposit,Debt,Collateral,LP Outstanding")
             else:
-                lines.append(j('Price') + j('Deposit') + j('Debt') + j('Collateral'))
+                lines.append(j('Price') + j('Deposit') + j('Debt') + j('Collateral') + j('LPOutstndg'))
         for i in range(max_bucket_index, min_bucket_index, -1):
             price = bucket_math.indexToPrice(i)
             (
@@ -264,13 +264,15 @@ class TestUtils:
                 bucket_deposit,
                 bucket_debt,
                 _,
-                _,
+                bucket_lp,
                 bucket_collateral,
             ) = pool.bucketAt(price)
             if csv:
-                lines.append(','.join([n(price), n(bucket_deposit), n(bucket_debt), n(bucket_collateral)]))
+                lines.append(','.join([n(price), n(bucket_deposit), n(bucket_debt), n(bucket_collateral),
+                                       n(bucket_lp)]))
             else:
-                lines.append(''.join([f(price), f(bucket_deposit), f(bucket_debt), f(bucket_collateral)]))
+                lines.append(''.join([f(price), f(bucket_deposit), f(bucket_debt), f(bucket_collateral),
+                                      f(bucket_lp)]))
         return '\n'.join(lines)
 
 

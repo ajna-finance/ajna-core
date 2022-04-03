@@ -87,7 +87,7 @@ def draw_initial_debt(borrowers, pool_client, target_utilization=0.55, limit_pri
         pool_client.borrow(borrow_amount, borrower_index, limit_price)
 
 
-def draw_debt(borrowers, pool, weth, limit_price=2210.03602 * 1e18):
+def draw_debt(borrowers, pool, weth, chain, limit_price=2210.03602 * 1e18):
     # Borrowers 0-9 draw debt
     for borrower_index in range(0, 10):
         # Deposit all their collateral
@@ -101,9 +101,10 @@ def draw_debt(borrowers, pool, weth, limit_price=2210.03602 * 1e18):
         print(f"borrower {borrower_index} drawing {borrow_amount/1e18} debt utilizing {collateral_to_utilize/1e18} collateral")
         assert borrow_amount > 1e18
         pool.borrow(borrow_amount, limit_price, {"from": borrowers[borrower_index]})
+        chain.sleep((borrower_index + 1) * 300)
 
 
-def add_quote_token(lenders, pool, bucket_math) -> dict:
+def add_quote_token(lenders, pool, bucket_math, chain) -> dict:
     # Lenders 0-10 add liquidity
     buckets_deposited = {}
     for lender_index in range(0, 10):
@@ -115,33 +116,37 @@ def add_quote_token(lenders, pool, bucket_math) -> dict:
         print(f"lender {lender_index} adding liquidity at {price / 1e18}")
         pool.addQuoteToken(lender, 200_000 * 1e18, price, {"from": lender})
         buckets_deposited[lender_index] = price
+        chain.sleep((lender_index + 1) * 300)
     return buckets_deposited
 
 
-def remove_quote_token(lenders, pool, buckets_deposited):
+def remove_quote_token(lenders, pool, buckets_deposited, chain):
     for lender_index, price in buckets_deposited.items():
         print(f"lender {lender_index} removing liquidity at {price / 1e18}")
         lender = lenders[lender_index]
         # FIXME: getting ajna/amount-greater-than-claimable trying to withdraw full amount
-        pool.removeQuoteToken(lender, 105_000 * 1e18, price, {"from": lender})
+        pool.removeQuoteToken(lender, 200_000 * 1e18, price, {"from": lender})
+        chain.sleep((lender_index + 1) * 300)
 
 
-def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, capsys):
+def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain):
     assert pool1.collateral() == weth
     assert pool1.quoteToken() == dai
     assert len(lenders) == 100
     assert len(borrowers) == 100
     assert weth.balanceOf(borrowers[0]) >= 67 * 1e18
+    print("Before:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, MAX_BUCKET))
     print(f"total quote token: {pool1.totalQuoteToken()/1e18}")
     print(f"actual utilization: {pool1.getPoolActualUtilization()/1e18}")
     assert pool1.totalQuoteToken() > 2_700_000 * 1e18  # 50% utilization
     assert pool1.getPoolActualUtilization() > 0.50 * 1e18
 
     with test_utils.GasWatcher(['borrow', 'addQuoteToken', 'removeQuoteToken']):
-        draw_debt(borrowers, pool1, weth)
-        buckets_deposited = add_quote_token(lenders, pool1, bucket_math)
+        draw_debt(borrowers, pool1, weth, chain)
+        buckets_deposited = add_quote_token(lenders, pool1, bucket_math, chain)
         hpb_index = bucket_math.priceToIndex(pool1.hdp())
-        print(test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
-        remove_quote_token(lenders, pool1, buckets_deposited)
+        print("After:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
+        remove_quote_token(lenders, pool1, buckets_deposited, chain)
 
     # assert False
+    # chain.sleep(3600)
