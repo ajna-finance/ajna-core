@@ -53,8 +53,9 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         // test deposit collateral
         assertEq(collateral.balanceOf(address(borrower)), 100 * 1e18);
         assertEq(collateral.balanceOf(address(pool)), 0);
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(borrower), address(pool), 100 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit AddCollateral(address(borrower), 100 * 1e18);
         borrower.addCollateral(pool, 100 * 1e18);
 
@@ -87,8 +88,9 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         borrower.repay(pool, 20_001 * 1e18);
 
         // remove collateral
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(borrower), 100 * 1e18);
+        vm.expectEmit(true, false, false, true);
         emit RemoveCollateral(address(borrower), 100 * 1e18);
         borrower.removeCollateral(pool, 100 * 1e18);
 
@@ -217,12 +219,13 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         );
 
         // lender claims 0.498191230021272793 collateral
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(
             address(pool),
             address(lender),
             0.498191230021272793 * 1e18
         );
+        vm.expectEmit(true, true, false, true);
         emit ClaimCollateral(
             address(lender),
             3_010.892022197881557845 * 1e18,

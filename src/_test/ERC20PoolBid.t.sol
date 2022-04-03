@@ -108,15 +108,18 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         // purchase 2000 bid from 4_000.927678580567537368 bucket
         vm.expectEmit(true, true, false, true);
+        emit Transfer(
+            address(bidder),
+            address(pool),
+            0.499884067064554307 * 1e18
+        );
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(pool), address(bidder), 2_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit Purchase(
             address(bidder),
             4_000.927678580567537368 * 1e18,
             2_000 * 1e18,
-            0.499884067064554307 * 1e18
-        );
-        emit Transfer(
-            address(bidder),
-            address(pool),
             0.499884067064554307 * 1e18
         );
         bidder.purchaseBid(pool, 2_000 * 1e18, 4_000.927678580567537368 * 1e18);
@@ -222,14 +225,21 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
 
         // purchase 1000 bid - entire amount in 4000 bucket
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(
+            address(bidder),
+            address(pool),
+            0.249942033532277153 * 1e18
+        );
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(pool), address(bidder), 1_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit Purchase(
             address(bidder),
             4_000.927678580567537368 * 1e18,
             1_000 * 1e18,
             0.249942033532277153 * 1e18
         );
-        emit Transfer(address(bidder), address(pool), 0.25 * 1e18);
         bidder.purchaseBid(pool, 1_000 * 1e18, 4_000.927678580567537368 * 1e18);
 
         // lup should be pushed downwards
