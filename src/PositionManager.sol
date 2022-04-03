@@ -42,6 +42,12 @@ interface IPositionManager {
         uint256 lpTokens;
     }
 
+    struct ConstructTokenURIParams {
+        uint256 tokenId;
+        address pool;
+        uint256[] prices;
+    }
+
     function mint(MintParams calldata params)
         external
         payable
@@ -91,6 +97,24 @@ contract PositionManager is IPositionManager, PositionNFT {
     modifier isAuthorizedForToken(uint256 tokenId) {
         require(_isApprovedOrOwner(msg.sender, tokenId), "Ajna/not-approved");
         _;
+    }
+
+    function tokenURI(uint256 tokenId) public view override(ERC721) returns (string memory) {
+        require(_exists(tokenId));
+
+        // get position information for the given token
+        Position storage position = positions[tokenId];
+
+        // TODO: access the prices at which a tokenId has added liquidity
+        uint256[] memory prices;
+
+        ConstructTokenURIParams memory params = ConstructTokenURIParams(
+            tokenId,
+            position.pool,
+            prices
+        );
+
+        return constructTokenURI(params);
     }
 
     /// @notice Called by lenders to add quote tokens and receive a representative NFT
@@ -249,7 +273,4 @@ contract PositionManager is IPositionManager, PositionNFT {
 
         return quote + (collateral * price);
     }
-
-    // TODO: implement
-    receive() external payable {}
 }
