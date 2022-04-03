@@ -24,4 +24,5 @@ compiler:
       - "@prb-math=lib/prb-math/"
       - "@clones=lib/clones-with-immutable-args/src/"
       - "@hardhat=lib/hardhat/packages"
+      - "@base64-sol=lib/base64/"
 
