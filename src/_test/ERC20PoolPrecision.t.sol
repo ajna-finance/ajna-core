@@ -67,8 +67,15 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertEq(quote.balanceOf(address(lender)), 200_000 * quotePrecision);
 
         // deposit 20_000 quote token with 6 decimal precision
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(lender), address(pool), 20_000 * quotePrecision);
+        vm.expectEmit(true, true, false, true);
+        emit AddQuoteToken(
+            address(lender),
+            BUCKET_PRICE,
+            20_000 * poolPrecision,
+            0
+        );
         lender.addQuoteToken(
             pool,
             address(lender),
@@ -81,8 +88,15 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertEq(quote.balanceOf(address(lender)), 180_000 * quotePrecision);
 
         // remove 10_000 quote token with 6 decimal precision
-        vm.expectEmit(true, true, true, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 10_000 * quotePrecision);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(
+            address(lender),
+            BUCKET_PRICE,
+            10_000 * poolPrecision,
+            0
+        );
         lender.removeQuoteToken(
             pool,
             address(lender),
@@ -96,11 +110,17 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
 
         // borrow 10_000 quote token with 6 decimal precision
         borrower.addCollateral(pool, 100 * poolPrecision);
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(
             address(pool),
             address(borrower),
             10_000 * quotePrecision
+        );
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(
+            address(borrower),
+            2_000.221618840727700609 * 1e18,
+            10_000 * poolPrecision
         );
         borrower.borrow(pool, 10_000 * poolPrecision, 2_000 * poolPrecision);
         // check balances
@@ -117,8 +137,14 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertEq(collateral.balanceOf(address(borrower)), 0);
 
         // repay 5_000 quote token with 6 decimal precision
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(borrower), address(pool), 5_000 * quotePrecision);
+        vm.expectEmit(true, true, false, true);
+        emit Repay(
+            address(borrower),
+            2_000.221618840727700609 * 1e18,
+            5_000 * poolPrecision
+        );
         borrower.repay(pool, 5_000 * poolPrecision);
         // check balances
         assertEq(pool.totalQuoteToken(), 5_000 * poolPrecision);
@@ -136,6 +162,13 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         // purchase bid of 1_000 quote tokens
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(bidder), 1_000 * quotePrecision);
+        vm.expectEmit(true, true, false, true);
+        emit Purchase(
+            address(bidder),
+            BUCKET_PRICE,
+            1_000 * poolPrecision,
+            0.499944601428501672 * 1e18
+        );
         bidder.purchaseBid(pool, 1_000 * poolPrecision, BUCKET_PRICE);
         // check balances
         assertEq(pool.totalQuoteToken(), 4_000 * poolPrecision);
@@ -182,6 +215,13 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
             address(lender),
             0.499944601428501672 * 10**18
         );
+        vm.expectEmit(true, true, false, true);
+        emit ClaimCollateral(
+            address(lender),
+            BUCKET_PRICE,
+            0.499944601428501672 * 10**18,
+            1000.000000000000000874 * 10**18
+        );
         lender.claimCollateral(
             pool,
             address(lender),
@@ -197,6 +237,8 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
             address(borrower),
             0.499944601428501672 * 10**18
         );
+        vm.expectEmit(true, true, false, true);
+        emit RemoveCollateral(address(borrower), 0.499944601428501672 * 10**18);
         borrower.removeCollateral(pool, 0.499944601428501672 * 10**18);
     }
 
@@ -276,6 +318,13 @@ contract CollateralWith6DecimalPrecisionTest is ERC20PoolPrecisionTest {
     function assertClaimCollateral() public override {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 0.499944 * 10**6);
+        vm.expectEmit(true, true, false, true);
+        emit ClaimCollateral(
+            address(lender),
+            BUCKET_PRICE,
+            0.499944601428501672 * 10**18,
+            1000.000000000000000874 * 10**18
+        );
         lender.claimCollateral(
             pool,
             address(lender),
@@ -287,6 +336,8 @@ contract CollateralWith6DecimalPrecisionTest is ERC20PoolPrecisionTest {
     function assertRemoveCollateral() public override {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(borrower), 0.499944 * 10**6);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveCollateral(address(borrower), 0.499944601428501672 * 10**18);
         borrower.removeCollateral(pool, 0.499944601428501672 * 10**18);
     }
 
@@ -329,6 +380,13 @@ contract CollateralAndQuoteWith6DecimalPrecisionTest is ERC20PoolPrecisionTest {
     function assertClaimCollateral() public override {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 0.499944 * 10**6);
+        vm.expectEmit(true, true, false, true);
+        emit ClaimCollateral(
+            address(lender),
+            BUCKET_PRICE,
+            0.499944601428501672 * 10**18,
+            1000.000000000000000874 * 10**18
+        );
         lender.claimCollateral(
             pool,
             address(lender),
@@ -340,6 +398,8 @@ contract CollateralAndQuoteWith6DecimalPrecisionTest is ERC20PoolPrecisionTest {
     function assertRemoveCollateral() public override {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(borrower), 0.499944 * 10**6);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveCollateral(address(borrower), 0.499944601428501672 * 10**18);
         borrower.removeCollateral(pool, 0.499944601428501672 * 10**18);
     }
 

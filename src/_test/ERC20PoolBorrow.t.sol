@@ -102,8 +102,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
             3_010.892022197881557845 * 1e18
         );
 
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(borrower), 21_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit Borrow(
             address(borrower),
             3_010.892022197881557845 * 1e18,
@@ -134,11 +135,12 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         skip(8200);
 
         // borrow remaining 9_000 DAI from LUP
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(borrower), 9_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit Borrow(
             address(borrower),
-            2_503.519024294695168295 * 1e18,
+            3_010.892022197881557845 * 1e18,
             9_000 * 1e18
         );
         borrower.borrow(pool, 9_000 * 1e18, 2_503.519024294695168295 * 1e18);
