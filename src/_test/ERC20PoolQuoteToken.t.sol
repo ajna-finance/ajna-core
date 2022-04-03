@@ -47,6 +47,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // test 10000 DAI deposit at price of 1 MKR = 4000 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(lender), address(pool), 10_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(
             address(lender),
             4_000.927678580567537368 * 1e18,
@@ -90,6 +91,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // test 20000 DAI deposit at price of 1 MKR = 2000.221618840727700609 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(lender), address(pool), 20_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(
             address(lender),
             2000.221618840727700609 * 1e18,
@@ -139,6 +141,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // test 30000 DAI deposit at price of 1 MKR = 3010.892022197881557845 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(lender), address(pool), 30_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(
             address(lender),
             3010.892022197881557845 * 1e18,
@@ -195,6 +198,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // hdp should be updated to 5000 DAI and hdp next price should be 4000 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(lender), address(pool), 40_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(
             address(lender),
             5_007.644384905151472283 * 1e18,
@@ -273,11 +277,12 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // remove 10000 DAI at price of 1 MKR = 4_000.927678580567537368 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 10_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(
-            address(borrower),
+            address(lender),
             4_000.927678580567537368 * 1e18,
             10_000 * 1e18,
-            4_000.927678580567537368 * 1e18
+            0
         );
         lender.removeQuoteToken(
             pool,
@@ -337,8 +342,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // remove 4000 DAI at price of 1 MKR = 4_000.927678580567537368 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 4_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(
-            address(borrower),
+            address(lender),
             4_000.927678580567537368 * 1e18,
             4_000 * 1e18,
             4_000.927678580567537368 * 1e18
@@ -393,8 +399,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // lender removes entire amount lended
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 10_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(
-            address(borrower),
+            address(lender),
             4_000.927678580567537368 * 1e18,
             10_000 * 1e18,
             4_000.927678580567537368 * 1e18
@@ -451,11 +458,12 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // lender removes 1000 DAI from lup
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 1_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(
-            address(borrower),
+            address(lender),
             4_000.927678580567537368 * 1e18,
             1_000 * 1e18,
-            4_000.927678580567537368 * 1e18
+            3_010.892022197881557845 * 1e18
         );
         lender.removeQuoteToken(
             pool,
@@ -527,8 +535,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // lender removes 1000 DAI under the lup - from bucket 3000
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 1_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(
-            address(borrower),
+            address(lender),
             3_010.892022197881557845 * 1e18,
             1_000 * 1e18,
             4_000.927678580567537368 * 1e18

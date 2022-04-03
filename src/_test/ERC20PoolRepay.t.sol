@@ -90,8 +90,9 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         // repay partially debt w/ 10_000 DAI
         skip(8200);
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(borrower), address(pool), 10_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
         emit Repay(
             address(borrower),
             4_000.927678580567537368 * 1e18,
@@ -116,16 +117,17 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         // overpay debt w/ repay 16_000 DAI
         skip(8200);
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(
             address(borrower),
             address(pool),
             15_000.520048191350671791 * 1e18
         );
+        vm.expectEmit(true, true, false, true);
         emit Repay(
             address(borrower),
             5_007.644384905151472283 * 1e18,
-            15_000.325027478522625000 * 1e18
+            15_000.520048191350671791 * 1e18
         );
         borrower.repay(pool, 16_000 * 1e18);
 
@@ -225,9 +227,14 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         // repay debt partially 10_000 DAI
         skip(8200);
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(borrower), address(pool), 10_000 * 1e18);
-        emit Repay(address(borrower), 4_000 * 1e18, 10_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Repay(
+            address(borrower),
+            4_000.927678580567537368 * 1e18,
+            10_000 * 1e18
+        );
         borrower.repay(pool, 10_000 * 1e18);
 
         // check balances
@@ -246,16 +253,17 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(depositedCollateral, 100 * 1e18);
 
         // borrower attempts to overpay to cover 15_000 DAI plus accumulated debt
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(
             address(borrower),
             address(pool),
             15_000.325027478522625000 * 1e18
         );
+        vm.expectEmit(true, true, false, true);
         emit Repay(
             address(borrower),
-            5_000 * 1e18,
-            17_000.325027478522625000 * 1e18
+            5_007.644384905151472283 * 1e18,
+            15_000.325027478522625000 * 1e18
         );
         borrower.repay(pool, 15_000.325027478522625000 * 1e18);
 
@@ -281,15 +289,16 @@ contract ERC20PoolRepayTest is DSTestPlus {
             address(borrower2)
         );
 
-        vm.expectEmit(true, false, false, true);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(
             address(borrower2),
             address(pool),
             2_000.026002198281810000 * 1e18
         );
+        vm.expectEmit(true, true, false, true);
         emit Repay(
             address(borrower2),
-            5_000 * 1e18,
+            5_007.644384905151472283 * 1e18,
             2_000.026002198281810000 * 1e18
         );
         borrower2.repay(pool, 2_000.026002198281810000 * 1e18);
