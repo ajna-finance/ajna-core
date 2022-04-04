@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
+import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
+
 import {PositionNFT} from "./PositionNFT.sol";
 import {IPool} from "./ERC20Pool.sol";
-
-import {console} from "@hardhat/hardhat-core/console.sol";
 
 interface IPositionManager {
     struct MintParams {
@@ -39,6 +40,12 @@ interface IPositionManager {
         address pool;
         uint256 price;
         uint256 lpTokens;
+    }
+
+    struct ConstructTokenURIParams {
+        uint256 tokenId;
+        address pool;
+        uint256[] prices;
     }
 
     function mint(MintParams calldata params)
@@ -87,11 +94,27 @@ contract PositionManager is IPositionManager, PositionNFT {
     /// @dev The ID of the next token that will be minted. Skips 0
     uint176 private _nextId = 1;
 
-    // TODO: add allowedCallers list to enable either recipient, or listed address to execute operations?
-    // TODO: compare w/ uniswap approach (decre, burn, collect - rest transfer from msg.sender) https://github.com/Uniswap/v3-periphery/blob/main/contracts/NonfungiblePositionManager.sol#L184
-    modifier onlyRecipient(address recipient) {
-        require(msg.sender == recipient, "Ajna/wrong-caller");
+    modifier isAuthorizedForToken(uint256 tokenId) {
+        require(_isApprovedOrOwner(msg.sender, tokenId), "ajna/not-approved");
         _;
+    }
+
+    function tokenURI(uint256 tokenId) public view override(ERC721) returns (string memory) {
+        require(_exists(tokenId));
+
+        // get position information for the given token
+        Position storage position = positions[tokenId];
+
+        // TODO: access the prices at which a tokenId has added liquidity
+        uint256[] memory prices;
+
+        ConstructTokenURIParams memory params = ConstructTokenURIParams(
+            tokenId,
+            position.pool,
+            prices
+        );
+
+        return constructTokenURI(params);
     }
 
     /// @notice Called by lenders to add quote tokens and receive a representative NFT
@@ -100,14 +123,12 @@ contract PositionManager is IPositionManager, PositionNFT {
     function mint(MintParams calldata params)
         external
         payable
-        onlyRecipient(params.recipient)
         returns (uint256 tokenId)
     {
         _safeMint(params.recipient, (tokenId = _nextId++));
 
         // create a new position associated with the newly minted tokenId
         Position storage position = positions[tokenId];
-        position.owner = params.recipient;
         position.pool = params.pool;
 
         emit Mint(params.recipient, params.pool, tokenId);
@@ -132,13 +153,16 @@ contract PositionManager is IPositionManager, PositionNFT {
     }
 
     // TODO: add support for ERC721Burnable?
+    /// @notice Called by lenders to burn an existing NFT
+    /// @dev Requires that all lp tokens have been removed from the NFT prior to calling
+    /// @param params Calldata struct supplying inputs required to update the underlying assets owed to an NFT
     function burn(BurnParams calldata params)
         external
         payable
-        onlyRecipient(params.recipient)
+        isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
-        require(position.lpTokens[params.price] == 0, "Not Redeemed");
+        require(position.lpTokens[params.price] == 0, "ajna/liquidity-not-removed");
         emit Burn(msg.sender, params.price);
         delete positions[params.tokenId];
     }
@@ -148,7 +172,7 @@ contract PositionManager is IPositionManager, PositionNFT {
     function increaseLiquidity(IncreaseLiquidityParams calldata params)
         external
         payable
-        onlyRecipient(params.recipient)
+        isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
 
@@ -158,7 +182,7 @@ contract PositionManager is IPositionManager, PositionNFT {
             params.amount,
             params.price
         );
-        require(lpTokensAdded != 0, "No liquidity added");
+        require(lpTokensAdded != 0, "ajna/increase-liquidity-failed");
 
         // update position with newly added lp shares
         position.lpTokens[params.price] += lpTokensAdded;
@@ -171,7 +195,7 @@ contract PositionManager is IPositionManager, PositionNFT {
     function decreaseLiquidity(DecreaseLiquidityParams calldata params)
         external
         payable
-        onlyRecipient(params.recipient)
+        isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
 
@@ -210,6 +234,17 @@ contract PositionManager is IPositionManager, PositionNFT {
         );
     }
 
+    /// @notice Override ERC721 afterTokenTransfer hook to ensure that transferred NFT's are properly tracked within the PositionManager data struct
+    /// @dev This call also executes upon Mint
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override(ERC721) {
+        Position storage position = positions[tokenId];
+        position.owner = to;
+    }
+
     // -------------------- Position State View functions --------------------
 
     /// @notice Returns the lpTokens accrued to a given tokenId, price pairing
@@ -238,7 +273,4 @@ contract PositionManager is IPositionManager, PositionNFT {
 
         return quote + (collateral * price);
     }
-
-    // TODO: implement
-    receive() external payable {}
 }

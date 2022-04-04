@@ -10,7 +10,6 @@ import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 import {PositionManager, IPositionManager} from "../PositionManager.sol";
 
-// TODO: add multiple pools to tests
 contract PositionManagerTest is DSTestPlus {
     PositionManager internal positionManager;
     ERC20Pool internal pool;
@@ -41,6 +40,8 @@ contract PositionManagerTest is DSTestPlus {
         pool = factory.deployPool(collateral, quote);
         positionManager = new PositionManager();
     }
+
+    // -------------------- Utility Functions --------------------
 
     function mintAndApproveQuoteTokens(
         address operator,
@@ -101,6 +102,44 @@ contract PositionManagerTest is DSTestPlus {
         positionManager.increaseLiquidity(increaseLiquidityParams);
     }
 
+    function decreaseLiquidity(
+        uint256 tokenId,
+        address recipient,
+        address _pool,
+        uint256 _price,
+        uint256 _lpTokensToRemove
+    )
+        private
+        returns (
+            uint256 collateralTokensToBeRemoved,
+            uint256 quoteTokensToBeRemoved
+        )
+    {
+        (collateralTokensToBeRemoved, quoteTokensToBeRemoved) = pool.getLPTokenExchangeValue(_lpTokensToRemove, _price);
+
+        IPositionManager.DecreaseLiquidityParams
+            memory decreaseLiquidityParams = IPositionManager
+                .DecreaseLiquidityParams(
+                    tokenId,
+                    recipient,
+                    _pool,
+                    _price,
+                    _lpTokensToRemove
+                );
+
+        vm.expectEmit(true, true, true, true);
+        emit DecreaseLiquidity(
+            recipient,
+            collateralTokensToBeRemoved,
+            quoteTokensToBeRemoved,
+            _price
+        );
+
+        // decrease liquidity and check change in balances
+        vm.prank(recipient);
+        positionManager.decreaseLiquidity(decreaseLiquidityParams);
+    }
+
     function generateAddress() private returns (address addr) {
         // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
         addr = address(
@@ -112,6 +151,8 @@ contract PositionManagerTest is DSTestPlus {
         );
         nonce++;
     }
+
+    // -------------------- Tests --------------------
 
     function testMint() public {
         uint256 mintAmount = 50 * 1e18;
@@ -133,19 +174,6 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(owner, alice);
         assert(lpTokens == 0);
-    }
-
-    function testMintPermissions() public {
-        address recipient = generateAddress();
-        address externalCaller = generateAddress();
-
-        IPositionManager.MintParams memory mintParams = IPositionManager
-            .MintParams(recipient, address(pool));
-
-        // should revert if called by a non-recipient address
-        vm.prank(externalCaller);
-        vm.expectRevert("Ajna/wrong-caller");
-        positionManager.mint(mintParams);
     }
 
     function testMemorializePositions() public {
@@ -205,11 +233,20 @@ contract PositionManagerTest is DSTestPlus {
         assert(positionAtWrongPriceLPTokens == 0);
     }
 
-    // TODO: implement test case where multiple users mints multiple NFTs
+    // TODO: implement test case where multiple users mints multiple NFTs to multiple pools
     function testMintMultiple() public {}
 
-    // TODO: implement test case where caller is not an EOA
-    function testMintToContract() public {}
+    function testMintToContract() public {
+        UserWithQuoteToken lender = new UserWithQuoteToken();
+        quote.mint(address(lender), 200_000 * 1e18);
+        lender.approveToken(quote, address(pool), 200_000 * 1e18);
+
+        // check that contract can successfully receive the NFT
+        vm.expectEmit(true, true, true, true);
+        emit Mint(address(lender), address(pool), 1);
+
+        uint256 tokenId = mintNFT(address(lender), address(pool));
+    }
 
     function testIncreaseLiquidity() public {
         // generate a new address
@@ -281,6 +318,33 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), mintAmount);
     }
 
+    function testIncreaseLiquidityPermissions() public {
+        address recipient = generateAddress();
+        address externalCaller = generateAddress();
+
+        uint256 tokenId = mintNFT(recipient, address(pool));
+
+        uint256 mintAmount = 10000 * 1e18;
+        uint256 mintPrice = 1000 * 10**18;
+        mintAndApproveQuoteTokens(recipient, mintAmount, approveBig);
+
+        IPositionManager.IncreaseLiquidityParams
+            memory increaseLiquidityParams = IPositionManager
+                .IncreaseLiquidityParams(
+                    tokenId,
+                    recipient,
+                    address(pool),
+                    mintAmount / 4,
+                    mintPrice
+                );
+
+        // should revert if called by a non-recipient address
+        vm.prank(externalCaller);
+        vm.expectRevert("ajna/not-approved");
+
+        positionManager.increaseLiquidity(increaseLiquidityParams);
+    }
+
     function testDecreaseLiquidityNoDebt() public {
         // generate a new address and set test params
         address testAddress = generateAddress();
@@ -306,42 +370,30 @@ contract PositionManagerTest is DSTestPlus {
             mintPrice
         );
 
-        // burn 1/4 of the LP tokens
+        // remove 1/4 of the LP tokens
         uint256 lpTokensToRemove = originalLPTokens / 4;
+
+        // decrease liquidity
         (
-            uint256 collateralTokensToBeRemoved,
-            uint256 quoteTokensToBeRemoved
-        ) = pool.getLPTokenExchangeValue(lpTokensToRemove, mintPrice);
+            uint256 collateralTokensRemoved,
+            uint256 quoteTokensRemoved
+        ) = decreaseLiquidity(
+                tokenId,
+                testAddress,
+                address(pool),
+                mintPrice,
+                lpTokensToRemove
+            );
 
-        IPositionManager.DecreaseLiquidityParams
-            memory decreaseLiquidityParams = IPositionManager
-                .DecreaseLiquidityParams(
-                    tokenId,
-                    testAddress,
-                    address(pool),
-                    mintPrice,
-                    lpTokensToRemove
-                );
+        // check quote token removed
+        assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
 
-        vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(
-            testAddress,
-            collateralTokensToBeRemoved,
-            quoteTokensToBeRemoved,
-            mintPrice
-        );
-
-        // decrease liquidity and check change in balances
-        vm.prank(testAddress);
-        positionManager.decreaseLiquidity(decreaseLiquidityParams);
-
-        assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensToBeRemoved);
-
+        // check lp tokens matches expectations
+        (address updatedPositionOwner, ) = positionManager.positions(tokenId);
         uint256 updatedLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
         );
-
         assert(updatedLPTokens < originalLPTokens);
 
         // TODO: check balance of collateral and quote
@@ -391,32 +443,20 @@ contract PositionManagerTest is DSTestPlus {
 
         // identify number of lp tokens to exchange for quote and collateral accrued
         uint256 lpTokensToRemove = originalLPTokens / 4;
+
         (
-            uint256 collateralTokensToBeRemoved,
-            uint256 quoteTokensToBeRemoved
-        ) = pool.getLPTokenExchangeValue(lpTokensToRemove, testBucketPrice);
+            uint256 collateralTokensRemoved,
+            uint256 quoteTokensRemoved
+        ) = decreaseLiquidity(
+                tokenId,
+                testLender,
+                address(pool),
+                testBucketPrice,
+                lpTokensToRemove
+            );
 
-        IPositionManager.DecreaseLiquidityParams
-            memory decreaseLiquidityParams = IPositionManager
-                .DecreaseLiquidityParams(
-                    tokenId,
-                    testLender,
-                    address(pool),
-                    testBucketPrice,
-                    lpTokensToRemove
-                );
-
-        vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(
-            testLender,
-            collateralTokensToBeRemoved,
-            quoteTokensToBeRemoved,
-            testBucketPrice
-        );
-
-        // decrease liquidity and check change in balances
-        vm.prank(testLender);
-        positionManager.decreaseLiquidity(decreaseLiquidityParams);
+        // TODO: check quote and collateral vs expectations
+        // assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
 
         uint256 updatedLPTokens = positionManager.getLPTokens(
             tokenId,
@@ -426,9 +466,71 @@ contract PositionManagerTest is DSTestPlus {
         assertTrue(updatedLPTokens < originalLPTokens);
     }
 
-    // TODO: implement test case where users transfer NFTs to another user, and that user Redeems it
     function testNFTTransfer() public {
-        emit log("testing transfer");
+        // generate addresses and set test params
+        address testMinter = generateAddress();
+        address testReceiver = generateAddress();
+        uint256 testBucketPrice = 10_016.501589292607751220 * 10**18;
+
+        uint256 tokenId = mintNFT(testMinter, address(pool));
+
+        // check owner
+        (address originalOwner, ) = positionManager.positions(tokenId);
+        assertEq(originalOwner, testMinter);
+
+        // approve and transfer NFT to different address
+        vm.prank(testMinter);
+        positionManager.approve(address(this), tokenId);
+        positionManager.safeTransferFrom(testMinter, testReceiver, tokenId);
+
+        // check owner
+        (address newOwner, ) = positionManager.positions(tokenId);
+        assertEq(newOwner, testReceiver);
+        assert(newOwner != originalOwner);
+
+        // check new owner can increaseLiquidity
+        uint256 mintAmount = 50000 * 1e18;
+        mintAndApproveQuoteTokens(newOwner, mintAmount, approveBig);
+
+        increaseLiquidity(
+            tokenId,
+            newOwner,
+            address(pool),
+            mintAmount,
+            testBucketPrice
+        );
+
+        // check previous owner can no longer modify the NFT
+        uint256 nextMintAmount = 50000 * 1e18;
+        mintAndApproveQuoteTokens(originalOwner, nextMintAmount, approveBig);
+
+        IPositionManager.IncreaseLiquidityParams
+            memory increaseLiquidityParams = IPositionManager
+                .IncreaseLiquidityParams(
+                    tokenId,
+                    originalOwner,
+                    address(pool),
+                    mintAmount / 4,
+                    testBucketPrice
+                );
+
+        vm.expectRevert("ajna/not-approved");
+        positionManager.increaseLiquidity(increaseLiquidityParams);
+
+        // check new owner can decreaseLiquidity
+        uint256 lpTokensToAttempt = positionManager.getLPTokens(
+            tokenId,
+            testBucketPrice
+        );
+
+        decreaseLiquidity(
+            tokenId,
+            newOwner,
+            address(pool),
+            testBucketPrice,
+            lpTokensToAttempt
+        );
+
     }
 
     function testBurn() public {
@@ -450,43 +552,33 @@ contract PositionManagerTest is DSTestPlus {
             mintPrice
         );
 
-        // decrease liquidity
+        // construct BurnParams
+        IPositionManager.BurnParams memory burnParams = IPositionManager
+            .BurnParams(tokenId, testAddress, mintPrice);
+
+        // should revert if liquidity not removed
+        vm.expectRevert("ajna/liquidity-not-removed");
+        vm.prank(testAddress);
+        positionManager.burn(burnParams);
+
+        // remove all lp tokens
         uint256 lpTokensToRemove = positionManager.getLPTokens(
             tokenId,
             mintPrice
         );
 
+        // decrease liquidity
         (
-            uint256 collateralTokensToBeRemoved,
-            uint256 quoteTokensToBeRemoved
-        ) = pool.getLPTokenExchangeValue(lpTokensToRemove, mintPrice);
-
-        IPositionManager.DecreaseLiquidityParams
-            memory decreaseLiquidityParams = IPositionManager
-                .DecreaseLiquidityParams(
-                    tokenId,
-                    testAddress,
-                    address(pool),
-                    mintPrice,
-                    lpTokensToRemove
-                );
-
-        vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(
-            testAddress,
-            collateralTokensToBeRemoved,
-            quoteTokensToBeRemoved,
-            mintPrice
-        );
-
-        vm.prank(testAddress);
-        positionManager.decreaseLiquidity(decreaseLiquidityParams);
-
-        assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensToBeRemoved);
-
-        // construct BurnParams
-        IPositionManager.BurnParams memory burnParams = IPositionManager
-            .BurnParams(tokenId, testAddress, mintPrice);
+            uint256 collateralTokensRemoved,
+            uint256 quoteTokensRemoved
+        ) = decreaseLiquidity(
+                tokenId,
+                testAddress,
+                address(pool),
+                mintPrice,
+                lpTokensToRemove
+            );
+        assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
 
         // should emit Burn
         vm.expectEmit(true, true, true, true);
