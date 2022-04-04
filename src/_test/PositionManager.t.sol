@@ -115,7 +115,8 @@ contract PositionManagerTest is DSTestPlus {
             uint256 quoteTokensToBeRemoved
         )
     {
-        (collateralTokensToBeRemoved, quoteTokensToBeRemoved) = pool.getLPTokenExchangeValue(_lpTokensToRemove, _price);
+        (collateralTokensToBeRemoved, quoteTokensToBeRemoved) = pool
+            .getLPTokenExchangeValue(_lpTokensToRemove, _price);
 
         IPositionManager.DecreaseLiquidityParams
             memory decreaseLiquidityParams = IPositionManager
@@ -245,7 +246,7 @@ contract PositionManagerTest is DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit Mint(address(lender), address(pool), 1);
 
-        uint256 tokenId = mintNFT(address(lender), address(pool));
+        mintNFT(address(lender), address(pool));
     }
 
     function testIncreaseLiquidity() public {
@@ -374,22 +375,19 @@ contract PositionManagerTest is DSTestPlus {
         uint256 lpTokensToRemove = originalLPTokens / 4;
 
         // decrease liquidity
-        (
-            uint256 collateralTokensRemoved,
-            uint256 quoteTokensRemoved
-        ) = decreaseLiquidity(
-                tokenId,
-                testAddress,
-                address(pool),
-                mintPrice,
-                lpTokensToRemove
-            );
+        (, uint256 quoteTokensRemoved) = decreaseLiquidity(
+            tokenId,
+            testAddress,
+            address(pool),
+            mintPrice,
+            lpTokensToRemove
+        );
 
         // check quote token removed
         assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
 
         // check lp tokens matches expectations
-        (address updatedPositionOwner, ) = positionManager.positions(tokenId);
+        positionManager.positions(tokenId);
         uint256 updatedLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -443,17 +441,13 @@ contract PositionManagerTest is DSTestPlus {
 
         // identify number of lp tokens to exchange for quote and collateral accrued
         uint256 lpTokensToRemove = originalLPTokens / 4;
-
-        (
-            uint256 collateralTokensRemoved,
-            uint256 quoteTokensRemoved
-        ) = decreaseLiquidity(
-                tokenId,
-                testLender,
-                address(pool),
-                testBucketPrice,
-                lpTokensToRemove
-            );
+        decreaseLiquidity(
+            tokenId,
+            testLender,
+            address(pool),
+            testBucketPrice,
+            lpTokensToRemove
+        );
 
         // TODO: check quote and collateral vs expectations
         // assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
@@ -530,7 +524,6 @@ contract PositionManagerTest is DSTestPlus {
             testBucketPrice,
             lpTokensToAttempt
         );
-
     }
 
     function testBurn() public {
@@ -568,16 +561,13 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // decrease liquidity
-        (
-            uint256 collateralTokensRemoved,
-            uint256 quoteTokensRemoved
-        ) = decreaseLiquidity(
-                tokenId,
-                testAddress,
-                address(pool),
-                mintPrice,
-                lpTokensToRemove
-            );
+        (, uint256 quoteTokensRemoved) = decreaseLiquidity(
+            tokenId,
+            testAddress,
+            address(pool),
+            mintPrice,
+            lpTokensToRemove
+        );
         assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
 
         // should emit Burn

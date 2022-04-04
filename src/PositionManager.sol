@@ -99,7 +99,12 @@ contract PositionManager is IPositionManager, PositionNFT {
         _;
     }
 
-    function tokenURI(uint256 tokenId) public view override(ERC721) returns (string memory) {
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721)
+        returns (string memory)
+    {
         require(_exists(tokenId));
 
         // get position information for the given token
@@ -162,7 +167,10 @@ contract PositionManager is IPositionManager, PositionNFT {
         isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
-        require(position.lpTokens[params.price] == 0, "ajna/liquidity-not-removed");
+        require(
+            position.lpTokens[params.price] == 0,
+            "ajna/liquidity-not-removed"
+        );
         emit Burn(msg.sender, params.price);
         delete positions[params.tokenId];
     }

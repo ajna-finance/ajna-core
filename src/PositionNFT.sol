@@ -18,59 +18,64 @@ abstract contract PositionNFT is ERC721, ERC721Enumerable {
         string memory version
     ) ERC721(name, symbol) {}
 
-    function constructTokenURI(IPositionManager.ConstructTokenURIParams memory params) public view returns (string memory) {
+    function constructTokenURI(
+        IPositionManager.ConstructTokenURIParams memory params
+    ) public pure returns (string memory) {
         string memory _name = string(
             abi.encodePacked("Ajna Token #", Strings.toString(params.tokenId))
         );
-        string memory image = Base64.encode(bytes(generateSVGofTokenById(params.tokenId)));
+        string memory image = Base64.encode(
+            bytes(generateSVGofTokenById(params.tokenId))
+        );
         string memory description = "Ajna Positions NFT-V1";
 
-        address tokenOwner = ownerOf(params.tokenId);
+        // address tokenOwner = ownerOf(params.tokenId);
         // string memory ownerHexString = (uint160(tokenOwner)).toHexString(20);
         string memory ownerHexString = "owner_address";
 
-        return string(
-            abi.encodePacked(
-                'data:application/json;base64,',
-                Base64.encode(
-                    bytes(
-                        abi.encodePacked(
-                            '{"name":"',
-                            _name,
-                            '", "description":"',
-                            description,
-                            '"owner":"',
-                            ownerHexString,
-                            '", "image": "',
-                            'data:image/svg+xml;base64,',
-                            image,
-                            '"}'
+        return
+            string(
+                abi.encodePacked(
+                    "data:application/json;base64,",
+                    Base64.encode(
+                        bytes(
+                            abi.encodePacked(
+                                '{"name":"',
+                                _name,
+                                '", "description":"',
+                                description,
+                                '"owner":"',
+                                ownerHexString,
+                                '", "image": "',
+                                "data:image/svg+xml;base64,",
+                                image,
+                                '"}'
+                            )
                         )
                     )
                 )
-            )
-        );
+            );
     }
 
     // TODO: finish implementing: https://github.com/scaffold-eth/scaffold-eth/blob/sipping-oe/packages/hardhat/contracts/OldEnglish.sol#L112-L234
     function generateSVGofTokenById(uint256 tokenId)
         internal
-        view
+        pure
         returns (string memory)
     {
-        string memory svg = string(abi.encodePacked(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="216.18" height="653.57">',
+        string memory svg = string(
+            abi.encodePacked(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="216.18" height="653.57">',
                 renderTokenById(tokenId),
-            '</svg>'
-        ));
+                "</svg>"
+            )
+        );
         return svg;
     }
 
     // TODO: add SVG string for Ajna Logo
-    function renderTokenById(uint256 tokenId) internal view returns (string memory) {
-          return string(abi.encodePacked(
-              ''
-          ));
+    function renderTokenById(uint256) internal pure returns (string memory) {
+        return string(abi.encodePacked(""));
     }
 
     /// @dev Override required by solidity to use ERC721Enumerable library
