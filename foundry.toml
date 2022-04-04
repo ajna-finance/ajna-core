@@ -1,7 +1,7 @@
 ## defaults for _all_ profiles
 [default]
 src = 'src'
-test = 'test'
+test = 'tests'
 out = 'out'
 libs = ['lib']
 # remappings = []

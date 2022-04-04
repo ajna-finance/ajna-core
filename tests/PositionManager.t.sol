@@ -6,9 +6,9 @@ import {DSTestPlus} from "./utils/DSTestPlus.sol";
 import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
 import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 
-import {ERC20Pool} from "../ERC20Pool.sol";
-import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
-import {PositionManager, IPositionManager} from "../PositionManager.sol";
+import {ERC20Pool} from "../src/ERC20Pool.sol";
+import {ERC20PoolFactory} from "../src/ERC20PoolFactory.sol";
+import {PositionManager, IPositionManager} from "../src/PositionManager.sol";
 
 contract PositionManagerTest is DSTestPlus {
     PositionManager internal positionManager;

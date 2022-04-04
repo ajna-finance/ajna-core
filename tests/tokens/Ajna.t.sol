@@ -3,7 +3,7 @@ pragma solidity 0.8.11;
 
 import {DSTestPlus} from "../utils/DSTestPlus.sol";
 
-import {AjnaToken} from "../../tokens/Ajna.sol";
+import {AjnaToken} from "../../src/tokens/Ajna.sol";
 
 contract AjnaTokenTest is DSTestPlus {
     AjnaToken internal token;

@@ -3,7 +3,7 @@ pragma solidity 0.8.11;
 
 import {DSTestPlus} from "./utils/DSTestPlus.sol";
 
-import "../libraries/BucketMath.sol";
+import "../src/libraries/BucketMath.sol";
 
 contract BucketMathTest is DSTestPlus {
     function testPriceToIndex() public {

@@ -5,8 +5,8 @@ import {DSTestPlus} from "./utils/DSTestPlus.sol";
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../ERC20Pool.sol";
-import "../ERC20PoolFactory.sol";
+import "../src/ERC20Pool.sol";
+import "../src/ERC20PoolFactory.sol";
 
 contract PoolFactoryTest is DSTestPlus {
     ERC20PoolFactory internal factory;
