@@ -52,10 +52,12 @@ def bucket_math(ajna_protocol):
 def mkr_dai_pool(ajna_protocol):
     return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
 
+
 @pytest.fixture
 def position_manager(deployer):
     position_manager = PositionManager.deploy({"from": deployer})
     yield position_manager
+
 
 @pytest.fixture
 def lenders(ajna_protocol, mkr_dai_pool):
@@ -98,8 +100,8 @@ class TestUtils:
 
     @staticmethod
     def get_usage(gas) -> str:
-        in_eth = gas * 100 * 10e-9
-        in_fiat = in_eth * 3000
+        in_eth = gas * 50 * 10e-9
+        in_fiat = in_eth * 3500
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
 
     class GasWatcher(object):
@@ -136,7 +138,11 @@ class TestUtils:
         def _build_cust_output(self):
             gas = network.state.TxHistory().gas_profile
 
-            sorted_gas = self._filter_methods(sorted(gas.items())) if self._method_names else sorted(gas.items())
+            sorted_gas = (
+                self._filter_methods(sorted(gas.items()))
+                if self._method_names
+                else sorted(gas.items())
+            )
 
             grouped_by_contract = {}
             padding = {}
@@ -159,10 +165,16 @@ class TestUtils:
             for contract, functions in grouped_by_contract.items():
                 lines.append(f"{color('bright magenta')}{contract}{color} <Contract>")
                 sorted_functions = dict(
-                    sorted(functions.items(), key=lambda value: value[1]["avg"], reverse=True)
+                    sorted(
+                        functions.items(),
+                        key=lambda value: value[1]["avg"],
+                        reverse=True,
+                    )
                 )
                 for ix, (fn_name, values) in enumerate(sorted_functions.items()):
-                    prefix = "\u2514\u2500" if ix == len(functions) - 1 else "\u251c\u2500"
+                    prefix = (
+                        "\u2514\u2500" if ix == len(functions) - 1 else "\u251c\u2500"
+                    )
                     fn_name = fn_name.ljust(padding["fn"])
                     values["avg"] = int(values["avg"])
                     values = {k: str(v).rjust(padding[k]) for k, v in values.items()}
