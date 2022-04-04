@@ -86,6 +86,7 @@ contract PositionManager is IPositionManager, PositionNFT {
 
     /// @dev Details about Ajna positions - used by Lenders interacting through PositionManager instead of directly with the Pool
     struct Position {
+        uint96 nonce; // nonce used for permits
         address owner; // owner of a position
         address pool; // address of the pool contract the position is associated to
         mapping(uint256 => uint256) lpTokens; // priceIndex => lpTokens
