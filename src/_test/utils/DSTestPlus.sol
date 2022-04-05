@@ -36,6 +36,13 @@ contract DSTestPlus is DSTest, stdCheats {
         uint256 amount,
         uint256 lup
     );
+    event MoveQuoteToken(
+        address indexed lender,
+        uint256 indexed fromPrice,
+        uint256 indexed toPrice,
+        uint256 amount,
+        uint256 lup
+    );
     event AddCollateral(address indexed borrower, uint256 amount);
     event RemoveCollateral(address indexed borrower, uint256 amount);
     event ClaimCollateral(

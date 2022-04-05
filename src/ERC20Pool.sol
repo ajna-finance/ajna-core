@@ -25,6 +25,13 @@ interface IPool {
         uint256 _price
     ) external;
 
+    function moveQuoteToken(
+        address _recipient,
+        uint256 _amount,
+        uint256 _fromPrice,
+        uint256 _toPrice
+    ) external;
+
     function addCollateral(uint256 _amount) external;
 
     function removeCollateral(uint256 _amount) external;
@@ -100,6 +107,13 @@ contract ERC20Pool is IPool, Clone {
     event RemoveQuoteToken(
         address indexed lender,
         uint256 indexed price,
+        uint256 amount,
+        uint256 lup
+    );
+    event MoveQuoteToken(
+        address indexed lender,
+        uint256 indexed fromPrice,
+        uint256 indexed toPrice,
         uint256 amount,
         uint256 lup
     );
@@ -226,6 +240,69 @@ contract ERC20Pool is IPool, Clone {
 
         quoteToken().safeTransfer(_recipient, _amount / quoteTokenScale);
         emit RemoveQuoteToken(_recipient, _price, _amount, lup);
+    }
+
+    /// @notice Called by lenders to move an amount of credit from a specified price bucket to another
+    /// @param _amount The amount of quote token to be moved by a lender
+    /// @param _fromPrice The bucket from which quote tokens will be moved
+    /// @param _toPrice The target bucket where quote tokens will be moved
+    function moveQuoteToken(
+        address _recipient,
+        uint256 _amount,
+        uint256 _fromPrice,
+        uint256 _toPrice
+    ) external {
+        require(
+            _fromPrice != _toPrice && BucketMath.isValidPrice(_toPrice),
+            "ajna/invalid-to-bucket-price"
+        );
+
+        require(
+            lpBalance[_recipient][_fromPrice] > 0,
+            "ajna/no-tokens-to-move"
+        );
+
+        // create target bucket if doesn't exist
+        if (!BitMaps.get(bitmap, _toPrice)) {
+            hdp = _buckets.initializeBucket(hdp, _toPrice);
+            BitMaps.setTo(bitmap, _toPrice, true);
+        }
+
+        accumulatePoolInterest();
+
+        // move between buckets
+        // reallocation will happen from max(from, to) price downwards to min(from, to) price
+        (
+            uint256 candidateLup,
+            uint256 fromLpTokens,
+            uint256 toLpTokens
+        ) = _buckets.moveQuoteToken(
+                _fromPrice,
+                _toPrice,
+                _amount,
+                lpBalance[_recipient][_fromPrice],
+                inflatorSnapshot
+            );
+
+        // update lup only if in (from, to) intervals
+        if (
+            (_fromPrice < lup && lup <= _toPrice) ||
+            (_toPrice <= lup && lup < _fromPrice)
+        ) {
+            lup = candidateLup;
+        }
+        require(
+            getPoolCollateralization() >= Maths.ONE_WAD,
+            "ajna/pool-undercollateralized"
+        );
+
+        // update lender lp balances for buckets
+        lpBalance[_recipient][_fromPrice] -= fromLpTokens;
+        lpBalance[_recipient][_toPrice] += toLpTokens;
+
+        // TODO: add require to ensure quote tokens were transferred successfully
+
+        emit MoveQuoteToken(_recipient, _fromPrice, _toPrice, _amount, lup);
     }
 
     function addCollateral(uint256 _amount) external {

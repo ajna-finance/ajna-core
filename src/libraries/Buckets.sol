@@ -31,7 +31,8 @@ library Buckets {
         bucket.onDeposit += _amount;
         lup = _lup;
         if (_reallocate) {
-            lup = reallocateUp(buckets, _price, _amount, _lup, _inflator);
+            Bucket storage curLup = buckets[_lup];
+            lup = reallocateUp(buckets, bucket, curLup, _amount, _inflator);
         }
 
         lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
@@ -65,6 +66,58 @@ library Buckets {
         lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
         bucket.lpOutstanding -= lpTokens;
+    }
+
+    function moveQuoteToken(
+        mapping(uint256 => Bucket) storage buckets,
+        uint256 _fromPrice,
+        uint256 _toPrice,
+        uint256 _amount,
+        uint256 _lpBalance,
+        uint256 _inflator
+    )
+        public
+        returns (
+            uint256 lup,
+            uint256 fromLpTokens,
+            uint256 toLpTokens
+        )
+    {
+        Bucket storage fromBucket = buckets[_fromPrice];
+        accumulateBucketInterest(fromBucket, _inflator);
+        uint256 exchangeRate = getExchangeRate(fromBucket);
+        require(
+            _amount <= Maths.wmul(_lpBalance, exchangeRate),
+            "ajna/amount-greater-than-claimable"
+        );
+        fromLpTokens = Maths.wdiv(_amount, exchangeRate);
+        fromBucket.lpOutstanding -= fromLpTokens;
+        uint256 removeFromDeposit = Maths.min(_amount, fromBucket.onDeposit);
+        fromBucket.onDeposit -= removeFromDeposit;
+
+        Bucket storage toBucket = buckets[_toPrice];
+        accumulateBucketInterest(toBucket, _inflator);
+        toLpTokens = Maths.wdiv(_amount, getExchangeRate(toBucket));
+        toBucket.lpOutstanding += toLpTokens;
+        toBucket.onDeposit += removeFromDeposit;
+
+        if (_fromPrice > _toPrice) {
+            lup = reallocateUp(
+                buckets,
+                fromBucket,
+                toBucket,
+                _amount,
+                _inflator
+            );
+        } else {
+            lup = reallocateUp(
+                buckets,
+                toBucket,
+                fromBucket,
+                _amount,
+                _inflator
+            );
+        }
     }
 
     function claimCollateral(
@@ -293,49 +346,46 @@ library Buckets {
 
     function reallocateUp(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _price,
+        Bucket storage _fromBucket,
+        Bucket storage _toBucket,
         uint256 _amount,
-        uint256 _lup,
         uint256 _inflator
     ) private returns (uint256) {
-        Bucket storage bucket = buckets[_price];
-        Bucket storage curLup = buckets[_lup];
-
         uint256 curLupDebt;
 
         while (true) {
             // accumulate bucket interest
-            accumulateBucketInterest(curLup, _inflator);
+            accumulateBucketInterest(_toBucket, _inflator);
 
-            curLupDebt = curLup.debt;
+            curLupDebt = _toBucket.debt;
 
             if (_amount > curLupDebt) {
-                bucket.debt += curLupDebt;
-                bucket.onDeposit -= curLupDebt;
+                _fromBucket.debt += curLupDebt;
+                _fromBucket.onDeposit -= curLupDebt;
                 _amount -= curLupDebt;
-                curLup.debt = 0;
-                curLup.onDeposit += curLupDebt;
-                if (curLup.price == curLup.up) {
+                _toBucket.debt = 0;
+                _toBucket.onDeposit += curLupDebt;
+                if (_toBucket.price == _toBucket.up) {
                     // nowhere to go
                     break;
                 }
             } else {
-                bucket.debt += _amount;
-                bucket.onDeposit -= _amount;
-                curLup.debt -= _amount;
-                curLup.onDeposit += _amount;
+                _fromBucket.debt += _amount;
+                _fromBucket.onDeposit -= _amount;
+                _toBucket.debt -= _amount;
+                _toBucket.onDeposit += _amount;
                 break;
             }
 
-            if (curLup.up == _price) {
+            if (_toBucket.up == _fromBucket.price) {
                 // nowhere to go
                 break;
             }
 
-            curLup = buckets[curLup.up];
+            _toBucket = buckets[_toBucket.up];
         }
 
-        return curLup.price;
+        return _toBucket.price;
     }
 
     function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator)
