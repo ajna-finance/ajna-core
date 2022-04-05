@@ -617,6 +617,7 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Returns the current Hight Utilizable Price (HUP) bucket
     /// @dev Starting at the LUP, iterate through down pointers until no quote tokens are available
+    /// @dev LUP should always be >= HUP
     function getHup() public view returns (uint256) {
         uint256 curPrice = lup;
         while (true) {

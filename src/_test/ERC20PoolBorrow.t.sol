@@ -318,11 +318,11 @@ contract ERC20PoolBorrowTest is DSTestPlus {
             priceLow
         );
 
-        // borrow max possible from hup
+        // borrow max possible from hdp
         borrower.addCollateral(pool, 51 * 1e18);
         borrower.borrow(pool, 50_000 * 1e18, 2_000 * 1e18);
 
-        // check hup is below lup
+        // check hup is below lup and lup equals hdp
         assertEq(priceHigh, pool.lup());
         assertEq(pool.hdp(), pool.lup());
         assertEq(pool.getHup(), priceMed);
