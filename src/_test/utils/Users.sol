@@ -106,7 +106,7 @@ contract UserWithQuoteToken {
         address from,
         uint256 tokenId,
         bytes memory data
-    ) external returns (bytes4) {
+    ) external pure returns (bytes4) {
         return this.onERC721Received.selector;
     }
 

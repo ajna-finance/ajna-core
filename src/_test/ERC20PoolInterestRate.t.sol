@@ -82,4 +82,27 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertEq(pool.previousRateUpdate(), 8200);
         assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
     }
+
+    function testUpdateInterestRateUnderutilized() public {
+        assertEq(pool.previousRate(), 0.05 * 1e18);
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            1_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+        skip(14);
+
+        // borrower draws debt with a low collateralization ratio
+        borrower.addCollateral(pool, 0.049988406706455432 * 1e18);
+        borrower.borrow(pool, 200 * 1e18, 0);
+        skip(14);
+
+        assertLt(pool.getPoolActualUtilization(), pool.getPoolTargetUtilization());
+
+        vm.expectEmit(true, true, false, true);
+        emit UpdateInterestRate(0.05 * 1e18, 0.009999998890157277 * 1e18);
+        lender.updateInterestRate(pool);
+        assertEq(pool.previousRate(), 0.009999998890157277 * 1e18);
+    }
 }
