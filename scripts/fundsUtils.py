@@ -1,6 +1,6 @@
 from brownie import *
 from sdk import (
-    TokenWrapper,
+    ERC20TokenClient,
     MKR_ADDRESS,
     MKR_RESERVE_ADDRESS,
     DAI_ADDRESS,
@@ -11,7 +11,7 @@ from sdk import (
 def provide_borrower_tokens(borrower):
     accounts[0].transfer(borrower, 100 * 1e18)
 
-    mkr = TokenWrapper(
+    mkr = ERC20TokenClient(
         MKR_ADDRESS,
         MKR_RESERVE_ADDRESS,
     )
@@ -20,7 +20,7 @@ def provide_borrower_tokens(borrower):
 
 def provide_lender_tokens(lender):
     # fund 100000 DAI
-    dai = TokenWrapper(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
+    dai = ERC20TokenClient(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
     dai.top_up(lender, 100_000 * 1e18)
 
     # fund 100 ETH

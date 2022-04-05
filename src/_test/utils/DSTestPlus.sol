@@ -11,6 +11,18 @@ contract DSTestPlus is DSTest, stdCheats {
     /// @dev Use forge-std Vm logic
     Vm public constant vm = Vm(HEVM_ADDRESS);
 
+    // PositionManager events
+    event Mint(address lender, address pool, uint256 tokenId);
+    event MemorializePosition(address lender, uint256 tokenId);
+    event Burn(address lender, uint256 price);
+    event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
+    event DecreaseLiquidity(
+        address lender,
+        uint256 collateral,
+        uint256 quote,
+        uint256 price
+    );
+
     event Transfer(address indexed src, address indexed dst, uint256 wad);
     event AddQuoteToken(
         address indexed lender,

@@ -54,18 +54,20 @@ contract UserWithCollateral {
 contract UserWithQuoteToken {
     function addQuoteToken(
         ERC20Pool pool,
+        address recipient,
         uint256 amount,
         uint256 price
     ) public {
-        pool.addQuoteToken(amount, price);
+        pool.addQuoteToken(recipient, amount, price);
     }
 
     function removeQuoteToken(
         ERC20Pool pool,
+        address recipient,
         uint256 amount,
         uint256 price
     ) public {
-        pool.removeQuoteToken(amount, price);
+        pool.removeQuoteToken(recipient, amount, price);
     }
 
     function borrow(
@@ -78,10 +80,11 @@ contract UserWithQuoteToken {
 
     function claimCollateral(
         ERC20Pool pool,
+        address recipient,
         uint256 amount,
         uint256 price
     ) public {
-        pool.claimCollateral(amount, price);
+        pool.claimCollateral(recipient, amount, price);
     }
 
     function liquidate(ERC20Pool pool, address borrower) public {
@@ -94,5 +97,20 @@ contract UserWithQuoteToken {
         uint256 amount
     ) public {
         token.approve(spender, amount);
+    }
+
+    // Implementing this method allows contracts to receive ERC721 tokens
+    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+    function onERC721Received(
+        address operator,
+        address from,
+        uint256 tokenId,
+        bytes memory data
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    function updateInterestRate(ERC20Pool pool) public {
+        pool.updateInterestRate();
     }
 }

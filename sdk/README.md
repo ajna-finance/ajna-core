@@ -8,7 +8,7 @@ sdk = create_default_sdk()
 
 sdk = create_sdk_for_mkr_dai_pool()
 
-mkr_dai_pool = sdk.pools[0]
+mkr_dai_pool = sdk.get_pool(MKR_ADDRESS, DAI_ADDRESS)
 ```
 
 ## Create custom SDK
@@ -27,17 +27,17 @@ sdk = create_sdk(
     )
 
 
-sdk_options = (
-    SdkOptionsBuilder()
+protocol_definition = (
+    AjnaProtocolStateDefinitionBuilder()
     .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
     .add_token(COMP_ADDRESS, COMP_RESERVE_ADDRESS)
     .deploy_pool(COMP_ADDRESS, DAI_ADDRESS)
 )
 
-sdk_options.with_borrowers(10).with_token(COMP_ADDRESS, 20_000 * 10**18).add()
-sdk_options.with_lenders(5).with_token(DAI_ADDRESS, 600_000 * 10**18).add()
+protocol_definition.with_borrowers(10).with_token(COMP_ADDRESS, 20_000 * 10**18).add()
+protocol_definition.with_lenders(5).with_token(DAI_ADDRESS, 600_000 * 10**18).add()
 
-sdk = AjnaSdk(sdk_options.build())
+sdk = AjnaSdk(protocol_definition.build())
 ```
 
 # Deploy ERC20 pool using SDK
@@ -67,55 +67,35 @@ pool_contract = pool.get_contract()
 # Interact with ERC20 pool using SDK
 ## Deposit quote token from lender
 ```bash
-sdk.deposit_quote_token(pool, amount, price, lender_index)
-
-# Or 
-
 pool = sdk.get_pool(collateral_address, quote_token_address)
 pool.deposit_quote_token(amount, price, lender_index)
 ```
 
 ## Withdraw quote token from pool as lender
 ```bash
-sdk.withdraw_quote_token(pool, amount, price, lender_index)
-
-# Or 
-
 pool = sdk.get_pool(collateral_address, quote_token_address)
 pool.withdraw_quote_token(amount, price, lender_index)
 ```
 
 ## Deposit collateral token from pool as borrower
 ```bash
-sdk.deposit_collateral(pool, amount, borrower_index)
-
-# Or 
-
 pool = sdk.get_pool(collateral_address, quote_token_address)
 pool.deposit_collateral(amount, price, borrower_index)
 ```
 
 ## Withdraw collateral token from pool as borrower
 ```bash
-sdk.withdraw_collateral(pool, amount, borrower_index)
+pool.withdraw_collateral(amount, borrower_index)
 ```
 
 ## Borrow from pool as borrower
 ```bash
-sdk.borrow(pool, amount, stop_price, borrower_index)
-
-# Or 
-
 pool = sdk.get_pool(collateral_address, quote_token_address)
 pool.borrow(amount, price, borrower_index)
 ```
 
 ## Repay to pool as borrower
 ```bash
-sdk.repay(pool, amount, borrower_index)
-
-# Or 
-
 pool = sdk.get_pool(collateral_address, quote_token_address)
 pool.repay(amount, price, borrower_index)
 ```
