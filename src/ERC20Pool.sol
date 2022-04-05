@@ -475,8 +475,8 @@ contract ERC20Pool is IPool, Clone {
 
             previousRate = Maths.wmul(
                 previousRate,
-                (Maths.sub(actualUtilization, getPoolTargetUtilization()) +
-                    Maths.ONE_WAD)
+                (Maths.sub(actualUtilization + Maths.ONE_WAD,
+                    getPoolTargetUtilization()))
             );
             previousRateUpdate = block.timestamp;
             emit UpdateInterestRate(oldRate, previousRate);
