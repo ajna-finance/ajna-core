@@ -294,6 +294,7 @@ contract ERC20Pool is IPool, Clone {
     }
 
     /// @notice Called by a borrower to open or expand a position
+    /// @dev Can only be called if quote tokens have already been added to the pool
     /// @param _amount The amount of quote token to borrow
     /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
@@ -612,6 +613,27 @@ contract ERC20Pool is IPool, Clone {
 
     function getPoolPrice() public view returns (uint256) {
         return lup;
+    }
+
+    /// @notice Returns the current Hight Utilizable Price (HUP) bucket
+    /// @dev Starting at the LUP, iterate through down pointers until no quote tokens are available
+    /// @dev LUP should always be >= HUP
+    function getHup() public view returns (uint256) {
+        uint256 curPrice = lup;
+        while (true) {
+            (uint256 price,, uint256 down, uint256 amount,,,,) = _buckets.bucketAt(curPrice);
+            if (price == down || amount != 0) {
+                break;
+            }
+
+            // check that there are available quote tokens on deposit in down bucket
+            (,,, uint256 downAmount,,,,) = _buckets.bucketAt(down);
+            if (downAmount == 0) {
+                break;
+            }
+            curPrice = down;
+        }
+        return curPrice;
     }
 
     function getMinimumPoolPrice() public view returns (uint256) {
