@@ -5,6 +5,8 @@ pragma solidity 0.8.11;
 import "./Maths.sol";
 
 library Buckets {
+    event Debug(string location_variable, uint256 value);
+
     struct Bucket {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
@@ -36,6 +38,7 @@ library Buckets {
 
         lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
         bucket.lpOutstanding += lpTokens;
+        emit Debug("addQuoteToken", bucket.lpOutstanding);
     }
 
     function removeQuoteToken(
@@ -50,6 +53,13 @@ library Buckets {
         accumulateBucketInterest(bucket, _inflator);
 
         uint256 exchangeRate = getExchangeRate(bucket);
+
+        emit Debug("removeAboveReqAmount", _amount);
+        emit Debug("removeAboveReqSize", bucket.debt + bucket.onDeposit);
+        emit Debug("removeAboveReqLpBal", _lpBalance);
+        emit Debug("removeAboveReqLpoutstanding", bucket.lpOutstanding);
+        emit Debug("removeAboveReqExchangeRate", exchangeRate);
+        emit Debug("removeAboveReqCheck", Maths.wmul(1, exchangeRate));
         require(
             _amount <= Maths.wmul(_lpBalance, exchangeRate),
             "ajna/amount-greater-than-claimable"
@@ -65,6 +75,7 @@ library Buckets {
         lup = reallocateDown(buckets, bucket, _amount, _inflator);
 
         bucket.lpOutstanding -= lpTokens;
+        emit Debug("removeBelowReqOustandingToken", bucket.lpOutstanding);
     }
 
     function claimCollateral(
@@ -411,7 +422,7 @@ library Buckets {
         uint256 size = bucket.onDeposit +
             bucket.debt +
             Maths.wmul(bucket.collateral, bucket.price);
-        if (size != 0 && bucket.lpOutstanding != 0) {
+        if (size > 0 && bucket.lpOutstanding > 0) {
             return Maths.wdiv(size, bucket.lpOutstanding);
         }
         return Maths.ONE_WAD;
