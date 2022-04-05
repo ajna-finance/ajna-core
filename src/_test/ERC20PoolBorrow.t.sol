@@ -292,4 +292,37 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // should not revert when borrower takes a loan on 100_000 DAI
         borrower.borrow(pool, 1_000 * 1e18, 13.537 * 1e18);
     }
+
+    function testGetHup() public {
+        // lender deposits 200_000 DAI in 3 buckets
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            100_000 * 1e18,
+            2_000.221618840727700609 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            50_000 * 1e18,
+            1_004.989662429170775094 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            50_000 * 1e18,
+            502.433988063349232760 * 1e18
+        );
+
+        borrower.addCollateral(pool, 51 * 1e18);
+        borrower.borrow(pool, 100_000 * 1e18, 2_000 * 1e18);
+
+        assertEq(pool.getHup(), pool.lup());
+
+        borrower2.addCollateral(pool, 51 * 1e18);
+        borrower2.borrow(pool, 5_0 * 1e18, 502 * 1e18);
+
+        assert(pool.getHup() > pool.lup());
+
+    }
 }
