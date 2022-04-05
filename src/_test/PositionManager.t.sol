@@ -169,7 +169,7 @@ contract PositionManagerTest is DSTestPlus {
         require(tokenId != 0, "tokenId nonce not incremented");
 
         // check position info
-        (address owner, ) = positionManager.positions(tokenId);
+        (,address owner, ) = positionManager.positions(tokenId);
         uint256 lpTokens = positionManager.getLPTokens(tokenId, mintPrice);
 
         assertEq(owner, alice);
@@ -259,7 +259,7 @@ contract PositionManagerTest is DSTestPlus {
         uint256 tokenId = mintNFT(testAddress, address(pool));
 
         // check newly minted position with no liquidity added
-        (address originalPositionOwner, ) = positionManager.positions(tokenId);
+        (,address originalPositionOwner, ) = positionManager.positions(tokenId);
         uint256 originalLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -278,7 +278,7 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // check liquidity was added successfully
-        (address updatedPositionOwner, ) = positionManager.positions(tokenId);
+        (,address updatedPositionOwner, ) = positionManager.positions(tokenId);
         uint256 updatedLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -389,7 +389,7 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
 
         // check lp tokens matches expectations
-        (address updatedPositionOwner, ) = positionManager.positions(tokenId);
+        (,address updatedPositionOwner, ) = positionManager.positions(tokenId);
         uint256 updatedLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -475,7 +475,7 @@ contract PositionManagerTest is DSTestPlus {
         uint256 tokenId = mintNFT(testMinter, address(pool));
 
         // check owner
-        (address originalOwner, ) = positionManager.positions(tokenId);
+        (,address originalOwner, ) = positionManager.positions(tokenId);
         assertEq(originalOwner, testMinter);
 
         // approve and transfer NFT to different address
@@ -484,7 +484,7 @@ contract PositionManagerTest is DSTestPlus {
         positionManager.safeTransferFrom(testMinter, testReceiver, tokenId);
 
         // check owner
-        (address newOwner, ) = positionManager.positions(tokenId);
+        (,address newOwner, ) = positionManager.positions(tokenId);
         assertEq(newOwner, testReceiver);
         assert(newOwner != originalOwner);
 
@@ -588,12 +588,149 @@ contract PositionManagerTest is DSTestPlus {
         vm.prank(testAddress);
         positionManager.burn(burnParams);
 
-        (address burntPositionOwner, ) = positionManager.positions(tokenId);
+        (,address burntPositionOwner, ) = positionManager.positions(tokenId);
 
         assertEq(
             burntPositionOwner,
             0x0000000000000000000000000000000000000000
         );
+    }
+
+    // TODO: check test flow -> permit w/out contract call?
+    // TODO: check how token approvals are handled
+    // https://github.com/Rari-Capital/solmate/blob/7c34ed021cfeeefb1a4bff7e511a25ce8a68806b/src/test/ERC20.t.sol#L89-L103
+    function testPermitEOA() public {
+        uint256 privateKey = 0xBEEF;
+        address owner = vm.addr(privateKey);
+        address spender = generateAddress();
+        address unapprovedSpender = generateAddress();
+
+        uint256 mintAmount = 10000 * 1e18;
+        uint256 mintPrice = 1_004.989662429170775094 * 10**18;
+        mintAndApproveQuoteTokens(owner, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(spender, mintAmount, approveBig);
+
+        bytes32 PERMIT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
+        uint256 deadline = block.timestamp + 1000000;
+
+        uint256 tokenId = mintNFT(owner, address(pool));
+
+        // check EOA can be approved via Permit()
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            privateKey,
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    positionManager.DOMAIN_SEPARATOR(),
+                    keccak256(abi.encode(PERMIT_TYPEHASH, spender, tokenId, 0, deadline))
+                )
+            )
+        );
+
+        positionManager.permit(spender, tokenId, deadline, v, r, s);
+
+        // check that nonce has been incremented
+        (uint96 nonces,,) = positionManager.positions(tokenId);
+        assertEq(nonces, 1);
+
+        // check that spender was approved
+        assertEq(positionManager.getApproved(tokenId), spender);
+        assertTrue(positionManager.getApproved(tokenId) != unapprovedSpender);
+
+        // check can add liquidity as approved spender
+        IPositionManager.IncreaseLiquidityParams
+            memory increaseLiquidityParamsApproved = IPositionManager
+                .IncreaseLiquidityParams(
+                    tokenId,
+                    owner,
+                    address(pool),
+                    mintAmount / 4,
+                    mintPrice
+                );
+
+        vm.expectEmit(true, true, true, true);
+        emit IncreaseLiquidity(owner, mintAmount / 4, mintPrice);
+
+        vm.prank(spender);
+        positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
+
+        // TODO: check can decreaseLiquidity as approved spender
+        // TODO: check change in balance
+
+        // attempt and fail to add liquidity as unapprovedSpender
+        IPositionManager.IncreaseLiquidityParams
+            memory increaseLiquidityParamsUnapproved = IPositionManager
+                .IncreaseLiquidityParams(
+                    tokenId,
+                    owner,
+                    address(pool),
+                    mintAmount / 4,
+                    mintPrice
+                );
+
+        vm.prank(unapprovedSpender);
+        vm.expectRevert("ajna/not-approved");
+        positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
+    }
+
+    // TODO: determine how to access private key of the contract...
+    // TODO: use salt new arg to deploy at desired address {}
+    function xtestPermitContract() public {
+        // TODO: use the privateKey to generate salt so we know the contract address
+        uint256 privateKey = 0xBEEF;
+        UserWithQuoteToken minter = new UserWithQuoteToken();
+        quote.mint(address(minter), 200_000 * 1e18);
+        minter.approveToken(quote, address(pool), 200_000 * 1e18);
+
+        uint256 liquidityToAdd = 10000 * 1e18;
+        uint256 price = 1_004.989662429170775094 * 10**18;
+
+        uint256 tokenId = mintNFT(address(minter), address(pool));
+
+        UserWithQuoteToken contractSpender = new UserWithQuoteToken();
+        UserWithQuoteToken unapprovedContractSpender = new UserWithQuoteToken();
+
+        bytes32 PERMIT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
+        uint256 deadline = block.timestamp + 1000000;
+
+        // check EOA can be approved via Permit()
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            privateKey,
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    positionManager.DOMAIN_SEPARATOR(),
+                    keccak256(abi.encode(PERMIT_TYPEHASH, address(contractSpender), tokenId, 0, deadline))
+                )
+            )
+        );
+
+        positionManager.permit(address(contractSpender), tokenId, deadline, v, r, s);
+
+        // check that nonce has been incremented
+        (uint96 nonces,,) = positionManager.positions(tokenId);
+        assertEq(nonces, 1);
+
+        // check that spender was approved
+        assertEq(positionManager.getApproved(tokenId), address(contractSpender));
+        assertTrue(positionManager.getApproved(tokenId) != address(unapprovedContractSpender));
+
+        // check can add liquidity as approved contract spender
+        IPositionManager.IncreaseLiquidityParams
+            memory increaseLiquidityParamsApproved = IPositionManager
+                .IncreaseLiquidityParams(
+                    tokenId,
+                    address(minter),
+                    address(pool),
+                    liquidityToAdd,
+                    price
+                );
+
+        vm.expectEmit(true, true, true, true);
+        emit IncreaseLiquidity(address(minter), liquidityToAdd, price);
+
+        vm.prank(address(contractSpender));
+        positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
     }
 
     function testGetPositionValueInQuoteTokens() public {}

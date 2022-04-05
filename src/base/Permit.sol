@@ -2,7 +2,10 @@
 pragma solidity 0.8.11;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
+
+import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
 // Implements: https://eips.ethereum.org/EIPS/eip-4494
 abstract contract Permit is ERC721 {
@@ -16,6 +19,9 @@ abstract contract Permit is ERC721 {
     /// @dev The hash of the version string used in the permit signature verification
     bytes32 private immutable versionHash;
 
+    /// @dev Value is equal to keccak256("Permit(address spender,uint256 tokenId,uint256 nonce,uint256 deadline)");
+    bytes32 public constant PERMIT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
+
     /// @notice Computes the nameHash and versionHash
     constructor(
         string memory name_,
@@ -26,7 +32,7 @@ abstract contract Permit is ERC721 {
         versionHash = keccak256(bytes(version_));
     }
 
-    function DOMAIN_SEPARATOR() public view override returns (bytes32) {
+    function DOMAIN_SEPARATOR() public view returns (bytes32) {
         return
             keccak256(
                 abi.encode(
@@ -40,7 +46,6 @@ abstract contract Permit is ERC721 {
             );
     }
 
-    // TODO: finish implementing
     function permit(
         address spender,
         uint256 tokenId,
@@ -48,7 +53,7 @@ abstract contract Permit is ERC721 {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) external payable override {
+    ) external payable {
         require(block.timestamp <= deadline, 'ajna/permit-expired');
 
         bytes32 digest =
@@ -61,22 +66,22 @@ abstract contract Permit is ERC721 {
             );
         address owner = ownerOf(tokenId);
         require(spender != owner, 'ERC721Permit: approval to current owner');
-        
-        // TODO: finish implementing
-        // if (Address.isContract(owner)) {
-        //     require(IERC1271(owner).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e, 'Unauthorized');
-        // } else {
-        //     address recoveredAddress = ecrecover(digest, v, r, s);
-        //     require(recoveredAddress != address(0), 'Invalid signature');
-        //     require(recoveredAddress == owner, 'Unauthorized');
-        // }
 
-        // _approve(spender, tokenId);
+        if (Address.isContract(owner)) {
+            // bytes4(keccak256("isValidSignature(bytes32,bytes)") == 0x1626ba7e
+            require(IERC1271(owner).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e, 'ajna/unauthorized');
+        } else {
+            address recoveredAddress = ecrecover(digest, v, r, s);
+            require(recoveredAddress != address(0), 'Invalid signature');
+            require(recoveredAddress == owner, 'Unauthorized');
+        }
+
+        _approve(spender, tokenId);
     }
 
     /// @dev Gets the current chain ID
     /// @return chainId The current chain ID
-    function getChainId() internal pure returns (uint256 chainId) {
+    function getChainId() internal view returns (uint256 chainId) {
         assembly {
             chainId := chainid()
         }

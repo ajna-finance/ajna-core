@@ -6,17 +6,18 @@ import {ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {Base64} from "@base64-sol/base64.sol";
 
-import {IPositionManager} from "./PositionManager.sol";
+import {IPositionManager} from "../PositionManager.sol";
+import {Permit} from "./Permit.sol";
 
 // TODO: determine if tokens should be burnable
 import {ERC721Burnable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
-abstract contract PositionNFT is ERC721, ERC721Enumerable {
+abstract contract PositionNFT is ERC721, ERC721Enumerable, Permit {
     constructor(
         string memory name,
         string memory symbol,
         string memory version
-    ) ERC721(name, symbol) {}
+    ) Permit(name, symbol, version) {}
 
     function constructTokenURI(IPositionManager.ConstructTokenURIParams memory params) public view returns (string memory) {
         string memory _name = string(

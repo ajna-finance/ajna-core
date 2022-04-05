@@ -4,7 +4,7 @@ pragma solidity 0.8.11;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
-import {PositionNFT} from "./PositionNFT.sol";
+import {PositionNFT} from "./base/PositionNFT.sol";
 import {IPool} from "./ERC20Pool.sol";
 
 interface IPositionManager {
@@ -244,6 +244,11 @@ contract PositionManager is IPositionManager, PositionNFT {
     ) internal virtual override(ERC721) {
         Position storage position = positions[tokenId];
         position.owner = to;
+    }
+
+    /// @dev used for tracking nonce input to permit function
+    function _getAndIncrementNonce(uint256 tokenId) internal override returns (uint256) {
+        return uint256(positions[tokenId].nonce++);
     }
 
     // -------------------- Position State View functions --------------------
