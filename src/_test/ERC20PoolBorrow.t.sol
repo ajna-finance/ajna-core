@@ -16,7 +16,6 @@ contract ERC20PoolBorrowTest is DSTestPlus {
     UserWithCollateral internal borrower;
     UserWithCollateral internal borrower2;
     UserWithQuoteToken internal lender;
-    UserWithQuoteToken internal hupTestLender;
 
     function setUp() public {
         collateral = new CollateralToken();
@@ -36,10 +35,6 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         lender = new UserWithQuoteToken();
         quote.mint(address(lender), 200_000 * 1e18);
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
-
-        // lender = new UserWithQuoteToken();
-        // quote.mint(address(lender), 200_000 * 1e18);
-        // lender.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
     function testBorrow() public {
@@ -348,7 +343,5 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assert(newHup > originalHup);
         assert(newHup > pool.lup());
         assertEq(pool.getHup(), pool.hdp());
-
-
     }
 }
