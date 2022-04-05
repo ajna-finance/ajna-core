@@ -403,8 +403,7 @@ library Buckets {
             uint256 debt,
             uint256 inflatorSnapshot,
             uint256 lpOutstanding,
-            uint256 collateral,
-            uint256 exchangeRate
+            uint256 collateral
         )
     {
         Bucket memory bucket = buckets[_price];
@@ -417,7 +416,6 @@ library Buckets {
         inflatorSnapshot = bucket.inflatorSnapshot;
         lpOutstanding = bucket.lpOutstanding;
         collateral = bucket.collateral;
-        exchangeRate = getExchangeRate(buckets[_price]);
     }
 
     function getExchangeRate(Bucket storage bucket)
