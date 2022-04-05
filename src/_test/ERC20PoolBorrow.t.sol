@@ -16,6 +16,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
     UserWithCollateral internal borrower;
     UserWithCollateral internal borrower2;
     UserWithQuoteToken internal lender;
+    UserWithQuoteToken internal hupTestLender;
 
     function setUp() public {
         collateral = new CollateralToken();
@@ -35,6 +36,10 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         lender = new UserWithQuoteToken();
         quote.mint(address(lender), 200_000 * 1e18);
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
+
+        // lender = new UserWithQuoteToken();
+        // quote.mint(address(lender), 200_000 * 1e18);
+        // lender.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
     function testBorrow() public {
@@ -294,11 +299,11 @@ contract ERC20PoolBorrowTest is DSTestPlus {
     }
 
     function testGetHup() public {
-        // lender deposits 200_000 DAI in 3 buckets
+        // lender deposits 150_000 DAI in 3 buckets
         lender.addQuoteToken(
             pool,
             address(lender),
-            100_000 * 1e18,
+            50_000 * 1e18,
             2_000.221618840727700609 * 1e18
         );
         lender.addQuoteToken(
@@ -314,15 +319,36 @@ contract ERC20PoolBorrowTest is DSTestPlus {
             502.433988063349232760 * 1e18
         );
 
+        // borrow max possible from hup
         borrower.addCollateral(pool, 51 * 1e18);
-        borrower.borrow(pool, 100_000 * 1e18, 2_000 * 1e18);
+        borrower.borrow(pool, 50_000 * 1e18, 2_000 * 1e18);
 
         assertEq(pool.getHup(), pool.lup());
 
         borrower2.addCollateral(pool, 51 * 1e18);
         borrower2.borrow(pool, 5_0 * 1e18, 502 * 1e18);
 
-        assert(pool.getHup() > pool.lup());
+        uint256 originalHup = pool.getHup();
+
+        // check hup is < hdp
+        assertEq(pool.getHup(), pool.lup());
+        assert(pool.getHup() < pool.hdp());
+
+        // add additional quote token to the previously maxed out hdp
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            1000 * 1e18,
+            2_000.221618840727700609 * 1e18
+        );
+
+        // check hup has moved up to previous hdp
+        uint256 newHup = pool.getHup();
+
+        assert(newHup > originalHup);
+        assert(newHup > pool.lup());
+        assertEq(pool.getHup(), pool.hdp());
+
 
     }
 }

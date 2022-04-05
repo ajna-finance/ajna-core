@@ -616,16 +616,20 @@ contract ERC20Pool is IPool, Clone {
     }
 
     /// @notice Returns the current Hight Utilizable Price (HUP) bucket
+    /// @dev Starting at the LUP, iterate through up pointers until the HDP is reached, or no quote tokens are available
     function getHup() public view returns (uint256) {
         uint256 curPrice = lup;
         while (true) {
             (uint256 price, uint256 up,, uint256 amount, uint256 debt,,,) = _buckets.bucketAt(curPrice);
-
             if (price == up) {
                 break;
             }
 
-            // TODO: check that there are available unencumbered tokens on deposit in up bucket
+            // check that there are available quote tokens on deposit in up bucket
+            (,,, uint256 upAmount, uint256 upDebt,,,) = _buckets.bucketAt(up);
+            if (upDebt > 0 && upAmount == 0) {
+                break;
+            }
             curPrice = up;
         }
         return curPrice;
