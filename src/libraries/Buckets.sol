@@ -422,7 +422,7 @@ library Buckets {
         uint256 size = bucket.onDeposit +
             bucket.debt +
             Maths.wmul(bucket.collateral, bucket.price);
-        if (size > 0 && bucket.lpOutstanding > 0) {
+        if (size != 0 && bucket.lpOutstanding != 0) {
             return Maths.wdiv(size, bucket.lpOutstanding);
         }
         return Maths.ONE_WAD;
