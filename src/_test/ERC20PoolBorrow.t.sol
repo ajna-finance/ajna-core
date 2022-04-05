@@ -294,54 +294,57 @@ contract ERC20PoolBorrowTest is DSTestPlus {
     }
 
     function testGetHup() public {
+        uint256 priceHigh = 2_000.221618840727700609 * 1e18;
+        uint256 priceMed = 1_004.989662429170775094 * 1e18;
+        uint256 priceLow = 502.433988063349232760 * 1e18;
+
         // lender deposits 150_000 DAI in 3 buckets
         lender.addQuoteToken(
             pool,
             address(lender),
             50_000 * 1e18,
-            2_000.221618840727700609 * 1e18
+            priceHigh
         );
         lender.addQuoteToken(
             pool,
             address(lender),
             50_000 * 1e18,
-            1_004.989662429170775094 * 1e18
+            priceMed
         );
         lender.addQuoteToken(
             pool,
             address(lender),
             50_000 * 1e18,
-            502.433988063349232760 * 1e18
+            priceLow
         );
 
         // borrow max possible from hup
         borrower.addCollateral(pool, 51 * 1e18);
         borrower.borrow(pool, 50_000 * 1e18, 2_000 * 1e18);
 
-        assertEq(pool.getHup(), pool.lup());
+        // check hup is below lup
+        assertEq(priceHigh, pool.lup());
+        assertEq(pool.hdp(), pool.lup());
+        assertEq(pool.getHup(), priceMed);
 
+        // borrow max possible from previous hup
         borrower2.addCollateral(pool, 51 * 1e18);
-        borrower2.borrow(pool, 5_0 * 1e18, 502 * 1e18);
+        borrower2.borrow(pool, 50_000 * 1e18, 1000 * 1e18);
 
-        uint256 originalHup = pool.getHup();
+        // check hup moves down
+        assertEq(pool.getHup(), priceLow);
+        assert(pool.getHup() < pool.lup());
 
-        // check hup is < hdp
-        assertEq(pool.getHup(), pool.lup());
-        assert(pool.getHup() < pool.hdp());
-
-        // add additional quote token to the previously maxed out hdp
+        // add additional quote token to the maxed out priceMed bucket
         lender.addQuoteToken(
             pool,
             address(lender),
             1000 * 1e18,
-            2_000.221618840727700609 * 1e18
+            priceMed
         );
 
-        // check hup has moved up to previous hdp
-        uint256 newHup = pool.getHup();
-
-        assert(newHup > originalHup);
-        assert(newHup > pool.lup());
-        assertEq(pool.getHup(), pool.hdp());
+        // check hup moves up as additional quote tokens become available
+        assertEq(pool.getHup(), priceMed);
+        assertEq(pool.getHup(), pool.lup());
     }
 }
