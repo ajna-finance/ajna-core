@@ -8,6 +8,7 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
 // Implements: https://eips.ethereum.org/EIPS/eip-4494
+// https://soliditydeveloper.com/erc721-permit
 abstract contract Permit is ERC721 {
 
     /// @dev Gets the current nonce for a token ID and then increments it, returning the original value

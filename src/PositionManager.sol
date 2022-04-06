@@ -252,6 +252,8 @@ contract PositionManager is IPositionManager, PositionNFT {
     ) internal virtual override(ERC721) {
         Position storage position = positions[tokenId];
         position.owner = to;
+        // TODO: ensure that each nonce is only updated after successful transfer to prevent reuse
+        // _getAndIncrementNonce(tokenId);
     }
 
     /// @dev used for tracking nonce input to permit function

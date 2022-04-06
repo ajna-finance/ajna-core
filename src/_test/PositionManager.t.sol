@@ -595,10 +595,8 @@ contract PositionManagerTest is DSTestPlus {
         address spender = generateAddress();
         address unapprovedSpender = generateAddress();
 
-        uint256 mintAmount = 10000 * 1e18;
-        uint256 mintPrice = 1_004.989662429170775094 * 10**18;
-        mintAndApproveQuoteTokens(owner, mintAmount, approveBig);
-        mintAndApproveQuoteTokens(spender, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(owner, 10000 * 1e18, approveBig);
+        mintAndApproveQuoteTokens(spender, 10000 * 1e18, approveBig);
 
         bytes32 PERMIT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
         uint256 deadline = block.timestamp + 1000000;
@@ -617,11 +615,18 @@ contract PositionManagerTest is DSTestPlus {
             )
         );
 
+        (uint96 nonceBeforePermit,,) = positionManager.positions(tokenId);
+
+        emit log_uint(nonceBeforePermit);
+
         positionManager.permit(spender, tokenId, deadline, v, r, s);
 
         // check that nonce has been incremented
-        (uint96 nonces,,) = positionManager.positions(tokenId);
-        assertEq(nonces, 1);
+        (uint96 nonceAfterPermit,,) = positionManager.positions(tokenId);
+        assertEq(nonceAfterPermit, 1);
+        assert(nonceAfterPermit > nonceBeforePermit);
+
+        emit log_uint(nonceAfterPermit);
 
         // check that spender was approved
         assertEq(positionManager.getApproved(tokenId), spender);
@@ -634,18 +639,20 @@ contract PositionManagerTest is DSTestPlus {
                     tokenId,
                     owner,
                     address(pool),
-                    mintAmount / 4,
-                    mintPrice
+                    (10000 * 1e18) / 4,
+                    1_004.989662429170775094 * 10**18
                 );
 
+        uint256 balanceBeforeAdd = quote.balanceOf(owner);
+
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(owner, mintAmount / 4, mintPrice);
+        emit IncreaseLiquidity(owner, 10000 * 1e18 / 4, 1_004.989662429170775094 * 10**18);
 
         vm.prank(spender);
         positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
 
-        // TODO: check can decreaseLiquidity as approved spender
-        // TODO: check change in balance
+        // check that quote tokens have been transferred from the owner
+        assert(quote.balanceOf(owner) < balanceBeforeAdd);
 
         // attempt and fail to add liquidity as unapprovedSpender
         IPositionManager.IncreaseLiquidityParams
@@ -654,17 +661,37 @@ contract PositionManagerTest is DSTestPlus {
                     tokenId,
                     owner,
                     address(pool),
-                    mintAmount / 4,
-                    mintPrice
+                    (10000 * 1e18) / 4,
+                    1_004.989662429170775094 * 10**18
                 );
 
         vm.prank(unapprovedSpender);
         vm.expectRevert("ajna/not-approved");
         positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
+
+        // TODO: resolve stack too deep issue
+        // transfer again and check nonce and approvals
+        // uint256 secondPrivateKey = 0xBE;
+        // address secondOwner = vm.addr(secondPrivateKey);
+        // mintAndApproveQuoteTokens(secondOwner, 10000 * 1e18, approveBig);
+
+        // check second EOA can be approved via Permit()
+        // (v, r, s) = vm.sign(
+        //     secondPrivateKey,
+        //     keccak256(
+        //         abi.encodePacked(
+        //             "\x19\x01",
+        //             positionManager.DOMAIN_SEPARATOR(),
+        //             keccak256(abi.encode(PERMIT_TYPEHASH, spender, tokenId, 0, deadline))
+        //         )
+        //     )
+        // );
+        // positionManager.permit(spender, tokenId, deadline, v, r, s);
+
     }
 
-    // TODO: determine how to access private key of the contract...
-    // TODO: use salt new arg to deploy at desired address {}
+    // contracts don't have private keys, so will have to use EIP-1271 here
+    // https://soliditydeveloper.com/meta-transactions
     function xtestPermitContract() public {
         // TODO: use the privateKey to generate salt so we know the contract address
         uint256 privateKey = 0xBEEF;
