@@ -569,7 +569,7 @@ contract ERC20Pool is IPool, Clone {
             ,
             ,
             uint256 quote,
-            ,
+            uint256 debt,
             ,
             uint256 lpOutstanding,
             uint256 bucketCollateral
@@ -579,7 +579,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 lenderShare = PRBMathUD60x18.div(_lpTokens, lpOutstanding);
 
         collateralTokens = PRBMathUD60x18.mul(bucketCollateral, lenderShare);
-        quoteTokens = PRBMathUD60x18.mul(quote, lenderShare);
+        quoteTokens = PRBMathUD60x18.mul(quote + debt, lenderShare);
     }
 
     // -------------------- Bucket related functions --------------------

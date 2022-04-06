@@ -88,10 +88,17 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(debt, 0);
         assertEq(snapshot, 1 * 1e18);
         assertEq(lpOutstanding, 10_000 * 1e18);
+        // check lender's LP amount can be redeemed for correct amount of quote token
         assertEq(
             pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18),
             10_000 * 1e18
         );
+        (
+            uint256 collateralTokens,
+            uint256 quoteTokens
+        ) = pool.getLPTokenExchangeValue(10_000 * 1e18, 4_000.927678580567537368 * 1e18);
+        assertEq(collateralTokens, 0);
+        assertEq(quoteTokens, 10_000 * 1e18);
 
         // test 20000 DAI deposit at price of 1 MKR = 2000.221618840727700609 DAI
         vm.expectEmit(true, true, false, true);
@@ -343,6 +350,18 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             10_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
+
+        // confirm our LP balance still entitles us to our share of the utilized bucket
+        assertEq(
+            pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18),
+            10_000 * 1e18
+        );
+        (
+            uint256 collateralTokens,
+            uint256 quoteTokens
+        ) = pool.getLPTokenExchangeValue(10_000 * 1e18, 4_000.927678580567537368 * 1e18);
+        assertEq(collateralTokens, 0);
+        assertEq(quoteTokens, 10_000 * 1e18);
 
         // remove 4000 DAI at price of 1 MKR = 4_000.927678580567537368 DAI
         vm.expectEmit(true, true, false, true);
