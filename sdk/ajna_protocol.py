@@ -91,7 +91,7 @@ class AjnaProtocol:
             token_address, reserve_address
         )
 
-    def add_borrower(self, *, borrower: LocalAccount = None) -> None:
+    def add_borrower(self, *, borrower: LocalAccount = None) -> LocalAccount:
         """
         Adds borrower to AjnaProtocol.
 
@@ -105,7 +105,7 @@ class AjnaProtocol:
         self.borrowers.append(borrower)
         return borrower
 
-    def add_lender(self, *, lender: LocalAccount = None) -> None:
+    def add_lender(self, *, lender: LocalAccount = None) -> LocalAccount:
         """
         Adds lender to AjnaProtocol.
 

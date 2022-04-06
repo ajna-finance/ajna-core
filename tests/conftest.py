@@ -16,8 +16,10 @@ def ajna_protocol() -> AjnaProtocol:
     protocol_definition = (
         InitialProtocolStateBuilder()
         .add_token(MKR_ADDRESS, MKR_RESERVE_ADDRESS)
+        .add_token(WETH_ADDRESS, WETH_RESERVE_ADDRESS)
         .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
         .deploy_pool(MKR_ADDRESS, DAI_ADDRESS)
+        .deploy_pool(WETH_ADDRESS, DAI_ADDRESS)
     )
 
     ajna_protocol = AjnaProtocol()
@@ -44,6 +46,12 @@ def mkr(ajna_protocol):
 
 
 @pytest.fixture
+def weth(ajna_protocol):
+    return ajna_protocol.get_token(WETH_ADDRESS).get_contract()
+
+
+# TODO: convert to deploying all necessary libraries "libraries(deployer)"
+@pytest.fixture
 def bucket_math(ajna_protocol):
     return ajna_protocol.bucket_math
 
@@ -52,10 +60,17 @@ def bucket_math(ajna_protocol):
 def mkr_dai_pool(ajna_protocol):
     return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
 
+
 @pytest.fixture
 def position_manager(deployer):
     position_manager = PositionManager.deploy({"from": deployer})
     yield position_manager
+
+
+@pytest.fixture
+def weth_dai_pool(ajna_protocol):
+    return ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS).get_contract()
+
 
 @pytest.fixture
 def lenders(ajna_protocol, mkr_dai_pool):
@@ -222,6 +237,43 @@ class TestUtils:
             network.state.TxHistory().gas_profile = self._combine_profiles(
                 TestUtils.GasWatcher._cache, network.state.TxHistory().gas_profile
             )
+
+    @staticmethod
+    def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926, with_headers=True, csv=False) -> str:
+        # formatting shortcuts
+        w = 12
+        def j(text):
+            return str.rjust(text, w)
+        def n(wad):
+            return wad/1e18
+        def f(wad):
+            return f"{n(wad):>{w}.3f}"
+
+        lines = []
+        if with_headers:
+            if csv:
+                lines.append("Price,Deposit,Debt,Collateral,LP Outstanding")
+            else:
+                lines.append(j('Price') + j('Deposit') + j('Debt') + j('Collateral') + j('LPOutstndg'))
+        for i in range(max_bucket_index, min_bucket_index, -1):
+            price = bucket_math.indexToPrice(i)
+            (
+                _,
+                _,
+                _,
+                bucket_deposit,
+                bucket_debt,
+                _,
+                bucket_lp,
+                bucket_collateral,
+            ) = pool.bucketAt(price)
+            if csv:
+                lines.append(','.join([n(price), n(bucket_deposit), n(bucket_debt), n(bucket_collateral),
+                                       n(bucket_lp)]))
+            else:
+                lines.append(''.join([f(price), f(bucket_deposit), f(bucket_debt), f(bucket_collateral),
+                                      f(bucket_lp)]))
+        return '\n'.join(lines)
 
 
 @pytest.fixture
