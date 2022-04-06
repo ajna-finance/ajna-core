@@ -12,6 +12,10 @@ MAX_BUCKET = 1623  # 3293.70191, highest bucket for initial deposits, is exceede
 SECONDS_PER_YEAR = 3600 * 24 * 365
 
 
+# set of buckets deposited into, indexed by lender index
+buckets_deposited = dict.fromkeys(range(0, 100), set())
+
+
 @pytest.fixture
 def pool_client(ajna_protocol: AjnaProtocol, weth, dai) -> AjnaPoolClient:
     return ajna_protocol.get_pool(weth.address, dai.address)
@@ -100,14 +104,12 @@ def draw_initial_debt(
         pool.borrow(borrow_amount / 10**27, limit_price, {"from": borrower})
 
 
-def draw_and_bid(
-    lenders, borrowers, pool, bucket_math, chain, duration=3600 * 8
-) -> dict:
-    buckets_deposited = {}
+def draw_and_bid(lenders, borrowers, pool, bucket_math, chain, duration=3600*8) -> dict:
     assert len(lenders) == len(borrowers)
     delay = int(duration / 3 / len(lenders))
-    for user_index in range(0, len(lenders) - 1):
-        # utilization = pool.getPoolActualUtilization() / 10**18
+    interest_rate = 0
+    for user_index in range(0, len(lenders)-1):
+        # utilization = pool.getPoolActualUtilization() / 1e18
         # print(f"actual utilization: {utilization:>10.1%}   "
         #       f"target utilization: {pool.getPoolTargetUtilization() / 10**18:>10.1%}")
 
@@ -132,22 +134,17 @@ def draw_and_bid(
             chain.sleep(delay)
 
         # Add liquidity
-        liquidity_coefficient = (
-            1.05
-            if pool.getPoolActualUtilization() > pool.getPoolTargetUtilization()
-            else 1.0
-        )
-        buckets_deposited[user_index] = add_quote_token(
-            lenders[user_index], user_index, pool, bucket_math, liquidity_coefficient
-        )
+        liquidity_coefficient = 1.05 if pool.getPoolActualUtilization() > pool.getPoolTargetUtilization() else 1.0
+        price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, liquidity_coefficient)
+        if price:
+            buckets_deposited[user_index].add(price)
+        remove_quote_token(lenders[user_index], user_index, buckets_deposited[user_index].pop(), pool)
         chain.sleep(delay)
+        assert False
 
-    print(
-        f"interest rate: {interest_rate:>6.3%}   "
-        f"total quote token: {pool.totalQuoteToken() / 10**45:>12.1f}   "
-        f"total debt: {pool.totalDebt() / 10**45:>12.1f}"
-    )
-    return buckets_deposited
+    print(f"interest rate: {interest_rate:>6.3%}   "
+          f"total quote token: {pool.totalQuoteToken() / 1e18:>12.1f}   "
+          f"total debt: {pool.totalDebt() / 1e18:>12.1f}")
 
 
 def draw_debt(
@@ -179,9 +176,7 @@ def add_quote_token(lender, lender_index, pool, bucket_math, liquidity_coefficie
     price = bucket_math.indexToPrice(MAX_BUCKET + index_offset)
     quantity = int(90_000 * ((lender_index % 2) + 1)) * liquidity_coefficient * 10**18
     if dai.balanceOf(lender) > quantity:
-        print(
-            f" lender {lender_index} adding {quantity / 10**18:.1f} liquidity at {price / 10**18:.1f}"
-        )
+        print(f" lender {lender_index} adding {quantity / 1e18:.1f} liquidity at {price / 1e18}")
         pool.addQuoteToken(lender, quantity, price, {"from": lender})
         return price
     else:
@@ -191,12 +186,17 @@ def add_quote_token(lender, lender_index, pool, bucket_math, liquidity_coefficie
         return None
 
 
-def remove_quote_token(lenders, pool, buckets_deposited, chain):
-    for lender_index, price in buckets_deposited.items():
-        print(f" lender {lender_index} removing liquidity at {price / 10**18}")
-        lender = lenders[lender_index]
-        pool.removeQuoteToken(lender, 100_000 * 10**18, price, {"from": lender})
-        chain.sleep((lender_index + 1) * 300)
+def remove_quote_token(lender, lender_index, price, pool):
+    lp_balance = pool.getLPTokenBalance(lender, price)
+    (_, _, _, quote, _, _, lp_outstanding, _) = pool.bucketAt(price)
+    if lp_balance > 0:
+        assert lp_outstanding > 0
+        (claimable_collateral, claimable_quote) = pool.getLPTokenExchangeValue(lp_balance, price)
+        assert claimable_collateral == 0
+        print(f" lender {lender_index} removing {claimable_quote:.1f} at {price / 1e18}, "
+              f"lp_balance={lp_balance / 1e18}, lpOutstanding={lp_outstanding / 1e18}, quote={quote / 1e18}")
+        assert claimable_quote > 0  # FIXME: triggers every time
+        pool.removeQuoteToken(lender, claimable_quote, price, {"from": lender})
 
 
 def repay(borrower, borrower_index, pool):
@@ -237,10 +237,7 @@ def test_stable_volatile_one(
         assert pool1.getPoolActualUtilization() > 0.50 * 10**18
         while chain.time() < end_time:
             try:
-                buckets_deposited = draw_and_bid(
-                    lenders, borrowers, pool1, bucket_math, chain
-                )
-                # remove_quote_token(lenders, pool1, buckets_deposited, chain)
+                draw_and_bid(lenders, borrowers, pool1, bucket_math, chain)
                 print(f"days remaining: {(end_time - chain.time()) / 3600 / 24}")
             except Exception as ex:
                 test_exception = ex
