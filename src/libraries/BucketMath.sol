@@ -42,7 +42,11 @@ library BucketMath {
     /// @dev Throws if price exceeds maximum constant
     /// @dev Price expected to be inputted as a 18 decimal WAD
     function priceToIndex(uint256 price) public pure returns (int256 index) {
-        if (price > MAX_PRICE || price < MIN_PRICE) {
+        if (price > MAX_PRICE) {
+            revert PriceOutsideBoundry();
+        }
+
+        if (price < MIN_PRICE) {
             revert PriceOutsideBoundry();
         }
 
@@ -72,7 +76,11 @@ library BucketMath {
     /// @dev Uses fixed-point math to get around lack of floating point numbers in EVM
     /// @dev Price expected to be inputted as a 18 decimal WAD
     function indexToPrice(int256 index) public pure returns (uint256 price) {
-        if (index > MAX_PRICE_INDEX || index < MIN_PRICE_INDEX) {
+        if (index > MAX_PRICE_INDEX) {
+            revert IndexOutsideBoundry();
+        }
+
+        if (index < MIN_PRICE_INDEX) {
             revert IndexOutsideBoundry();
         }
 

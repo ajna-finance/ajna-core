@@ -18,7 +18,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
     UserWithCollateral internal borrower;
     UserWithQuoteToken internal lender;
-    UserWithQuoteToken internal lender2;
+    UserWithQuoteToken internal lender1;
 
     function setUp() public {
         collateral = new CollateralToken();
@@ -35,9 +35,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         quote.mint(address(lender), 200_000 * 1e18);
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
 
-        lender2 = new UserWithQuoteToken();
-        quote.mint(address(lender2), 200_000 * 1e18);
-        lender2.approveToken(quote, address(pool), 200_000 * 1e18);
+        lender1 = new UserWithQuoteToken();
+        quote.mint(address(lender1), 200_000 * 1e18);
+        lender1.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
     function testDepositQuoteToken() public {
@@ -393,23 +393,22 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
     function testRemoveQuoteTokenPaidLoan() public {
         // lender deposit 10000 DAI at price 4000
-
-        // lender.addQuoteToken(
-        //     pool,
-        //     address(lender),
-        //     10_000 * 1e18,
-        //     4_000.927678580567537368 * 1e18
-        // );
-        // assertEq(quote.balanceOf(address(lender)), 190_000 * 1e18);
-
-        // lender2 deposit 10000 DAI at price 4000
-        lender2.addQuoteToken(
+        lender.addQuoteToken(
             pool,
-            address(lender2),
+            address(lender),
             10_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
-        assertEq(quote.balanceOf(address(lender2)), 190_000 * 1e18);
+        assertEq(quote.balanceOf(address(lender)), 190_000 * 1e18);
+
+        // lender1 deposit 10000 DAI at price 4000:
+        lender1.addQuoteToken(
+            pool,
+            address(lender1),
+            10_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+        assertEq(quote.balanceOf(address(lender1)), 190_000 * 1e18);
 
         // borrower takes a loan of 10_000 DAI
         borrower.addCollateral(pool, 100 * 1e18);
@@ -425,24 +424,26 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         skip(8200);
 
         //exchange rate
-        // vm.expectRevert(
-        //     abi.encodeWithSelector(
-        //         Buckets.AmountExceedsClaimable.selector,
-        //         196153846153846153922
-        //     )
-        // );
-        // TODO: Get the exchange rate and calculate automatically
-        lender2.removeQuoteToken(
+        //TODO: Get the exchange rate and calculate automatically
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Buckets.AmountExceedsClaimable.selector,
+                10000000000000000000000
+            )
+        );
+        lender1.removeQuoteToken(
             pool,
-            address(lender2),
-            10_000 * 1e18,
+            address(lender1),
+            15_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
 
-        /*
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(pool), address(lender), 10_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
+        lender1.removeQuoteToken(
+            pool,
+            address(lender1),
+            10_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
 
         // lender removes entire amount lended
         vm.expectEmit(true, true, false, true);
@@ -466,7 +467,6 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(quote.balanceOf(address(pool)), 0);
         // check lender balance
         assertEq(quote.balanceOf(address(lender)), 200_000 * 1e18);
-        */
     }
 
     function testRemoveQuoteTokenWithDebtReallocation() public {
@@ -658,5 +658,103 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             2_000 * 1e18,
             1_004.989662429170775094 * 1e18
         );
+    }
+
+    function testRemoveQuoteMultipleLenders() public {
+        assertEq(quote.balanceOf(address(lender)), 200_000 * 1e18);
+        assertEq(quote.balanceOf(address(lender1)), 200_000 * 1e18);
+        assertEq(quote.balanceOf(address(pool)), 0);
+
+        (, , , , , , uint256 lpOutstanding, ) = pool.bucketAt(
+            1_004.989662429170775094 * 1e18
+        );
+        assertEq(lpOutstanding, 0);
+
+        assertEq(
+            pool.lpBalance(address(lender), 1_004.989662429170775094 * 1e18),
+            0
+        );
+        assertEq(
+            pool.lpBalance(address(lender1), 1_004.989662429170775094 * 1e18),
+            0
+        );
+
+        // lender1 deposit 10000 DAI
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            1_004.989662429170775094 * 1e18
+        );
+        // lender1 deposit 10000 DAI in same bucket
+        lender1.addQuoteToken(
+            pool,
+            address(lender1),
+            10_000 * 1e18,
+            1_004.989662429170775094 * 1e18
+        );
+
+        assertEq(quote.balanceOf(address(lender)), 190_000 * 1e18);
+        assertEq(quote.balanceOf(address(lender1)), 190_000 * 1e18);
+        assertEq(quote.balanceOf(address(pool)), 20_000 * 1e18);
+
+        assertEq(
+            pool.lpBalance(address(lender), 1_004.989662429170775094 * 1e18),
+            10_000 * 1e18
+        );
+        assertEq(
+            pool.lpBalance(address(lender1), 1_004.989662429170775094 * 1e18),
+            10_000 * 1e18
+        );
+
+        (, , , , , , lpOutstanding, ) = pool.bucketAt(
+            1_004.989662429170775094 * 1e18
+        );
+        assertEq(lpOutstanding, 20_000 * 1e18);
+
+        skip(8200);
+
+        lender.removeQuoteToken(
+            pool,
+            address(lender),
+            10_000 * 1e18,
+            1_004.989662429170775094 * 1e18
+        );
+        assertEq(
+            pool.lpBalance(address(lender), 1_004.989662429170775094 * 1e18),
+            0
+        );
+        assertEq(
+            pool.lpBalance(address(lender1), 1_004.989662429170775094 * 1e18),
+            10_000 * 1e18
+        );
+        (, , , , , , lpOutstanding, ) = pool.bucketAt(
+            1_004.989662429170775094 * 1e18
+        );
+        assertEq(lpOutstanding, 10_000 * 1e18);
+
+        lender1.removeQuoteToken(
+            pool,
+            address(lender1),
+            10_000 * 1e18,
+            1_004.989662429170775094 * 1e18
+        );
+
+        assertEq(quote.balanceOf(address(lender)), 200_000 * 1e18);
+        assertEq(quote.balanceOf(address(lender1)), 200_000 * 1e18);
+        assertEq(quote.balanceOf(address(pool)), 0);
+
+        assertEq(
+            pool.lpBalance(address(lender), 1_004.989662429170775094 * 1e18),
+            0
+        );
+        assertEq(
+            pool.lpBalance(address(lender1), 1_004.989662429170775094 * 1e18),
+            0
+        );
+        (, , , , , , lpOutstanding, ) = pool.bucketAt(
+            1_004.989662429170775094 * 1e18
+        );
+        assertEq(lpOutstanding, 0);
     }
 }
