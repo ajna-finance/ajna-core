@@ -28,14 +28,14 @@ library Buckets {
 
         accumulateBucketInterest(bucket, _inflator);
 
-        bucket.onDeposit += _amount;
-        lup = _lup;
-        if (_reallocate) {
-            lup = reallocateUp(buckets, _price, _amount, _lup, _inflator);
-        }
-
         lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
         bucket.lpOutstanding += lpTokens;
+        bucket.onDeposit += _amount;
+
+        lup = _lup;
+        if (_reallocate) {
+            lup = reallocateUp(buckets, bucket, _amount, _lup, _inflator);
+        }
     }
 
     function removeQuoteToken(
@@ -293,12 +293,11 @@ library Buckets {
 
     function reallocateUp(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _price,
+        Bucket storage _bucket,
         uint256 _amount,
         uint256 _lup,
         uint256 _inflator
     ) private returns (uint256) {
-        Bucket storage bucket = buckets[_price];
         Bucket storage curLup = buckets[_lup];
 
         uint256 curLupDebt;
@@ -310,8 +309,8 @@ library Buckets {
             curLupDebt = curLup.debt;
 
             if (_amount > curLupDebt) {
-                bucket.debt += curLupDebt;
-                bucket.onDeposit -= curLupDebt;
+                _bucket.debt += curLupDebt;
+                _bucket.onDeposit -= curLupDebt;
                 _amount -= curLupDebt;
                 curLup.debt = 0;
                 curLup.onDeposit += curLupDebt;
@@ -320,14 +319,14 @@ library Buckets {
                     break;
                 }
             } else {
-                bucket.debt += _amount;
-                bucket.onDeposit -= _amount;
+                _bucket.debt += _amount;
+                _bucket.onDeposit -= _amount;
                 curLup.debt -= _amount;
                 curLup.onDeposit += _amount;
                 break;
             }
 
-            if (curLup.up == _price) {
+            if (curLup.up == _bucket.price) {
                 // nowhere to go
                 break;
             }

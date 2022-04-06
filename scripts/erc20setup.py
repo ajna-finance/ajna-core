@@ -6,16 +6,9 @@ def main():
 
     protocol_definition = (
         InitialProtocolStateBuilder()
-        .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
         .add_token(MKR_ADDRESS, MKR_RESERVE_ADDRESS)
+        .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
         .deploy_pool(MKR_ADDRESS, DAI_ADDRESS)
-        .with_lender()
-        .with_token(DAI_ADDRESS, 500_000 * 10**18)
-        .add()
-        .with_borrowers(10)
-        .with_token(MKR_ADDRESS, 5_000 * 10**18)
-        .with_token(DAI_ADDRESS, 0, approve_max=True)
-        .add()
     )
 
     ajna_protocol = AjnaProtocol()
@@ -23,30 +16,56 @@ def main():
         protocol_definition.build()
     )
 
-    pool = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS)
-    lenders = pool.get_lenders()
-    borrowers = pool.get_borrowers()
+    pool_client = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS)
+    pool = pool_client.get_contract()
 
-    pool.deposit_quote_token(10_000 * 1e18, 10000 * 1e18, 0)
-    pool.deposit_quote_token(1_000 * 1e18, 9000 * 1e18, 0)
-    pool.deposit_quote_token(10_000 * 1e18, 100 * 1e18, 0)
+    dai_client = pool_client.get_quote_token()
+    lenders = []
+    for _ in range(10):
+        lender = ajna_protocol.add_lender()
+        dai_client.top_up(lender, 200_000 * 1e18)
+        dai_client.approve_max(pool, lender)
+        lenders.append(lender)
 
-    pool.deposit_collateral(2 * 1e18, 0)
-    pool.deposit_collateral(200 * 1e18, 1)
-    pool.deposit_collateral(100 * 1e18, 2)
-    pool.deposit_collateral(100 * 1e18, 3)
-    pool.deposit_collateral(100 * 1e18, 4)
+    mkr_client = pool_client.get_collateral_token()
+    borrowers = []
+    for _ in range(10):
+        borrower = ajna_protocol.add_borrower()
+        mkr_client.top_up(borrower, 5_000 * 1e18)
+        mkr_client.approve_max(pool, borrower)
+        dai_client.approve_max(pool, borrower)
+        borrowers.append(borrower)
 
-    pool.borrow(10_000 * 1e18, 1 * 1e18, 0)
-    pool.borrow(1_000 * 1e18, 1 * 1e18, 0)
-    pool.borrow(1_000 * 1e18, 1 * 1e18, 1)
+    pool.addQuoteToken(
+        lender,
+        10_000 * 1e18,
+        ajna_protocol.bucket_math.indexToPrice(1600),
+        {"from": lenders[0]},
+    )
+    pool.addQuoteToken(
+        lender,
+        1_000 * 1e18,
+        ajna_protocol.bucket_math.indexToPrice(1500),
+        {"from": lenders[0]},
+    )
+    pool.addQuoteToken(
+        lender,
+        10_000 * 1e18,
+        ajna_protocol.bucket_math.indexToPrice(1400),
+        {"from": lenders[0]},
+    )
+
+    pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
+    pool.addCollateral(100 * 1e18, {"from": borrowers[1]})
+
+    pool.borrow(10_000 * 1e18, 1 * 1e18, {"from": borrowers[0]})
+    pool.borrow(10_000 * 1e18, 1 * 1e18, {"from": borrowers[1]})
 
     return (
         ajna_protocol,
-        lenders[0],
-        borrowers[0],
-        borrowers[1],
-        pool.get_quote_token().get_contract(),
-        pool.get_collateral_token().get_contract(),
-        pool.get_contract(),
+        lenders,
+        borrowers,
+        pool_client.get_quote_token(),
+        pool_client.get_collateral_token(),
+        pool,
     )
