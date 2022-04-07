@@ -3,6 +3,7 @@ import inspect
 import pytest
 import random
 from brownie import Contract
+from brownie.exceptions import VirtualMachineError
 from decimal import *
 from sdk import AjnaPoolClient, AjnaProtocol
 
@@ -24,7 +25,7 @@ def pool_client(ajna_protocol: AjnaProtocol, weth, dai) -> AjnaPoolClient:
 @pytest.fixture
 def lenders(ajna_protocol, pool_client, weth_dai_pool):
     dai_client = pool_client.get_quote_token()
-    amount = 4_000_000 * 10**18
+    amount = 4_000_000 * 1e18
     lenders = []
     for _ in range(100):
         lender = ajna_protocol.add_lender()
@@ -37,7 +38,7 @@ def lenders(ajna_protocol, pool_client, weth_dai_pool):
 @pytest.fixture
 def borrowers(ajna_protocol, pool_client, weth_dai_pool):
     weth_client = pool_client.get_collateral_token()
-    amount = 15_000 * 10**18
+    amount = 15_000 * 1e18
     dai_client = pool_client.get_quote_token()
     borrowers = []
     for _ in range(100):
@@ -56,7 +57,7 @@ def borrowers(ajna_protocol, pool_client, weth_dai_pool):
 def pool1(pool_client, dai, weth, lenders, borrowers, bucket_math):
     # Adds liquidity to an empty pool and draws debt up to a target utilization
     add_initial_liquidity(lenders, pool_client, bucket_math)
-    draw_initial_debt(borrowers, pool_client.get_contract(), weth)
+    draw_initial_debt(borrowers, pool_client)
     return pool_client.get_contract()
 
 
@@ -68,10 +69,10 @@ def add_initial_liquidity(lenders, pool_client, bucket_math):
         for b in range(1, (i % 4) + 1):
             random.seed(seed)
             seed += 1
-            place_random_bid(i, pool_client, bucket_math)
+            place_initial_random_bid(i, pool_client, bucket_math)
 
 
-def place_random_bid(lender_index, pool_client, bucket_math):
+def place_initial_random_bid(lender_index, pool_client, bucket_math):
     price_count = MAX_BUCKET - MIN_BUCKET
     price_position = 1 - random.expovariate(lambd=5.0)
     price_index = (
@@ -81,9 +82,9 @@ def place_random_bid(lender_index, pool_client, bucket_math):
     pool_client.deposit_quote_token(60_000 * 10**18, price, lender_index)
 
 
-def draw_initial_debt(
-    borrowers, pool, weth, target_utilization=0.60, limit_price=2210.03602 * 10**18
-):
+def draw_initial_debt(borrowers, pool_client, target_utilization=0.60, limit_price=2210.03602 * 1e18):
+    pool = pool_client.get_contract()
+    weth = pool_client.get_collateral_token().get_contract()
     target_debt = pool.totalQuoteToken() * target_utilization
     for borrower_index in range(0, len(borrowers) - 1):
         borrower = borrowers[borrower_index]
@@ -94,32 +95,35 @@ def draw_initial_debt(
         if pool_price == 0:
             pool_price = 3293.70191 * 10**18  # MAX_BUCKET
         collateralization_ratio = 1 / target_utilization
-        collateral_to_deposit = (
-            borrow_amount / pool_price * collateralization_ratio / 10**9
-        )
-        # print(f"borrower {borrower_index} about to deposit {collateral_to_deposit / 10**18:.1f} collateral "
-        #       f"and draw {borrow_amount / 10**18:.1f} debt")
+        collateral_to_deposit = borrow_amount / pool_price * collateralization_ratio * 1e18
         assert collateral_balance > collateral_to_deposit
-        pool.addCollateral(collateral_to_deposit, {"from": borrower})
-        pool.borrow(borrow_amount / 10**27, limit_price, {"from": borrower})
+        pool_client.deposit_collateral(collateral_to_deposit, borrower_index)
+        pool_client.borrow(borrow_amount, borrower_index, limit_price)
 
 
 def draw_and_bid(lenders, borrowers, pool, bucket_math, chain, duration=3600*8, target_utilization=0.60):
     assert len(lenders) == len(borrowers)
     delay = int(duration / 2 / len(lenders))  # 96 seconds between transactions
     interest_rate = update_interest_rate(lenders, pool)
+    last_interest_rate_update = chain.time()
     chain.sleep(14)
 
     # utilization = pool.getPoolActualUtilization() / 1e18
     # print(f"actual utilization: {utilization:>10.1%}   "
     #       f"target utilization: {pool.getPoolTargetUtilization() / 1e18:>10.1%}")
 
-    random.seed(interest_rate)
+    # TODO: Instead of all 100 actors each cycle, have a subset interact.
+    lenders_in_cycle = random.sample(range(0, len(lenders)), 10)
+    borrowers_in_cycle = random.sample(range(0, len(borrowers)), 10)
     lenders_to_remove_liquidity = random.sample(range(0, len(lenders)), 5)
+    print(f"DEBUG lenders in cycle: {lenders_in_cycle}\n"
+          f"borrowers in cycle: {borrowers_in_cycle}\n"
+          f"lenders to remove liquidity: {lenders_to_remove_liquidity}")
 
     for user_index in range(0, len(lenders)-1):
-        if user_index in (38, 76):  # at 96 seconds between transactions, update roughly once every 3600 seconds
+        if chain.time() - last_interest_rate_update > 3600:
             interest_rate = update_interest_rate(lenders, pool)
+            last_interest_rate_update = chain.time()
             chain.sleep(14)
 
         # Draw debt, repay debt, or do nothing depending on interest rate
@@ -135,7 +139,12 @@ def draw_and_bid(lenders, borrowers, pool, bucket_math, chain, duration=3600*8, 
         utilization = pool.getPoolActualUtilization() / 1e18
         if user_index in lenders_to_remove_liquidity:
             if len(buckets_deposited[user_index]) > 0:
-                remove_quote_token(lenders[user_index], user_index, buckets_deposited[user_index].pop(), pool)
+                price = buckets_deposited[user_index].pop()
+                try:
+                    remove_quote_token(lenders[user_index], user_index, price, pool)
+                except VirtualMachineError as ex:
+                    print(f" ERROR removing lender {user_index}'s quote token at {price / 1e18:.1f}: {ex}")
+                    buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             else:
                 print(f" lender {user_index} has no liquidity to remove")
         elif utilization > 0.60:
@@ -154,6 +163,7 @@ def update_interest_rate(lenders, pool) -> int:
     # Update the interest rate
     tx = pool.updateInterestRate({"from": lenders[random.randrange(0, len(lenders))]})
     interest_rate = tx.events["UpdateInterestRate"][0][0]['newRate'] / 1e18
+    print(f" updated interest rate to {interest_rate:.1%}")
     assert 0.001 < interest_rate < 100
     return interest_rate
 
@@ -246,4 +256,5 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     print("After test:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
     utilization = pool1.getPoolActualUtilization() / 1e18
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")
+
     assert 0.5 < utilization < 0.7

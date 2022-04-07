@@ -1,6 +1,7 @@
 import pytest
 from sdk import *
 from brownie import test, network, PositionManager
+from brownie.exceptions import VirtualMachineError
 from brownie.network.state import TxHistory
 from brownie.utils import color
 
@@ -241,7 +242,7 @@ class TestUtils:
     @staticmethod
     def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926, with_headers=True, csv=False) -> str:
         # formatting shortcuts
-        w = 12
+        w = 15
         def j(text):
             return str.rjust(text, w)
         def n(wad):
@@ -257,16 +258,20 @@ class TestUtils:
                 lines.append(j('Price') + j('Deposit') + j('Debt') + j('Collateral') + j('LPOutstndg'))
         for i in range(max_bucket_index, min_bucket_index, -1):
             price = bucket_math.indexToPrice(i)
-            (
-                _,
-                _,
-                _,
-                bucket_deposit,
-                bucket_debt,
-                _,
-                bucket_lp,
-                bucket_collateral,
-            ) = pool.bucketAt(price)
+            try:
+                (
+                    _,
+                    _,
+                    _,
+                    bucket_deposit,
+                    bucket_debt,
+                    _,
+                    bucket_lp,
+                    bucket_collateral,
+                ) = pool.bucketAt(price)
+            except VirtualMachineError as ex:
+                lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
+                continue
             if csv:
                 lines.append(','.join([n(price), n(bucket_deposit), n(bucket_debt), n(bucket_collateral),
                                        n(bucket_lp)]))
