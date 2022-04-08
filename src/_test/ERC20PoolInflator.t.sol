@@ -44,7 +44,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e18,
+            10_000 * 1e45,
             4_000.927678580567537368 * 1e18
         );
 
@@ -53,14 +53,14 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         );
 
         skip(8200);
-        borrower.addCollateral(pool, 10 * 1e18);
+        borrower.addCollateral(pool, 10 * 1e27);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
         );
 
         skip(8200);
-        borrower.borrow(pool, 10_000 * 1e18, 4000 * 1e18);
+        borrower.borrow(pool, 10_000 * 1e45, 4000 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
@@ -68,14 +68,14 @@ contract ERC20PoolInflatorTest is DSTestPlus {
 
         skip(8200);
         borrower.approveToken(quote, address(pool), 1_000 * 1e18);
-        borrower.repay(pool, 1_000 * 1e18);
+        borrower.repay(pool, 1_000 * 1e45);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
         );
 
         skip(8200);
-        borrower.removeCollateral(pool, 1 * 1e18);
+        borrower.removeCollateral(pool, 1 * 1e27);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
@@ -86,7 +86,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e18,
+            10_000 * 1e45,
             4_000.927678580567537368 * 1e18
         );
         uint256 calculatedInflator = calculateInflator();

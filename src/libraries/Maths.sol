@@ -55,4 +55,16 @@ library Maths {
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = mul(x, RAY) / y;
     }
+
+    function rad(uint256 x) internal pure returns (uint256) {
+        return x * RAD;
+    }
+
+    function rdmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = mul(x, y) / RAD;
+    }
+
+    function rddiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = mul(x, RAD) / y;
+    }
 }

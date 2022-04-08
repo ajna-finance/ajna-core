@@ -412,7 +412,7 @@ contract PositionManagerTest is DSTestPlus {
             tokenId,
             testLender,
             address(pool),
-            mintAmount,
+            50000 * 1e45,
             testBucketPrice
         );
 
@@ -427,17 +427,17 @@ contract PositionManagerTest is DSTestPlus {
         uint256 collateralToMint = 5000 * 1e18;
         mintAndApproveCollateralTokens(testBorrower, collateralToMint);
 
-        testBorrower.addCollateral(pool, collateralToMint);
+        testBorrower.addCollateral(pool, 5_000 * 1e27);
 
-        testBorrower.borrow(pool, collateralToMint / 2, testBucketPrice);
+        testBorrower.borrow(pool, 2_500 * 1e45, testBucketPrice);
         assertEq(pool.lup(), testBucketPrice);
         assertEq(pool.hdp(), testBucketPrice);
-        assertEq(pool.totalDebt(), collateralToMint / 2);
+        assertEq(pool.totalDebt(), 2_500 * 1e45);
 
         UserWithCollateral testBidder = new UserWithCollateral();
         mintAndApproveCollateralTokens(testBidder, 50000 * 1e18);
 
-        testBidder.purchaseBid(pool, 1 * 1e18, testBucketPrice);
+        testBidder.purchaseBid(pool, 1 * 1e45, testBucketPrice);
 
         // identify number of lp tokens to exchange for quote and collateral accrued
         uint256 lpTokensToRemove = originalLPTokens / 4;
