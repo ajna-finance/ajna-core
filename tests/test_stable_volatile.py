@@ -1,3 +1,5 @@
+import math
+
 import brownie
 import inspect
 import pytest
@@ -15,6 +17,8 @@ SECONDS_PER_YEAR = 3600 * 24 * 365
 
 # set of buckets deposited into, indexed by lender index
 buckets_deposited = dict.fromkeys(range(0, 100), set())
+# timestamp when a lender/borrower last interacted with the pool
+last_triggered = {}
 
 
 @pytest.fixture
@@ -58,6 +62,8 @@ def pool1(pool_client, dai, weth, lenders, borrowers, bucket_math):
     # Adds liquidity to an empty pool and draws debt up to a target utilization
     add_initial_liquidity(lenders, pool_client, bucket_math)
     draw_initial_debt(borrowers, pool_client)
+    global last_triggered
+    last_triggered = dict.fromkeys(range(0, 100), 0)
     return pool_client.get_contract()
 
 
@@ -101,64 +107,52 @@ def draw_initial_debt(borrowers, pool_client, target_utilization=0.60, limit_pri
         pool_client.borrow(borrow_amount, borrower_index, limit_price)
 
 
-def draw_and_bid(lenders, borrowers, pool, bucket_math, chain, duration=3600*8, target_utilization=0.60):
-    assert len(lenders) == len(borrowers)
-    delay = int(duration / 2 / len(lenders))  # 96 seconds between transactions
+def get_time_between_interactions(actor_index):
+    # Distribution function throttles time between interactions based upon user_index
+    return 333 * math.exp(actor_index/10) + 3600
+
+
+def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, duration=3600, target_utilization=0.60):
+    user_index = start_from
+    end_time = chain.time() + duration
+    # Update the interest rate
     interest_rate = update_interest_rate(lenders, pool)
-    last_interest_rate_update = chain.time()
     chain.sleep(14)
 
-    # utilization = pool.getPoolActualUtilization() / 1e18
-    # print(f"actual utilization: {utilization:>10.1%}   "
-    #       f"target utilization: {pool.getPoolTargetUtilization() / 1e18:>10.1%}")
+    while chain.time() < end_time:
+        if chain.time() - last_triggered[user_index] > get_time_between_interactions(user_index):
 
-    # TODO: Instead of all 100 actors each cycle, have a subset interact.
-    lenders_in_cycle = random.sample(range(0, len(lenders)), 10)
-    borrowers_in_cycle = random.sample(range(0, len(borrowers)), 10)
-    lenders_to_remove_liquidity = random.sample(range(0, len(lenders)), 5)
-    print(f"DEBUG lenders in cycle: {lenders_in_cycle}\n"
-          f"borrowers in cycle: {borrowers_in_cycle}\n"
-          f"lenders to remove liquidity: {lenders_to_remove_liquidity}")
-
-    for user_index in range(0, len(lenders)-1):
-        if chain.time() - last_interest_rate_update > 3600:
-            interest_rate = update_interest_rate(lenders, pool)
-            last_interest_rate_update = chain.time()
+            # Draw debt, repay debt, or do nothing depending on interest rate
+            if interest_rate < 0.10:  # draw more debt if interest is reasonably low
+                target_collateralization = 1 / pool.getPoolTargetUtilization() * 1e18
+                assert 1 < target_collateralization < 10
+                draw_debt(borrowers[user_index], user_index, pool, collateralization=target_collateralization)
+            elif interest_rate > 0.20:  # start repaying debt if interest grows too high
+                repay(borrowers[user_index], user_index, pool)
             chain.sleep(14)
 
-        # Draw debt, repay debt, or do nothing depending on interest rate
-        if interest_rate < 0.10:  # draw more debt if interest is reasonably low
-            target_collateralization = 1 / pool.getPoolTargetUtilization() * 10**18
-            assert 1 < target_collateralization < 10
-            draw_debt(borrowers[user_index], user_index, pool, collateralization=target_collateralization)
-        elif interest_rate > 0.20:  # start repaying debt if interest grows too high
-            repay(borrowers[user_index], user_index, pool)
-        chain.sleep(delay)
-
-        # Add or remove liquidity
-        utilization = pool.getPoolActualUtilization() / 1e18
-        if user_index in lenders_to_remove_liquidity:
-            if len(buckets_deposited[user_index]) > 0:
+            # Add or remove liquidity
+            utilization = pool.getPoolActualUtilization() / 1e18
+            if len(buckets_deposited[user_index]) > 3:  # if lender is in too many buckets, pull out of one
                 price = buckets_deposited[user_index].pop()
                 try:
                     remove_quote_token(lenders[user_index], user_index, price, pool)
                 except VirtualMachineError as ex:
                     print(f" ERROR removing lender {user_index}'s quote token at {price / 1e18:.1f}: {ex}")
                     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
-            else:
-                print(f" lender {user_index} has no liquidity to remove")
-        elif utilization > 0.60:
-            liquidity_coefficient = 1.05 if utilization > pool.getPoolTargetUtilization() / 1e18 else 1.0
-            price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, liquidity_coefficient)
-            if price:
-                buckets_deposited[user_index].add(price)
-        chain.sleep(delay)
+            elif utilization > 0.60:
+                liquidity_coefficient = 1.05 if utilization > pool.getPoolTargetUtilization() / 1e18 else 1.0
+                price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, liquidity_coefficient)
+                if price:
+                    buckets_deposited[user_index].add(price)
+            chain.sleep(14)
 
-    print(f"interest rate: {interest_rate:>6.3%}   utilization: {utilization:6.3%}   "
-          f"total quote token: {pool.totalQuoteToken() / 1e18:>12.1f}   "
-          f"total debt: {pool.totalDebt() / 1e18:>12.1f}")
+            last_triggered[user_index] = chain.time()
+        chain.mine(blocks=10, timedelta=137)  # mine empty blocks
+        user_index = (user_index + 1) % 100  # increment with wraparound
+    return user_index
 
-
+    
 def update_interest_rate(lenders, pool) -> int:
     # Update the interest rate
     tx = pool.updateInterestRate({"from": lenders[random.randrange(0, len(lenders))]})
@@ -176,7 +170,7 @@ def draw_debt(
     limit_price=2210.03602 * 10**18,
 ):
     # Draw debt based on added liquidity
-    borrow_amount = int(90_000 * ((borrower_index % 2) + 1)) * 1e18
+    borrow_amount = int(20_000 * ((borrower_index % 4) + 1)) * 1e18
     collateral_to_deposit = borrow_amount / pool.getPoolPrice() * collateralization * 1e18
     print(f" borrower {borrower_index} borrowing {borrow_amount / 1e18:.1f} "
           f"collateralizing at {collateralization:.1%}, (pool price is {pool.getPoolPrice() / 1e18:.1f})")
@@ -191,7 +185,7 @@ def add_quote_token(lender, lender_index, pool, bucket_math, liquidity_coefficie
     lup_index = bucket_math.priceToIndex(pool.lup())
     index_offset = ((lender_index % 6) - 2) * 2
     price = bucket_math.indexToPrice(lup_index + index_offset)
-    quantity = int(90_000 * ((lender_index % 2) + 1)) * liquidity_coefficient * 1e18
+    quantity = int(30_000 * ((lender_index % 4) + 1)) * liquidity_coefficient * 1e18
     if dai.balanceOf(lender) > quantity:
         print(f" lender {lender_index} adding {quantity / 1e18:.1f} liquidity at {price / 1e18:.1f}")
         pool.addQuoteToken(lender, quantity, price, {"from": lender})
@@ -245,10 +239,14 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     start_time = chain.time()
     # end_time = start_time + SECONDS_PER_YEAR  # TODO: one year test
     end_time = start_time + SECONDS_PER_YEAR / 52
-    test_exception = None
+    actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay', 'updateInterestRate']):
         while chain.time() < end_time:
-            draw_and_bid(lenders, borrowers, pool1, bucket_math, chain)
+            # hit the pool an hour at a time, calculating interest and then sending transactions
+            try:
+                actor_id = draw_and_bid(lenders, borrowers, actor_id, pool1, bucket_math, chain)
+            except VirtualMachineError as ex:
+                print(f"ERROR at time {chain.time()}: {ex}")
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}")
 
     # Validate test ended with the pool in a meaningful state
