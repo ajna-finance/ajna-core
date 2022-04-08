@@ -123,12 +123,16 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, durat
         if chain.time() - last_triggered[user_index] > get_time_between_interactions(user_index):
 
             # Draw debt, repay debt, or do nothing depending on interest rate
-            if interest_rate < 0.10:  # draw more debt if interest is reasonably low
-                target_collateralization = 1 / pool.getPoolTargetUtilization() * 1e18
-                assert 1 < target_collateralization < 10
-                draw_debt(borrowers[user_index], user_index, pool, collateralization=target_collateralization)
-            elif interest_rate > 0.20:  # start repaying debt if interest grows too high
-                repay(borrowers[user_index], user_index, pool)
+            utilization = pool.getPoolActualUtilization() / 1e18
+            try:
+                if interest_rate < 0.10 and utilization < 0.80:  # draw more debt if interest is reasonably low
+                    target_collateralization = 1 / pool.getPoolTargetUtilization() * 1e18
+                    assert 1 < target_collateralization < 10
+                    draw_debt(borrowers[user_index], user_index, pool, collateralization=target_collateralization)
+                elif interest_rate > 0.20:  # start repaying debt if interest grows too high
+                    repay(borrowers[user_index], user_index, pool)
+            except VirtualMachineError as ex:
+                print(f"ERROR at time {chain.time()}: {ex}")
             chain.sleep(14)
 
             # Add or remove liquidity
@@ -138,17 +142,20 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, durat
                 try:
                     remove_quote_token(lenders[user_index], user_index, price, pool)
                 except VirtualMachineError as ex:
-                    print(f" ERROR removing lender {user_index}'s quote token at {price / 1e18:.1f}: {ex}")
+                    print(f" ERROR removing liquidity at {price / 1e18:.1f}: {ex}")
                     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             elif utilization > 0.60:
                 liquidity_coefficient = 1.05 if utilization > pool.getPoolTargetUtilization() / 1e18 else 1.0
-                price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, liquidity_coefficient)
-                if price:
-                    buckets_deposited[user_index].add(price)
+                try:
+                    price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, liquidity_coefficient)
+                    if price:
+                        buckets_deposited[user_index].add(price)
+                except VirtualMachineError as ex:
+                    print(f"ERROR adding liquidity at {price / 1e18:.1f}: {ex}")
             chain.sleep(14)
 
             last_triggered[user_index] = chain.time()
-        chain.mine(blocks=10, timedelta=137)  # mine empty blocks
+        chain.mine(blocks=20, timedelta=274)  # mine empty blocks
         user_index = (user_index + 1) % 100  # increment with wraparound
     return user_index
 
@@ -162,15 +169,21 @@ def update_interest_rate(lenders, pool) -> int:
     return interest_rate
 
 
-def draw_debt(
-    borrower,
-    borrower_index,
-    pool,
-    collateralization=1.1,
-    limit_price=2210.03602 * 10**18,
-):
+def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:
+    # Iterates through number of buckets passed as parameter, adding deposit to determine what loan size will be
+    # required to utilize the buckets.
+    (_, _, down, quote, _, _, _, _) = pool.bucketAt(pool.lup())
+    cumulative_deposit = quote
+    while bucket_depth > 0 and down:
+        (_, _, down, quote, _, _, _, _) = pool.bucketAt(down)
+        cumulative_deposit += quote
+        bucket_depth -= 1
+    return cumulative_deposit
+
+
+def draw_debt(borrower, borrower_index, pool, collateralization=1.1, limit_price=2210.03602 * 1e18):
     # Draw debt based on added liquidity
-    borrow_amount = int(20_000 * ((borrower_index % 4) + 1)) * 1e18
+    borrow_amount = get_cumulative_bucket_deposit(pool, (borrower_index % 4) + 1)
     collateral_to_deposit = borrow_amount / pool.getPoolPrice() * collateralization * 1e18
     print(f" borrower {borrower_index} borrowing {borrow_amount / 1e18:.1f} "
           f"collateralizing at {collateralization:.1%}, (pool price is {pool.getPoolPrice() / 1e18:.1f})")
@@ -243,10 +256,7 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay', 'updateInterestRate']):
         while chain.time() < end_time:
             # hit the pool an hour at a time, calculating interest and then sending transactions
-            try:
-                actor_id = draw_and_bid(lenders, borrowers, actor_id, pool1, bucket_math, chain)
-            except VirtualMachineError as ex:
-                print(f"ERROR at time {chain.time()}: {ex}")
+            actor_id = draw_and_bid(lenders, borrowers, actor_id, pool1, bucket_math, chain)
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}")
 
     # Validate test ended with the pool in a meaningful state
