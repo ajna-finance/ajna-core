@@ -5,14 +5,12 @@ pragma solidity 0.8.11;
 import "./Maths.sol";
 
 library Buckets {
-    error NoAvailableDeposit();
+    error NoDepositToReallocateTo();
     error InsufficientLpBalance(uint256 balance);
     error AmountExceedsClaimable(uint256 rightToClaim);
     error BorrowPriceBelowStopPrice(uint256 borrowPrice);
     error ClaimExceedsCollateral(uint256 collateralAmount);
     error InsufficientBucketLiquidity(uint256 amountAvailable);
-
-    event Debug(string where, uint256 value);
 
     struct Bucket {
         uint256 price; // current bucket price
@@ -99,8 +97,6 @@ library Buckets {
             exchangeRate
         );
 
-        emit Debug("balance", lpRedemption);
-        emit Debug("balance", _lpBalance);
         if (lpRedemption > _lpBalance) {
             revert InsufficientLpBalance({balance: _lpBalance});
         }
@@ -298,7 +294,7 @@ library Buckets {
                     if (toBucket.down == 0) {
                         // last bucket, nowhere to go, guard against reallocation failures
                         if (reallocation != 0) {
-                            revert NoAvailableDeposit();
+                            revert NoDepositToReallocateTo();
                         }
                         lup = toBucket.price;
                         break;
@@ -308,7 +304,9 @@ library Buckets {
                 }
             } else {
                 // lup started at the bottom
-                require(reallocation == 0, "ajna/failed-to-reallocate");
+                if (reallocation != 0) {
+                    revert NoDepositToReallocateTo();
+                }
             }
         }
     }

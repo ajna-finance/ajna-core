@@ -148,13 +148,6 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             4_000.927678580567537368 * 1e18
         );
 
-        lender1.addQuoteToken(
-            pool,
-            address(lender),
-            3_000 * 1e18,
-            4_000.927678580567537368 * 1e18
-        );
-
         lender.addQuoteToken(
             pool,
             address(lender),
@@ -167,9 +160,18 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             5_000 * 1e18,
             1_004.989662429170775094 * 1e18
         );
+
+        lender1.addQuoteToken(
+            pool,
+            address(lender1),
+            3_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+
+        // check LP balance for lender
         assertEq(
             pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18),
-            6_000 * 1e18
+            3_000 * 1e18
         );
         assertEq(
             pool.lpBalance(address(lender), 3_010.892022197881557845 * 1e18),
@@ -178,6 +180,12 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(
             pool.lpBalance(address(lender), 1_004.989662429170775094 * 1e18),
             5_000 * 1e18
+        );
+
+        // check LP balance for lender1
+        assertEq(
+            pool.lpBalance(address(lender1), 4_000.927678580567537368 * 1e18),
+            3_000 * 1e18
         );
 
         // should revert when claiming collateral if no purchase bid was done on bucket
@@ -212,16 +220,11 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(debt, 4_000 * 1e18);
         assertEq(lpOutstanding, 6_000 * 1e18);
         assertEq(bucketCollateral, 0);
-        assertEq(
-            pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18),
-            6_000 * 1e18
-        );
 
         // bidder purchases some of the top bucket
         bidder.purchaseBid(pool, 1_500 * 1e18, 4_000.927678580567537368 * 1e18);
 
         // check balances
-
         assertEq(collateral.balanceOf(address(lender)), 0);
         assertEq(
             collateral.balanceOf(address(bidder)),
@@ -231,71 +234,74 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             collateral.balanceOf(address(pool)),
             100.374913050298415730 * 1e18
         );
-        assertEq(quote.balanceOf(address(lender)), 185_000 * 1e18);
+        assertEq(quote.balanceOf(address(lender)), 188_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 9_500 * 1e18);
         assertEq(pool.totalCollateral(), 100 * 1e18);
 
-        // should revert if claiming a larger amount than available in bucket
-        (, , , , , , , bucketCollateral) = pool.bucketAt(
-            3_010.892022197881557845 * 1e18
-        );
-        /*
-        vm.expectRevert(
-            abi.encodeWithSelector(Buckets.InsufficientLpBalance.selector, 0)
-        );
-        */
-        lender.claimCollateral(
+        lender1.removeQuoteToken(
             pool,
-            address(lender),
+            address(lender1),
+            2_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+
+        // should revert if claiming larger amount of collateral than LP balance allows
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Buckets.InsufficientLpBalance.selector,
+                1_000 * 1e18
+            )
+        );
+        lender1.claimCollateral(
+            pool,
+            address(lender1),
             0.3 * 1e18,
             4_000.927678580567537368 * 1e18
         );
 
-        /*
-        // lender claims 0.498191230021272793 collateral
+        // lender claims 0.374913050298415730 collateral
         vm.expectEmit(true, true, false, true);
         emit Transfer(
             address(pool),
             address(lender),
-            0.498191230021272793 * 1e18
+            0.374913050298415730 * 1e18
         );
         vm.expectEmit(true, true, false, true);
         emit ClaimCollateral(
             address(lender),
-            3_010.892022197881557845 * 1e18,
-            0.498191230021272793 * 1e18,
-            1_499.999999999999999431 * 1e18
+            4_000.927678580567537368 * 1e18,
+            0.374913050298415730 * 1e18,
+            1_500.000000000000000046 * 1e18
         );
         lender.claimCollateral(
             pool,
             address(lender),
-            0.498191230021272793 * 1e18,
-            3_010.892022197881557845 * 1e18
+            0.374913050298415730 * 1e18,
+            4_000.927678580567537368 * 1e18
         );
 
-        // check 3_010.892022197881557845 bucket balance after collateral claimed
+        // check 4_000.927678580567537368 bucket balance after collateral claimed
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = pool
-            .bucketAt(3_010.892022197881557845 * 1e18);
-        assertEq(deposit, 1_500 * 1e18);
-        assertEq(debt, 1_000 * 1e18);
-        assertEq(lpOutstanding, 2_500.000000000000000569 * 1e18);
+            .bucketAt(4_000.927678580567537368 * 1e18);
+        assertEq(deposit, 0);
+        assertEq(debt, 2_500 * 1e18);
+        assertEq(lpOutstanding, 2_499.999999999999999954 * 1e18);
         assertEq(bucketCollateral, 0);
 
         // claimer lp tokens for pool should be diminished
         assertEq(
             pool.lpBalance(address(lender), 3_010.892022197881557845 * 1e18),
-            2_500.000000000000000569 * 1e18
+            4_000.000000000000000000 * 1e18
         );
         // claimer collateral balance should increase with claimed amount
         assertEq(
             collateral.balanceOf(address(lender)),
-            0.498191230021272793 * 1e18
+            0.374913050298415730 * 1e18
         );
         // claimer quote token balance should stay the same
         assertEq(quote.balanceOf(address(lender)), 188_000 * 1e18);
         assertEq(collateral.balanceOf(address(pool)), 100 * 1e18);
-        assertEq(quote.balanceOf(address(pool)), 6_500 * 1e18);
         assertEq(pool.totalCollateral(), 100 * 1e18);
-        */
+        assertEq(quote.balanceOf(address(pool)), 7_500 * 1e18);
     }
 }

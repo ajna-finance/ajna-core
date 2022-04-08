@@ -8,6 +8,7 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 import {Buckets} from "../libraries/Buckets.sol";
+import {BucketMath} from "../libraries/BucketMath.sol";
 
 contract ERC20PoolBidTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -64,9 +65,9 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
 
         // should revert if invalid price
-        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
+        vm.expectRevert(BucketMath.PriceOutsideBoundry.selector);
         bidder.purchaseBid(pool, 1 * 1e18, 1_000);
-        /*
+
         // should revert if bidder doesn't have enough collateral
         vm.expectRevert(ERC20Pool.InsufficientCollateralBalance.selector);
         bidder.purchaseBid(
@@ -74,15 +75,15 @@ contract ERC20PoolBidTest is DSTestPlus {
             2_000_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
-
         // should revert if trying to purchase more than on bucket
-        (, , , uint256 amount, , , , ) = pool.bucketAt(
+        (, , , uint256 amount, uint256 bucket_debt, , , ) = pool.bucketAt(
             4_000.927678580567537368 * 1e18
         );
+
         vm.expectRevert(
             abi.encodeWithSelector(
                 Buckets.InsufficientBucketLiquidity.selector,
-                amount
+                amount + bucket_debt
             )
         );
         bidder.purchaseBid(pool, 4_000 * 1e18, 4_000.927678580567537368 * 1e18);
@@ -168,7 +169,6 @@ contract ERC20PoolBidTest is DSTestPlus {
         );
         assertEq(quote.balanceOf(address(pool)), 3_000 * 1e18);
         assertEq(pool.totalCollateral(), 100 * 1e18);
-        */
     }
 
     function testPurchaseBidEntireAmount() public {
@@ -317,13 +317,9 @@ contract ERC20PoolBidTest is DSTestPlus {
         borrower.borrow(pool, 1_000 * 1e18, 3_000 * 1e18);
 
         assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+
         // should revert if trying to bid more than available liquidity (1000 vs 500)
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ERC20Pool.InsufficientLiquidity.selector,
-                pool.totalQuoteToken() - pool.totalDebt()
-            )
-        );
+        vm.expectRevert(Buckets.NoDepositToReallocateTo.selector);
         bidder.purchaseBid(pool, 1_000 * 1e18, 4_000.927678580567537368 * 1e18);
     }
 

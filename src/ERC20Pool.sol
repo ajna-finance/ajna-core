@@ -219,12 +219,6 @@ contract ERC20Pool is IPool, Clone {
             revert InvalidPrice();
         }
 
-        if (totalQuoteToken - totalDebt < _amount) {
-            revert AmountExceedsTotalClaimableQuoteToken({
-                totalClaimable: totalQuoteToken - totalDebt
-            });
-        }
-
         accumulatePoolInterest();
 
         // remove from bucket
