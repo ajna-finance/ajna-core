@@ -96,7 +96,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 Buckets.BorrowPriceBelowStopPrice.selector,
-                3_500 * 1e18
+                3_514.334495390401848927 * 1e18
             )
         );
         borrower.borrow(pool, 15_000 * 1e18, 4_000 * 1e18);
@@ -292,7 +292,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 ERC20Pool.PoolUndercollateralized.selector,
-                971428571428571429
+                0.976275672074051610 * 1e18
             )
         );
         borrower2.borrow(pool, 5_000 * 1e18, 1_000 * 1e18);
@@ -317,24 +317,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         uint256 priceLow = 502.433988063349232760 * 1e18;
 
         // lender deposits 150_000 DAI in 3 buckets
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            50_000 * 1e18,
-            priceHigh
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            50_000 * 1e18,
-            priceMed
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            50_000 * 1e18,
-            priceLow
-        );
+        lender.addQuoteToken(pool, address(lender), 50_000 * 1e18, priceHigh);
+        lender.addQuoteToken(pool, address(lender), 50_000 * 1e18, priceMed);
+        lender.addQuoteToken(pool, address(lender), 50_000 * 1e18, priceLow);
 
         // borrow max possible from hdp
         borrower.addCollateral(pool, 51 * 1e18);
@@ -354,12 +339,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assert(pool.getHup() < pool.lup());
 
         // add additional quote token to the maxed out priceMed bucket
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            1000 * 1e18,
-            priceMed
-        );
+        lender.addQuoteToken(pool, address(lender), 1000 * 1e18, priceMed);
 
         // check hup moves up as additional quote tokens become available
         assertEq(pool.getHup(), priceMed);

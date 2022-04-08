@@ -12,6 +12,8 @@ library Buckets {
     error ClaimExceedsCollateral(uint256 collateralAmount);
     error InsufficientBucketLiquidity(uint256 amountAvailable);
 
+    event Debug(string where, uint256 value);
+
     struct Bucket {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
@@ -85,7 +87,7 @@ library Buckets {
     ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
 
-        if (bucket.collateral > 0 && _amount > bucket.collateral) {
+        if (bucket.collateral <= 0 || _amount > bucket.collateral) {
             revert ClaimExceedsCollateral({
                 collateralAmount: bucket.collateral
             });
@@ -97,6 +99,8 @@ library Buckets {
             exchangeRate
         );
 
+        emit Debug("balance", lpRedemption);
+        emit Debug("balance", _lpBalance);
         if (lpRedemption > _lpBalance) {
             revert InsufficientLpBalance({balance: _lpBalance});
         }

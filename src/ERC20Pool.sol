@@ -445,12 +445,6 @@ contract ERC20Pool is IPool, Clone {
 
         accumulatePoolInterest();
 
-        if (_amount > totalQuoteToken - totalDebt) {
-            revert InsufficientLiquidity({
-                amountAvailable: totalQuoteToken - totalDebt
-            });
-        }
-
         uint256 newLup = _buckets.purchaseBid(
             _price,
             _amount,
