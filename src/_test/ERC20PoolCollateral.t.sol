@@ -76,7 +76,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             address(borrower)
         );
         assertEq(deposited, 100 * 1e18);
-        assertEq(encumbered, 3.993893827662208276 * 1e18);
+        assertEq(encumbered, 3.993893827662208275 * 1e18);
 
         // should revert if trying to remove all collateral deposited
         vm.expectRevert("ajna/not-enough-collateral");
@@ -230,7 +230,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             address(lender),
             3_010.892022197881557845 * 1e18,
             0.498191230021272793 * 1e18,
-            1_499.999999999999999431 * 1e18
+            1_500.000000000000000930 * 1e18
         );
         lender.claimCollateral(
             pool,
@@ -244,13 +244,13 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             .bucketAt(3_010.892022197881557845 * 1e18);
         assertEq(deposit, 1_500 * 1e18);
         assertEq(debt, 1_000 * 1e18);
-        assertEq(lpOutstanding, 2_500.000000000000000569 * 1e18);
+        assertEq(lpOutstanding, 2_499.999999999999999070 * 1e18);
         assertEq(bucketCollateral, 0);
 
         // claimer lp tokens for pool should be diminished
         assertEq(
             pool.lpBalance(address(lender), 3_010.892022197881557845 * 1e18),
-            2_500.000000000000000569 * 1e18
+            2_499.999999999999999070 * 1e18
         );
         // claimer collateral balance should increase with claimed amount
         assertEq(

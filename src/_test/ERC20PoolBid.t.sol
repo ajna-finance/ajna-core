@@ -111,7 +111,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         emit Transfer(
             address(bidder),
             address(pool),
-            0.499884067064554307 * 1e18
+            0.499884067064554306 * 1e18
         );
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(bidder), 2_000 * 1e18);
@@ -120,7 +120,7 @@ contract ERC20PoolBidTest is DSTestPlus {
             address(bidder),
             4_000.927678580567537368 * 1e18,
             2_000 * 1e18,
-            0.499884067064554307 * 1e18
+            0.499884067064554306 * 1e18
         );
         bidder.purchaseBid(pool, 2_000 * 1e18, 4_000.927678580567537368 * 1e18);
 
@@ -131,7 +131,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         );
         assertEq(deposit, 0);
         assertEq(debt, 1_000 * 1e18);
-        assertEq(bucketCollateral, 0.499884067064554307 * 1e18);
+        assertEq(bucketCollateral, 0.499884067064554306 * 1e18);
         // check 3_010.892022197881557845 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
             3_010.892022197881557845 * 1e18
@@ -150,12 +150,12 @@ contract ERC20PoolBidTest is DSTestPlus {
         // check bidder and pool balances
         assertEq(
             collateral.balanceOf(address(bidder)),
-            99.500115932935445693 * 1e18
+            99.500115932935445694 * 1e18
         );
         assertEq(quote.balanceOf(address(bidder)), 2_000 * 1e18);
         assertEq(
             collateral.balanceOf(address(pool)),
-            100.499884067064554307 * 1e18
+            100.499884067064554306 * 1e18
         );
         assertEq(quote.balanceOf(address(pool)), 3_000 * 1e18);
         assertEq(pool.totalCollateral(), 100 * 1e18);

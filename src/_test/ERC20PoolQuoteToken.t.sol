@@ -93,10 +93,11 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18),
             10_000 * 1e18
         );
-        (
-            uint256 collateralTokens,
-            uint256 quoteTokens
-        ) = pool.getLPTokenExchangeValue(10_000 * 1e18, 4_000.927678580567537368 * 1e18);
+        (uint256 collateralTokens, uint256 quoteTokens) = pool
+            .getLPTokenExchangeValue(
+                10_000 * 1e18,
+                4_000.927678580567537368 * 1e18
+            );
         assertEq(collateralTokens, 0);
         assertEq(quoteTokens, 10_000 * 1e18);
 
@@ -356,10 +357,11 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18),
             10_000 * 1e18
         );
-        (
-            uint256 collateralTokens,
-            uint256 quoteTokens
-        ) = pool.getLPTokenExchangeValue(10_000 * 1e18, 4_000.927678580567537368 * 1e18);
+        (uint256 collateralTokens, uint256 quoteTokens) = pool
+            .getLPTokenExchangeValue(
+                10_000 * 1e18,
+                4_000.927678580567537368 * 1e18
+            );
         assertEq(collateralTokens, 0);
         assertEq(quoteTokens, 10_000 * 1e18);
 
