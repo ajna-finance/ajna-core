@@ -136,7 +136,6 @@ contract ERC20Pool is IPool, Clone {
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
 
     // TODO: add onlyFactory modifier
-
     function initialize() external {
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());

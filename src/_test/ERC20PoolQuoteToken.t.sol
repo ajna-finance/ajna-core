@@ -47,7 +47,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             pool,
             address(lender),
             10_000 * 1e18,
-            1004948314 * 1e18
+            10_049.48314 * 1e18
         );
 
         assertEq(pool.hdp(), 0);
@@ -483,6 +483,13 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(quote.balanceOf(address(pool)), 0);
         // check lender balance
         assertEq(quote.balanceOf(address(lender)), 200_000 * 1e18);
+
+        // check 4000 bucket balance
+        (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(
+            4_000.927678580567537368 * 1e18
+        );
+        assertEq(deposit, 0);
+        assertEq(debt, 0);
     }
 
     function testRemoveQuoteTokenWithDebtReallocation() public {
