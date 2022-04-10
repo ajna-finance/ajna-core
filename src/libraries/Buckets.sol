@@ -85,7 +85,7 @@ library Buckets {
     ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
 
-        if (bucket.collateral <= 0 || _amount > bucket.collateral) {
+        if (_amount > bucket.collateral) {
             revert ClaimExceedsCollateral({
                 collateralAmount: bucket.collateral
             });

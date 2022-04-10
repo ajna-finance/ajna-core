@@ -345,10 +345,6 @@ contract ERC20Pool is IPool, Clone {
             encumberedBorrowerCollateral = Maths.wdiv(borrower.debt, lup);
         }
 
-        if (borrower.collateralDeposited <= encumberedBorrowerCollateral) {
-            revert InsufficientCollateralForBorrow();
-        }
-
         uint256 loanCost;
         (lup, loanCost) = _buckets.borrow(
             _amount,
@@ -358,12 +354,9 @@ contract ERC20Pool is IPool, Clone {
         );
 
         // if collateralDeposited <= collateralSupportingDebt + newdebt
-        // && unencumberedCollateral < loanCollateralCost
         if (
             borrower.collateralDeposited <=
-            Maths.wdiv(borrower.debt + _amount, lup) ||
-            borrower.collateralDeposited - Maths.wdiv(borrower.debt, lup) <
-            loanCost
+            Maths.wdiv(borrower.debt + _amount, lup)
         ) {
             revert InsufficientCollateralForBorrow();
         }
