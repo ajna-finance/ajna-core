@@ -58,10 +58,10 @@ library Buckets {
 
         uint256 exchangeRate = getExchangeRate(bucket);
 
-        if (_amount > Maths.wmul(_lpBalance, exchangeRate)) {
-            revert AmountExceedsClaimable({
-                rightToClaim: Maths.wmul(_lpBalance, exchangeRate)
-            });
+        uint256 claimable = Maths.wmul(_lpBalance, exchangeRate);
+
+        if (_amount > claimable) {
+            revert AmountExceedsClaimable({rightToClaim: claimable});
         }
 
         lpTokens = Maths.wdiv(_amount, exchangeRate);
@@ -201,10 +201,9 @@ library Buckets {
         Bucket storage bucket = buckets[_price];
         accumulateBucketInterest(bucket, _inflator);
 
-        if (_amount > bucket.onDeposit + bucket.debt) {
-            revert InsufficientBucketLiquidity({
-                amountAvailable: bucket.onDeposit + bucket.debt
-            });
+        uint256 available = bucket.onDeposit + bucket.debt;
+        if (_amount > available) {
+            revert InsufficientBucketLiquidity({amountAvailable: available});
         }
 
         // Exchange collateral for quote token on deposit
