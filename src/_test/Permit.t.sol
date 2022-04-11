@@ -21,7 +21,7 @@ contract PermitTest is DSTestPlus {
     CollateralToken internal collateral;
     QuoteToken internal quote;
 
-    AjnaToken internal token = new AjnaToken(10_000 * 1e18);
+    AjnaToken internal ajnaToken = new AjnaToken(10_000 * 1e18);
     ERC20Pool internal ajnaTokenPool;
 
 
@@ -33,8 +33,9 @@ contract PermitTest is DSTestPlus {
         quote = new QuoteToken();
 
         factory = new ERC20PoolFactory();
-        pool = factory.deployPool(collateral, quote);
-        ajnaTokenPool = factory.deployPool(collateral, AjnaToken);
+        pool = factory.deployPool(address(collateral), address(quote));
+        ajnaTokenPool = factory.deployPool(address(collateral), address(ajnaToken));
+
         positionManager = new PositionManager();
     }
 
@@ -119,8 +120,6 @@ contract PermitTest is DSTestPlus {
         );
 
         (uint96 nonceBeforePermit,,) = positionManager.positions(tokenId);
-
-        emit log_uint(nonceBeforePermit);
 
         positionManager.permit(spender, tokenId, deadline, v, r, s);
 
@@ -251,18 +250,51 @@ contract PermitTest is DSTestPlus {
         positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
     }
 
-    // TODO: test against Ajna token
-    function testPermitERC20() public {
-
+    function testPermitAjnaERC20() public {
         uint256 privateKey = 0xBEEF;
         address owner = vm.addr(privateKey);
 
-        token.transfer(owner, 1);
-        assert(token.balanceOf(owner) > 0);
+        address spender = generateAddress();
+        address unapprovedSpender = generateAddress();
 
-        // mint Ajna tokens to be used as quote tokens w/ permit functionality
-        ajnaTokenPool;
+        ajnaToken.transfer(owner, 1 * 1e18);
+        assert(ajnaToken.balanceOf(owner) > 0);
 
+        // TODO: mint Ajna tokens to be used as quote tokens w/ permit functionality
+        // ajnaTokenPool.mint(owner, 10 * 1e18);
+
+        bytes32 PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+
+        uint256 deadline = block.timestamp + 1000000;
+        uint256 permitAmount = 10 * 1e18;
+
+        uint256 tokenId = mintNFT(owner, address(pool));
+
+        // check EOA can be approved via Permit()
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            privateKey,
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    ajnaToken.DOMAIN_SEPARATOR(),
+                    keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, permitAmount, 0, deadline))
+                )
+            )
+        );
+
+        uint256 nonceBeforePermit = ajnaToken.nonces(owner);
+
+        ajnaToken.permit(owner, spender, permitAmount, deadline, v, r, s);
+
+        uint256 nonceAfterPermit = ajnaToken.nonces(owner);
+
+        // check permit nonce has incremented
+        assert(nonceAfterPermit > nonceBeforePermit);
+        assertEq(nonceAfterPermit, 1);
+
+        // check that spender was approved
+        assert(ajnaToken.allowance(owner, spender) > 0);
+        assert(ajnaToken.allowance(owner, unapprovedSpender) == 0);
     }
 
 }

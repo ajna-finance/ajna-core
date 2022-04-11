@@ -37,7 +37,7 @@ contract PositionManagerTest is DSTestPlus {
         quote.mint(alice, 30000000000 * 1e18);
 
         factory = new ERC20PoolFactory();
-        pool = factory.deployPool(collateral, quote);
+        pool = factory.deployPool(address(collateral), address(quote));
         positionManager = new PositionManager();
     }
 
