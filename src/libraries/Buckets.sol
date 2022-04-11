@@ -5,6 +5,13 @@ pragma solidity 0.8.11;
 import "./Maths.sol";
 
 library Buckets {
+    error NoDepositToReallocateTo();
+    error InsufficientLpBalance(uint256 balance);
+    error AmountExceedsClaimable(uint256 rightToClaim);
+    error BorrowPriceBelowStopPrice(uint256 borrowPrice);
+    error ClaimExceedsCollateral(uint256 collateralAmount);
+    error InsufficientBucketLiquidity(uint256 amountAvailable);
+
     struct Bucket {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
@@ -50,10 +57,13 @@ library Buckets {
         accumulateBucketInterest(bucket, _inflator);
 
         uint256 exchangeRate = getExchangeRate(bucket);
-        require(
-            _amount <= Maths.wmul(_lpBalance, exchangeRate),
-            "ajna/amount-greater-than-claimable"
-        );
+
+        uint256 claimable = Maths.wmul(_lpBalance, exchangeRate);
+
+        if (_amount > claimable) {
+            revert AmountExceedsClaimable({rightToClaim: claimable});
+        }
+
         lpTokens = Maths.wdiv(_amount, exchangeRate);
 
         // Remove from deposit first
@@ -75,10 +85,11 @@ library Buckets {
     ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
 
-        require(
-            bucket.collateral > 0 && _amount <= bucket.collateral,
-            "ajna/insufficient-amount-to-claim"
-        );
+        if (_amount > bucket.collateral) {
+            revert ClaimExceedsCollateral({
+                collateralAmount: bucket.collateral
+            });
+        }
 
         uint256 exchangeRate = getExchangeRate(bucket);
         uint256 lpRedemption = Maths.wdiv(
@@ -86,7 +97,9 @@ library Buckets {
             exchangeRate
         );
 
-        require(lpRedemption <= _lpBalance, "ajna/insufficient-lp-balance");
+        if (lpRedemption > _lpBalance) {
+            revert InsufficientLpBalance({balance: _lpBalance});
+        }
 
         bucket.collateral -= _amount;
         bucket.lpOutstanding -= lpRedemption;
@@ -104,7 +117,9 @@ library Buckets {
         uint256 amountRemaining = _amount;
 
         while (true) {
-            require(curLup.price >= _stop, "ajna/stop-price-exceeded");
+            if (curLup.price < _stop) {
+                revert BorrowPriceBelowStopPrice({borrowPrice: curLup.price});
+            }
 
             // accumulate bucket interest
             accumulateBucketInterest(curLup, _inflator);
@@ -186,10 +201,10 @@ library Buckets {
         Bucket storage bucket = buckets[_price];
         accumulateBucketInterest(bucket, _inflator);
 
-        require(
-            _amount <= bucket.onDeposit + bucket.debt,
-            "ajna/insufficient-bucket-size"
-        );
+        uint256 available = bucket.onDeposit + bucket.debt;
+        if (_amount > available) {
+            revert InsufficientBucketLiquidity({amountAvailable: available});
+        }
 
         // Exchange collateral for quote token on deposit
         uint256 purchaseFromDeposit = Maths.min(_amount, bucket.onDeposit);
@@ -277,7 +292,9 @@ library Buckets {
 
                     if (toBucket.down == 0) {
                         // last bucket, nowhere to go, guard against reallocation failures
-                        require(reallocation == 0, "ajna/failed-to-reallocate");
+                        if (reallocation != 0) {
+                            revert NoDepositToReallocateTo();
+                        }
                         lup = toBucket.price;
                         break;
                     }
@@ -286,7 +303,9 @@ library Buckets {
                 }
             } else {
                 // lup started at the bottom
-                require(reallocation == 0, "ajna/failed-to-reallocate");
+                if (reallocation != 0) {
+                    revert NoDepositToReallocateTo();
+                }
             }
         }
     }

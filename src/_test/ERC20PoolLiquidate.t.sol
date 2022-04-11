@@ -8,6 +8,8 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
+import {Maths} from "../libraries/Maths.sol";
+
 contract ERC20PoolLiquidateTest is DSTestPlus {
     ERC20Pool internal pool;
     CollateralToken internal collateral;
@@ -59,7 +61,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         );
 
         // should revert when no debt
-        vm.expectRevert("ajna/no-debt-to-liquidate");
+        vm.expectRevert(ERC20Pool.NoDebtToLiquidate.selector);
         lender.liquidate(pool, address(borrower));
 
         // borrowers deposit collateral
@@ -76,12 +78,6 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         borrower.borrow(pool, 11_000 * 1e18, 9_000 * 1e18);
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100
         borrower2.borrow(pool, 1_000 * 1e18, 100 * 1e18);
-
-        // should revert when borrower collateralized
-        vm.expectRevert("ajna/borrower-collateralized");
-        lender.liquidate(pool, address(borrower2));
-
-        // check borrower 1 is undercollateralized
         (
             uint256 borrowerDebt,
             uint256 borrowerPendingDebt,
@@ -89,6 +85,29 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             uint256 collateralEncumbered,
             uint256 collateralization,
             uint256 borrowerInflator,
+
+        ) = pool.getBorrowerInfo(address(borrower2));
+
+        // should revert when borrower collateralized
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20Pool.BorrowerIsCollateralized.selector,
+                Maths.wdiv(
+                    collateralDeposited,
+                    Maths.wdiv(borrowerDebt, pool.lup())
+                )
+            )
+        );
+        lender.liquidate(pool, address(borrower2));
+
+        // check borrower 1 is undercollateralized
+        (
+            borrowerDebt,
+            borrowerPendingDebt,
+            collateralDeposited,
+            collateralEncumbered,
+            collateralization,
+            borrowerInflator,
 
         ) = pool.getBorrowerInfo(address(borrower));
         assertEq(borrowerDebt, 11_000 * 1e18);

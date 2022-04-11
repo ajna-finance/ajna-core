@@ -191,7 +191,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(pool.totalCollateral(), 200 * 1e18);
 
         // repay should revert if no debt
-        vm.expectRevert("ajna/no-debt-to-repay");
+        vm.expectRevert(ERC20Pool.NoDebtToRepay.selector);
         borrower.repay(pool, 10_000 * 1e18);
 
         // borrower takes loan of 25_000 DAI from 3 buckets
@@ -222,7 +222,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(borrowerDebt, 2_000 * 1e18);
         assertEq(depositedCollateral, 100 * 1e18);
         // repay should revert if amount not available
-        vm.expectRevert("ajna/no-funds-to-repay");
+        vm.expectRevert(ERC20Pool.InsufficientBalanceForRepay.selector);
         borrower.repay(pool, 50_000 * 1e18);
 
         // repay debt partially 10_000 DAI

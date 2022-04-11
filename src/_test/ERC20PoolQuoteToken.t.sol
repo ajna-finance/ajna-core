@@ -8,6 +8,9 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
+import "../libraries/Maths.sol";
+import "../libraries/Buckets.sol";
+
 contract ERC20PoolQuoteTokenTest is DSTestPlus {
     ERC20Pool internal pool;
     CollateralToken internal collateral;
@@ -39,16 +42,15 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
     function testDepositQuoteToken() public {
         // should revert when depositing at invalid price
-        vm.expectRevert("ajna/invalid-bucket-price");
+        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
         lender.addQuoteToken(
             pool,
             address(lender),
             10_000 * 1e18,
-            4_000 * 1e18
+            10_049.48314 * 1e18
         );
 
         assertEq(pool.hdp(), 0);
-
         // test 10000 DAI deposit at price of 1 MKR = 4000 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(lender), address(pool), 10_000 * 1e18);
@@ -93,10 +95,11 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18),
             10_000 * 1e18
         );
-        (
-            uint256 collateralTokens,
-            uint256 quoteTokens
-        ) = pool.getLPTokenExchangeValue(10_000 * 1e18, 4_000.927678580567537368 * 1e18);
+        (uint256 collateralTokens, uint256 quoteTokens) = pool
+            .getLPTokenExchangeValue(
+                10_000 * 1e18,
+                4_000.927678580567537368 * 1e18
+            );
         assertEq(collateralTokens, 0);
         assertEq(quoteTokens, 10_000 * 1e18);
 
@@ -262,7 +265,12 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         );
 
         // should revert if trying to remove more than lended
-        vm.expectRevert("ajna/amount-greater-than-claimable");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Buckets.AmountExceedsClaimable.selector,
+                10_000 * 1e18
+            )
+        );
         lender.removeQuoteToken(
             pool,
             address(lender),
@@ -343,7 +351,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.borrow(pool, 5_000 * 1e18, 4_000 * 1e18);
 
         // should revert if trying to remove entire amount lended
-        vm.expectRevert("ajna/failed-to-reallocate");
+        vm.expectRevert(Buckets.NoDepositToReallocateTo.selector);
         lender.removeQuoteToken(
             pool,
             address(lender),
@@ -356,10 +364,11 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18),
             10_000 * 1e18
         );
-        (
-            uint256 collateralTokens,
-            uint256 quoteTokens
-        ) = pool.getLPTokenExchangeValue(10_000 * 1e18, 4_000.927678580567537368 * 1e18);
+        (uint256 collateralTokens, uint256 quoteTokens) = pool
+            .getLPTokenExchangeValue(
+                10_000 * 1e18,
+                4_000.927678580567537368 * 1e18
+            );
         assertEq(collateralTokens, 0);
         assertEq(quoteTokens, 10_000 * 1e18);
 
@@ -408,7 +417,16 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         );
         assertEq(quote.balanceOf(address(lender)), 190_000 * 1e18);
 
-        // borrower takes a loan of 10000 DAI
+        // lender1 deposit 10000 DAI at price 4000:
+        lender1.addQuoteToken(
+            pool,
+            address(lender1),
+            10_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+        assertEq(quote.balanceOf(address(lender1)), 190_000 * 1e18);
+
+        // borrower takes a loan of 10_000 DAI
         borrower.addCollateral(pool, 100 * 1e18);
         borrower.borrow(pool, 10_000 * 1e18, 4_000 * 1e18);
         assertEq(pool.lup(), 4_000.927678580567537368 * 1e18);
@@ -420,6 +438,29 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.repay(pool, 10_001 * 1e18);
 
         skip(8200);
+
+        //exchange rate
+        //TODO: Get the exchange rate and calculate automatically
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Buckets.AmountExceedsClaimable.selector,
+                10000000000000000000000
+            )
+        );
+        lender1.removeQuoteToken(
+            pool,
+            address(lender1),
+            15_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+
+        lender1.removeQuoteToken(
+            pool,
+            address(lender1),
+            10_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+
         // lender removes entire amount lended
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 10_000 * 1e18);
@@ -442,6 +483,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(quote.balanceOf(address(pool)), 0);
         // check lender balance
         assertEq(quote.balanceOf(address(lender)), 200_000 * 1e18);
+
         // check 4000 bucket balance
         (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(
             4_000.927678580567537368 * 1e18
@@ -690,8 +732,13 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.borrow(pool, 4_000 * 1e18, 1_000 * 1e18);
         assertEq(pool.lup(), 1_004.989662429170775094 * 1e18);
 
-        // repay should revert if pool remains undercollateralized
-        vm.expectRevert("ajna/pool-undercollateralized");
+        // removal should revert if pool remains undercollateralized
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20Pool.PoolUndercollateralized.selector,
+                1.27923769382684563 * 1e17
+            )
+        );
         lender.removeQuoteToken(
             pool,
             address(lender),

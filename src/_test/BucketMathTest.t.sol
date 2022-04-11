@@ -7,8 +7,12 @@ import "../libraries/BucketMath.sol";
 
 contract BucketMathTest is DSTestPlus {
     function testPriceToIndex() public {
-        uint256 priceToTest = 5 * 10**18;
+        uint256 badPrice = 5 * 10**10;
 
+        vm.expectRevert(BucketMath.PriceOutsideBoundry.selector);
+        BucketMath.priceToIndex(badPrice);
+
+        uint256 priceToTest = 5 * 10**18;
         int256 index = BucketMath.priceToIndex(priceToTest);
 
         assertEq(index, 323);
