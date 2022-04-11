@@ -234,10 +234,9 @@ contract ERC20Pool is IPool, Clone {
         }
 
         totalQuoteToken -= _amount;
-        if (getPoolCollateralization() < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({
-                collateralization: getPoolCollateralization()
-            });
+        uint256 col = getPoolCollateralization();
+        if (col < Maths.ONE_WAD) {
+            revert PoolUndercollateralized({collateralization: col});
         }
 
         lpBalance[_recipient][_price] -= lpTokens;
@@ -353,7 +352,6 @@ contract ERC20Pool is IPool, Clone {
             inflatorSnapshot
         );
 
-        // if collateralDeposited <= collateralSupportingDebt + newdebt
         if (
             borrower.collateralDeposited <=
             Maths.wdiv(borrower.debt + _amount, lup)
@@ -365,10 +363,9 @@ contract ERC20Pool is IPool, Clone {
 
         totalQuoteToken -= _amount;
         totalDebt += _amount;
-        if (getPoolCollateralization() < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({
-                collateralization: getPoolCollateralization()
-            });
+        uint256 col = getPoolCollateralization();
+        if (col < Maths.ONE_WAD) {
+            revert PoolUndercollateralized({collateralization: col});
         }
 
         quoteToken().safeTransfer(msg.sender, _amount / quoteTokenScale);
@@ -444,10 +441,9 @@ contract ERC20Pool is IPool, Clone {
         }
 
         totalQuoteToken -= _amount;
-        if (getPoolCollateralization() < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({
-                collateralization: getPoolCollateralization()
-            });
+        uint256 col = getPoolCollateralization();
+        if (col < Maths.ONE_WAD) {
+            revert PoolUndercollateralized({collateralization: col});
         }
 
         // move required collateral from sender to pool
