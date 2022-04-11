@@ -240,7 +240,37 @@ class TestUtils:
             )
 
     @staticmethod
-    def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926, with_headers=True, csv=False) -> str:
+    def validate_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926):
+        calc_lup = None
+        calc_hpb = None
+        partially_utilized_buckets = []
+        for i in range(max_bucket_index - 1, min_bucket_index, -1):
+            (_, _, _, on_deposit, debt, _, _, _) = pool.bucketAt(bucket_math.indexToPrice(i))
+            if not calc_hpb and (on_deposit or debt):
+                calc_hpb = i
+            if debt:
+                calc_lup = i
+            if on_deposit and debt:
+                partially_utilized_buckets.append(i)
+
+        # Ensure utilization is not fragmented
+        for i in range(max_bucket_index - 1, min_bucket_index, -1):
+            (_, _, _, on_deposit, debt, _, _, _) = pool.bucketAt(bucket_math.indexToPrice(i))
+            if calc_hpb and calc_lup and calc_lup < i < calc_hpb:
+                assert on_deposit == 0  # If there's deposit between LUP and HPB, utilization is fragmented
+
+        # Confirm price pointers are correct
+        assert bucket_math.indexToPrice(calc_hpb) == pool.hdp()
+        assert bucket_math.indexToPrice(calc_lup) == pool.lup()
+
+        # Ensure multiple buckets are not partially utilized
+        assert len(partially_utilized_buckets) <= 1
+        # Ensure price pointers make sense
+        assert calc_lup <= calc_hpb
+
+    @staticmethod
+    def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926,
+                  with_headers=True, csv=False) -> str:
         # formatting shortcuts
         w = 15
         def j(text):
@@ -250,14 +280,23 @@ class TestUtils:
         def f(wad):
             return f"{n(wad):>{w}.3f}"
 
+        hpb = pool.hdp()
+        lup = pool.lup()
+
         lines = []
         if with_headers:
             if csv:
-                lines.append("Price,Deposit,Debt,Collateral,LP Outstanding")
+                lines.append("Price,Pointer,Deposit,Debt,Collateral,LP Outstanding,Inflator")
             else:
-                lines.append(j('Price') + j('Deposit') + j('Debt') + j('Collateral') + j('LPOutstndg'))
+                lines.append(j('Price') + j('Pointer') + j('Deposit') + j('Debt') + j('Collateral')
+                             + j('LPOutstndg') + j('Inflator'))
         for i in range(max_bucket_index, min_bucket_index, -1):
             price = bucket_math.indexToPrice(i)
+            pointer = ""
+            if price == hpb:
+                pointer += "HPB"
+            if price == lup:
+                pointer += "LUP"
             try:
                 (
                     _,
@@ -265,7 +304,7 @@ class TestUtils:
                     _,
                     bucket_deposit,
                     bucket_debt,
-                    _,
+                    bucket_inflator,
                     bucket_lp,
                     bucket_collateral,
                 ) = pool.bucketAt(price)
@@ -273,11 +312,11 @@ class TestUtils:
                 lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
                 continue
             if csv:
-                lines.append(','.join([n(price), n(bucket_deposit), n(bucket_debt), n(bucket_collateral),
-                                       n(bucket_lp)]))
+                lines.append(','.join([n(price), pointer, n(bucket_deposit), n(bucket_debt), n(bucket_collateral),
+                                       n(bucket_lp), n(bucket_inflator)]))
             else:
-                lines.append(''.join([f(price), f(bucket_deposit), f(bucket_debt), f(bucket_collateral),
-                                      f(bucket_lp)]))
+                lines.append(''.join([f(price), j(pointer), f(bucket_deposit), f(bucket_debt), f(bucket_collateral),
+                                      f(bucket_lp), f(bucket_inflator)]))
         return '\n'.join(lines)
 
 
