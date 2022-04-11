@@ -177,7 +177,7 @@ contract ERC20Pool is IPool, Clone {
 
         // deposit amount with RAD precision
         _amount = Maths.wadToRad(_amount);
-        bool reallocate = (totalDebt != 0 && _price >= lup);
+        bool reallocate = (totalDebt != 0 && _price > lup);
         (uint256 newLup, uint256 lpTokens) = _buckets.addQuoteToken(
             _price,
             _amount,
