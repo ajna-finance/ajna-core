@@ -59,37 +59,38 @@ contract ERC20Pool is IPool, Clone {
     using Buckets for mapping(uint256 => Buckets.Bucket);
 
     struct BorrowerInfo {
-        uint256 debt;
-        uint256 collateralDeposited;
-        uint256 inflatorSnapshot; // last updated inflator rate for a given borrower
+        uint256 debt; // WAD
+        uint256 collateralDeposited; // RAY
+        uint256 inflatorSnapshot; // WAD, last updated inflator rate for a given borrower
     }
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
+    // price (WAD) -> bucket
     mapping(uint256 => Buckets.Bucket) private _buckets;
     BitMaps.BitMap private bitmap;
 
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
 
-    uint256 public hdp;
-    uint256 public lup;
+    uint256 public hdp; // WAD
+    uint256 public lup; // WAD
 
-    // lenders lp token balances: lender address -> price bucket -> lender lp
+    // lenders lp token balances: lender address -> price bucket (WAD) -> lender lp (RAY)
     mapping(address => mapping(uint256 => uint256)) public lpBalance;
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
 
-    uint256 public inflatorSnapshot;
+    uint256 public inflatorSnapshot; // WAD
     uint256 public lastInflatorSnapshotUpdate;
-    uint256 public previousRate;
+    uint256 public previousRate; // WAD
     uint256 public previousRateUpdate;
 
-    uint256 public totalCollateral;
+    uint256 public totalCollateral; // RAY
 
-    uint256 public totalQuoteToken;
-    uint256 public totalDebt;
+    uint256 public totalQuoteToken; // RAD
+    uint256 public totalDebt; // RAD
 
     event AddQuoteToken(
         address indexed lender,
@@ -137,8 +138,8 @@ contract ERC20Pool is IPool, Clone {
 
     // TODO: add onlyFactory modifier
     function initialize() external {
-        collateralScale = 10**(18 - collateral().decimals());
-        quoteTokenScale = 10**(18 - quoteToken().decimals());
+        collateralScale = 10**(27 - collateral().decimals());
+        quoteTokenScale = 10**(45 - quoteToken().decimals());
 
         inflatorSnapshot = Maths.ONE_WAD;
         lastInflatorSnapshotUpdate = block.timestamp;
@@ -174,7 +175,8 @@ contract ERC20Pool is IPool, Clone {
             BitMaps.setTo(bitmap, _price, true);
         }
 
-        // deposit amount
+        // deposit amount with RAD precision
+        _amount = Maths.wadToRad(_amount);
         bool reallocate = (totalDebt != 0 && _price >= lup);
         (uint256 newLup, uint256 lpTokens) = _buckets.addQuoteToken(
             _price,
@@ -220,7 +222,8 @@ contract ERC20Pool is IPool, Clone {
 
         accumulatePoolInterest();
 
-        // remove from bucket
+        // remove from bucket with RAD precision
+        _amount = Maths.wadToRad(_amount);
         (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
             _price,
             _amount,
@@ -235,7 +238,7 @@ contract ERC20Pool is IPool, Clone {
 
         totalQuoteToken -= _amount;
         uint256 col = getPoolCollateralization();
-        if (col < Maths.ONE_WAD) {
+        if (col < Maths.ONE_RAY) {
             revert PoolUndercollateralized({collateralization: col});
         }
 
@@ -247,6 +250,8 @@ contract ERC20Pool is IPool, Clone {
 
     function addCollateral(uint256 _amount) external {
         accumulatePoolInterest();
+        // convert amount from WAD to collateral pool precision - RAY
+        _amount = Maths.wadToRay(_amount);
         borrowers[msg.sender].collateralDeposited += _amount;
         totalCollateral += _amount;
 
@@ -269,8 +274,11 @@ contract ERC20Pool is IPool, Clone {
 
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
-            encumberedBorrowerCollateral = Maths.wdiv(borrower.debt, lup);
+            encumberedBorrowerCollateral = borrower.debt / lup;
         }
+
+        // convert amount from WAD to collateral pool precision - RAY
+        _amount = Maths.wadToRay(_amount);
 
         if (
             borrower.collateralDeposited - encumberedBorrowerCollateral <
@@ -306,6 +314,8 @@ contract ERC20Pool is IPool, Clone {
             revert NoClaimToBucket();
         }
 
+        // convert amount from WAD to collateral pool precision - RAY
+        _amount = Maths.wadToRay(_amount);
         uint256 claimedLpTokens = _buckets.claimCollateral(
             _price,
             _amount,
@@ -323,6 +333,9 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of quote token to borrow
     /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
+        // convert amount from WAD to pool precision - RAD
+        _amount = Maths.wadToRad(_amount);
+
         if (_amount > totalQuoteToken) {
             revert InsufficientLiquidity({amountAvailable: totalQuoteToken});
         }
@@ -341,7 +354,7 @@ contract ERC20Pool is IPool, Clone {
         // TODO: make value explicit for use in comparison operator against collateralDeposited below
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
-            encumberedBorrowerCollateral = Maths.wdiv(borrower.debt, lup);
+            encumberedBorrowerCollateral = borrower.debt / lup;
         }
 
         uint256 loanCost;
@@ -352,10 +365,7 @@ contract ERC20Pool is IPool, Clone {
             inflatorSnapshot
         );
 
-        if (
-            borrower.collateralDeposited <=
-            Maths.wdiv(borrower.debt + _amount, lup)
-        ) {
+        if (borrower.collateralDeposited <= (borrower.debt + _amount) / lup) {
             revert InsufficientCollateralForBorrow();
         }
 
@@ -364,7 +374,7 @@ contract ERC20Pool is IPool, Clone {
         totalQuoteToken -= _amount;
         totalDebt += _amount;
         uint256 col = getPoolCollateralization();
-        if (col < Maths.ONE_WAD) {
+        if (col < Maths.ONE_RAY) {
             revert PoolUndercollateralized({collateralization: col});
         }
 
@@ -377,6 +387,8 @@ contract ERC20Pool is IPool, Clone {
     function repay(uint256 _maxAmount) external {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) *
             quoteTokenScale;
+        // convert amount from WAD to pool precision - RAD
+        _maxAmount = Maths.wadToRad(_maxAmount);
         if (availableAmount < _maxAmount) {
             revert InsufficientBalanceForRepay();
         }
@@ -418,7 +430,9 @@ contract ERC20Pool is IPool, Clone {
             revert InvalidPrice();
         }
 
-        uint256 collateralRequired = Maths.wdiv(_amount, _price);
+        // convert amount from WAD to pool precision - RAD
+        _amount = Maths.wadToRad(_amount);
+        uint256 collateralRequired = _amount / _price;
         if (
             collateral().balanceOf(msg.sender) * collateralScale <
             collateralRequired
@@ -442,7 +456,7 @@ contract ERC20Pool is IPool, Clone {
 
         totalQuoteToken -= _amount;
         uint256 col = getPoolCollateralization();
-        if (col < Maths.ONE_WAD) {
+        if (col < Maths.ONE_RAY) {
             revert PoolUndercollateralized({collateralization: col});
         }
 
@@ -472,11 +486,8 @@ contract ERC20Pool is IPool, Clone {
             revert NoDebtToLiquidate();
         }
 
-        uint256 collateralization = Maths.wdiv(
-            collateralDeposited,
-            Maths.wdiv(debt, lup)
-        );
-        if (collateralization > Maths.ONE_WAD) {
+        uint256 collateralization = Maths.rdiv(collateralDeposited, debt / lup);
+        if (collateralization > Maths.ONE_RAY) {
             revert BorrowerIsCollateralized({
                 collateralization: collateralization
             });
@@ -682,18 +693,10 @@ contract ERC20Pool is IPool, Clone {
     }
 
     function getPoolCollateralization() public view returns (uint256) {
-        uint256 encumberedCollateral = getEncumberedCollateral();
-        if (encumberedCollateral != 0) {
-            return Maths.wdiv(totalCollateral, encumberedCollateral);
+        if (lup != 0 && totalDebt != 0) {
+            return Maths.rdiv(totalCollateral, totalDebt / lup);
         }
-        return Maths.ONE_WAD;
-    }
-
-    function getEncumberedCollateral() public view returns (uint256) {
-        if (lup != 0) {
-            return Maths.wdiv(totalDebt, lup);
-        }
-        return 0;
+        return Maths.ONE_RAY;
     }
 
     function getPoolActualUtilization() public view returns (uint256) {
@@ -704,7 +707,7 @@ contract ERC20Pool is IPool, Clone {
     }
 
     function getPoolTargetUtilization() public view returns (uint256) {
-        return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
+        return Maths.wdiv(Maths.ONE_RAY, getPoolCollateralization());
     }
 
     // -------------------- Borrower related functions --------------------
@@ -739,8 +742,8 @@ contract ERC20Pool is IPool, Clone {
                 getPendingInflator(),
                 borrower.inflatorSnapshot
             );
-            collateralEncumbered = Maths.wdiv(borrowerPendingDebt, lup);
-            collateralization = Maths.wdiv(
+            collateralEncumbered = borrowerPendingDebt / lup;
+            collateralization = Maths.rdiv(
                 borrower.collateralDeposited,
                 collateralEncumbered
             );
@@ -762,6 +765,8 @@ contract ERC20Pool is IPool, Clone {
         view
         returns (uint256)
     {
+        // convert amount from WAD to collateral pool precision - RAD
+        _amount = Maths.wadToRad(_amount);
         if (lup == 0) {
             return _buckets.estimatePrice(_amount, hdp);
         }

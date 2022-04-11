@@ -18,21 +18,21 @@ def test_borrow_gas(
         for i in range(1643, 1663):
             mkr_dai_pool.addQuoteToken(
                 lenders[0],
-                10_000 * 1e18,
+                10_000 * 10**18,
                 bucket_math.indexToPrice(i),
                 {"from": lenders[0]},
             )
 
-        mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
-        mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrowers[1]})
+        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrowers[0]})
+        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrowers[1]})
 
         # borrow 10_000 DAI from single bucket (LUP)
         tx_one_bucket = mkr_dai_pool.borrow(
-            10_000 * 1e18, 1 * 1e18, {"from": borrowers[0]}
+            10_000 * 10**18, 1 * 10**18, {"from": borrowers[0]}
         )
         tx_reallocate_debt_one_bucket = mkr_dai_pool.addQuoteToken(
             lenders[1],
-            10_000 * 1e18,
+            10_000 * 10**18,
             bucket_math.indexToPrice(1664),
             {"from": lenders[1]},
         )
@@ -41,11 +41,11 @@ def test_borrow_gas(
 
         # borrow 101_000 DAI from 11 buckets
         tx_11_buckets = mkr_dai_pool.borrow(
-            101_000 * 1e18, 1 * 1e18, {"from": borrowers[1]}
+            101_000 * 10**18, 1 * 10**18, {"from": borrowers[1]}
         )
         tx_reallocate_debt_11_buckets = mkr_dai_pool.addQuoteToken(
             lenders[2],
-            150_000 * 1e18,
+            150_000 * 10**18,
             bucket_math.indexToPrice(1665),
             {"from": lenders[2]},
         )

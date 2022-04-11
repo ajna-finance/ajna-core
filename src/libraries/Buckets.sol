@@ -35,7 +35,7 @@ library Buckets {
 
         accumulateBucketInterest(bucket, _inflator);
 
-        lpTokens = Maths.wdiv(_amount, getExchangeRate(bucket));
+        lpTokens = _amount / getExchangeRate(bucket);
         bucket.lpOutstanding += lpTokens;
         bucket.onDeposit += _amount;
 
@@ -58,13 +58,13 @@ library Buckets {
 
         uint256 exchangeRate = getExchangeRate(bucket);
 
-        uint256 claimable = Maths.wmul(_lpBalance, exchangeRate);
+        uint256 claimable = _lpBalance * exchangeRate;
 
         if (_amount > claimable) {
             revert AmountExceedsClaimable({rightToClaim: claimable});
         }
 
-        lpTokens = Maths.wdiv(_amount, exchangeRate);
+        lpTokens = _amount / exchangeRate;
 
         // Remove from deposit first
         uint256 removeFromDeposit = Maths.min(_amount, bucket.onDeposit);
@@ -82,7 +82,7 @@ library Buckets {
         uint256 _price,
         uint256 _amount,
         uint256 _lpBalance
-    ) public returns (uint256) {
+    ) public returns (uint256 lpRedemption) {
         Bucket storage bucket = buckets[_price];
 
         if (_amount > bucket.collateral) {
@@ -92,7 +92,7 @@ library Buckets {
         }
 
         uint256 exchangeRate = getExchangeRate(bucket);
-        uint256 lpRedemption = Maths.wdiv(
+        lpRedemption = Maths.wdiv(
             Maths.wmul(_amount, bucket.price),
             exchangeRate
         );
@@ -103,7 +103,6 @@ library Buckets {
 
         bucket.collateral -= _amount;
         bucket.lpOutstanding -= lpRedemption;
-        return lpRedemption;
     }
 
     function borrow(
@@ -129,13 +128,13 @@ library Buckets {
                 // take all on deposit from this bucket
                 curLup.debt += curLup.onDeposit;
                 amountRemaining -= curLup.onDeposit;
-                loanCost += Maths.wdiv(curLup.onDeposit, curLup.price);
+                loanCost += curLup.onDeposit / curLup.price;
                 curLup.onDeposit -= curLup.onDeposit;
             } else {
                 // take all remaining amount for loan from this bucket and exit
                 curLup.onDeposit -= amountRemaining;
                 curLup.debt += amountRemaining;
-                loanCost += Maths.wdiv(amountRemaining, curLup.price);
+                loanCost += amountRemaining / curLup.price;
                 break;
             }
 
@@ -231,8 +230,8 @@ library Buckets {
             uint256 bucketDebtToPurchase = Maths.min(_debt, bucket.debt);
 
             uint256 bucketRequiredCollateral = Maths.min(
-                Maths.min(Maths.wdiv(_debt, bucket.price), _collateral),
-                Maths.wdiv(bucket.debt, bucket.price)
+                Maths.min(_debt / bucket.price, _collateral),
+                bucket.debt / bucket.price
             );
 
             _debt -= bucketDebtToPurchase;
@@ -428,9 +427,10 @@ library Buckets {
     {
         uint256 size = bucket.onDeposit +
             bucket.debt +
-            Maths.wmul(bucket.collateral, bucket.price);
+            bucket.collateral *
+            bucket.price;
         if (size != 0 && bucket.lpOutstanding != 0) {
-            return Maths.wdiv(size, bucket.lpOutstanding);
+            size / bucket.lpOutstanding;
         }
         return Maths.ONE_WAD;
     }
