@@ -7,9 +7,21 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
 import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
+interface IPermit {
+
+    function permit(
+        address spender,
+        uint256 tokenId,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external payable;
+}
+
 // Implements: https://eips.ethereum.org/EIPS/eip-4494
 // https://soliditydeveloper.com/erc721-permit
-abstract contract Permit is ERC721 {
+abstract contract PermitERC721 is ERC721, IPermit {
 
     /// @dev Gets the current nonce for a token ID and then increments it, returning the original value
     function _getAndIncrementNonce(uint256 tokenId) internal virtual returns (uint256);
@@ -87,5 +99,4 @@ abstract contract Permit is ERC721 {
             chainId := chainid()
         }
     }
-
 }

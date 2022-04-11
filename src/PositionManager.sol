@@ -199,6 +199,11 @@ contract PositionManager is IPositionManager, PositionNFT {
         emit IncreaseLiquidity(params.recipient, params.amount, params.price);
     }
 
+    // TODO: figure out how to check access -- if permitting can't use isAuthorized..
+    function increaseLiquidityWithPermit(IncreaseLiquidityParams calldata params, uint8 v, bytes32 r, bytes32 s) external payable {
+
+    }
+
     /// @notice Called by lenders to remove liquidity from an existing position
     /// @param params Calldata struct supplying inputs required to update the underlying assets owed to an NFT
     function decreaseLiquidity(DecreaseLiquidityParams calldata params)
