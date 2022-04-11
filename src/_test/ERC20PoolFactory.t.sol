@@ -29,8 +29,7 @@ contract PoolFactoryTest is DSTestPlus {
 
     function testDeployPoolTwice() public {
         factory.deployPool(collateral, quote);
-
-        vm.expectRevert("ajna/pool-deployed");
+        vm.expectRevert(ERC20PoolFactory.PoolAlreadyExists.selector);
         factory.deployPool(collateral, quote);
     }
 }

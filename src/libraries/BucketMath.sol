@@ -31,6 +31,9 @@ library BucketMath {
     // step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
     int256 public constant FLOAT_STEP_INT = 1005000000000000000;
 
+    error PriceOutsideBoundry();
+    error IndexOutsideBoundry();
+
     function abs(int256 x) private pure returns (uint256) {
         return x >= 0 ? uint256(x) : uint256(-x);
     }
@@ -39,7 +42,13 @@ library BucketMath {
     /// @dev Throws if price exceeds maximum constant
     /// @dev Price expected to be inputted as a 18 decimal WAD
     function priceToIndex(uint256 price) public pure returns (int256 index) {
-        require(price <= MAX_PRICE && price >= MIN_PRICE, "ajna/invalid-price");
+        if (price > MAX_PRICE) {
+            revert PriceOutsideBoundry();
+        }
+
+        if (price < MIN_PRICE) {
+            revert PriceOutsideBoundry();
+        }
 
         // V1
         // index = (price - MIN_PRICE) / FLOAT_STEP;
@@ -67,10 +76,13 @@ library BucketMath {
     /// @dev Uses fixed-point math to get around lack of floating point numbers in EVM
     /// @dev Price expected to be inputted as a 18 decimal WAD
     function indexToPrice(int256 index) public pure returns (uint256 price) {
-        require(
-            index <= MAX_PRICE_INDEX && index >= MIN_PRICE_INDEX,
-            "ajna/invalid-index"
-        );
+        if (index > MAX_PRICE_INDEX) {
+            revert IndexOutsideBoundry();
+        }
+
+        if (index < MIN_PRICE_INDEX) {
+            revert IndexOutsideBoundry();
+        }
 
         // V1
         // price = MIN_PRICE + (FLOAT_STEP * index);

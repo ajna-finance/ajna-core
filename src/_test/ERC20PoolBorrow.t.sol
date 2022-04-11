@@ -7,6 +7,7 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import {Buckets} from "../libraries/Buckets.sol";
 
 contract ERC20PoolBorrowTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -76,22 +77,32 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
 
         // should revert if borrower wants to borrow a greater amount than in pool
-        vm.expectRevert("ajna/not-enough-liquidity");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20Pool.InsufficientLiquidity.selector,
+                pool.totalQuoteToken() - pool.totalDebt()
+            )
+        );
         borrower.borrow(pool, 60_000 * 1e18, 2_000 * 1e18);
 
         // should revert if not enough collateral deposited by borrower
-        vm.expectRevert("ajna/not-enough-collateral");
+        vm.expectRevert(ERC20Pool.InsufficientCollateralForBorrow.selector);
         borrower.borrow(pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // borrower deposit 100 MKR collateral
         borrower.addCollateral(pool, 10 * 1e18);
 
         // should revert if stop price exceeded
-        vm.expectRevert("ajna/stop-price-exceeded");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Buckets.BorrowPriceBelowStopPrice.selector,
+                3_514.334495390401848927 * 1e18
+            )
+        );
         borrower.borrow(pool, 15_000 * 1e18, 4_000 * 1e18);
 
         // should revert if not enough collateral to get the loan
-        vm.expectRevert("ajna/not-enough-collateral");
+        vm.expectRevert(ERC20Pool.InsufficientCollateralForBorrow.selector);
         borrower.borrow(pool, 40_000 * 1e18, 2_000 * 1e18);
 
         // borrower deposits additional 90 MKR collateral
@@ -275,8 +286,15 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         );
         assertEq(pool.estimatePriceForLoan(175_000 * 1e18), 0);
         borrower2.addCollateral(pool, 51 * 1e18);
+
         // should revert when taking a loan of 50_000 DAI that will drive pool undercollateralized
-        vm.expectRevert("ajna/pool-undercollateralized");
+
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20Pool.PoolUndercollateralized.selector,
+                0.976275672074051610091314285 * 1e27
+            )
+        );
         borrower2.borrow(pool, 5_000 * 1e18, 1_000 * 1e18);
     }
 
