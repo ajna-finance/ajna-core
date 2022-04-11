@@ -376,18 +376,18 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // Lender deposits 1400 at LUP
         lender.addQuoteToken(pool, address(lender1), 1_400 * 1e18, p2835);
         (, , , deposit, debt, , , ) = pool.bucketAt(p2850);
-        assertEq(deposit, 0);             // FIXME: shows  400
-        assertEq(debt, 1_000 * 1e45);     // FIXME: shows  600
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
         (, , , deposit, debt, , , ) = pool.bucketAt(p2835);
-        assertEq(deposit, 1_400 * 1e45);  // FIXME: shows 1000
-        assertEq(debt, 1_000 * 1e45);     // FIXME: shows  400
+        assertEq(deposit, 1_400 * 1e45);
+        assertEq(debt, 1_000 * 1e45);
         (, , , deposit, debt, , , ) = pool.bucketAt(p2821);
         assertEq(deposit, 1_000 * 1e45);
         assertEq(debt, 0);
         (, , , deposit, debt, , , ) = pool.bucketAt(p2807);
         assertEq(deposit, 1_000 * 1e45);
         assertEq(debt, 0);
-        assertEq(pool.lup(), p2835);      // FIXME: shows LUP is p2850
+        assertEq(pool.lup(), p2835);
     }
 
     function testRemoveQuoteTokenNoLoan() public {
