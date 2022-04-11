@@ -49,25 +49,25 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             3_514.334495390401848927 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             2_503.519024294695168295 * 1e18
         );
 
         // borrower deposits 100 MKR collateral and draws debt
-        borrower.addCollateral(pool, 100 * 1e27);
-        borrower.borrow(pool, 25_000 * 1e45, 2500 * 1e18);
+        borrower.addCollateral(pool, 100 * 1e18);
+        borrower.borrow(pool, 25_000 * 1e18, 2500 * 1e18);
 
         skip(8200);
 
@@ -88,14 +88,14 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
         skip(14);
 
         // borrower draws debt with a low collateralization ratio
-        borrower.addCollateral(pool, 0.049988406706455432 * 1e27);
-        borrower.borrow(pool, 200 * 1e45, 0);
+        borrower.addCollateral(pool, 0.049988406706455432 * 1e18);
+        borrower.borrow(pool, 200 * 1e18, 0);
         skip(14);
 
         assertLt(

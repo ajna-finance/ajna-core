@@ -42,19 +42,19 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             10_016.501589292607751220 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             9_020.461710444470171420 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             100.332368143282009890 * 1e18
         );
 
@@ -63,8 +63,8 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         lender.liquidate(pool, address(borrower));
 
         // borrowers deposit collateral
-        borrower.addCollateral(pool, 2 * 1e27);
-        borrower2.addCollateral(pool, 200 * 1e27);
+        borrower.addCollateral(pool, 2 * 1e18);
+        borrower2.addCollateral(pool, 200 * 1e18);
 
         // check pool balance
         assertEq(pool.totalQuoteToken(), 21_000 * 1e45);
@@ -73,9 +73,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.hdp(), 10_016.501589292607751220 * 1e18);
 
         // first borrower takes a loan of 11_000 DAI, pushing lup to 9_000
-        borrower.borrow(pool, 11_000 * 1e45, 9_000 * 1e18);
+        borrower.borrow(pool, 11_000 * 1e18, 9_000 * 1e18);
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100
-        borrower2.borrow(pool, 1_000 * 1e45, 100 * 1e18);
+        borrower2.borrow(pool, 1_000 * 1e18, 100 * 1e18);
 
         // should revert when borrower collateralized
         vm.expectRevert("ajna/borrower-collateralized");
@@ -208,31 +208,31 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             10_016.501589292607751220 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             9_020.461710444470171420 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             8_002.824356287850613262 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             100.332368143282009890 * 1e18
         );
 
         // borrowers deposit collateral
-        borrower.addCollateral(pool, 2 * 1e27);
-        borrower2.addCollateral(pool, 200 * 1e27);
+        borrower.addCollateral(pool, 2 * 1e18);
+        borrower2.addCollateral(pool, 200 * 1e18);
 
         // check pool balance
         assertEq(pool.totalQuoteToken(), 13_000 * 1e45);
@@ -241,10 +241,10 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.hdp(), 10_016.501589292607751220 * 1e18);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
-        borrower.borrow(pool, 12_000 * 1e45, 8_000 * 1e18);
+        borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);
 
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100.332368143282009890
-        borrower2.borrow(pool, 1_000 * 1e45, 100 * 1e18);
+        borrower2.borrow(pool, 1_000 * 1e18, 100 * 1e18);
 
         // check borrower 1 is undercollateralized and collateral not enough to cover debt
         (
@@ -334,31 +334,31 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             10_016.501589292607751220 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             9_020.461710444470171420 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             8_002.824356287850613262 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             100.332368143282009890 * 1e18
         );
 
         // borrowers deposit collateral
-        borrower.addCollateral(pool, 2 * 1e27);
-        borrower2.addCollateral(pool, 200 * 1e27);
+        borrower.addCollateral(pool, 2 * 1e18);
+        borrower2.addCollateral(pool, 200 * 1e18);
 
         // check pool balance
         assertEq(pool.totalQuoteToken(), 13_000 * 1e45);
@@ -367,13 +367,13 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.hdp(), 10_016.501589292607751220 * 1e18);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_000
-        borrower.borrow(pool, 12_000 * 1e45, 8_000 * 1e18);
+        borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);
 
         // time warp
         skip(100000000);
 
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100
-        borrower2.borrow(pool, 1_000 * 1e45, 100 * 1e18);
+        borrower2.borrow(pool, 1_000 * 1e18, 100 * 1e18);
 
         // check borrower 1 is undercollateralized and collateral not enough to cover debt
         (

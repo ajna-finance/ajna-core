@@ -9,6 +9,7 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 import {PositionManager, IPositionManager} from "../PositionManager.sol";
+import {Maths} from "../libraries/Maths.sol";
 
 contract PositionManagerTest is DSTestPlus {
     PositionManager internal positionManager;
@@ -285,7 +286,7 @@ contract PositionManagerTest is DSTestPlus {
             mintPrice
         );
 
-        assertEq(pool.totalQuoteToken(), mintAmount / 4);
+        assertEq(pool.totalQuoteToken(), Maths.wadToRad(mintAmount) / 4);
         assertEq(updatedPositionOwner, testAddress);
         assert(updatedLPTokens != 0);
 
@@ -303,7 +304,7 @@ contract PositionManagerTest is DSTestPlus {
             mintPrice
         );
 
-        assertEq(pool.totalQuoteToken(), mintAmount / 2);
+        assertEq(pool.totalQuoteToken(), Maths.wadToRad(mintAmount) / 2);
         assert(positionUpdatedTwiceTokens > updatedLPTokens);
 
         // add liquidity to a different price, for same owner and tokenId
@@ -316,7 +317,7 @@ contract PositionManagerTest is DSTestPlus {
             newPrice
         );
 
-        assertEq(pool.totalQuoteToken(), mintAmount);
+        assertEq(pool.totalQuoteToken(), Maths.wadToRad(mintAmount));
     }
 
     function testIncreaseLiquidityPermissions() public {
@@ -369,10 +370,12 @@ contract PositionManagerTest is DSTestPlus {
         uint256 originalLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
-        );
+        ); // RAY
+        assertEq(originalLPTokens, 10_000 * 1e27);
 
         // remove 1/4 of the LP tokens
-        uint256 lpTokensToRemove = originalLPTokens / 4;
+        uint256 lpTokensToRemove = Maths.rayToWad(originalLPTokens / 4); // WAD
+        assertEq(lpTokensToRemove, 2_500 * 1e18);
 
         // decrease liquidity
         (, uint256 quoteTokensRemoved) = decreaseLiquidity(
@@ -384,7 +387,10 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // check quote token removed
-        assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
+        assertEq(
+            pool.totalQuoteToken(),
+            Maths.wadToRad(mintAmount) - quoteTokensRemoved
+        );
 
         // check lp tokens matches expectations
         positionManager.positions(tokenId);
@@ -412,7 +418,7 @@ contract PositionManagerTest is DSTestPlus {
             tokenId,
             testLender,
             address(pool),
-            50000 * 1e45,
+            mintAmount,
             testBucketPrice
         );
 
@@ -427,9 +433,9 @@ contract PositionManagerTest is DSTestPlus {
         uint256 collateralToMint = 5000 * 1e18;
         mintAndApproveCollateralTokens(testBorrower, collateralToMint);
 
-        testBorrower.addCollateral(pool, 5_000 * 1e27);
+        testBorrower.addCollateral(pool, collateralToMint);
 
-        testBorrower.borrow(pool, 2_500 * 1e45, testBucketPrice);
+        testBorrower.borrow(pool, 2_500 * 1e18, testBucketPrice);
         assertEq(pool.lup(), testBucketPrice);
         assertEq(pool.hdp(), testBucketPrice);
         assertEq(pool.totalDebt(), 2_500 * 1e45);
@@ -437,7 +443,7 @@ contract PositionManagerTest is DSTestPlus {
         UserWithCollateral testBidder = new UserWithCollateral();
         mintAndApproveCollateralTokens(testBidder, 50000 * 1e18);
 
-        testBidder.purchaseBid(pool, 1 * 1e45, testBucketPrice);
+        testBidder.purchaseBid(pool, 1 * 1e18, testBucketPrice);
 
         // identify number of lp tokens to exchange for quote and collateral accrued
         uint256 lpTokensToRemove = originalLPTokens / 4;
@@ -560,6 +566,8 @@ contract PositionManagerTest is DSTestPlus {
             mintPrice
         );
 
+        assertEq(lpTokensToRemove, 10_000 * 10**27);
+
         // decrease liquidity
         (, uint256 quoteTokensRemoved) = decreaseLiquidity(
             tokenId,
@@ -568,7 +576,10 @@ contract PositionManagerTest is DSTestPlus {
             mintPrice,
             lpTokensToRemove
         );
-        assertEq(pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
+        assertEq(
+            pool.totalQuoteToken(),
+            Maths.wadToRad(mintAmount) - quoteTokensRemoved
+        );
 
         // should emit Burn
         vm.expectEmit(true, true, true, true);

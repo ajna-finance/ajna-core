@@ -59,37 +59,38 @@ contract ERC20Pool is IPool, Clone {
     using Buckets for mapping(uint256 => Buckets.Bucket);
 
     struct BorrowerInfo {
-        uint256 debt;
-        uint256 collateralDeposited;
-        uint256 inflatorSnapshot; // last updated inflator rate for a given borrower
+        uint256 debt; // WAD
+        uint256 collateralDeposited; // RAY
+        uint256 inflatorSnapshot; // WAD, last updated inflator rate for a given borrower
     }
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
+    // price (WAD) -> bucket
     mapping(uint256 => Buckets.Bucket) private _buckets;
     BitMaps.BitMap private bitmap;
 
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
 
-    uint256 public hdp;
-    uint256 public lup;
+    uint256 public hdp; // WAD
+    uint256 public lup; // WAD
 
-    // lenders lp token balances: lender address -> price bucket -> lender lp
+    // lenders lp token balances: lender address -> price bucket (WAD) -> lender lp (RAY)
     mapping(address => mapping(uint256 => uint256)) public lpBalance;
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
 
-    uint256 public inflatorSnapshot;
+    uint256 public inflatorSnapshot; // WAD
     uint256 public lastInflatorSnapshotUpdate;
-    uint256 public previousRate;
+    uint256 public previousRate; // WAD
     uint256 public previousRateUpdate;
 
-    uint256 public totalCollateral;
+    uint256 public totalCollateral; // RAY
 
-    uint256 public totalQuoteToken;
-    uint256 public totalDebt;
+    uint256 public totalQuoteToken; // RAD
+    uint256 public totalDebt; // RAD
 
     event AddQuoteToken(
         address indexed lender,
@@ -159,7 +160,8 @@ contract ERC20Pool is IPool, Clone {
             BitMaps.setTo(bitmap, _price, true);
         }
 
-        // deposit amount
+        // deposit amount with RAD precision
+        _amount = Maths.wadToRad(_amount);
         bool reallocate = (totalDebt != 0 && _price >= lup);
         (uint256 newLup, uint256 lpTokens) = _buckets.addQuoteToken(
             _price,
@@ -203,7 +205,8 @@ contract ERC20Pool is IPool, Clone {
 
         accumulatePoolInterest();
 
-        // remove from bucket
+        // remove from bucket with RAD precision
+        _amount = Maths.wadToRad(_amount);
         (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
             _price,
             _amount,
@@ -230,6 +233,8 @@ contract ERC20Pool is IPool, Clone {
 
     function addCollateral(uint256 _amount) external {
         accumulatePoolInterest();
+        // convert amount from WAD to collateral pool precision - RAY
+        _amount = Maths.wadToRay(_amount);
         borrowers[msg.sender].collateralDeposited += _amount;
         totalCollateral += _amount;
 
@@ -254,6 +259,9 @@ contract ERC20Pool is IPool, Clone {
         if (borrower.debt != 0) {
             encumberedBorrowerCollateral = borrower.debt / lup;
         }
+
+        // convert amount from WAD to collateral pool precision - RAY
+        _amount = Maths.wadToRay(_amount);
 
         require(
             borrower.collateralDeposited - encumberedBorrowerCollateral >=
@@ -281,6 +289,8 @@ contract ERC20Pool is IPool, Clone {
         uint256 maxClaim = lpBalance[_recipient][_price];
         require(maxClaim != 0, "ajna/no-claim-to-bucket");
 
+        // convert amount from WAD to collateral pool precision - RAY
+        _amount = Maths.wadToRay(_amount);
         uint256 claimedLpTokens = _buckets.claimCollateral(
             _price,
             _amount,
@@ -298,6 +308,8 @@ contract ERC20Pool is IPool, Clone {
     /// @param _amount The amount of quote token to borrow
     /// @param _stopPrice Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position
     function borrow(uint256 _amount, uint256 _stopPrice) external {
+        // convert amount from WAD to pool precision - RAD
+        _amount = Maths.wadToRad(_amount);
         require(_amount <= totalQuoteToken, "ajna/not-enough-liquidity");
 
         accumulatePoolInterest();
@@ -352,6 +364,9 @@ contract ERC20Pool is IPool, Clone {
     function repay(uint256 _maxAmount) external {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) *
             quoteTokenScale;
+
+        // convert amount from WAD to pool precision - RAD
+        _maxAmount = Maths.wadToRad(_maxAmount);
         require(availableAmount >= _maxAmount, "ajna/no-funds-to-repay");
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
@@ -387,6 +402,8 @@ contract ERC20Pool is IPool, Clone {
     function purchaseBid(uint256 _amount, uint256 _price) external {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
+        // convert amount from WAD to pool precision - RAD
+        _amount = Maths.wadToRad(_amount);
         uint256 collateralRequired = _amount / _price;
         require(
             collateral().balanceOf(msg.sender) * collateralScale >=
@@ -717,6 +734,8 @@ contract ERC20Pool is IPool, Clone {
         view
         returns (uint256)
     {
+        // convert amount from WAD to collateral pool precision - RAD
+        _amount = Maths.wadToRad(_amount);
         if (lup == 0) {
             return _buckets.estimatePrice(_amount, hdp);
         }

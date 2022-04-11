@@ -74,7 +74,7 @@ def place_random_bid(lender_index, pool_client, bucket_math):
         max(0, min(int(price_position * price_count), price_count)) + MIN_BUCKET
     )
     price = bucket_math.indexToPrice(price_index)
-    pool_client.deposit_quote_token(60_000 * 10**45, price, lender_index)
+    pool_client.deposit_quote_token(60_000 * 10**18, price, lender_index)
 
 
 def draw_initial_debt(
@@ -91,13 +91,13 @@ def draw_initial_debt(
             pool_price = 3293.70191 * 10**18  # MAX_BUCKET
         collateralization_ratio = 1 / target_utilization
         collateral_to_deposit = (
-            borrow_amount / pool_price * collateralization_ratio * 10**27
+            borrow_amount / pool_price * collateralization_ratio / 10**9
         )
-        # print(f"borrower {borrower_index} about to deposit {collateral_to_deposit / 10**27:.1f} collateral "
-        #       f"and draw {borrow_amount / 10**45:.1f} debt")
+        # print(f"borrower {borrower_index} about to deposit {collateral_to_deposit / 10**18:.1f} collateral "
+        #       f"and draw {borrow_amount / 10**18:.1f} debt")
         assert collateral_balance > collateral_to_deposit
         pool.addCollateral(collateral_to_deposit, {"from": borrower})
-        pool.borrow(borrow_amount, limit_price, {"from": borrower})
+        pool.borrow(borrow_amount / 10**27, limit_price, {"from": borrower})
 
 
 def draw_and_bid(
@@ -158,18 +158,18 @@ def draw_debt(
     limit_price=2210.03602 * 10**18,
 ):
     # Draw debt based on added liquidity
-    borrow_amount = int(90_000 * ((borrower_index % 2) + 1)) * 10**45
+    borrow_amount = int(90_000 * ((borrower_index % 2) + 1)) * 10**18
     collateral_to_deposit = (
-        borrow_amount / pool.getPoolPrice() * collateralization * 10**27
+        borrow_amount / pool.getPoolPrice() * collateralization * 10**18
     )
     print(
-        f" borrower {borrower_index} will borrow {borrow_amount / 10**45:.1f} "
+        f" borrower {borrower_index} will borrow {borrow_amount / 10**18:.1f} "
         f"collateralizing at {collateralization:.1f}, (pool price is {pool.getPoolPrice() / 10**18:.1f})"
     )
-    assert collateral_to_deposit > 10**27
+    assert collateral_to_deposit > 10**18
     pool.addCollateral(collateral_to_deposit, {"from": borrower})
     # print(f"borrower {borrower_index} drawing {borrow_amount / 10**18:.1f} debt from {pool.getPoolPrice() / 10**18:.1f}")
-    assert borrow_amount > 10**45
+    assert borrow_amount > 10**18
     pool.borrow(borrow_amount, limit_price, {"from": borrower})
 
 
@@ -177,16 +177,16 @@ def add_quote_token(lender, lender_index, pool, bucket_math, liquidity_coefficie
     dai = Contract(pool.quoteToken())
     index_offset = ((lender_index % 6) - 2) * 2
     price = bucket_math.indexToPrice(MAX_BUCKET + index_offset)
-    quantity = int(90_000 * ((lender_index % 2) + 1)) * liquidity_coefficient * 10**45
+    quantity = int(90_000 * ((lender_index % 2) + 1)) * liquidity_coefficient * 10**18
     if dai.balanceOf(lender) > quantity:
         print(
-            f" lender {lender_index} adding {quantity / 10**45:.1f} liquidity at {price / 10**18:.1f}"
+            f" lender {lender_index} adding {quantity / 10**18:.1f} liquidity at {price / 10**18:.1f}"
         )
         pool.addQuoteToken(lender, quantity, price, {"from": lender})
         return price
     else:
         print(
-            f" lender {lender_index} had insufficient balance to add {quantity / 10**45:.1f}"
+            f" lender {lender_index} had insufficient balance to add {quantity / 10**18:.1f}"
         )
         return None
 
@@ -195,7 +195,7 @@ def remove_quote_token(lenders, pool, buckets_deposited, chain):
     for lender_index, price in buckets_deposited.items():
         print(f" lender {lender_index} removing liquidity at {price / 10**18}")
         lender = lenders[lender_index]
-        pool.removeQuoteToken(lender, 100_000 * 10**45, price, {"from": lender})
+        pool.removeQuoteToken(lender, 100_000 * 10**18, price, {"from": lender})
         chain.sleep((lender_index + 1) * 300)
 
 
@@ -204,13 +204,13 @@ def repay(borrower, borrower_index, pool):
     (debt, pending_debt, _, _, _, _, _) = pool.getBorrowerInfo(borrower)
     quote_balance = dai.balanceOf(borrower)
     if pending_debt > 1000 * 10**45:
-        if quote_balance > 100 * 10**45:
+        if quote_balance > 100 * 10**18:
             repay_amount = min(pending_debt * 1.05, quote_balance)
             print(f" borrower {borrower_index} is repaying {repay_amount / 10**45:.1f}")
-            pool.repay(repay_amount, {"from": borrower})
+            pool.repay(repay_amount / 10**27, {"from": borrower})
         else:
             print(
-                f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**45:.1f}"
+                f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}"
             )
 
 
@@ -222,10 +222,10 @@ def test_stable_volatile_one(
     assert len(lenders) == 100
     assert len(borrowers) == 100
     # print("Initialized book:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, MAX_BUCKET))
-    # print(f"total quote token: {pool1.totalQuoteToken()/10**45}   "
-    #       f"total debt: {pool1.totalDebt() / 10**45}")
+    # print(f"total quote token: {pool1.totalQuoteToken()/10**18}   "
+    #       f"total debt: {pool1.totalDebt() / 10**18}")
     # print(f"initial utilization: {pool1.getPoolActualUtilization()/10**18}")
-    assert pool1.totalQuoteToken() > 2_700_000 * 10**45  # 50% utilization
+    assert pool1.totalQuoteToken() > 2_700_000 * 10**18  # 50% utilization
 
     start_time = chain.time()
     # end_time = start_time + SECONDS_PER_YEAR  # TODO: one year test

@@ -6,6 +6,7 @@ import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
 import {PositionNFT} from "./PositionNFT.sol";
 import {IPool} from "./ERC20Pool.sol";
+import {Maths} from "./libraries/Maths.sol";
 
 interface IPositionManager {
     struct MintParams {
@@ -215,7 +216,7 @@ contract PositionManager is IPositionManager, PositionNFT {
 
         pool.removeQuoteToken(
             params.recipient,
-            quoteTokenToRemove,
+            Maths.radToWad(quoteTokenToRemove),
             params.price
         );
 
@@ -224,7 +225,7 @@ contract PositionManager is IPositionManager, PositionNFT {
             // claim any unencumbered collateral accrued to the price bucket
             pool.claimCollateral(
                 params.recipient,
-                collateralToRemove,
+                Maths.rayToWad(collateralToRemove),
                 params.price
             );
         }

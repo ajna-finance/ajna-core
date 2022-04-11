@@ -9,7 +9,7 @@ library Maths {
     uint256 public constant RAY = 10**27;
     uint256 public constant ONE_RAY = 1 * RAY;
 
-    uint256 public constant RAD = 10**27;
+    uint256 public constant RAD = 10**45;
     uint256 public constant ONE_RAD = 1 * RAD;
 
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -66,5 +66,21 @@ library Maths {
 
     function rddiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = mul(x, RAD) / y;
+    }
+
+    function wadToRay(uint256 x) internal pure returns (uint256) {
+        return x * 10**9;
+    }
+
+    function wadToRad(uint256 x) internal pure returns (uint256) {
+        return x * RAY;
+    }
+
+    function rayToWad(uint256 x) internal pure returns (uint256) {
+        return x / 10**9;
+    }
+
+    function radToWad(uint256 x) internal pure returns (uint256) {
+        return x / 10**27;
     }
 }

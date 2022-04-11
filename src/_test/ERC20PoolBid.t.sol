@@ -41,42 +41,42 @@ contract ERC20PoolBidTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            3_000 * 1e45,
+            3_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            3_000 * 1e45,
+            3_000 * 1e18,
             3_010.892022197881557845 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            3_000 * 1e45,
+            3_000 * 1e18,
             1_004.989662429170775094 * 1e18
         );
 
         // borrower takes a loan of 4000 DAI making bucket 4000 to be fully utilized
-        borrower.addCollateral(pool, 100 * 1e27);
-        borrower.borrow(pool, 4_000 * 1e45, 3_000 * 1e18);
+        borrower.addCollateral(pool, 100 * 1e18);
+        borrower.borrow(pool, 4_000 * 1e18, 3_000 * 1e18);
         assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
 
         // should revert if invalid price
         vm.expectRevert("ajna/invalid-price");
-        bidder.purchaseBid(pool, 1 * 1e45, 1_000);
+        bidder.purchaseBid(pool, 1 * 1e18, 1_000);
 
         // should revert if bidder doesn't have enough collateral
         vm.expectRevert("ajna/not-enough-collateral-balance");
         bidder.purchaseBid(
             pool,
-            2_000_000 * 1e45,
+            2_000_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
 
         // should revert if trying to purchase more than on bucket
         vm.expectRevert("ajna/insufficient-bucket-size");
-        bidder.purchaseBid(pool, 4_000 * 1e45, 4_000.927678580567537368 * 1e18);
+        bidder.purchaseBid(pool, 4_000 * 1e18, 4_000.927678580567537368 * 1e18);
 
         // check bidder and pool balances
         assertEq(collateral.balanceOf(address(bidder)), 100 * 1e18);
@@ -122,7 +122,7 @@ contract ERC20PoolBidTest is DSTestPlus {
             2_000 * 1e45,
             0.499884067064554306651186497 * 1e27
         );
-        bidder.purchaseBid(pool, 2_000 * 1e45, 4_000.927678580567537368 * 1e18);
+        bidder.purchaseBid(pool, 2_000 * 1e18, 4_000.927678580567537368 * 1e18);
 
         assertEq(pool.lup(), 1_004.989662429170775094 * 1e18);
         // check 4_000.927678580567537368 bucket balance after purchase bid
@@ -165,27 +165,27 @@ contract ERC20PoolBidTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             3_010.892022197881557845 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            5_000 * 1e45,
+            5_000 * 1e18,
             2_000.221618840727700609 * 1e18
         );
 
         // borrower takes a loan of 1000 DAI from bucket 4000
-        borrower.addCollateral(pool, 100 * 1e27);
-        borrower.borrow(pool, 1_000 * 1e45, 3_000 * 1e18);
+        borrower.addCollateral(pool, 100 * 1e18);
+        borrower.borrow(pool, 1_000 * 1e18, 3_000 * 1e18);
         // borrower takes a loan of 1000 DAI from bucket 3000
-        borrower.borrow(pool, 1_000 * 1e45, 3_000 * 1e18);
+        borrower.borrow(pool, 1_000 * 1e18, 3_000 * 1e18);
 
         // check bidder and pool balances
         assertEq(collateral.balanceOf(address(bidder)), 100 * 1e18);
@@ -240,7 +240,7 @@ contract ERC20PoolBidTest is DSTestPlus {
             1_000 * 1e45,
             0.249942033532277153325593248 * 1e27
         );
-        bidder.purchaseBid(pool, 1_000 * 1e45, 4_000.927678580567537368 * 1e18);
+        bidder.purchaseBid(pool, 1_000 * 1e18, 4_000.927678580567537368 * 1e18);
 
         // lup should be pushed downwards
         assertEq(pool.lup(), 2_000.221618840727700609 * 1e18);
@@ -284,60 +284,60 @@ contract ERC20PoolBidTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             3_010.892022197881557845 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            500 * 1e45,
+            500 * 1e18,
             2_000.221618840727700609 * 1e18
         );
 
         // borrower takes a loan of 1000 DAI from bucket 4000
-        borrower.addCollateral(pool, 100 * 1e27);
-        borrower.borrow(pool, 1_000 * 1e45, 3_000 * 1e18);
+        borrower.addCollateral(pool, 100 * 1e18);
+        borrower.borrow(pool, 1_000 * 1e18, 3_000 * 1e18);
         // borrower takes a loan of 1000 DAI from bucket 3000
-        borrower.borrow(pool, 1_000 * 1e45, 3_000 * 1e18);
+        borrower.borrow(pool, 1_000 * 1e18, 3_000 * 1e18);
 
         assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
 
         // should revert if debt cannot be reallocated
         vm.expectRevert("ajna/failed-to-reallocate");
-        bidder.purchaseBid(pool, 1_000 * 1e45, 4_000.927678580567537368 * 1e18);
+        bidder.purchaseBid(pool, 1_000 * 1e18, 4_000.927678580567537368 * 1e18);
     }
 
     function testPurchaseBidUndercollateralized() public {
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            1_000 * 1e45,
+            1_000 * 1e18,
             3_010.892022197881557845 * 1e18
         );
-        lender.addQuoteToken(pool, address(lender), 2_000 * 1e45, 1 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 2_000 * 1e18, 1 * 1e18);
 
         // borrower takes a loan of 1000 DAI from bucket 4000
-        borrower.addCollateral(pool, 100 * 1e27);
-        borrower.borrow(pool, 1_000 * 1e45, 3_000 * 1e18);
+        borrower.addCollateral(pool, 100 * 1e18);
+        borrower.borrow(pool, 1_000 * 1e18, 3_000 * 1e18);
         // borrower takes a loan of 1000 DAI from bucket 3000
-        borrower.borrow(pool, 1_000 * 1e45, 3_000 * 1e18);
+        borrower.borrow(pool, 1_000 * 1e18, 3_000 * 1e18);
 
         assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
 
         // should revert when leave pool undercollateralized
         vm.expectRevert("ajna/pool-undercollateralized");
-        bidder.purchaseBid(pool, 1_000 * 1e45, 4_000.927678580567537368 * 1e18);
+        bidder.purchaseBid(pool, 1_000 * 1e18, 4_000.927678580567537368 * 1e18);
     }
 }

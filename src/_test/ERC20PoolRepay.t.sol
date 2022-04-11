@@ -42,28 +42,28 @@ contract ERC20PoolRepayTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             5_007.644384905151472283 * 1e18
         );
         skip(14);
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
         skip(14);
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             3_010.892022197881557845 * 1e18
         );
 
         // borrower starts with 10_000 DAI and deposit 100 collateral
         quote.mint(address(borrower), 10_000 * 1e18);
         borrower.approveToken(quote, address(pool), 100_000 * 1e18);
-        borrower.addCollateral(pool, 100 * 1e27);
+        borrower.addCollateral(pool, 100 * 1e18);
 
         // check balances
         assertEq(collateral.balanceOf(address(borrower)), 0);
@@ -71,7 +71,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(pool.totalCollateral(), 100 * 1e27);
 
         // borrower takes loan of 25_000 DAI from 3 buckets
-        borrower.borrow(pool, 25_000 * 1e45, 2_500 * 1e18);
+        borrower.borrow(pool, 25_000 * 1e18, 2_500 * 1e18);
 
         // check balances
         assertEq(pool.totalQuoteToken(), 5_000 * 1e45);
@@ -101,7 +101,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
             4_000.927678580567537368 * 1e18,
             10_000 * 1e45
         );
-        borrower.repay(pool, 10_000 * 1e45);
+        borrower.repay(pool, 10_000 * 1e18);
 
         // check balances
         assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
@@ -135,7 +135,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
             5_007.644384905151472283 * 1e18,
             15_000.520048191350631790368171148430400000000000000 * 1e45
         );
-        borrower.repay(pool, 16_000 * 1e45);
+        borrower.repay(pool, 16_000 * 1e18);
 
         // check balances
         assertEq(
@@ -167,31 +167,31 @@ contract ERC20PoolRepayTest is DSTestPlus {
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             5_007.644384905151472283 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             4_000.927678580567537368 * 1e18
         );
         lender.addQuoteToken(
             pool,
             address(lender),
-            10_000 * 1e45,
+            10_000 * 1e18,
             3_010.892022197881557845 * 1e18
         );
 
         // borrower starts with 10_000 DAI and deposit 100 collateral
         quote.mint(address(borrower), 10_000 * 1e18);
         borrower.approveToken(quote, address(pool), 100_000 * 1e18);
-        borrower.addCollateral(pool, 100 * 1e27);
+        borrower.addCollateral(pool, 100 * 1e18);
 
         // borrower2 starts with 10_000 DAI and deposit 100 collateral
         quote.mint(address(borrower2), 10_000 * 1e18);
         borrower2.approveToken(quote, address(pool), 100_000 * 1e18);
-        borrower2.addCollateral(pool, 100 * 1e27);
+        borrower2.addCollateral(pool, 100 * 1e18);
 
         // check balances
         assertEq(collateral.balanceOf(address(borrower)), 0);
@@ -201,12 +201,12 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         // repay should revert if no debt
         vm.expectRevert("ajna/no-debt-to-repay");
-        borrower.repay(pool, 10_000 * 1e45);
+        borrower.repay(pool, 10_000 * 1e18);
 
         // borrower takes loan of 25_000 DAI from 3 buckets
-        borrower.borrow(pool, 25_000 * 1e45, 2_500 * 1e18);
+        borrower.borrow(pool, 25_000 * 1e18, 2_500 * 1e18);
         // borrower2 takes loan of 2_000 DAI from 3 buckets
-        borrower2.borrow(pool, 2_000 * 1e45, 1 * 1e18);
+        borrower2.borrow(pool, 2_000 * 1e18, 1 * 1e18);
 
         // check balances
         assertEq(pool.totalQuoteToken(), 3_000 * 1e45);
@@ -235,7 +235,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(depositedCollateral, 100 * 1e27);
         // repay should revert if amount not available
         vm.expectRevert("ajna/no-funds-to-repay");
-        borrower.repay(pool, 50_000 * 1e45);
+        borrower.repay(pool, 50_000 * 1e18);
 
         // repay debt partially 10_000 DAI
         skip(8200);
@@ -247,7 +247,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
             4_000.927678580567537368 * 1e18,
             10_000 * 1e45
         );
-        borrower.repay(pool, 10_000 * 1e45);
+        borrower.repay(pool, 10_000 * 1e18);
 
         // check balances
         assertEq(pool.totalQuoteToken(), 13_000 * 1e45);
@@ -280,7 +280,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
             5_007.644384905151472283 * 1e18,
             15_000.325027478522625000 * 1e45
         );
-        borrower.repay(pool, 15_000.325027478522625000 * 1e45);
+        borrower.repay(pool, 15_000.325027478522625000 * 1e18);
 
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(
             address(borrower)
@@ -319,7 +319,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
             5_007.644384905151472283 * 1e18,
             2_000.026002198281810000 * 1e45
         );
-        borrower2.repay(pool, 2_000.026002198281810000 * 1e45);
+        borrower2.repay(pool, 2_000.026002198281810000 * 1e18);
 
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(
             address(borrower2)
@@ -339,10 +339,10 @@ contract ERC20PoolRepayTest is DSTestPlus {
         );
 
         // remove deposited collateral
-        borrower.removeCollateral(pool, 100 * 1e27);
+        borrower.removeCollateral(pool, 100 * 1e18);
         assertEq(collateral.balanceOf(address(borrower)), 100 * 1e18);
 
-        borrower2.removeCollateral(pool, 100 * 1e27);
+        borrower2.removeCollateral(pool, 100 * 1e18);
         assertEq(collateral.balanceOf(address(borrower2)), 100 * 1e18);
     }
 }
