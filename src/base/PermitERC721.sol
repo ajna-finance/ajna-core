@@ -8,7 +8,6 @@ import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
 interface IPermit {
-
     function permit(
         address spender,
         uint256 tokenId,
@@ -19,8 +18,9 @@ interface IPermit {
     ) external payable;
 }
 
-// Implements: https://eips.ethereum.org/EIPS/eip-4494
 // https://soliditydeveloper.com/erc721-permit
+/// @notice Functionality to enable EIP-4494 permit calls as part of interactions with Position NFTs
+/// @dev spender https://eips.ethereum.org/EIPS/eip-4494
 abstract contract PermitERC721 is ERC721, IPermit {
 
     /// @dev Gets the current nonce for a token ID and then increments it, returning the original value
@@ -35,7 +35,7 @@ abstract contract PermitERC721 is ERC721, IPermit {
     /// @dev Value is equal to keccak256("Permit(address spender,uint256 tokenId,uint256 nonce,uint256 deadline)");
     bytes32 public constant PERMIT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
 
-    /// @notice Computes the nameHash and versionHash
+    /// @notice Computes the nameHash and versionHash based upon constructor input
     constructor(
         string memory name_,
         string memory symbol_,
@@ -45,6 +45,8 @@ abstract contract PermitERC721 is ERC721, IPermit {
         versionHash = keccak256(bytes(version_));
     }
 
+    /// @notice Calculate the EIP-712 compliant DOMAIN_SEPERATOR for ledgible signature encoding
+    /// @return The bytes32 domain separator of Position NFTs
     function DOMAIN_SEPARATOR() public view returns (bytes32) {
         return
             keccak256(
@@ -59,6 +61,13 @@ abstract contract PermitERC721 is ERC721, IPermit {
             );
     }
 
+    /// @notice Called by a NFT owner to enable a third party spender to interact with their NFT
+    /// @param spender The address of the third party who will execute the transaction involving an owners NFT
+    /// @param tokenId The id of the NFT being interacted with
+    /// @param deadline The unix timestamp by which the permit must be called
+    /// @param v Component of secp256k1 signature
+    /// @param r Component of secp256k1 signature
+    /// @param s Component of secp256k1 signature
     function permit(
         address spender,
         uint256 tokenId,
@@ -67,7 +76,7 @@ abstract contract PermitERC721 is ERC721, IPermit {
         bytes32 r,
         bytes32 s
     ) external payable {
-        require(block.timestamp <= deadline, 'ajna/permit-expired');
+        require(block.timestamp <= deadline, 'ajna/nft-permit-expired');
 
         bytes32 digest =
             keccak256(
@@ -82,14 +91,37 @@ abstract contract PermitERC721 is ERC721, IPermit {
 
         if (Address.isContract(owner)) {
             // bytes4(keccak256("isValidSignature(bytes32,bytes)") == 0x1626ba7e
-            require(IERC1271(owner).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e, 'ajna/unauthorized');
+            require(IERC1271(owner).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e, 'ajna/nft-unauthorized');
         } else {
             address recoveredAddress = ecrecover(digest, v, r, s);
-            require(recoveredAddress != address(0), 'Invalid signature');
-            require(recoveredAddress == owner, 'Unauthorized');
+            require(recoveredAddress != address(0), 'ajna/nft-invalid-signature');
+            require(recoveredAddress == owner, 'ajna/nft-unauthorized');
         }
 
         _approve(spender, tokenId);
+    }
+
+    /// @notice Called by an NFT owner to enable their NFT to be transferred by a spender address without making a seperate approve call
+    /// @param from The address of the current owner of the NFT
+    /// @param to The address of the new owner of the NFT
+    /// @param spender The address of the third party who will execute the transaction involving an owners NFT
+    /// @param tokenId The id of the NFT being interacted with
+    /// @param deadline The unix timestamp by which the permit must be called
+    /// @param v Component of secp256k1 signature
+    /// @param r Component of secp256k1 signature
+    /// @param s Component of secp256k1 signature
+    function safeTransferFromWithPermit(
+        address from,
+        address to,
+        address spender,
+        uint256 tokenId,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        this.permit(spender, tokenId, deadline, v, r, s);
+        safeTransferFrom(from, to, tokenId);
     }
 
     /// @dev Gets the current chain ID

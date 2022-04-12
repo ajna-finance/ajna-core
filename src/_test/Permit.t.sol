@@ -24,9 +24,11 @@ contract PermitTest is DSTestPlus {
     AjnaToken internal ajnaToken = new AjnaToken(10_000 * 1e18);
     ERC20Pool internal ajnaTokenPool;
 
+    bytes32 internal constant PERMIT_NFT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
 
     // nonce for generating random addresses
     uint16 nonce = 0;
+
     function setUp() public {
 
         collateral = new CollateralToken();
@@ -95,7 +97,6 @@ contract PermitTest is DSTestPlus {
         mintAndApproveQuoteTokens(owner, 10000 * 1e18);
         mintAndApproveQuoteTokens(spender, 10000 * 1e18);
 
-        bytes32 PERMIT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
         uint256 deadline = block.timestamp + 1000000;
 
         uint256 tokenId = mintNFT(owner, address(pool));
@@ -107,7 +108,7 @@ contract PermitTest is DSTestPlus {
                 abi.encodePacked(
                     "\x19\x01",
                     positionManager.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(PERMIT_TYPEHASH, spender, tokenId, 0, deadline))
+                    keccak256(abi.encode(PERMIT_NFT_TYPEHASH, spender, tokenId, 0, deadline))
                 )
             )
         );
@@ -163,6 +164,44 @@ contract PermitTest is DSTestPlus {
         positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
     }
 
+    function testSafeTransferFromWithPermit() public {
+        uint256 privateKey = 0xBEEF;
+        address owner = vm.addr(privateKey);
+        address newOwner = generateAddress();
+        address spender = generateAddress();
+        address unapprovedSpender = generateAddress();
+
+        mintAndApproveQuoteTokens(owner, 10000 * 1e18);
+
+        uint256 deadline = block.timestamp + 1000000;
+        uint256 tokenId = mintNFT(owner, address(pool));
+
+        // generate permit signature
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            privateKey,
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    positionManager.DOMAIN_SEPARATOR(),
+                    keccak256(abi.encode(PERMIT_NFT_TYPEHASH, spender, tokenId, 0, deadline))
+                )
+            )
+        );
+
+        // it should block an unapproved spender from interacting with the NFT
+        vm.expectRevert("ERC721: transfer caller is not owner nor approved");
+        vm.prank(unapprovedSpender);
+        positionManager.safeTransferFromWithPermit(owner, newOwner, spender, tokenId, deadline, v, r, s);
+
+        // it should allow the permitted spender to interact with the NFT
+        vm.prank(spender);
+        positionManager.safeTransferFromWithPermit(owner, newOwner, spender, tokenId, deadline, v, r, s);
+
+        (,address ownerAfterTransfer, ) = positionManager.positions(tokenId);
+        assertEq(newOwner, ownerAfterTransfer);
+        assert(ownerAfterTransfer != owner);
+    }
+
     // TODO: finish implementing -> Requires updating test contracts to have an owner set to our private key, with that owner then signing a message hash provided by a contract view function.
     // contracts don't have private keys, so will have to use EIP-1271 here
     // https://soliditydeveloper.com/meta-transactions
@@ -181,7 +220,6 @@ contract PermitTest is DSTestPlus {
         UserWithQuoteToken contractSpender = new UserWithQuoteToken();
         UserWithQuoteToken unapprovedContractSpender = new UserWithQuoteToken();
 
-        bytes32 PERMIT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
         uint256 deadline = block.timestamp + 1000000;
 
         // check EOA can be approved via Permit()
@@ -191,7 +229,7 @@ contract PermitTest is DSTestPlus {
                 abi.encodePacked(
                     "\x19\x01",
                     positionManager.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(PERMIT_TYPEHASH, address(contractSpender), tokenId, 0, deadline))
+                    keccak256(abi.encode(PERMIT_NFT_TYPEHASH, address(contractSpender), tokenId, 0, deadline))
                 )
             )
         );
@@ -234,10 +272,7 @@ contract PermitTest is DSTestPlus {
         ajnaToken.transfer(owner, 1 * 1e18);
         assert(ajnaToken.balanceOf(owner) > 0);
 
-        // TODO: mint Ajna tokens to be used as quote tokens w/ permit functionality
-        // ajnaTokenPool.mint(owner, 10 * 1e18);
-
-        bytes32 PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+        bytes32 PERMIT_ERC20_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
 
         uint256 deadline = block.timestamp + 1000000;
         uint256 permitAmount = 10 * 1e18;
@@ -251,7 +286,7 @@ contract PermitTest is DSTestPlus {
                 abi.encodePacked(
                     "\x19\x01",
                     ajnaToken.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, permitAmount, 0, deadline))
+                    keccak256(abi.encode(PERMIT_ERC20_TYPEHASH, owner, spender, permitAmount, 0, deadline))
                 )
             )
         );

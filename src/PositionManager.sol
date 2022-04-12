@@ -161,7 +161,6 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
         emit MemorializePosition(params.owner, params.tokenId);
     }
 
-    // TODO: add support for ERC721Burnable?
     /// @notice Called by lenders to burn an existing NFT
     /// @dev Requires that all lp tokens have been removed from the NFT prior to calling
     /// @param params Calldata struct supplying inputs required to update the underlying assets owed to an NFT
@@ -255,8 +254,6 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
     ) internal virtual override(ERC721) {
         Position storage position = positions[tokenId];
         position.owner = to;
-        // TODO: ensure that each nonce is only updated after successful transfer to prevent reuse
-        // _getAndIncrementNonce(tokenId);
     }
 
     /// @dev used for tracking nonce input to permit function
