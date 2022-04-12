@@ -597,7 +597,7 @@ contract ERC20Pool is IPool, Clone {
     function getLPTokenBalance(address _owner, uint256 _price)
         external
         view
-        returns (uint256 lpTokens)
+        returns (uint256 lpTokens) // RAY
     {
         return lpBalance[_owner][_price];
     }
@@ -608,7 +608,7 @@ contract ERC20Pool is IPool, Clone {
     function getLPTokenExchangeValue(uint256 _lpTokens, uint256 _price)
         external
         view
-        returns (uint256 collateralTokens, uint256 quoteTokens)
+        returns (uint256 collateralTokens, uint256 quoteTokens)  // RAY, RAD
     {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 

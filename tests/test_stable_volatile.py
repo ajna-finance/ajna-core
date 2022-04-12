@@ -163,11 +163,11 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
             utilization = pool.getPoolActualUtilization() / 10**18
             if len(buckets_deposited[user_index]) > 3:  # if lender is in too many buckets, pull out of one
                 price = buckets_deposited[user_index].pop()
-                try:
-                    remove_quote_token(lenders[user_index], user_index, price, pool)
-                except VirtualMachineError as ex:
-                    print(f" ERROR removing liquidity at {price / 10**18:.1f}: {ex}")
-                    buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
+                # try:
+                remove_quote_token(lenders[user_index], user_index, price, pool)
+                # except VirtualMachineError as ex:
+                #     print(f" ERROR removing liquidity at {price / 10**18:.1f}: {ex}")
+                #     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             elif utilization > 0.60:
                 liquidity_coefficient = 1.05 if utilization > pool.getPoolTargetUtilization() / 10**18 else 1.0
                 price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, gas_validator,
@@ -246,11 +246,12 @@ def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, liqu
 
 def remove_quote_token(lender, lender_index, price, pool):
     lp_balance = pool.getLPTokenBalance(lender, price)  # FIXME: view intermittently reverts
-    (_, _, _, quote, _, _, lp_outstanding, _) = pool.bucketAt(price)
+    # (_, _, _, quote, _, _, lp_outstanding, _) = pool.bucketAt(price)  # FIXME: view intermittently reverts
     if lp_balance > 0:
-        assert lp_outstanding > 0
+        # assert lp_outstanding > 0
         (_, claimable_quote) = pool.getLPTokenExchangeValue(lp_balance, price)
-        print(f" lender {lender_index} removing {claimable_quote / 10**27:.1f} at {price / 10**18:.1f}")
+        print(f" lender {lender_index} removing {claimable_quote / 10**45:.1f} at {price / 10**18:.1f}")
+        # FIXME: getting AmountExceedsClaimable although I'm only trying to claim based what I'm entitled to
         pool.removeQuoteToken(lender, claimable_quote / 10**27, price, {"from": lender})
 
 
