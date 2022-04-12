@@ -4,6 +4,7 @@ pragma solidity 0.8.11;
 import {DSTestPlus} from "./utils/DSTestPlus.sol";
 import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
 import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
+import "../libraries/BucketMath.sol";
 
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
@@ -253,6 +254,140 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             pool.lpBalance(address(lender), 5_007.644384905151472283 * 1e18),
             40_000 * 1e27
         );
+    }
+
+    function testDepositQuoteTokenWithReallocation() public {
+        // Lender deposits into three buckets
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            1_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            1_000 * 1e18,
+            3_010.892022197881557845 * 1e18
+        );
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            1_000 * 1e18,
+            2_000.221618840727700609 * 1e18
+        );
+
+        // Borrower draws debt from all three
+        borrower.addCollateral(pool, 10 * 1e18);
+        borrower.borrow(pool, 2_400 * 1e18, 0);
+        (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(
+            4_000.927678580567537368 * 1e18
+        );
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            3_010.892022197881557845 * 1e18
+        );
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            2_000.221618840727700609 * 1e18
+        );
+        assertEq(deposit, 600 * 1e45);
+        assertEq(debt, 400 * 1e45);
+
+        // Lender deposits more into the middle bucket, causing reallocation
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            2_000 * 1e18,
+            3_010.892022197881557845 * 1e18
+        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            4_000.927678580567537368 * 1e18
+        );
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            3_010.892022197881557845 * 1e18
+        );
+        assertEq(deposit, 1_600 * 1e45);
+        assertEq(debt, 1_400 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            2_000.221618840727700609 * 1e18
+        );
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+
+        // Lender deposits in the top bucket, causing another reallocation
+        lender.addQuoteToken(
+            pool,
+            address(lender),
+            3_000 * 1e18,
+            4_000.927678580567537368 * 1e18
+        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            4_000.927678580567537368 * 1e18
+        );
+        assertEq(deposit, 1600 * 1e45);
+        assertEq(debt, 2_400 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            3_010.892022197881557845 * 1e18
+        );
+        assertEq(deposit, 3_000 * 1e45);
+        assertEq(debt, 0);
+        (, , , deposit, debt, , , ) = pool.bucketAt(
+            2_000.221618840727700609 * 1e18
+        );
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+    }
+
+    function testDepositQuoteTokenAtLup() public {
+        // Adjacent prices
+        uint256 p2850 = 2850.155149230026939621 * 1e18;  // index 1595
+        uint256 p2835 = 2835.975272865698470386 * 1e18;  // index 1594
+        uint256 p2821 = 2821.865943149948749647 * 1e18;  // index 1593
+        uint256 p2807 = 2807.826809104426639178 * 1e18;  // index 1592
+
+        // Lender deposits 1000 in each bucket
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2850);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2835);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2821);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2807);
+
+        // Borrower draws 2000 debt fully utilizing the LUP
+        borrower.addCollateral(pool, 10 * 1e18);
+        borrower.borrow(pool, 2_000 * 1e18, 0);
+        (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(p2850);
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2835);
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2821);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2807);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(pool.lup(), p2835);
+
+        // Lender deposits 1400 at LUP
+        lender.addQuoteToken(pool, address(lender1), 1_400 * 1e18, p2835);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2850);
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2835);
+        assertEq(deposit, 1_400 * 1e45);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2821);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2807);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(pool.lup(), p2835);
     }
 
     function testRemoveQuoteTokenNoLoan() public {

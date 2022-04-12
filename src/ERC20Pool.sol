@@ -177,7 +177,7 @@ contract ERC20Pool is IPool, Clone {
 
         // deposit amount with RAD precision
         _amount = Maths.wadToRad(_amount);
-        bool reallocate = (totalDebt != 0 && _price >= lup);
+        bool reallocate = (totalDebt != 0 && _price > lup);
         (uint256 newLup, uint256 lpTokens) = _buckets.addQuoteToken(
             _price,
             _amount,
@@ -616,7 +616,7 @@ contract ERC20Pool is IPool, Clone {
             ,
             ,
             ,
-            uint256 quote,
+            uint256 onDeposit,
             uint256 debt,
             ,
             uint256 lpOutstanding,
@@ -627,7 +627,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 lenderShare = PRBMathUD60x18.div(_lpTokens, lpOutstanding);
 
         collateralTokens = PRBMathUD60x18.mul(bucketCollateral, lenderShare);
-        quoteTokens = PRBMathUD60x18.mul(quote + debt, lenderShare);
+        quoteTokens = PRBMathUD60x18.mul(onDeposit + debt, lenderShare);
     }
 
     // -------------------- Bucket related functions --------------------
@@ -643,7 +643,7 @@ contract ERC20Pool is IPool, Clone {
             uint256 price,
             uint256 up,
             uint256 down,
-            uint256 amount,
+            uint256 onDeposit,
             uint256 debt,
             uint256 bucketInflator,
             uint256 lpOutstanding,
@@ -669,9 +669,9 @@ contract ERC20Pool is IPool, Clone {
     function getHup() public view returns (uint256) {
         uint256 curPrice = lup;
         while (true) {
-            (uint256 price, , uint256 down, uint256 amount, , , , ) = _buckets
+            (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = _buckets
                 .bucketAt(curPrice);
-            if (price == down || amount != 0) {
+            if (price == down || onDeposit != 0) {
                 break;
             }
 

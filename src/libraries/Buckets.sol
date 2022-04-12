@@ -401,7 +401,7 @@ library Buckets {
             uint256 price,
             uint256 up,
             uint256 down,
-            uint256 amount,
+            uint256 onDeposit,
             uint256 debt,
             uint256 inflatorSnapshot,
             uint256 lpOutstanding,
@@ -413,7 +413,7 @@ library Buckets {
         price = bucket.price;
         up = bucket.up;
         down = bucket.down;
-        amount = bucket.onDeposit;
+        onDeposit = bucket.onDeposit;
         debt = bucket.debt;
         inflatorSnapshot = bucket.inflatorSnapshot;
         lpOutstanding = bucket.lpOutstanding;
