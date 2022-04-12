@@ -214,6 +214,7 @@ def repay(borrower, borrower_index, pool):
             )
 
 
+@pytest.mark.skip
 def test_stable_volatile_one(
     pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain
 ):
