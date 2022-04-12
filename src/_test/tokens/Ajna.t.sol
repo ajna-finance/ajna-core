@@ -15,4 +15,10 @@ contract AjnaTokenTest is DSTestPlus {
     function testFailCannotSendTokensToContract() public {
         assert(false == token.transfer(address(token), 1));
     }
+
+    function invariantMetadata() public {
+        assertEq(token.name(), "Ajna");
+        assertEq(token.symbol(), "AJNA");
+        assertEq(token.decimals(), 18);
+    }
 }

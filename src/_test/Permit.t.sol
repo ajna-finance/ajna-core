@@ -85,15 +85,8 @@ contract PermitTest is DSTestPlus {
         return positionManager.mint(mintParams);
     }
 
-    function increaseLiquidityWithPermit() public {
-
-    }
-
-
-    // TODO: check test flow -> permit w/out contract call?
-    // TODO: check how token approvals are handled
     // https://github.com/Rari-Capital/solmate/blob/7c34ed021cfeeefb1a4bff7e511a25ce8a68806b/src/test/ERC20.t.sol#L89-L103
-    function testPermitEOA() public {
+    function testPermitAjnaNFTByEOA() public {
         uint256 privateKey = 0xBEEF;
         address owner = vm.addr(privateKey);
         address spender = generateAddress();
@@ -168,32 +161,13 @@ contract PermitTest is DSTestPlus {
         vm.prank(unapprovedSpender);
         vm.expectRevert("ajna/not-approved");
         positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
-
-        // // TODO: resolve stack too deep issue
-        // // transfer again and check nonce and approvals
-        // uint256 secondPrivateKey = 0xBE;
-        // address secondOwner = vm.addr(secondPrivateKey);
-        // mintAndApproveQuoteTokens(secondOwner, 10000 * 1e18);
-
-        // // check second EOA can be approved via Permit()
-        // (v, r, s) = vm.sign(
-        //     secondPrivateKey,
-        //     keccak256(
-        //         abi.encodePacked(
-        //             "\x19\x01",
-        //             positionManager.DOMAIN_SEPARATOR(),
-        //             keccak256(abi.encode(PERMIT_TYPEHASH, spender, tokenId, 0, deadline))
-        //         )
-        //     )
-        // );
-        // positionManager.permit(spender, tokenId, deadline, v, r, s);
-
     }
 
+    // TODO: finish implementing -> Requires updating test contracts to have an owner set to our private key, with that owner then signing a message hash provided by a contract view function.
     // contracts don't have private keys, so will have to use EIP-1271 here
     // https://soliditydeveloper.com/meta-transactions
-    function testPermitContract() public {
-        // TODO: use the privateKey to generate salt so we know the contract address
+    // https://github.com/gnosis/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/examples/libraries/SignMessage.sol#L9
+    function xtestPermitAjnaNFTByContract() public {
         uint256 privateKey = 0xBEEF;
         UserWithQuoteToken minter = new UserWithQuoteToken();
         quote.mint(address(minter), 200_000 * 1e18);

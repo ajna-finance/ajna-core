@@ -7,6 +7,8 @@ import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 import {PositionNFT} from "./base/PositionNFT.sol";
 import {IPool} from "./ERC20Pool.sol";
 
+import {PermitERC20} from "./base/PermitERC20.sol";
+
 interface IPositionManager {
     struct MintParams {
         address recipient;
@@ -67,7 +69,7 @@ interface IPositionManager {
         payable;
 }
 
-contract PositionManager is IPositionManager, PositionNFT {
+contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
     event Mint(address lender, address pool, uint256 tokenId);
     event MemorializePosition(address lender, uint256 tokenId);
     event Burn(address lender, uint256 price);
@@ -197,11 +199,6 @@ contract PositionManager is IPositionManager, PositionNFT {
         position.lpTokens[params.price] += lpTokensAdded;
 
         emit IncreaseLiquidity(params.recipient, params.amount, params.price);
-    }
-
-    // TODO: figure out how to check access -- if permitting can't use isAuthorized..
-    function increaseLiquidityWithPermit(IncreaseLiquidityParams calldata params, uint8 v, bytes32 r, bytes32 s) external payable {
-
     }
 
     /// @notice Called by lenders to remove liquidity from an existing position
