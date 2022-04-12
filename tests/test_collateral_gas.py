@@ -15,16 +15,16 @@ def test_add_remove_collateral_gas(
     with test_utils.GasWatcher(["addQuoteToken", "addCollateral", "removeCollateral"]):
         mkr_dai_pool.addQuoteToken(
             lenders[0],
-            20_000 * 1e18,
+            20_000 * 10**18,
             bucket_math.indexToPrice(1708),
             {"from": lenders[0]},
         )
         tx_add_collateral = mkr_dai_pool.addCollateral(
-            100 * 1e18, {"from": borrowers[0]}
+            100 * 10**18, {"from": borrowers[0]}
         )
-        mkr_dai_pool.borrow(20_000 * 1e18, 2500 * 1e18, {"from": borrowers[0]})
+        mkr_dai_pool.borrow(20_000 * 10**18, 2500 * 10**18, {"from": borrowers[0]})
         tx_remove_collateral = mkr_dai_pool.removeCollateral(
-            10 * 1e18, {"from": borrowers[0]}
+            10 * 10**18, {"from": borrowers[0]}
         )
         with capsys.disabled():
             print("\n==================================")
@@ -53,25 +53,25 @@ def test_claim_collateral_gas(
 
         # deposit DAI in 3 buckets
         mkr_dai_pool.addQuoteToken(
-            lender, 3_000 * 1e18, bucket_math.indexToPrice(1663), {"from": lender}
+            lender, 3_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 4_000 * 1e18, bucket_math.indexToPrice(1606), {"from": lender}
+            lender, 4_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 5_000 * 1e18, bucket_math.indexToPrice(1386), {"from": lender}
+            lender, 5_000 * 10**18, bucket_math.indexToPrice(1386), {"from": lender}
         )
 
-        mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})
-        mkr_dai_pool.borrow(4_000 * 1e18, 3000 * 1e18, {"from": borrower})
+        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
+        mkr_dai_pool.borrow(4_000 * 10**18, 3000 * 10**18, {"from": borrower})
 
         # bidder purchases some of the middle bucket
         mkr_dai_pool.purchaseBid(
-            1_500 * 1e18, bucket_math.indexToPrice(1606), {"from": bidder}
+            1_500 * 10**18, bucket_math.indexToPrice(1606), {"from": bidder}
         )
 
         tx = mkr_dai_pool.claimCollateral(
-            lender, 0.4 * 1e18, bucket_math.indexToPrice(1606), {"from": lender}
+            lender, 0.4 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
         )
 
         with capsys.disabled():

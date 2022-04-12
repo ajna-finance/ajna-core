@@ -15,6 +15,8 @@ contract ERC20PoolFactory {
 
     event PoolCreated(ERC20Pool pool);
 
+    error PoolAlreadyExists();
+
     constructor() {
         implementation = new ERC20Pool();
     }
@@ -23,10 +25,9 @@ contract ERC20PoolFactory {
         external
         returns (ERC20Pool pool)
     {
-        require(
-            deployedPools[address(collateral)][address(quote)] == address(0),
-            "ajna/pool-deployed"
-        );
+        if (deployedPools[address(collateral)][address(quote)] != address(0)) {
+            revert PoolAlreadyExists();
+        }
 
         bytes memory data = abi.encodePacked(collateral, quote);
 

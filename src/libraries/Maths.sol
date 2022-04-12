@@ -6,6 +6,12 @@ library Maths {
     uint256 public constant WAD = 10**18;
     uint256 public constant ONE_WAD = 1 * WAD;
 
+    uint256 public constant RAY = 10**27;
+    uint256 public constant ONE_RAY = 1 * RAY;
+
+    uint256 public constant RAD = 10**45;
+    uint256 public constant ONE_RAD = 1 * RAD;
+
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require((z = x + y) >= x, "ds-math-add-overflow");
     }
@@ -19,11 +25,11 @@ library Maths {
     }
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, y), WAD / 2) / WAD;
+        z = mul(x, y) / WAD;
     }
 
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, WAD), y / 2) / y;
+        z = mul(x, WAD) / y;
     }
 
     function max(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -36,5 +42,45 @@ library Maths {
 
     function wad(uint256 x) internal pure returns (uint256) {
         return x * WAD;
+    }
+
+    function ray(uint256 x) internal pure returns (uint256) {
+        return x * RAY;
+    }
+
+    function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = mul(x, y) / RAY;
+    }
+
+    function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = mul(x, RAY) / y;
+    }
+
+    function rad(uint256 x) internal pure returns (uint256) {
+        return x * RAD;
+    }
+
+    function rdmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = mul(x, y) / RAD;
+    }
+
+    function rddiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        z = mul(x, RAD) / y;
+    }
+
+    function wadToRay(uint256 x) internal pure returns (uint256) {
+        return x * 10**9;
+    }
+
+    function wadToRad(uint256 x) internal pure returns (uint256) {
+        return x * RAY;
+    }
+
+    function rayToWad(uint256 x) internal pure returns (uint256) {
+        return x / 10**9;
+    }
+
+    function radToWad(uint256 x) internal pure returns (uint256) {
+        return x / 10**27;
     }
 }

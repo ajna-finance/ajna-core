@@ -17,7 +17,7 @@ def test_quote_deposit_gas_below_hdp(
         for i in reversed(range(1000, 1020)):
             tx = mkr_dai_pool.addQuoteToken(
                 lenders[0],
-                100 * 1e18,
+                100 * 10**18,
                 bucket_math.indexToPrice(i),
                 {"from": lenders[0]},
             )
@@ -42,7 +42,7 @@ def test_quote_deposit_gas_above_hdp(
         for i in range(1000, 1020):
             tx = mkr_dai_pool.addQuoteToken(
                 lenders[0],
-                100 * 1e18,
+                100 * 10**18,
                 bucket_math.indexToPrice(i),
                 {"from": lenders[0]},
             )
@@ -73,19 +73,19 @@ def test_quote_removal_from_lup_with_reallocation(
         borrower = borrowers[0]
 
         mkr_dai_pool.addQuoteToken(
-            lender, 3_400 * 1e18, bucket_math.indexToPrice(1663), {"from": lender}
+            lender, 3_400 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 3_400 * 1e18, bucket_math.indexToPrice(1606), {"from": lender}
+            lender, 3_400 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
         )
 
         # borrower takes a loan of 3000 DAI
-        mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})
-        mkr_dai_pool.borrow(3_000 * 1e18, 4000 * 1e18, {"from": borrower})
+        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
+        mkr_dai_pool.borrow(3_000 * 10**18, 4000 * 10**18, {"from": borrower})
 
         # lender removes 1000 DAI
         tx = mkr_dai_pool.removeQuoteToken(
-            lender, 1_000 * 1e18, bucket_math.indexToPrice(1663), {"from": lender}
+            lender, 1_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
         )
 
         with capsys.disabled():
@@ -113,22 +113,22 @@ def test_quote_removal_below_lup(
         borrower = borrowers[0]
 
         mkr_dai_pool.addQuoteToken(
-            lender, 5_000 * 1e18, bucket_math.indexToPrice(1663), {"from": lender}
+            lender, 5_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 5_000 * 1e18, bucket_math.indexToPrice(1606), {"from": lender}
+            lender, 5_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 5_000 * 1e18, bucket_math.indexToPrice(1524), {"from": lender}
+            lender, 5_000 * 10**18, bucket_math.indexToPrice(1524), {"from": lender}
         )
 
         # borrower takes a loan of 3000 DAI
-        mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower})
-        mkr_dai_pool.borrow(3_000 * 1e18, 4000 * 1e18, {"from": borrower})
+        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
+        mkr_dai_pool.borrow(3_000 * 10**18, 4000 * 10**18, {"from": borrower})
 
         # lender removes 1000 DAI
         tx = mkr_dai_pool.removeQuoteToken(
-            lender, 1_000 * 1e18, bucket_math.indexToPrice(1606), {"from": lender}
+            lender, 1_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
         )
 
         with capsys.disabled():

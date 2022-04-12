@@ -23,18 +23,18 @@ def test_update_interest_rate_gas(
         # raise pool utilization
         # lender deposits 10000 DAI in 3 buckets each
         mkr_dai_pool.addQuoteToken(
-            lender, 10_000 * 1e18, bucket_math.indexToPrice(1663), {"from": lender}
+            lender, 10_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 10_000 * 1e18, bucket_math.indexToPrice(1637), {"from": lender}
+            lender, 10_000 * 10**18, bucket_math.indexToPrice(1637), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 10_000 * 1e18, bucket_math.indexToPrice(1569), {"from": lender}
+            lender, 10_000 * 10**18, bucket_math.indexToPrice(1569), {"from": lender}
         )
 
         # borrower deposits 100 MKR collateral and draws debt
-        mkr_dai_pool.addCollateral(100 * 1e18, {"from": borrower1})
-        mkr_dai_pool.borrow(25_000 * 1e18, 2500 * 1e18, {"from": borrower1})
+        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower1})
+        mkr_dai_pool.borrow(25_000 * 10**18, 2500 * 10**18, {"from": borrower1})
 
         tx = mkr_dai_pool.updateInterestRate({"from": lender})
 
