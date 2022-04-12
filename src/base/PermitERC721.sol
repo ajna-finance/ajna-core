@@ -22,9 +22,11 @@ interface IPermit {
 /// @notice Functionality to enable EIP-4494 permit calls as part of interactions with Position NFTs
 /// @dev spender https://eips.ethereum.org/EIPS/eip-4494
 abstract contract PermitERC721 is ERC721, IPermit {
-
     /// @dev Gets the current nonce for a token ID and then increments it, returning the original value
-    function _getAndIncrementNonce(uint256 tokenId) internal virtual returns (uint256);
+    function _getAndIncrementNonce(uint256 tokenId)
+        internal
+        virtual
+        returns (uint256);
 
     /// @dev The hash of the name used in the permit signature verification
     bytes32 private immutable nameHash;
@@ -33,7 +35,8 @@ abstract contract PermitERC721 is ERC721, IPermit {
     bytes32 private immutable versionHash;
 
     /// @dev Value is equal to keccak256("Permit(address spender,uint256 tokenId,uint256 nonce,uint256 deadline)");
-    bytes32 public constant PERMIT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
+    bytes32 public constant PERMIT_TYPEHASH =
+        0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
 
     /// @notice Computes the nameHash and versionHash based upon constructor input
     constructor(
@@ -76,26 +79,42 @@ abstract contract PermitERC721 is ERC721, IPermit {
         bytes32 r,
         bytes32 s
     ) external payable {
-        require(block.timestamp <= deadline, 'ajna/nft-permit-expired');
+        require(block.timestamp <= deadline, "ajna/nft-permit-expired");
 
-        bytes32 digest =
-            keccak256(
-                abi.encodePacked(
-                    '\x19\x01',
-                    DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(PERMIT_TYPEHASH, spender, tokenId, _getAndIncrementNonce(tokenId), deadline))
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                DOMAIN_SEPARATOR(),
+                keccak256(
+                    abi.encode(
+                        PERMIT_TYPEHASH,
+                        spender,
+                        tokenId,
+                        _getAndIncrementNonce(tokenId),
+                        deadline
+                    )
                 )
-            );
+            )
+        );
         address owner = ownerOf(tokenId);
-        require(spender != owner, 'ERC721Permit: approval to current owner');
+        require(spender != owner, "ERC721Permit: approval to current owner");
 
         if (Address.isContract(owner)) {
             // bytes4(keccak256("isValidSignature(bytes32,bytes)") == 0x1626ba7e
-            require(IERC1271(owner).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e, 'ajna/nft-unauthorized');
+            require(
+                IERC1271(owner).isValidSignature(
+                    digest,
+                    abi.encodePacked(r, s, v)
+                ) == 0x1626ba7e,
+                "ajna/nft-unauthorized"
+            );
         } else {
             address recoveredAddress = ecrecover(digest, v, r, s);
-            require(recoveredAddress != address(0), 'ajna/nft-invalid-signature');
-            require(recoveredAddress == owner, 'ajna/nft-unauthorized');
+            require(
+                recoveredAddress != address(0),
+                "ajna/nft-invalid-signature"
+            );
+            require(recoveredAddress == owner, "ajna/nft-unauthorized");
         }
 
         _approve(spender, tokenId);

@@ -257,7 +257,11 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
     }
 
     /// @dev used for tracking nonce input to permit function
-    function _getAndIncrementNonce(uint256 tokenId) internal override returns (uint256) {
+    function _getAndIncrementNonce(uint256 tokenId)
+        internal
+        override
+        returns (uint256)
+    {
         return uint256(positions[tokenId].nonce++);
     }
 

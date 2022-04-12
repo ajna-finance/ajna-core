@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
-import {IERC20Permit} from '@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol';
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/draft-IERC20Permit.sol";
 
 /// @notice Interface used by DAI/CHAI for permit
 interface IERC20PermitAllowed {
@@ -20,7 +20,7 @@ interface IERC20PermitAllowed {
     ) external;
 }
 
-/// @notice Functionality to enable EIP-2612 permit calls as part of a multicall batch to avoid seperate token approval transactions. 
+/// @notice Functionality to enable EIP-2612 permit calls as part of a multicall batch to avoid seperate token approval transactions.
 /// @dev This is intended to be implemented by proxy contracts.
 /// @dev IfNecessary methods are added to resolve issues faced by potential front running of Permit: https://eips.ethereum.org/EIPS/eip-2612#security-considerations
 /// Front running will result in the permit call failing, but will not enable the loss of any assets.
@@ -37,7 +37,15 @@ abstract contract PermitERC20 {
         bytes32 r,
         bytes32 s
     ) public payable {
-        IERC20Permit(token).permit(owner, address(this), value, deadline, v, r, s);
+        IERC20Permit(token).permit(
+            owner,
+            address(this),
+            value,
+            deadline,
+            v,
+            r,
+            s
+        );
     }
 
     /// @notice Permits the implementing contract to spend a given amount of a token
@@ -69,7 +77,16 @@ abstract contract PermitERC20 {
         bytes32 r,
         bytes32 s
     ) public payable {
-        IERC20PermitAllowed(token).permit(owner, address(this), nonce, expiry, true, v, r, s);
+        IERC20PermitAllowed(token).permit(
+            owner,
+            address(this),
+            nonce,
+            expiry,
+            true,
+            v,
+            r,
+            s
+        );
     }
 
     /// @notice Permits the implementing contract to spend a given amount of a token

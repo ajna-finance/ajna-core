@@ -12,7 +12,6 @@ import {PositionManager, IPositionManager} from "../PositionManager.sol";
 
 import {AjnaToken} from "../tokens/Ajna.sol";
 
-
 contract PermitTest is DSTestPlus {
     PositionManager internal positionManager;
     ERC20Pool internal pool;
@@ -24,19 +23,22 @@ contract PermitTest is DSTestPlus {
     AjnaToken internal ajnaToken = new AjnaToken(10_000 * 1e18);
     ERC20Pool internal ajnaTokenPool;
 
-    bytes32 internal constant PERMIT_NFT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
+    bytes32 internal constant PERMIT_NFT_TYPEHASH =
+        0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
 
     // nonce for generating random addresses
     uint16 nonce = 0;
 
     function setUp() public {
-
         collateral = new CollateralToken();
         quote = new QuoteToken();
 
         factory = new ERC20PoolFactory();
         pool = factory.deployPool(address(collateral), address(quote));
-        ajnaTokenPool = factory.deployPool(address(collateral), address(ajnaToken));
+        ajnaTokenPool = factory.deployPool(
+            address(collateral),
+            address(ajnaToken)
+        );
 
         positionManager = new PositionManager();
     }
@@ -53,10 +55,9 @@ contract PermitTest is DSTestPlus {
         nonce++;
     }
 
-    function mintAndApproveQuoteTokens(
-        address operator,
-        uint256 mintAmount
-    ) private {
+    function mintAndApproveQuoteTokens(address operator, uint256 mintAmount)
+        private
+    {
         quote.mint(operator, mintAmount * 1e18);
 
         vm.prank(operator);
@@ -108,17 +109,25 @@ contract PermitTest is DSTestPlus {
                 abi.encodePacked(
                     "\x19\x01",
                     positionManager.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(PERMIT_NFT_TYPEHASH, spender, tokenId, 0, deadline))
+                    keccak256(
+                        abi.encode(
+                            PERMIT_NFT_TYPEHASH,
+                            spender,
+                            tokenId,
+                            0,
+                            deadline
+                        )
+                    )
                 )
             )
         );
 
-        (uint96 nonceBeforePermit,,) = positionManager.positions(tokenId);
+        (uint96 nonceBeforePermit, , ) = positionManager.positions(tokenId);
 
         positionManager.permit(spender, tokenId, deadline, v, r, s);
 
         // check that nonce has been incremented
-        (uint96 nonceAfterPermit,,) = positionManager.positions(tokenId);
+        (uint96 nonceAfterPermit, , ) = positionManager.positions(tokenId);
         assertEq(nonceAfterPermit, 1);
         assert(nonceAfterPermit > nonceBeforePermit);
 
@@ -140,7 +149,11 @@ contract PermitTest is DSTestPlus {
         uint256 balanceBeforeAdd = quote.balanceOf(owner);
 
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(owner, 10000 * 1e18 / 4, 1_004.989662429170775094 * 10**18);
+        emit IncreaseLiquidity(
+            owner,
+            (10000 * 1e18) / 4,
+            1_004.989662429170775094 * 10**18
+        );
 
         vm.prank(spender);
         positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
@@ -183,7 +196,15 @@ contract PermitTest is DSTestPlus {
                 abi.encodePacked(
                     "\x19\x01",
                     positionManager.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(PERMIT_NFT_TYPEHASH, spender, tokenId, 0, deadline))
+                    keccak256(
+                        abi.encode(
+                            PERMIT_NFT_TYPEHASH,
+                            spender,
+                            tokenId,
+                            0,
+                            deadline
+                        )
+                    )
                 )
             )
         );
@@ -191,13 +212,31 @@ contract PermitTest is DSTestPlus {
         // it should block an unapproved spender from interacting with the NFT
         vm.expectRevert("ERC721: transfer caller is not owner nor approved");
         vm.prank(unapprovedSpender);
-        positionManager.safeTransferFromWithPermit(owner, newOwner, spender, tokenId, deadline, v, r, s);
+        positionManager.safeTransferFromWithPermit(
+            owner,
+            newOwner,
+            spender,
+            tokenId,
+            deadline,
+            v,
+            r,
+            s
+        );
 
         // it should allow the permitted spender to interact with the NFT
         vm.prank(spender);
-        positionManager.safeTransferFromWithPermit(owner, newOwner, spender, tokenId, deadline, v, r, s);
+        positionManager.safeTransferFromWithPermit(
+            owner,
+            newOwner,
+            spender,
+            tokenId,
+            deadline,
+            v,
+            r,
+            s
+        );
 
-        (,address ownerAfterTransfer, ) = positionManager.positions(tokenId);
+        (, address ownerAfterTransfer, ) = positionManager.positions(tokenId);
         assertEq(newOwner, ownerAfterTransfer);
         assert(ownerAfterTransfer != owner);
     }
@@ -229,20 +268,41 @@ contract PermitTest is DSTestPlus {
                 abi.encodePacked(
                     "\x19\x01",
                     positionManager.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(PERMIT_NFT_TYPEHASH, address(contractSpender), tokenId, 0, deadline))
+                    keccak256(
+                        abi.encode(
+                            PERMIT_NFT_TYPEHASH,
+                            address(contractSpender),
+                            tokenId,
+                            0,
+                            deadline
+                        )
+                    )
                 )
             )
         );
 
-        positionManager.permit(address(contractSpender), tokenId, deadline, v, r, s);
+        positionManager.permit(
+            address(contractSpender),
+            tokenId,
+            deadline,
+            v,
+            r,
+            s
+        );
 
         // check that nonce has been incremented
-        (uint96 nonces,,) = positionManager.positions(tokenId);
+        (uint96 nonces, , ) = positionManager.positions(tokenId);
         assertEq(nonces, 1);
 
         // check that spender was approved
-        assertEq(positionManager.getApproved(tokenId), address(contractSpender));
-        assertTrue(positionManager.getApproved(tokenId) != address(unapprovedContractSpender));
+        assertEq(
+            positionManager.getApproved(tokenId),
+            address(contractSpender)
+        );
+        assertTrue(
+            positionManager.getApproved(tokenId) !=
+                address(unapprovedContractSpender)
+        );
 
         // check can add liquidity as approved contract spender
         IPositionManager.IncreaseLiquidityParams
@@ -272,7 +332,9 @@ contract PermitTest is DSTestPlus {
         ajnaToken.transfer(owner, 1 * 1e18);
         assert(ajnaToken.balanceOf(owner) > 0);
 
-        bytes32 PERMIT_ERC20_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+        bytes32 PERMIT_ERC20_TYPEHASH = keccak256(
+            "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
+        );
 
         uint256 deadline = block.timestamp + 1000000;
         uint256 permitAmount = 10 * 1e18;
@@ -286,7 +348,16 @@ contract PermitTest is DSTestPlus {
                 abi.encodePacked(
                     "\x19\x01",
                     ajnaToken.DOMAIN_SEPARATOR(),
-                    keccak256(abi.encode(PERMIT_ERC20_TYPEHASH, owner, spender, permitAmount, 0, deadline))
+                    keccak256(
+                        abi.encode(
+                            PERMIT_ERC20_TYPEHASH,
+                            owner,
+                            spender,
+                            permitAmount,
+                            0,
+                            deadline
+                        )
+                    )
                 )
             )
         );
@@ -305,5 +376,4 @@ contract PermitTest is DSTestPlus {
         assert(ajnaToken.allowance(owner, spender) > 0);
         assert(ajnaToken.allowance(owner, unapprovedSpender) == 0);
     }
-
 }
