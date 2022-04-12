@@ -16,11 +16,11 @@ library Buckets {
         uint256 price; // current bucket price
         uint256 up; // upper utilizable bucket price
         uint256 down; // next utilizable bucket price
-        uint256 onDeposit; // quote token on deposit in bucket
-        uint256 debt; // accumulated bucket debt
+        uint256 onDeposit; // quote token on deposit in bucket (RAD)
+        uint256 debt; // accumulated bucket debt (RAD)
         uint256 inflatorSnapshot; // bucket inflator snapshot
-        uint256 lpOutstanding;
-        uint256 collateral;
+        uint256 lpOutstanding; // RAY
+        uint256 collateral; // RAY
     }
 
     function addQuoteToken(

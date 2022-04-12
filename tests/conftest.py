@@ -275,10 +275,18 @@ class TestUtils:
         w = 15
         def j(text):
             return str.rjust(text, w)
-        def n(wad):
+        def nw(wad):
             return wad/1e18
-        def f(wad):
-            return f"{n(wad):>{w}.3f}"
+        def ny(ray):
+            return ray/1e27
+        def nd(rad):
+            return rad/1e45
+        def fw(wad):
+            return f"{nw(wad):>{w}.3f}"
+        def fy(ray):
+            return f"{ny(ray):>{w}.3f}"
+        def fd(rad):
+            return f"{nd(rad):>{w}.3f}"
 
         hpb = pool.hdp()
         lup = pool.lup()
@@ -312,11 +320,11 @@ class TestUtils:
                 lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
                 continue
             if csv:
-                lines.append(','.join([n(price), pointer, n(bucket_deposit), n(bucket_debt), n(bucket_collateral),
-                                       n(bucket_lp), n(bucket_inflator)]))
+                lines.append(','.join([nw(price), pointer, nd(bucket_deposit), nd(bucket_debt), ny(bucket_collateral),
+                                       ny(bucket_lp), nw(bucket_inflator)]))
             else:
-                lines.append(''.join([f(price), j(pointer), f(bucket_deposit), f(bucket_debt), f(bucket_collateral),
-                                      f(bucket_lp), f(bucket_inflator)]))
+                lines.append(''.join([fw(price), j(pointer), fd(bucket_deposit), fd(bucket_debt), fy(bucket_collateral),
+                                      fy(bucket_lp), fw(bucket_inflator)]))
         return '\n'.join(lines)
 
 

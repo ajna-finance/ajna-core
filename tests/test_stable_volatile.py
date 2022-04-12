@@ -123,10 +123,10 @@ def draw_initial_debt(borrowers, pool_client, target_utilization=0.60, limit_pri
         if pool_price == 0:
             pool_price = 3293.70191 * 10**18  # MAX_BUCKET
         collateralization_ratio = 1 / target_utilization
-        collateral_to_deposit = borrow_amount / pool_price * collateralization_ratio * 1e18
+        collateral_to_deposit = borrow_amount / pool_price * collateralization_ratio / 10**9
         assert collateral_balance > collateral_to_deposit
         pool_client.deposit_collateral(collateral_to_deposit, borrower_index)
-        pool_client.borrow(borrow_amount, borrower_index, limit_price)
+        pool_client.borrow(borrow_amount / 10**27, borrower_index, limit_price)
 
 
 def get_time_between_interactions(actor_index):
@@ -207,7 +207,7 @@ def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:
         (_, _, down, quote, _, _, _, _) = pool.bucketAt(down)
         cumulative_deposit += quote
         bucket_depth -= 1
-    return cumulative_deposit
+    return cumulative_deposit / 1e27
 
 
 def draw_debt(borrower, borrower_index, pool, gas_validator, collateralization=1.1, limit_price=2210.03602 * 1e18):
@@ -286,8 +286,8 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
-    end_time = start_time + SECONDS_PER_YEAR  # TODO: one year test
-    # end_time = start_time + SECONDS_PER_YEAR / 52
+    # end_time = start_time + SECONDS_PER_YEAR  # TODO: one year test
+    end_time = start_time + SECONDS_PER_YEAR / 52
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay', 'updateInterestRate']):
         while chain.time() < end_time:
