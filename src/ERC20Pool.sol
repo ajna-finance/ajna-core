@@ -624,10 +624,10 @@ contract ERC20Pool is IPool, Clone {
         ) = bucketAt(_price);
 
         // calculate lpTokens share of all outstanding lpTokens for the bucket
-        uint256 lenderShare = PRBMathUD60x18.div(_lpTokens, lpOutstanding);
+        uint256 lenderShare = _lpTokens / lpOutstanding;
 
-        collateralTokens = PRBMathUD60x18.mul(bucketCollateral, lenderShare);
-        quoteTokens = PRBMathUD60x18.mul(onDeposit + debt, lenderShare);
+        collateralTokens = bucketCollateral * lenderShare;
+        quoteTokens = (onDeposit + debt) * lenderShare;
     }
 
     // -------------------- Bucket related functions --------------------
