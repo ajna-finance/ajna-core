@@ -549,6 +549,7 @@ contract ERC20Pool is IPool, Clone {
         }
     }
 
+    // TODO: update precision here -> switch math libraries? https://github.com/barakman/solidity-math-utils/blob/master/project/contracts/AnalyticMath.sol
     /// @notice Calculate the pending inflator based upon previous rate and last update
     /// @return The new pending inflator value
     function getPendingInflator() public view returns (uint256) {
@@ -557,14 +558,22 @@ contract ERC20Pool is IPool, Clone {
         uint256 secondsSinceLastUpdate = block.timestamp -
             lastInflatorSnapshotUpdate;
 
+        // return
+        //     PRBMathUD60x18.mul(
+        //         inflatorSnapshot,
+        //         PRBMathUD60x18.pow(
+        //             PRBMathUD60x18.fromUint(1) + spr,
+        //             PRBMathUD60x18.fromUint(secondsSinceLastUpdate)
+        //         )
+        //     );
         return
-            PRBMathUD60x18.mul(
+            Maths.rmul(
                 inflatorSnapshot,
-                PRBMathUD60x18.pow(
-                    PRBMathUD60x18.fromUint(1) + spr,
-                    PRBMathUD60x18.fromUint(secondsSinceLastUpdate)
+                Maths.rpow(
+                    Maths.ONE_RAY + spr,
+                    Maths.ray(secondsSinceLastUpdate)
                 )
-            );
+            );            
     }
 
     /// @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
