@@ -324,7 +324,7 @@ class TestUtils:
                                        ny(bucket_lp), nw(bucket_inflator)]))
             else:
                 lines.append(''.join([fw(price), j(pointer), fd(bucket_deposit), fd(bucket_debt), fy(bucket_collateral),
-                                      fy(bucket_lp), fw(bucket_inflator)]))
+                                      fy(bucket_lp), f"{nw(bucket_inflator):>{w}.9f}"]))
         return '\n'.join(lines)
 
 

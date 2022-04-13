@@ -235,7 +235,10 @@ def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, liqu
             gas_validator.validate(tx)
             return price
         except VirtualMachineError as ex:
-            print(f" ERROR adding liquidity at {price / 10**18:.3f}: {ex}")
+            (_, _, _, _, _, bucket_inflator, _, _) = pool.bucketAt(price)
+            print(f" ERROR adding liquidity at {price / 10**18:.3f}, "
+                  f"pool.inflatorSnapshot={pool.inflatorSnapshot()/10**18} "
+                  f"bucket_inflator={bucket_inflator/10**18} \n{ex}")
             hpb_index = bucket_math.priceToIndex(pool.hdp())
             print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, hpb_index))
             assert False
@@ -250,9 +253,10 @@ def remove_quote_token(lender, lender_index, price, pool):
     if lp_balance > 0:
         # assert lp_outstanding > 0
         (_, claimable_quote) = pool.getLPTokenExchangeValue(lp_balance, price)
-        print(f" lender {lender_index} removing {claimable_quote / 10**45:.1f} at {price / 10**18:.1f}")
-        # FIXME: getting AmountExceedsClaimable although I'm only trying to claim based what I'm entitled to
-        pool.removeQuoteToken(lender, claimable_quote / 10**27, price, {"from": lender})
+        # FIXME: subtracting dust amount (1 wad) to mitigate rounding error
+        claimable_quote = claimable_quote / 10**27 - 10**18
+        print(f" lender {lender_index} removing {claimable_quote / 10**18:.1f} at {price / 10**18:.1f}")
+        pool.removeQuoteToken(lender, claimable_quote, price, {"from": lender})
 
 
 def repay(borrower, borrower_index, pool):
