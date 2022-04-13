@@ -92,7 +92,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 ERC20Pool.BorrowerIsCollateralized.selector,
-                20.066473628656401978 * 1e27
+                20.066473628656401978000000001 * 1e27
             )
         );
         lender.liquidate(pool, address(borrower2));
@@ -405,7 +405,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerPendingDebt, 14_061.711519357563040000 * 1e45);
         assertEq(collateralDeposited, 2 * 1e27);
         assertEq(collateralEncumbered, 140.151296930183124225206913837 * 1e27);
-        assertEq(collateralization, 0.014270292489667842588863822 * 1e27);
+        assertEq(collateralization, 0.014270292489667842588863823 * 1e27);
         assertEq(borrowerInflator, 1 * 1e18);
 
         // liquidate borrower
