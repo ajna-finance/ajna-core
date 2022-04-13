@@ -21,7 +21,7 @@ contract ERC20PoolFactory {
         implementation = new ERC20Pool();
     }
 
-    function deployPool(ERC20 collateral, ERC20 quote)
+    function deployPool(address collateral, address quote)
         external
         returns (ERC20Pool pool)
     {
@@ -46,6 +46,6 @@ contract ERC20PoolFactory {
         return deployedPools[address(collateral)][address(quote)] != address(0);
     }
 
-    // https://ethereum.stackexchange.com/questions/100025/calculate-deterministic-address-with-create2-when-cloning-contract-with-factory
+    // TODO: https://ethereum.stackexchange.com/questions/100025/calculate-deterministic-address-with-create2-when-cloning-contract-with-factory
     // function predictCloneAddress()
 }

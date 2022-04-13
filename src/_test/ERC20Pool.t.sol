@@ -28,7 +28,7 @@ contract ERC20PoolTest is DSTestPlus {
         quote = new QuoteToken();
 
         ERC20PoolFactory factory = new ERC20PoolFactory();
-        pool = factory.deployPool(collateral, quote);
+        pool = factory.deployPool(address(collateral), address(quote));
     }
 
     function testDeploy() public {

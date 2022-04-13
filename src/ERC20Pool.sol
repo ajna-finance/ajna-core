@@ -669,8 +669,16 @@ contract ERC20Pool is IPool, Clone {
     function getHup() public view returns (uint256) {
         uint256 curPrice = lup;
         while (true) {
-            (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = _buckets
-                .bucketAt(curPrice);
+            (
+                uint256 price,
+                ,
+                uint256 down,
+                uint256 onDeposit,
+                ,
+                ,
+                ,
+
+            ) = _buckets.bucketAt(curPrice);
             if (price == down || onDeposit != 0) {
                 break;
             }

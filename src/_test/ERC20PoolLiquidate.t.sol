@@ -24,7 +24,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         quote = new QuoteToken();
 
         ERC20PoolFactory factory = new ERC20PoolFactory();
-        pool = factory.deployPool(collateral, quote);
+        pool = factory.deployPool(address(collateral), address(quote));
 
         borrower = new UserWithCollateral();
         collateral.mint(address(borrower), 2 * 1e18);
