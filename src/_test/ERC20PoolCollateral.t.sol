@@ -421,11 +421,11 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             .bucketAt(9_020.461710444470171420 * 1e18);
         assertEq(debt, 0);
         assertEq(deposit, 0);
-        assertEq(lpOutstanding, 0.000000000000006136510456709 * 1e27);
+        assertEq(lpOutstanding, 0.000000000000006136510456708 * 1e27);
         assertEq(bucketCollateral, 0.000000000000000000680287844 * 1e27);
         assertEq(
             pool.lpBalance(address(lender), 9_020.461710444470171420 * 1e18),
-            0.000000000000006136510456709 * 1e27
+            0.000000000000006136510456708 * 1e27
         );
 
         // claim collateral and deactivate bucket 10_016.501589292607751220
