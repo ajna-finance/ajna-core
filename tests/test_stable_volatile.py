@@ -163,11 +163,11 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
             utilization = pool.getPoolActualUtilization() / 10**18
             if len(buckets_deposited[user_index]) > 3:  # if lender is in too many buckets, pull out of one
                 price = buckets_deposited[user_index].pop()
-                # try:
-                remove_quote_token(lenders[user_index], user_index, price, pool)
-                # except VirtualMachineError as ex:
-                #     print(f" ERROR removing liquidity at {price / 10**18:.1f}: {ex}")
-                #     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
+                try:
+                    remove_quote_token(lenders[user_index], user_index, price, pool)
+                except VirtualMachineError as ex:
+                    print(f" ERROR removing liquidity at {price / 10**18:.1f}: {ex}")
+                    buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             elif utilization > 0.60:
                 liquidity_coefficient = 1.05 if utilization > pool.getPoolTargetUtilization() / 10**18 else 1.0
                 price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, gas_validator,
@@ -231,14 +231,12 @@ def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, liqu
     if dai.balanceOf(lender) > quantity:
         print(f" lender {lender_index} adding {quantity / 10**18:.1f} liquidity at {price / 10**18:.1f}")
         try:
-            tx = pool.addQuoteToken(lender, quantity, price, {"from": lender})  # FIXME: reverts without useful trace
+            tx = pool.addQuoteToken(lender, quantity, price, {"from": lender})
             gas_validator.validate(tx)
             return price
         except VirtualMachineError as ex:
             (_, _, _, _, _, bucket_inflator, _, _) = pool.bucketAt(price)
-            print(f" ERROR adding liquidity at {price / 10**18:.3f}, "
-                  f"pool.inflatorSnapshot={pool.inflatorSnapshot()/10**18} "
-                  f"bucket_inflator={bucket_inflator/10**18} \n{ex}")
+            print(f" ERROR adding liquidity at {price / 10**18:.1f}\n{ex}")
             hpb_index = bucket_math.priceToIndex(pool.hdp())
             print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, hpb_index))
             assert False
@@ -257,27 +255,30 @@ def remove_quote_token(lender, lender_index, price, pool):
         claimable_quote = claimable_quote / 10**27 - 10**18
         print(f" lender {lender_index} removing {claimable_quote / 10**18:.1f} at {price / 10**18:.1f}")
         pool.removeQuoteToken(lender, claimable_quote, price, {"from": lender})
+    else:
+        print(f" lender {lender_index} has no claim to bucket {price / 10**18:.1f}")
 
 
 def repay(borrower, borrower_index, pool):
     dai = Contract(pool.quoteToken())
     (debt, pending_debt, _, _, _, _, _) = pool.getBorrowerInfo(borrower)
+    pending_debt = pending_debt / 10**27  # convert RAD to WAD
     quote_balance = dai.balanceOf(borrower)
-    if pending_debt > 1000 * 10**45:
+    if pending_debt > 1000 * 10**18:
         if quote_balance > 100 * 10**18:
             repay_amount = min(pending_debt * 1.05, quote_balance)
-            print(f" borrower {borrower_index} is repaying {repay_amount / 10**45:.1f}")
-            pool.repay(repay_amount / 10**27, {"from": borrower})
+            print(f" borrower {borrower_index} is repaying {repay_amount / 10**18:.1f}")
+            pool.repay(repay_amount, {"from": borrower})
             (_, _, collateral_deposited, collateral_encumbered, _, _, _) = pool.getBorrowerInfo(borrower)
             # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
             collateral_to_withdraw = collateral_deposited - (collateral_encumbered * 1.667)
-            pool.removeCollateral(collateral_to_withdraw, {"from": borrower})
+            print(f" borrower {borrower_index} is withdrawing {collateral_to_withdraw / 10**27:.1f} collateral")
+            pool.removeCollateral(collateral_to_withdraw / 10**9, {"from": borrower})
         else:
-            print(
-                f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}"
-            )
+            print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
-@pytest.mark.skip
+
+# @pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth
