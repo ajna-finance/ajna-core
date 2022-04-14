@@ -13,14 +13,14 @@ library Buckets {
     error InsufficientBucketLiquidity(uint256 amountAvailable);
 
     struct Bucket {
-        uint256 price; // current bucket price
-        uint256 up; // upper utilizable bucket price
-        uint256 down; // next utilizable bucket price
-        uint256 onDeposit; // quote token on deposit in bucket
-        uint256 debt; // accumulated bucket debt
-        uint256 inflatorSnapshot; // bucket inflator snapshot
-        uint256 lpOutstanding;
-        uint256 collateral;
+        uint256 price; // WAD current bucket price
+        uint256 up; // WAD upper utilizable bucket price
+        uint256 down; // WAD next utilizable bucket price
+        uint256 onDeposit; // RAD quote token on deposit in bucket
+        uint256 debt; // RAD accumulated bucket debt
+        uint256 inflatorSnapshot; // RAY bucket inflator snapshot
+        uint256 lpOutstanding; // RAY outstanding Liquidity Provider LP tokens in a bucket
+        uint256 collateral; // RAY Current collateral tokens deposited in the bucket
     }
 
     function addQuoteToken(
@@ -35,7 +35,7 @@ library Buckets {
 
         accumulateBucketInterest(bucket, _inflator);
 
-        lpTokens = _amount / getExchangeRate(bucket);
+        lpTokens = Maths.rdiv(Maths.radToRay(_amount), getExchangeRate(bucket));
         bucket.lpOutstanding += lpTokens;
         bucket.onDeposit += _amount;
 
@@ -47,10 +47,10 @@ library Buckets {
 
     function removeQuoteToken(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _price,
-        uint256 _amount,
-        uint256 _lpBalance,
-        uint256 _inflator
+        uint256 _price, // WAD
+        uint256 _amount, // RAD
+        uint256 _lpBalance, // RAY
+        uint256 _inflator // RAY
     ) public returns (uint256 lup, uint256 lpTokens) {
         Bucket storage bucket = buckets[_price];
 
@@ -58,13 +58,13 @@ library Buckets {
 
         uint256 exchangeRate = getExchangeRate(bucket);
 
-        uint256 claimable = _lpBalance * exchangeRate;
+        uint256 claimable = Maths.rmul(_lpBalance, exchangeRate);
 
-        if (_amount > claimable) {
+        if (_amount > Maths.rayToRad(claimable)) {
             revert AmountExceedsClaimable({rightToClaim: claimable});
         }
 
-        lpTokens = _amount / exchangeRate;
+        lpTokens = Maths.rdiv(Maths.radToRay(_amount), exchangeRate);
 
         // Remove from deposit first
         uint256 removeFromDeposit = Maths.min(_amount, bucket.onDeposit);
@@ -79,9 +79,9 @@ library Buckets {
 
     function claimCollateral(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _price,
-        uint256 _amount,
-        uint256 _lpBalance
+        uint256 _price, // WAD
+        uint256 _amount, // RAY
+        uint256 _lpBalance // RAY
     ) public returns (uint256 lpRedemption) {
         Bucket storage bucket = buckets[_price];
 
@@ -92,8 +92,8 @@ library Buckets {
         }
 
         uint256 exchangeRate = getExchangeRate(bucket);
-        lpRedemption = Maths.wdiv(
-            Maths.wmul(_amount, bucket.price),
+        lpRedemption = Maths.rdiv(
+            Maths.rmul(_amount, Maths.wadToRay(bucket.price)),
             exchangeRate
         );
 
@@ -105,12 +105,15 @@ library Buckets {
         bucket.lpOutstanding -= lpRedemption;
     }
 
+    /// @notice Allow a borrower to borrow from a given bucket
+    /// @return lup WAD The price at which the borrow executed
+    /// @return loanCost RAD The amount of quote tokens removed from the bucket
     function borrow(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _amount,
-        uint256 _stop, // lowest price desired to borrow at
-        uint256 _lup, // lowest utilized price
-        uint256 _inflator
+        uint256 _amount, // RAD total quote tokens to borrow from the bucket
+        uint256 _stop, // WAD - lowest price desired to borrow at
+        uint256 _lup, // WAD - lowest utilized price
+        uint256 _inflator // RAY - Current Inflator value
     ) public returns (uint256 lup, uint256 loanCost) {
         Bucket storage curLup = buckets[_lup];
         uint256 amountRemaining = _amount;
@@ -128,13 +131,13 @@ library Buckets {
                 // take all on deposit from this bucket
                 curLup.debt += curLup.onDeposit;
                 amountRemaining -= curLup.onDeposit;
-                loanCost += curLup.onDeposit / curLup.price;
+                loanCost += Maths.rayToRad(Maths.rdiv(Maths.radToRay(curLup.onDeposit), Maths.wadToRay(curLup.price)));
                 curLup.onDeposit -= curLup.onDeposit;
             } else {
                 // take all remaining amount for loan from this bucket and exit
                 curLup.onDeposit -= amountRemaining;
                 curLup.debt += amountRemaining;
-                loanCost += amountRemaining / curLup.price;
+                loanCost += Maths.rayToRad(Maths.rdiv(Maths.radToRay(amountRemaining), Maths.wadToRay(curLup.price)));
                 break;
             }
 
@@ -151,9 +154,9 @@ library Buckets {
 
     function repay(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _amount,
-        uint256 _lup,
-        uint256 _inflator
+        uint256 _amount, // RAD - Amount of quote tokens to repay to the bucket
+        uint256 _lup, // WAD - The current pool lup
+        uint256 _inflator // RAY - Current Inflator value
     ) public returns (uint256, uint256) {
         Bucket storage curLup = buckets[_lup];
         uint256 debtToPay;
@@ -192,15 +195,15 @@ library Buckets {
 
     function purchaseBid(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _price,
-        uint256 _amount,
-        uint256 _collateral,
-        uint256 _inflator
+        uint256 _price, // WAD
+        uint256 _amount, // RAD
+        uint256 _collateral, // RAY
+        uint256 _inflator // RAY - Current Inflator value
     ) public returns (uint256 lup) {
         Bucket storage bucket = buckets[_price];
         accumulateBucketInterest(bucket, _inflator);
 
-        uint256 available = bucket.onDeposit + bucket.debt;
+        uint256 available = Maths.add(bucket.onDeposit, bucket.debt);
         if (_amount > available) {
             revert InsufficientBucketLiquidity({amountAvailable: available});
         }
@@ -218,10 +221,10 @@ library Buckets {
 
     function liquidate(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _debt,
-        uint256 _collateral,
-        uint256 _hdp,
-        uint256 _inflator
+        uint256 _debt, // RAD
+        uint256 _collateral, // RAY
+        uint256 _hdp, // WAD
+        uint256 _inflator // RAY - Current Inflator value
     ) public returns (uint256 requiredCollateral) {
         Bucket storage bucket = buckets[_hdp];
 
@@ -229,9 +232,10 @@ library Buckets {
             accumulateBucketInterest(bucket, _inflator);
             uint256 bucketDebtToPurchase = Maths.min(_debt, bucket.debt);
 
+            uint256 debtByPriceRay = Maths.rdiv(Maths.radToRay(_debt), Maths.wadToRay(bucket.price));
             uint256 bucketRequiredCollateral = Maths.min(
-                Maths.min(_debt / bucket.price, _collateral),
-                bucket.debt / bucket.price
+                Maths.min(debtByPriceRay, _collateral),
+                debtByPriceRay
             );
 
             _debt -= bucketDebtToPurchase;
@@ -260,8 +264,8 @@ library Buckets {
     function reallocateDown(
         mapping(uint256 => Bucket) storage buckets,
         Bucket storage _bucket,
-        uint256 _amount,
-        uint256 _inflator
+        uint256 _amount, // RAD
+        uint256 _inflator // RAY - Current Inflator value
     ) private returns (uint256 lup) {
         lup = _bucket.price;
         // debt reallocation
@@ -309,12 +313,13 @@ library Buckets {
         }
     }
 
+    /// @notice Moves
     function reallocateUp(
         mapping(uint256 => Bucket) storage buckets,
         Bucket storage _bucket,
         uint256 _amount,
         uint256 _lup,
-        uint256 _inflator
+        uint256 _inflator // RAY - Current Inflator value
     ) private returns (uint256) {
         Bucket storage curLup = buckets[_lup];
 
@@ -355,14 +360,17 @@ library Buckets {
         return curLup.price;
     }
 
+    /// @notice Update bucket.debt with interest accumulated since last state change
+    /// @param bucket The bucket being updated
+    /// @param _inflator RAY - The current bucket inflator value
     function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator)
         private
     {
         if (bucket.debt != 0) {
-            bucket.debt += Maths.wmul(
-                bucket.debt,
-                Maths.wdiv(_inflator, bucket.inflatorSnapshot) - Maths.ONE_WAD
-            );
+            bucket.debt += Maths.rayToRad(Maths.rmul(
+                Maths.radToRay(bucket.debt),
+                Maths.sub(Maths.rdiv(_inflator, bucket.inflatorSnapshot), Maths.ONE_RAY)
+            ));
             bucket.inflatorSnapshot = _inflator;
         }
     }
@@ -420,6 +428,10 @@ library Buckets {
         collateral = bucket.collateral;
     }
 
+    // TODO: replace + with Maths.add()
+    /// @notice Calculate the current exchange rate for Quote tokens / LP Tokens
+    /// @dev Performs calculations in RAY terms and rounds up to determine size to minimize precision loss
+    /// @return RAY The current rate at which quote tokens can be exchanged for LP tokens
     function getExchangeRate(Bucket storage bucket)
         internal
         view
@@ -427,12 +439,11 @@ library Buckets {
     {
         uint256 size = bucket.onDeposit +
             bucket.debt +
-            bucket.collateral *
-            bucket.price;
+            Maths.rayToRad(Maths.rmul(bucket.collateral, Maths.wadToRay(bucket.price)));
         if (size != 0 && bucket.lpOutstanding != 0) {
-            size / bucket.lpOutstanding;
+            Maths.rdiv(Maths.radToRay(size), bucket.lpOutstanding);
         }
-        return Maths.ONE_WAD;
+        return Maths.ONE_RAY;
     }
 
     function initializeBucket(
