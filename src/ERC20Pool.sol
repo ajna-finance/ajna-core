@@ -12,6 +12,8 @@ import "./libraries/Maths.sol";
 import "./libraries/BucketMath.sol";
 import "./libraries/Buckets.sol";
 
+import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
+
 interface IPool {
     function addQuoteToken(
         address _recipient,
@@ -82,7 +84,7 @@ contract ERC20Pool is IPool, Clone {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
 
-    uint256 public inflatorSnapshot; // WAD
+    uint256 public inflatorSnapshot; // RAY
     uint256 public lastInflatorSnapshotUpdate;
     uint256 public previousRate; // WAD
     uint256 public previousRateUpdate;
@@ -141,7 +143,7 @@ contract ERC20Pool is IPool, Clone {
         collateralScale = 10**(27 - collateral().decimals());
         quoteTokenScale = 10**(45 - quoteToken().decimals());
 
-        inflatorSnapshot = Maths.ONE_WAD;
+        inflatorSnapshot = Maths.ONE_RAY;
         lastInflatorSnapshotUpdate = block.timestamp;
         previousRate = Maths.wdiv(5, 100);
         previousRateUpdate = block.timestamp;
@@ -204,6 +206,7 @@ contract ERC20Pool is IPool, Clone {
 
         // TODO: add require to ensure quote tokens were transferred successfully
 
+        //  TODO: emit _amount / quoteTokenScale
         emit AddQuoteToken(_recipient, _price, _amount, lup);
         return lpTokens;
     }
@@ -244,6 +247,7 @@ contract ERC20Pool is IPool, Clone {
 
         lpBalance[_recipient][_price] -= lpTokens;
 
+        //  TODO: emit _amount / quoteTokenScale
         quoteToken().safeTransfer(_recipient, _amount / quoteTokenScale);
         emit RemoveQuoteToken(_recipient, _price, _amount, lup);
     }
@@ -365,6 +369,7 @@ contract ERC20Pool is IPool, Clone {
             inflatorSnapshot
         );
 
+        // TODO: fix precision mismatch here - amount is rad
         if (borrower.collateralDeposited <= (borrower.debt + _amount) / lup) {
             revert InsufficientCollateralForBorrow();
         }
@@ -383,7 +388,7 @@ contract ERC20Pool is IPool, Clone {
     }
 
     /// @notice Called by a borrower to repay some amount of their borrowed quote tokens
-    /// @param _maxAmount The maximum amount of quote token to repay
+    /// @param _maxAmount WAD The maximum amount of quote token to repay
     function repay(uint256 _maxAmount) external {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) *
             quoteTokenScale;
@@ -513,6 +518,7 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Called by lenders to update interest rate of the pool when actual > target utilization
     function updateInterestRate() external {
+        // RAY
         uint256 actualUtilization = getPoolActualUtilization();
         if (actualUtilization != 0 && previousRateUpdate < block.timestamp) {
             uint256 oldRate = previousRate;
@@ -522,8 +528,8 @@ contract ERC20Pool is IPool, Clone {
                 previousRate,
                 (
                     Maths.sub(
-                        actualUtilization + Maths.ONE_WAD,
-                        getPoolTargetUtilization()
+                        Maths.add(Maths.rayToWad(actualUtilization), Maths.ONE_WAD),
+                        Maths.rayToWad(getPoolTargetUtilization())
                     )
                 )
             );
@@ -536,13 +542,15 @@ contract ERC20Pool is IPool, Clone {
     /// @dev Requires time to have passed between update calls
     function accumulatePoolInterest() private {
         if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
+            // RAY
             uint256 pendingInflator = getPendingInflator();
 
-            totalDebt += getPendingInterest(
+            // RAD
+            totalDebt += Maths.rayToRad(getPendingBookInterest(
                 totalDebt,
                 pendingInflator,
                 inflatorSnapshot
-            );
+            ));
 
             inflatorSnapshot = pendingInflator;
             lastInflatorSnapshotUpdate = block.timestamp;
@@ -554,7 +562,9 @@ contract ERC20Pool is IPool, Clone {
     /// @return The new pending inflator value
     function getPendingInflator() public view returns (uint256) {
         // calculate annualized interest rate
-        uint256 spr = previousRate / SECONDS_PER_YEAR;
+        uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
+
+        // secondsSinceLastUpdate is unscaled
         uint256 secondsSinceLastUpdate = block.timestamp -
             lastInflatorSnapshotUpdate;
 
@@ -566,12 +576,13 @@ contract ERC20Pool is IPool, Clone {
         //             PRBMathUD60x18.fromUint(secondsSinceLastUpdate)
         //         )
         //     );
+
         return
             Maths.rmul(
                 inflatorSnapshot,
                 Maths.rpow(
-                    Maths.ONE_RAY + spr,
-                    Maths.ray(secondsSinceLastUpdate)
+                    Maths.add(Maths.ONE_RAY, spr),
+                    secondsSinceLastUpdate
                 )
             );            
     }
@@ -582,7 +593,7 @@ contract ERC20Pool is IPool, Clone {
         private
     {
         if (_borrower.debt != 0 && _borrower.inflatorSnapshot != 0) {
-            _borrower.debt += getPendingInterest(
+            _borrower.debt += getPendingBorrowerInterest(
                 _borrower.debt,
                 inflatorSnapshot,
                 _borrower.inflatorSnapshot
@@ -591,7 +602,28 @@ contract ERC20Pool is IPool, Clone {
         _borrower.inflatorSnapshot = inflatorSnapshot;
     }
 
-    function getPendingInterest(
+    /// @notice Calculate the next interest rate given the state of the book
+    /// @param _debt RAD - The total book debt
+    /// @param _pendingInflator RAY - The next debt inflator value
+    /// @param _currentInflator RAY - The current debt inflator value
+    /// @return RAY - The additional debt accumulated to the pool
+    function getPendingBookInterest(
+        uint256 _debt,
+        uint256 _pendingInflator,
+        uint256 _currentInflator
+    ) private pure returns (uint256) {
+        return
+            Maths.rmul(
+                Maths.radToRay(_debt),
+                Maths.sub(Maths.rmul(_pendingInflator, _currentInflator), Maths.ONE_RAY)
+            );
+    }
+
+    /// @notice Calculate the next interest rate for a borrower given the state of the book
+    /// @param _debt WAD - The borrower debt to which interest is being charged
+    /// @param _pendingInflator RAY - The next debt inflator value
+    /// @param _currentInflator RAY - The current debt inflator value
+    function getPendingBorrowerInterest(
         uint256 _debt,
         uint256 _pendingInflator,
         uint256 _currentInflator
@@ -599,7 +631,7 @@ contract ERC20Pool is IPool, Clone {
         return
             Maths.wmul(
                 _debt,
-                Maths.wdiv(_pendingInflator, _currentInflator) - Maths.ONE_WAD
+                Maths.sub(Maths.wdiv(Maths.rayToWad(_pendingInflator), Maths.rayToWad(_currentInflator)), Maths.ONE_WAD)
             );
     }
 
@@ -702,29 +734,33 @@ contract ERC20Pool is IPool, Clone {
         return curPrice;
     }
 
+    /// @return RAY - The current minimum pool price
     function getMinimumPoolPrice() public view returns (uint256) {
         if (totalDebt != 0) {
-            return Maths.wdiv(totalDebt, totalCollateral);
+            return Maths.rdiv(Maths.radToRay(totalDebt), totalCollateral);
         }
         return 0;
     }
 
     function getPoolCollateralization() public view returns (uint256) {
         if (lup != 0 && totalDebt != 0) {
-            return Maths.rdiv(totalCollateral, totalDebt / lup);
+            return Maths.rdiv(totalCollateral, Maths.rdiv(Maths.radToRay(totalDebt), Maths.wadToRay(lup)));
         }
         return Maths.ONE_RAY;
     }
 
+    // TODO: fix this
+    /// @return RAY - The current pool actual utilization
     function getPoolActualUtilization() public view returns (uint256) {
         if (totalQuoteToken != 0) {
-            return Maths.wdiv(totalDebt, (totalQuoteToken + totalDebt));
+            return Maths.rdiv(Maths.radToRay(totalDebt), Maths.add(Maths.radToRay(totalQuoteToken), Maths.radToRay(totalDebt)));
         }
         return 0;
     }
 
+    /// @return RAY - The current pool target utilization
     function getPoolTargetUtilization() public view returns (uint256) {
-        return Maths.wdiv(Maths.ONE_RAY, getPoolCollateralization());
+        return Maths.rdiv(Maths.ONE_RAY, getPoolCollateralization());
     }
 
     // -------------------- Borrower related functions --------------------
@@ -749,12 +785,12 @@ contract ERC20Pool is IPool, Clone {
         uint256 collateralization;
 
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
-            borrowerDebt += getPendingInterest(
+            borrowerDebt += getPendingBorrowerInterest(
                 borrower.debt,
                 inflatorSnapshot,
                 borrower.inflatorSnapshot
             );
-            borrowerPendingDebt += getPendingInterest(
+            borrowerPendingDebt += getPendingBorrowerInterest(
                 borrower.debt,
                 getPendingInflator(),
                 borrower.inflatorSnapshot

@@ -37,7 +37,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
     function testInflator() public {
         uint256 inflatorSnapshot = pool.inflatorSnapshot();
         uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
-        assertEq(inflatorSnapshot, 1 * 1e18);
+        assertEq(inflatorSnapshot, 1 * 1e27);
         assertEq(lastInflatorSnapshotUpdate, block.timestamp);
 
         skip(8200);

@@ -84,7 +84,15 @@ library Maths {
         return x / 10**9;
     }
 
+    function rayToRad(uint256 x) internal pure returns (uint256) {
+        return x * 10**18;
+    }
+
     function radToWad(uint256 x) internal pure returns (uint256) {
         return x / 10**27;
+    }
+
+    function radToRay(uint256 x) internal pure returns (uint256) {
+        return x / 10**18;
     }
 }
