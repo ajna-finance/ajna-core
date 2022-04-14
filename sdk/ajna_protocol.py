@@ -137,8 +137,6 @@ class AjnaProtocol:
             collateral_address, quote_token_address
         )
 
-        print(f"pool add - {pool_address}")
-
         is_deployed = (
             True
             if pool_address != "0x0000000000000000000000000000000000000000"

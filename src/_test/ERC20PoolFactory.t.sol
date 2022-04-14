@@ -36,7 +36,6 @@ contract PoolFactoryTest is DSTestPlus {
 
         vm.expectRevert(ERC20PoolFactory.WethOnly.selector);
         factory.deployPool(address(0), address(collateral));
-        assertEq(address(collateral), address(quote));
     }
 
     function testDeployPoolTwice() public {
