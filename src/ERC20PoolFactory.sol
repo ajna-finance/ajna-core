@@ -15,6 +15,7 @@ contract ERC20PoolFactory {
 
     event PoolCreated(ERC20Pool pool);
 
+    error WethOnly();
     error PoolAlreadyExists();
 
     constructor() {
@@ -25,7 +26,11 @@ contract ERC20PoolFactory {
         external
         returns (ERC20Pool pool)
     {
-        if (deployedPools[address(collateral)][address(quote)] != address(0)) {
+        if (collateral == address(0) || quote == address(0)) {
+            revert WethOnly();
+        }
+
+        if (deployedPools[collateral][quote] != address(0)) {
             revert PoolAlreadyExists();
         }
 
@@ -34,16 +39,8 @@ contract ERC20PoolFactory {
         pool = ERC20Pool(address(implementation).clone(data));
         pool.initialize();
 
-        deployedPools[address(collateral)][address(quote)] = address(pool);
+        deployedPools[collateral][quote] = address(pool);
         emit PoolCreated(pool);
-    }
-
-    function isPoolDeployed(ERC20 collateral, ERC20 quote)
-        external
-        view
-        returns (bool)
-    {
-        return deployedPools[address(collateral)][address(quote)] != address(0);
     }
 
     // TODO: https://ethereum.stackexchange.com/questions/100025/calculate-deterministic-address-with-create2-when-cloning-contract-with-factory
