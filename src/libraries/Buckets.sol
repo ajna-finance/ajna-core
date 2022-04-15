@@ -231,6 +231,12 @@ library Buckets {
         bucket.collateral += _collateral;
     }
 
+    /// @notice Liquidate a given position's collateral
+    /// @param buckets Mapping of buckets for a given pool
+    /// @param _collateral The amount of collateral deposited
+    /// @param _hdp The pool's HDP
+    /// @param _inflator The current pool inflator rate
+    /// @return requiredCollateral The amount of collateral to be liquidated
     function liquidate(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _debt, // RAD
@@ -276,6 +282,14 @@ library Buckets {
         }
     }
 
+    /// @notice Moves assets in a bucket to a bucket's down pointers
+    /// @dev Occurs when quote tokens are being removed
+    /// @dev Should continue until all of the desired quote tokens have been removed
+    /// @param buckets Mapping of buckets for a given pool
+    /// @param _bucket The given bucket whose assets are being reallocated
+    /// @param _amount The amount of quote tokens requiring reallocation
+    /// @param _inflator The current pool inflator rate
+    /// @return lup The price to which assets were reallocated
     function reallocateDown(
         mapping(uint256 => Bucket) storage buckets,
         Bucket storage _bucket,
@@ -328,7 +342,15 @@ library Buckets {
         }
     }
 
-    /// @notice Moves
+    /// @notice Moves assets in a bucket to a bucket's up pointers
+    /// @dev Should continue until all desired quote tokens are added
+    /// @dev Occcurs when quote tokens are being added
+    /// @param buckets Mapping of buckets for a given pool
+    /// @param _bucket The given bucket whose assets are being reallocated
+    /// @param _amount The amount of quote tokens requiring reallocation
+    /// @param _lup The current pool lup
+    /// @param _inflator The current pool inflator rate
+    /// @return The price to which assets were reallocated
     function reallocateUp(
         mapping(uint256 => Bucket) storage buckets,
         Bucket storage _bucket,
