@@ -58,7 +58,9 @@ library Buckets {
 
         uint256 exchangeRate = getExchangeRate(bucket);
 
-        uint256 claimable = Maths.rayToRad(Maths.rmul(_lpBalance, exchangeRate));
+        uint256 claimable = Maths.rayToRad(
+            Maths.rmul(_lpBalance, exchangeRate)
+        );
 
         if (_amount > claimable) {
             revert AmountExceedsClaimable({rightToClaim: claimable});
@@ -131,13 +133,23 @@ library Buckets {
                 // take all on deposit from this bucket
                 curLup.debt += curLup.onDeposit;
                 amountRemaining -= curLup.onDeposit;
-                loanCost += Maths.rayToRad(Maths.rdiv(Maths.radToRay(curLup.onDeposit), Maths.wadToRay(curLup.price)));
+                loanCost += Maths.rayToRad(
+                    Maths.rdiv(
+                        Maths.radToRay(curLup.onDeposit),
+                        Maths.wadToRay(curLup.price)
+                    )
+                );
                 curLup.onDeposit -= curLup.onDeposit;
             } else {
                 // take all remaining amount for loan from this bucket and exit
                 curLup.onDeposit -= amountRemaining;
                 curLup.debt += amountRemaining;
-                loanCost += Maths.rayToRad(Maths.rdiv(Maths.radToRay(amountRemaining), Maths.wadToRay(curLup.price)));
+                loanCost += Maths.rayToRad(
+                    Maths.rdiv(
+                        Maths.radToRay(amountRemaining),
+                        Maths.wadToRay(curLup.price)
+                    )
+                );
                 break;
             }
 
@@ -232,7 +244,10 @@ library Buckets {
             accumulateBucketInterest(bucket, _inflator);
             uint256 bucketDebtToPurchase = Maths.min(_debt, bucket.debt);
 
-            uint256 debtByPriceRay = Maths.rdiv(Maths.radToRay(_debt), Maths.wadToRay(bucket.price));
+            uint256 debtByPriceRay = Maths.rdiv(
+                Maths.radToRay(_debt),
+                Maths.wadToRay(bucket.price)
+            );
             uint256 bucketRequiredCollateral = Maths.min(
                 Maths.min(debtByPriceRay, _collateral),
                 debtByPriceRay
@@ -367,10 +382,15 @@ library Buckets {
         private
     {
         if (bucket.debt != 0) {
-            bucket.debt += Maths.rayToRad(Maths.rmul(
-                Maths.radToRay(bucket.debt),
-                Maths.sub(Maths.rdiv(_inflator, bucket.inflatorSnapshot), Maths.ONE_RAY)
-            ));
+            bucket.debt += Maths.rayToRad(
+                Maths.rmul(
+                    Maths.radToRay(bucket.debt),
+                    Maths.sub(
+                        Maths.rdiv(_inflator, bucket.inflatorSnapshot),
+                        Maths.ONE_RAY
+                    )
+                )
+            );
             bucket.inflatorSnapshot = _inflator;
         }
     }
@@ -439,9 +459,11 @@ library Buckets {
     {
         uint256 size = bucket.onDeposit +
             bucket.debt +
-            Maths.rayToRad(Maths.rmul(bucket.collateral, Maths.wadToRay(bucket.price)));
+            Maths.rayToRad(
+                Maths.rmul(bucket.collateral, Maths.wadToRay(bucket.price))
+            );
         if (size != 0 && bucket.lpOutstanding != 0) {
-            Maths.rdiv(Maths.radToRay(size), bucket.lpOutstanding);
+            return Maths.rdiv(Maths.radToRay(size), bucket.lpOutstanding);
         }
         return Maths.ONE_RAY;
     }

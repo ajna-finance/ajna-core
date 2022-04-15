@@ -222,10 +222,14 @@ contract ERC20Pool is IPool, Clone {
             revert InvalidPrice();
         }
 
-        accumulatePoolInterest();
-
         // remove from bucket with RAD precision
         _amount = Maths.wadToRad(_amount);
+        if (_amount > totalQuoteToken) {
+            revert InsufficientLiquidity({amountAvailable: totalQuoteToken});
+        }
+
+        accumulatePoolInterest();
+
         (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
             _price,
             _amount,
@@ -277,7 +281,10 @@ contract ERC20Pool is IPool, Clone {
 
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
-            encumberedBorrowerCollateral = Maths.rdiv(Maths.radToRay(borrower.debt), Maths.wadToRay(lup));
+            encumberedBorrowerCollateral = Maths.rdiv(
+                Maths.radToRay(borrower.debt),
+                Maths.wadToRay(lup)
+            );
         }
 
         // convert amount from WAD to collateral pool precision - RAY
@@ -357,7 +364,10 @@ contract ERC20Pool is IPool, Clone {
         // TODO: make value explicit for use in comparison operator against collateralDeposited below
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
-            encumberedBorrowerCollateral = Maths.rdiv(Maths.radToRay(borrower.debt), Maths.wadToRay(lup));
+            encumberedBorrowerCollateral = Maths.rdiv(
+                Maths.radToRay(borrower.debt),
+                Maths.wadToRay(lup)
+            );
         }
 
         uint256 loanCost;
@@ -368,7 +378,13 @@ contract ERC20Pool is IPool, Clone {
             inflatorSnapshot
         );
 
-        if (borrower.collateralDeposited <= Maths.rdiv(Maths.radToRay(Maths.add(borrower.debt, _amount)), Maths.wadToRay(lup))) {
+        if (
+            borrower.collateralDeposited <=
+            Maths.rdiv(
+                Maths.radToRay(Maths.add(borrower.debt, _amount)),
+                Maths.wadToRay(lup)
+            )
+        ) {
             revert InsufficientCollateralForBorrow();
         }
 
@@ -435,7 +451,10 @@ contract ERC20Pool is IPool, Clone {
 
         // convert amount from WAD to pool precision - RAD
         _amount = Maths.wadToRad(_amount);
-        uint256 collateralRequired = Maths.rdiv(Maths.radToRay(_amount), Maths.wadToRay(_price));
+        uint256 collateralRequired = Maths.rdiv(
+            Maths.radToRay(_amount),
+            Maths.wadToRay(_price)
+        );
         if (
             collateral().balanceOf(msg.sender) * collateralScale <
             collateralRequired
@@ -489,7 +508,10 @@ contract ERC20Pool is IPool, Clone {
             revert NoDebtToLiquidate();
         }
 
-        uint256 collateralization = Maths.rdiv(collateralDeposited, Maths.rdiv(Maths.radToRay(debt), Maths.wadToRay(lup)));
+        uint256 collateralization = Maths.rdiv(
+            collateralDeposited,
+            Maths.rdiv(Maths.radToRay(debt), Maths.wadToRay(lup))
+        );
         if (collateralization > Maths.ONE_RAY) {
             revert BorrowerIsCollateralized({
                 collateralization: collateralization
@@ -526,7 +548,10 @@ contract ERC20Pool is IPool, Clone {
                 previousRate,
                 (
                     Maths.sub(
-                        Maths.add(Maths.rayToWad(actualUtilization), Maths.ONE_WAD),
+                        Maths.add(
+                            Maths.rayToWad(actualUtilization),
+                            Maths.ONE_WAD
+                        ),
                         Maths.rayToWad(getPoolTargetUtilization())
                     )
                 )
@@ -563,7 +588,10 @@ contract ERC20Pool is IPool, Clone {
         // calculate annualized interest rate
         uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
         // secondsSinceLastUpdate is unscaled
-        uint256 secondsSinceLastUpdate = Maths.sub(block.timestamp, lastInflatorSnapshotUpdate);
+        uint256 secondsSinceLastUpdate = Maths.sub(
+            block.timestamp,
+            lastInflatorSnapshotUpdate
+        );
 
         return
             Maths.rmul(
@@ -602,10 +630,15 @@ contract ERC20Pool is IPool, Clone {
         uint256 _currentInflator
     ) private pure returns (uint256) {
         return
-            Maths.rayToRad(Maths.rmul(
-                Maths.radToRay(_debt),
-                Maths.sub(Maths.rmul(_pendingInflator, _currentInflator), Maths.ONE_RAY)
-            ));
+            Maths.rayToRad(
+                Maths.rmul(
+                    Maths.radToRay(_debt),
+                    Maths.sub(
+                        Maths.rmul(_pendingInflator, _currentInflator),
+                        Maths.ONE_RAY
+                    )
+                )
+            );
     }
 
     function getLPTokenBalance(address _owner, uint256 _price)
@@ -642,7 +675,9 @@ contract ERC20Pool is IPool, Clone {
 
         // calculate the amount of collateral and quote tokens equivalent to the lenderShare
         collateralTokens = Maths.rmul(bucketCollateral, lenderShare);
-        quoteTokens = Maths.rayToRad(Maths.rmul(Maths.radToRay(Maths.add(onDeposit, debt)), lenderShare));
+        quoteTokens = Maths.rayToRad(
+            Maths.rmul(Maths.radToRay(Maths.add(onDeposit, debt)), lenderShare)
+        );
     }
 
     // -------------------- Bucket related functions --------------------
@@ -719,7 +754,11 @@ contract ERC20Pool is IPool, Clone {
     /// @return RAY - The current collateralization of the pool given totalCollateral and totalDebt
     function getPoolCollateralization() public view returns (uint256) {
         if (lup != 0 && totalDebt != 0) {
-            return Maths.rdiv(totalCollateral, Maths.rdiv(Maths.radToRay(totalDebt), Maths.wadToRay(lup)));
+            return
+                Maths.rdiv(
+                    totalCollateral,
+                    Maths.rdiv(Maths.radToRay(totalDebt), Maths.wadToRay(lup))
+                );
         }
         return Maths.ONE_RAY;
     }
@@ -727,7 +766,14 @@ contract ERC20Pool is IPool, Clone {
     /// @return RAY - The current pool actual utilization
     function getPoolActualUtilization() public view returns (uint256) {
         if (totalQuoteToken != 0) {
-            return Maths.rdiv(Maths.radToRay(totalDebt), Maths.add(Maths.radToRay(totalQuoteToken), Maths.radToRay(totalDebt)));
+            return
+                Maths.rdiv(
+                    Maths.radToRay(totalDebt),
+                    Maths.add(
+                        Maths.radToRay(totalQuoteToken),
+                        Maths.radToRay(totalDebt)
+                    )
+                );
         }
         return 0;
     }
