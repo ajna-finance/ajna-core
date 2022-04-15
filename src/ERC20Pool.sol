@@ -148,10 +148,12 @@ contract ERC20Pool is IPool, Clone {
         previousRateUpdate = block.timestamp;
     }
 
+    /// @dev Pure function used to facilitate accessing token via clone state
     function collateral() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0));
     }
 
+    /// @dev Pure function used to facilitate accessing token via clone state
     function quoteToken() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0x14));
     }
@@ -159,6 +161,7 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Called by lenders to add an amount of credit at a specified price bucket
     /// @param _amount The amount of quote token to be added by a lender
     /// @param _price The bucket to which the quote tokens will be added
+    /// @return The amount of LP Tokens received for the added quote tokens
     function addQuoteToken(
         address _recipient,
         uint256 _amount,
@@ -255,6 +258,8 @@ contract ERC20Pool is IPool, Clone {
         emit RemoveQuoteToken(_recipient, _price, _amount, lup);
     }
 
+    /// @notice Called by borrowers to add collateral to the pool
+    /// @param _amount The amount of collateral in deposit tokens to be added to the pool
     function addCollateral(uint256 _amount) external {
         accumulatePoolInterest();
         // convert amount from WAD to collateral pool precision - RAY
@@ -495,6 +500,7 @@ contract ERC20Pool is IPool, Clone {
     }
 
     /// @notice Liquidates a given borrower's position
+    /// @param _borrower The address of the borrower being liquidated
     function liquidate(address _borrower) external {
         accumulatePoolInterest();
 
@@ -580,8 +586,6 @@ contract ERC20Pool is IPool, Clone {
         }
     }
 
-    // TODO: convert spr and secondsSinceLastUpdate to ray??
-    // TODO: update precision here -> switch math libraries? https://github.com/barakman/solidity-math-utils/blob/master/project/contracts/AnalyticMath.sol
     /// @notice Calculate the pending inflator based upon previous rate and last update
     /// @return The new pending inflator value as a RAY
     function getPendingInflator() public view returns (uint256) {
@@ -641,6 +645,10 @@ contract ERC20Pool is IPool, Clone {
             );
     }
 
+    /// @notice Returns a given lender's LP tokens in a given price bucket
+    /// @param _owner The EOA to check token balance for
+    /// @param _price The price bucket for which the value should be calculated
+    /// @return lpTokens - The EOA's lp token balance in the bucket
     function getLPTokenBalance(address _owner, uint256 _price)
         external
         view
@@ -652,6 +660,8 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens
     /// @param _lpTokens The number of lpTokens to calculate amounts for
     /// @param _price The price bucket for which the value should be calculated
+    /// @return collateralTokens - The equivalent value of collateral tokens for the given LP Tokens
+    /// @return quoteTokens - The equivalent value of quote tokens for the given LP Tokens
     function getLPTokenExchangeValue(uint256 _lpTokens, uint256 _price)
         external
         view
@@ -709,6 +719,7 @@ contract ERC20Pool is IPool, Clone {
 
     // -------------------- Pool state related functions --------------------
 
+    /// @return The current LUP
     function getPoolPrice() public view returns (uint256) {
         return lup;
     }
@@ -716,6 +727,7 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Returns the current Hight Utilizable Price (HUP) bucket
     /// @dev Starting at the LUP, iterate through down pointers until no quote tokens are available
     /// @dev LUP should always be >= HUP
+    /// @return The current HUP
     function getHup() public view returns (uint256) {
         uint256 curPrice = lup;
         while (true) {
@@ -785,6 +797,7 @@ contract ERC20Pool is IPool, Clone {
 
     // -------------------- Borrower related functions --------------------
 
+    /// @notice Returns a Tuple representing a given borrower's info struct
     function getBorrowerInfo(address _borrower)
         public
         view
@@ -833,6 +846,7 @@ contract ERC20Pool is IPool, Clone {
         );
     }
 
+    /// @notice Estimate the price at which a loan can be taken
     function estimatePriceForLoan(uint256 _amount)
         public
         view
