@@ -264,7 +264,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 Buckets.InsufficientLpBalance.selector,
-                1_000 * 1e27
+                999.999999999999998 * 1e27
             )
         );
         lender1.claimCollateral(
@@ -300,7 +300,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             .bucketAt(4_000.927678580567537368 * 1e18);
         assertEq(deposit, 0);
         assertEq(debt, 2_500 * 1e45);
-        assertEq(lpOutstanding, 2_500.000000000000003954476400703 * 1e27);
+        assertEq(lpOutstanding, 2_500.000000000000001954476400703 * 1e27);
         assertEq(bucketCollateral, 988389873);
 
         // claimer lp tokens for pool should be diminished
@@ -373,7 +373,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(lpOutstanding, 1_000 * 1e27);
         assertEq(bucketCollateral, 0.124955885007559370189665835 * 1e27);
 
-        // claim collateral and deactivate bucket 8_002.824356287850613262
+        // claim collateral from bucket 8_002.824356287850613262
         lender.claimCollateral(
             pool,
             address(lender),
@@ -392,7 +392,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             0.000000000000001517862363840 * 1e27
         );
 
-        // claim collateral and deactivate bucket 9_020.461710444470171420
+        // claim collateral from bucket 9_020.461710444470171420
         lender.claimCollateral(
             pool,
             address(lender),
@@ -408,7 +408,17 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(bucketCollateral, 360575690); // RAY dust
         assertEq(pool.lpBalance(address(lender), p9020), 1626279602486); // RAY dust
 
-        // claim collateral and deactivate bucket 10_016.501589292607751220
+        (uint256 col, uint256 quote) = pool.getLPTokenExchangeValue(
+            pool.getLPTokenBalance(
+                address(lender),
+                10_016.501589292607751220 * 1e18
+            ),
+            10_016.501589292607751220 * 1e18
+        );
+        assertEq(col, 0.998352559609210511014078361 * 1e27);
+        assertEq(quote, 0);
+
+        // claim collateral from bucket 10_016.501589292607751220
         lender.claimCollateral(
             pool,
             address(lender),
