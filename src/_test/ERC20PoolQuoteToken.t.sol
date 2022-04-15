@@ -48,6 +48,8 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender1.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
+    // TODO: Review each test and validate HPB and LUP are correct where appropriate.
+
     function testDepositQuoteToken() public {
         // should revert when depositing at invalid price
         vm.expectRevert(ERC20Pool.InvalidPrice.selector);
