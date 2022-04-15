@@ -768,7 +768,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         );
         assertEq(deposit, 2_000 * 1e45);
         // some debt accumulated between loan and reallocation
-        assertEq(debt, 4_000.002124558305730000 * 1e45);
+        assertEq(debt, 4_000.002124558318098823459519 * 1e45);
     }
 
     function testRemoveQuoteTokenBelowLup() public {

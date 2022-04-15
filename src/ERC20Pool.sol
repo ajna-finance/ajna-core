@@ -426,7 +426,7 @@ contract ERC20Pool is IPool, Clone {
     }
 
     /// @notice Exchanges collateral for quote token
-    /// @param _amount RAD The amount of quote token to purchase
+    /// @param _amount WAD The amount of quote token to purchase
     /// @param _price The purchasing price of quote token
     function purchaseBid(uint256 _amount, uint256 _price) external {
         if (!BucketMath.isValidPrice(_price)) {
