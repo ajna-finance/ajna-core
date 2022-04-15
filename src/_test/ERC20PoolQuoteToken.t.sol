@@ -409,7 +409,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // should revert if trying to remove more than lended
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.InsufficientLiquidity.selector,
+                Buckets.AmountExceedsClaimable.selector,
                 10_000 * 1e45
             )
         );
@@ -493,12 +493,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.borrow(pool, 5_000 * 1e18, 4_000 * 1e18);
 
         // should revert if trying to remove more than pool available
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                ERC20Pool.InsufficientLiquidity.selector,
-                5_000 * 1e45
-            )
-        );
+        vm.expectRevert(Buckets.NoDepositToReallocateTo.selector);
         lender.removeQuoteToken(
             pool,
             address(lender),
@@ -1075,9 +1070,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // should revert if not enough funds in pool
         assertEq(pool.totalQuoteToken(), 0);
-        vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.InsufficientLiquidity.selector, 0)
-        );
+        vm.expectRevert(Buckets.NoDepositToReallocateTo.selector);
         lender.removeQuoteToken(
             pool,
             address(lender),
