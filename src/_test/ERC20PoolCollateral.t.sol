@@ -264,7 +264,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 Buckets.InsufficientLpBalance.selector,
-                999.999999999999998 * 1e27
+                1000 * 1e27
             )
         );
         lender1.claimCollateral(
@@ -300,7 +300,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             .bucketAt(4_000.927678580567537368 * 1e18);
         assertEq(deposit, 0);
         assertEq(debt, 2_500 * 1e45);
-        assertEq(lpOutstanding, 2_500.000000000000001954476400703 * 1e27);
+        assertEq(lpOutstanding, 2_500.000000000000003954476400703 * 1e27);
         assertEq(bucketCollateral, 988389873);
 
         // claimer lp tokens for pool should be diminished
@@ -415,7 +415,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             ),
             10_016.501589292607751220 * 1e18
         );
-        assertEq(col, 0.998352559609210511014078361 * 1e27);
+        assertEq(col, 1.198023071531052613216894034 * 1e27);
         assertEq(quote, 0);
 
         // claim collateral from bucket 10_016.501589292607751220
