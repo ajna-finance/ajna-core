@@ -430,7 +430,7 @@ library Buckets {
             bucket.collateral *
             bucket.price;
         if (size != 0 && bucket.lpOutstanding != 0) {
-            size / bucket.lpOutstanding;
+            return size / bucket.lpOutstanding;
         }
         return Maths.ONE_WAD;
     }
