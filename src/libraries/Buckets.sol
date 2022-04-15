@@ -58,9 +58,9 @@ library Buckets {
 
         uint256 exchangeRate = getExchangeRate(bucket);
 
-        uint256 claimable = Maths.rmul(_lpBalance, exchangeRate);
+        uint256 claimable = Maths.rayToRad(Maths.rmul(_lpBalance, exchangeRate));
 
-        if (_amount > Maths.rayToRad(claimable)) {
+        if (_amount > claimable) {
             revert AmountExceedsClaimable({rightToClaim: claimable});
         }
 

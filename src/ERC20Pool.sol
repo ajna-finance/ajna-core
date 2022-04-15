@@ -5,7 +5,6 @@ pragma solidity 0.8.11;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
 import {Clone} from "@clones/Clone.sol";
 
 import "./libraries/Maths.sol";
@@ -563,10 +562,8 @@ contract ERC20Pool is IPool, Clone {
     function getPendingInflator() public view returns (uint256) {
         // calculate annualized interest rate
         uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
-
         // secondsSinceLastUpdate is unscaled
-        uint256 secondsSinceLastUpdate = block.timestamp -
-            lastInflatorSnapshotUpdate;
+        uint256 secondsSinceLastUpdate = Maths.sub(block.timestamp, lastInflatorSnapshotUpdate);
 
         return
             Maths.rmul(
@@ -598,7 +595,7 @@ contract ERC20Pool is IPool, Clone {
     /// @param _debt RAD - The total book debt
     /// @param _pendingInflator RAY - The next debt inflator value
     /// @param _currentInflator RAY - The current debt inflator value
-    /// @return RAY - The additional debt accumulated to the pool
+    /// @return RAD - The additional debt accumulated to the pool
     function getPendingInterest(
         uint256 _debt,
         uint256 _pendingInflator,
@@ -641,10 +638,11 @@ contract ERC20Pool is IPool, Clone {
         ) = bucketAt(_price);
 
         // calculate lpTokens share of all outstanding lpTokens for the bucket
-        uint256 lenderShare = PRBMathUD60x18.div(_lpTokens, lpOutstanding);
+        uint256 lenderShare = Maths.rdiv(_lpTokens, lpOutstanding);
 
-        collateralTokens = PRBMathUD60x18.mul(bucketCollateral, lenderShare);
-        quoteTokens = PRBMathUD60x18.mul(onDeposit + debt, lenderShare);
+        // calculate the amount of collateral and quote tokens equivalent to the lenderShare
+        collateralTokens = Maths.rmul(bucketCollateral, lenderShare);
+        quoteTokens = Maths.rayToRad(Maths.rmul(Maths.radToRay(Maths.add(onDeposit, debt)), lenderShare));
     }
 
     // -------------------- Bucket related functions --------------------
