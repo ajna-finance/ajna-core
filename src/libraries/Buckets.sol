@@ -321,13 +321,13 @@ library Buckets {
         uint256 curLupDebt;
 
         while (true) {
-            // accumulate bucket interest
-            accumulateBucketInterest(curLup, _inflator);
-
             if (curLup.price == _bucket.price) {
                 // reached deposit bucket; nowhere to go
                 break;
             }
+
+            // accumulate bucket interest
+            accumulateBucketInterest(curLup, _inflator);
 
             curLupDebt = curLup.debt;
 
