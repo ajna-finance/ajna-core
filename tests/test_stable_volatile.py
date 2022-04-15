@@ -91,12 +91,9 @@ def tx_validator(pool1, bucket_math):
 
 def add_initial_liquidity(lenders, pool_client, bucket_math):
     # Lenders 0-9 will be "new to the pool" upon actual testing
-    seed = 1648932463
     for i in range(10, len(lenders) - 1):
         # determine how many buckets to deposit into
         for b in range(1, (i % 4) + 1):
-            random.seed(seed)
-            seed += 1
             place_initial_random_bid(i, pool_client, bucket_math)
 
 
@@ -156,7 +153,6 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
                     repay(borrowers[user_index], user_index, pool)
             except VirtualMachineError as ex:
                 print(f" ERROR at time {chain.time()}: {ex}")
-            test_utils.validate_book(pool, bucket_math, MIN_BUCKET, MAX_BUCKET)
             chain.sleep(14)
 
             # Add or remove liquidity
@@ -174,10 +170,11 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
                                         liquidity_coefficient)
                 if price:
                     buckets_deposited[user_index].add(price)
+
             try:
                 test_utils.validate_book(pool, bucket_math, MIN_BUCKET, MAX_BUCKET)
             except AssertionError as ex:
-                print("Book became invalid following the previous transaction")
+                print("Book became invalid:")
                 print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hdp())))
                 raise ex
             chain.sleep(14)
@@ -278,7 +275,7 @@ def repay(borrower, borrower_index, pool):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth

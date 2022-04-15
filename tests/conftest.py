@@ -244,8 +244,10 @@ class TestUtils:
         calc_lup = None
         calc_hpb = None
         partially_utilized_buckets = []
+        cached_buckets = {}
         for i in range(max_bucket_index - 1, min_bucket_index, -1):
             (_, _, _, on_deposit, debt, _, _, _) = pool.bucketAt(bucket_math.indexToPrice(i))
+            cached_buckets[i] = (on_deposit, debt)
             if not calc_hpb and (on_deposit or debt):
                 calc_hpb = i
             if debt:
@@ -255,7 +257,7 @@ class TestUtils:
 
         # Ensure utilization is not fragmented
         for i in range(max_bucket_index - 1, min_bucket_index, -1):
-            (_, _, _, on_deposit, debt, _, _, _) = pool.bucketAt(bucket_math.indexToPrice(i))
+            (on_deposit, debt) = cached_buckets[i]
             if calc_hpb and calc_lup and calc_lup < i < calc_hpb:
                 assert on_deposit == 0  # If there's deposit between LUP and HPB, utilization is fragmented
 
