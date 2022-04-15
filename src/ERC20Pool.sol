@@ -220,10 +220,14 @@ contract ERC20Pool is IPool, Clone {
             revert InvalidPrice();
         }
 
-        accumulatePoolInterest();
-
         // remove from bucket with RAD precision
         _amount = Maths.wadToRad(_amount);
+        if (_amount > totalQuoteToken) {
+            revert InsufficientLiquidity({amountAvailable: totalQuoteToken});
+        }
+
+        accumulatePoolInterest();
+
         (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
             _price,
             _amount,
