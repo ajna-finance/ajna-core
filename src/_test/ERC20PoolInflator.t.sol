@@ -23,7 +23,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         quote = new QuoteToken();
 
         ERC20PoolFactory factory = new ERC20PoolFactory();
-        pool = factory.deployPool(collateral, quote);
+        pool = factory.deployPool(address(collateral), address(quote));
 
         borrower = new UserWithCollateral();
         collateral.mint(address(borrower), 100 * 1e18);

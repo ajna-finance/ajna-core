@@ -231,8 +231,8 @@ contract ERC20Pool is IPool, Clone {
             inflatorSnapshot
         );
 
-        // move lup down only if removal happened at lup and new lup different than current
-        if (_price == lup && newLup < lup) {
+        // move lup down only if removal happened at or above lup and new lup different than current
+        if (_price >= lup && newLup < lup) {
             lup = newLup;
         }
 
@@ -669,8 +669,16 @@ contract ERC20Pool is IPool, Clone {
     function getHup() public view returns (uint256) {
         uint256 curPrice = lup;
         while (true) {
-            (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = _buckets
-                .bucketAt(curPrice);
+            (
+                uint256 price,
+                ,
+                uint256 down,
+                uint256 onDeposit,
+                ,
+                ,
+                ,
+
+            ) = _buckets.bucketAt(curPrice);
             if (price == down || onDeposit != 0) {
                 break;
             }

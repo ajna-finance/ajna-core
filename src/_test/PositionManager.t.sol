@@ -38,7 +38,7 @@ contract PositionManagerTest is DSTestPlus {
         quote.mint(alice, 30000000000 * 1e18);
 
         factory = new ERC20PoolFactory();
-        pool = factory.deployPool(collateral, quote);
+        pool = factory.deployPool(address(collateral), address(quote));
         positionManager = new PositionManager();
     }
 
@@ -171,7 +171,7 @@ contract PositionManagerTest is DSTestPlus {
         require(tokenId != 0, "tokenId nonce not incremented");
 
         // check position info
-        (address owner, ) = positionManager.positions(tokenId);
+        (, address owner, ) = positionManager.positions(tokenId);
         uint256 lpTokens = positionManager.getLPTokens(tokenId, mintPrice);
 
         assertEq(owner, alice);
@@ -261,7 +261,9 @@ contract PositionManagerTest is DSTestPlus {
         uint256 tokenId = mintNFT(testAddress, address(pool));
 
         // check newly minted position with no liquidity added
-        (address originalPositionOwner, ) = positionManager.positions(tokenId);
+        (, address originalPositionOwner, ) = positionManager.positions(
+            tokenId
+        );
         uint256 originalLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -280,7 +282,7 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // check liquidity was added successfully
-        (address updatedPositionOwner, ) = positionManager.positions(tokenId);
+        (, address updatedPositionOwner, ) = positionManager.positions(tokenId);
         uint256 updatedLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -393,7 +395,7 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // check lp tokens matches expectations
-        positionManager.positions(tokenId);
+        (, address updatedPositionOwner, ) = positionManager.positions(tokenId);
         uint256 updatedLPTokens = positionManager.getLPTokens(
             tokenId,
             mintPrice
@@ -475,7 +477,7 @@ contract PositionManagerTest is DSTestPlus {
         uint256 tokenId = mintNFT(testMinter, address(pool));
 
         // check owner
-        (address originalOwner, ) = positionManager.positions(tokenId);
+        (, address originalOwner, ) = positionManager.positions(tokenId);
         assertEq(originalOwner, testMinter);
 
         // approve and transfer NFT to different address
@@ -484,7 +486,7 @@ contract PositionManagerTest is DSTestPlus {
         positionManager.safeTransferFrom(testMinter, testReceiver, tokenId);
 
         // check owner
-        (address newOwner, ) = positionManager.positions(tokenId);
+        (, address newOwner, ) = positionManager.positions(tokenId);
         assertEq(newOwner, testReceiver);
         assert(newOwner != originalOwner);
 
@@ -589,7 +591,7 @@ contract PositionManagerTest is DSTestPlus {
         vm.prank(testAddress);
         positionManager.burn(burnParams);
 
-        (address burntPositionOwner, ) = positionManager.positions(tokenId);
+        (, address burntPositionOwner, ) = positionManager.positions(tokenId);
 
         assertEq(
             burntPositionOwner,

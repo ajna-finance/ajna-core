@@ -23,7 +23,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         quote = new QuoteToken();
 
         ERC20PoolFactory factory = new ERC20PoolFactory();
-        pool = factory.deployPool(collateral, quote);
+        pool = factory.deployPool(address(collateral), address(quote));
 
         borrower = new UserWithCollateral();
         collateral.mint(address(borrower), 100 * 1e18);
@@ -292,7 +292,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 ERC20Pool.PoolUndercollateralized.selector,
-                0.976275672074051610091314285 * 1e27
+                0.976275672074051610091314286 * 1e27
             )
         );
         borrower2.borrow(pool, 5_000 * 1e18, 1_000 * 1e18);

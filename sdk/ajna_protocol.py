@@ -137,8 +137,10 @@ class AjnaProtocol:
             collateral_address, quote_token_address
         )
 
-        is_deployed = self.ajna_factory.isPoolDeployed(
-            collateral_address, quote_token_address
+        is_deployed = (
+            True
+            if pool_address != "0x0000000000000000000000000000000000000000"
+            else False
         )
 
         if is_deployed:
@@ -149,7 +151,7 @@ class AjnaProtocol:
             return self.deploy_erc20_pool(collateral_address, quote_token_address)
         else:
             raise Exception(
-                f"Pool for {pool_address} not deployed. Deploy it first for collateral {collateral_address} and quote token {quote_token_address}"
+                f"Pool is not deployed. Deploy it first for collateral {collateral_address} and quote token {quote_token_address}"
             )
 
     def get_borrower(self, index) -> LocalAccount:

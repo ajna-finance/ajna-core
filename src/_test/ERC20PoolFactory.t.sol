@@ -21,15 +21,26 @@ contract PoolFactoryTest is DSTestPlus {
     }
 
     function testDeployPool() public {
-        ERC20Pool pool = factory.deployPool(collateral, quote);
+        ERC20Pool pool = factory.deployPool(
+            address(collateral),
+            address(quote)
+        );
 
         assertEq(address(collateral), address(pool.collateral()));
         assertEq(address(quote), address(pool.quoteToken()));
     }
 
+    function testDeployPoolEther() public {
+        vm.expectRevert(ERC20PoolFactory.WethOnly.selector);
+        factory.deployPool(address(collateral), address(0));
+
+        vm.expectRevert(ERC20PoolFactory.WethOnly.selector);
+        factory.deployPool(address(0), address(collateral));
+    }
+
     function testDeployPoolTwice() public {
-        factory.deployPool(collateral, quote);
+        factory.deployPool(address(collateral), address(quote));
         vm.expectRevert(ERC20PoolFactory.PoolAlreadyExists.selector);
-        factory.deployPool(collateral, quote);
+        factory.deployPool(address(collateral), address(quote));
     }
 }

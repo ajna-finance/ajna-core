@@ -26,7 +26,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         quote = new QuoteToken();
 
         ERC20PoolFactory factory = new ERC20PoolFactory();
-        pool = factory.deployPool(collateral, quote);
+        pool = factory.deployPool(address(collateral), address(quote));
 
         borrower = new UserWithCollateral();
         collateral.mint(address(borrower), 100 * 1e18);
@@ -345,10 +345,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
     function testDepositQuoteTokenAtLup() public {
         // Adjacent prices
-        uint256 p2850 = 2850.155149230026939621 * 1e18;  // index 1595
-        uint256 p2835 = 2835.975272865698470386 * 1e18;  // index 1594
-        uint256 p2821 = 2821.865943149948749647 * 1e18;  // index 1593
-        uint256 p2807 = 2807.826809104426639178 * 1e18;  // index 1592
+        uint256 p2850 = 2850.155149230026939621 * 1e18; // index 1595
+        uint256 p2835 = 2835.975272865698470386 * 1e18; // index 1594
+        uint256 p2821 = 2821.865943149948749647 * 1e18; // index 1593
+        uint256 p2807 = 2807.826809104426639178 * 1e18; // index 1592
 
         // Lender deposits 1000 in each bucket
         lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2850);
@@ -769,6 +769,53 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(deposit, 2_000 * 1e45);
         // some debt accumulated between loan and reallocation
         assertEq(debt, 4_000.002124558305730000 * 1e45);
+    }
+
+    function testRemoveQuoteTokenAboveLup() public {
+        // Adjacent prices
+        uint256 p2850 = 2850.155149230026939621 * 1e18; // index 1595
+        uint256 p2835 = 2835.975272865698470386 * 1e18; // index 1594
+        uint256 p2821 = 2821.865943149948749647 * 1e18; // index 1593
+        uint256 p2807 = 2807.826809104426639178 * 1e18; // index 1592
+
+        // Lender deposits 1000 in each bucket
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2850);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2835);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2821);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2807);
+
+        // Borrower draws 2400 debt partially utilizing the LUP
+        borrower.addCollateral(pool, 10 * 1e18);
+        borrower.borrow(pool, 2_400 * 1e18, 0);
+        (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(p2850);
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2835);
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2821);
+        assertEq(deposit, 600 * 1e45);
+        assertEq(debt, 400 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2807);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(pool.lup(), p2821);
+
+        // Lender withdraws above LUP
+        lender.removeQuoteToken(pool, address(lender), 1_000 * 1e18, p2850);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2850);
+        assertEq(deposit, 0);
+        assertEq(debt, 0);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2835);
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2821);
+        assertEq(deposit, 0);
+        assertEq(debt, 1_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(p2807);
+        assertEq(deposit, 600 * 1e45);
+        assertEq(debt, 400 * 1e45);
+        assertEq(pool.lup(), p2807);
     }
 
     function testRemoveQuoteTokenBelowLup() public {
