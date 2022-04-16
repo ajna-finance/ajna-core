@@ -17,7 +17,7 @@ SECONDS_PER_YEAR = 3600 * 24 * 365
 
 
 # set of buckets deposited into, indexed by lender index
-buckets_deposited = dict.fromkeys(range(0, 100), set())
+buckets_deposited = {lender_id: set() for lender_id in range(0, 100)}
 # timestamp when a lender/borrower last interacted with the pool
 last_triggered = {}
 
@@ -76,7 +76,7 @@ class TransactionValidator:
         self.bucket_math = bucket_math
         self.min_bucket = min_bucket
 
-    def validate(self, tx, limit=400000):
+    def validate(self, tx, limit=800000):
         if tx.gas_used > limit:
             print(f"Gas used {tx.gas_used} exceeds limit {limit}")
             hpb_index = self.bucket_math.priceToIndex(self.pool.hdp())
