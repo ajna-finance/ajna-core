@@ -38,6 +38,14 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
+    // @notice: lender deposits 50,000 quote accross 5 buckets
+    // @notice: borrower unsuccessfully:
+    // @notice:     attempts to borrow more than available quote
+    // @notice:     attempts to borrow more than their collateral supports
+    // @notice:     attempts to borrow but stop price is exceeded
+    // @notice: borrower successfully borrows 21,000 quote
+    // @notice: borrower successfully borrows 9,000 quote
+    // @notice: lender deposits 40,000 quote reallocating entire debt
     function testBorrow() public {
         // lender deposits 10000 DAI in 5 buckets each
         lender.addQuoteToken(
@@ -85,7 +93,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         );
         borrower.borrow(pool, 60_000 * 1e18, 2_000 * 1e18);
 
-        // should revert if not enough collateral deposited by borrower
+        // should revert if insufficient collateral deposited by borrower
         vm.expectRevert(ERC20Pool.InsufficientCollateralForBorrow.selector);
         borrower.borrow(pool, 10_000 * 1e18, 4_000 * 1e18);
 
@@ -101,12 +109,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         );
         borrower.borrow(pool, 15_000 * 1e18, 4_000 * 1e18);
 
-        // should revert if not enough collateral to get the loan
-        vm.expectRevert(ERC20Pool.InsufficientCollateralForBorrow.selector);
-        borrower.borrow(pool, 40_000 * 1e18, 2_000 * 1e18);
-
         // borrower deposits additional 90 MKR collateral
         borrower.addCollateral(pool, 90 * 1e18);
+
         // get a 21_000 DAI loan from 3 buckets, loan price should be 3000 DAI
         assertEq(
             pool.estimatePriceForLoan(21_000 * 1e18),
@@ -239,6 +244,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.totalDebt(), 30000.273023081959005000 * 1e45);
     }
 
+    // @notice: lender deposits 200,000 quote accross 3 buckets
+    // @notice: borrower successfully borrows 100,000 quote
+    // @notice: borrower2 attempts to borrow more than available quote
     function testBorrowPoolUndercollateralization() public {
         // lender deposits 200_000 DAI in 3 buckets
         lender.addQuoteToken(
@@ -287,8 +295,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.estimatePriceForLoan(175_000 * 1e18), 0);
         borrower2.addCollateral(pool, 51 * 1e18);
 
-        // should revert when taking a loan of 50_000 DAI that will drive pool undercollateralized
-
+        // should revert when taking a loan of 5_000 DAI that will drive pool undercollateralized
         vm.expectRevert(
             abi.encodeWithSelector(
                 ERC20Pool.PoolUndercollateralized.selector,

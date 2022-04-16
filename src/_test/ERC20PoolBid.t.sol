@@ -39,6 +39,9 @@ contract ERC20PoolBidTest is DSTestPlus {
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
+    // @notice: lender deposits 9000 quote accross 3 buckets
+    // @notice: borrower borrows 4000
+    // @notice: bidder successfully purchases 6000 quote partially in 2 purchases
     function testPurchaseBidPartialAmount() public {
         lender.addQuoteToken(
             pool,
@@ -171,6 +174,9 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(pool.totalCollateral(), 100 * 1e27);
     }
 
+    // @notice: lender deposits 7000 quote accross 3 buckets
+    // @notice: borrower borrows 2000 quote
+    // @notice: bidder successfully purchases 6000 quote fully accross 2 purchases
     function testPurchaseBidEntireAmount() public {
         lender.addQuoteToken(
             pool,
@@ -323,6 +329,9 @@ contract ERC20PoolBidTest is DSTestPlus {
         bidder.purchaseBid(pool, 1_000 * 1e18, 4_000.927678580567537368 * 1e18);
     }
 
+    // @notice: lender deposits 4000 quote accross 3 buckets
+    // @notice: borrower borrows 2000 quote
+    // @notice: bidder attempts to purchase 1000 quote, it reverts
     function testPurchaseBidUndercollateralized() public {
         lender.addQuoteToken(
             pool,
