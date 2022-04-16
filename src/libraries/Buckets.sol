@@ -321,6 +321,11 @@ library Buckets {
         uint256 curLupDebt;
 
         while (true) {
+            if (curLup.price == _bucket.price) {
+                // reached deposit bucket; nowhere to go
+                break;
+            }
+
             // accumulate bucket interest
             accumulateBucketInterest(curLup, _inflator);
 
@@ -333,7 +338,7 @@ library Buckets {
                 curLup.debt = 0;
                 curLup.onDeposit += curLupDebt;
                 if (curLup.price == curLup.up) {
-                    // nowhere to go
+                    // reached top-of-book; nowhere to go
                     break;
                 }
             } else {
@@ -341,11 +346,6 @@ library Buckets {
                 _bucket.onDeposit -= _amount;
                 curLup.debt -= _amount;
                 curLup.onDeposit += _amount;
-                break;
-            }
-
-            if (curLup.up == _bucket.price) {
-                // nowhere to go
                 break;
             }
 
