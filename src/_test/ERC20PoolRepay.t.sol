@@ -105,11 +105,14 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         // check balances
         assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
-        assertEq(pool.totalDebt(), 15_000.325027478522600000 * 1e45);
+        assertEq(
+            pool.totalDebt(),
+            15_000.325027478522625000000000000000000000000000000 * 1e45
+        );
         assertEq(pool.lup(), 4_000.927678580567537368 * 1e18);
         assertEq(
             pool.totalDebt() / pool.lup(),
-            3.749211741013093107065365136 * 1e27
+            3.749211741013093113313915974 * 1e27
         );
         assertEq(quote.balanceOf(address(borrower)), 25_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 15_000 * 1e18);
@@ -118,7 +121,10 @@ contract ERC20PoolRepayTest is DSTestPlus {
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(
             address(borrower)
         );
-        assertEq(borrowerDebt, 15_000.325027478522600000 * 1e45);
+        assertEq(
+            borrowerDebt,
+            15_000.325027478522625000000000000000000000000000000 * 1e45
+        );
         assertEq(depositedCollateral, 100 * 1e27);
 
         // overpay debt w/ repay 16_000 DAI
@@ -127,31 +133,31 @@ contract ERC20PoolRepayTest is DSTestPlus {
         emit Transfer(
             address(borrower),
             address(pool),
-            15_000.520048191350631790 * 1e18
+            15_000.520048191350671791 * 1e18
         );
         vm.expectEmit(true, true, false, true);
         emit Repay(
             address(borrower),
             5_007.644384905151472283 * 1e18,
-            15_000.520048191350631790368171148430400000000000000 * 1e45
+            15_000.520048191350671791018226105475625000000000000 * 1e45
         );
         borrower.repay(pool, 16_000 * 1e18);
 
         // check balances
         assertEq(
             pool.totalQuoteToken(),
-            30_000.520048191350631790368171148430400000000000000 * 1e45
+            30_000.520048191350671791018226105475625000000000000 * 1e45
         );
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.lup(), 5_007.644384905151472283 * 1e18);
         assertEq(pool.totalDebt() / pool.lup(), 0);
         assertEq(
             quote.balanceOf(address(borrower)),
-            9_999.479951808649368210 * 1e18
+            9_999.479951808649328209 * 1e18
         );
         assertEq(
             quote.balanceOf(address(pool)),
-            30_000.520048191350631790 * 1e18
+            30_000.520048191350671791 * 1e18
         );
 
         // check borrower debt

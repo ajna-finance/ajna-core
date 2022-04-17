@@ -203,6 +203,8 @@ contract ERC20PoolBorrowTest is DSTestPlus {
             40_000 * 1e18,
             5_007.644384905151472283 * 1e18
         );
+        assertEq(pool.hdp(), 5_007.644384905151472283 * 1e18);
+        assertEq(pool.lup(), 5_007.644384905151472283 * 1e18);
 
         // check bucket debt at 2_503.519024294695168295
         (, , , deposit, debt, , , ) = pool.bucketAt(
@@ -292,7 +294,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 ERC20Pool.PoolUndercollateralized.selector,
-                0.976275672074051610091314285 * 1e27
+                0.976275672074051610091314286 * 1e27
             )
         );
         borrower2.borrow(pool, 5_000 * 1e18, 1_000 * 1e18);

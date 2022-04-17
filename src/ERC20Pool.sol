@@ -231,8 +231,8 @@ contract ERC20Pool is IPool, Clone {
             inflatorSnapshot
         );
 
-        // move lup down only if removal happened at lup and new lup different than current
-        if (_price == lup && newLup < lup) {
+        // move lup down only if removal happened at or above lup and new lup different than current
+        if (_price >= lup && newLup < lup) {
             lup = newLup;
         }
 
