@@ -86,16 +86,11 @@ library Buckets {
         Bucket storage bucket = buckets[_price];
 
         if (_amount > bucket.collateral) {
-            revert ClaimExceedsCollateral({
-                collateralAmount: bucket.collateral
-            });
+            revert ClaimExceedsCollateral({collateralAmount: bucket.collateral});
         }
 
         uint256 exchangeRate = getExchangeRate(bucket);
-        lpRedemption = Maths.wdiv(
-            Maths.wmul(_amount, bucket.price),
-            exchangeRate
-        );
+        lpRedemption = Maths.wdiv(Maths.wmul(_amount, bucket.price), exchangeRate);
 
         if (lpRedemption > _lpBalance) {
             revert InsufficientLpBalance({balance: _lpBalance});
@@ -355,9 +350,7 @@ library Buckets {
         return curLup.price;
     }
 
-    function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator)
-        private
-    {
+    function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator) private {
         if (bucket.debt != 0) {
             bucket.debt += Maths.wmul(
                 bucket.debt,
@@ -391,10 +384,7 @@ library Buckets {
         return 0;
     }
 
-    function bucketAt(
-        mapping(uint256 => Bucket) storage buckets,
-        uint256 _price
-    )
+    function bucketAt(mapping(uint256 => Bucket) storage buckets, uint256 _price)
         public
         view
         returns (
@@ -420,15 +410,8 @@ library Buckets {
         collateral = bucket.collateral;
     }
 
-    function getExchangeRate(Bucket storage bucket)
-        internal
-        view
-        returns (uint256)
-    {
-        uint256 size = bucket.onDeposit +
-            bucket.debt +
-            bucket.collateral *
-            bucket.price;
+    function getExchangeRate(Bucket storage bucket) internal view returns (uint256) {
+        uint256 size = bucket.onDeposit + bucket.debt + bucket.collateral * bucket.price;
         if (size != 0 && bucket.lpOutstanding != 0) {
             return size / bucket.lpOutstanding;
         }

@@ -47,18 +47,8 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             10_000 * 1e18,
             10_016.501589292607751220 * 1e18
         );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            1_000 * 1e18,
-            9_020.461710444470171420 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            10_000 * 1e18,
-            100.332368143282009890 * 1e18
-        );
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 9_020.461710444470171420 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 100.332368143282009890 * 1e18);
 
         // should revert when no debt
         vm.expectRevert(ERC20Pool.NoDebtToLiquidate.selector);
@@ -124,16 +114,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.lastInflatorSnapshotUpdate(), 0);
 
         // check 10_016.501589292607751220 bucket balance before liquidate
-        (
-            ,
-            ,
-            ,
-            uint256 deposit,
-            uint256 debt,
-            ,
-            ,
-            uint256 bucketCollateral
-        ) = pool.bucketAt(10_016.501589292607751220 * 1e18);
+        (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = pool.bucketAt(
+            10_016.501589292607751220 * 1e18
+        );
         assertEq(debt, 10_000 * 1e45);
         assertEq(deposit, 0);
         assertEq(bucketCollateral, 0);
@@ -147,9 +130,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
 
         // check 100.332368143282009890 bucket balance before liquidate
-        (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
-            100.332368143282009890 * 1e18
-        );
+        (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(100.332368143282009890 * 1e18);
         assertEq(debt, 1_000 * 1e45);
         assertEq(deposit, 9_000 * 1e45);
         assertEq(bucketCollateral, 0);
@@ -185,10 +166,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // check pool balance and that interest accumulated
         assertEq(pool.totalQuoteToken(), 9_000 * 1e45);
         assertEq(pool.totalDebt(), 1000.013001099140905000 * 1e45);
-        assertEq(
-            pool.totalCollateral(),
-            200.890773948998099718546295708 * 1e27
-        );
+        assertEq(pool.totalCollateral(), 200.890773948998099718546295708 * 1e27);
         assertEq(pool.inflatorSnapshot(), 1.000013001099140905 * 1e18);
         assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
         assertEq(pool.lup(), 100.332368143282009890 * 1e18);
@@ -211,9 +189,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(bucketCollateral, 0.110860511712084714825048660 * 1e27);
 
         // check 100.332368143282009890 bucket balance after purchase bid
-        (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
-            100.332368143282009890 * 1e18
-        );
+        (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(100.332368143282009890 * 1e18);
         assertEq(debt, 1_000 * 1e45);
         assertEq(deposit, 9_000 * 1e45);
         assertEq(bucketCollateral, 0);
@@ -227,24 +203,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             10_000 * 1e18,
             10_016.501589292607751220 * 1e18
         );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            1_000 * 1e18,
-            9_020.461710444470171420 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            1_000 * 1e18,
-            8_002.824356287850613262 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            1_000 * 1e18,
-            100.332368143282009890 * 1e18
-        );
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 9_020.461710444470171420 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 8_002.824356287850613262 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 100.332368143282009890 * 1e18);
 
         // borrowers deposit collateral
         borrower.addCollateral(pool, 2 * 1e18);
@@ -283,16 +244,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         lender.liquidate(pool, address(borrower));
 
         // check buckets debt and collateral after liquidation
-        (
-            ,
-            ,
-            ,
-            uint256 deposit,
-            uint256 debt,
-            ,
-            ,
-            uint256 bucketCollateral
-        ) = pool.bucketAt(10_016.501589292607751220 * 1e18);
+        (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = pool.bucketAt(
+            10_016.501589292607751220 * 1e18
+        );
         assertEq(debt, 0);
         assertEq(deposit, 0);
         assertEq(bucketCollateral, 0.998352559609210511014078361 * 1e27);
@@ -311,9 +265,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(deposit, 0);
         assertEq(bucketCollateral, 0.124955885007559370189665834 * 1e27);
 
-        (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
-            100.332368143282009890 * 1e18
-        );
+        (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(100.332368143282009890 * 1e18);
         assertEq(debt, 1_000 * 1e45);
         assertEq(deposit, 0);
         assertEq(bucketCollateral, 0);
@@ -339,10 +291,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // check pool balance
         assertEq(pool.totalQuoteToken(), 0);
         assertEq(pool.totalDebt(), 1_000 * 1e45);
-        assertEq(
-            pool.totalCollateral(),
-            200.765832484960910633115967961 * 1e27
-        );
+        assertEq(pool.totalCollateral(), 200.765832484960910633115967961 * 1e27);
     }
 
     function testLiquidateScenario1TimeWarp() public {
@@ -353,24 +302,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             10_000 * 1e18,
             10_016.501589292607751220 * 1e18
         );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            1_000 * 1e18,
-            9_020.461710444470171420 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            1_000 * 1e18,
-            8_002.824356287850613262 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            1_000 * 1e18,
-            100.332368143282009890 * 1e18
-        );
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 9_020.461710444470171420 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 8_002.824356287850613262 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 100.332368143282009890 * 1e18);
 
         // borrowers deposit collateral
         borrower.addCollateral(pool, 2 * 1e18);
@@ -412,16 +346,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         lender.liquidate(pool, address(borrower));
 
         // check buckets debt and collateral after liquidation
-        (
-            ,
-            ,
-            ,
-            uint256 deposit,
-            uint256 debt,
-            ,
-            ,
-            uint256 bucketCollateral
-        ) = pool.bucketAt(10_016.501589292607751220 * 1e18);
+        (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = pool.bucketAt(
+            10_016.501589292607751220 * 1e18
+        );
         assertEq(debt, 0);
         assertEq(deposit, 0);
         assertEq(bucketCollateral, 1.169878807319745296452349382 * 1e27);
@@ -440,9 +367,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(deposit, 0);
         assertEq(bucketCollateral, 0.146424467301859716998466886 * 1e27);
 
-        (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(
-            100.332368143282009890 * 1e18
-        );
+        (, , , deposit, debt, , , bucketCollateral) = pool.bucketAt(100.332368143282009890 * 1e18);
         assertEq(debt, 1_000 * 1e45);
         assertEq(deposit, 0);
         assertEq(bucketCollateral, 0);
@@ -467,9 +392,6 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // check pool balance
         assertEq(pool.totalQuoteToken(), 0);
         assertEq(pool.totalDebt(), 1_000 * 1e45);
-        assertEq(
-            pool.totalCollateral(),
-            200.553791036413161552155813918 * 1e27
-        );
+        assertEq(pool.totalCollateral(), 200.553791036413161552155813918 * 1e27);
     }
 }

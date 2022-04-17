@@ -19,15 +19,15 @@ abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
         string memory version
     ) PermitERC721(name, symbol, version) {}
 
-    function constructTokenURI(
-        IPositionManager.ConstructTokenURIParams memory params
-    ) public pure returns (string memory) {
+    function constructTokenURI(IPositionManager.ConstructTokenURIParams memory params)
+        public
+        pure
+        returns (string memory)
+    {
         string memory _name = string(
             abi.encodePacked("Ajna Token #", Strings.toString(params.tokenId))
         );
-        string memory image = Base64.encode(
-            bytes(generateSVGofTokenById(params.tokenId))
-        );
+        string memory image = Base64.encode(bytes(generateSVGofTokenById(params.tokenId)));
         string memory description = "Ajna Positions NFT-V1";
 
         // address tokenOwner = ownerOf(params.tokenId);
@@ -59,11 +59,7 @@ abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
     }
 
     // TODO: finish implementing: https://github.com/scaffold-eth/scaffold-eth/blob/sipping-oe/packages/hardhat/contracts/OldEnglish.sol#L112-L234
-    function generateSVGofTokenById(uint256 tokenId)
-        internal
-        pure
-        returns (string memory)
-    {
+    function generateSVGofTokenById(uint256 tokenId) internal pure returns (string memory) {
         string memory svg = string(
             abi.encodePacked(
                 '<svg xmlns="http://www.w3.org/2000/svg" width="216.18" height="653.57">',
