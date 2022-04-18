@@ -248,7 +248,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
     // @notice: lender deposits 200,000 quote accross 3 buckets
     // @notice: borrower successfully borrows 100,000 quote
-    // @notice: borrower2 attempts to borrow more than available quote
+    // @notice: borrower2 unsuccessfully attempts to borrow pool is undercolalteralized
     function testBorrowPoolUndercollateralization() public {
         // lender deposits 200_000 DAI in 3 buckets
         lender.addQuoteToken(
@@ -307,6 +307,8 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         borrower2.borrow(pool, 5_000 * 1e18, 1_000 * 1e18);
     }
 
+    // @notice: lender deposits 10,000 quote in one bucket
+    // @notice: borrower successfully borrows 1,000 quote
     function testBorrowTestCollateralValidation() public {
         // lender deposits 10_000 DAI at 13.578453165083418466 * 1e18
         lender.addQuoteToken(
@@ -316,10 +318,14 @@ contract ERC20PoolBorrowTest is DSTestPlus {
             13.578453165083418466 * 1e18
         );
         borrower.addCollateral(pool, 100 * 1e18);
-        // should not revert when borrower takes a loan on 100_000 DAI
+        // should not revert when borrower takes a loan on 10_000 DAI
         borrower.borrow(pool, 1_000 * 1e18, 13.537 * 1e18);
     }
 
+    // @notice: lender deposits 150,000 quote accross 3 buckets
+    // @notice: borrower borrows 50,000 quote
+    // @notice: borrower2 borrows 50,000 quote
+    // @notice: lender deposits 1,000 quote 
     function testGetHup() public {
         uint256 priceHigh = 2_000.221618840727700609 * 1e18;
         uint256 priceMed = 1_004.989662429170775094 * 1e18;
