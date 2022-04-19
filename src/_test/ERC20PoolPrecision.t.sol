@@ -143,7 +143,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
             address(lender),
             BUCKET_PRICE,
             0.499944601428501671000000000 * 10**27,
-            999.999999999999999874190864576 * 10**27
+            999.999999999999998874190864576 * 10**27
         );
         lender.claimCollateral(pool, address(lender), 0.499944601428501671 * 1e18, BUCKET_PRICE);
         // // check balances

@@ -56,14 +56,14 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
 
         skip(8200);
 
-        assertEq(pool.getPoolActualUtilization(), 0.833333333333333333 * 1e18);
-        assertEq(pool.getPoolTargetUtilization(), 0.099859436886217129 * 1e18);
+        assertEq(pool.getPoolActualUtilization(), 0.833333333333333333333333333 * 1e27);
+        assertEq(pool.getPoolTargetUtilization(), 0.099859436886217129237589653 * 1e27);
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.086673629908233855 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.086673629908233477 * 1e18);
         lender.updateInterestRate(pool);
 
-        assertEq(pool.previousRate(), 0.086673629908233855 * 1e18);
+        assertEq(pool.previousRate(), 0.086673629908233477 * 1e18);
         assertEq(pool.previousRateUpdate(), 8200);
         assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
     }
@@ -81,8 +81,8 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertLt(pool.getPoolActualUtilization(), pool.getPoolTargetUtilization());
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.009999998890157277 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.009999996670471735 * 1e18);
         lender.updateInterestRate(pool);
-        assertEq(pool.previousRate(), 0.009999998890157277 * 1e18);
+        assertEq(pool.previousRate(), 0.009999996670471735 * 1e18);
     }
 }

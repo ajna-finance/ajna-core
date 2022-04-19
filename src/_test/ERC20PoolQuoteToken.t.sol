@@ -385,7 +385,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.addCollateral(pool, 100 * 1e18);
         borrower.borrow(pool, 5_000 * 1e18, 4_000 * 1e18);
 
-        // should revert if trying to remove more than pool available
+        // should revert if trying to remove entire amount lended
         vm.expectRevert(Buckets.NoDepositToReallocateTo.selector);
         lender.removeQuoteToken(
             pool,
@@ -615,7 +615,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(3_010.892022197881557845 * 1e18);
         assertEq(deposit, 2_000 * 1e45);
         // some debt accumulated between loan and reallocation
-        assertEq(debt, 4_000.002124558305730000 * 1e45);
+        assertEq(debt, 4_000.002124558318098823459519 * 1e45);
     }
 
     function testRemoveQuoteTokenAboveLup() public {
@@ -834,12 +834,12 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             pool.getLPTokenBalance(address(lender), p8002),
             p8002
         );
-        assertEq(quote, 1_000.023113960426559 * 1e45);
+        assertEq(quote, 1_000.023113960510762449249703 * 1e45);
 
         // should revert if not enough funds in pool
         assertEq(pool.totalQuoteToken(), 0);
-        vm.expectRevert(Buckets.NoDepositToReallocateTo.selector);
-        lender.removeQuoteToken(pool, address(lender), 1_000.023113960426559 * 1e18, p8002);
+        vm.expectRevert(abi.encodeWithSelector(Buckets.NoDepositToReallocateTo.selector));
+        lender.removeQuoteToken(pool, address(lender), 1_000.023113960510762449 * 1e18, p8002);
 
         borrower.repay(pool, 12_000 * 1e18);
 
@@ -847,23 +847,23 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             pool.getLPTokenBalance(address(lender), p8002),
             p8002
         );
-        assertEq(quote, 1_000.053487614433709824765574852945019 * 1e45);
+        assertEq(quote, 1_000.053487614594018248892126132 * 1e45);
 
         // should revert if trying to remove more than lended
         vm.expectRevert(
             abi.encodeWithSelector(
                 Buckets.AmountExceedsClaimable.selector,
-                1_000.053487614433709 * 1e45
+                1_000.053487614594018248892126 * 1e45
             )
         );
         lender.removeQuoteToken(pool, address(lender), 1_001 * 1e18, p8002);
 
         // lender should be able to remove lended quote tokens + interest
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(pool), address(lender), 1_000.053487614433709 * 1e18);
+        emit Transfer(address(pool), address(lender), 1_000.053487614594018248 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(lender), p8002, 1_000.053487614433709 * 1e45, p10016);
-        lender.removeQuoteToken(pool, address(lender), 1_000.053487614433709 * 1e18, p8002);
+        emit RemoveQuoteToken(address(lender), p8002, 1_000.053487614594018248 * 1e45, p10016);
+        lender.removeQuoteToken(pool, address(lender), 1_000.053487614594018248 * 1e18, p8002);
 
         assertEq(pool.lup(), p10016);
     }

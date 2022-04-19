@@ -129,7 +129,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(deposit, 10_000 * 1e45);
         // check bucket debt at 3_010.892022197881557845
         (, , , deposit, debt, , , ) = pool.bucketAt(3_010.892022197881557845 * 1e18);
-        assertEq(debt, 10000.013001099140905000 * 1e45);
+        assertEq(debt, 10000.013001099216594901568631000000000000000000000 * 1e45);
         assertEq(deposit, 0);
         // check bucket debt at 3_514.334495390401848927
         (, , , deposit, debt, , , ) = pool.bucketAt(3_514.334495390401848927 * 1e18);
@@ -141,11 +141,11 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(deposit, 0);
         // check pool balances
         assertEq(pool.totalQuoteToken(), 20_000 * 1e45);
-        assertEq(pool.totalDebt(), 30_000.273023081959005000 * 1e45);
+        assertEq(pool.totalDebt(), 30_000.2730230835484929329412510 * 1e45);
 
         // check borrower balances
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower));
-        assertEq(borrowerDebt, 30_000.273023081959005000 * 1e45);
+        assertEq(borrowerDebt, 30_000.2730230835484929329412510 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
 
         // deposit at 5_007.644384905151472283 price and reallocate entire debt
@@ -160,22 +160,22 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check bucket debt at 3_010.892022197881557845
         (, , , deposit, debt, , , ) = pool.bucketAt(3_010.892022197881557845 * 1e18);
         assertEq(debt, 0);
-        assertEq(deposit, 10000.013001099140905000 * 1e45);
+        assertEq(deposit, 10000.013001099216594901568631000000000000000000000 * 1e45);
         // check bucket debt at 3_514.334495390401848927
         (, , , deposit, debt, , , ) = pool.bucketAt(3_514.334495390401848927 * 1e18);
         assertEq(debt, 0);
-        assertEq(deposit, 10000.130010991409050000 * 1e45);
+        assertEq(deposit, 10000.130010992165949015686310 * 1e45);
         // check bucket debt at 4_000.927678580567537368
         (, , , deposit, debt, , , ) = pool.bucketAt(4_000.927678580567537368 * 1e18);
         assertEq(debt, 0);
-        assertEq(deposit, 10000.130010991409050000 * 1e45);
+        assertEq(deposit, 10000.130010992165949015686310 * 1e45);
         // check bucket debt at 5_007.644384905151472283
         (, , , deposit, debt, , , ) = pool.bucketAt(5_007.644384905151472283 * 1e18);
-        assertEq(debt, 30000.273023081959005000 * 1e45);
-        assertEq(deposit, 9999.726976918040995000 * 1e45);
+        assertEq(debt, 30000.2730230835484929329412510 * 1e45);
+        assertEq(deposit, 9999.7269769164515070670587490 * 1e45);
         // check pool balances
         assertEq(pool.totalQuoteToken(), 60_000 * 1e45);
-        assertEq(pool.totalDebt(), 30000.273023081959005000 * 1e45);
+        assertEq(pool.totalDebt(), 30000.2730230835484929329412510 * 1e45);
     }
 
     function testBorrowPoolUndercollateralization() public {
