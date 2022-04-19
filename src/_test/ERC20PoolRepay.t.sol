@@ -212,7 +212,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(borrower), address(pool), 15_000.715071443825413103 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Repay(address(borrower), priceHigh, 15_000.325027478522625000 * 1e45);
+        emit Repay(address(borrower), priceHigh, 15_000.715071443825413103419758346 * 1e45);
         borrower.repay(pool, 15_001 * 1e18);
 
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower));
@@ -234,7 +234,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(borrower2), address(pool), 2000.026002198433189803 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Repay(address(borrower2), priceHigh, 2_000.026002198281810000 * 1e45);
+        emit Repay(address(borrower2), priceHigh, 2000.026002198433189803137262 * 1e45);
         // repay entire debt
         borrower2.repay(pool, 2_010 * 1e18);
 
