@@ -35,10 +35,7 @@ contract PermitTest is DSTestPlus {
 
         factory = new ERC20PoolFactory();
         pool = factory.deployPool(address(collateral), address(quote));
-        ajnaTokenPool = factory.deployPool(
-            address(collateral),
-            address(ajnaToken)
-        );
+        ajnaTokenPool = factory.deployPool(address(collateral), address(ajnaToken));
 
         positionManager = new PositionManager();
     }
@@ -46,18 +43,12 @@ contract PermitTest is DSTestPlus {
     function generateAddress() private returns (address addr) {
         // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
         addr = address(
-            uint160(
-                uint256(
-                    keccak256(abi.encodePacked(nonce, blockhash(block.number)))
-                )
-            )
+            uint160(uint256(keccak256(abi.encodePacked(nonce, blockhash(block.number)))))
         );
         nonce++;
     }
 
-    function mintAndApproveQuoteTokens(address operator, uint256 mintAmount)
-        private
-    {
+    function mintAndApproveQuoteTokens(address operator, uint256 mintAmount) private {
         quote.mint(operator, mintAmount * 1e18);
 
         vm.prank(operator);
@@ -66,10 +57,9 @@ contract PermitTest is DSTestPlus {
         quote.approve(address(positionManager), type(uint256).max);
     }
 
-    function mintAndApproveCollateralTokens(
-        UserWithCollateral operator,
-        uint256 mintAmount
-    ) private {
+    function mintAndApproveCollateralTokens(UserWithCollateral operator, uint256 mintAmount)
+        private
+    {
         collateral.mint(address(operator), mintAmount * 1e18);
 
         operator.approveToken(collateral, address(pool), mintAmount);
@@ -77,12 +67,8 @@ contract PermitTest is DSTestPlus {
     }
 
     // abstract away NFT Minting logic for use by multiple tests
-    function mintNFT(address minter, address _pool)
-        private
-        returns (uint256 tokenId)
-    {
-        IPositionManager.MintParams memory mintParams = IPositionManager
-            .MintParams(minter, _pool);
+    function mintNFT(address minter, address _pool) private returns (uint256 tokenId) {
+        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(minter, _pool);
 
         vm.prank(mintParams.recipient);
         return positionManager.mint(mintParams);
@@ -109,15 +95,7 @@ contract PermitTest is DSTestPlus {
                 abi.encodePacked(
                     "\x19\x01",
                     positionManager.DOMAIN_SEPARATOR(),
-                    keccak256(
-                        abi.encode(
-                            PERMIT_NFT_TYPEHASH,
-                            spender,
-                            tokenId,
-                            0,
-                            deadline
-                        )
-                    )
+                    keccak256(abi.encode(PERMIT_NFT_TYPEHASH, spender, tokenId, 0, deadline))
                 )
             )
         );
@@ -137,23 +115,18 @@ contract PermitTest is DSTestPlus {
 
         // check can add liquidity as approved spender
         IPositionManager.IncreaseLiquidityParams
-            memory increaseLiquidityParamsApproved = IPositionManager
-                .IncreaseLiquidityParams(
-                    tokenId,
-                    owner,
-                    address(pool),
-                    (10000 * 1e18) / 4,
-                    1_004.989662429170775094 * 10**18
-                );
+            memory increaseLiquidityParamsApproved = IPositionManager.IncreaseLiquidityParams(
+                tokenId,
+                owner,
+                address(pool),
+                (10000 * 1e18) / 4,
+                1_004.989662429170775094 * 10**18
+            );
 
         uint256 balanceBeforeAdd = quote.balanceOf(owner);
 
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(
-            owner,
-            (10000 * 1e18) / 4,
-            1_004.989662429170775094 * 10**18
-        );
+        emit IncreaseLiquidity(owner, (10000 * 1e18) / 4, 1_004.989662429170775094 * 10**18);
 
         vm.prank(spender);
         positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
@@ -163,14 +136,13 @@ contract PermitTest is DSTestPlus {
 
         // attempt and fail to add liquidity as unapprovedSpender
         IPositionManager.IncreaseLiquidityParams
-            memory increaseLiquidityParamsUnapproved = IPositionManager
-                .IncreaseLiquidityParams(
-                    tokenId,
-                    owner,
-                    address(pool),
-                    (10000 * 1e18) / 4,
-                    1_004.989662429170775094 * 10**18
-                );
+            memory increaseLiquidityParamsUnapproved = IPositionManager.IncreaseLiquidityParams(
+                tokenId,
+                owner,
+                address(pool),
+                (10000 * 1e18) / 4,
+                1_004.989662429170775094 * 10**18
+            );
 
         vm.prank(unapprovedSpender);
         vm.expectRevert("ajna/not-approved");
@@ -196,15 +168,7 @@ contract PermitTest is DSTestPlus {
                 abi.encodePacked(
                     "\x19\x01",
                     positionManager.DOMAIN_SEPARATOR(),
-                    keccak256(
-                        abi.encode(
-                            PERMIT_NFT_TYPEHASH,
-                            spender,
-                            tokenId,
-                            0,
-                            deadline
-                        )
-                    )
+                    keccak256(abi.encode(PERMIT_NFT_TYPEHASH, spender, tokenId, 0, deadline))
                 )
             )
         );
@@ -281,39 +245,25 @@ contract PermitTest is DSTestPlus {
             )
         );
 
-        positionManager.permit(
-            address(contractSpender),
-            tokenId,
-            deadline,
-            v,
-            r,
-            s
-        );
+        positionManager.permit(address(contractSpender), tokenId, deadline, v, r, s);
 
         // check that nonce has been incremented
         (uint96 nonces, , ) = positionManager.positions(tokenId);
         assertEq(nonces, 1);
 
         // check that spender was approved
-        assertEq(
-            positionManager.getApproved(tokenId),
-            address(contractSpender)
-        );
-        assertTrue(
-            positionManager.getApproved(tokenId) !=
-                address(unapprovedContractSpender)
-        );
+        assertEq(positionManager.getApproved(tokenId), address(contractSpender));
+        assertTrue(positionManager.getApproved(tokenId) != address(unapprovedContractSpender));
 
         // check can add liquidity as approved contract spender
         IPositionManager.IncreaseLiquidityParams
-            memory increaseLiquidityParamsApproved = IPositionManager
-                .IncreaseLiquidityParams(
-                    tokenId,
-                    address(minter),
-                    address(pool),
-                    liquidityToAdd,
-                    price
-                );
+            memory increaseLiquidityParamsApproved = IPositionManager.IncreaseLiquidityParams(
+                tokenId,
+                address(minter),
+                address(pool),
+                liquidityToAdd,
+                price
+            );
 
         vm.expectEmit(true, true, true, true);
         emit IncreaseLiquidity(address(minter), liquidityToAdd, price);
@@ -349,14 +299,7 @@ contract PermitTest is DSTestPlus {
                     "\x19\x01",
                     ajnaToken.DOMAIN_SEPARATOR(),
                     keccak256(
-                        abi.encode(
-                            PERMIT_ERC20_TYPEHASH,
-                            owner,
-                            spender,
-                            permitAmount,
-                            0,
-                            deadline
-                        )
+                        abi.encode(PERMIT_ERC20_TYPEHASH, owner, spender, permitAmount, 0, deadline)
                     )
                 )
             )

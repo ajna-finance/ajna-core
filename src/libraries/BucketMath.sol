@@ -121,11 +121,7 @@ library BucketMath {
     /// @notice Determine closest bucket index for a given price
     /// @return index closest bucket index
     /// @return price closest bucket price
-    function getClosestBucket(uint256 _price)
-        external
-        pure
-        returns (int256 index, uint256 price)
-    {
+    function getClosestBucket(uint256 _price) external pure returns (int256 index, uint256 price) {
         index = priceToIndex(_price);
         price = indexToPrice(index);
     }
