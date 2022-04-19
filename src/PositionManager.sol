@@ -51,23 +51,15 @@ interface IPositionManager {
         uint256[] prices;
     }
 
-    function mint(MintParams calldata params)
-        external
-        payable
-        returns (uint256 tokenId);
+    function mint(MintParams calldata params) external payable returns (uint256 tokenId);
 
-    function memorializePositions(MemorializePositionsParams calldata params)
-        external;
+    function memorializePositions(MemorializePositionsParams calldata params) external;
 
     function burn(BurnParams calldata params) external payable;
 
-    function increaseLiquidity(IncreaseLiquidityParams calldata params)
-        external
-        payable;
+    function increaseLiquidity(IncreaseLiquidityParams calldata params) external payable;
 
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params)
-        external
-        payable;
+    function decreaseLiquidity(DecreaseLiquidityParams calldata params) external payable;
 }
 
 contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
@@ -75,12 +67,7 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
     event MemorializePosition(address lender, uint256 tokenId);
     event Burn(address lender, uint256 price);
     event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
-    event DecreaseLiquidity(
-        address lender,
-        uint256 collateral,
-        uint256 quote,
-        uint256 price
-    );
+    event DecreaseLiquidity(address lender, uint256 collateral, uint256 quote, uint256 price);
 
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
@@ -103,12 +90,7 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
         _;
     }
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        override(ERC721)
-        returns (string memory)
-    {
+    function tokenURI(uint256 tokenId) public view override(ERC721) returns (string memory) {
         require(_exists(tokenId));
 
         // get position information for the given token
@@ -129,11 +111,7 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
     /// @notice Called by lenders to add quote tokens and receive a representative NFT
     /// @param params Calldata struct supplying inputs required to add quote tokens, and receive the NFT
     /// @return tokenId The tokenId of the newly minted NFT
-    function mint(MintParams calldata params)
-        external
-        payable
-        returns (uint256 tokenId)
-    {
+    function mint(MintParams calldata params) external payable returns (uint256 tokenId) {
         _safeMint(params.recipient, (tokenId = _nextId++));
 
         // create a new position associated with the newly minted tokenId
@@ -148,14 +126,14 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
     /// @dev The array of price is expected to be constructed off chain by scanning events for that lender
     /// @dev The NFT must have already been created, and only TODO: (X) prices can be memorialized at a time
     /// @param params Calldata struct supplying inputs required to conduct the memorialization
-    function memorializePositions(MemorializePositionsParams calldata params)
-        external
-    {
+    function memorializePositions(MemorializePositionsParams calldata params) external {
         Position storage position = positions[params.tokenId];
 
         for (uint256 i = 0; i < params.prices.length; i++) {
-            position.lpTokens[params.prices[i]] = IPool(params.pool)
-                .getLPTokenBalance(params.owner, params.prices[i]);
+            position.lpTokens[params.prices[i]] = IPool(params.pool).getLPTokenBalance(
+                params.owner,
+                params.prices[i]
+            );
         }
 
         emit MemorializePosition(params.owner, params.tokenId);
@@ -170,10 +148,7 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
         isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
-        require(
-            position.lpTokens[params.price] == 0,
-            "ajna/liquidity-not-removed"
-        );
+        require(position.lpTokens[params.price] == 0, "ajna/liquidity-not-removed");
         emit Burn(msg.sender, params.price);
         delete positions[params.tokenId];
     }
@@ -213,14 +188,12 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
         IPool pool = IPool(params.pool);
 
         // calulate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool
-            .getLPTokenExchangeValue(params.lpTokens, params.price);
-
-        pool.removeQuoteToken(
-            params.recipient,
-            Maths.radToWad(quoteTokenToRemove),
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool.getLPTokenExchangeValue(
+            params.lpTokens,
             params.price
         );
+
+        pool.removeQuoteToken(params.recipient, Maths.radToWad(quoteTokenToRemove), params.price);
 
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
@@ -257,11 +230,7 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
     }
 
     /// @dev used for tracking nonce input to permit function
-    function _getAndIncrementNonce(uint256 tokenId)
-        internal
-        override
-        returns (uint256)
-    {
+    function _getAndIncrementNonce(uint256 tokenId) internal override returns (uint256) {
         return uint256(positions[tokenId].nonce++);
     }
 
@@ -269,11 +238,7 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
 
     /// @notice Returns the lpTokens accrued to a given tokenId, price pairing
     /// @dev Nested mappings aren't returned normally as part of the default getter for a mapping
-    function getLPTokens(uint256 tokenId, uint256 price)
-        external
-        view
-        returns (uint256 lpTokens)
-    {
+    function getLPTokens(uint256 tokenId, uint256 price) external view returns (uint256 lpTokens) {
         return positions[tokenId].lpTokens[price];
     }
 
@@ -288,8 +253,10 @@ contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
 
         uint256 lpTokens = position.lpTokens[price];
 
-        (uint256 collateral, uint256 quote) = IPool(position.pool)
-            .getLPTokenExchangeValue(lpTokens, price);
+        (uint256 collateral, uint256 quote) = IPool(position.pool).getLPTokenExchangeValue(
+            lpTokens,
+            price
+        );
 
         return quote + (collateral * price);
     }

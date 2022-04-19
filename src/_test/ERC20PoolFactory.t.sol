@@ -22,10 +22,7 @@ contract PoolFactoryTest is DSTestPlus {
 
     // @notice: Tests pool deployment
     function testDeployPool() public {
-        ERC20Pool pool = factory.deployPool(
-            address(collateral),
-            address(quote)
-        );
+        ERC20Pool pool = factory.deployPool(address(collateral), address(quote));
 
         assertEq(address(collateral), address(pool.collateral()));
         assertEq(address(quote), address(pool.quoteToken()));
