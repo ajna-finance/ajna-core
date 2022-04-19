@@ -93,12 +93,7 @@ contract ERC20Pool is IPool, Clone {
     uint256 public totalQuoteToken; // RAD
     uint256 public totalDebt; // RAD
 
-    event AddQuoteToken(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lup
-    );
+    event AddQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lup);
     event RemoveQuoteToken(
         address indexed lender,
         uint256 indexed price,
@@ -200,11 +195,7 @@ contract ERC20Pool is IPool, Clone {
         // update quote token accumulator
         totalQuoteToken += _amount;
 
-        quoteToken().safeTransferFrom(
-            _recipient,
-            address(this),
-            _amount / quoteTokenScale
-        );
+        quoteToken().safeTransferFrom(_recipient, address(this), _amount / quoteTokenScale);
 
         // TODO: add require to ensure quote tokens were transferred successfully
 
@@ -265,11 +256,7 @@ contract ERC20Pool is IPool, Clone {
         totalCollateral += _amount;
 
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
-        collateral().safeTransferFrom(
-            msg.sender,
-            address(this),
-            _amount / collateralScale
-        );
+        collateral().safeTransferFrom(msg.sender, address(this), _amount / collateralScale);
         emit AddCollateral(msg.sender, _amount);
     }
 
@@ -292,13 +279,9 @@ contract ERC20Pool is IPool, Clone {
         // convert amount from WAD to collateral pool precision - RAY
         _amount = Maths.wadToRay(_amount);
 
-        if (
-            borrower.collateralDeposited - encumberedBorrowerCollateral <
-            _amount
-        ) {
+        if (borrower.collateralDeposited - encumberedBorrowerCollateral < _amount) {
             revert AmountExceedsAvailableCollateral({
-                availableCollateral: borrower.collateralDeposited -
-                    encumberedBorrowerCollateral
+                availableCollateral: borrower.collateralDeposited - encumberedBorrowerCollateral
             });
         }
 
@@ -328,11 +311,7 @@ contract ERC20Pool is IPool, Clone {
 
         // convert amount from WAD to collateral pool precision - RAY
         _amount = Maths.wadToRay(_amount);
-        uint256 claimedLpTokens = _buckets.claimCollateral(
-            _price,
-            _amount,
-            maxClaim
-        );
+        uint256 claimedLpTokens = _buckets.claimCollateral(_price, _amount, maxClaim);
 
         lpBalance[_recipient][_price] -= claimedLpTokens;
 
@@ -373,12 +352,7 @@ contract ERC20Pool is IPool, Clone {
         }
 
         uint256 loanCost;
-        (lup, loanCost) = _buckets.borrow(
-            _amount,
-            _stopPrice,
-            curLup,
-            inflatorSnapshot
-        );
+        (lup, loanCost) = _buckets.borrow(_amount, _stopPrice, curLup, inflatorSnapshot);
 
         if (
             borrower.collateralDeposited <=
@@ -406,8 +380,7 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Called by a borrower to repay some amount of their borrowed quote tokens
     /// @param _maxAmount WAD The maximum amount of quote token to repay
     function repay(uint256 _maxAmount) external {
-        uint256 availableAmount = quoteToken().balanceOf(msg.sender) *
-            quoteTokenScale;
+        uint256 availableAmount = quoteToken().balanceOf(msg.sender) * quoteTokenScale;
         // convert amount from WAD to pool precision - RAD
         _maxAmount = Maths.wadToRad(_maxAmount);
         if (availableAmount < _maxAmount) {
@@ -435,11 +408,7 @@ contract ERC20Pool is IPool, Clone {
         totalQuoteToken += amount;
         totalDebt -= Maths.min(totalDebt, amount);
 
-        quoteToken().safeTransferFrom(
-            msg.sender,
-            address(this),
-            amount / quoteTokenScale
-        );
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, lup, amount);
     }
 
@@ -516,9 +485,7 @@ contract ERC20Pool is IPool, Clone {
             Maths.rdiv(Maths.radToRay(debt), Maths.wadToRay(lup))
         );
         if (collateralization > Maths.ONE_RAY) {
-            revert BorrowerIsCollateralized({
-                collateralization: collateralization
-            });
+            revert BorrowerIsCollateralized({collateralization: collateralization});
         }
 
         uint256 requiredCollateral = _buckets.liquidate(
@@ -607,9 +574,7 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
     /// @param _borrower Pointer to the struct which is accumulating interest on their debt
     /// @dev Only adds debt if a borrower has already initiated a debt position
-    function accumulateBorrowerInterest(BorrowerInfo storage _borrower)
-        private
-    {
+    function accumulateBorrowerInterest(BorrowerInfo storage _borrower) private {
         if (_borrower.debt != 0 && _borrower.inflatorSnapshot != 0) {
             _borrower.debt += getPendingInterest(
                 _borrower.debt,
@@ -728,16 +693,9 @@ contract ERC20Pool is IPool, Clone {
     function getHup() public view returns (uint256) {
         uint256 curPrice = lup;
         while (true) {
-            (
-                uint256 price,
-                ,
-                uint256 down,
-                uint256 onDeposit,
-                ,
-                ,
-                ,
-
-            ) = _buckets.bucketAt(curPrice);
+            (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = _buckets.bucketAt(
+                curPrice
+            );
             if (price == down || onDeposit != 0) {
                 break;
             }
@@ -826,10 +784,7 @@ contract ERC20Pool is IPool, Clone {
                 borrower.inflatorSnapshot
             );
             collateralEncumbered = borrowerPendingDebt / lup;
-            collateralization = Maths.rdiv(
-                borrower.collateralDeposited,
-                collateralEncumbered
-            );
+            collateralization = Maths.rdiv(borrower.collateralDeposited, collateralEncumbered);
         }
 
         return (

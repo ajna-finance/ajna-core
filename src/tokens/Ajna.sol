@@ -18,9 +18,6 @@ contract AjnaToken is ERC20("AjnaToken", "AJNA"), ERC20Permit {
         // This can be achived by setting _balances[address(this)] to the max value uint256.
         // But _balances are private variable in the OpenZeppelin ERC20 contract implementation.
 
-        require(
-            from != address(this),
-            "Cannot transfer tokens from the contract itself"
-        );
+        require(from != address(this), "Cannot transfer tokens from the contract itself");
     }
 }
