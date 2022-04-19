@@ -184,7 +184,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
     // @notice: With 1 lender and 2 borrowers tests addQuoteToken, addCollateral and borrow
     // @notice: on an undercollateralized pool
-    // @notice: borrower2 reverts: attempts to borrow when pool is undercolalteralized
+    // @notice: borrower2 reverts: attempts to borrow when pool is undercollateralized
     function testBorrowPoolUndercollateralization() public {
         uint256 priceHigh = 2_000.221618840727700609 * 1e18;
         uint256 priceMed = 1_004.989662429170775094 * 1e18;
