@@ -6,6 +6,9 @@ import {DSTestPlus} from "./utils/DSTestPlus.sol";
 import "../libraries/BucketMath.sol";
 
 contract BucketMathTest is DSTestPlus {
+    // @notice: Tests price maps to index
+    // @notice: BucketMath revert:
+    // @notice:     attempt to get index of bad price
     function testPriceToIndex() public {
         uint256 badPrice = 5 * 10**10;
 
@@ -18,6 +21,7 @@ contract BucketMathTest is DSTestPlus {
         assertEq(index, 323);
     }
 
+    // @notice: Tests validity of min and max prices
     function testIsValidPrice() public {
         assertTrue(BucketMath.isValidPrice(BucketMath.MAX_PRICE));
         assertTrue(BucketMath.isValidPrice(BucketMath.MIN_PRICE));
@@ -25,6 +29,7 @@ contract BucketMathTest is DSTestPlus {
         assertTrue(!BucketMath.isValidPrice(2_000 * 10**18));
     }
 
+    // @notice: Tests verying prices map to indexes properly
     function testPriceIndexConversion() public {
         uint256 priceToTest = BucketMath.MAX_PRICE;
         assertEq(BucketMath.indexToPrice(4156), priceToTest);
@@ -91,6 +96,8 @@ contract BucketMathTest is DSTestPlus {
         assertEq(BucketMath.priceToIndex(priceToTest), -3232);
     }
 
+    // @notice: Tests that price to index and index to price
+    // @notice: return properly
     function testPriceBucketCorrectness() public {
         for (
             int256 i = BucketMath.MIN_PRICE_INDEX;
@@ -103,6 +110,7 @@ contract BucketMathTest is DSTestPlus {
         }
     }
 
+    // @notice: Tests retreival of closest bucket to price
     function testClosestPriceBucket() public {
         uint256 priceToTest = 2_000 * 10**18;
 
@@ -114,6 +122,7 @@ contract BucketMathTest is DSTestPlus {
         assertEq(price, 2000.221618840727700609 * 1e18);
     }
 
+    // @notice: Tests get closest bucket with fuzzing
     function testPriceToIndexFuzzy(uint256 priceToIndex) public {
         if (
             priceToIndex < BucketMath.MIN_PRICE ||

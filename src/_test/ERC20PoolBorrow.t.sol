@@ -38,51 +38,35 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
-    // @notice: lender deposits 50,000 quote accross 5 buckets
-    // @notice: borrower unsuccessfully:
+    // @notice: With 1 lender and 1 borrower tests
+    // @notice: addQuoteToken (subsequently reallocation), addCollateral and borrow
+    // @notice: borrower reverts:
     // @notice:     attempts to borrow more than available quote
     // @notice:     attempts to borrow more than their collateral supports
     // @notice:     attempts to borrow but stop price is exceeded
-    // @notice: borrower successfully borrows 21,000 quote
-    // @notice: borrower successfully borrows 9,000 quote
-    // @notice: lender deposits 40,000 quote reallocating entire debt
     function testBorrow() public {
+        uint256 priceHighest = 4_000.927678580567537368 * 1e18;
+        uint256 priceHigh = 3_514.334495390401848927 * 1e18;
+        uint256 priceMed = 3_010.892022197881557845 * 1e18;
+        uint256 priceLow = 2_503.519024294695168295 * 1e18;
+        uint256 priceLowest = 2_000.221618840727700609 * 1e18;
+
         // lender deposits 10000 DAI in 5 buckets each
         lender.addQuoteToken(
             pool,
             address(lender),
             10_000 * 1e18,
-            4_000.927678580567537368 * 1e18
+            priceHighest
         );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            10_000 * 1e18,
-            3_514.334495390401848927 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            10_000 * 1e18,
-            3_010.892022197881557845 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            10_000 * 1e18,
-            2_503.519024294695168295 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            10_000 * 1e18,
-            2_000.221618840727700609 * 1e18
-        );
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceHigh);
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceMed);
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceLow);
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceLowest);
 
         // check pool balance
         assertEq(pool.totalQuoteToken(), 50_000 * 1e45);
         assertEq(pool.totalDebt(), 0);
-        assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
+        assertEq(pool.hdp(), priceHighest);
 
         // should revert if borrower wants to borrow a greater amount than in pool
         vm.expectRevert(
@@ -104,7 +88,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 Buckets.BorrowPriceBelowStopPrice.selector,
-                3_514.334495390401848927 * 1e18
+                priceHigh
             )
         );
         borrower.borrow(pool, 15_000 * 1e18, 4_000 * 1e18);
@@ -113,30 +97,21 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         borrower.addCollateral(pool, 90 * 1e18);
 
         // get a 21_000 DAI loan from 3 buckets, loan price should be 3000 DAI
-        assertEq(
-            pool.estimatePriceForLoan(21_000 * 1e18),
-            3_010.892022197881557845 * 1e18
-        );
+        assertEq(pool.estimatePriceForLoan(21_000 * 1e18), priceMed);
 
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(borrower), 21_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Borrow(
-            address(borrower),
-            3_010.892022197881557845 * 1e18,
-            21_000 * 1e45
-        );
+        emit Borrow(address(borrower), priceMed, 21_000 * 1e45);
         borrower.borrow(pool, 21_000 * 1e18, 2_500 * 1e18);
 
         assertEq(quote.balanceOf(address(borrower)), 21_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 29_000 * 1e18);
-        assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
-        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(pool.hdp(), priceHighest);
+        assertEq(pool.lup(), priceMed);
 
         // check bucket deposit and debt at 3_010.892022197881557845
-        (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(
-            3_010.892022197881557845 * 1e18
-        );
+        (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(priceMed);
         assertEq(deposit, 9_000 * 1e45);
         // check pool balances
         assertEq(pool.totalQuoteToken(), 29_000 * 1e45);
@@ -154,40 +129,28 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(borrower), 9_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Borrow(
-            address(borrower),
-            3_010.892022197881557845 * 1e18,
-            9_000 * 1e45
-        );
-        borrower.borrow(pool, 9_000 * 1e18, 2_503.519024294695168295 * 1e18);
+        emit Borrow(address(borrower), priceMed, 9_000 * 1e45);
+        borrower.borrow(pool, 9_000 * 1e18, priceLow);
 
         assertEq(quote.balanceOf(address(borrower)), 30_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 20_000 * 1e18);
-        assertEq(pool.hdp(), 4_000.927678580567537368 * 1e18);
-        assertEq(pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(pool.hdp(), priceHighest);
+        assertEq(pool.lup(), priceMed);
 
         // check bucket debt at 2_503.519024294695168295
-        (, , , deposit, debt, , , ) = pool.bucketAt(
-            2_503.519024294695168295 * 1e18
-        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceLow);
         assertEq(debt, 0);
         assertEq(deposit, 10_000 * 1e45);
         // check bucket debt at 3_010.892022197881557845
-        (, , , deposit, debt, , , ) = pool.bucketAt(
-            3_010.892022197881557845 * 1e18
-        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceMed);
         assertEq(debt, 10000.013001099140905000 * 1e45);
         assertEq(deposit, 0);
         // check bucket debt at 3_514.334495390401848927
-        (, , , deposit, debt, , , ) = pool.bucketAt(
-            3_514.334495390401848927 * 1e18
-        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceHigh);
         assertEq(debt, 10_000 * 1e45);
         assertEq(deposit, 0);
         // check bucket debt at 4_000.927678580567537368
-        (, , , deposit, debt, , , ) = pool.bucketAt(
-            4_000.927678580567537368 * 1e18
-        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceHighest);
         assertEq(debt, 10_000 * 1e45);
         assertEq(deposit, 0);
         // check pool balances
@@ -212,27 +175,19 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.lup(), 5_007.644384905151472283 * 1e18);
 
         // check bucket debt at 2_503.519024294695168295
-        (, , , deposit, debt, , , ) = pool.bucketAt(
-            2_503.519024294695168295 * 1e18
-        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceLow);
         assertEq(debt, 0);
         assertEq(deposit, 10_000 * 1e45);
         // check bucket debt at 3_010.892022197881557845
-        (, , , deposit, debt, , , ) = pool.bucketAt(
-            3_010.892022197881557845 * 1e18
-        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceMed);
         assertEq(debt, 0);
         assertEq(deposit, 10000.013001099140905000 * 1e45);
         // check bucket debt at 3_514.334495390401848927
-        (, , , deposit, debt, , , ) = pool.bucketAt(
-            3_514.334495390401848927 * 1e18
-        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceHigh);
         assertEq(debt, 0);
         assertEq(deposit, 10000.130010991409050000 * 1e45);
         // check bucket debt at 4_000.927678580567537368
-        (, , , deposit, debt, , , ) = pool.bucketAt(
-            4_000.927678580567537368 * 1e18
-        );
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceHighest);
         assertEq(debt, 0);
         assertEq(deposit, 10000.130010991409050000 * 1e45);
         // check bucket debt at 5_007.644384905151472283
@@ -246,54 +201,28 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.totalDebt(), 30000.273023081959005000 * 1e45);
     }
 
-    // @notice: lender deposits 200,000 quote accross 3 buckets
-    // @notice: borrower successfully borrows 100,000 quote
-    // @notice: borrower2 unsuccessfully attempts to borrow pool is undercolalteralized
+    // @notice: With 1 lender and 2 borrowers tests addQuoteToken, addCollateral and borrow
+    // @notice: on an undercollateralized pool
+    // @notice: borrower2 reverts: attempts to borrow when pool is undercolalteralized
     function testBorrowPoolUndercollateralization() public {
+        uint256 priceHigh = 2_000.221618840727700609 * 1e18;
+        uint256 priceMed = 1_004.989662429170775094 * 1e18;
+        uint256 priceLow = 502.433988063349232760 * 1e18;
+
         // lender deposits 200_000 DAI in 3 buckets
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            100_000 * 1e18,
-            2_000.221618840727700609 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            50_000 * 1e18,
-            1_004.989662429170775094 * 1e18
-        );
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            50_000 * 1e18,
-            502.433988063349232760 * 1e18
-        );
+        lender.addQuoteToken(pool, address(lender), 100_000 * 1e18, priceHigh);
+        lender.addQuoteToken(pool, address(lender), 50_000 * 1e18, priceMed);
+        lender.addQuoteToken(pool, address(lender), 50_000 * 1e18, priceLow);
 
         // borrower1 takes a loan on 100_000 DAI
-        assertEq(
-            pool.estimatePriceForLoan(75_000 * 1e18),
-            2_000.221618840727700609 * 1e18
-        );
-        assertEq(
-            pool.estimatePriceForLoan(125_000 * 1e18),
-            1_004.989662429170775094 * 1e18
-        );
-        assertEq(
-            pool.estimatePriceForLoan(175_000 * 1e18),
-            502.433988063349232760 * 1e18
-        );
+        assertEq(pool.estimatePriceForLoan(75_000 * 1e18), priceHigh);
+        assertEq(pool.estimatePriceForLoan(125_000 * 1e18), priceMed);
+        assertEq(pool.estimatePriceForLoan(175_000 * 1e18), priceLow);
         borrower.addCollateral(pool, 51 * 1e18);
         borrower.borrow(pool, 100_000 * 1e18, 1_000 * 1e18);
 
-        assertEq(
-            pool.estimatePriceForLoan(25_000 * 1e18),
-            1_004.989662429170775094 * 1e18
-        );
-        assertEq(
-            pool.estimatePriceForLoan(75_000 * 1e18),
-            502.433988063349232760 * 1e18
-        );
+        assertEq(pool.estimatePriceForLoan(25_000 * 1e18), priceMed);
+        assertEq(pool.estimatePriceForLoan(75_000 * 1e18), priceLow);
         assertEq(pool.estimatePriceForLoan(175_000 * 1e18), 0);
         borrower2.addCollateral(pool, 51 * 1e18);
 
@@ -307,25 +236,20 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         borrower2.borrow(pool, 5_000 * 1e18, 1_000 * 1e18);
     }
 
-    // @notice: lender deposits 10,000 quote in one bucket
-    // @notice: borrower successfully borrows 1,000 quote
+    // @notice: With 1 lender and 1 borrower tests addQuoteToken, addCollateral and borrow
+    // @notice: verifying collateral
     function testBorrowTestCollateralValidation() public {
+        uint256 priceLow = 13.578453165083418466 * 1e18;
         // lender deposits 10_000 DAI at 13.578453165083418466 * 1e18
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            10_000 * 1e18,
-            13.578453165083418466 * 1e18
-        );
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceLow);
         borrower.addCollateral(pool, 100 * 1e18);
         // should not revert when borrower takes a loan on 10_000 DAI
         borrower.borrow(pool, 1_000 * 1e18, 13.537 * 1e18);
     }
 
-    // @notice: lender deposits 150,000 quote accross 3 buckets
-    // @notice: borrower borrows 50,000 quote
-    // @notice: borrower2 borrows 50,000 quote
-    // @notice: lender deposits 1,000 quote 
+    // @notice: With 1 lender and 2 borrower tests HUP moves down
+    // @notice: when pool is borrowed against and moves up when
+    // @notice: quote token is added
     function testGetHup() public {
         uint256 priceHigh = 2_000.221618840727700609 * 1e18;
         uint256 priceMed = 1_004.989662429170775094 * 1e18;

@@ -156,6 +156,7 @@ contract PositionManagerTest is DSTestPlus {
 
     // -------------------- Tests --------------------
 
+    // @notice: Tests base NFT minting functionality
     function testMint() public {
         uint256 mintAmount = 50 * 1e18;
         uint256 mintPrice = 1_004.989662429170775094 * 10**18;
@@ -178,6 +179,8 @@ contract PositionManagerTest is DSTestPlus {
         assert(lpTokens == 0);
     }
 
+    // @notice: Tests attachment of a created position to an already existing NFT
+    // @notice: LP tokens are checked to verify ownership of position
     function testMemorializePositions() public {
         address testAddress = generateAddress();
         uint256 mintAmount = 10000 * 1e18;
@@ -238,6 +241,7 @@ contract PositionManagerTest is DSTestPlus {
     // TODO: implement test case where multiple users mints multiple NFTs to multiple pools
     function testMintMultiple() public {}
 
+    // @notice: Tests a contract minting an NFT
     function testMintToContract() public {
         UserWithQuoteToken lender = new UserWithQuoteToken();
         quote.mint(address(lender), 200_000 * 1e18);
@@ -250,6 +254,7 @@ contract PositionManagerTest is DSTestPlus {
         mintNFT(address(lender), address(pool));
     }
 
+    // @notice: Tests minting an NFT, increasing liquidity at two different prices
     function testIncreaseLiquidity() public {
         // generate a new address
         address testAddress = generateAddress();
@@ -322,6 +327,10 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), Maths.wadToRad(mintAmount));
     }
 
+    // @notice: Tests minting an NFT and failing to increase
+    // @notice: liquidity for invalid recipient
+    // @notice: recipient reverts:
+    // @notice:     attempts to increase liquidity when not permited
     function testIncreaseLiquidityPermissions() public {
         address recipient = generateAddress();
         address externalCaller = generateAddress();
@@ -349,6 +358,7 @@ contract PositionManagerTest is DSTestPlus {
         positionManager.increaseLiquidity(increaseLiquidityParams);
     }
 
+    // @notice: Tests minting an NFT, increasing liquidity and decreasing liquidity
     function testDecreaseLiquidityNoDebt() public {
         // generate a new address and set test params
         address testAddress = generateAddress();
@@ -405,6 +415,8 @@ contract PositionManagerTest is DSTestPlus {
         // TODO: check balance of collateral and quote
     }
 
+    // @notice: Tests minting an NFT, increasing liquidity, borrowing,
+    // @notice: purchasing then decreasing liquidity
     function testDecreaseLiquidityWithDebt() public {
         // generate a new address and set test params
         address testLender = generateAddress();
@@ -468,6 +480,10 @@ contract PositionManagerTest is DSTestPlus {
         assertTrue(updatedLPTokens < originalLPTokens);
     }
 
+    // @notice: Tests minting an NFT, transfering NFT, increasing liquidity
+    // @notice: checks that old owner cannot increase liquidity
+    // @notice: old owner reverts:
+    // @notice:    attempts to increase liquidity without permission
     function testNFTTransfer() public {
         // generate addresses and set test params
         address testMinter = generateAddress();
@@ -534,6 +550,10 @@ contract PositionManagerTest is DSTestPlus {
         );
     }
 
+    // @notice: Tests NFT position can & can't be burned
+    // @notice: based on liquidity attached to it
+    // @notice: owner reverts:
+    // @notice:    attempts to burn NFT with liquidity
     function testBurn() public {
         // generate a new address and set test params
         address testAddress = generateAddress();

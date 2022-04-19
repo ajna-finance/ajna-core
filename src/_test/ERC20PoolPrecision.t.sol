@@ -59,6 +59,9 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         borrower.approveToken(quote, address(pool), 10_000 * quotePrecision);
     }
 
+    // @notice: 1 lender and 1 borrower tests adding quote token, removing quote token borrowing
+    // @notice: removing quote token, borrowing and repaying
+    // @notice: with 10^45 and 10^27 precision
     function testPrecision() public virtual {
         assertEq(
             collateral.balanceOf(address(borrower)),

@@ -34,6 +34,9 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
+    // @notice: with 1 lender and 1 borrower quote token is deposited
+    // @notice: then borrower adds collateral, borrows and repays over time
+    // @notice: to check inflator correctness
     function testInflator() public {
         uint256 inflatorSnapshot = pool.inflatorSnapshot();
         uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
@@ -82,6 +85,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         );
     }
 
+    // @notice: With 1 lender pending inflator is tested against calculated inflator
     function testCalculatePendingInflator() public {
         lender.addQuoteToken(
             pool,
