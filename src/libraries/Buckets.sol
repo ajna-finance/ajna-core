@@ -75,9 +75,7 @@ library Buckets {
 
         uint256 exchangeRate = getExchangeRate(bucket);
 
-        uint256 claimable = Maths.rayToRad(
-            Maths.rmul(_lpBalance, exchangeRate)
-        );
+        uint256 claimable = Maths.rayToRad(Maths.rmul(_lpBalance, exchangeRate));
 
         if (_amount > claimable) {
             revert AmountExceedsClaimable({rightToClaim: claimable});
@@ -115,10 +113,7 @@ library Buckets {
         }
 
         uint256 exchangeRate = getExchangeRate(bucket);
-        lpRedemption = Maths.rdiv(
-            Maths.rmul(_amount, Maths.wadToRay(bucket.price)),
-            exchangeRate
-        );
+        lpRedemption = Maths.rdiv(Maths.rmul(_amount, Maths.wadToRay(bucket.price)), exchangeRate);
 
         if (lpRedemption > _lpBalance) {
             revert InsufficientLpBalance({balance: _lpBalance});
@@ -138,7 +133,7 @@ library Buckets {
     function borrow(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _amount, // RAD
-        uint256 _stop, // WAD 
+        uint256 _stop, // WAD
         uint256 _lup, // WAD
         uint256 _inflator // RAY
     ) public returns (uint256 lup, uint256 loanCost) {
@@ -159,10 +154,7 @@ library Buckets {
                 curLup.debt += curLup.onDeposit;
                 amountRemaining -= curLup.onDeposit;
                 loanCost += Maths.rayToRad(
-                    Maths.rdiv(
-                        Maths.radToRay(curLup.onDeposit),
-                        Maths.wadToRay(curLup.price)
-                    )
+                    Maths.rdiv(Maths.radToRay(curLup.onDeposit), Maths.wadToRay(curLup.price))
                 );
                 curLup.onDeposit -= curLup.onDeposit;
             } else {
@@ -170,10 +162,7 @@ library Buckets {
                 curLup.onDeposit -= amountRemaining;
                 curLup.debt += amountRemaining;
                 loanCost += Maths.rayToRad(
-                    Maths.rdiv(
-                        Maths.radToRay(amountRemaining),
-                        Maths.wadToRay(curLup.price)
-                    )
+                    Maths.rdiv(Maths.radToRay(amountRemaining), Maths.wadToRay(curLup.price))
                 );
                 break;
             }
@@ -188,7 +177,6 @@ library Buckets {
 
         return (_lup, loanCost);
     }
-
 
     /// @notice Called by a borrower to repay quote tokens as part of reducing their position
     /// @param buckets Mapping of buckets for a given pool
@@ -440,17 +428,12 @@ library Buckets {
     /// @notice Update bucket.debt with interest accumulated since last state change
     /// @param bucket The bucket being updated
     /// @param _inflator RAY - The current bucket inflator value
-    function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator)
-        private
-    {
+    function accumulateBucketInterest(Bucket storage bucket, uint256 _inflator) private {
         if (bucket.debt != 0) {
             bucket.debt += Maths.rayToRad(
                 Maths.rmul(
                     Maths.radToRay(bucket.debt),
-                    Maths.sub(
-                        Maths.rdiv(_inflator, bucket.inflatorSnapshot),
-                        Maths.ONE_RAY
-                    )
+                    Maths.sub(Maths.rdiv(_inflator, bucket.inflatorSnapshot), Maths.ONE_RAY)
                 )
             );
             bucket.inflatorSnapshot = _inflator;
@@ -488,10 +471,7 @@ library Buckets {
     /// @notice Return the information of the bucket at a given price
     /// @param buckets Mapping of buckets for a given pool
     /// @param _price The price of the bucket to retrieve information from
-    function bucketAt(
-        mapping(uint256 => Bucket) storage buckets,
-        uint256 _price
-    )
+    function bucketAt(mapping(uint256 => Bucket) storage buckets, uint256 _price)
         public
         view
         returns (
@@ -521,16 +501,10 @@ library Buckets {
     /// @notice Calculate the current exchange rate for Quote tokens / LP Tokens
     /// @dev Performs calculations in RAY terms and rounds up to determine size to minimize precision loss
     /// @return RAY The current rate at which quote tokens can be exchanged for LP tokens
-    function getExchangeRate(Bucket storage bucket)
-        internal
-        view
-        returns (uint256)
-    {
+    function getExchangeRate(Bucket storage bucket) internal view returns (uint256) {
         uint256 size = bucket.onDeposit +
             bucket.debt +
-            Maths.rayToRad(
-                Maths.rmul(bucket.collateral, Maths.wadToRay(bucket.price))
-            );
+            Maths.rayToRad(Maths.rmul(bucket.collateral, Maths.wadToRay(bucket.price)));
         if (size != 0 && bucket.lpOutstanding != 0) {
             return Maths.rdiv(Maths.radToRay(size), bucket.lpOutstanding);
         }

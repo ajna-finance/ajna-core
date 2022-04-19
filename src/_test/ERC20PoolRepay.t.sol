@@ -81,36 +81,21 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         // check balances
         assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
-        assertEq(
-            pool.totalDebt(),
-            15_000.327247194808868366441750000000000000000000000 * 1e45
-        );
+        assertEq(pool.totalDebt(), 15_000.327247194808868366441750000000000000000000000 * 1e45);
         assertEq(pool.lup(), 4_000.927678580567537368 * 1e18);
-        assertEq(
-            pool.totalDebt() / pool.lup(),
-            3.749212295813495561695123221 * 1e27
-        );
+        assertEq(pool.totalDebt() / pool.lup(), 3.749212295813495561695123221 * 1e27);
         assertEq(quote.balanceOf(address(borrower)), 25_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 15_000 * 1e18);
 
         // check borrower debt
-        (borrowerDebt, depositedCollateral, ) = pool.borrowers(
-            address(borrower)
-        );
-        assertEq(
-            borrowerDebt,
-            15_000.327247194808868366441750000000000000000000000 * 1e45
-        );
+        (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower));
+        assertEq(borrowerDebt, 15_000.327247194808868366441750000000000000000000000 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
 
         // overpay debt w/ repay 16_000 DAI
         skip(8200);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(
-            address(borrower),
-            address(pool),
-            15_000.913648922084090343 * 1e18
-        );
+        emit Transfer(address(borrower), address(pool), 15_000.913648922084090343 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(
             address(borrower),
@@ -127,14 +112,8 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.lup(), 5_007.644384905151472283 * 1e18);
         assertEq(pool.totalDebt() / pool.lup(), 0);
-        assertEq(
-            quote.balanceOf(address(borrower)),
-            9_999.086351077915909657 * 1e18
-        );
-        assertEq(
-            quote.balanceOf(address(pool)),
-            30_000.913648922084090343 * 1e18
-        );
+        assertEq(quote.balanceOf(address(borrower)), 9_999.086351077915909657 * 1e18);
+        assertEq(quote.balanceOf(address(pool)), 30_000.913648922084090343 * 1e18);
 
         // check borrower debt
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower));
@@ -205,32 +184,20 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         // check balances
         assertEq(pool.totalQuoteToken(), 13_000 * 1e45);
-        assertEq(
-            pool.totalDebt(),
-            17_000.351029678848062342353037000000000000000000000 * 1e45
-        );
+        assertEq(pool.totalDebt(), 17_000.351029678848062342353037000000000000000000000 * 1e45);
         assertEq(pool.lup(), 4_000.927678580567537368 * 1e18);
-        assertEq(
-            pool.totalDebt() / pool.lup(),
-            4.249102307120473073413233732 * 1e27
-        );
+        assertEq(pool.totalDebt() / pool.lup(), 4.249102307120473073413233732 * 1e27);
         assertEq(quote.balanceOf(address(borrower)), 25_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 13_000 * 1e18);
 
         // check borrower debt
-        (borrowerDebt, depositedCollateral, ) = pool.borrowers(
-            address(borrower)
-        );
+        (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower));
         assertEq(borrowerDebt, 15_000.325027480414872539215775 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
 
         // borrower attempts to overpay to cover 15_000 DAI plus accumulated debt
         vm.expectEmit(true, true, false, true);
-        emit Transfer(
-            address(borrower),
-            address(pool),
-            15_000.715071443825413103 * 1e18
-        );
+        emit Transfer(address(borrower), address(pool), 15_000.715071443825413103 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(
             address(borrower),
@@ -239,44 +206,24 @@ contract ERC20PoolRepayTest is DSTestPlus {
         );
         borrower.repay(pool, 15_001 * 1e18);
 
-        (borrowerDebt, depositedCollateral, ) = pool.borrowers(
-            address(borrower)
-        );
+        (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower));
         assertEq(borrowerDebt, 0);
         assertEq(depositedCollateral, 100 * 1e27);
 
-        assertEq(
-            pool.totalQuoteToken(),
-            28_000.715071443825413103419758346 * 1e45
-        );
+        assertEq(pool.totalQuoteToken(), 28_000.715071443825413103419758346 * 1e45);
         assertEq(pool.totalDebt(), 1_999.635958235022649238933278654 * 1e45);
         assertEq(pool.lup(), 5_007.644384905151472283 * 1e18);
-        assertEq(
-            pool.totalDebt() / pool.lup(),
-            0.399316685558313112714566594 * 1e27
-        );
-        assertEq(
-            quote.balanceOf(address(borrower)),
-            9_999.284928556174586897 * 1e18
-        );
-        assertEq(
-            quote.balanceOf(address(pool)),
-            28_000.715071443825413103 * 1e18
-        );
+        assertEq(pool.totalDebt() / pool.lup(), 0.399316685558313112714566594 * 1e27);
+        assertEq(quote.balanceOf(address(borrower)), 9_999.284928556174586897 * 1e18);
+        assertEq(quote.balanceOf(address(pool)), 28_000.715071443825413103 * 1e18);
 
         // borrower2 attempts to repay 2_000 DAI plus accumulated debt
-        (borrowerDebt, depositedCollateral, ) = pool.borrowers(
-            address(borrower2)
-        );
+        (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower2));
         assertEq(borrowerDebt, 2_000 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
 
         vm.expectEmit(true, true, false, true);
-        emit Transfer(
-            address(borrower2),
-            address(pool),
-            2000.026002198433189803 * 1e18
-        );
+        emit Transfer(address(borrower2), address(pool), 2000.026002198433189803 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(
             address(borrower2),
@@ -289,21 +236,12 @@ contract ERC20PoolRepayTest is DSTestPlus {
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower2));
         assertEq(borrowerDebt, 0);
         assertEq(depositedCollateral, 100 * 1e27);
-        assertEq(
-            pool.totalQuoteToken(),
-            30_000.741073642258602906557020346 * 1e45
-        );
+        assertEq(pool.totalQuoteToken(), 30_000.741073642258602906557020346 * 1e45);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.lup(), 5_007.644384905151472283 * 1e18);
         assertEq(pool.totalDebt() / pool.lup(), 0);
-        assertEq(
-            quote.balanceOf(address(borrower2)),
-            9_999.973997801566810197 * 1e18
-        );
-        assertEq(
-            quote.balanceOf(address(pool)),
-            30_000.741073642258602906 * 1e18
-        );
+        assertEq(quote.balanceOf(address(borrower2)), 9_999.973997801566810197 * 1e18);
+        assertEq(quote.balanceOf(address(pool)), 30_000.741073642258602906 * 1e18);
 
         // remove deposited collateral
         borrower.removeCollateral(pool, 100 * 1e18);

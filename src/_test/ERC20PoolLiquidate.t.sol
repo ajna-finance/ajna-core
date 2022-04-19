@@ -166,10 +166,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // check pool balance and that interest accumulated
         assertEq(pool.totalQuoteToken(), 9_000 * 1e45);
         assertEq(pool.totalDebt(), 1000.013001099216594901568631000000000000000000000 * 1e45);
-        assertEq(
-            pool.totalCollateral(),
-            200.790937395069026649243637516 * 1e27
-        );
+        assertEq(pool.totalCollateral(), 200.790937395069026649243637516 * 1e27);
         assertEq(pool.inflatorSnapshot(), 1.000013001099216594901568631 * 1e27);
         assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
         assertEq(pool.lup(), 100.332368143282009890 * 1e18);
@@ -294,10 +291,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // check pool balance
         assertEq(pool.totalQuoteToken(), 0);
         assertEq(pool.totalDebt(), 1_000 * 1e45);
-        assertEq(
-            pool.totalCollateral(),
-            200.455302902616749045232864441 * 1e27
-        );
+        assertEq(pool.totalCollateral(), 200.455302902616749045232864441 * 1e27);
     }
 
     function testLiquidateScenario1TimeWarp() public {
@@ -398,9 +392,6 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // check pool balance
         assertEq(pool.totalQuoteToken(), 0);
         assertEq(pool.totalDebt(), 1_000 * 1e45);
-        assertEq(
-            pool.totalCollateral(),
-            200.189909584313202057545482525 * 1e27
-        );
+        assertEq(pool.totalCollateral(), 200.189909584313202057545482525 * 1e27);
     }
 }

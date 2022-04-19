@@ -356,10 +356,7 @@ contract ERC20Pool is IPool, Clone {
 
         if (
             borrower.collateralDeposited <=
-            Maths.rdiv(
-                Maths.radToRay(Maths.add(borrower.debt, _amount)),
-                Maths.wadToRay(lup)
-            )
+            Maths.rdiv(Maths.radToRay(Maths.add(borrower.debt, _amount)), Maths.wadToRay(lup))
         ) {
             revert InsufficientCollateralForBorrow();
         }
@@ -422,14 +419,8 @@ contract ERC20Pool is IPool, Clone {
 
         // convert amount from WAD to pool precision - RAD
         _amount = Maths.wadToRad(_amount);
-        uint256 collateralRequired = Maths.rdiv(
-            Maths.radToRay(_amount),
-            Maths.wadToRay(_price)
-        );
-        if (
-            collateral().balanceOf(msg.sender) * collateralScale <
-            collateralRequired
-        ) {
+        uint256 collateralRequired = Maths.rdiv(Maths.radToRay(_amount), Maths.wadToRay(_price));
+        if (collateral().balanceOf(msg.sender) * collateralScale < collateralRequired) {
             revert InsufficientCollateralBalance();
         }
 
@@ -518,10 +509,7 @@ contract ERC20Pool is IPool, Clone {
                 previousRate,
                 (
                     Maths.sub(
-                        Maths.add(
-                            Maths.rayToWad(actualUtilization),
-                            Maths.ONE_WAD
-                        ),
+                        Maths.add(Maths.rayToWad(actualUtilization), Maths.ONE_WAD),
                         Maths.rayToWad(getPoolTargetUtilization())
                     )
                 )
@@ -539,11 +527,7 @@ contract ERC20Pool is IPool, Clone {
             uint256 pendingInflator = getPendingInflator();
 
             // RAD
-            totalDebt += getPendingInterest(
-                totalDebt,
-                pendingInflator,
-                inflatorSnapshot
-            );
+            totalDebt += getPendingInterest(totalDebt, pendingInflator, inflatorSnapshot);
 
             inflatorSnapshot = pendingInflator;
             lastInflatorSnapshotUpdate = block.timestamp;
@@ -556,18 +540,12 @@ contract ERC20Pool is IPool, Clone {
         // calculate annualized interest rate
         uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
         // secondsSinceLastUpdate is unscaled
-        uint256 secondsSinceLastUpdate = Maths.sub(
-            block.timestamp,
-            lastInflatorSnapshotUpdate
-        );
+        uint256 secondsSinceLastUpdate = Maths.sub(block.timestamp, lastInflatorSnapshotUpdate);
 
         return
             Maths.rmul(
                 inflatorSnapshot,
-                Maths.rpow(
-                    Maths.add(Maths.ONE_RAY, spr),
-                    secondsSinceLastUpdate
-                )
+                Maths.rpow(Maths.add(Maths.ONE_RAY, spr), secondsSinceLastUpdate)
             );
     }
 
@@ -599,10 +577,7 @@ contract ERC20Pool is IPool, Clone {
             Maths.rayToRad(
                 Maths.rmul(
                     Maths.radToRay(_debt),
-                    Maths.sub(
-                        Maths.rmul(_pendingInflator, _currentInflator),
-                        Maths.ONE_RAY
-                    )
+                    Maths.sub(Maths.rmul(_pendingInflator, _currentInflator), Maths.ONE_RAY)
                 )
             );
     }
@@ -736,10 +711,7 @@ contract ERC20Pool is IPool, Clone {
             return
                 Maths.rdiv(
                     Maths.radToRay(totalDebt),
-                    Maths.add(
-                        Maths.radToRay(totalQuoteToken),
-                        Maths.radToRay(totalDebt)
-                    )
+                    Maths.add(Maths.radToRay(totalQuoteToken), Maths.radToRay(totalDebt))
                 );
         }
         return 0;
@@ -799,11 +771,7 @@ contract ERC20Pool is IPool, Clone {
     }
 
     /// @notice Estimate the price at which a loan can be taken
-    function estimatePriceForLoan(uint256 _amount)
-        public
-        view
-        returns (uint256)
-    {
+    function estimatePriceForLoan(uint256 _amount) public view returns (uint256) {
         // convert amount from WAD to collateral pool precision - RAD
         _amount = Maths.wadToRad(_amount);
         if (lup == 0) {

@@ -838,15 +838,8 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // should revert if not enough funds in pool
         assertEq(pool.totalQuoteToken(), 0);
-        vm.expectRevert(
-            abi.encodeWithSelector(Buckets.NoDepositToReallocateTo.selector)
-        );
-        lender.removeQuoteToken(
-            pool,
-            address(lender),
-            1_000.023113960510762449 * 1e18,
-            p8002
-        );
+        vm.expectRevert(abi.encodeWithSelector(Buckets.NoDepositToReallocateTo.selector));
+        lender.removeQuoteToken(pool, address(lender), 1_000.023113960510762449 * 1e18, p8002);
 
         borrower.repay(pool, 12_000 * 1e18);
 
@@ -867,24 +860,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // lender should be able to remove lended quote tokens + interest
         vm.expectEmit(true, true, false, true);
-        emit Transfer(
-            address(pool),
-            address(lender),
-            1_000.053487614594018248 * 1e18
-        );
+        emit Transfer(address(pool), address(lender), 1_000.053487614594018248 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(
-            address(lender),
-            p8002,
-            1_000.053487614594018248 * 1e45,
-            p10016
-        );
-        lender.removeQuoteToken(
-            pool,
-            address(lender),
-            1_000.053487614594018248 * 1e18,
-            p8002
-        );
+        emit RemoveQuoteToken(address(lender), p8002, 1_000.053487614594018248 * 1e45, p10016);
+        lender.removeQuoteToken(pool, address(lender), 1_000.053487614594018248 * 1e18, p8002);
 
         assertEq(pool.lup(), p10016);
     }

@@ -56,7 +56,7 @@ library Maths {
         z = add(mul(x, RAY), y / 2) / y;
     }
 
-    function rpow(uint x, uint n) internal pure returns (uint z) {
+    function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
         z = n % 2 != 0 ? x : RAY;
 
         for (n /= 2; n != 0; n /= 2) {
