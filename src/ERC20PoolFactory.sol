@@ -22,10 +22,7 @@ contract ERC20PoolFactory {
         implementation = new ERC20Pool();
     }
 
-    function deployPool(address collateral, address quote)
-        external
-        returns (ERC20Pool pool)
-    {
+    function deployPool(address collateral, address quote) external returns (ERC20Pool pool) {
         if (collateral == address(0) || quote == address(0)) {
             revert WethOnly();
         }

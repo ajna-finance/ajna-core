@@ -37,15 +37,7 @@ abstract contract PermitERC20 {
         bytes32 r,
         bytes32 s
     ) public payable {
-        IERC20Permit(token).permit(
-            owner,
-            address(this),
-            value,
-            deadline,
-            v,
-            r,
-            s
-        );
+        IERC20Permit(token).permit(owner, address(this), value, deadline, v, r, s);
     }
 
     /// @notice Permits the implementing contract to spend a given amount of a token
@@ -77,16 +69,7 @@ abstract contract PermitERC20 {
         bytes32 r,
         bytes32 s
     ) public payable {
-        IERC20PermitAllowed(token).permit(
-            owner,
-            address(this),
-            nonce,
-            expiry,
-            true,
-            v,
-            r,
-            s
-        );
+        IERC20PermitAllowed(token).permit(owner, address(this), nonce, expiry, true, v, r, s);
     }
 
     /// @notice Permits the implementing contract to spend a given amount of a token
