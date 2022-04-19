@@ -133,7 +133,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(deposit, 10_000 * 1e45);
         // check bucket debt at 3_010.892022197881557845
         (, , , deposit, debt, , , ) = pool.bucketAt(priceMed);
-        assertEq(debt, 10000.013001099140905000 * 1e45);
+        assertEq(debt, 10000.013001099216594901568631000000000000000000000 * 1e45);
         assertEq(deposit, 0);
         // check bucket debt at 3_514.334495390401848927
         (, , , deposit, debt, , , ) = pool.bucketAt(priceHigh);
