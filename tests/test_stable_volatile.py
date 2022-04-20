@@ -30,7 +30,7 @@ def pool_client(ajna_protocol: AjnaProtocol, weth, dai) -> AjnaPoolClient:
 @pytest.fixture
 def lenders(ajna_protocol, pool_client, weth_dai_pool):
     dai_client = pool_client.get_quote_token()
-    amount = 4_000_000 * 10**18
+    amount = 3_000_000 * 10**18
     lenders = []
     for _ in range(100):
         lender = ajna_protocol.add_lender()
@@ -107,7 +107,7 @@ def place_initial_random_bid(lender_index, pool_client, bucket_math):
     pool_client.deposit_quote_token(60_000 * 10**18, price, lender_index)
 
 
-def draw_initial_debt(borrowers, pool_client, target_utilization=0.60, limit_price=2210.03602 * 10**18):
+def draw_initial_debt(borrowers, pool_client, target_utilization=0.60, limit_price=2000 * 10**18):
     pool = pool_client.get_contract()
     weth = pool_client.get_collateral_token().get_contract()
     target_debt = pool.totalQuoteToken() * target_utilization
@@ -143,16 +143,13 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
 
             # Draw debt, repay debt, or do nothing depending on interest rate
             utilization = pool.getPoolActualUtilization() / 10**27
-            # try:
             if interest_rate < 0.10 and utilization < 0.70:  # draw more debt if interest is reasonably low
-                target_collateralization = min(1 / pool.getPoolTargetUtilization() * 10**27, 2.5)
+                target_collateralization = max(1.01, min(1 / pool.getPoolTargetUtilization() * 10**27, 2.5))
                 assert 1 < target_collateralization < 10
                 draw_debt(borrowers[user_index], user_index, pool, gas_validator,
                           collateralization=target_collateralization)
             elif interest_rate > 0.15 and utilization > 0.40:  # start repaying debt if interest grows too high
                 repay(borrowers[user_index], user_index, pool, gas_validator)
-            # except VirtualMachineError as ex:
-            #     print(f" ERROR at time {chain.time()}: {ex}")
             chain.sleep(14)
 
             # Add or remove liquidity
@@ -208,7 +205,7 @@ def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:
     return cumulative_deposit / 10**27
 
 
-def draw_debt(borrower, borrower_index, pool, gas_validator, collateralization=1.1, limit_price=2210.03602 * 10**18):
+def draw_debt(borrower, borrower_index, pool, gas_validator, collateralization=1.1, limit_price=1000 * 10**18):
     # Draw debt based on added liquidity
     borrow_amount = get_cumulative_bucket_deposit(pool, (borrower_index % 4) + 1)
     collateral_to_deposit = borrow_amount / pool.getPoolPrice() * collateralization * 10**18
