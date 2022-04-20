@@ -34,7 +34,14 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
+    // @notice: with 1 lender and 1 borrower quote token is deposited
+    // @notice: then borrower adds collateral and borrows interest
+    // @notice: rate is checked for correctness
     function testUpdateInterestRate() public {
+        uint256 priceHigh = 4_000.927678580567537368 * 1e18;
+        uint256 priceMed = 3_514.334495390401848927 * 1e18;
+        uint256 priceLow = 2_503.519024294695168295 * 1e18;
+
         assertEq(pool.previousRate(), 0.05 * 1e18);
 
         uint256 updateTime = pool.previousRateUpdate();
@@ -45,10 +52,10 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertEq(pool.previousRateUpdate(), updateTime);
 
         // raise pool utilization
-        // lender deposits 10000 DAI in 3 buckets each
-        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 4_000.927678580567537368 * 1e18);
-        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 3_514.334495390401848927 * 1e18);
-        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 2_503.519024294695168295 * 1e18);
+        // lender deposits 10_000 DAI in 3 buckets each
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceHigh);
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceMed);
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceLow);
 
         // borrower deposits 100 MKR collateral and draws debt
         borrower.addCollateral(pool, 100 * 1e18);
@@ -68,9 +75,15 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
     }
 
+    // @notice: with 1 lender and 1 borrower quote token is deposited
+    // @notice: then borrower adds collateral and borrows interest
+    // @notice: rate is checked for correctness, pool is underutilized
+
     function testUpdateInterestRateUnderutilized() public {
+        uint256 priceHigh = 4_000.927678580567537368 * 1e18;
+
         assertEq(pool.previousRate(), 0.05 * 1e18);
-        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, 4_000.927678580567537368 * 1e18);
+        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, priceHigh);
         skip(14);
 
         // borrower draws debt with a low collateralization ratio

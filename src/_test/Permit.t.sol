@@ -74,6 +74,10 @@ contract PermitTest is DSTestPlus {
         return positionManager.mint(mintParams);
     }
 
+    // @notice: owner, spender, and unapproved spender mint, approve
+    // @notice: and increase liquidity testing permission
+    // @notice:  position manager reverts:
+    // @notice:     attempts to increase liquidity unapproved spender
     // https://github.com/Rari-Capital/solmate/blob/7c34ed021cfeeefb1a4bff7e511a25ce8a68806b/src/test/ERC20.t.sol#L89-L103
     function testPermitAjnaNFTByEOA() public {
         uint256 privateKey = 0xBEEF;
@@ -149,6 +153,10 @@ contract PermitTest is DSTestPlus {
         positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
     }
 
+    // @notice: owner, newowner, spender, unapproved spender testing permission
+    // @notice: generate permit sig and allow approved spender to transfer NFT
+    // @notice: unapproved spender reverts:
+    // @notice:     attempts to transfer NFT when not permitted
     function testSafeTransferFromWithPermit() public {
         uint256 privateKey = 0xBEEF;
         address owner = vm.addr(privateKey);
@@ -205,6 +213,7 @@ contract PermitTest is DSTestPlus {
         assert(ownerAfterTransfer != owner);
     }
 
+    // @notice: Tests that contract can be approved to increase liquidity
     // TODO: finish implementing -> Requires updating test contracts to have an owner set to our private key, with that owner then signing a message hash provided by a contract view function.
     // contracts don't have private keys, so will have to use EIP-1271 here
     // https://soliditydeveloper.com/meta-transactions
@@ -272,6 +281,9 @@ contract PermitTest is DSTestPlus {
         positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
     }
 
+
+
+    // @notice: Tests that Ajna token can be permitted for use by another EOA
     function testPermitAjnaERC20() public {
         uint256 privateKey = 0xBEEF;
         address owner = vm.addr(privateKey);
