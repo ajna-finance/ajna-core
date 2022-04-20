@@ -65,6 +65,9 @@ contract ERC20Pool is IPool, Clone {
         uint256 inflatorSnapshot; // RAY, the inflator rate of the given borrower's last state change
     }
 
+    /// @dev Counter used by onlyOnce modifier
+    uint8 private poolInitializations = 0;
+
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
     // price (WAD) -> bucket
@@ -132,8 +135,14 @@ contract ERC20Pool is IPool, Clone {
     error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
 
-    // TODO: add onlyFactory modifier
-    function initialize() external {
+
+    /// @notice Modifier to protect a clone's initaliz
+    modifier onlyOnce() {
+        require(poolInitializations == 0);
+        _;
+    }
+
+    function initialize() external onlyOnce {
         collateralScale = 10**(27 - collateral().decimals());
         quoteTokenScale = 10**(45 - quoteToken().decimals());
 
@@ -141,6 +150,9 @@ contract ERC20Pool is IPool, Clone {
         lastInflatorSnapshotUpdate = block.timestamp;
         previousRate = Maths.wdiv(5, 100);
         previousRateUpdate = block.timestamp;
+
+        // increment initializations count to ensure these values can't be updated
+        poolInitializations += 1;
     }
 
     /// @dev Pure function used to facilitate accessing token via clone state
