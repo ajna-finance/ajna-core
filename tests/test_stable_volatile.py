@@ -142,10 +142,10 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
         if chain.time() - last_triggered[user_index] > get_time_between_interactions(user_index):
 
             # Draw debt, repay debt, or do nothing depending on interest rate
-            utilization = pool.getPoolActualUtilization() / 10 ** 18
+            utilization = pool.getPoolActualUtilization() / 10**27
             # try:
-            if interest_rate < 0.10 and utilization < 0.80:  # draw more debt if interest is reasonably low
-                target_collateralization = min(1 / pool.getPoolTargetUtilization() * 10**18, 2.5)
+            if interest_rate < 0.10 and utilization < 0.70:  # draw more debt if interest is reasonably low
+                target_collateralization = min(1 / pool.getPoolTargetUtilization() * 10**27, 2.5)
                 assert 1 < target_collateralization < 10
                 draw_debt(borrowers[user_index], user_index, pool, gas_validator,
                           collateralization=target_collateralization)
@@ -156,7 +156,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
             chain.sleep(14)
 
             # Add or remove liquidity
-            utilization = pool.getPoolActualUtilization() / 10**18
+            utilization = pool.getPoolActualUtilization() / 10**27
             if utilization < 0.50 and len(buckets_deposited[user_index]) > 3:
                 price = buckets_deposited[user_index].pop()
                 try:
@@ -165,7 +165,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
                     print(f" ERROR removing liquidity at {price / 10**18:.1f}: {ex}")
                     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             else:
-                liquidity_coefficient = 1.05 if utilization > pool.getPoolTargetUtilization() / 10**18 else 1.0
+                liquidity_coefficient = 1.05 if utilization > pool.getPoolTargetUtilization() / 10**27 else 1.0
                 price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, gas_validator,
                                         liquidity_coefficient)
                 if price:
@@ -192,7 +192,7 @@ def update_interest_rate(lenders, pool) -> int:
     tx = pool.updateInterestRate({"from": lenders[random.randrange(0, len(lenders))]})
     interest_rate = tx.events["UpdateInterestRate"][0][0]['newRate'] / 10**18
     print(f" updated interest rate to {interest_rate:.1%}; "
-          f"utilization is {pool.getPoolActualUtilization() / 10**18:.1%}")
+          f"utilization is {pool.getPoolActualUtilization() / 10**27:.1%}")
     assert 0.001 < interest_rate < 100
     return interest_rate
 
@@ -280,7 +280,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth
@@ -288,7 +288,7 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     assert len(lenders) == 100
     assert len(borrowers) == 100
     assert pool1.totalQuoteToken() > 2_700_000 * 10**18  # 50% utilization
-    assert pool1.getPoolActualUtilization() > 0.50 * 10**18
+    assert pool1.getPoolActualUtilization() > 0.50 * 10**27
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
@@ -304,6 +304,6 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     # Validate test ended with the pool in a meaningful state
     hpb_index = bucket_math.priceToIndex(pool1.hdp())
     print("After test:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
-    utilization = pool1.getPoolActualUtilization() / 10**18
+    utilization = pool1.getPoolActualUtilization() / 10**27
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")
     assert 0.5 < utilization < 0.7

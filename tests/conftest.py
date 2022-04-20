@@ -240,7 +240,7 @@ class TestUtils:
             )
 
     @staticmethod
-    def validate_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926):
+    def validate_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=4156):
         calc_lup = None
         calc_hpb = None
         partially_utilized_buckets = []
