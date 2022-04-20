@@ -102,8 +102,6 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
     // @notice Ensure an underutilized and undercollateralized pool does not produce an underflow.
     function testUndercollateralized() public {
         uint256 price = 3_514.334495390401848927 * 1e18;
-        uint256 lastRate = pool.previousRate();
-        assertEq(lastRate, 0.05 * 1e18);
 
         lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, price);
         skip(14);
@@ -111,6 +109,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         // borrower utilizes the entire pool
         borrower.addCollateral(pool, 0.000284548895761533 * 1e18);
         borrower.borrow(pool, 1 * 1e18, 0);
+        uint256 lastRate = pool.previousRate();
         skip(3600*24);
 
         // debt accumulates, and the borrower becomes undercollateralized
@@ -118,13 +117,8 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         (, , , , uint256 collateralization, , ) = pool.getBorrowerInfo(address(borrower));
         assertLt(collateralization, 1 * 1e27);
 
-        // over time, rate should go to 0 without underflow
-        for (int i=0; i<7; ++i) {
-            lender.updateInterestRate(pool);
-            assertLt(pool.previousRate(), lastRate);
-            lastRate = pool.previousRate();
-            skip(3600*24);
-        }
-        assertEq(pool.previousRate(), 0);
+        // rate should not change while pool is undercollateralized
+        lender.updateInterestRate(pool);
+        assertEq(pool.previousRate(), lastRate);
     }
 }
