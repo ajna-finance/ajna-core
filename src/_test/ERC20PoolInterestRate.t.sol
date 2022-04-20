@@ -28,6 +28,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         borrower = new UserWithCollateral();
         collateral.mint(address(borrower), 100 * 1e18);
         borrower.approveToken(collateral, address(pool), 100 * 1e18);
+        borrower.approveToken(quote, address(pool), 1);
 
         lender = new UserWithQuoteToken();
         quote.mint(address(lender), 200_000 * 1e18);
@@ -98,8 +99,8 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertEq(pool.previousRate(), 0.009999996670471735 * 1e18);
     }
 
-    // @notice Ensure a heavily underutilized pool does not produce an underflow.
-    function testUnderflow() public {
+    // @notice Ensure an underutilized and undercollateralized pool does not produce an underflow.
+    function testUndercollateralized() public {
         uint256 price = 3_514.334495390401848927 * 1e18;
         uint256 lastRate = pool.previousRate();
         assertEq(lastRate, 0.05 * 1e18);
@@ -107,20 +108,23 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, price);
         skip(14);
 
-        // borrower draws tiny amount of debt
+        // borrower utilizes the entire pool
         borrower.addCollateral(pool, 0.000284548895761533 * 1e18);
         borrower.borrow(pool, 1 * 1e18, 0);
-        skip(14);
+        skip(3600*24);
 
-        uint remainingCalls = 10;
-        while (remainingCalls > 0) {
+        // debt accumulates, and the borrower becomes undercollateralized
+        borrower.repay(pool, 1);  // repay 1 WAD to trigger accumulation
+        (, , , , uint256 collateralization, , ) = pool.getBorrowerInfo(address(borrower));
+        assertLt(collateralization, 1 * 1e27);
+
+        // over time, rate should go to 0 without underflow
+        for (int i=0; i<7; ++i) {
             lender.updateInterestRate(pool);
-            // Rate goes to 0 after a few iterations.  Unsure how to reproduce underflow.
-//            assertGt(pool.previousRate(), 0);
-//            assertLt(pool.previousRate(), lastRate);
+            assertLt(pool.previousRate(), lastRate);
             lastRate = pool.previousRate();
-            skip(14);
-            remainingCalls -= 1;
+            skip(3600*24);
         }
+        assertEq(pool.previousRate(), 0);
     }
 }
