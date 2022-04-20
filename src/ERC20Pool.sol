@@ -135,10 +135,9 @@ contract ERC20Pool is IPool, Clone {
     error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
 
-
-    /// @notice Modifier to protect a clone's initaliz
+    /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
-        require(poolInitializations == 0);
+        require(poolInitializations == 0, "ajna/already-initialized");
         _;
     }
 
