@@ -36,16 +36,26 @@ make test
 
 ## Brownie integration
 
+`eth-brownie` 1.18.1+ and `ganache` 7.0+ is required.
 - Install Brownie [instructions](https://eth-brownie.readthedocs.io/en/stable/install.html)
 - Make a copy of .env.example and name it .env. Add the values for ETHERSCAN_TOKEN and WEB3_INFURA_PROJECT_ID
 - Run `brownie console`
-- Install ganache-cli `npm i -g ganache-cli`
+- Install ganache `npm i -g ganache`
+
+### Brownie with Hardhat
+- Install Hardhat `npm install --save-dev hardhat`
+- To use `hardhat` instead of `ganache`, add `--network hardhat-fork` to override the configured network
+
+Caveats:
+- Brownie does not support mining empty blocks using `chain.mine`
+- Brownie does not report custom errors raised by the contract when using Hardhat
 
 ### Brownie integration tests
 
 ```bash
 brownie test
 ```
+  - To view `stdout` on long-running tests, use `brownie test -s`.
 
 #### Debugging Brownie integration tests
 
@@ -57,6 +67,7 @@ brownie test --interactive
 From there, use `chain.undo` to roll back the most recent transaction.
 Copy/paste the failed transaction prefixed with `tx = ` and you can interact 
 with the transaction receipt as desired.
+
 
 ### ERC20 pool manual test
 
