@@ -34,19 +34,17 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         lender.approveToken(quote, address(pool), 200_000 * 1e18);
     }
 
+    // @notice: with 1 lender and 1 borrower quote token is deposited
+    // @notice: then borrower adds collateral, borrows and repays over time
+    // @notice: to check inflator correctness
     function testInflator() public {
         uint256 inflatorSnapshot = pool.inflatorSnapshot();
         uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
-        assertEq(inflatorSnapshot, 1 * 1e18);
+        assertEq(inflatorSnapshot, 1 * 1e27);
         assertEq(lastInflatorSnapshotUpdate, block.timestamp);
 
         skip(8200);
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            10_000 * 1e18,
-            4_000.927678580567537368 * 1e18
-        );
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 4_000.927678580567537368 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
@@ -82,13 +80,9 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         );
     }
 
+    // @notice: With 1 lender pending inflator is tested against calculated inflator
     function testCalculatePendingInflator() public {
-        lender.addQuoteToken(
-            pool,
-            address(lender),
-            10_000 * 1e18,
-            4_000.927678580567537368 * 1e18
-        );
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 4_000.927678580567537368 * 1e18);
         uint256 calculatedInflator = calculateInflator();
 
         skip(8200);
@@ -99,10 +93,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
 
     function assertPoolInflator(uint256 lastInflatorSnapshotUpdate)
         internal
-        returns (
-            uint256 newInflatorSnapshot,
-            uint256 newLastInflatorSnapshotUpdate
-        )
+        returns (uint256 newInflatorSnapshot, uint256 newLastInflatorSnapshotUpdate)
     {
         assertEq(pool.lastInflatorSnapshotUpdate(), block.timestamp);
         assertGt(pool.lastInflatorSnapshotUpdate(), lastInflatorSnapshotUpdate);
@@ -113,13 +104,8 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         newLastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
     }
 
-    function calculateInflator()
-        internal
-        view
-        returns (uint256 calculatedInflator)
-    {
-        uint256 secondsSinceLastUpdate = block.timestamp -
-            pool.lastInflatorSnapshotUpdate();
+    function calculateInflator() internal view returns (uint256 calculatedInflator) {
+        uint256 secondsSinceLastUpdate = block.timestamp - pool.lastInflatorSnapshotUpdate();
 
         uint256 spr = pool.previousRate() / (3600 * 24 * 365);
 
