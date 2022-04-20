@@ -193,7 +193,6 @@ def update_interest_rate(lenders, pool) -> int:
     interest_rate = tx.events["UpdateInterestRate"][0][0]['newRate'] / 10**18
     print(f" updated interest rate to {interest_rate:.1%}; "
           f"utilization is {pool.getPoolActualUtilization() / 10**27:.1%}")
-    assert 0.001 < interest_rate < 100
     return interest_rate
 
 
@@ -280,7 +279,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth
