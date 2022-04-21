@@ -512,7 +512,8 @@ contract ERC20Pool is IPool, Clone {
     function updateInterestRate() external {
         // RAY
         uint256 actualUtilization = getPoolActualUtilization();
-        if (actualUtilization != 0 && previousRateUpdate < block.timestamp) {
+        if (actualUtilization != 0 && previousRateUpdate < block.timestamp
+            && getPoolCollateralization() > Maths.ONE_RAY) {
             uint256 oldRate = previousRate;
             accumulatePoolInterest();
 
