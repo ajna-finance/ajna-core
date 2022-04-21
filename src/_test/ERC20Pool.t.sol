@@ -93,7 +93,7 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
 
         // Attempt to call initialize() to reset global variables and check for revert
-        vm.expectRevert("ajna/already-initialized");
+        vm.expectRevert(ERC20Pool.AlreadyInitialized.selector);
         pool.initialize();
 
         // check that global variables weren't reset

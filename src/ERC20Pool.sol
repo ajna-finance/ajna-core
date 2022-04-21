@@ -122,6 +122,7 @@ contract ERC20Pool is IPool, Clone {
     );
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
 
+    error AlreadyInitialized();
     error InvalidPrice();
     error NoClaimToBucket();
     error NoDebtToRepay();
@@ -137,7 +138,9 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
-        require(poolInitializations == 0, "ajna/already-initialized");
+        if(poolInitializations != 0) {
+            revert AlreadyInitialized();
+        }
         _;
     }
 
