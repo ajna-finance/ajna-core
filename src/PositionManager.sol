@@ -8,6 +8,7 @@ import {PositionNFT} from "./base/PositionNFT.sol";
 import {IPool} from "./ERC20Pool.sol";
 import {Maths} from "./libraries/Maths.sol";
 
+import {Multicall} from "./base/Multicall.sol";
 import {PermitERC20} from "./base/PermitERC20.sol";
 
 interface IPositionManager {
@@ -62,7 +63,7 @@ interface IPositionManager {
     function decreaseLiquidity(DecreaseLiquidityParams calldata params) external payable;
 }
 
-contract PositionManager is IPositionManager, PositionNFT, PermitERC20 {
+contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20 {
     event Mint(address lender, address pool, uint256 tokenId);
     event MemorializePosition(address lender, uint256 tokenId);
     event Burn(address lender, uint256 price);
