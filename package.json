@@ -18,7 +18,6 @@
   },
   "scripts": {
     "setup": "make clean && make build",
-    "sync": "make update",
     "test": "make test",
     "snapshot": "make snapshot",
     "lint": "make lint"
