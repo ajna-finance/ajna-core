@@ -14,21 +14,23 @@ contract ERC20PoolTest is DSTestPlus {
     CollateralToken internal collateral;
     QuoteToken internal quote;
 
-    UserWithCollateral internal alice;
-    UserWithCollateral internal bob;
+    UserWithCollateral internal borrower;
+    UserWithQuoteToken internal lender;
 
     function setUp() public {
-        alice = new UserWithCollateral();
-        bob = new UserWithCollateral();
         collateral = new CollateralToken();
-
-        collateral.mint(address(alice), 100 * 1e18);
-        collateral.mint(address(bob), 100 * 1e18);
-
         quote = new QuoteToken();
 
         ERC20PoolFactory factory = new ERC20PoolFactory();
         pool = factory.deployPool(address(collateral), address(quote));
+
+        lender = new UserWithQuoteToken();
+        quote.mint(address(lender), 200_000 * 1e18);
+        lender.approveToken(quote, address(pool), 200_000 * 1e18);
+
+        borrower = new UserWithCollateral();
+        collateral.mint(address(borrower), 200_000 * 1e18);
+        borrower.approveToken(collateral, address(pool), 200_000 * 1e18);
     }
 
     // @notice:Tests pool factory inputs match the pool created
@@ -69,5 +71,33 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(bucketInflator, 0);
         assertEq(lpOutstanding, 0);
         assertEq(bucketCollateral, 0);
+    }
+
+    // @notice: Check that initialize can only be called once
+    function testInitialize() public {
+        uint256 initialInflator = 1 * 10**27;
+
+        assertEq(pool.inflatorSnapshot(), initialInflator);
+        assertEq(pool.lastInflatorSnapshotUpdate(), 0);
+
+        // Add quote tokens to the pool to allow initial values to change
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 4_000.927678580567537368 * 1e18);
+
+        // add time to enable the inflator to update
+        skip(8200);
+
+        borrower.addCollateral(pool, 2 * 1e18);
+        borrower.borrow(pool, 1000 * 1e18, 3000 * 1e18);
+
+        assertGt(pool.inflatorSnapshot(), initialInflator);
+        assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
+
+        // Attempt to call initialize() to reset global variables and check for revert
+        vm.expectRevert(ERC20Pool.AlreadyInitialized.selector);
+        pool.initialize();
+
+        // check that global variables weren't reset
+        assertGt(pool.inflatorSnapshot(), initialInflator);
+        assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
     }
 }
