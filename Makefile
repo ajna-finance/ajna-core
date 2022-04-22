@@ -2,16 +2,13 @@
 # (-include to ignore error if it does not exist)
 -include .env
 
-all: clean install update build
+all: clean install build
 
 # Clean the repo
 clean  :; forge clean
 
 # Install the Modules
 install :; git submodule update --init --recursive
-
-# Update Dependencies
-update:; forge update
 
 # Builds
 build  :; forge clean && forge build --optimize --optimize-runs 1000000

@@ -22,12 +22,6 @@ foundryup
 make all
 ```
 
-#### Build
-
-```bash
-make build
-```
-
 #### Run Tests
 
 ```bash
