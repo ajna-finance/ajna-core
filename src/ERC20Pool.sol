@@ -77,7 +77,7 @@ contract ERC20Pool is IPool, Clone {
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
 
-    uint256 public hdp; // WAD
+    uint256 public hbp; // WAD
     uint256 public lup; // WAD
 
     // lenders lp token balances: lender address -> price bucket (WAD) -> lender lp (RAY)
@@ -184,7 +184,7 @@ contract ERC20Pool is IPool, Clone {
 
         // create bucket if doesn't exist
         if (!BitMaps.get(bitmap, _price)) {
-            hdp = _buckets.initializeBucket(hdp, _price);
+            hbp = _buckets.initializeBucket(hbp, _price);
             BitMaps.setTo(bitmap, _price, true);
         }
 
@@ -234,9 +234,9 @@ contract ERC20Pool is IPool, Clone {
 
         // remove from bucket with RAD precision
         _amount = Maths.wadToRad(_amount);
-
+        Buckets.Bucket storage bucket = _buckets[_price];
         (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
-            _price,
+            bucket,
             _amount,
             lpBalance[_recipient][_price],
             inflatorSnapshot
@@ -245,6 +245,11 @@ contract ERC20Pool is IPool, Clone {
         // move lup down only if removal happened at or above lup and new lup different than current
         if (_price >= lup && newLup < lup) {
             lup = newLup;
+        }
+
+        // update HBP if removed from current, if no deposit nor debt in current HBP and if LUP not 0
+        if (_price == hbp && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
+            hbp = getHbp();
         }
 
         totalQuoteToken -= _amount;
@@ -350,10 +355,10 @@ contract ERC20Pool is IPool, Clone {
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
-        // if first loan then borrow at hdp
+        // if first loan then borrow at hbp
         uint256 curLup = lup;
         if (curLup == 0) {
-            curLup = hdp;
+            curLup = hbp;
         }
 
         // TODO: make value explicit for use in comparison operator against collateralDeposited below
@@ -440,8 +445,9 @@ contract ERC20Pool is IPool, Clone {
 
         accumulatePoolInterest();
 
+        Buckets.Bucket storage bucket = _buckets[_price];
         uint256 newLup = _buckets.purchaseBid(
-            _price,
+            bucket,
             _amount,
             collateralRequired,
             inflatorSnapshot
@@ -450,6 +456,11 @@ contract ERC20Pool is IPool, Clone {
         // move lup down only if removal happened at lup or higher and new lup different than current
         if (_price >= lup && newLup < lup) {
             lup = newLup;
+        }
+
+        // update HBP if removed from current, if no deposit nor debt in current HBP and if LUP not 0
+        if (_price == hbp && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
+            hbp = getHbp();
         }
 
         totalQuoteToken -= _amount;
@@ -496,7 +507,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 requiredCollateral = _buckets.liquidate(
             debt,
             collateralDeposited,
-            hdp,
+            hbp,
             inflatorSnapshot
         );
 
@@ -515,8 +526,11 @@ contract ERC20Pool is IPool, Clone {
     function updateInterestRate() external {
         // RAY
         uint256 actualUtilization = getPoolActualUtilization();
-        if (actualUtilization != 0 && previousRateUpdate < block.timestamp
-            && getPoolCollateralization() > Maths.ONE_RAY) {
+        if (
+            actualUtilization != 0 &&
+            previousRateUpdate < block.timestamp &&
+            getPoolCollateralization() > Maths.ONE_RAY
+        ) {
             uint256 oldRate = previousRate;
             accumulatePoolInterest();
 
@@ -599,12 +613,12 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Returns a given lender's LP tokens in a given price bucket
     /// @param _owner The EOA to check token balance for
-    /// @param _price The price bucket for which the value should be calculated
-    /// @return lpTokens - The EOA's lp token balance in the bucket
+    /// @param _price The price bucket for which the value should be calculated, WAD
+    /// @return lpTokens - The EOA's lp token balance in the bucket, RAY
     function getLPTokenBalance(address _owner, uint256 _price)
         external
         view
-        returns (uint256 lpTokens) // RAY
+        returns (uint256 lpTokens)
     {
         return lpBalance[_owner][_price];
     }
@@ -612,12 +626,12 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens
     /// @param _lpTokens The number of lpTokens to calculate amounts for
     /// @param _price The price bucket for which the value should be calculated
-    /// @return collateralTokens - The equivalent value of collateral tokens for the given LP Tokens
-    /// @return quoteTokens - The equivalent value of quote tokens for the given LP Tokens
+    /// @return collateralTokens - The equivalent value of collateral tokens for the given LP Tokens, RAY
+    /// @return quoteTokens - The equivalent value of quote tokens for the given LP Tokens, RAD
     function getLPTokenExchangeValue(uint256 _lpTokens, uint256 _price)
         external
         view
-        returns (uint256 collateralTokens, uint256 quoteTokens)  // RAY, RAD
+        returns (uint256 collateralTokens, uint256 quoteTokens)
     {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
@@ -698,6 +712,23 @@ contract ERC20Pool is IPool, Clone {
             curPrice = down;
         }
         return curPrice;
+    }
+
+    /// @notice Returns the next Highest Deposited Bucket (HBP)
+    /// @dev Starting at the current HBP, iterate through down pointers until a new HBP found
+    /// @dev HBP should have at on deposit or debt different than 0
+    /// @return The next HBP
+    function getHbp() public view returns (uint256) {
+        uint256 curHbp = hbp;
+        while (true) {
+            (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = _buckets.bucketAt(curHbp);
+            if (down == 0 || onDeposit != 0 || debt != 0) {
+                break;
+            }
+
+            curHbp = down;
+        }
+        return curHbp;
     }
 
     /// @return RAY - The current minimum pool price
@@ -790,7 +821,7 @@ contract ERC20Pool is IPool, Clone {
         // convert amount from WAD to collateral pool precision - RAD
         _amount = Maths.wadToRad(_amount);
         if (lup == 0) {
-            return _buckets.estimatePrice(_amount, hdp);
+            return _buckets.estimatePrice(_amount, hbp);
         }
 
         return _buckets.estimatePrice(_amount, lup);

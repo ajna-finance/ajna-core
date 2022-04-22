@@ -67,7 +67,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 21_000 * 1e45);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.totalCollateral(), 202 * 1e27);
-        assertEq(pool.hdp(), priceHigh);
+        assertEq(pool.hbp(), priceHigh);
 
         // first borrower takes a loan of 11_000 DAI, pushing lup to 9_000
         borrower.borrow(pool, 11_000 * 1e18, 9_000 * 1e18);
@@ -216,7 +216,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 13_000 * 1e45);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.totalCollateral(), 202 * 1e27);
-        assertEq(pool.hdp(), priceHighest);
+        assertEq(pool.hbp(), priceHighest);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
         borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);
@@ -315,7 +315,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 13_000 * 1e45);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.totalCollateral(), 202 * 1e27);
-        assertEq(pool.hdp(), priceHighest);
+        assertEq(pool.hbp(), priceHighest);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_000
         borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);
