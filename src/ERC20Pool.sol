@@ -599,14 +599,12 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Returns a given lender's LP tokens in a given price bucket
     /// @param _owner The EOA to check token balance for
-    /// @param _price The price bucket for which the value should be calculated
-    /// @return lpTokens - The EOA's lp token balance in the bucket
+    /// @param _price The price bucket for which the value should be calculated, WAD
+    /// @return lpTokens - The EOA's lp token balance in the bucket, RAY
     function getLPTokenBalance(address _owner, uint256 _price)
         external
         view
-        returns (
-            uint256 lpTokens // RAY
-        )
+        returns (uint256 lpTokens)
     {
         return lpBalance[_owner][_price];
     }
@@ -614,15 +612,12 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens
     /// @param _lpTokens The number of lpTokens to calculate amounts for
     /// @param _price The price bucket for which the value should be calculated
-    /// @return collateralTokens - The equivalent value of collateral tokens for the given LP Tokens
-    /// @return quoteTokens - The equivalent value of quote tokens for the given LP Tokens
+    /// @return collateralTokens - The equivalent value of collateral tokens for the given LP Tokens, RAY
+    /// @return quoteTokens - The equivalent value of quote tokens for the given LP Tokens, RAD
     function getLPTokenExchangeValue(uint256 _lpTokens, uint256 _price)
         external
         view
-        returns (
-            uint256 collateralTokens,
-            uint256 quoteTokens // RAY, RAD
-        )
+        returns (uint256 collateralTokens, uint256 quoteTokens)
     {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
