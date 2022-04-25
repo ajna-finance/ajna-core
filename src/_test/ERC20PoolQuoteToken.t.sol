@@ -417,6 +417,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(collateralTokens, 0);
         assertEq(quoteTokens, 10_000 * 1e45);
 
+        // check price pointers
+        assertEq(pool.hbp(), priceMed);
+        assertEq(pool.lup(), priceMed);
+
         // remove 4000 DAI at price of 1 MKR = 4_000.927678580567537368 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 4_000 * 1e18);
@@ -568,19 +572,32 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(deposit, 5_000 * 1e45);
         assertEq(debt, 1_000 * 1e45);
         assertEq(lpOutstanding, 6_000 * 1e27);
+        assertEq(pool.hbp(), priceMed);
+        assertEq(pool.lup(), priceLow);
         skip(1340);
 
         // lender removes entire bid from 4_000.927678580567537368 bucket
+        // FIXME: need a way to remove the entire bid
+//        uint256 withdrawalAmount = 3_000.006373674954296470378557 * 1e45;
+        uint256 withdrawalAmount = 3_000 * 1e45;
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(pool), address(lender), 3_000 * 1e18);
-        emit RemoveQuoteToken(address(lender), priceMed, 3_000 * 1e45, priceMed);
-        lender.removeQuoteToken(pool, address(lender), 3_000 * 1e18, priceMed);
+        emit Transfer(address(pool), address(lender), withdrawalAmount / 1e27);
+        emit RemoveQuoteToken(address(lender), priceMed, withdrawalAmount, priceMed);
+        lender.removeQuoteToken(pool, address(lender), withdrawalAmount / 1e27, priceMed);
+
+        // confirm entire bid was removed
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(priceMed);
+        assertEq(deposit, 0);
+//        assertEq(debt, 0);  // FIXME: debt should be zero here
+//        assertEq(lpOutstanding, 0);
 
         // confirm debt was reallocated
         (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(priceLow);
         assertEq(deposit, 2_000 * 1e45);
         // some debt accumulated between loan and reallocation
         assertEq(debt, 4_000.002124558318098823459519 * 1e45);
+//        assertEq(pool.hbp(), priceLow);  // FIXME: once all debt is reallocated, HPB should move
+        assertEq(pool.lup(), priceLow);
     }
 
     // @notice: 1 lender and 1 borrower deposits quote token, borrow
