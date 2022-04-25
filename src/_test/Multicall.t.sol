@@ -108,4 +108,47 @@ contract MulticallTest is DSTestPlus {
         assertGt(lpTokensAtNewPrice, 0);
     }
 
+    /// @notice Attempt two different multicalls that should revert and verify the revert reason is captured and returned properly
+    function testMulticallRevertString() public {
+        address recipient = generateAddress();
+        address externalCaller = generateAddress();
+
+        // mint an NFT
+        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(recipient, address(pool));
+        uint256 tokenId = positionManager.mint(mintParams);
+
+        uint256 mintAmount = 10000 * 1e18;
+        uint256 mintPrice = 5_007.644384905151472283 * 1e18;
+        mintAndApproveQuoteTokens(recipient, mintAmount);
+
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
+            .IncreaseLiquidityParams(tokenId, recipient, address(pool), mintAmount, mintPrice);
+
+        // construct BurnParams
+        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(
+            tokenId,
+            recipient,
+            mintPrice
+        );
+
+        bytes[] memory callsToExecute = new bytes[](2);
+
+        // https://ethereum.stackexchange.com/questions/65980/passing-struct-as-an-argument-in-call
+        callsToExecute[0] = abi.encodeWithSignature("increaseLiquidity((uint256,address,address,uint256,uint256))", increaseLiquidityParams);
+        callsToExecute[1] = abi.encodeWithSignature("burn((uint256,address,uint256))", burnParams);
+
+        // attempt to modify the NFT from an unapproved EOA
+        vm.prank(externalCaller);
+        vm.expectRevert("ajna/not-approved");
+        positionManager.multicall(callsToExecute);
+
+        vm.expectEmit(true, true, true, true);
+        emit IncreaseLiquidity(recipient, mintAmount, mintPrice);
+
+        // attempt to increase liquidity and then burn the NFT without decreasing liquidity
+        vm.prank(recipient);
+        vm.expectRevert("ajna/liquidity-not-removed");
+        positionManager.multicall(callsToExecute);
+    }
+
 }
