@@ -262,7 +262,7 @@ class TestUtils:
                 assert on_deposit == 0  # If there's deposit between LUP and HPB, utilization is fragmented
 
         # Confirm price pointers are correct
-        assert bucket_math.indexToPrice(calc_hpb) == pool.hdp()
+        assert bucket_math.indexToPrice(calc_hpb) == pool.hbp()
         assert bucket_math.indexToPrice(calc_lup) == pool.lup()
 
         # Ensure multiple buckets are not partially utilized
@@ -290,7 +290,7 @@ class TestUtils:
         def fd(rad):
             return f"{nd(rad):>{w}.3f}"
 
-        hpb = pool.hdp()
+        hpb = pool.hbp()
         lup = pool.lup()
 
         lines = []

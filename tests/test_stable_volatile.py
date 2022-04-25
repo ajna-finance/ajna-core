@@ -79,7 +79,7 @@ class TransactionValidator:
     def validate(self, tx, limit=800000):
         if tx.gas_used > limit:
             print(f"Gas used {tx.gas_used} exceeds limit {limit}")
-            hpb_index = self.bucket_math.priceToIndex(self.pool.hdp())
+            hpb_index = self.bucket_math.priceToIndex(self.pool.hbp())
             print(TestUtils.dump_book(self.pool, self.bucket_math, self.min_bucket, hpb_index))
             assert False
 
@@ -143,7 +143,8 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
 
             # Draw debt, repay debt, or do nothing depending on interest rate
             utilization = pool.getPoolActualUtilization() / 10**27
-            if interest_rate < 0.10 and utilization < 0.70:  # draw more debt if interest is reasonably low
+            collateralization = pool.getPoolCollateralization() / 10**27
+            if interest_rate < 0.10 and utilization < 0.70 and collateralization > 1.1:
                 target_collateralization = max(1.01, min(1 / pool.getPoolTargetUtilization() * 10**27, 2.5))
                 assert 1 < target_collateralization < 10
                 draw_debt(borrowers[user_index], user_index, pool, gas_validator,
@@ -169,11 +170,11 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
                     buckets_deposited[user_index].add(price)
 
             try:
-                max_bucket = bucket_math.priceToIndex(pool.hdp()) + 100
+                max_bucket = bucket_math.priceToIndex(pool.hbp()) + 100
                 test_utils.validate_book(pool, bucket_math, MIN_BUCKET - 100, max_bucket)
             except AssertionError as ex:
                 print("Book became invalid:")
-                print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hdp())))
+                print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hbp())))
                 raise ex
             chain.sleep(14)
 
@@ -187,13 +188,17 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
 def update_interest_rate(lenders, pool) -> int:
     # Update the interest rate
     tx = pool.updateInterestRate({"from": lenders[random.randrange(0, len(lenders))]})
-    interest_rate = tx.events["UpdateInterestRate"][0][0]['newRate'] / 10**18
-    print(f" updated interest rate to {interest_rate:.1%}; "
-          f"utilization is {pool.getPoolActualUtilization() / 10**27:.1%}")
+    if 'UpdateInterestRate' in tx.events:
+        interest_rate = tx.events['UpdateInterestRate'][0][0]['newRate'] / 10**18
+        print(f" updated interest rate to {interest_rate:.3%}; "
+              f"utilization is {pool.getPoolActualUtilization() / 10**27:.1%}")
+    else:
+        interest_rate = pool.previousRate() / 10**18
+        print(f" interest rate was not updated, and remains at {interest_rate:.3%}")
     return interest_rate
 
 
-def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:
+def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:  # WAD
     # Iterates through number of buckets passed as parameter, adding deposit to determine what loan size will be
     # required to utilize the buckets.
     (_, _, down, quote, _, _, _, _) = pool.bucketAt(pool.lup())
@@ -208,6 +213,7 @@ def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:
 def draw_debt(borrower, borrower_index, pool, gas_validator, collateralization=1.1, limit_price=1000 * 10**18):
     # Draw debt based on added liquidity
     borrow_amount = get_cumulative_bucket_deposit(pool, (borrower_index % 4) + 1)
+    borrow_amount = min(pool.totalQuoteToken() / 2, borrow_amount)
     collateral_to_deposit = borrow_amount / pool.getPoolPrice() * collateralization * 10**18
     print(f" borrower {borrower_index} borrowing {borrow_amount / 10**18:.1f} "
           f"collateralizing at {collateralization:.1%}, (pool price is {pool.getPoolPrice() / 10**18:.1f})")
@@ -233,7 +239,7 @@ def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, liqu
         except VirtualMachineError as ex:
             (_, _, _, _, _, bucket_inflator, _, _) = pool.bucketAt(price)
             print(f" ERROR adding liquidity at {price / 10**18:.1f}\n{ex}")
-            hpb_index = bucket_math.priceToIndex(pool.hdp())
+            hpb_index = bucket_math.priceToIndex(pool.hbp())
             print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, hpb_index))
             assert False
     else:
@@ -276,7 +282,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth
@@ -298,7 +304,7 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}")
 
     # Validate test ended with the pool in a meaningful state
-    hpb_index = bucket_math.priceToIndex(pool1.hdp())
+    hpb_index = bucket_math.priceToIndex(pool1.hbp())
     print("After test:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
     utilization = pool1.getPoolActualUtilization() / 10**27
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")
