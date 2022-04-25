@@ -281,8 +281,6 @@ contract PermitTest is DSTestPlus {
         positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
     }
 
-
-
     // @notice: Tests that Ajna token can be permitted for use by another EOA
     function testPermitAjnaERC20() public {
         uint256 privateKey = 0xBEEF;

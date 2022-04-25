@@ -20,7 +20,7 @@ contract MulticallTest is DSTestPlus {
 
     // nonce for generating random addresses
     uint16 nonce = 0;
-    
+
     function setUp() public {
         collateral = new CollateralToken();
         quote = new QuoteToken();
@@ -40,10 +40,7 @@ contract MulticallTest is DSTestPlus {
         nonce++;
     }
 
-    function mintAndApproveQuoteTokens(
-        address operator,
-        uint256 mintAmount
-    ) private {
+    function mintAndApproveQuoteTokens(address operator, uint256 mintAmount) private {
         quote.mint(operator, mintAmount * 1e18);
 
         vm.prank(operator);
@@ -68,7 +65,10 @@ contract MulticallTest is DSTestPlus {
         pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceThree);
 
         // mint an NFT capable of representing the positions
-        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(testAddress, address(pool));
+        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(
+            testAddress,
+            address(pool)
+        );
         uint256 tokenId = positionManager.mint(mintParams);
 
         // Prepare to memorialize the extant positions with the just minted NFT
@@ -84,15 +84,30 @@ contract MulticallTest is DSTestPlus {
         uint256 additionalAmount = 1000 * 1e18;
         uint256 newPriceToAddQuoteTokensTo = 5_007.644384905151472283 * 1e18;
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
-            .IncreaseLiquidityParams(tokenId, testAddress, address(pool), additionalAmount, newPriceToAddQuoteTokensTo);
+            .IncreaseLiquidityParams(
+                tokenId,
+                testAddress,
+                address(pool),
+                additionalAmount,
+                newPriceToAddQuoteTokensTo
+            );
 
         bytes[] memory callsToExecute = new bytes[](2);
 
         // https://ethereum.stackexchange.com/questions/65980/passing-struct-as-an-argument-in-call
-        callsToExecute[0] = abi.encodeWithSignature("memorializePositions((uint256,address,address,uint256[]))", memorializeParams);
-        callsToExecute[1] = abi.encodeWithSignature("increaseLiquidity((uint256,address,address,uint256,uint256))", increaseLiquidityParams);
+        callsToExecute[0] = abi.encodeWithSignature(
+            "memorializePositions((uint256,address,address,uint256[]))",
+            memorializeParams
+        );
+        callsToExecute[1] = abi.encodeWithSignature(
+            "increaseLiquidity((uint256,address,address,uint256,uint256))",
+            increaseLiquidityParams
+        );
 
-        uint256 lpTokensAtNewPrice = positionManager.getLPTokens(tokenId, newPriceToAddQuoteTokensTo);
+        uint256 lpTokensAtNewPrice = positionManager.getLPTokens(
+            tokenId,
+            newPriceToAddQuoteTokensTo
+        );
         assertEq(lpTokensAtNewPrice, 0);
 
         vm.expectEmit(true, true, true, true);
@@ -114,7 +129,10 @@ contract MulticallTest is DSTestPlus {
         address externalCaller = generateAddress();
 
         // mint an NFT
-        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(recipient, address(pool));
+        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(
+            recipient,
+            address(pool)
+        );
         uint256 tokenId = positionManager.mint(mintParams);
 
         uint256 mintAmount = 10000 * 1e18;
@@ -134,7 +152,10 @@ contract MulticallTest is DSTestPlus {
         bytes[] memory callsToExecute = new bytes[](2);
 
         // https://ethereum.stackexchange.com/questions/65980/passing-struct-as-an-argument-in-call
-        callsToExecute[0] = abi.encodeWithSignature("increaseLiquidity((uint256,address,address,uint256,uint256))", increaseLiquidityParams);
+        callsToExecute[0] = abi.encodeWithSignature(
+            "increaseLiquidity((uint256,address,address,uint256,uint256))",
+            increaseLiquidityParams
+        );
         callsToExecute[1] = abi.encodeWithSignature("burn((uint256,address,uint256))", burnParams);
 
         // attempt to modify the NFT from an unapproved EOA
@@ -150,5 +171,4 @@ contract MulticallTest is DSTestPlus {
         vm.expectRevert("ajna/liquidity-not-removed");
         positionManager.multicall(callsToExecute);
     }
-
 }
