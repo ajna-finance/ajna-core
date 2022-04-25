@@ -77,7 +77,7 @@ contract ERC20Pool is IPool, Clone {
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
 
-    uint256 public hbp; // WAD
+    uint256 public hpb; // WAD
     uint256 public lup; // WAD
 
     // lenders lp token balances: lender address -> price bucket (WAD) -> lender lp (RAY)
@@ -184,7 +184,7 @@ contract ERC20Pool is IPool, Clone {
 
         // create bucket if doesn't exist
         if (!BitMaps.get(bitmap, _price)) {
-            hbp = _buckets.initializeBucket(hbp, _price);
+            hpb = _buckets.initializeBucket(hpb, _price);
             BitMaps.setTo(bitmap, _price, true);
         }
 
@@ -247,9 +247,9 @@ contract ERC20Pool is IPool, Clone {
             lup = newLup;
         }
 
-        // update HBP if removed from current, if no deposit nor debt in current HBP and if LUP not 0
-        if (_price == hbp && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
-            hbp = getHbp();
+        // update HPB if removed from current, if no deposit nor debt in current HPB and if LUP not 0
+        if (_price == hpb && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
+            hpb = getHpb();
         }
 
         totalQuoteToken -= _amount;
@@ -355,10 +355,10 @@ contract ERC20Pool is IPool, Clone {
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
-        // if first loan then borrow at hbp
+        // if first loan then borrow at HPB
         uint256 curLup = lup;
         if (curLup == 0) {
-            curLup = hbp;
+            curLup = hpb;
         }
 
         // TODO: make value explicit for use in comparison operator against collateralDeposited below
@@ -458,9 +458,9 @@ contract ERC20Pool is IPool, Clone {
             lup = newLup;
         }
 
-        // update HBP if removed from current, if no deposit nor debt in current HBP and if LUP not 0
-        if (_price == hbp && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
-            hbp = getHbp();
+        // update HPB if removed from current, if no deposit nor debt in current HPB and if LUP not 0
+        if (_price == hpb && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
+            hpb = getHpb();
         }
 
         totalQuoteToken -= _amount;
@@ -507,7 +507,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 requiredCollateral = _buckets.liquidate(
             debt,
             collateralDeposited,
-            hbp,
+            hpb,
             inflatorSnapshot
         );
 
@@ -714,21 +714,21 @@ contract ERC20Pool is IPool, Clone {
         return curPrice;
     }
 
-    /// @notice Returns the next Highest Deposited Bucket (HBP)
-    /// @dev Starting at the current HBP, iterate through down pointers until a new HBP found
-    /// @dev HBP should have at on deposit or debt different than 0
-    /// @return The next HBP
-    function getHbp() public view returns (uint256) {
-        uint256 curHbp = hbp;
+    /// @notice Returns the next Highest Deposited Bucket (HPB)
+    /// @dev Starting at the current HPB, iterate through down pointers until a new HPB found
+    /// @dev HPB should have at on deposit or debt different than 0
+    /// @return The next HPB
+    function getHpb() public view returns (uint256) {
+        uint256 curHpb = hpb;
         while (true) {
-            (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = _buckets.bucketAt(curHbp);
+            (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = _buckets.bucketAt(curHpb);
             if (down == 0 || onDeposit != 0 || debt != 0) {
                 break;
             }
 
-            curHbp = down;
+            curHpb = down;
         }
-        return curHbp;
+        return curHpb;
     }
 
     /// @return RAY - The current minimum pool price
@@ -821,7 +821,7 @@ contract ERC20Pool is IPool, Clone {
         // convert amount from WAD to collateral pool precision - RAD
         _amount = Maths.wadToRad(_amount);
         if (lup == 0) {
-            return _buckets.estimatePrice(_amount, hbp);
+            return _buckets.estimatePrice(_amount, hpb);
         }
 
         return _buckets.estimatePrice(_amount, lup);

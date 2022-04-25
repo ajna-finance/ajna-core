@@ -61,7 +61,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check pool balance
         assertEq(pool.totalQuoteToken(), 50_000 * 1e45);
         assertEq(pool.totalDebt(), 0);
-        assertEq(pool.hbp(), priceHighest);
+        assertEq(pool.hpb(), priceHighest);
 
         // should revert if borrower wants to borrow a greater amount than in pool
         vm.expectRevert(
@@ -99,7 +99,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         assertEq(quote.balanceOf(address(borrower)), 21_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 29_000 * 1e18);
-        assertEq(pool.hbp(), priceHighest);
+        assertEq(pool.hpb(), priceHighest);
         assertEq(pool.lup(), priceMed);
 
         // check bucket deposit and debt at 3_010.892022197881557845
@@ -124,7 +124,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         assertEq(quote.balanceOf(address(borrower)), 30_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 20_000 * 1e18);
-        assertEq(pool.hbp(), priceHighest);
+        assertEq(pool.hpb(), priceHighest);
         assertEq(pool.lup(), priceMed);
 
         // check bucket debt at 2_503.519024294695168295
@@ -154,7 +154,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // deposit at 5_007.644384905151472283 price and reallocate entire debt
         lender.addQuoteToken(pool, address(lender), 40_000 * 1e18, 5_007.644384905151472283 * 1e18);
-        assertEq(pool.hbp(), 5_007.644384905151472283 * 1e18);
+        assertEq(pool.hpb(), 5_007.644384905151472283 * 1e18);
         assertEq(pool.lup(), 5_007.644384905151472283 * 1e18);
 
         // check bucket debt at 2_503.519024294695168295
@@ -247,7 +247,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // check hup is below lup and lup equals hdp
         assertEq(priceHigh, pool.lup());
-        assertEq(pool.hbp(), pool.lup());
+        assertEq(pool.hpb(), pool.lup());
         assertEq(pool.getHup(), priceMed);
 
         // borrow max possible from previous hup

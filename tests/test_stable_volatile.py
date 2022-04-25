@@ -79,7 +79,7 @@ class TransactionValidator:
     def validate(self, tx, limit=800000):
         if tx.gas_used > limit:
             print(f"Gas used {tx.gas_used} exceeds limit {limit}")
-            hpb_index = self.bucket_math.priceToIndex(self.pool.hbp())
+            hpb_index = self.bucket_math.priceToIndex(self.pool.hpb())
             print(TestUtils.dump_book(self.pool, self.bucket_math, self.min_bucket, hpb_index))
             assert False
 
@@ -155,7 +155,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
 
             # Add or remove liquidity
             utilization = pool.getPoolActualUtilization() / 10**27
-            if utilization < 0.50 and len(buckets_deposited[user_index]) > 3:
+            if utilization < 0.50 and len(buckets_deposited[user_index]) > 1:
                 price = buckets_deposited[user_index].pop()
                 try:
                     remove_quote_token(lenders[user_index], user_index, price, pool)
@@ -170,11 +170,11 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
                     buckets_deposited[user_index].add(price)
 
             try:
-                max_bucket = bucket_math.priceToIndex(pool.hbp()) + 100
+                max_bucket = bucket_math.priceToIndex(pool.hpb()) + 100
                 test_utils.validate_book(pool, bucket_math, MIN_BUCKET - 100, max_bucket)
             except AssertionError as ex:
                 print("Book became invalid:")
-                print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hbp())))
+                print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hpb())))
                 raise ex
             chain.sleep(14)
 
@@ -239,7 +239,7 @@ def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, liqu
         except VirtualMachineError as ex:
             (_, _, _, _, _, bucket_inflator, _, _) = pool.bucketAt(price)
             print(f" ERROR adding liquidity at {price / 10**18:.1f}\n{ex}")
-            hpb_index = bucket_math.priceToIndex(pool.hbp())
+            hpb_index = bucket_math.priceToIndex(pool.hpb())
             print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, hpb_index))
             assert False
     else:
@@ -282,7 +282,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth
@@ -295,16 +295,22 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
     # end_time = start_time + SECONDS_PER_YEAR  # TODO: one year test
-    end_time = start_time + SECONDS_PER_YEAR / 52
+    end_time = start_time + SECONDS_PER_YEAR / 119
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay', 'updateInterestRate']):
         while chain.time() < end_time:
+            utilization = pool1.getPoolActualUtilization() / 10**27
+            target = pool1.getPoolTargetUtilization() / 10**27
+            collateralization = pool1.getPoolCollateralization() / 10**27
+            print(f"actual utlzn: {utilization:>6.1%}   "
+                  f"target utlzn: {target:>6.1%}   "
+                  f"collateralization: {collateralization:>6.1%}")
             # hit the pool an hour at a time, calculating interest and then sending transactions
             actor_id = draw_and_bid(lenders, borrowers, actor_id, pool1, bucket_math, chain, tx_validator, test_utils)
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}")
 
     # Validate test ended with the pool in a meaningful state
-    hpb_index = bucket_math.priceToIndex(pool1.hbp())
+    hpb_index = bucket_math.priceToIndex(pool1.hpb())
     print("After test:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
     utilization = pool1.getPoolActualUtilization() / 10**27
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")

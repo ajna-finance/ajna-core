@@ -259,17 +259,17 @@ library Buckets {
     /// @notice Liquidate a given position's collateral
     /// @param buckets Mapping of buckets for a given pool
     /// @param _collateral The amount of collateral deposited
-    /// @param _hbp The pool's HBP
+    /// @param _hpb The pool's highest price bucket
     /// @param _inflator The current pool inflator rate
     /// @return requiredCollateral The amount of collateral to be liquidated
     function liquidate(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _debt, // RAD
         uint256 _collateral, // RAY
-        uint256 _hbp, // WAD
+        uint256 _hpb, // WAD
         uint256 _inflator // RAY
     ) public returns (uint256 requiredCollateral) {
-        Bucket storage bucket = buckets[_hbp];
+        Bucket storage bucket = buckets[_hpb];
 
         while (true) {
             accumulateBucketInterest(bucket, _inflator);
@@ -440,13 +440,13 @@ library Buckets {
     /// @notice Estimate the price at which a loan can be taken
     /// @param buckets Mapping of buckets for a given pool
     /// @param _amount The amount of quote tokens desired to borrow
-    /// @param _hbp The current HBP of the pool
+    /// @param _hpb The current highest price bucket of the pool
     function estimatePrice(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _amount,
-        uint256 _hbp
+        uint256 _hpb
     ) public view returns (uint256) {
-        Bucket memory curLup = buckets[_hbp];
+        Bucket memory curLup = buckets[_hpb];
 
         while (true) {
             if (_amount > curLup.onDeposit) {
@@ -510,26 +510,26 @@ library Buckets {
 
     /// @notice Set state for a new bucket and update surrounding price pointers
     /// @param buckets Mapping of buckets for a given pool
-    /// @param _hbp The current HBP of the pool
+    /// @param _hpb The current highest price bucket of the pool
     /// @param _price The price of the bucket to retrieve information from
-    /// @return The new HBP given the newly initialized bucket
+    /// @return The new HPB given the newly initialized bucket
     function initializeBucket(
         mapping(uint256 => Bucket) storage buckets,
-        uint256 _hbp,
+        uint256 _hpb,
         uint256 _price
     ) public returns (uint256) {
         Bucket storage bucket = buckets[_price];
         bucket.price = _price;
         bucket.inflatorSnapshot = Maths.ONE_WAD;
 
-        if (_price > _hbp) {
-            bucket.down = _hbp;
-            _hbp = _price;
+        if (_price > _hpb) {
+            bucket.down = _hpb;
+            _hpb = _price;
         }
 
-        uint256 cur = _hbp;
-        uint256 down = buckets[_hbp].down;
-        uint256 up = buckets[_hbp].up;
+        uint256 cur = _hpb;
+        uint256 down = buckets[_hpb].down;
+        uint256 up = buckets[_hpb].up;
 
         // update price pointers
         while (true) {
@@ -544,6 +544,6 @@ library Buckets {
             down = buckets[cur].down;
             up = buckets[cur].up;
         }
-        return _hbp;
+        return _hpb;
     }
 }

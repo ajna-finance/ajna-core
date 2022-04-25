@@ -164,7 +164,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(collateral.balanceOf(address(pool)), 100 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 5_000 * 1e18);
         assertEq(pool.totalCollateral(), 100 * 1e27);
-        assertEq(pool.hbp(), p4000);
+        assertEq(pool.hpb(), p4000);
         assertEq(pool.lup(), p3010);
 
         // check 4_000.927678580567537368 bucket balance before purchase Bid
@@ -198,7 +198,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         bidder.purchaseBid(pool, 1_000 * 1e18, 4_000.927678580567537368 * 1e18);
 
         // hbp should be pushed downwards
-        assertEq(pool.hbp(), p3010);
+        assertEq(pool.hpb(), p3010);
         // lup should be pushed downwards
         assertEq(pool.lup(), 2_000.221618840727700609 * 1e18);
         // check 4_000.927678580567537368 bucket balance after purchase Bid
