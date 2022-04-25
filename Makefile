@@ -14,8 +14,8 @@ install :; git submodule update --init --recursive
 build  :; forge clean && forge build --optimize --optimize-runs 1000000
 
 # Tests
-test   :; forge clean && forge build && forge test --optimize --optimize-runs 1000000 -v # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-with-gas-report   :; forge clean && forge build && forge test --optimize --optimize-runs 1000000 -v --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
+test   :; forge clean && forge build && forge test --optimize --optimizer-runs 1000000 -v # --ffi # enable if you need the `ffi` cheat code on HEVM
+test-with-gas-report   :; forge clean && forge build && forge test --optimize --optimizer-runs 1000000 -v --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
 
 # Lints
 lint :; prettier --write src/**/*.sol && prettier --write src/*.sol

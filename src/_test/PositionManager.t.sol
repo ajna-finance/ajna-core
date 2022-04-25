@@ -22,9 +22,6 @@ contract PositionManagerTest is DSTestPlus {
     // UserWithQuoteToken internal alice;
     address alice;
 
-    // uint256 constant maxUint = 115792089237316195423570985008687907853269984665640564039457584007913129639935;
-    uint256 constant approveBig = 50000000000 * 1e18;
-
     // nonce for generating random addresses
     uint16 nonce = 0;
 
@@ -44,17 +41,13 @@ contract PositionManagerTest is DSTestPlus {
 
     // -------------------- Utility Functions --------------------
 
-    function mintAndApproveQuoteTokens(
-        address operator,
-        uint256 mintAmount,
-        uint256 approvalAmount
-    ) private {
+    function mintAndApproveQuoteTokens(address operator, uint256 mintAmount) private {
         quote.mint(operator, mintAmount * 1e18);
 
         vm.prank(operator);
-        quote.approve(address(pool), approvalAmount);
+        quote.approve(address(pool), type(uint256).max);
         vm.prank(operator);
-        quote.approve(address(positionManager), approvalAmount);
+        quote.approve(address(positionManager), type(uint256).max);
     }
 
     function mintAndApproveCollateralTokens(UserWithCollateral operator, uint256 mintAmount)
@@ -134,7 +127,7 @@ contract PositionManagerTest is DSTestPlus {
         uint256 mintAmount = 50 * 1e18;
         uint256 mintPrice = 1_004.989662429170775094 * 10**18;
 
-        mintAndApproveQuoteTokens(alice, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(alice, mintAmount);
 
         // test emitted Mint event
         vm.expectEmit(true, true, true, true);
@@ -158,7 +151,7 @@ contract PositionManagerTest is DSTestPlus {
         address testAddress = generateAddress();
         uint256 mintAmount = 10000 * 1e18;
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         // call pool contract directly to add quote tokens
         uint256 priceOne = 4_000.927678580567537368 * 1e18;
@@ -222,7 +215,7 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 mintAmount = 10000 * 1e18;
         uint256 mintPrice = 1_004.989662429170775094 * 10**18;
-        mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         uint256 tokenId = mintNFT(testAddress, address(pool));
 
@@ -271,7 +264,7 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 mintAmount = 10000 * 1e18;
         uint256 mintPrice = 1000 * 10**18;
-        mintAndApproveQuoteTokens(recipient, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(recipient, mintAmount);
 
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
             .IncreaseLiquidityParams(tokenId, recipient, address(pool), mintAmount / 4, mintPrice);
@@ -290,7 +283,7 @@ contract PositionManagerTest is DSTestPlus {
         uint256 mintAmount = 10000 * 1e18;
         uint256 mintPrice = 1_004.989662429170775094 * 10**18;
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         uint256 tokenId = mintNFT(testAddress, address(pool));
 
@@ -333,7 +326,7 @@ contract PositionManagerTest is DSTestPlus {
         uint256 testBucketPrice = 10_016.501589292607751220 * 10**18;
         uint256 mintAmount = 50000 * 1e18;
 
-        mintAndApproveQuoteTokens(testLender, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(testLender, mintAmount);
 
         uint256 tokenId = mintNFT(testLender, address(pool));
 
@@ -400,13 +393,13 @@ contract PositionManagerTest is DSTestPlus {
 
         // check new owner can increaseLiquidity
         uint256 mintAmount = 50000 * 1e18;
-        mintAndApproveQuoteTokens(newOwner, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(newOwner, mintAmount);
 
         increaseLiquidity(tokenId, newOwner, address(pool), mintAmount, testBucketPrice);
 
         // check previous owner can no longer modify the NFT
         uint256 nextMintAmount = 50000 * 1e18;
-        mintAndApproveQuoteTokens(originalOwner, nextMintAmount, approveBig);
+        mintAndApproveQuoteTokens(originalOwner, nextMintAmount);
 
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
             .IncreaseLiquidityParams(
@@ -436,7 +429,7 @@ contract PositionManagerTest is DSTestPlus {
         uint256 mintAmount = 10000 * 1e18;
         uint256 mintPrice = 1_004.989662429170775094 * 10**18;
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount, approveBig);
+        mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         uint256 tokenId = mintNFT(testAddress, address(pool));
 
