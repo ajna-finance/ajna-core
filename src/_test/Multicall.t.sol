@@ -102,7 +102,7 @@ contract MulticallTest is DSTestPlus {
         emit IncreaseLiquidity(testAddress, additionalAmount, newPriceToAddQuoteTokensTo);
 
         vm.prank(testAddress);
-        bytes[] memory results = positionManager.multicall(callsToExecute);
+        positionManager.multicall(callsToExecute);
 
         lpTokensAtNewPrice = positionManager.getLPTokens(tokenId, newPriceToAddQuoteTokensTo);
         assertGt(lpTokensAtNewPrice, 0);
@@ -139,7 +139,7 @@ contract MulticallTest is DSTestPlus {
 
         // attempt to modify the NFT from an unapproved EOA
         vm.prank(externalCaller);
-        vm.expectRevert("ajna/not-approved");
+        vm.expectRevert(PositionManager.NotApproved.selector);
         positionManager.multicall(callsToExecute);
 
         vm.expectEmit(true, true, true, true);
