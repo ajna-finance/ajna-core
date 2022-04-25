@@ -174,6 +174,17 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(quote.balanceOf(address(borrower2)), 12_000 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 3_000 * 1e18);
 
+        // check buckets
+        (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(priceHigh);
+        assertEq(deposit, 0);
+        assertEq(debt, 10_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceMid);
+        assertEq(deposit, 0);
+        assertEq(debt, 10_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceLow);
+        assertEq(deposit, 3_000 * 1e45);
+        assertEq(debt, 7_000 * 1e45);
+
         // check borrower
         (uint256 borrowerDebt, uint256 depositedCollateral, ) = pool.borrowers(address(borrower));
         assertEq(borrowerDebt, 25_000 * 1e45);
@@ -194,6 +205,17 @@ contract ERC20PoolRepayTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Repay(address(borrower), priceMid, 10_000 * 1e45);
         borrower.repay(pool, 10_000 * 1e18);
+
+        // check buckets
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceHigh);
+        assertEq(deposit, 0);
+        assertEq(debt, 10_000 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceMid);
+        assertEq(deposit, 2_999.908992305483835689019583 * 1e45);
+        assertEq(debt, 7_000.221018686682113326666727 * 1e45);
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceLow);
+        assertEq(deposit, 10_000.091007694516164310980417 * 1e45);
+        assertEq(debt, 0);
 
         // check balances
         assertEq(pool.totalQuoteToken(), 13_000 * 1e45);
@@ -230,13 +252,22 @@ contract ERC20PoolRepayTest is DSTestPlus {
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower2));
         assertEq(borrowerDebt, 2_000 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
-
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(borrower2), address(pool), 2000.026002198433189803 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(borrower2), priceHigh, 2000.026002198433189803137262 * 1e45);
         // repay entire debt
         borrower2.repay(pool, 2_010 * 1e18);
+
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceHigh);
+        assertEq(deposit, 10_000.13001099216594901568631 * 1e45);
+        assertEq(debt, 0);
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceMid);
+        assertEq(deposit, 10_000.13001099216594901568631 * 1e45);
+        assertEq(debt, 0);
+        (, , , deposit, debt, , , ) = pool.bucketAt(priceLow);
+        assertEq(deposit, 10_000.091007694516164310980417 * 1e45);
+        assertEq(debt, 0);
 
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower2));
         assertEq(borrowerDebt, 0);
