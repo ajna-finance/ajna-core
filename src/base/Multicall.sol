@@ -2,15 +2,18 @@
 
 pragma solidity 0.8.11;
 
-// Multicall Guides:
-// - https://github.com/gnosis/safe-contracts/blob/186a21a74b327f17fc41217a927dea7064f74604/contracts/libraries/MultiSend.sol
+import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
-// https://github.com/gakonst/v3-periphery-foundry
-
+/// @notice Functionality to enable contracts to implement multicall method for method call aggregation into single transactions
+/// @dev Implementing multicall internally enables gas savings compared to making a call to externally deployed contracts
 abstract contract Multicall {
-    function multicall(bytes[] calldata data) public payable returns (bytes[] memory results) {
+
+    /// @notice Make a series of contract calls in a single transaction 
+    /// @param data Externally aggregated function calls serialized into a byte array
+    /// @return results Array of the results from each aggregated call
+    function multicall(bytes[] calldata data) public returns (bytes[] memory results) {
         results = new bytes[](data.length);
-        for (uint256 i = 0; i < data.length; i++) {
+        for (uint256 i = 0; i < data.length;) {
             (bool success, bytes memory result) = address(this).delegatecall(data[i]);
 
             if (!success) {
@@ -23,6 +26,9 @@ abstract contract Multicall {
             }
 
             results[i] = result;
+
+            // increment call counter in gas efficient way
+            unchecked {++i; }
         }
     }
 }

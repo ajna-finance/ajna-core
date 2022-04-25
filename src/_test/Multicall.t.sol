@@ -52,7 +52,8 @@ contract MulticallTest is DSTestPlus {
         quote.approve(address(positionManager), type(uint256).max);
     }
 
-    function testMulticallMintIncreaseLiquidity() public {
+    /// @notice Use multicall to aggregate memorializePosition and increaseLiquidity method calls into one tx
+    function testMulticallMemorializeIncreaseLiquidity() public {
         address testAddress = generateAddress();
         uint256 mintAmount = 10000 * 1e18;
 
@@ -81,20 +82,30 @@ contract MulticallTest is DSTestPlus {
 
         // Prepare to add quotte tokens to a new price bucket and associate with NFT
         uint256 additionalAmount = 1000 * 1e18;
-        uint256 newPriceToAddQuoteTokensTo = 10000 * 1e18;
+        uint256 newPriceToAddQuoteTokensTo = 5_007.644384905151472283 * 1e18;
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
             .IncreaseLiquidityParams(tokenId, testAddress, address(pool), additionalAmount, newPriceToAddQuoteTokensTo);
 
         bytes[] memory callsToExecute = new bytes[](2);
 
-        // TODO: seriealize structs for passing to multicall: https://github.com/pouladzade/Seriality
-        callsToExecute[0] = memorializeParams;
-        callsToExecute[1] = increaseLiquidityParams;
+        // https://ethereum.stackexchange.com/questions/65980/passing-struct-as-an-argument-in-call
+        callsToExecute[0] = abi.encodeWithSignature("memorializePositions((uint256,address,address,uint256[]))", memorializeParams);
+        callsToExecute[1] = abi.encodeWithSignature("increaseLiquidity((uint256,address,address,uint256,uint256))", increaseLiquidityParams);
 
-        positionManager.multicall(callsToExecute);
+        uint256 lpTokensAtNewPrice = positionManager.getLPTokens(tokenId, newPriceToAddQuoteTokensTo);
+        assertEq(lpTokensAtNewPrice, 0);
 
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress, tokenId);
 
+        vm.expectEmit(true, true, true, true);
+        emit IncreaseLiquidity(testAddress, additionalAmount, newPriceToAddQuoteTokensTo);
 
+        vm.prank(testAddress);
+        bytes[] memory results = positionManager.multicall(callsToExecute);
+
+        lpTokensAtNewPrice = positionManager.getLPTokens(tokenId, newPriceToAddQuoteTokensTo);
+        assertGt(lpTokensAtNewPrice, 0);
     }
 
 }
