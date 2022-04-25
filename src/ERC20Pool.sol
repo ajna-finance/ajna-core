@@ -65,6 +65,9 @@ contract ERC20Pool is IPool, Clone {
         uint256 inflatorSnapshot; // RAY, the inflator rate of the given borrower's last state change
     }
 
+    /// @dev Counter used by onlyOnce modifier
+    uint8 private poolInitializations = 0;
+
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
     // price (WAD) -> bucket
@@ -119,6 +122,7 @@ contract ERC20Pool is IPool, Clone {
     );
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
 
+    error AlreadyInitialized();
     error InvalidPrice();
     error NoClaimToBucket();
     error NoDebtToRepay();
@@ -132,8 +136,15 @@ contract ERC20Pool is IPool, Clone {
     error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
 
-    // TODO: add onlyFactory modifier
-    function initialize() external {
+    /// @notice Modifier to protect a clone's initialize method from repeated updates
+    modifier onlyOnce() {
+        if(poolInitializations != 0) {
+            revert AlreadyInitialized();
+        }
+        _;
+    }
+
+    function initialize() external onlyOnce {
         collateralScale = 10**(27 - collateral().decimals());
         quoteTokenScale = 10**(45 - quoteToken().decimals());
 
@@ -141,6 +152,9 @@ contract ERC20Pool is IPool, Clone {
         lastInflatorSnapshotUpdate = block.timestamp;
         previousRate = Maths.wdiv(5, 100);
         previousRateUpdate = block.timestamp;
+
+        // increment initializations count to ensure these values can't be updated
+        poolInitializations += 1;
     }
 
     /// @dev Pure function used to facilitate accessing token via clone state
@@ -501,7 +515,8 @@ contract ERC20Pool is IPool, Clone {
     function updateInterestRate() external {
         // RAY
         uint256 actualUtilization = getPoolActualUtilization();
-        if (actualUtilization != 0 && previousRateUpdate < block.timestamp) {
+        if (actualUtilization != 0 && previousRateUpdate < block.timestamp
+            && getPoolCollateralization() > Maths.ONE_RAY) {
             uint256 oldRate = previousRate;
             accumulatePoolInterest();
 
@@ -589,7 +604,7 @@ contract ERC20Pool is IPool, Clone {
     function getLPTokenBalance(address _owner, uint256 _price)
         external
         view
-        returns (uint256 lpTokens)
+        returns (uint256 lpTokens) // RAY
     {
         return lpBalance[_owner][_price];
     }
@@ -602,7 +617,7 @@ contract ERC20Pool is IPool, Clone {
     function getLPTokenExchangeValue(uint256 _lpTokens, uint256 _price)
         external
         view
-        returns (uint256 collateralTokens, uint256 quoteTokens)
+        returns (uint256 collateralTokens, uint256 quoteTokens)  // RAY, RAD
     {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
