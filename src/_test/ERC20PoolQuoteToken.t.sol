@@ -578,7 +578,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // lender removes entire bid from 4_000.927678580567537368 bucket
         // FIXME: need a way to remove the entire bid
-//        uint256 withdrawalAmount = 3_000.006373674954296470378557 * 1e45;
+        //        uint256 withdrawalAmount = 3_000.006373674954296470378557 * 1e45;
         uint256 withdrawalAmount = 3_000 * 1e45;
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), withdrawalAmount / 1e27);
@@ -588,15 +588,15 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // confirm entire bid was removed
         (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(priceMed);
         assertEq(deposit, 0);
-//        assertEq(debt, 0);  // FIXME: debt should be zero here
-//        assertEq(lpOutstanding, 0);
+        //        assertEq(debt, 0);  // FIXME: debt should be zero here
+        //        assertEq(lpOutstanding, 0);
 
         // confirm debt was reallocated
         (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(priceLow);
         assertEq(deposit, 2_000 * 1e45);
         // some debt accumulated between loan and reallocation
         assertEq(debt, 4_000.002124558318098823459519 * 1e45);
-//        assertEq(pool.hbp(), priceLow);  // FIXME: once all debt is reallocated, HPB should move
+        //        assertEq(pool.hbp(), priceLow);  // FIXME: once all debt is reallocated, HPB should move
         assertEq(pool.lup(), priceLow);
     }
 
@@ -834,5 +834,357 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender.removeQuoteToken(pool, address(lender), 1_000.053487614594018248 * 1e18, p8002);
 
         assertEq(pool.lup(), p10016);
+    }
+
+    function testMoveQuoteTokenNoLoan() public {
+        uint256 p4000 = 4_000.927678580567537368 * 1e18;
+        uint256 p3010 = 3_010.892022197881557845 * 1e18;
+        uint256 p2000 = 2_000.221618840727700609 * 1e18;
+        uint256 p1004 = 1_004.989662429170775094 * 1e18;
+        // lender deposit 5000 DAI at price 4_000.927678580567537368
+        lender.addQuoteToken(pool, address(lender), 5_000 * 1e18, p4000);
+        // lender deposit 10000 DAI at price 2_000.221618840727700609
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, p2000);
+
+        // should revert if trying to move in same bucket
+        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
+        lender.moveQuoteToken(pool, address(lender), 20_000 * 1e18, p4000, p4000);
+
+        // should revert if trying to move to invalid price bucket
+        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
+        lender.moveQuoteToken(pool, address(lender), 20_000 * 1e18, p4000, 4_000 * 1e18);
+
+        // should revert if trying to move from invalid price bucket
+        vm.expectRevert(
+            abi.encodeWithSelector(ERC20Pool.AmountExceedsTotalClaimableQuoteToken.selector, 0)
+        );
+        lender.moveQuoteToken(pool, address(lender), 20_000 * 1e18, 4_000 * 1e18, p4000);
+
+        // should revert if user doesn't have any lp tokens
+        vm.expectRevert(
+            abi.encodeWithSelector(ERC20Pool.AmountExceedsTotalClaimableQuoteToken.selector, 0)
+        );
+        lender.moveQuoteToken(pool, address(lender), 20_000 * 1e18, p1004, p4000);
+
+        // check balances before moving
+        assertEq(pool.totalDebt(), 0);
+        assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
+        assertEq(pool.hpb(), p4000);
+        assertEq(pool.lup(), 0);
+
+        // check 4_000.927678580567537368 bucket
+        (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = pool.bucketAt(p4000);
+        assertEq(deposit, 5_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 5_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p4000), 5_000 * 1e27);
+
+        // check 2_000.221618840727700609 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p2000);
+        assertEq(deposit, 10_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 10_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p2000), 10_000 * 1e27);
+
+        // move 5000 DAI from 2_000.221618840727700609 to 4_000.927678580567537368 DAI
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(lender), p2000, p4000, 5_000 * 1e45, 0);
+        lender.moveQuoteToken(pool, address(lender), 5_000 * 1e18, p2000, p4000);
+
+        // check balances after moving
+        assertEq(pool.totalDebt(), 0);
+        assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
+        assertEq(pool.hpb(), p4000);
+        assertEq(pool.lup(), 0);
+
+        // check 4_000.927678580567537368 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p4000);
+        assertEq(deposit, 10_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 10_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p4000), 10_000 * 1e27);
+
+        // check 2_000.221618840727700609 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p2000);
+        assertEq(deposit, 5_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 5_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p2000), 5_000 * 1e27);
+
+        // move 1000 DAI from 2_000.221618840727700609 to 3_010.892022197881557845
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(lender), p2000, p3010, 1_000 * 1e45, 0);
+        lender.moveQuoteToken(pool, address(lender), 1_000 * 1e18, p2000, p3010);
+
+        // check balances after moving
+        assertEq(pool.totalDebt(), 0);
+        assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
+        assertEq(pool.hpb(), p4000);
+        assertEq(pool.lup(), 0);
+
+        // check 3_010.892022197881557845 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p3010);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p3010), 1_000 * 1e27);
+
+        // check 2_000.221618840727700609 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p2000);
+        assertEq(deposit, 4_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 4_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p2000), 4_000 * 1e27);
+
+        // move 1000 DAI from 4_000.927678580567537368 to 1_004.989662429170775094
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(lender), p4000, p1004, 1_000 * 1e45, 0);
+        lender.moveQuoteToken(pool, address(lender), 1_000 * 1e18, p4000, p1004);
+
+        // check balances after moving
+        assertEq(pool.totalDebt(), 0);
+        assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
+        assertEq(pool.hpb(), p4000);
+        assertEq(pool.lup(), 0);
+
+        // check 4_000.927678580567537368 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p4000);
+        assertEq(deposit, 9_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 9_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p4000), 9_000 * 1e27);
+
+        // check 1_004.989662429170775094 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p1004);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p1004), 1_000 * 1e27);
+    }
+
+    function testMoveQuoteTokenUnpaidLoan() public {
+        uint256 p6022 = 6_022.513263210630472095 * 1e18;
+        uint256 p5007 = 5_007.644384905151472283 * 1e18;
+        uint256 p4000 = 4_000.927678580567537368 * 1e18;
+        uint256 p3010 = 3_010.892022197881557845 * 1e18;
+        uint256 p2000 = 2_000.221618840727700609 * 1e18;
+        uint256 p1004 = 1_004.989662429170775094 * 1e18;
+        uint256 p146 = 146.575625611106531706 * 1e18;
+        // lender deposit 10000 DAI at price 4_000.927678580567537368 and 2_000.221618840727700609
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, p4000);
+        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, p2000);
+        assertEq(quote.balanceOf(address(lender)), 180_000 * 1e18);
+
+        // check balances
+        assertEq(quote.balanceOf(address(pool)), 20_000 * 1e18);
+        assertEq(pool.totalQuoteToken(), 20_000 * 1e45);
+        assertEq(quote.balanceOf(address(lender)), 180_000 * 1e18);
+        assertEq(pool.lpBalance(address(lender), p4000), 10_000 * 1e27);
+
+        // borrower takes a loan of 5_000 DAI
+        borrower.addCollateral(pool, 100 * 1e18);
+        borrower.borrow(pool, 5_000 * 1e18, 4_000 * 1e18);
+
+        // check 4_000.927678580567537368 bucket
+        (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = pool.bucketAt(p4000);
+        assertEq(deposit, 5_000 * 1e45);
+        assertEq(debt, 5_000 * 1e45);
+        assertEq(lpOutstanding, 10_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p4000), 10_000 * 1e27);
+        assertEq(pool.hpb(), p4000);
+        assertEq(pool.lup(), p4000);
+
+        // should revert if trying to move entire amount lended
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                ERC20Pool.AmountExceedsTotalClaimableQuoteToken.selector,
+                10_000 * 1e27
+            )
+        );
+        lender.moveQuoteToken(pool, address(lender), 20_000 * 1e18, p4000, p1004);
+
+        // move 1000 DAI up from 4_000.927678580567537368 to 5_007.644384905151472283
+        // 4_000.927678580567537368 should remain lup, 1000 debt should be reallocated
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(lender), p4000, p5007, 1_000 * 1e45, p4000);
+        lender.moveQuoteToken(pool, address(lender), 1_000 * 1e18, p4000, p5007);
+
+        // check balances
+        assertEq(pool.totalDebt(), 5_000 * 1e45);
+        assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
+        assertEq(pool.hpb(), p5007);
+        assertEq(pool.lup(), p4000);
+
+        // check 2_000.221618840727700609 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p2000);
+        assertEq(deposit, 10_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 10_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p2000), 10_000 * 1e27);
+
+        // check 4_000.927678580567537368 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p4000);
+        assertEq(deposit, 4_000 * 1e45);
+        assertEq(debt, 5_000 * 1e45);
+        assertEq(lpOutstanding, 9_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p4000), 9_000 * 1e27);
+
+        // check 5_007.644384905151472283 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p5007);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p5007), 1_000 * 1e27);
+
+        // move 1000 DAI down from 4_000.927678580567537368 to 3_010.892022197881557845
+        // 4_000.927678580567537368 should remain lup, no debt should be reallocated
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(lender), p4000, p3010, 1_000 * 1e45, p4000);
+        lender.moveQuoteToken(pool, address(lender), 1_000 * 1e18, p4000, p3010);
+
+        // check balances
+        assertEq(pool.totalDebt(), 5_000 * 1e45);
+        assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
+        assertEq(pool.hpb(), p5007);
+        assertEq(pool.lup(), p4000);
+
+        // check 5_007.644384905151472283 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p5007);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p5007), 1_000 * 1e27);
+
+        // check 4_000.927678580567537368 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p4000);
+        assertEq(deposit, 3_000 * 1e45);
+        assertEq(debt, 5_000 * 1e45);
+        assertEq(lpOutstanding, 8_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p4000), 8_000 * 1e27);
+
+        // check 3_010.892022197881557845 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p3010);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p3010), 1_000 * 1e27);
+
+        // move 10000 DAI up from 2_000.221618840727700609 to 6_022.513263210630472095
+        // 6_022.513263210630472095 should become lup, all debt reallocated
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(lender), p2000, p6022, 10_000 * 1e45, p6022);
+        lender.moveQuoteToken(pool, address(lender), 10_000 * 1e18, p2000, p6022);
+
+        // check balances
+        assertEq(pool.totalDebt(), 5_000 * 1e45);
+        assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
+        assertEq(pool.hpb(), p6022);
+        assertEq(pool.lup(), p6022);
+
+        // check 6_022.513263210630472095 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p6022);
+        assertEq(deposit, 5_000 * 1e45);
+        assertEq(debt, 5_000 * 1e45);
+        assertEq(lpOutstanding, 10_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p6022), 10_000 * 1e27);
+
+        // check 5_007.644384905151472283 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p5007);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p5007), 1_000 * 1e27);
+
+        // check 4_000.927678580567537368 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p4000);
+        assertEq(deposit, 8_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 8_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p4000), 8_000 * 1e27);
+
+        // check 3_010.892022197881557845 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p3010);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p3010), 1_000 * 1e27);
+
+        // check 2_000.221618840727700609 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p2000);
+        assertEq(deposit, 0);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 0);
+        assertEq(pool.lpBalance(address(lender), p2000), 0);
+
+        // move 5000 DAI up from 4_000.927678580567537368 to 6_022.513263210630472095
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(lender), p4000, p6022, 5_000 * 1e45, p6022);
+        lender.moveQuoteToken(pool, address(lender), 5_000 * 1e18, p4000, p6022);
+
+        // check balances
+        assertEq(pool.totalDebt(), 5_000 * 1e45);
+        assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
+        assertEq(pool.hpb(), p6022);
+        assertEq(pool.lup(), p6022);
+
+        // check 6_022.513263210630472095 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p6022);
+        assertEq(deposit, 10_000 * 1e45);
+        assertEq(debt, 5_000 * 1e45);
+        assertEq(lpOutstanding, 15_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p6022), 15_000 * 1e27);
+
+        // check 5_007.644384905151472283 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p5007);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p5007), 1_000 * 1e27);
+
+        // check 4_000.927678580567537368 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p4000);
+        assertEq(deposit, 3_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 3_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p4000), 3_000 * 1e27);
+
+        // move 10_000 DAI down from 6_022.513263210630472095 to 146.575625611106531706
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(lender), p6022, p146, 10_000 * 1e45, p6022);
+        lender.moveQuoteToken(pool, address(lender), 10_000 * 1e18, p6022, p146);
+
+        // check balances
+        assertEq(pool.totalDebt(), 5_000 * 1e45);
+        assertEq(pool.totalQuoteToken(), 15_000 * 1e45);
+        assertEq(pool.hpb(), p6022);
+        assertEq(pool.lup(), p6022);
+
+        // check 6_022.513263210630472095 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p6022);
+        assertEq(deposit, 0);
+        assertEq(debt, 5_000 * 1e45);
+        assertEq(lpOutstanding, 15_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p6022), 15_000 * 1e27);
+
+        // check 5_007.644384905151472283 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p5007);
+        assertEq(deposit, 1_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p5007), 1_000 * 1e27);
+
+        // check 4_000.927678580567537368 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p4000);
+        assertEq(deposit, 3_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 3_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p4000), 3_000 * 1e27);
+
+        // check 146.575625611106531706 bucket
+        (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(p146);
+        assertEq(deposit, 10_000 * 1e45);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 10_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), p146), 10_000 * 1e27);
     }
 }

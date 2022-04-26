@@ -26,6 +26,13 @@ interface IPool {
         uint256 _price
     ) external;
 
+    function moveQuoteToken(
+        address _recipient,
+        uint256 _amount,
+        uint256 _fromPrice,
+        uint256 _toPrice
+    ) external;
+
     function addCollateral(uint256 _amount) external;
 
     function removeCollateral(uint256 _amount) external;
@@ -103,6 +110,13 @@ contract ERC20Pool is IPool, Clone {
         uint256 amount,
         uint256 lup
     );
+    event MoveQuoteToken(
+        address indexed lender,
+        uint256 indexed fromPrice,
+        uint256 indexed toPrice,
+        uint256 amount,
+        uint256 lup
+    );
     event AddCollateral(address indexed borrower, uint256 amount);
     event RemoveCollateral(address indexed borrower, uint256 amount);
     event ClaimCollateral(
@@ -138,7 +152,7 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
-        if(poolInitializations != 0) {
+        if (poolInitializations != 0) {
             revert AlreadyInitialized();
         }
         _;
@@ -263,6 +277,69 @@ contract ERC20Pool is IPool, Clone {
         //  TODO: emit _amount / quoteTokenScale
         quoteToken().safeTransfer(_recipient, _amount / quoteTokenScale);
         emit RemoveQuoteToken(_recipient, _price, _amount, lup);
+    }
+
+    /// @notice Called by lenders to move an amount of credit from a specified price bucket to another
+    /// @param _amount The amount of quote token to be moved by a lender
+    /// @param _fromPrice The bucket from which quote tokens will be moved
+    /// @param _toPrice The target bucket where quote tokens will be moved
+    function moveQuoteToken(
+        address _recipient,
+        uint256 _amount,
+        uint256 _fromPrice,
+        uint256 _toPrice
+    ) external {
+        if (_fromPrice == _toPrice || !BucketMath.isValidPrice(_toPrice)) {
+            revert InvalidPrice();
+        }
+
+        uint256 currentBalance = lpBalance[_recipient][_fromPrice];
+        if (currentBalance < Maths.wadToRay(_amount)) {
+            revert AmountExceedsTotalClaimableQuoteToken({totalClaimable: currentBalance});
+        }
+
+        // initialize target bucket if bucket not initialized
+        if (!BitMaps.get(bitmap, _toPrice)) {
+            hpb = _buckets.initializeBucket(hpb, _toPrice);
+            BitMaps.setTo(bitmap, _toPrice, true);
+        }
+
+        accumulatePoolInterest();
+
+        _amount = Maths.wadToRad(_amount);
+        Buckets.Bucket storage fromBucket = _buckets[_fromPrice];
+        Buckets.Bucket storage toBucket = _buckets[_toPrice];
+        (uint256 newLup, uint256 fromLpTokens, uint256 toLpTokens) = _buckets.moveQuoteToken(
+            fromBucket,
+            toBucket,
+            lup,
+            _amount,
+            currentBalance,
+            inflatorSnapshot
+        );
+
+        uint256 col = getPoolCollateralization();
+        if (col < Maths.ONE_RAY) {
+            revert PoolUndercollateralized({collateralization: col});
+        }
+
+        if (lup != newLup) {
+            lup = newLup;
+        }
+
+        if (_toPrice > hpb) {
+            hpb = _toPrice;
+        } else if (
+            _fromPrice == hpb && fromBucket.onDeposit == 0 && fromBucket.debt == 0 && lup != 0
+        ) {
+            hpb = getHpb();
+        }
+
+        // update lender lp balances for buckets
+        lpBalance[_recipient][_fromPrice] -= fromLpTokens;
+        lpBalance[_recipient][_toPrice] += toLpTokens;
+
+        emit MoveQuoteToken(_recipient, _fromPrice, _toPrice, _amount, lup);
     }
 
     /// @notice Called by borrowers to add collateral to the pool
@@ -410,12 +487,7 @@ contract ERC20Pool is IPool, Clone {
         accumulatePoolInterest();
         accumulateBorrowerInterest(borrower);
 
-        uint256 amount;
-        if (_maxAmount >= borrower.debt) {
-            amount = borrower.debt;
-        } else {
-            amount = _maxAmount;
-        }
+        uint256 amount = Maths.min(_maxAmount, borrower.debt);
 
         uint256 debtToPay;
         (lup, debtToPay) = _buckets.repay(amount, lup, inflatorSnapshot);

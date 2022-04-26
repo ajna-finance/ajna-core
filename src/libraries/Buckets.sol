@@ -92,6 +92,82 @@ library Buckets {
         _bucket.lpOutstanding -= lpTokens;
     }
 
+    /// @notice Called by a lender to move quote tokens between buckets
+    /// @param buckets Mapping of buckets for a given pool
+    /// @param _fromBucket The price bucket from which quote tokens should be moved
+    /// @param _toBucket The price bucket where quote tokens should be moved
+    /// @param _lup Current LUP
+    /// @param _amount The amount of quote tokens to be moved
+    /// @param _lpBalance The lender's current LP balance
+    /// @param _inflator The current pool inflator rate
+    /// @return newLup New LUP
+    /// @return fromLpTokens The amount of lpTokens moved from bucket, equivalent to the quote tokens moved
+    /// @return toLpTokens The amount of lpTokens moved in to bucket, equivalent to the quote tokens moved
+    function moveQuoteToken(
+        mapping(uint256 => Bucket) storage buckets,
+        Bucket storage _fromBucket,
+        Bucket storage _toBucket,
+        uint256 _lup,
+        uint256 _amount,
+        uint256 _lpBalance,
+        uint256 _inflator
+    )
+        public
+        returns (
+            uint256 newLup,
+            uint256 fromLpTokens,
+            uint256 toLpTokens
+        )
+    {
+        accumulateBucketInterest(_fromBucket, _inflator);
+
+        if (_fromBucket.price < _lup && _lup <= _toBucket.price) {
+            (fromLpTokens, toLpTokens) = moveQuoteTokens(_fromBucket, _toBucket, _amount);
+            newLup = reallocateUp(buckets, _toBucket, _amount, _lup, _inflator);
+        } else if (_toBucket.price < _lup && _lup <= _fromBucket.price) {
+            accumulateBucketInterest(_toBucket, _inflator);
+            uint256 toReallocate;
+            if (_amount > _fromBucket.onDeposit) {
+                toReallocate = _amount - _fromBucket.onDeposit;
+            }
+            newLup = reallocateDown(buckets, _fromBucket, toReallocate, _inflator);
+            (fromLpTokens, toLpTokens) = moveQuoteTokens(_fromBucket, _toBucket, _amount);
+        } else if (_fromBucket.debt > 0 || _toBucket.debt > 0) {
+            uint256 debtChange = _amount * (_toBucket.price / _fromBucket.price) - _amount;
+            if (_fromBucket.price < _toBucket.price) {
+                _toBucket.debt += debtChange;
+                _fromBucket.debt -= debtChange;
+                (fromLpTokens, toLpTokens) = moveQuoteTokens(_fromBucket, _toBucket, _amount);
+                newLup = reallocateUp(buckets, _toBucket, debtChange, _lup, _inflator);
+            } else {
+                (fromLpTokens, toLpTokens) = moveQuoteTokens(_fromBucket, _toBucket, _amount);
+                accumulateBucketInterest(_toBucket, _inflator);
+                newLup = reallocateDown(buckets, _fromBucket, debtChange, _inflator);
+                _toBucket.debt += debtChange;
+                _fromBucket.debt -= debtChange;
+            }
+        } else {
+            newLup = _lup;
+            accumulateBucketInterest(_toBucket, _inflator);
+            (fromLpTokens, toLpTokens) = moveQuoteTokens(_fromBucket, _toBucket, _amount);
+        }
+    }
+
+    function moveQuoteTokens(
+        Bucket storage _fromBucket,
+        Bucket storage _toBucket,
+        uint256 _amount
+    ) internal returns (uint256 fromLpTokens, uint256 toLpTokens) {
+        fromLpTokens = Maths.rdiv(Maths.radToRay(_amount), getExchangeRate(_fromBucket));
+        _fromBucket.lpOutstanding -= fromLpTokens;
+        uint256 removeFromDeposit = Maths.min(_amount, _fromBucket.onDeposit);
+        _fromBucket.onDeposit -= removeFromDeposit;
+
+        toLpTokens = Maths.rdiv(Maths.radToRay(_amount), getExchangeRate(_toBucket));
+        _toBucket.lpOutstanding += toLpTokens;
+        _toBucket.onDeposit += removeFromDeposit;
+    }
+
     /// @notice Called by a lender to claim accumulated collateral
     /// @param buckets Mapping of buckets for a given pool
     /// @param _price The price bucket from which collateral should be claimed
