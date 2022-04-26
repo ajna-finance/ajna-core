@@ -18,7 +18,7 @@ test   :; forge clean && forge build && forge test --optimize --optimizer-runs 1
 test-with-gas-report   :; forge clean && forge build && forge test --optimize --optimizer-runs 1000000 -v --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
 
 # Lints
-lint :; prettier --write src/**/*.sol && prettier --write src/*.sol
+lint :; node_modules/prettier/bin-prettier.js --write src/**/*.sol && node_modules/prettier/bin-prettier.js --write src/*.sol
 
 # Generate Gas Snapshots
 snapshot :; forge clean && forge snapshot --optimize --optimize-runs 1000000 
