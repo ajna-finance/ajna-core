@@ -41,10 +41,7 @@ contract PositionManagerTest is DSTestPlus {
 
     // -------------------- Utility Functions --------------------
 
-    function mintAndApproveQuoteTokens(
-        address operator,
-        uint256 mintAmount
-    ) private {
+    function mintAndApproveQuoteTokens(address operator, uint256 mintAmount) private {
         quote.mint(operator, mintAmount * 1e18);
 
         vm.prank(operator);
