@@ -10,17 +10,8 @@ import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 import {PositionManager, IPositionManager} from "../PositionManager.sol";
 
-contract PositionManagerWithRevertStringTestMethod is PositionManager {
-    constructor() PositionManager() {}
-
-    function revertWithString() public {
-        revert("TESTING");
-    }
-}
-
 contract MulticallTest is DSTestPlus {
     PositionManager internal positionManager;
-    // PositionManagerWithRevertStringTestMethod internal positionManager;
     ERC20Pool internal pool;
     ERC20PoolFactory internal factory;
 
