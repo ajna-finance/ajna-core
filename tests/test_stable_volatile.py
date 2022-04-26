@@ -155,7 +155,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
 
             # Add or remove liquidity
             utilization = pool.getPoolActualUtilization() / 10**27
-            if utilization < 0.50 and len(buckets_deposited[user_index]) > 1:
+            if utilization < 0.60 and len(buckets_deposited[user_index]) > 0:
                 price = buckets_deposited[user_index].pop()
                 try:
                     remove_quote_token(lenders[user_index], user_index, price, pool)
