@@ -147,8 +147,10 @@ contract MulticallTest is DSTestPlus {
 
         // attempt to increase liquidity and then burn the NFT without decreasing liquidity
         vm.prank(recipient);
-        vm.expectRevert("ajna/liquidity-not-removed");
+        vm.expectRevert(PositionManager.LiquidityNotRemoved.selector);
         positionManager.multicall(callsToExecute);
+
+        // TODO: add case for custom error string -> figure out how to induce such a revert
     }
 
 }

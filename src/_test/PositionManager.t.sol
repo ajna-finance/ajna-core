@@ -446,7 +446,7 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // should revert if liquidity not removed
-        vm.expectRevert("ajna/liquidity-not-removed");
+        vm.expectRevert(PositionManager.LiquidityNotRemoved.selector);
         vm.prank(testAddress);
         positionManager.burn(burnParams);
 
