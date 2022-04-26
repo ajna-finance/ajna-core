@@ -56,16 +56,9 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(lpOutstanding, 0);
         assertEq(bucketCollateral, 0);
 
-        (
-            ,
-            ,
-            ,
-            deposit,
-            debt,
-            bucketInflator,
-            lpOutstanding,
-            bucketCollateral
-        ) = pool.bucketAt(2_793.857521496941952028 * 1e18);
+        (, , , deposit, debt, bucketInflator, lpOutstanding, bucketCollateral) = pool.bucketAt(
+            2_793.857521496941952028 * 1e18
+        );
         assertEq(deposit, 0);
         assertEq(debt, 0);
         assertEq(bucketInflator, 0);

@@ -138,7 +138,7 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
-        if(poolInitializations != 0) {
+        if (poolInitializations != 0) {
             revert AlreadyInitialized();
         }
         _;
@@ -515,8 +515,11 @@ contract ERC20Pool is IPool, Clone {
     function updateInterestRate() external {
         // RAY
         uint256 actualUtilization = getPoolActualUtilization();
-        if (actualUtilization != 0 && previousRateUpdate < block.timestamp
-            && getPoolCollateralization() > Maths.ONE_RAY) {
+        if (
+            actualUtilization != 0 &&
+            previousRateUpdate < block.timestamp &&
+            getPoolCollateralization() > Maths.ONE_RAY
+        ) {
             uint256 oldRate = previousRate;
             accumulatePoolInterest();
 
@@ -604,7 +607,9 @@ contract ERC20Pool is IPool, Clone {
     function getLPTokenBalance(address _owner, uint256 _price)
         external
         view
-        returns (uint256 lpTokens) // RAY
+        returns (
+            uint256 lpTokens // RAY
+        )
     {
         return lpBalance[_owner][_price];
     }
@@ -617,7 +622,10 @@ contract ERC20Pool is IPool, Clone {
     function getLPTokenExchangeValue(uint256 _lpTokens, uint256 _price)
         external
         view
-        returns (uint256 collateralTokens, uint256 quoteTokens)  // RAY, RAD
+        returns (
+            uint256 collateralTokens,
+            uint256 quoteTokens // RAY, RAD
+        )
     {
         require(BucketMath.isValidPrice(_price), "ajna/invalid-bucket-price");
 
