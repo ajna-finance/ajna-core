@@ -112,3 +112,23 @@ class ERC20TokenClient:
             )
 
         return tx
+
+
+class DaiTokenClient(ERC20TokenClient):
+    def top_up(self, to: LocalAccount, amount: int) -> TransactionReceipt:
+        """
+        Mints `amount` tokens to `to` account from DaiJoin contract.
+
+        Args:
+            to: account address to top up
+            amount: amount of tokens to top up
+        """
+
+        tx = self._contract.mint(to, amount, {"from": self._reserve})
+
+        if bool(tx.revert_msg):
+            raise Exception(
+                f"Failed to top up {self.token_address} to {to.address}. Revert message: {tx.revert_msg}"
+            )
+
+        return tx
