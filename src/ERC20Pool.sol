@@ -219,11 +219,11 @@ contract ERC20Pool is IPool, Clone {
     }
 
     /// @notice Called by lenders to remove an amount of credit at a specified price bucket
-    /// @param _amount The amount of quote token to be removed by a lender
+    /// @param _maxAmount The maximum amount of quote token to be removed by a lender
     /// @param _price The bucket from which quote tokens will be removed
     function removeQuoteToken(
         address _recipient,
-        uint256 _amount,
+        uint256 _maxAmount,
         uint256 _price
     ) external {
         if (!BucketMath.isValidPrice(_price)) {
@@ -233,11 +233,11 @@ contract ERC20Pool is IPool, Clone {
         accumulatePoolInterest();
 
         // remove from bucket with RAD precision
-        _amount = Maths.wadToRad(_amount);
+        _maxAmount = Maths.wadToRad(_maxAmount);
         Buckets.Bucket storage bucket = _buckets[_price];
-        (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
+        (uint256 amount, uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
             bucket,
-            _amount,
+            _maxAmount,
             lpBalance[_recipient][_price],
             inflatorSnapshot
         );
@@ -252,7 +252,7 @@ contract ERC20Pool is IPool, Clone {
             hpb = getHpb();
         }
 
-        totalQuoteToken -= _amount;
+        totalQuoteToken -= amount;
         uint256 col = getPoolCollateralization();
         if (col < Maths.ONE_RAY) {
             revert PoolUndercollateralized({collateralization: col});
@@ -261,8 +261,8 @@ contract ERC20Pool is IPool, Clone {
         lpBalance[_recipient][_price] -= lpTokens;
 
         //  TODO: emit _amount / quoteTokenScale
-        quoteToken().safeTransfer(_recipient, _amount / quoteTokenScale);
-        emit RemoveQuoteToken(_recipient, _price, _amount, lup);
+        quoteToken().safeTransfer(_recipient, amount / quoteTokenScale);
+        emit RemoveQuoteToken(_recipient, _price, amount, lup);
     }
 
     /// @notice Called by borrowers to add collateral to the pool
