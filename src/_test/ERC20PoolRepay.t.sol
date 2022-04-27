@@ -117,6 +117,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.lup(), priceHigh);
         assertEq(pool.totalDebt() / pool.lup(), 0);
+        assertEq(pool.getPendingPoolInterest(), 0);
         assertEq(quote.balanceOf(address(borrower)), 9_999.086351077915909657 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 30_000.913648922084090343 * 1e18);
 
@@ -124,6 +125,8 @@ contract ERC20PoolRepayTest is DSTestPlus {
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower));
         assertEq(borrowerDebt, 0);
         assertEq(depositedCollateral, 100 * 1e27);
+        (, uint256 borrowerPendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower));
+        assertEq(borrowerPendingDebt, 0);
     }
 
     // @notice: 1 lender 2 borrowers deposits quote token
@@ -240,9 +243,14 @@ contract ERC20PoolRepayTest is DSTestPlus {
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower));
         assertEq(borrowerDebt, 0);
         assertEq(depositedCollateral, 100 * 1e27);
+        (, uint256 borrowerPendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower));
+        assertEq(borrowerPendingDebt, 0);
 
         assertEq(pool.totalQuoteToken(), 28_000.715071443825413103419758346 * 1e45);
         assertEq(pool.totalDebt(), 1_999.635958235022649238933278654 * 1e45);
+        (, uint256 borrower2PendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower2));
+        // FIXME: Pending debt should tie within 1 RAY, but it is ~0.4 quote tokens off.
+        assertEq(pool.totalDebt() + pool.getPendingPoolInterest(), borrower2PendingDebt);
         assertEq(pool.lup(), priceHigh);
         assertEq(pool.totalDebt() / pool.lup(), 0.399316685558313112714566594 * 1e27);
         assertEq(quote.balanceOf(address(borrower)), 9_999.284928556174586897 * 1e18);
@@ -262,18 +270,24 @@ contract ERC20PoolRepayTest is DSTestPlus {
         (, , , deposit, debt, , , ) = pool.bucketAt(priceHigh);
         assertEq(deposit, 10_000.13001099216594901568631 * 1e45);
         assertEq(debt, 0);
+        assertEq(pool.getPendingBucketInterest(priceHigh), 0);
         (, , , deposit, debt, , , ) = pool.bucketAt(priceMid);
         assertEq(deposit, 10_000.13001099216594901568631 * 1e45);
         assertEq(debt, 0);
+        assertEq(pool.getPendingBucketInterest(priceMid), 0);
         (, , , deposit, debt, , , ) = pool.bucketAt(priceLow);
         assertEq(deposit, 10_000.091007694516164310980417 * 1e45);
         assertEq(debt, 0);
+        assertEq(pool.getPendingBucketInterest(priceLow), 0);
 
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower2));
         assertEq(borrowerDebt, 0);
+        (, borrower2PendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower2));
+        assertEq(borrower2PendingDebt, 0);
         assertEq(depositedCollateral, 100 * 1e27);
         assertEq(pool.totalQuoteToken(), 30_000.741073642258602906557020346 * 1e45);
         assertEq(pool.totalDebt(), 0);
+        assertEq(pool.getPendingPoolInterest(), 0);
         assertEq(pool.lup(), priceHigh);
         assertEq(pool.totalDebt() / pool.lup(), 0);
         assertEq(quote.balanceOf(address(borrower2)), 9_999.973997801566810197 * 1e18);
