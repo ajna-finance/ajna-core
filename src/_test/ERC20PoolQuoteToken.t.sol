@@ -13,6 +13,9 @@ import "../libraries/Maths.sol";
 import "../libraries/Buckets.sol";
 
 contract ERC20PoolQuoteTokenTest is DSTestPlus {
+    uint256 public constant MAX_INT = 2**256 - 1;
+    uint256 public constant LARGEST_AMOUNT = MAX_INT / 10**27;
+
     ERC20Pool internal pool;
     CollateralToken internal collateral;
     QuoteToken internal quote;
@@ -329,23 +332,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
     // @notice: 1 lender deposits quote token then removes quote token
     // @notice: with no loans outstanding
-    // @notice: lender reverts:
-    // @notice:         attempts to remove more quote token then lent out
     function testRemoveQuoteTokenNoLoan() public {
         // lender deposit 10000 DAI at price 4000
         lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 4_000.927678580567537368 * 1e18);
-
-        // should revert if trying to remove more than lended
-        vm.expectRevert(
-            abi.encodeWithSelector(Buckets.AmountExceedsClaimable.selector, 10_000 * 1e45)
-        );
-        lender.removeQuoteToken(
-            pool,
-            address(lender),
-            20_000 * 1e18,
-            4_000.927678580567537368 * 1e18
-        );
-
         skip(8200);
 
         // check balances before removal
@@ -470,11 +459,6 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         //exchange rate
         //TODO: Get the exchange rate and calculate automatically
-        vm.expectRevert(
-            abi.encodeWithSelector(Buckets.AmountExceedsClaimable.selector, 10_000 * 1e45)
-        );
-        lender1.removeQuoteToken(pool, address(lender1), 15_000 * 1e18, priceMed);
-
         lender1.removeQuoteToken(pool, address(lender1), 10_000 * 1e18, priceMed);
 
         // lender removes entire amount lended
@@ -920,5 +904,39 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender.removeQuoteToken(pool, address(lender), 1_000.053487614594018248 * 1e18, p8002);
 
         assertEq(pool.lup(), p10016);
+    }
+
+    // @notice: 1 lender removes more quote token than their claim
+    function testRemoveMoreThanClaim() public {
+        uint256 price = 4_000.927678580567537368 * 1e18;
+
+        // lender deposit 4000 DAI at price 4000
+        lender.addQuoteToken(pool, address(lender), 4_000 * 1e18, price);
+        skip(14);
+
+        // remove max 5000 DAI at price of 1 MKR = 4_000.927678580567537368 DAI
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(pool), address(lender), 4_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(lender), price, 4_000 * 1e45, 0);
+        lender.removeQuoteToken(pool, address(lender), 5_000 * 1e18, price);
+        // check balances
+        assertEq(pool.totalQuoteToken(), 0);
+        assertEq(quote.balanceOf(address(pool)), 0);
+        skip(14);
+
+        // lender deposit 2000 DAI at price 4000
+        lender.addQuoteToken(pool, address(lender), 2_000 * 1e18, price);
+        skip(14);
+
+        // remove uint256.max at price of 1 MKR = 4_000.927678580567537368 DAI
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(pool), address(lender), 2_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(lender), price, 2_000 * 1e45, 0);
+        lender.removeQuoteToken(pool, address(lender), LARGEST_AMOUNT, price);
+        // check balances
+        assertEq(pool.totalQuoteToken(), 0);
+        assertEq(quote.balanceOf(address(pool)), 0);
     }
 }
