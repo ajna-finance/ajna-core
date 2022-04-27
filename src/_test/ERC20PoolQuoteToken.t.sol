@@ -575,26 +575,27 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         skip(1340);
 
         // lender removes entire bid from 4_000.927678580567537368 bucket
-        // FIXME: need a way to remove the entire bid
-        // uint256 withdrawalAmount = 3_000.006373674954296470378557 * 1e45;
-        uint256 withdrawalAmount = 3_000 * 1e45;
+        uint256 withdrawalAmount = 3_001 * 1e45;
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(pool), address(lender), withdrawalAmount / 1e27);
-        emit RemoveQuoteToken(address(lender), priceMed, withdrawalAmount, priceMed);
+        emit Transfer(address(pool), address(lender),
+            3_000.006373674954296470 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(lender), priceMed,
+            3_000.006373674954296470378557 * 1e45, priceLow);
         lender.removeQuoteToken(pool, address(lender), withdrawalAmount / 1e27, priceMed);
 
         // confirm entire bid was removed
         (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(priceMed);
         assertEq(deposit, 0);
-        // assertEq(debt, 0);  // FIXME: debt should be zero here
-        // assertEq(lpOutstanding, 0);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 0);
 
         // confirm debt was reallocated
         (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(priceLow);
-        assertEq(deposit, 2_000 * 1e45);
+        assertEq(deposit, 1_999.993626325045703529621443 * 1e45);
         // some debt accumulated between loan and reallocation
-        assertEq(debt, 4_000.002124558318098823459519 * 1e45);
-        // assertEq(pool.hbp(), priceLow);  // FIXME: once all debt is reallocated, HPB should move
+        assertEq(debt, 4_000.008498233272395293838076 * 1e45);
+        assertEq(pool.hpb(), priceLow);
         assertEq(pool.lup(), priceLow);
     }
 
