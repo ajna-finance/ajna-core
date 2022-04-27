@@ -586,11 +586,11 @@ contract ERC20Pool is IPool, Clone {
         _borrower.inflatorSnapshot = inflatorSnapshot;
     }
 
-    /// @notice Calculate the next interest rate
+    /// @notice Calculate the amount of unaccrued interest for a specified amount of debt
     /// @param _debt RAD - The total book debt
     /// @param _pendingInflator RAY - The next debt inflator value
     /// @param _currentInflator RAY - The current debt inflator value
-    /// @return RAD - The additional debt accumulated to the pool
+    /// @return RAD - The additional debt pending accumulation
     function getPendingInterest(
         uint256 _debt,
         uint256 _pendingInflator,
@@ -603,6 +603,35 @@ contract ERC20Pool is IPool, Clone {
                     Maths.sub(Maths.rmul(_pendingInflator, _currentInflator), Maths.ONE_RAY)
                 )
             );
+    }
+
+    /// @notice Calculate unaccrued interest for the pool, which may be added to totalDebt
+    /// @notice to discover pending pool debt
+    /// @return interest - Unaccumulated pool interest, RAD
+    function getPendingPoolInterest() external view returns (uint256 interest)
+    {
+        if (totalDebt != 0) {
+            return getPendingInterest(
+                totalDebt,
+                getPendingInflator(),
+                inflatorSnapshot);
+        } else {
+            return 0;
+        }
+    }
+
+    /// @notice Calculate unaccrued interest for a particular bucket, which may be added to
+    /// @notice bucket debt to discover pending bucket debt
+    /// @param _price The price bucket for which interest should be calculated, WAD
+    /// @return interest - Unaccumulated bucket interest, RAD
+    function getPendingBucketInterest(uint256 _price) external view returns (uint256 interest)
+    {
+        (, , , , uint256 debt, uint256 bucketInflator, ,) = bucketAt(_price);
+        if (debt != 0) {
+            return getPendingInterest(debt,  getPendingInflator(), bucketInflator);
+        } else {
+            return 0;
+        }
     }
 
     /// @notice Returns a given lender's LP tokens in a given price bucket

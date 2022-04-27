@@ -63,6 +63,8 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 50_000 * 1e45);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.hpb(), priceHighest);
+        assertEq(pool.getPendingPoolInterest(), 0);
+        assertEq(pool.getPendingBucketInterest(priceHighest), 0);
 
         // should revert if borrower wants to borrow a greater amount than in pool
         vm.expectRevert(
@@ -117,6 +119,13 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.getPoolCollateralization(), 14.337581058085150275452380951 * 1e27);
 
         skip(8200);
+
+        // tie out borrower and pool debt
+        (, uint256 borrowerPendingDebt, , , uint256 collateralization, , )
+            = pool.getBorrowerInfo(address(borrower));
+        assertGt(collateralization, 10**27);
+        uint256 poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
+        assertEq(borrowerPendingDebt, poolPendingDebt);
 
         // borrow remaining 9_000 DAI from LUP
         vm.expectEmit(true, true, false, true);
