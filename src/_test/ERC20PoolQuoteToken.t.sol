@@ -444,6 +444,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
     // @notice: quote token is removed
     function testRemoveQuoteTokenPaidLoan() public {
         uint256 priceMed = 4_000.927678580567537368 * 1e18;
+
         // lender deposit 10000 DAI at price 4000
         lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceMed);
         assertEq(quote.balanceOf(address(lender)), 190_000 * 1e18);
@@ -461,9 +462,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // borrower repay entire loan
         quote.mint(address(borrower), 1 * 1e18);
         borrower.approveToken(quote, address(pool), 100_000 * 1e18);
-
         borrower.repay(pool, 10_001 * 1e18);
-//        assertEq(pool.lup(), 0);  // FIXME: repay isn't updating the LUP
+        assertEq(pool.totalDebt(), 0);
+        assertEq(pool.lup(), 0);  // FIXME: LUP isn't being reset after all debt paid off
 
         skip(8200);
 
@@ -480,7 +481,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 0);
         assertEq(quote.balanceOf(address(pool)), 0);
         assertEq(pool.hpb(), 0);
-//        assertEq(pool.lup(), 0);
+        assertEq(pool.lup(), 0);  // FIXME: LUP isn't being reset after all debt paid off
         // check lender balance
         assertEq(quote.balanceOf(address(lender)), 200_000 * 1e18);
 
