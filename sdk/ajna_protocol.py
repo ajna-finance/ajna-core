@@ -12,7 +12,7 @@ from brownie import (
 from brownie.network.account import Accounts, LocalAccount
 
 from .protocol_definition import *
-from .erc20_token_client import ERC20TokenClient
+from .erc20_token_client import ERC20TokenClient, DaiTokenClient
 from .ajna_pool_client import AjnaPoolClient
 from .ajna_protocol_runner import AjnaProtocolRunner
 
@@ -87,9 +87,14 @@ class AjnaProtocol:
             Used to top up token to lenders and borrowers.
         """
 
-        self._tokens[token_address.lower()] = ERC20TokenClient(
-            token_address, reserve_address
-        )
+        if token_address == DAI_ADDRESS:
+            self._tokens[token_address.lower()] = DaiTokenClient(
+                token_address, reserve_address
+            )
+        else:
+            self._tokens[token_address.lower()] = ERC20TokenClient(
+                token_address, reserve_address
+            )
 
     def add_borrower(self, *, borrower: LocalAccount = None) -> LocalAccount:
         """

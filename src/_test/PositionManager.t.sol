@@ -271,7 +271,7 @@ contract PositionManagerTest is DSTestPlus {
 
         // should revert if called by a non-recipient address
         vm.prank(externalCaller);
-        vm.expectRevert("ajna/not-approved");
+        vm.expectRevert(PositionManager.NotApproved.selector);
 
         positionManager.increaseLiquidity(increaseLiquidityParams);
     }
@@ -311,7 +311,6 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), Maths.wadToRad(mintAmount) - quoteTokensRemoved);
 
         // check lp tokens matches expectations
-        (, address updatedPositionOwner, ) = positionManager.positions(tokenId);
         uint256 updatedLPTokens = positionManager.getLPTokens(tokenId, mintPrice);
         assert(updatedLPTokens < originalLPTokens);
 
@@ -410,7 +409,7 @@ contract PositionManagerTest is DSTestPlus {
                 testBucketPrice
             );
 
-        vm.expectRevert("ajna/not-approved");
+        vm.expectRevert(PositionManager.NotApproved.selector);
         positionManager.increaseLiquidity(increaseLiquidityParams);
 
         // check new owner can decreaseLiquidity
@@ -444,7 +443,7 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // should revert if liquidity not removed
-        vm.expectRevert("ajna/liquidity-not-removed");
+        vm.expectRevert(PositionManager.LiquidityNotRemoved.selector);
         vm.prank(testAddress);
         positionManager.burn(burnParams);
 

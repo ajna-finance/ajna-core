@@ -117,7 +117,7 @@ contract MulticallTest is DSTestPlus {
         emit IncreaseLiquidity(testAddress, additionalAmount, newPriceToAddQuoteTokensTo);
 
         vm.prank(testAddress);
-        bytes[] memory results = positionManager.multicall(callsToExecute);
+        positionManager.multicall(callsToExecute);
 
         lpTokensAtNewPrice = positionManager.getLPTokens(tokenId, newPriceToAddQuoteTokensTo);
         assertGt(lpTokensAtNewPrice, 0);
@@ -160,7 +160,7 @@ contract MulticallTest is DSTestPlus {
 
         // attempt to modify the NFT from an unapproved EOA
         vm.prank(externalCaller);
-        vm.expectRevert("ajna/not-approved");
+        vm.expectRevert(PositionManager.NotApproved.selector);
         positionManager.multicall(callsToExecute);
 
         vm.expectEmit(true, true, true, true);
@@ -168,7 +168,9 @@ contract MulticallTest is DSTestPlus {
 
         // attempt to increase liquidity and then burn the NFT without decreasing liquidity
         vm.prank(recipient);
-        vm.expectRevert("ajna/liquidity-not-removed");
+        vm.expectRevert(PositionManager.LiquidityNotRemoved.selector);
         positionManager.multicall(callsToExecute);
+
+        // TODO: add case for custom error string -> figure out how to induce such a revert
     }
 }
