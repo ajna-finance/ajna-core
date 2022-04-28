@@ -106,7 +106,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
             address(borrower),
             0,
             15_000.913648922084090343510876438000000000000000000 * 1e45
-        );  // FIXME
+        );
         borrower.repay(pool, 16_000 * 1e18);
 
         // check balances
@@ -115,7 +115,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
             30_000.913648922084090343510876438000000000000000000 * 1e45
         );
         assertEq(pool.totalDebt(), 0);
-        assertEq(pool.lup(), priceHigh);
+        assertEq(pool.lup(), 0);
         // assertEq(pool.getEncumberedCollateral() , 0);
         assertEq(pool.getPendingPoolInterest(), 0);
         assertEq(quote.balanceOf(address(borrower)), 9_999.086351077915909657 * 1e18);
@@ -309,7 +309,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 30_000.741073642258602906557020346 * 1e45);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.getPendingPoolInterest(), 0);
-        assertEq(pool.lup(), priceHigh);
+        assertEq(pool.lup(), 0);
         // assertEq(pool.getEncumberedCollateral() , 0);
         assertEq(quote.balanceOf(address(borrower2)), 9_999.973997801566810197 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 30_000.741073642258602906 * 1e18);

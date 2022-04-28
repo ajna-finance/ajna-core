@@ -210,7 +210,6 @@ library Buckets {
 
             if (curLup.price == curLup.up) {
                 // nowhere to go
-                // FIXME: If there is no debt, should return (0, debtToPay)
                 break;
             }
             // move to upper bucket
