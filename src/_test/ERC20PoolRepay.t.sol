@@ -266,7 +266,6 @@ contract ERC20PoolRepayTest is DSTestPlus {
         uint256 poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
         (, uint256 borrower2PendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower2));
         // TODO: Pending debt should tie within 1 RAY, but it is ~0.4 quote tokens off.
-        //  Might be caused by
 //        assertEq(bucketPendingDebt, borrower2PendingDebt);
         assertEq(bucketPendingDebt, poolPendingDebt);
 //        assertEq(borrower2PendingDebt, poolPendingDebt);

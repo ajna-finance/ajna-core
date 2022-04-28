@@ -86,15 +86,18 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(pool.totalCollateral(), 100 * 1e27);
 
         // check borrower
-        (, , uint256 deposited, uint256 borrowerEncumbered, , , ) = pool.getBorrowerInfo(address(borrower));
+        (, , uint256 deposited, uint256 borrowerEncumbered, uint256 collateralization, ,)
+            = pool.getBorrowerInfo(address(borrower));
         assertEq(deposited, 100 * 1e27);
         assertEq(borrowerEncumbered, 0);
+        assertEq(collateralization, Maths.ONE_RAY);
 
         // get loan of 20_000 DAI, recheck borrower
         borrower.borrow(pool, 20_000 * 1e18, 2500 * 1e18);
-        (, , deposited, borrowerEncumbered, , , ) = pool.getBorrowerInfo(address(borrower));
+        (, , deposited, borrowerEncumbered, collateralization, , ) = pool.getBorrowerInfo(address(borrower));
         assertEq(deposited, 100 * 1e27);
         assertEq(borrowerEncumbered, 3.993893827662208275880152017 * 1e27);
+        assertEq(collateralization, 25.038221924525757361415000003 * 1e27);
 
         // check pool state after loan
         poolEncumbered = pool.getEncumberedCollateral(pool.totalDebt());
@@ -115,17 +118,27 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         );
         borrower.removeCollateral(pool, 100 * 1e18);
 
+        // remove some collateral
+        borrower.removeCollateral(pool, 20 * 1e18);
+        (, , deposited, encumbered, collateralization, , ) = pool.getBorrowerInfo(address(borrower));
+        assertEq(deposited, 80 * 1e27);
+        assertEq(encumbered, 3.993893827662208275880152017 * 1e27);
+        assertEq(collateralization, 20.030577539620605889132000002 * 1e27);
+        assertEq(pool.getPoolCollateralization(), collateralization);
+
         // borrower pays back entire loan and accumulated debt
         quote.mint(address(borrower), 20_001 * 1e18);
         borrower.approveToken(quote, address(pool), 20_001 * 1e18);
         borrower.repay(pool, 20_001 * 1e18);
+        assertEq(pool.getPoolCollateralization(), Maths.ONE_RAY);
 
         // remove collateral
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(pool), address(borrower), 100 * 1e18);
+        emit Transfer(address(pool), address(borrower), 80 * 1e18);
         vm.expectEmit(true, false, false, true);
-        emit RemoveCollateral(address(borrower), 100 * 1e27);
-        borrower.removeCollateral(pool, 100 * 1e18);
+        emit RemoveCollateral(address(borrower), 80 * 1e27);
+        borrower.removeCollateral(pool, 80 * 1e18);
+        assertEq(pool.getPoolCollateralization(), Maths.ONE_RAY);
 
         // check borrower balances
         (, , deposited, borrowerEncumbered, , , ) = pool.getBorrowerInfo(address(borrower));

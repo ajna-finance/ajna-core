@@ -829,7 +829,7 @@ contract ERC20Pool is IPool, Clone {
         uint256 borrowerDebt = borrower.debt;
         uint256 borrowerPendingDebt = borrower.debt;
         uint256 collateralEncumbered;
-        uint256 collateralization;
+        uint256 collateralization = Maths.ONE_RAY;
 
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
             borrowerDebt += getPendingInterest(
