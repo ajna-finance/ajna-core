@@ -516,6 +516,11 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         (, , , deposit, debt, , , ) = pool.bucketAt(priceLow);
         assertEq(deposit, 3_400 * 1e45);
         assertEq(debt, 0);
+        uint256 poolCollateralizationAfterBorrow = pool.getPoolCollateralization();
+        uint256 targetUtilizationAfterBorrow = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationAfterBorrow = pool.getPoolActualUtilization();
+        assertEq(poolCollateralizationAfterBorrow, 133.364255952685584578933333386 * 1e27);
+        assertGt(actualUtilizationAfterBorrow, targetUtilizationAfterBorrow);
 
         // lender removes 1000 DAI from LUP
         vm.expectEmit(true, true, false, true);
@@ -523,6 +528,15 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(lender), priceMed, 1_000 * 1e45, priceLow);
         lender.removeQuoteToken(pool, address(lender), 1_000 * 1e18, priceMed);
+
+        // check that utilization increased following the removal of deposit
+        uint256 poolCollateralizationAfterRemove = pool.getPoolCollateralization();
+        uint256 targetUtilizationAfterRemove = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationAfterRemove = pool.getPoolActualUtilization();
+        assertLt(poolCollateralizationAfterRemove, poolCollateralizationAfterBorrow);
+        assertGt(actualUtilizationAfterRemove, targetUtilizationAfterRemove);
+        assertGt(actualUtilizationAfterRemove, actualUtilizationAfterBorrow);
+        assertGt(targetUtilizationAfterRemove, targetUtilizationAfterBorrow);
 
         // check lup moved down to 3000
         assertEq(pool.lup(), priceLow);
@@ -615,6 +629,11 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2821);
         lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, p2807);
 
+        // check initial utilization after depositing but not borrowing
+        assertEq(pool.getPoolCollateralization(), Maths.ONE_RAY);
+        assertEq(pool.getPoolActualUtilization(), 0);
+        assertEq(pool.getPoolTargetUtilization(), Maths.ONE_RAY);
+
         // Borrower draws 2400 debt partially utilizing the LUP
         borrower.addCollateral(pool, 10 * 1e18);
         borrower.borrow(pool, 2_400 * 1e18, 0);
@@ -631,6 +650,11 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(deposit, 1_000 * 1e45);
         assertEq(debt, 0);
         assertEq(pool.lup(), p2821);
+        uint256 poolCollateralizationAfterBorrow = pool.getPoolCollateralization();
+        uint256 targetUtilizationAfterBorrow = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationAfterBorrow = pool.getPoolActualUtilization();
+        assertEq(poolCollateralizationAfterBorrow, 11.757774763124786456862499999 * 1e27);
+        assertGt(actualUtilizationAfterBorrow, targetUtilizationAfterBorrow);
 
         // Lender withdraws above LUP
         lender.removeQuoteToken(pool, address(lender), 1_000 * 1e18, p2850);
@@ -647,6 +671,15 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(deposit, 600 * 1e45);
         assertEq(debt, 400 * 1e45);
         assertEq(pool.lup(), p2807);
+
+        // check that utilization increased following the removal of deposit
+        uint256 poolCollateralizationAfterRemove = pool.getPoolCollateralization();
+        uint256 targetUtilizationAfterRemove = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationAfterRemove = pool.getPoolActualUtilization();
+        assertLt(poolCollateralizationAfterRemove, poolCollateralizationAfterBorrow);
+        assertGt(actualUtilizationAfterRemove, targetUtilizationAfterRemove);
+        assertGt(actualUtilizationAfterRemove, actualUtilizationAfterBorrow);
+        assertGt(targetUtilizationAfterRemove, targetUtilizationAfterBorrow);
     }
 
     // @notice: 1 lender and 1 borrower deposits quote token
@@ -659,6 +692,14 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender.addQuoteToken(pool, address(lender), 5_000 * 1e18, priceHigh);
         lender.addQuoteToken(pool, address(lender), 5_000 * 1e18, priceMed);
         lender.addQuoteToken(pool, address(lender), 5_000 * 1e18, priceLow);
+
+        // check initial utilization after depositing but not borrowing
+        uint256 collateralization = pool.getPoolCollateralization();
+        uint256 targetUtilization = pool.getPoolTargetUtilization();
+        uint256 actualUtilization = pool.getPoolActualUtilization();
+        assertEq(collateralization, Maths.ONE_RAY);
+        assertEq(actualUtilization, 0);
+        assertEq(targetUtilization, Maths.ONE_RAY);
 
         // borrower takes a loan of 3000 DAI
         borrower.addCollateral(pool, 100 * 1e18);
@@ -677,6 +718,15 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // check pool balances
         assertEq(pool.totalQuoteToken(), 10_989.107977802118442155 * 1e45);
         assertEq(quote.balanceOf(address(pool)), 10_989.107977802118442155 * 1e18);
+
+        // check pool collateralization
+        collateralization = pool.getPoolCollateralization();
+        assertEq(collateralization, 132.881805427880566840691179328 * 1e27);
+
+        // check pool is still overcollateralized
+        targetUtilization = pool.getPoolTargetUtilization();
+        actualUtilization = pool.getPoolActualUtilization();
+        assertGt(actualUtilization, targetUtilization);
 
         // check 4000 bucket balance
         (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = pool.bucketAt(priceHigh);
@@ -702,9 +752,16 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         lender.addQuoteToken(pool, address(lender), 5_000 * 1e18, priceLow);
         lender.addQuoteToken(pool, address(lender), 5_000 * 1e18, priceLowest);
 
-        // borrower takes a loan of 4000 DAI
+        // check initial utilization after depositing but not borrowing
+        uint256 targetUtilization = pool.getPoolTargetUtilization();
+        uint256 actualUtilization = pool.getPoolActualUtilization();
+        assertEq(actualUtilization, 0);
+        assertEq(targetUtilization, Maths.ONE_RAY);
+
+        // borrower takes a loan of 4000 DAI at priceLow
+        uint256 borrowAmount = 4_000 * 1e18;
         borrower.addCollateral(pool, 5.1 * 1e18);
-        borrower.borrow(pool, 4_000 * 1e18, 1_000 * 1e18);
+        borrower.borrow(pool, borrowAmount, 1_000 * 1e18);
         assertEq(pool.lup(), priceLow);
 
         // removal should revert if pool remains undercollateralized
@@ -715,6 +772,18 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             )
         );
         lender.removeQuoteToken(pool, address(lender), 2_000 * 1e18, priceLow);
+
+        // check pool collateralization after borrowing
+        uint256 collateralization = pool.getPoolCollateralization();
+        assertEq(collateralization, 1.281361819597192738244850000 * 1e27);
+
+        // check pool utilization after borrowing
+        targetUtilization = pool.getPoolTargetUtilization();
+        actualUtilization = pool.getPoolActualUtilization();
+        assertEq(actualUtilization, Maths.wadToRay(Maths.wdiv(borrowAmount, (10_000 * 1e18))));
+
+        // since pool is undercollateralized actualUtilization should be < targetUtilization
+        assertLt(actualUtilization, targetUtilization);
     }
 
     // @notice: 2 lenders both deposit then remove quote token
@@ -784,6 +853,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // borrowers deposit collateral
         borrower.addCollateral(pool, 2 * 1e18);
         borrower2.addCollateral(pool, 200 * 1e18);
+        assertEq(pool.getPoolCollateralization(), Maths.ONE_RAY);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
         borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);
@@ -798,35 +868,51 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         pool.updateInterestRate();
         skip(5000);
 
-        (uint256 col, uint256 quote) = pool.getLPTokenExchangeValue(
+        (uint256 col, uint256 quoteLPValue) = pool.getLPTokenExchangeValue(
             pool.getLPTokenBalance(address(lender), p8002),
             p8002
         );
-        assertEq(quote, 1_000.023113960510762449249703 * 1e45);
+        assertEq(quoteLPValue, 1_000.023113960510762449249703 * 1e45);
+
+        // check pool state following borrows
+        uint256 poolCollateralizationAfterBorrow = pool.getPoolCollateralization();
+        uint256 targetUtilizationAfterBorrow = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationAfterBorrow = pool.getPoolActualUtilization();
+        assertEq(poolCollateralizationAfterBorrow, 1.558858827078768654127776949 * 1e27);
+        assertGt(actualUtilizationAfterBorrow, targetUtilizationAfterBorrow);
 
         // should revert if not enough funds in pool
         assertEq(pool.totalQuoteToken(), 0);
         vm.expectRevert(abi.encodeWithSelector(Buckets.NoDepositToReallocateTo.selector));
         lender.removeQuoteToken(pool, address(lender), 1_000.023113960510762449 * 1e18, p8002);
 
+        // borrower repays their initial loan principal
         borrower.repay(pool, 12_000 * 1e18);
-
-        (col, quote) = pool.getLPTokenExchangeValue(
+        (col, quoteLPValue) = pool.getLPTokenExchangeValue(
             pool.getLPTokenBalance(address(lender), p8002),
             p8002
         );
-        assertEq(quote, 1_000.053487614594018248892126132 * 1e45);
+        assertEq(quoteLPValue, 1_000.058932266911224024728608229 * 1e45);
 
-        // should revert if trying to remove more than lended
+        // check that utilization decreased following repayment
+        uint256 poolCollateralizationAfterRepay = pool.getPoolCollateralization();
+        uint256 targetUtilizationAfterRepay = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationAfterRepay = pool.getPoolActualUtilization();
+        assertGt(poolCollateralizationAfterRepay, poolCollateralizationAfterBorrow);
+        assertGt(actualUtilizationAfterRepay, targetUtilizationAfterRepay);
+        assertLt(actualUtilizationAfterRepay, actualUtilizationAfterBorrow);
+        assertLt(targetUtilizationAfterRepay, targetUtilizationAfterBorrow);
+
+        // should revert if trying to remove more than was lent
         vm.expectRevert(
             abi.encodeWithSelector(
                 Buckets.AmountExceedsClaimable.selector,
-                1_000.053487614594018248892126 * 1e45
+                1_000.058932266911224024728608 * 1e45
             )
         );
         lender.removeQuoteToken(pool, address(lender), 1_001 * 1e18, p8002);
 
-        // lender should be able to remove lended quote tokens + interest
+        // lender should be able to remove lent quote tokens + interest
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 1_000.053487614594018248 * 1e18);
         vm.expectEmit(true, true, false, true);
