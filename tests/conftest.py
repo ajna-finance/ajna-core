@@ -271,6 +271,35 @@ class TestUtils:
         assert calc_lup <= calc_hpb
 
     @staticmethod
+    def validate_debt(pool, borrowers, bucket_math, min_bucket_index=-3232):
+        def p(lhs_name, lhs_value, rhs_name, rhs_value):
+            error = lhs_value - rhs_value
+            print(f"{lhs_name:>8} vs {rhs_name:<8} error: {error/1e45:>{48}.45f}")
+
+        borrower_debt_pending = 0
+        for borrower in borrowers:
+            (_, pending_debt, _, _, _, _, _) = pool.getBorrowerInfo(borrower.address)
+            borrower_debt_pending += pending_debt
+
+        bucket_debt_pending = 0
+        hpb_index = bucket_math.priceToIndex(pool.hpb())
+        for i in range(hpb_index, min_bucket_index, -1):
+            price = bucket_math.indexToPrice(i)
+            (_, _, _, _, debt, _, _, _) = pool.bucketAt(price)
+            bucket_debt_pending += debt + pool.getPendingBucketInterest(price)
+
+        pool_debt_pending = pool.totalDebt() + pool.getPendingPoolInterest()
+
+        p("bucket", bucket_debt_pending, "borrower", borrower_debt_pending)
+        p("bucket", bucket_debt_pending, "pool", pool_debt_pending)
+        p("borrower", borrower_debt_pending, "pool", pool_debt_pending)
+
+        # TODO: Get these to tie out to WAD (or RAD) precision.
+        # assert (bucket_debt_pending - borrower_debt_pending) / 1e27 == 0
+        # assert (bucket_debt_pending - pool_debt_pending) / 1e27 == 0
+        # assert (borrower_debt_pending - pool_debt_pending) / 1e27 == 0
+
+    @staticmethod
     def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926,
                   with_headers=True, csv=False) -> str:
         # formatting shortcuts
