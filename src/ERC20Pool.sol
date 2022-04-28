@@ -247,8 +247,8 @@ contract ERC20Pool is IPool, Clone {
             lup = newLup;
         }
 
-        // update HPB if removed from current, if no deposit nor debt in current HPB and if LUP not 0
-        if (_price == hpb && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
+        // update HPB if removed from current, if no deposit nor debt in current HPB
+        if (_price == hpb && bucket.onDeposit == 0 && bucket.debt == 0) {
             hpb = getHpb();
         }
 
@@ -741,7 +741,10 @@ contract ERC20Pool is IPool, Clone {
         uint256 curHpb = hpb;
         while (true) {
             (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = _buckets.bucketAt(curHpb);
-            if (down == 0 || onDeposit != 0 || debt != 0) {
+            if (onDeposit != 0 || debt != 0) {
+                break;
+            } else if (down == 0) {
+                curHpb = 0;
                 break;
             }
 
