@@ -70,6 +70,13 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
     event DecreaseLiquidity(address lender, uint256 collateral, uint256 quote, uint256 price);
 
+    /// @dev Caller is not approved to interact with the token
+    error NotApproved();
+    /// @dev increaseLiquidity() call failed
+    error IncreaseLiquidityFailed();
+    /// @dev Unable to burn as liquidity still present at price
+    error LiquidityNotRemoved();
+
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
     /// @dev Mapping of tokenIds to Position struct
@@ -87,7 +94,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     uint176 private _nextId = 1;
 
     modifier isAuthorizedForToken(uint256 tokenId) {
-        require(_isApprovedOrOwner(msg.sender, tokenId), "ajna/not-approved");
+        if (_isApprovedOrOwner(msg.sender, tokenId) == false) {
+            revert NotApproved();
+        }
         _;
     }
 
@@ -129,17 +138,21 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /// @param params Calldata struct supplying inputs required to conduct the memorialization
     function memorializePositions(MemorializePositionsParams calldata params) external {
         Position storage position = positions[params.tokenId];
-
-        for (uint256 i = 0; i < params.prices.length; i++) {
+        for (uint256 i = 0; i < params.prices.length; ) {
             position.lpTokens[params.prices[i]] = IPool(params.pool).getLPTokenBalance(
                 params.owner,
                 params.prices[i]
             );
+            // increment call counter in gas efficient way by skipping safemath checks
+            unchecked {
+                ++i;
+            }
         }
 
         emit MemorializePosition(params.owner, params.tokenId);
     }
 
+    // TODO: update burn check to ensure all position prices have removed liquidity
     /// @notice Called by lenders to burn an existing NFT
     /// @dev Requires that all lp tokens have been removed from the NFT prior to calling
     /// @param params Calldata struct supplying inputs required to update the underlying assets owed to an NFT
@@ -149,7 +162,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         isAuthorizedForToken(params.tokenId)
     {
         Position storage position = positions[params.tokenId];
-        require(position.lpTokens[params.price] == 0, "ajna/liquidity-not-removed");
+        if (position.lpTokens[params.price] != 0) {
+            revert LiquidityNotRemoved();
+        }
         emit Burn(msg.sender, params.price);
         delete positions[params.tokenId];
     }
@@ -169,7 +184,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             params.amount,
             params.price
         );
-        require(lpTokensAdded != 0, "ajna/increase-liquidity-failed");
+        // TODO: figure out how to test this case
+        if (lpTokensAdded == 0) {
+            revert IncreaseLiquidityFailed();
+        }
 
         // update position with newly added lp shares
         position.lpTokens[params.price] += lpTokensAdded;
@@ -222,7 +240,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /// @notice Override ERC721 afterTokenTransfer hook to ensure that transferred NFT's are properly tracked within the PositionManager data struct
     /// @dev This call also executes upon Mint
     function _afterTokenTransfer(
-        address from,
+        address,
         address to,
         uint256 tokenId
     ) internal virtual override(ERC721) {

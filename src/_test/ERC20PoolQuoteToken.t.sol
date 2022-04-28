@@ -578,7 +578,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // lender removes entire bid from 4_000.927678580567537368 bucket
         // FIXME: need a way to remove the entire bid
-//        uint256 withdrawalAmount = 3_000.006373674954296470378557 * 1e45;
+        // uint256 withdrawalAmount = 3_000.006373674954296470378557 * 1e45;
         uint256 withdrawalAmount = 3_000 * 1e45;
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), withdrawalAmount / 1e27);
@@ -588,15 +588,15 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // confirm entire bid was removed
         (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(priceMed);
         assertEq(deposit, 0);
-//        assertEq(debt, 0);  // FIXME: debt should be zero here
-//        assertEq(lpOutstanding, 0);
+        // assertEq(debt, 0);  // FIXME: debt should be zero here
+        // assertEq(lpOutstanding, 0);
 
         // confirm debt was reallocated
         (, , , deposit, debt, , lpOutstanding, ) = pool.bucketAt(priceLow);
         assertEq(deposit, 2_000 * 1e45);
         // some debt accumulated between loan and reallocation
         assertEq(debt, 4_000.002124558318098823459519 * 1e45);
-//        assertEq(pool.hbp(), priceLow);  // FIXME: once all debt is reallocated, HPB should move
+        // assertEq(pool.hbp(), priceLow);  // FIXME: once all debt is reallocated, HPB should move
         assertEq(pool.lup(), priceLow);
     }
 

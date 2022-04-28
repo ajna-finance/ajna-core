@@ -138,7 +138,7 @@ contract ERC20Pool is IPool, Clone {
 
     /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
-        if(poolInitializations != 0) {
+        if (poolInitializations != 0) {
             revert AlreadyInitialized();
         }
         _;

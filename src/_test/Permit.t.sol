@@ -149,7 +149,7 @@ contract PermitTest is DSTestPlus {
             );
 
         vm.prank(unapprovedSpender);
-        vm.expectRevert("ajna/not-approved");
+        vm.expectRevert(PositionManager.NotApproved.selector);
         positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
     }
 
@@ -299,7 +299,7 @@ contract PermitTest is DSTestPlus {
         uint256 deadline = block.timestamp + 1000000;
         uint256 permitAmount = 10 * 1e18;
 
-        uint256 tokenId = mintNFT(owner, address(pool));
+        mintNFT(owner, address(pool));
 
         // check EOA can be approved via Permit()
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
