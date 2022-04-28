@@ -418,6 +418,11 @@ contract ERC20Pool is IPool, Clone {
         totalQuoteToken += amount;
         totalDebt -= Maths.min(totalDebt, amount);
 
+        // reset LUP if no debt in pool
+        if (totalDebt == 0) {
+            lup = 0;
+        }
+
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, lup, amount);
     }
