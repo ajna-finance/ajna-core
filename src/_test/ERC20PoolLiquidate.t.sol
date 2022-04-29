@@ -44,7 +44,6 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
     // @notice: is called
     // @notice: lender reverts:
     // @notice:    attempts to call liquidate on borrower that is collateralized
-
     function testLiquidate() public {
         // lender deposit in 3 buckets, price spaced
         uint256 priceHigh = 10_016.501589292607751220 * 1e18;
@@ -163,7 +162,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerPendingDebt, 0);
         assertEq(collateralDeposited, 0.790937395069026649243637516 * 1e27);
         assertEq(collateralEncumbered, 0);
-        assertEq(collateralization, 0);
+        assertEq(collateralization, Maths.ONE_RAY);
         assertEq(borrowerInflator, 1.000013001099216594901568631 * 1e27);
 
         // check pool balance and that interest accumulated
@@ -282,7 +281,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerPendingDebt, 0);
         assertEq(collateralDeposited, 0.455302902616749045232864441 * 1e27);
         assertEq(collateralEncumbered, 0);
-        assertEq(collateralization, 0);
+        assertEq(collateralization, Maths.ONE_RAY);
         assertEq(borrowerInflator, 1 * 1e27);
 
         // check pool balance
@@ -383,7 +382,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerPendingDebt, 0);
         assertEq(collateralDeposited, 0.189909584313202057545482525 * 1e27);
         assertEq(collateralEncumbered, 0);
-        assertEq(collateralization, 0);
+        assertEq(collateralization, Maths.ONE_RAY);
         assertEq(borrowerInflator, 1.171809294361418037665607534 * 1e27);
 
         // check pool balance

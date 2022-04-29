@@ -7,7 +7,6 @@ import "./Maths.sol";
 library Buckets {
     error NoDepositToReallocateTo();
     error InsufficientLpBalance(uint256 balance);
-    error AmountExceedsClaimable(uint256 rightToClaim);
     error BorrowPriceBelowStopPrice(uint256 borrowPrice);
     error ClaimExceedsCollateral(uint256 collateralAmount);
     error InsufficientBucketLiquidity(uint256 amountAvailable);
@@ -57,37 +56,33 @@ library Buckets {
     /// @notice Called by a lender to remove quote tokens from a bucket
     /// @param buckets Mapping of buckets for a given pool
     /// @param _bucket The price bucket from which quote tokens should be removed
-    /// @param _amount The amount of quote tokens to be removed
+    /// @param _maxAmount The maximum amount of quote tokens to be removed
     /// @param _lpBalance The lender's current LP balance
     /// @param _inflator The current pool inflator rate
+    /// @return amount The actual amount being removed
     /// @return lup The new pool LUP
     /// @return lpTokens The amount of lpTokens removed equivalent to the quote tokens removed
     function removeQuoteToken(
         mapping(uint256 => Bucket) storage buckets,
         Bucket storage _bucket,
-        uint256 _amount, // RAD
+        uint256 _maxAmount, // RAD
         uint256 _lpBalance, // RAY
         uint256 _inflator // RAY
-    ) public returns (uint256 lup, uint256 lpTokens) {
+    ) public returns (uint256 amount, uint256 lup, uint256 lpTokens) {
         accumulateBucketInterest(_bucket, _inflator);
 
         uint256 exchangeRate = getExchangeRate(_bucket);
-
         uint256 claimable = Maths.rayToRad(Maths.rmul(_lpBalance, exchangeRate));
+        amount = Maths.min(_maxAmount, claimable);
 
-        if (_amount > claimable) {
-            revert AmountExceedsClaimable({rightToClaim: claimable});
-        }
-
-        lpTokens = Maths.rdiv(Maths.radToRay(_amount), exchangeRate);
+        lpTokens = Maths.rdiv(Maths.radToRay(amount), exchangeRate);
 
         // Remove from deposit first
-        uint256 removeFromDeposit = Maths.min(_amount, _bucket.onDeposit);
+        uint256 removeFromDeposit = Maths.min(amount, _bucket.onDeposit);
         _bucket.onDeposit -= removeFromDeposit;
-        _amount -= removeFromDeposit;
 
         // Reallocate debt to fund remaining withdrawal
-        lup = reallocateDown(buckets, _bucket, _amount, _inflator);
+        lup = reallocateDown(buckets, _bucket, amount - removeFromDeposit, _inflator);
 
         _bucket.lpOutstanding -= lpTokens;
     }
@@ -127,14 +122,13 @@ library Buckets {
     /// @param _lup The current pool LUP
     /// @param _inflator The current pool inflator rate
     /// @return lup WAD The price at which the borrow executed
-    /// @return loanCost RAD The amount of quote tokens removed from the bucket
     function borrow(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _amount, // RAD
         uint256 _stop, // WAD
         uint256 _lup, // WAD
         uint256 _inflator // RAY
-    ) public returns (uint256 lup, uint256 loanCost) {
+    ) public returns (uint256) {
         Bucket storage curLup = buckets[_lup];
         uint256 amountRemaining = _amount;
 
@@ -151,17 +145,11 @@ library Buckets {
                 // take all on deposit from this bucket
                 curLup.debt += curLup.onDeposit;
                 amountRemaining -= curLup.onDeposit;
-                loanCost += Maths.rayToRad(
-                    Maths.rdiv(Maths.radToRay(curLup.onDeposit), Maths.wadToRay(curLup.price))
-                );
                 curLup.onDeposit -= curLup.onDeposit;
             } else {
                 // take all remaining amount for loan from this bucket and exit
                 curLup.onDeposit -= amountRemaining;
                 curLup.debt += amountRemaining;
-                loanCost += Maths.rayToRad(
-                    Maths.rdiv(Maths.radToRay(amountRemaining), Maths.wadToRay(curLup.price))
-                );
                 break;
             }
 
@@ -173,7 +161,7 @@ library Buckets {
             _lup = curLup.price;
         }
 
-        return (_lup, loanCost);
+        return _lup;
     }
 
     /// @notice Called by a borrower to repay quote tokens as part of reducing their position
@@ -182,15 +170,13 @@ library Buckets {
     /// @param _lup The current pool LUP
     /// @param _inflator The current pool inflator rate
     /// @return The new pool LUP
-    /// @return The amount of quote tokens to be repaid
     function repay(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _amount, // RAD
         uint256 _lup, // WAD
         uint256 _inflator // RAY
-    ) public returns (uint256, uint256) {
+    ) public returns (uint256) {
         Bucket storage curLup = buckets[_lup];
-        uint256 debtToPay;
 
         while (true) {
             // accumulate bucket interest
@@ -199,7 +185,6 @@ library Buckets {
 
                 if (_amount > curLup.debt) {
                     // pay entire debt on this bucket
-                    debtToPay += curLup.debt;
                     _amount -= curLup.debt;
                     curLup.onDeposit += curLup.debt;
                     curLup.debt = 0;
@@ -207,7 +192,6 @@ library Buckets {
                     // pay as much debt as possible and exit
                     curLup.onDeposit += _amount;
                     curLup.debt -= _amount;
-                    debtToPay += _amount;
                     _amount = 0;
                     break;
                 }
@@ -221,7 +205,7 @@ library Buckets {
             curLup = buckets[curLup.up];
         }
 
-        return (curLup.price, debtToPay);
+        return curLup.price;
     }
 
     /// @notice Puchase a given amount of quote tokens for given collateral tokens

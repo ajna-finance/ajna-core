@@ -61,11 +61,11 @@ abstract contract Interest {
             );
     }
 
-    /// @notice Calculate the next interest rate
+    /// @notice Calculate the amount of unaccrued interest for a specified amount of debt
     /// @param _debt RAD - The total book debt
     /// @param _pendingInflator RAY - The next debt inflator value
     /// @param _currentInflator RAY - The current debt inflator value
-    /// @return RAD - The additional debt accumulated to the pool
+    /// @return RAD - The additional debt pending accumulation
     function getPendingInterest(
         uint256 _debt,
         uint256 _pendingInflator,

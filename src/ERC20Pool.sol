@@ -174,11 +174,11 @@ contract ERC20Pool is IPool, Clone, Interest {
     }
 
     /// @notice Called by lenders to remove an amount of credit at a specified price bucket
-    /// @param _amount The amount of quote token to be removed by a lender
+    /// @param _maxAmount The maximum amount of quote token to be removed by a lender
     /// @param _price The bucket from which quote tokens will be removed
     function removeQuoteToken(
         address _recipient,
-        uint256 _amount,
+        uint256 _maxAmount,
         uint256 _price
     ) external {
         if (!BucketMath.isValidPrice(_price)) {
@@ -188,11 +188,11 @@ contract ERC20Pool is IPool, Clone, Interest {
         accumulatePoolInterest();
 
         // remove from bucket with RAD precision
-        _amount = Maths.wadToRad(_amount);
+        _maxAmount = Maths.wadToRad(_maxAmount);
         Buckets.Bucket storage bucket = _buckets[_price];
-        (uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
+        (uint256 amount, uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
             bucket,
-            _amount,
+            _maxAmount,
             lpBalance[_recipient][_price],
             inflatorSnapshot
         );
@@ -202,12 +202,12 @@ contract ERC20Pool is IPool, Clone, Interest {
             lup = newLup;
         }
 
-        // update HPB if removed from current, if no deposit nor debt in current HPB and if LUP not 0
-        if (_price == hpb && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
+        // update HPB if removed from current, if no deposit nor debt in current HPB
+        if (_price == hpb && bucket.onDeposit == 0 && bucket.debt == 0) {
             hpb = getHpb();
         }
 
-        totalQuoteToken -= _amount;
+        totalQuoteToken -= amount;
         uint256 col = getPoolCollateralization();
         if (col < Maths.ONE_RAY) {
             revert PoolUndercollateralized({collateralization: col});
@@ -216,8 +216,8 @@ contract ERC20Pool is IPool, Clone, Interest {
         lpBalance[_recipient][_price] -= lpTokens;
 
         //  TODO: emit _amount / quoteTokenScale
-        quoteToken().safeTransfer(_recipient, _amount / quoteTokenScale);
-        emit RemoveQuoteToken(_recipient, _price, _amount, lup);
+        quoteToken().safeTransfer(_recipient, amount / quoteTokenScale);
+        emit RemoveQuoteToken(_recipient, _price, amount, lup);
     }
 
     /// @notice Called by borrowers to add collateral to the pool
@@ -305,15 +305,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         accumulateBorrowerInterest(borrower);
 
         // if first loan then borrow at HPB
-        uint256 curLup = lup;
-        if (curLup == 0) {
-            curLup = hpb;
-        }
-
-        uint256 encumberedBorrowerCollateral = getEncumberedCollateral(borrower.debt);
-
-        uint256 loanCost;
-        (lup, loanCost) = _buckets.borrow(_amount, _stopPrice, curLup, inflatorSnapshot);
+        lup = _buckets.borrow(_amount, _stopPrice, lup == 0 ? hpb : lup, inflatorSnapshot);
 
         if (
             borrower.collateralDeposited <=
@@ -352,19 +344,17 @@ contract ERC20Pool is IPool, Clone, Interest {
         accumulatePoolInterest();
         accumulateBorrowerInterest(borrower);
 
-        uint256 amount;
-        if (_maxAmount >= borrower.debt) {
-            amount = borrower.debt;
-        } else {
-            amount = _maxAmount;
-        }
+        uint256 amount = Maths.min(_maxAmount, borrower.debt);
+        lup = _buckets.repay(amount, lup, inflatorSnapshot);
 
-        uint256 debtToPay;
-        (lup, debtToPay) = _buckets.repay(amount, lup, inflatorSnapshot);
-
-        borrower.debt -= Maths.min(borrower.debt, amount);
+        borrower.debt -= amount;
         totalQuoteToken += amount;
         totalDebt -= Maths.min(totalDebt, amount);
+
+        // reset LUP if no debt in pool
+        if (totalDebt == 0) {
+            lup = 0;
+        }
 
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, lup, amount);
@@ -493,6 +483,19 @@ contract ERC20Pool is IPool, Clone, Interest {
         return BitMaps.get(bitmap, _price);
     }
 
+    /// @notice Calculate unaccrued interest for a particular bucket, which may be added to
+    /// @notice bucket debt to discover pending bucket debt
+    /// @param _price The price bucket for which interest should be calculated, WAD
+    /// @return interest - Unaccumulated bucket interest, RAD
+    function getPendingBucketInterest(uint256 _price) external view returns (uint256 interest) {
+        (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(_price);
+        if (debt != 0) {
+            return getPendingInterest(debt, getPendingInflator(), bucketInflator);
+        } else {
+            return 0;
+        }
+    }
+
     // -------------------- Pool state related functions --------------------
 
     /// @notice Update the global borrower inflator
@@ -542,7 +545,10 @@ contract ERC20Pool is IPool, Clone, Interest {
         uint256 curHpb = hpb;
         while (true) {
             (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = _buckets.bucketAt(curHpb);
-            if (down == 0 || onDeposit != 0 || debt != 0) {
+            if (onDeposit != 0 || debt != 0) {
+                break;
+            } else if (down == 0) {
+                curHpb = 0;
                 break;
             }
 
@@ -569,6 +575,18 @@ contract ERC20Pool is IPool, Clone, Interest {
             return 0;
         }
         return Maths.rdiv(Maths.radToRay(_debt), Maths.wadToRay(lup));
+    }
+
+
+    /// @notice Calculate unaccrued interest for the pool, which may be added to totalDebt
+    /// @notice to discover pending pool debt
+    /// @return interest - Unaccumulated pool interest, RAD
+    function getPendingPoolInterest() external view returns (uint256 interest) {
+        if (totalDebt != 0) {
+            return getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot);
+        } else {
+            return 0;
+        }
     }
 
     // TODO: lup at 0 is a valid price -> update check?
@@ -659,7 +677,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         uint256 borrowerDebt = borrower.debt;
         uint256 borrowerPendingDebt = borrower.debt;
         uint256 collateralEncumbered;
-        uint256 collateralization;
+        uint256 collateralization = Maths.ONE_RAY;
 
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
             borrowerDebt += getPendingInterest(
