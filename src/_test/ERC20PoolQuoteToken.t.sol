@@ -915,15 +915,6 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertLt(actualUtilizationAfterRepay, actualUtilizationAfterBorrow);
         assertLt(targetUtilizationAfterRepay, targetUtilizationAfterBorrow);
 
-        // should revert if trying to remove more than was lent
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Buckets.AmountExceedsClaimable.selector,
-                1_000.058932266911224024728608 * 1e45
-            )
-        );
-        lender.removeQuoteToken(pool, address(lender), 1_001 * 1e18, p8002);
-
         // lender should be able to remove lent quote tokens + interest
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(pool), address(lender), 1_000.053487614594018248 * 1e18);
