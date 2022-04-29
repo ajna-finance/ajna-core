@@ -177,15 +177,13 @@ library Buckets {
     /// @param _lup The current pool LUP
     /// @param _inflator The current pool inflator rate
     /// @return The new pool LUP
-    /// @return The amount of quote tokens to be repaid
     function repay(
         mapping(uint256 => Bucket) storage buckets,
         uint256 _amount, // RAD
         uint256 _lup, // WAD
         uint256 _inflator // RAY
-    ) public returns (uint256, uint256) {
+    ) public returns (uint256) {
         Bucket storage curLup = buckets[_lup];
-        uint256 debtToPay;
 
         while (true) {
             // accumulate bucket interest
@@ -194,7 +192,6 @@ library Buckets {
 
                 if (_amount > curLup.debt) {
                     // pay entire debt on this bucket
-                    debtToPay += curLup.debt;
                     _amount -= curLup.debt;
                     curLup.onDeposit += curLup.debt;
                     curLup.debt = 0;
@@ -202,7 +199,6 @@ library Buckets {
                     // pay as much debt as possible and exit
                     curLup.onDeposit += _amount;
                     curLup.debt -= _amount;
-                    debtToPay += _amount;
                     _amount = 0;
                     break;
                 }
@@ -216,7 +212,7 @@ library Buckets {
             curLup = buckets[curLup.up];
         }
 
-        return (curLup.price, debtToPay);
+        return curLup.price;
     }
 
     /// @notice Puchase a given amount of quote tokens for given collateral tokens
