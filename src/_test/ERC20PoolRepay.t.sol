@@ -266,9 +266,9 @@ contract ERC20PoolRepayTest is DSTestPlus {
         uint256 poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
         (, uint256 borrower2PendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower2));
         // TODO: Pending debt should tie within 1 RAY, but it is ~0.4 quote tokens off.
-//        assertEq(bucketPendingDebt, borrower2PendingDebt);
+        //        assertEq(bucketPendingDebt, borrower2PendingDebt);
         assertEq(bucketPendingDebt, poolPendingDebt);
-//        assertEq(borrower2PendingDebt, poolPendingDebt);
+        //        assertEq(borrower2PendingDebt, poolPendingDebt);
 
         assertEq(pool.hpb(), priceHigh);
         assertEq(pool.lup(), priceHigh);
@@ -283,7 +283,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(borrower2), address(pool), 2000.026002198433189803 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Repay(address(borrower2), 0, 2000.026002198433189803137262 * 1e45);  // FIXME
+        emit Repay(address(borrower2), 0, 2000.026002198433189803137262 * 1e45);
         // repay entire debt
         borrower2.repay(pool, 2_010 * 1e18);
 

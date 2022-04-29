@@ -613,13 +613,9 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Calculate unaccrued interest for the pool, which may be added to totalDebt
     /// @notice to discover pending pool debt
     /// @return interest - Unaccumulated pool interest, RAD
-    function getPendingPoolInterest() external view returns (uint256 interest)
-    {
+    function getPendingPoolInterest() external view returns (uint256 interest) {
         if (totalDebt != 0) {
-            return getPendingInterest(
-                totalDebt,
-                getPendingInflator(),
-                inflatorSnapshot);
+            return getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot);
         } else {
             return 0;
         }
@@ -629,11 +625,10 @@ contract ERC20Pool is IPool, Clone {
     /// @notice bucket debt to discover pending bucket debt
     /// @param _price The price bucket for which interest should be calculated, WAD
     /// @return interest - Unaccumulated bucket interest, RAD
-    function getPendingBucketInterest(uint256 _price) external view returns (uint256 interest)
-    {
-        (, , , , uint256 debt, uint256 bucketInflator, ,) = bucketAt(_price);
+    function getPendingBucketInterest(uint256 _price) external view returns (uint256 interest) {
+        (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(_price);
         if (debt != 0) {
-            return getPendingInterest(debt,  getPendingInflator(), bucketInflator);
+            return getPendingInterest(debt, getPendingInflator(), bucketInflator);
         } else {
             return 0;
         }
@@ -781,11 +776,7 @@ contract ERC20Pool is IPool, Clone {
     /// @return RAY - The current collateralization of the pool given totalCollateral and totalDebt
     function getPoolCollateralization() public view returns (uint256) {
         if (lup != 0 && totalDebt != 0) {
-            return
-                Maths.rdiv(
-                    totalCollateral,
-                    getEncumberedCollateral(totalDebt)
-                );
+            return Maths.rdiv(totalCollateral, getEncumberedCollateral(totalDebt));
         }
         return Maths.ONE_RAY;
     }

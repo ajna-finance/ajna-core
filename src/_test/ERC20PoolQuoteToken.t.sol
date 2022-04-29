@@ -481,7 +481,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 0);
         assertEq(quote.balanceOf(address(pool)), 0);
         assertEq(pool.hpb(), 0);
-        assertEq(pool.lup(), 0);  // FIXME: LUP isn't being reset after all debt paid off
+        assertEq(pool.lup(), 0);
         // check lender balance
         assertEq(quote.balanceOf(address(lender)), 200_000 * 1e18);
 
@@ -589,8 +589,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // lender removes entire bid from 4_000.927678580567537368 bucket
         uint256 withdrawalAmount = 3_001 * 1e45;
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(pool), address(lender),
-            3_000.006373674954296470 * 1e18);
+        emit Transfer(address(pool), address(lender), 3_000.006373674954296470 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(lender), priceMed,
             3_000.006373674954296470378557 * 1e45, priceLow);

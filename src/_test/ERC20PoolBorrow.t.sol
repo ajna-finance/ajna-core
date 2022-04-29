@@ -115,7 +115,10 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check pool balances
         assertEq(pool.totalQuoteToken(), 29_000 * 1e45);
         assertEq(pool.totalDebt(), 21_000 * 1e45);
-        assertEq(pool.getEncumberedCollateral(pool.totalDebt()), pool.getEncumberedCollateral(borrowerDebt));
+        assertEq(
+            pool.getEncumberedCollateral(pool.totalDebt()),
+            pool.getEncumberedCollateral(borrowerDebt)
+        );
         assertEq(pool.getPoolCollateralization(), 14.337581058085150275452380951 * 1e27);
 
         skip(8200);
@@ -160,11 +163,13 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check pool balances
         assertEq(pool.totalQuoteToken(), 20_000 * 1e45);
         assertEq(pool.totalDebt(), 30_000.2730230835484929329412510 * 1e45);
-        assertEq(pool.getEncumberedCollateral(pool.totalDebt()), pool.getEncumberedCollateral(borrowerDebt));
+        assertEq(
+            pool.getEncumberedCollateral(pool.totalDebt()),
+            pool.getEncumberedCollateral(borrowerDebt)
+        );
         assertEq(pool.getPoolCollateralization(), 10.036215403377052296661609493 * 1e27);
 
-        (, borrowerPendingDebt, , , , , )
-            = pool.getBorrowerInfo(address(borrower));
+        (, borrowerPendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower));
         poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
         assertEq(borrowerPendingDebt, poolPendingDebt);
 
@@ -173,8 +178,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.hpb(), 5_007.644384905151472283 * 1e18);
         assertEq(pool.lup(), 5_007.644384905151472283 * 1e18);
 
-        (, borrowerPendingDebt, , , , , )
-            = pool.getBorrowerInfo(address(borrower));
+        (, borrowerPendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower));
         poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
         assertEq(borrowerPendingDebt, poolPendingDebt);
 
@@ -225,8 +229,11 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // check pool collateralization after borrower1 takes loan
         uint256 poolCollateralizationAfterB1Actions = pool.getPoolCollateralization();
-        (uint256 borrower1Debt,,) = pool.borrowers(address(borrower));
-        assertEq(pool.getEncumberedCollateral(pool.totalDebt()), pool.getEncumberedCollateral(borrower1Debt));
+        (uint256 borrower1Debt, , ) = pool.borrowers(address(borrower));
+        assertEq(
+            pool.getEncumberedCollateral(pool.totalDebt()),
+            pool.getEncumberedCollateral(borrower1Debt)
+        );
         assertEq(poolCollateralizationAfterB1Actions, 1.020113025608771127310590000 * 1e27);
 
         // check utilization after borrow - since pool is barely overcollateralized actual < target
@@ -273,8 +280,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // tie out debt between bucket, borrower, and pool
         (, , , , uint256 debt, , , ) = pool.bucketAt(priceLow);
         uint256 bucketPendingDebt = debt + pool.getPendingBucketInterest(priceLow);
-        (, uint256 borrowerPendingDebt, , , , , )
-            = pool.getBorrowerInfo(address(borrower));
+        (, uint256 borrowerPendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower));
         uint256 poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
         assertEq(bucketPendingDebt, borrowerPendingDebt);
         assertEq(bucketPendingDebt, poolPendingDebt);

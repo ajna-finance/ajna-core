@@ -94,8 +94,9 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         // get loan of 20_000 DAI, recheck borrower
         borrower.borrow(pool, 20_000 * 1e18, 2500 * 1e18);
-        (, , deposited, borrowerEncumbered, borrowerCollateralization, , )
-        = pool.getBorrowerInfo(address(borrower));
+        (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = pool.getBorrowerInfo(
+            address(borrower)
+        );
         assertEq(deposited, 100 * 1e27);
         assertEq(borrowerEncumbered, 3.993893827662208275880152017 * 1e27);
         assertEq(borrowerCollateralization, 25.038221924525757361415000003 * 1e27);
@@ -119,8 +120,9 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         // remove some collateral
         borrower.removeCollateral(pool, 20 * 1e18);
-        (, , deposited, borrowerEncumbered, borrowerCollateralization, , )
-            = pool.getBorrowerInfo(address(borrower));
+        (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = pool.getBorrowerInfo(
+            address(borrower)
+        );
         assertEq(deposited, 80 * 1e27);
         assertEq(borrowerEncumbered, 3.993893827662208275880152017 * 1e27);
         assertEq(borrowerCollateralization, 20.030577539620605889132000002 * 1e27);
