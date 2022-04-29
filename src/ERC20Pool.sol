@@ -484,11 +484,6 @@ contract ERC20Pool is IPool, Clone {
             revert NoDebtToLiquidate();
         }
 
-        // TODO: replace w/ getBorrowerCollateralization
-        // uint256 collateralization = Maths.rdiv(
-        //     collateralDeposited,
-        //     Maths.rdiv(Maths.radToRay(debt), Maths.wadToRay(lup))
-        // );
         uint256 collateralization = getBorrowerCollateralization(borrower.collateralDeposited, debt);
 
         if (collateralization > Maths.ONE_RAY) {
@@ -759,7 +754,6 @@ contract ERC20Pool is IPool, Clone {
             );
             collateralEncumbered = getEncumberedCollateral(borrowerPendingDebt);
             collateralization = Maths.rdiv(borrower.collateralDeposited, collateralEncumbered);
-            // TODO: replace with collateralization = getBorrowerCollateralization(borrower.collateralDeposited, borrower.pendingDebt);
         }
 
         return (
@@ -773,11 +767,10 @@ contract ERC20Pool is IPool, Clone {
         );
     }
 
-    // TODO: determine what the base collateralization value should be. Existing borrower collateralization defaults to 0
     // TODO: sync lup and debt checks between the different collateralization getters
-    /// @dev Supports passage of amounts to enable calculation of potential borrower collateralization states, not just current.
-    /// @param _collateralDeposited RAD - Collateral amount to calculate a collateralization ratio for
-    /// @param _debt Debt position to calculate encumbered quotient
+    /// @dev Supports passage of collateralDeposited and debt to enable calculation of potential borrower collateralization states, not just current.
+    /// @param _collateralDeposited RAY - Collateral amount to calculate a collateralization ratio for
+    /// @param _debt RAD - Debt position to calculate encumbered quotient
     /// @return RAY - The current collateralization of the borrowers given totalCollateral and totalDebt
     function getBorrowerCollateralization(uint256 _collateralDeposited, uint256 _debt) public view returns (uint256) {
         if (lup != 0 && _debt != 0) {
@@ -787,7 +780,7 @@ contract ERC20Pool is IPool, Clone {
                     getEncumberedCollateral(_debt)
                 );
         }
-        return 0;
+        return Maths.ONE_RAY;
     }
 
     /// @notice Estimate the price at which a loan can be taken
