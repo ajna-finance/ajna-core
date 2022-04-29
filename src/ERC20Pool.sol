@@ -7,55 +7,15 @@ import {BitMaps} from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Clone} from "@clones/Clone.sol";
 
+import {IPool} from "./interfaces/IPool.sol";
+import {Interest} from "./base/Interest.sol";
 import "./libraries/Maths.sol";
 import "./libraries/BucketMath.sol";
 import "./libraries/Buckets.sol";
 
 import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
-interface IPool {
-    function addQuoteToken(
-        address _recipient,
-        uint256 _amount,
-        uint256 _price
-    ) external returns (uint256 lpTokens);
-
-    function removeQuoteToken(
-        address _recipient,
-        uint256 _amount,
-        uint256 _price
-    ) external;
-
-    function addCollateral(uint256 _amount) external;
-
-    function removeCollateral(uint256 _amount) external;
-
-    function claimCollateral(
-        address _recipient,
-        uint256 _amount,
-        uint256 _price
-    ) external;
-
-    function borrow(uint256 _amount, uint256 _stopPrice) external;
-
-    function repay(uint256 _amount) external;
-
-    function purchaseBid(uint256 _amount, uint256 _price) external;
-
-    function getLPTokenBalance(address _owner, uint256 _price)
-        external
-        view
-        returns (uint256 lpTokens);
-
-    function getLPTokenExchangeValue(uint256 _lpTokens, uint256 _price)
-        external
-        view
-        returns (uint256 _collateralTokens, uint256 _quoteTokens);
-
-    function liquidate(address _borrower) external;
-}
-
-contract ERC20Pool is IPool, Clone {
+contract ERC20Pool is IPool, Clone, Interest {
     using SafeERC20 for ERC20;
     using Buckets for mapping(uint256 => Buckets.Bucket);
 
@@ -67,8 +27,6 @@ contract ERC20Pool is IPool, Clone {
 
     /// @dev Counter used by onlyOnce modifier
     uint8 private poolInitializations = 0;
-
-    uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
     // price (WAD) -> bucket
     mapping(uint256 => Buckets.Bucket) private _buckets;
@@ -86,9 +44,6 @@ contract ERC20Pool is IPool, Clone {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
 
-    uint256 public inflatorSnapshot; // RAY
-    uint256 public lastInflatorSnapshotUpdate;
-    uint256 public previousRate; // WAD
     uint256 public previousRateUpdate;
 
     uint256 public totalCollateral; // RAY
@@ -511,25 +466,6 @@ contract ERC20Pool is IPool, Clone {
         emit Liquidate(_borrower, debt, requiredCollateral);
     }
 
-    /// @notice Calculate the next interest rate
-    /// @param _debt RAD - The total book debt
-    /// @param _pendingInflator RAY - The next debt inflator value
-    /// @param _currentInflator RAY - The current debt inflator value
-    /// @return RAD - The additional debt accumulated to the pool
-    function getPendingInterest(
-        uint256 _debt,
-        uint256 _pendingInflator,
-        uint256 _currentInflator
-    ) private pure returns (uint256) {
-        return
-            Maths.rayToRad(
-                Maths.rmul(
-                    Maths.radToRay(_debt),
-                    Maths.sub(Maths.rmul(_pendingInflator, _currentInflator), Maths.ONE_RAY)
-                )
-            );
-    }
-
     // -------------------- Bucket related functions --------------------
 
     // TODO: rename bucketAtPrice & add bucketAtIndex
@@ -572,21 +508,6 @@ contract ERC20Pool is IPool, Clone {
             inflatorSnapshot = pendingInflator;
             lastInflatorSnapshotUpdate = block.timestamp;
         }
-    }
-
-    /// @notice Calculate the pending inflator based upon previous rate and last update
-    /// @return The new pending inflator value as a RAY
-    function getPendingInflator() public view returns (uint256) {
-        // calculate annualized interest rate
-        uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
-        // secondsSinceLastUpdate is unscaled
-        uint256 secondsSinceLastUpdate = Maths.sub(block.timestamp, lastInflatorSnapshotUpdate);
-
-        return
-            Maths.rmul(
-                inflatorSnapshot,
-                Maths.rpow(Maths.add(Maths.ONE_RAY, spr), secondsSinceLastUpdate)
-            );
     }
 
     /// @notice Returns the current Hight Utilizable Price (HUP) bucket
