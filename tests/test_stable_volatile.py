@@ -116,7 +116,7 @@ def draw_initial_debt(borrowers, pool_client, target_utilization=0.60, limit_pri
         collateral_balance = weth.balanceOf(borrower)
         borrow_amount = target_debt / 100
         assert borrow_amount > 10**45
-        pool_price = pool.lup(()
+        pool_price = pool.lup()
         if pool_price == 0:
             pool_price = 3293.70191 * 10**18  # MAX_BUCKET
         collateralization_ratio = min(1 / target_utilization, 2.5)  # cap at 250% collateralization
