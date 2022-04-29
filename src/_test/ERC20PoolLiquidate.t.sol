@@ -335,7 +335,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             uint256 borrowerInflator,
 
         ) = pool.getBorrowerInfo(address(borrower));
-        assertEq(borrowerDebt, 14_061.7115323370164519872904080 * 1e45);
+        assertEq(borrowerDebt, 12_000 * 1e45);
         assertEq(borrowerPendingDebt, 14_061.7115323370164519872904080 * 1e45);
         assertEq(collateralDeposited, 2 * 1e27);
         assertEq(collateralEncumbered, 140.151297059547691733986086344 * 1e27);
