@@ -353,19 +353,7 @@ contract ERC20Pool is IPool, Clone {
         accumulateBorrowerInterest(borrower);
 
         // if first loan then borrow at HPB
-        uint256 curLup = lup;
-        if (curLup == 0) {
-            curLup = hpb;
-        }
-
-        // TODO: make value explicit for use in comparison operator against collateralDeposited below
-        uint256 encumberedBorrowerCollateral;
-        if (borrower.debt != 0) {
-            encumberedBorrowerCollateral = getEncumberedCollateral(borrower.debt);
-        }
-
-        uint256 loanCost;
-        (lup, loanCost) = _buckets.borrow(_amount, _stopPrice, curLup, inflatorSnapshot);
+        lup = _buckets.borrow(_amount, _stopPrice, lup == 0 ? hpb : lup, inflatorSnapshot);
 
         if (
             borrower.collateralDeposited <=
@@ -404,17 +392,10 @@ contract ERC20Pool is IPool, Clone {
         accumulatePoolInterest();
         accumulateBorrowerInterest(borrower);
 
-        uint256 amount;
-        if (_maxAmount >= borrower.debt) {
-            amount = borrower.debt;
-        } else {
-            amount = _maxAmount;
-        }
+        uint256 amount = Maths.min(_maxAmount, borrower.debt);
+        lup = _buckets.repay(amount, lup, inflatorSnapshot);
 
-        uint256 debtToPay;
-        (lup, debtToPay) = _buckets.repay(amount, lup, inflatorSnapshot);
-
-        borrower.debt -= Maths.min(borrower.debt, amount);
+        borrower.debt -= amount;
         totalQuoteToken += amount;
         totalDebt -= Maths.min(totalDebt, amount);
 
