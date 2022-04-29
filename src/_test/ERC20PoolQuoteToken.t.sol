@@ -13,8 +13,7 @@ import "../libraries/Maths.sol";
 import "../libraries/Buckets.sol";
 
 contract ERC20PoolQuoteTokenTest is DSTestPlus {
-    uint256 public constant MAX_INT = 2**256 - 1;
-    uint256 public constant LARGEST_AMOUNT = MAX_INT / 10**27;
+    uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
     ERC20Pool internal pool;
     CollateralToken internal collateral;

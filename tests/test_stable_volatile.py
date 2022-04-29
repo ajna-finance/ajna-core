@@ -147,8 +147,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
             # Draw debt, repay debt, or do nothing depending on interest rate
             utilization = pool.getPoolActualUtilization() / 10**27
             if interest_rate < 0.10 and utilization < 0.70:
-                target_collateralization = max(1.01, min(1 / pool.getPoolTargetUtilization() * 10**27, 2.5))
-                # target_collateralization = 1/0.6
+                target_collateralization = 1/0.6
                 draw_debt(borrowers[user_index], user_index, pool, gas_validator,
                           collateralization=target_collateralization)
             elif utilization > 0.40:  # start repaying debt if interest grows too high
