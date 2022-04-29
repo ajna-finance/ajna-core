@@ -865,12 +865,16 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
         borrower.borrow(pool, 12_000 * 1e18, 8_000 * 1e18);
+        assertEq(pool.lup(), p8002);
+        assertEq(pool.getPoolCollateralization(), 134.714209997512151989910333326 * 1e27);
 
         skip(5000);
         pool.updateInterestRate();
         skip(5000);
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100.332368143282009890
         borrower2.borrow(pool, 1_000 * 1e18, 100 * 1e18);
+        assertEq(pool.lup(), p100);
+        assertEq(pool.getPoolCollateralization(), 1.558954565201166119419824603 * 1e27);
 
         skip(5000);
         pool.updateInterestRate();
