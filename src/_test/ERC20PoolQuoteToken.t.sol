@@ -214,6 +214,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(pool.hpb(), p4000);
         assertEq(pool.lup(), p2000);
 
+        uint256 collateralizationBeforeAdd = pool.getPoolCollateralization();
+        uint256 targetUtilizationBeforeAdd = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationBeforeAdd = pool.getPoolActualUtilization();
+
         // Lender deposits more into the middle bucket, causing reallocation
         lender.addQuoteToken(pool, address(lender), 2_000 * 1e18, p3000);
         (, , , deposit, debt, , , ) = pool.bucketAt(p4000);
@@ -227,8 +231,14 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(debt, 0);
         assertEq(pool.hpb(), p4000);
         assertEq(pool.lup(), p3000);
+        assertGt(pool.getPoolCollateralization(), collateralizationBeforeAdd);
+        assertLt(pool.getPoolTargetUtilization(), targetUtilizationBeforeAdd);
+        assertLt(pool.getPoolActualUtilization(), actualUtilizationBeforeAdd);
 
         // Lender deposits in the top bucket, causing another reallocation
+        collateralizationBeforeAdd = pool.getPoolCollateralization();
+        targetUtilizationBeforeAdd = pool.getPoolTargetUtilization();
+        actualUtilizationBeforeAdd = pool.getPoolActualUtilization();
         lender.addQuoteToken(pool, address(lender), 3_000 * 1e18, p4000);
         (, , , deposit, debt, , , ) = pool.bucketAt(p4000);
         assertEq(deposit, 1600 * 1e45);
@@ -241,6 +251,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(debt, 0);
         assertEq(pool.hpb(), p4000);
         assertEq(pool.lup(), p4000);
+        assertGt(pool.getPoolCollateralization(), collateralizationBeforeAdd);
+        assertLt(pool.getPoolTargetUtilization(), targetUtilizationBeforeAdd);
+        assertLt(pool.getPoolActualUtilization(), actualUtilizationBeforeAdd);
     }
 
     // @notice: 1 lender and 1 borrower test adding quote token,
