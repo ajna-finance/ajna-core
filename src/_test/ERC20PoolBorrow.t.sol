@@ -63,6 +63,8 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.totalQuoteToken(), 50_000 * 1e45);
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.hpb(), priceHighest);
+        assertEq(pool.getPendingPoolInterest(), 0);
+        assertEq(pool.getPendingBucketInterest(priceHighest), 0);
 
         // should revert if borrower wants to borrow a greater amount than in pool
         vm.expectRevert(
@@ -113,10 +115,18 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check pool balances
         assertEq(pool.totalQuoteToken(), 29_000 * 1e45);
         assertEq(pool.totalDebt(), 21_000 * 1e45);
-        assertEq(pool.getEncumberedCollateral(pool.totalDebt()), pool.getEncumberedCollateral(borrowerDebt));
+        assertEq(
+            pool.getEncumberedCollateral(pool.totalDebt()),
+            pool.getEncumberedCollateral(borrowerDebt)
+        );
         assertEq(pool.getPoolCollateralization(), 14.337581058085150275452380951 * 1e27);
 
         skip(8200);
+
+        // tie out borrower and pool debt
+        (, uint256 borrowerPendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower));
+        uint256 poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
+        assertEq(borrowerPendingDebt, poolPendingDebt);
 
         // borrow remaining 9_000 DAI from LUP
         vm.expectEmit(true, true, false, true);
@@ -153,13 +163,24 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check pool balances
         assertEq(pool.totalQuoteToken(), 20_000 * 1e45);
         assertEq(pool.totalDebt(), 30_000.2730230835484929329412510 * 1e45);
-        assertEq(pool.getEncumberedCollateral(pool.totalDebt()), pool.getEncumberedCollateral(borrowerDebt));
+        assertEq(
+            pool.getEncumberedCollateral(pool.totalDebt()),
+            pool.getEncumberedCollateral(borrowerDebt)
+        );
         assertEq(pool.getPoolCollateralization(), 10.036215403377052296661609493 * 1e27);
+
+        (, borrowerPendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower));
+        poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
+        assertEq(borrowerPendingDebt, poolPendingDebt);
 
         // deposit at 5_007.644384905151472283 price and reallocate entire debt
         lender.addQuoteToken(pool, address(lender), 40_000 * 1e18, 5_007.644384905151472283 * 1e18);
         assertEq(pool.hpb(), 5_007.644384905151472283 * 1e18);
         assertEq(pool.lup(), 5_007.644384905151472283 * 1e18);
+
+        (, borrowerPendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower));
+        poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
+        assertEq(borrowerPendingDebt, poolPendingDebt);
 
         // check bucket debt at 2_503.519024294695168295
         (, , , deposit, debt, , , ) = pool.bucketAt(priceLow);
@@ -168,22 +189,22 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check bucket debt at 3_010.892022197881557845
         (, , , deposit, debt, , , ) = pool.bucketAt(priceMed);
         assertEq(debt, 0);
-        assertEq(deposit, 10000.013001099216594901568631000000000000000000000 * 1e45);
+        assertEq(deposit, 10_000.0130010992165949015686310 * 1e45);
         // check bucket debt at 3_514.334495390401848927
         (, , , deposit, debt, , , ) = pool.bucketAt(priceHigh);
         assertEq(debt, 0);
-        assertEq(deposit, 10000.130010992165949015686310 * 1e45);
+        assertEq(deposit, 10_000.130010992165949015686310 * 1e45);
         // check bucket debt at 4_000.927678580567537368
         (, , , deposit, debt, , , ) = pool.bucketAt(priceHighest);
         assertEq(debt, 0);
-        assertEq(deposit, 10000.130010992165949015686310 * 1e45);
+        assertEq(deposit, 10_000.130010992165949015686310 * 1e45);
         // check bucket debt at 5_007.644384905151472283
         (, , , deposit, debt, , , ) = pool.bucketAt(5_007.644384905151472283 * 1e18);
-        assertEq(debt, 30000.2730230835484929329412510 * 1e45);
-        assertEq(deposit, 9999.7269769164515070670587490 * 1e45);
+        assertEq(debt, 30_000.2730230835484929329412510 * 1e45);
+        assertEq(deposit, 9_999.7269769164515070670587490 * 1e45);
         // check pool balances
         assertEq(pool.totalQuoteToken(), 60_000 * 1e45);
-        assertEq(pool.totalDebt(), 30000.2730230835484929329412510 * 1e45);
+        assertEq(pool.totalDebt(), 30_000.2730230835484929329412510 * 1e45);
     }
 
     // @notice: With 1 lender and 2 borrowers tests addQuoteToken, addCollateral and borrow
@@ -208,8 +229,11 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // check pool collateralization after borrower1 takes loan
         uint256 poolCollateralizationAfterB1Actions = pool.getPoolCollateralization();
-        (uint256 borrower1Debt,,) = pool.borrowers(address(borrower));
-        assertEq(pool.getEncumberedCollateral(pool.totalDebt()), pool.getEncumberedCollateral(borrower1Debt));
+        (uint256 borrower1Debt, , ) = pool.borrowers(address(borrower));
+        assertEq(
+            pool.getEncumberedCollateral(pool.totalDebt()),
+            pool.getEncumberedCollateral(borrower1Debt)
+        );
         assertEq(poolCollateralizationAfterB1Actions, 1.020113025608771127310590000 * 1e27);
 
         // check utilization after borrow - since pool is barely overcollateralized actual < target
@@ -251,6 +275,16 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         borrower.addCollateral(pool, 100 * 1e18);
         // should not revert when borrower takes a loan on 10_000 DAI
         borrower.borrow(pool, 1_000 * 1e18, 13.537 * 1e18);
+        skip(3600);
+
+        // tie out debt between bucket, borrower, and pool
+        (, , , , uint256 debt, , , ) = pool.bucketAt(priceLow);
+        uint256 bucketPendingDebt = debt + pool.getPendingBucketInterest(priceLow);
+        (, uint256 borrowerPendingDebt, , , , , ) = pool.getBorrowerInfo(address(borrower));
+        uint256 poolPendingDebt = pool.totalDebt() + pool.getPendingPoolInterest();
+        assertEq(bucketPendingDebt, borrowerPendingDebt);
+        assertEq(bucketPendingDebt, poolPendingDebt);
+        assertEq(borrowerPendingDebt, poolPendingDebt);
     }
 
     // @notice: With 1 lender and 2 borrower tests HUP moves down
