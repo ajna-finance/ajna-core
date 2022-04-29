@@ -116,7 +116,7 @@ def draw_initial_debt(borrowers, pool_client, target_utilization=0.60, limit_pri
         collateral_balance = weth.balanceOf(borrower)
         borrow_amount = target_debt / 100
         assert borrow_amount > 10**45
-        pool_price = pool.getPoolPrice()
+        pool_price = pool.lup()
         if pool_price == 0:
             pool_price = 3293.70191 * 10**18  # MAX_BUCKET
         collateralization_ratio = min(1 / target_utilization, 2.5)  # cap at 250% collateralization
@@ -214,9 +214,9 @@ def draw_debt(borrower, borrower_index, pool, gas_validator, collateralization=1
     # Draw debt based on added liquidity
     borrow_amount = get_cumulative_bucket_deposit(pool, (borrower_index % 4) + 1)
     borrow_amount = min(pool.totalQuoteToken() / 2, borrow_amount)
-    collateral_to_deposit = borrow_amount / pool.getPoolPrice() * collateralization * 10**18
+    collateral_to_deposit = borrow_amount / pool.lup() * collateralization * 10**18
     print(f" borrower {borrower_index} borrowing {borrow_amount / 10**18:.1f} "
-          f"collateralizing at {collateralization:.1%}, (pool price is {pool.getPoolPrice() / 10**18:.1f})")
+          f"collateralizing at {collateralization:.1%}, (pool price is {pool.lup() / 10**18:.1f})")
     assert collateral_to_deposit > 10**18
     pool.addCollateral(collateral_to_deposit, {"from": borrower})
     assert borrow_amount > 10**18

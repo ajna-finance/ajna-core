@@ -289,10 +289,7 @@ contract ERC20Pool is IPool, Clone {
 
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
-            encumberedBorrowerCollateral = Maths.rdiv(
-                Maths.radToRay(borrower.debt),
-                Maths.wadToRay(lup)
-            );
+            encumberedBorrowerCollateral = getEncumberedCollateral(borrower.debt);
         }
 
         // convert amount from WAD to collateral pool precision - RAY
@@ -364,10 +361,7 @@ contract ERC20Pool is IPool, Clone {
         // TODO: make value explicit for use in comparison operator against collateralDeposited below
         uint256 encumberedBorrowerCollateral;
         if (borrower.debt != 0) {
-            encumberedBorrowerCollateral = Maths.rdiv(
-                Maths.radToRay(borrower.debt),
-                Maths.wadToRay(lup)
-            );
+            encumberedBorrowerCollateral = getEncumberedCollateral(borrower.debt);
         }
 
         uint256 loanCost;
@@ -685,11 +679,6 @@ contract ERC20Pool is IPool, Clone {
 
     // -------------------- Pool state related functions --------------------
 
-    /// @return The current LUP
-    function getPoolPrice() public view returns (uint256) {
-        return lup;
-    }
-
     /// @notice Returns the current Hight Utilizable Price (HUP) bucket
     /// @dev Starting at the LUP, iterate through down pointers until no quote tokens are available
     /// @dev LUP should always be >= HUP
@@ -714,6 +703,7 @@ contract ERC20Pool is IPool, Clone {
         return curPrice;
     }
 
+    // TODO: add tests for this
     /// @notice Returns the next Highest Deposited Bucket (HPB)
     /// @dev Starting at the current HPB, iterate through down pointers until a new HPB found
     /// @dev HPB should have at on deposit or debt different than 0
@@ -731,6 +721,7 @@ contract ERC20Pool is IPool, Clone {
         return curHpb;
     }
 
+    // TODO: add a test for this
     /// @return RAY - The current minimum pool price
     function getMinimumPoolPrice() public view returns (uint256) {
         if (totalDebt != 0) {
@@ -739,28 +730,41 @@ contract ERC20Pool is IPool, Clone {
         return 0;
     }
 
+    /// @dev Used for both pool and borrower level debt
+    /// @param _debt - Debt to check encumberance of
+    /// @return RAY - The current encumberance of a given debt balance
+    function getEncumberedCollateral(uint256 _debt) public view returns (uint256) {
+        if (_debt == 0) {
+            return 0;
+        }
+        return Maths.rdiv(Maths.radToRay(_debt), Maths.wadToRay(lup));
+    }
+
+    // TODO: lup at 0 is a valid price -> update check?
     /// @return RAY - The current collateralization of the pool given totalCollateral and totalDebt
     function getPoolCollateralization() public view returns (uint256) {
         if (lup != 0 && totalDebt != 0) {
             return
                 Maths.rdiv(
                     totalCollateral,
-                    Maths.rdiv(Maths.radToRay(totalDebt), Maths.wadToRay(lup))
+                    getEncumberedCollateral(totalDebt)
                 );
         }
         return Maths.ONE_RAY;
     }
 
+    /// @notice Gets the current utilization of the pool
+    /// @dev Will return 0 unless the pool has been borrowed from
     /// @return RAY - The current pool actual utilization
     function getPoolActualUtilization() public view returns (uint256) {
-        if (totalQuoteToken != 0) {
-            return
-                Maths.rdiv(
-                    Maths.radToRay(totalDebt),
-                    Maths.add(Maths.radToRay(totalQuoteToken), Maths.radToRay(totalDebt))
-                );
+        if (totalDebt == 0) {
+            return 0;
         }
-        return 0;
+        return
+            Maths.rdiv(
+                Maths.radToRay(totalDebt),
+                Maths.add(Maths.radToRay(totalQuoteToken), Maths.radToRay(totalDebt))
+            );
     }
 
     /// @return RAY - The current pool target utilization

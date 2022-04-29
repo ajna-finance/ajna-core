@@ -8,6 +8,7 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 import {Buckets} from "../libraries/Buckets.sol";
+import {Maths} from "../libraries/Maths.sol";
 
 contract ERC20PoolBorrowTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -76,7 +77,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         vm.expectRevert(ERC20Pool.InsufficientCollateralForBorrow.selector);
         borrower.borrow(pool, 10_000 * 1e18, 4_000 * 1e18);
 
-        // borrower deposit 100 MKR collateral
+        // borrower deposit 10 MKR collateral
         borrower.addCollateral(pool, 10 * 1e18);
 
         // should revert if stop price exceeded
@@ -105,13 +106,15 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check bucket deposit and debt at 3_010.892022197881557845
         (, , , uint256 deposit, uint256 debt, , , ) = pool.bucketAt(priceMed);
         assertEq(deposit, 9_000 * 1e45);
-        // check pool balances
-        assertEq(pool.totalQuoteToken(), 29_000 * 1e45);
-        assertEq(pool.totalDebt(), 21_000 * 1e45);
         // check borrower balance
         (uint256 borrowerDebt, uint256 depositedCollateral, ) = pool.borrowers(address(borrower));
         assertEq(borrowerDebt, 21_000 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
+        // check pool balances
+        assertEq(pool.totalQuoteToken(), 29_000 * 1e45);
+        assertEq(pool.totalDebt(), 21_000 * 1e45);
+        assertEq(pool.getEncumberedCollateral(pool.totalDebt()), pool.getEncumberedCollateral(borrowerDebt));
+        assertEq(pool.getPoolCollateralization(), 14.337581058085150275452380951 * 1e27);
 
         skip(8200);
 
@@ -143,14 +146,15 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         (, , , deposit, debt, , , ) = pool.bucketAt(priceHighest);
         assertEq(debt, 10_000 * 1e45);
         assertEq(deposit, 0);
-        // check pool balances
-        assertEq(pool.totalQuoteToken(), 20_000 * 1e45);
-        assertEq(pool.totalDebt(), 30_000.2730230835484929329412510 * 1e45);
-
         // check borrower balances
         (borrowerDebt, depositedCollateral, ) = pool.borrowers(address(borrower));
         assertEq(borrowerDebt, 30_000.2730230835484929329412510 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
+        // check pool balances
+        assertEq(pool.totalQuoteToken(), 20_000 * 1e45);
+        assertEq(pool.totalDebt(), 30_000.2730230835484929329412510 * 1e45);
+        assertEq(pool.getEncumberedCollateral(pool.totalDebt()), pool.getEncumberedCollateral(borrowerDebt));
+        assertEq(pool.getPoolCollateralization(), 10.036215403377052296661609493 * 1e27);
 
         // deposit at 5_007.644384905151472283 price and reallocate entire debt
         lender.addQuoteToken(pool, address(lender), 40_000 * 1e18, 5_007.644384905151472283 * 1e18);
@@ -195,17 +199,38 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         lender.addQuoteToken(pool, address(lender), 50_000 * 1e18, priceMed);
         lender.addQuoteToken(pool, address(lender), 50_000 * 1e18, priceLow);
 
-        // borrower1 takes a loan on 100_000 DAI
+        // borrower1 takes a loan of 100_000 DAI
         assertEq(pool.estimatePriceForLoan(75_000 * 1e18), priceHigh);
         assertEq(pool.estimatePriceForLoan(125_000 * 1e18), priceMed);
         assertEq(pool.estimatePriceForLoan(175_000 * 1e18), priceLow);
         borrower.addCollateral(pool, 51 * 1e18);
         borrower.borrow(pool, 100_000 * 1e18, 1_000 * 1e18);
 
+        // check pool collateralization after borrower1 takes loan
+        uint256 poolCollateralizationAfterB1Actions = pool.getPoolCollateralization();
+        (uint256 borrower1Debt,,) = pool.borrowers(address(borrower));
+        assertEq(pool.getEncumberedCollateral(pool.totalDebt()), pool.getEncumberedCollateral(borrower1Debt));
+        assertEq(poolCollateralizationAfterB1Actions, 1.020113025608771127310590000 * 1e27);
+
+        // check utilization after borrow - since pool is barely overcollateralized actual < target
+        uint256 targetUtilizationAfterBorrow = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationAfterBorrow = pool.getPoolActualUtilization();
+        assertLt(actualUtilizationAfterBorrow, targetUtilizationAfterBorrow);
+
+        // borrower2 adds collateral to attempt a borrow
         assertEq(pool.estimatePriceForLoan(25_000 * 1e18), priceMed);
         assertEq(pool.estimatePriceForLoan(75_000 * 1e18), priceLow);
         assertEq(pool.estimatePriceForLoan(175_000 * 1e18), 0);
         borrower2.addCollateral(pool, 51 * 1e18);
+
+        // check collateralization / utilization after borrower adds collateral
+        uint256 poolCollateralizationAfterB2Actions = pool.getPoolCollateralization();
+        uint256 targetUtilizationAfterAddCollateral = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationAfterAddCollateral = pool.getPoolActualUtilization();
+        assertEq(pool.getPoolCollateralization(), 2.040226051217542254621180000 * 1e27);
+        assertGt(poolCollateralizationAfterB2Actions, poolCollateralizationAfterB1Actions);
+        assertEq(actualUtilizationAfterAddCollateral, actualUtilizationAfterBorrow);
+        assertLt(targetUtilizationAfterAddCollateral, targetUtilizationAfterBorrow);
 
         // should revert when taking a loan of 5_000 DAI that will drive pool undercollateralized
         vm.expectRevert(
@@ -265,4 +290,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(pool.getHup(), priceMed);
         assertEq(pool.getHup(), pool.lup());
     }
+
+    // TODO: finish implemeting
+    function testGetMinimumPoolPrice() public {}
 }
