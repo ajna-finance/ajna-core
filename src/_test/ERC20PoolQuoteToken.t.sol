@@ -89,7 +89,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice, 0);
         assertEq(deposit, 10_000 * 1e45);
         assertEq(debt, 0);
-        assertEq(snapshot, 0);
+        assertEq(snapshot, Maths.ONE_RAY);
         assertEq(lpOutstanding, 10_000 * 1e27);
         // check lender's LP amount can be redeemed for correct amount of quote token
         assertEq(pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18), 10_000 * 1e27);
@@ -120,7 +120,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice, 0);
         assertEq(deposit, 20_000 * 1e45);
         assertEq(debt, 0);
-        assertEq(snapshot, 0);
+        assertEq(snapshot, Maths.ONE_RAY);
         assertEq(lpOutstanding, 20_000 * 1e27);
         assertEq(pool.lpBalance(address(lender), 2000.221618840727700609 * 1e18), 20_000 * 1e27);
         // check hpb down price pointer updated
@@ -148,7 +148,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice, 2_000.221618840727700609 * 1e18);
         assertEq(deposit, 30_000 * 1e45);
         assertEq(debt, 0);
-        assertEq(snapshot, 0);
+        assertEq(snapshot, Maths.ONE_RAY);
         assertEq(lpOutstanding, 30_000 * 1e27);
         assertEq(pool.lpBalance(address(lender), 3010.892022197881557845 * 1e18), 30_000 * 1e27);
         // check hdp down price pointer updated
@@ -182,7 +182,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice, 4_000.927678580567537368 * 1e18);
         assertEq(deposit, 40_000 * 1e45);
         assertEq(debt, 0);
-        assertEq(snapshot, 0);
+        assertEq(snapshot, Maths.ONE_RAY);
         assertEq(lpOutstanding, 40_000 * 1e27);
         assertEq(pool.lpBalance(address(lender), 5_007.644384905151472283 * 1e18), 40_000 * 1e27);
     }
