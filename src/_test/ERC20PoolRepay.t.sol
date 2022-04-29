@@ -116,7 +116,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         );
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.lup(), 0);
-        // assertEq(pool.getEncumberedCollateral() , 0);
+         assertEq(pool.getEncumberedCollateral(pool.totalDebt()) , 0);
         assertEq(pool.getPendingPoolInterest(), 0);
         assertEq(quote.balanceOf(address(borrower)), 9_999.086351077915909657 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 30_000.913648922084090343 * 1e18);
@@ -309,7 +309,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(pool.totalDebt(), 0);
         assertEq(pool.getPendingPoolInterest(), 0);
         assertEq(pool.lup(), 0);
-        // assertEq(pool.getEncumberedCollateral() , 0);
+         assertEq(pool.getEncumberedCollateral(pool.totalDebt()) , 0);
         assertEq(quote.balanceOf(address(borrower2)), 9_999.973997801566810197 * 1e18);
         assertEq(quote.balanceOf(address(pool)), 30_000.741073642258602906 * 1e18);
 
