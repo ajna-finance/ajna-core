@@ -484,7 +484,10 @@ contract ERC20Pool is IPool, Clone {
             revert NoDebtToLiquidate();
         }
 
-        uint256 collateralization = getBorrowerCollateralization(borrower.collateralDeposited, debt);
+        uint256 collateralization = getBorrowerCollateralization(
+            borrower.collateralDeposited,
+            debt
+        );
 
         if (collateralization > Maths.ONE_RAY) {
             revert BorrowerIsCollateralized({collateralization: collateralization});
@@ -651,11 +654,7 @@ contract ERC20Pool is IPool, Clone {
     /// @return RAY - The current collateralization of the pool given totalCollateral and totalDebt
     function getPoolCollateralization() public view returns (uint256) {
         if (lup != 0 && totalDebt != 0) {
-            return
-                Maths.rdiv(
-                    totalCollateral,
-                    getEncumberedCollateral(totalDebt)
-                );
+            return Maths.rdiv(totalCollateral, getEncumberedCollateral(totalDebt));
         }
         return Maths.ONE_RAY;
     }
@@ -772,13 +771,13 @@ contract ERC20Pool is IPool, Clone {
     /// @param _collateralDeposited RAY - Collateral amount to calculate a collateralization ratio for
     /// @param _debt RAD - Debt position to calculate encumbered quotient
     /// @return RAY - The current collateralization of the borrowers given totalCollateral and totalDebt
-    function getBorrowerCollateralization(uint256 _collateralDeposited, uint256 _debt) public view returns (uint256) {
+    function getBorrowerCollateralization(uint256 _collateralDeposited, uint256 _debt)
+        public
+        view
+        returns (uint256)
+    {
         if (lup != 0 && _debt != 0) {
-            return
-                Maths.rdiv(
-                    _collateralDeposited,
-                    getEncumberedCollateral(_debt)
-                );
+            return Maths.rdiv(_collateralDeposited, getEncumberedCollateral(_debt));
         }
         return Maths.ONE_RAY;
     }
@@ -841,4 +840,3 @@ contract ERC20Pool is IPool, Clone {
         );
     }
 }
-
