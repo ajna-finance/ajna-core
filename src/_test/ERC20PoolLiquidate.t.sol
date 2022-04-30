@@ -9,6 +9,7 @@ import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
 import {Maths} from "../libraries/Maths.sol";
+import {IPool} from "../interfaces/IPool.sol";
 
 contract ERC20PoolLiquidateTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -55,7 +56,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceLow);
 
         // should revert when no debt
-        vm.expectRevert(ERC20Pool.NoDebtToLiquidate.selector);
+        vm.expectRevert(IPool.NoDebtToLiquidate.selector);
         lender.liquidate(pool, address(borrower));
 
         // borrowers deposit collateral
@@ -85,7 +86,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // should revert when borrower collateralized
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.BorrowerIsCollateralized.selector,
+                IPool.BorrowerIsCollateralized.selector,
                 20.066473628656401978000000001 * 1e27
             )
         );

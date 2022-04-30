@@ -9,6 +9,7 @@ import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 import {Buckets} from "../libraries/Buckets.sol";
 import {Maths} from "../libraries/Maths.sol";
+import {IPool} from "../interfaces/IPool.sol";
 
 contract ERC20PoolBorrowTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -69,14 +70,14 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // should revert if borrower wants to borrow a greater amount than in pool
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.InsufficientLiquidity.selector,
+                IPool.InsufficientLiquidity.selector,
                 pool.totalQuoteToken() - pool.totalDebt()
             )
         );
         borrower.borrow(pool, 60_000 * 1e18, 2_000 * 1e18);
 
         // should revert if insufficient collateral deposited by borrower
-        vm.expectRevert(ERC20Pool.InsufficientCollateralForBorrow.selector);
+        vm.expectRevert(IPool.InsufficientCollateralForBorrow.selector);
         borrower.borrow(pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // borrower deposit 10 MKR collateral
@@ -259,7 +260,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // should revert when taking a loan of 5_000 DAI that will drive pool undercollateralized
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.PoolUndercollateralized.selector,
+                IPool.PoolUndercollateralized.selector,
                 0.976275672074051610091314286 * 1e27
             )
         );

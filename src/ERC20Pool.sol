@@ -19,12 +19,6 @@ contract ERC20Pool is IPool, Clone, Interest {
     using SafeERC20 for ERC20;
     using Buckets for mapping(uint256 => Buckets.Bucket);
 
-    struct BorrowerInfo {
-        uint256 debt; // RAD
-        uint256 collateralDeposited; // RAY
-        uint256 inflatorSnapshot; // RAY, the inflator rate of the given borrower's last state change
-    }
-
     /// @dev Counter used by onlyOnce modifier
     uint8 private poolInitializations = 0;
 
@@ -50,46 +44,6 @@ contract ERC20Pool is IPool, Clone, Interest {
 
     uint256 public totalQuoteToken; // RAD
     uint256 public totalDebt; // RAD
-
-    event AddQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lup);
-    event RemoveQuoteToken(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lup
-    );
-    event AddCollateral(address indexed borrower, uint256 amount);
-    event RemoveCollateral(address indexed borrower, uint256 amount);
-    event ClaimCollateral(
-        address indexed claimer,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lps
-    );
-    event Borrow(address indexed borrower, uint256 lup, uint256 amount);
-    event Repay(address indexed borrower, uint256 lup, uint256 amount);
-    event UpdateInterestRate(uint256 oldRate, uint256 newRate);
-    event Purchase(
-        address indexed bidder,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 collateral
-    );
-    event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
-
-    error AlreadyInitialized();
-    error InvalidPrice();
-    error NoClaimToBucket();
-    error NoDebtToRepay();
-    error NoDebtToLiquidate();
-    error InsufficientBalanceForRepay();
-    error InsufficientCollateralBalance();
-    error InsufficientCollateralForBorrow();
-    error InsufficientLiquidity(uint256 amountAvailable);
-    error PoolUndercollateralized(uint256 collateralization);
-    error BorrowerIsCollateralized(uint256 collateralization);
-    error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
-    error AmountExceedsAvailableCollateral(uint256 availableCollateral);
 
     /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
@@ -456,7 +410,9 @@ contract ERC20Pool is IPool, Clone, Interest {
         emit Liquidate(_borrower, debt, requiredCollateral);
     }
 
-    // -------------------- Bucket related functions --------------------
+                /*****************************/
+                /*** Bucket Management ***/
+                /*****************************/
 
     // TODO: rename bucketAtPrice & add bucketAtIndex
     // TODO: add return type
@@ -496,7 +452,9 @@ contract ERC20Pool is IPool, Clone, Interest {
         }
     }
 
-    // -------------------- Pool state related functions --------------------
+                /*****************************/
+                /*** Pool State Management ***/
+                /*****************************/
 
     /// @notice Update the global borrower inflator
     /// @dev Requires time to have passed between update calls
@@ -643,21 +601,9 @@ contract ERC20Pool is IPool, Clone, Interest {
         }
     }
 
-    // -------------------- Borrower related functions --------------------
-
-    /// @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
-    /// @param _borrower Pointer to the struct which is accumulating interest on their debt
-    /// @dev Only adds debt if a borrower has already initiated a debt position
-    function accumulateBorrowerInterest(BorrowerInfo storage _borrower) private {
-        if (_borrower.debt != 0 && _borrower.inflatorSnapshot != 0) {
-            _borrower.debt += getPendingInterest(
-                _borrower.debt,
-                inflatorSnapshot,
-                _borrower.inflatorSnapshot
-            );
-        }
-        _borrower.inflatorSnapshot = inflatorSnapshot;
-    }
+                /*****************************/
+                /*** Borrower Management ***/
+                /*****************************/
 
     /// @notice Returns a Tuple representing a given borrower's info struct
     function getBorrowerInfo(address _borrower)
@@ -732,7 +678,9 @@ contract ERC20Pool is IPool, Clone, Interest {
         return _buckets.estimatePrice(_amount, lup);
     }
 
-    // -------------------- Lender related functions --------------------
+                /*****************************/
+                /*** Lender Management ***/
+                /*****************************/
 
     /// @notice Returns a given lender's LP tokens in a given price bucket
     /// @param _owner The EOA to check token balance for
