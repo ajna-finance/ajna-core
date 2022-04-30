@@ -524,7 +524,6 @@ contract ERC20Pool is IPool, Clone, Interest {
         return 0;
     }
 
-    // TODO: move this to a section for functions that are used in multiple places
     /// @dev Used for both pool and borrower level debt
     /// @param _debt - RAD Debt to check encumberance of
     /// @return RAY - The current encumberance of a given debt balance
@@ -547,7 +546,6 @@ contract ERC20Pool is IPool, Clone, Interest {
         }
     }
 
-    // TODO: lup at 0 is a valid price -> update check?
     /// @return RAY - The current collateralization of the pool given totalCollateral and totalDebt
     function getPoolCollateralization() public view returns (uint256) {
         if (lup != 0 && totalDebt != 0) {
@@ -651,7 +649,6 @@ contract ERC20Pool is IPool, Clone, Interest {
         );
     }
 
-    // TODO: sync lup and debt checks between the different collateralization getters
     /// @dev Supports passage of collateralDeposited and debt to enable calculation of potential borrower collateralization states, not just current.
     /// @param _collateralDeposited RAY - Collateral amount to calculate a collateralization ratio for
     /// @param _debt RAD - Debt position to calculate encumbered quotient
