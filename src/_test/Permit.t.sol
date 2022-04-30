@@ -8,9 +8,9 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
-import {PositionManager, IPositionManager} from "../PositionManager.sol";
-
+import {PositionManager} from "../PositionManager.sol";
 import {AjnaToken} from "../tokens/Ajna.sol";
+import {IPositionManager} from "../interfaces/IPositionManager.sol";
 
 contract PermitTest is DSTestPlus {
     PositionManager internal positionManager;
@@ -149,7 +149,7 @@ contract PermitTest is DSTestPlus {
             );
 
         vm.prank(unapprovedSpender);
-        vm.expectRevert(PositionManager.NotApproved.selector);
+        vm.expectRevert(IPositionManager.NotApproved.selector);
         positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
     }
 

@@ -12,19 +12,6 @@ import {PositionNFT} from "./base/PositionNFT.sol";
 import {Maths} from "./libraries/Maths.sol";
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20 {
-    event Mint(address lender, address pool, uint256 tokenId);
-    event MemorializePosition(address lender, uint256 tokenId);
-    event Burn(address lender, uint256 price);
-    event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
-    event DecreaseLiquidity(address lender, uint256 collateral, uint256 quote, uint256 price);
-
-    /// @dev Caller is not approved to interact with the token
-    error NotApproved();
-    /// @dev increaseLiquidity() call failed
-    error IncreaseLiquidityFailed();
-    /// @dev Unable to burn as liquidity still present at price
-    error LiquidityNotRemoved();
-
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
     /// @dev Mapping of tokenIds to Position struct

@@ -2,10 +2,28 @@
 pragma solidity 0.8.11;
 
 interface IPositionManager {
+
+    event Mint(address lender, address pool, uint256 tokenId);
+    event MemorializePosition(address lender, uint256 tokenId);
+    event Burn(address lender, uint256 price);
+    event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
+    event DecreaseLiquidity(address lender, uint256 collateral, uint256 quote, uint256 price);
+
+    /// @dev Caller is not approved to interact with the token
+    error NotApproved();
+    /// @dev increaseLiquidity() call failed
+    error IncreaseLiquidityFailed();
+    /// @dev Unable to burn as liquidity still present at price
+    error LiquidityNotRemoved();
+
+    function mint(MintParams calldata params) external payable returns (uint256 tokenId);
+
     struct MintParams {
         address recipient;
         address pool;
     }
+
+    function memorializePositions(MemorializePositionsParams calldata params) external;
 
     struct MemorializePositionsParams {
         uint256 tokenId;
@@ -14,11 +32,15 @@ interface IPositionManager {
         uint256[] prices; // the array of price buckets with LP tokens to be tracked by a NFT
     }
 
+    function burn(BurnParams calldata params) external payable;
+
     struct BurnParams {
         uint256 tokenId;
         address recipient;
         uint256 price;
     }
+
+    function increaseLiquidity(IncreaseLiquidityParams calldata params) external payable;
 
     struct IncreaseLiquidityParams {
         uint256 tokenId;
@@ -27,6 +49,8 @@ interface IPositionManager {
         uint256 amount;
         uint256 price;
     }
+
+    function decreaseLiquidity(DecreaseLiquidityParams calldata params) external payable;
 
     struct DecreaseLiquidityParams {
         uint256 tokenId;
@@ -41,14 +65,4 @@ interface IPositionManager {
         address pool;
         uint256[] prices;
     }
-
-    function mint(MintParams calldata params) external payable returns (uint256 tokenId);
-
-    function memorializePositions(MemorializePositionsParams calldata params) external;
-
-    function burn(BurnParams calldata params) external payable;
-
-    function increaseLiquidity(IncreaseLiquidityParams calldata params) external payable;
-
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params) external payable;
 }
