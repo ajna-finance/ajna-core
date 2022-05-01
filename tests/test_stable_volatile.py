@@ -14,6 +14,9 @@ from sdk import AjnaPoolClient, AjnaProtocol
 MIN_BUCKET = 1543  # 2210.03602, lowest bucket involved in the test
 MAX_BUCKET = 1623  # 3293.70191, highest bucket for initial deposits, is exceeded after initialization
 SECONDS_PER_YEAR = 3600 * 24 * 365
+MIN_UTILIZATION = 0.4
+MAX_UTILIZATION = 0.8
+GOAL_UTILIZATION = 0.6
 
 
 # set of buckets deposited into, indexed by lender index
@@ -62,7 +65,7 @@ def borrowers(ajna_protocol, pool_client, weth_dai_pool):
 def pool1(pool_client, dai, weth, lenders, borrowers, bucket_math, test_utils):
     # Adds liquidity to an empty pool and draws debt up to a target utilization
     add_initial_liquidity(lenders, pool_client, bucket_math)
-    draw_initial_debt(borrowers, pool_client, bucket_math, test_utils)
+    draw_initial_debt(borrowers, pool_client, bucket_math, test_utils, target_utilization=GOAL_UTILIZATION)
     global last_triggered
     last_triggered = dict.fromkeys(range(0, 100), 0)
     pool = pool_client.get_contract()
@@ -107,8 +110,7 @@ def place_initial_random_bid(lender_index, pool_client, bucket_math):
     pool_client.deposit_quote_token(60_000 * 10**18, price, lender_index)
 
 
-def draw_initial_debt(borrowers, pool_client, bucket_math, test_utils,
-                      target_utilization=0.60, limit_price=2000 * 10**18):
+def draw_initial_debt(borrowers, pool_client, bucket_math, test_utils, target_utilization, limit_price=2000 * 10**18):
     pool = pool_client.get_contract()
     weth = pool_client.get_collateral_token().get_contract()
     target_debt = pool.totalQuoteToken() * target_utilization
@@ -146,17 +148,17 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
 
             # Draw debt, repay debt, or do nothing depending on interest rate
             utilization = pool.getPoolActualUtilization() / 10**27
-            if interest_rate < 0.10 and utilization < 0.70:
-                target_collateralization = 1/0.6
+            if interest_rate < 0.10 and utilization < MAX_UTILIZATION:
+                target_collateralization = max(1.1, 1/GOAL_UTILIZATION)
                 draw_debt(borrowers[user_index], user_index, pool, gas_validator,
                           collateralization=target_collateralization)
-            elif utilization > 0.40:  # start repaying debt if interest grows too high
+            elif utilization > MIN_UTILIZATION:  # start repaying debt if interest grows too high
                 repay(borrowers[user_index], user_index, pool, gas_validator)
             chain.sleep(14)
 
             # Add or remove liquidity
             utilization = pool.getPoolActualUtilization() / 10**27
-            if utilization < 0.60 and len(buckets_deposited[user_index]) > 0:
+            if utilization < MAX_UTILIZATION and len(buckets_deposited[user_index]) > 0:
                 price = buckets_deposited[user_index].pop()
                 try:
                     remove_quote_token(lenders[user_index], user_index, price, pool)
@@ -164,17 +166,16 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
                     print(f" ERROR removing liquidity at {price / 10**18:.1f}: {ex}")
                     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             else:
-                liquidity_coefficient = 1.05 if utilization > pool.getPoolTargetUtilization() / 10**27 else 1.0
-                price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, gas_validator,
-                                        liquidity_coefficient)
+                price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, gas_validator)
                 if price:
                     buckets_deposited[user_index].add(price)
 
             try:
                 max_bucket = bucket_math.priceToIndex(pool.hpb()) + 100
                 test_utils.validate_book(pool, bucket_math, MIN_BUCKET - 100, max_bucket)
+                # test_utils.validate_debt(pool, borrowers, bucket_math, MIN_BUCKET)
             except AssertionError as ex:
-                print("Book became invalid:")
+                print("Book or debt became invalid:")
                 print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hpb())))
                 raise ex
             chain.sleep(14)
@@ -191,8 +192,7 @@ def update_interest_rate(lenders, pool) -> int:
     tx = pool.updateInterestRate({"from": lenders[random.randrange(0, len(lenders))]})
     if 'UpdateInterestRate' in tx.events:
         interest_rate = tx.events['UpdateInterestRate'][0][0]['newRate'] / 10**18
-        print(f" updated interest rate to {interest_rate:.3%}; "
-              f"utilization is {pool.getPoolActualUtilization() / 10**27:.1%}")
+        print(f" updated interest rate to {interest_rate:.3%}")
     else:
         interest_rate = pool.previousRate() / 10**18
         print(f" interest rate was not updated, and remains at {interest_rate:.3%}")
@@ -291,7 +291,7 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     assert len(borrowers) == 100
     assert pool1.totalQuoteToken() > 2_700_000 * 10**18  # 50% utilization
     assert pool1.getPoolActualUtilization() > 0.50 * 10**27
-    # test_utils.validate_debt(pool1, borrowers, bucket_math, MIN_BUCKET)
+    test_utils.validate_debt(pool1, borrowers, bucket_math, MIN_BUCKET, print_error=True)
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
@@ -312,9 +312,9 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}")
 
     # Validate test ended with the pool in a meaningful state
-    # test_utils.validate_debt(pool1, borrowers, bucket_math, MIN_BUCKET)
+    test_utils.validate_debt(pool1, borrowers, bucket_math, MIN_BUCKET, print_error=True)
     hpb_index = bucket_math.priceToIndex(pool1.hpb())
     print("After test:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
     utilization = pool1.getPoolActualUtilization() / 10**27
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")
-    assert 0.5 < utilization < 0.7
+    assert MIN_UTILIZATION * 0.9 < utilization < MAX_UTILIZATION * 1.1
