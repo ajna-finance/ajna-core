@@ -747,7 +747,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         borrower.borrow(pool, 1_000 * 1e18, priceMed);
         skip(60); // fragment the inflator
         borrower.borrow(pool, 400 * 1e18, priceMed);
-        (, , , uint256 deposit, uint256 debt, , ,) = pool.bucketAt(priceHigh);
+        (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding,) = pool.bucketAt(priceHigh);
         assertEq(deposit, 0);
         assertEq(debt, 1_000.000095129380400679662239 * 1e45);
         (, , , deposit, debt, , ,) = pool.bucketAt(priceMed);
@@ -788,10 +788,11 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         (, , , deposit, debt, , ,) = pool.bucketAt(priceHigh);
         assertEq(deposit, 0);
         assertEq(debt, 1_000.000095129380400679662239 * 1e45);
-        (, , , deposit, debt, , ,) = pool.bucketAt(priceMed);
+        (, , , deposit, debt, , lpOutstanding,) = pool.bucketAt(priceMed);
         assertEq(deposit, 0);
         assertEq(debt, 0); // FIXME: shows dusty debt amount remaining
-        (, , , deposit, debt, , ,) = pool.bucketAt(priceLow);
+        assertEq(lpOutstanding, 0);
+        (, , , deposit, debt, , ,) = pool.bucketAt(priceLow);  // nothing else can be removed
         assertEq(deposit, 2_599.999923896492059616664041999 * 1e45);
         assertEq(debt, 400.000076103507940383335958001 * 1e45);
         assertEq(pool.hpb(), priceHigh);
