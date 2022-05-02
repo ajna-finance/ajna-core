@@ -779,7 +779,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // borrower takes a loan of 3000 DAI
         borrower.addCollateral(pool, 100 * 1e18);
-        borrower.borrow(pool, priceMed, 4_000 * 1e18);  // FIXME: methinks amount and price are backwards
+        borrower.borrow(pool, 3_000 * 1e18, priceHigh);
         assertEq(pool.hpb(), priceHigh);
         assertEq(pool.lup(), priceHigh);
 
@@ -794,12 +794,12 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(pool.hpb(), priceHigh);
         assertEq(pool.lup(), priceHigh);
         // check pool balances
-        assertEq(pool.totalQuoteToken(), 10_989.107977802118442155 * 1e45);
-        assertEq(quote.balanceOf(address(pool)), 10_989.107977802118442155 * 1e18);
+        assertEq(pool.totalQuoteToken(), 11_000 * 1e45);
+        assertEq(quote.balanceOf(address(pool)), 11_000 * 1e18);
 
         // check pool collateralization
         collateralization = pool.getPoolCollateralization();
-        assertEq(collateralization, 132.881805427880566840691179328 * 1e27);
+        assertEq(collateralization, 133.364255952685584578933333386 * 1e27);
 
         // check pool is still overcollateralized
         targetUtilization = pool.getPoolTargetUtilization();
@@ -808,8 +808,8 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // check 4000 bucket balance
         (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = pool.bucketAt(priceHigh);
-        assertEq(deposit, 1_989.107977802118442155 * 1e45);
-        assertEq(debt, 3_010.892022197881557845 * 1e45);
+        assertEq(deposit, 2_000 * 1e45);
+        assertEq(debt, 3_000 * 1e45);
         assertEq(lpOutstanding, 5_000 * 1e27);
         assertEq(pool.lpBalance(address(lender), priceHigh), 5_000 * 1e27);
 
