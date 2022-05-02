@@ -6,19 +6,19 @@ import {DSTestPlus} from "../utils/DSTestPlus.sol";
 import {AjnaToken} from "../../tokens/Ajna.sol";
 
 contract AjnaTokenTest is DSTestPlus {
-    AjnaToken internal token;
+    AjnaToken internal _token;
 
-    function setUp() public {
-        token = new AjnaToken(10_000);
+    function setUp() external {
+        _token = new AjnaToken(10_000);
     }
 
-    function testFailCannotSendTokensToContract() public {
-        assert(false == token.transfer(address(token), 1));
+    function testFailCannotSendTokensToContract() external {
+        assert(false == _token.transfer(address(_token), 1));
     }
 
-    function invariantMetadata() public {
-        assertEq(token.name(), "Ajna");
-        assertEq(token.symbol(), "AJNA");
-        assertEq(token.decimals(), 18);
+    function invariantMetadata() external {
+        assertEq(_token.name(), "Ajna");
+        assertEq(_token.symbol(), "AJNA");
+        assertEq(_token.decimals(), 18);
     }
 }

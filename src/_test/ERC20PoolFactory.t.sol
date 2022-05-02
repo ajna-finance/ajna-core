@@ -9,38 +9,38 @@ import "../ERC20Pool.sol";
 import "../ERC20PoolFactory.sol";
 
 contract PoolFactoryTest is DSTestPlus {
-    ERC20PoolFactory internal factory;
-    ERC20 internal collateral;
-    ERC20 internal quote;
-    uint256 internal count;
+    ERC20PoolFactory internal _factory;
+    ERC20           internal _collateral;
+    ERC20           internal _quote;
+    uint256         internal _count;
 
-    function setUp() public {
-        factory = new ERC20PoolFactory();
-        collateral = new ERC20("Collateral", "C");
-        quote = new ERC20("Quote", "Q");
+    function setUp() external {
+        _factory    = new ERC20PoolFactory();
+        _collateral = new ERC20("Collateral", "C");
+        _quote      = new ERC20("Quote", "Q");
     }
 
     // @notice: Tests pool deployment
-    function testDeployPool() public {
-        ERC20Pool pool = factory.deployPool(address(collateral), address(quote));
+    function testDeployPool() external {
+        ERC20Pool pool = _factory.deployPool(address(_collateral), address(_quote));
 
-        assertEq(address(collateral), address(pool.collateral()));
-        assertEq(address(quote), address(pool.quoteToken()));
+        assertEq(address(_collateral),  address(pool.collateral()));
+        assertEq(address(_quote),       address(pool.quoteToken()));
     }
 
     // @notice: Tests revert if actor attempts to deploy ETH pool
-    function testDeployPoolEther() public {
+    function testDeployPoolEther() external {
         vm.expectRevert(ERC20PoolFactory.WethOnly.selector);
-        factory.deployPool(address(collateral), address(0));
+        _factory.deployPool(address(_collateral), address(0));
 
         vm.expectRevert(ERC20PoolFactory.WethOnly.selector);
-        factory.deployPool(address(0), address(collateral));
+        _factory.deployPool(address(0), address(_collateral));
     }
 
     // @notice: Tests revert if actor attempts to deploy the same pair
-    function testDeployPoolTwice() public {
-        factory.deployPool(address(collateral), address(quote));
+    function testDeployPoolTwice() external {
+        _factory.deployPool(address(_collateral), address(_quote));
         vm.expectRevert(ERC20PoolFactory.PoolAlreadyExists.selector);
-        factory.deployPool(address(collateral), address(quote));
+        _factory.deployPool(address(_collateral), address(_quote));
     }
 }

@@ -832,11 +832,6 @@ contract ERC20Pool is IPool, Clone {
     /// @notice Estimate the price at which a loan can be taken
     function estimatePriceForLoan(uint256 _amount) public view returns (uint256) {
         // convert amount from WAD to collateral pool precision - RAD
-        _amount = Maths.wadToRad(_amount);
-        if (lup == 0) {
-            return _buckets.estimatePrice(_amount, hpb);
-        }
-
-        return _buckets.estimatePrice(_amount, lup);
+        return _buckets.estimatePrice(Maths.wadToRad(_amount), lup == 0 ? hpb : lup);
     }
 }

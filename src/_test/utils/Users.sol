@@ -2,52 +2,40 @@
 pragma solidity 0.8.11;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20Pool, IPool} from "../../ERC20Pool.sol";
+import {ERC20Pool} from "../../ERC20Pool.sol";
 
 contract UserWithCollateral {
     function approveAndDepositTokenAsCollateral(
-        IERC20 token,
-        ERC20Pool pool,
-        uint256 amount
+        IERC20 token_,
+        ERC20Pool pool_,
+        uint256 amount_
     ) public {
-        token.approve(address(pool), amount);
-        pool.addCollateral(amount);
+        token_.approve(address(pool_), amount_);
+        pool_.addCollateral(amount_);
     }
 
-    function approveToken(
-        IERC20 token,
-        address spender,
-        uint256 amount
-    ) public {
-        token.approve(spender, amount);
+    function approveToken(IERC20 token_, address spender_, uint256 amount_) public {
+        token_.approve(spender_, amount_);
     }
 
-    function addCollateral(ERC20Pool pool, uint256 amount) public {
-        pool.addCollateral(amount);
+    function addCollateral(ERC20Pool pool_, uint256 amount_) public {
+        pool_.addCollateral(amount_);
     }
 
-    function borrow(
-        ERC20Pool pool,
-        uint256 amount,
-        uint256 price
-    ) public {
-        pool.borrow(amount, price);
+    function borrow(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
+        pool_.borrow(amount_, price_);
     }
 
-    function purchaseBid(
-        ERC20Pool pool,
-        uint256 amount,
-        uint256 price
-    ) public {
-        pool.purchaseBid(amount, price);
+    function purchaseBid(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
+        pool_.purchaseBid(amount_, price_);
     }
 
-    function repay(ERC20Pool pool, uint256 amount) public {
-        pool.repay(amount);
+    function repay(ERC20Pool pool_, uint256 amount_) public {
+        pool_.repay(amount_);
     }
 
-    function removeCollateral(ERC20Pool pool, uint256 amount) public {
-        pool.removeCollateral(amount);
+    function removeCollateral(ERC20Pool pool_, uint256 amount_) public {
+        pool_.removeCollateral(amount_);
     }
 }
 

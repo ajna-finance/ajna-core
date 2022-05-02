@@ -10,37 +10,33 @@ import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
 contract ERC20PoolPerformanceTest is DSTestPlus {
-    ERC20Pool internal pool;
-    CollateralToken internal collateral;
-    QuoteToken internal quote;
-    uint256 internal count = 7000;
+    ERC20Pool               internal _pool;
+    CollateralToken         internal _collateral;
+    QuoteToken              internal _quote;
+    uint256                 internal _count = 7000;
+    UserWithCollateral[]    internal _borrowers;
+    UserWithQuoteToken[]    internal _lenders;
+    uint8                   internal constant MAX_USERS = type(uint8).max;
 
-    UserWithCollateral[] internal borrowers;
-    UserWithQuoteToken[] internal lenders;
-
-    uint8 internal constant MAX_USERS = type(uint8).max;
-
-    function setUp() public {
-        collateral = new CollateralToken();
-        quote = new QuoteToken();
-
-        ERC20PoolFactory factory = new ERC20PoolFactory();
-        pool = factory.deployPool(address(collateral), address(quote));
+    function setUp() external {
+        _collateral = new CollateralToken();
+        _quote      = new QuoteToken();
+        _pool       = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
 
         for (uint256 i; i < MAX_USERS; ++i) {
             UserWithCollateral user = new UserWithCollateral();
-            collateral.mint(address(user), 1_000_000 * 1e18);
-            user.approveToken(collateral, address(pool), type(uint256).max);
+            _collateral.mint(address(user), 1_000_000 * 1e18);
+            user.approveToken(_collateral, address(_pool), type(uint256).max);
 
-            borrowers.push(user);
+            _borrowers.push(user);
         }
 
         for (uint256 i; i < MAX_USERS; ++i) {
             UserWithQuoteToken user = new UserWithQuoteToken();
-            quote.mint(address(user), 1_000_000 * 1e18);
-            user.approveToken(quote, address(pool), type(uint256).max);
+            _quote.mint(address(user), 1_000_000 * 1e18);
+            user.approveToken(_quote, address(_pool), type(uint256).max);
 
-            lenders.push(user);
+            _lenders.push(user);
         }
     }
 }

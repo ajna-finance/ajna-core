@@ -6,7 +6,6 @@ import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
 import {PositionNFT} from "./base/PositionNFT.sol";
 import {IPool} from "./ERC20Pool.sol";
-import {Maths} from "./libraries/Maths.sol";
 
 import {Multicall} from "./base/Multicall.sol";
 import {PermitERC20} from "./base/PermitERC20.sol";
@@ -212,14 +211,14 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             params.price
         );
 
-        pool.removeQuoteToken(params.recipient, Maths.radToWad(quoteTokenToRemove), params.price);
+        pool.removeQuoteToken(params.recipient, quoteTokenToRemove / 10**27, params.price);
 
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
             // claim any unencumbered collateral accrued to the price bucket
             pool.claimCollateral(
                 params.recipient,
-                Maths.rayToWad(collateralToRemove),
+                collateralToRemove / 10**9,
                 params.price
             );
         }
