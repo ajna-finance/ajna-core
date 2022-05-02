@@ -9,14 +9,14 @@ interface IERC20PermitAllowed {
     /// @notice Approve the spender to spend some tokens via the owner signature
     /// @dev This is the permit interface used by DAI and CHAI
     function permit(
-        address owner,
-        address spender,
-        uint256 nonce,
-        uint256 expiry,
-        bool allowed,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address owner_,
+        address spender_,
+        uint256 nonce_,
+        uint256 expiry_,
+        bool allowed_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
     ) external;
 }
 
@@ -29,15 +29,15 @@ abstract contract PermitERC20 {
     /// @dev Spender always assumed to be implementing contract
     /// @dev Owner is passed through to enable implementing clone contracts to be called by other contracts.
     function permitToken(
-        address owner,
-        address token,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address owner_,
+        address token_,
+        uint256 value_,
+        uint256 deadline_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
     ) public payable {
-        IERC20Permit(token).permit(owner, address(this), value, deadline, v, r, s);
+        IERC20Permit(token_).permit(owner_, address(this), value_, deadline_, v_, r_, s_);
     }
 
     /// @notice Permits the implementing contract to spend a given amount of a token
@@ -45,31 +45,31 @@ abstract contract PermitERC20 {
     /// @dev Spender always assumed to be implementing contract
     /// @dev Owner is passed through to enable implementing clone contracts to be called by other contracts.
     function permitTokenIfNecessary(
-        address owner,
-        address token,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address owner_,
+        address token_,
+        uint256 value_,
+        uint256 deadline_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
     ) external payable {
-        if (IERC20(token).allowance(owner, address(this)) < value) {
-            permitToken(owner, token, value, deadline, v, r, s);
+        if (IERC20(token_).allowance(owner_, address(this)) < value_) {
+            permitToken(owner_, token_, value_, deadline_, v_, r_, s_);
         }
     }
 
     /// @notice Permits the implementing contract to spend a given amount of a token
     /// @dev Used by tokens like DAI which have a non-standard Permit() interface
     function permitTokensWithAllowedParam(
-        address owner,
-        address token,
-        uint256 nonce,
-        uint256 expiry,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address owner_,
+        address token_,
+        uint256 nonce_,
+        uint256 expiry_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
     ) public payable {
-        IERC20PermitAllowed(token).permit(owner, address(this), nonce, expiry, true, v, r, s);
+        IERC20PermitAllowed(token_).permit(owner_, address(this), nonce_, expiry_, true, v_, r_, s_);
     }
 
     /// @notice Permits the implementing contract to spend a given amount of a token
@@ -78,16 +78,16 @@ abstract contract PermitERC20 {
     /// @dev Spender always assumed to be implementing contract
     /// @dev Owner is passed through to enable implementing clone contracts to be called by other contracts.
     function permitTokensWithAllowedParamIfNecessary(
-        address owner,
-        address token,
-        uint256 nonce,
-        uint256 expiry,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
+        address owner_,
+        address token_,
+        uint256 nonce_,
+        uint256 expiry_,
+        uint8 v_,
+        bytes32 r_,
+        bytes32 s_
     ) external payable {
-        if (IERC20(token).allowance(owner, address(this)) < type(uint256).max) {
-            permitTokensWithAllowedParam(owner, token, nonce, expiry, v, r, s);
+        if (IERC20(token_).allowance(owner_, address(this)) < type(uint256).max) {
+            permitTokensWithAllowedParam(owner_, token_, nonce_, expiry_, v_, r_, s_);
         }
     }
 }

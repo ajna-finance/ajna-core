@@ -14,23 +14,23 @@ import {ERC721Burnable} from "@openzeppelin/contracts/token/ERC721/extensions/ER
 
 abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
     constructor(
-        string memory name,
-        string memory symbol,
-        string memory version
-    ) PermitERC721(name, symbol, version) {}
+        string memory name_,
+        string memory symbol_,
+        string memory version_
+    ) PermitERC721(name_, symbol_, version_) {}
 
-    function constructTokenURI(IPositionManager.ConstructTokenURIParams memory params)
+    function constructTokenURI(IPositionManager.ConstructTokenURIParams memory params_)
         public
         pure
         returns (string memory)
     {
         string memory _name = string(
-            abi.encodePacked("Ajna Token #", Strings.toString(params.tokenId))
+            abi.encodePacked("Ajna Token #", Strings.toString(params_.tokenId))
         );
-        string memory image = Base64.encode(bytes(generateSVGofTokenById(params.tokenId)));
+        string memory image = Base64.encode(bytes(generateSVGofTokenById(params_.tokenId)));
         string memory description = "Ajna Positions NFT-V1";
 
-        // address tokenOwner = ownerOf(params.tokenId);
+        // address tokenOwner = ownerOf(params_.tokenId);
         // string memory ownerHexString = (uint160(tokenOwner)).toHexString(20);
         string memory ownerHexString = "owner_address";
 
@@ -59,11 +59,11 @@ abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
     }
 
     // TODO: finish implementing: https://github.com/scaffold-eth/scaffold-eth/blob/sipping-oe/packages/hardhat/contracts/OldEnglish.sol#L112-L234
-    function generateSVGofTokenById(uint256 tokenId) internal pure returns (string memory) {
+    function generateSVGofTokenById(uint256 tokenId_) internal pure returns (string memory) {
         string memory svg = string(
             abi.encodePacked(
                 '<svg xmlns="http://www.w3.org/2000/svg" width="216.18" height="653.57">',
-                renderTokenById(tokenId),
+                renderTokenById(tokenId_),
                 "</svg>"
             )
         );
@@ -77,20 +77,20 @@ abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
 
     /// @dev Override required by solidity to use ERC721Enumerable library
     function _beforeTokenTransfer(
-        address from,
-        address to,
-        uint256 tokenId
+        address from_,
+        address to_,
+        uint256 tokenId_
     ) internal override(ERC721, ERC721Enumerable) {
-        super._beforeTokenTransfer(from, to, tokenId);
+        super._beforeTokenTransfer(from_, to_, tokenId_);
     }
 
     /// @dev Override required by solidity to use ERC721Enumerable library
-    function supportsInterface(bytes4 interfaceId)
+    function supportsInterface(bytes4 interfaceId_)
         public
         view
         override(ERC721, ERC721Enumerable)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return super.supportsInterface(interfaceId_);
     }
 }

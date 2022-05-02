@@ -88,7 +88,7 @@ contract DSTestPlus is DSTest, Test {
     );
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
 
-    function assertERC20Eq(ERC20 erc1, ERC20 erc2) internal {
-        assertEq(address(erc1), address(erc2));
+    function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
+        assertEq(address(erc1_), address(erc2_));
     }
 }
