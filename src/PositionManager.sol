@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
+import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import {PositionNFT} from "./base/PositionNFT.sol";
-import {IPool} from "./ERC20Pool.sol";
+import { IPool } from "./ERC20Pool.sol";
 
-import {Multicall} from "./base/Multicall.sol";
-import {PermitERC20} from "./base/PermitERC20.sol";
+import { Multicall }    from "./base/Multicall.sol";
+import { PermitERC20 }  from "./base/PermitERC20.sol";
+import { PositionNFT }  from "./base/PositionNFT.sol";
+
+import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
 interface IPositionManager {
     struct MintParams {

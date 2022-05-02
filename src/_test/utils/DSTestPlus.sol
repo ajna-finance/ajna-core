@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.11;
 
-import {DSTest} from "@ds-test/test.sol";
-import {ERC20} from "@solmate/tokens/ERC20.sol";
-
-import {Test} from "@std/Test.sol";
-import {Vm} from "@std/Vm.sol";
+import { DSTest }   from "@ds-test/test.sol";
+import { ERC20 }    from "@solmate/tokens/ERC20.sol";
+import { Test }     from "@std/Test.sol";
+import { Vm }   from "@std/Vm.sol";
 
 contract DSTestPlus is DSTest, Test {
     // prices

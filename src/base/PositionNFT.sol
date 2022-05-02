@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import {ERC721Enumerable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
-import {Base64} from "@base64-sol/base64.sol";
-
-import {IPositionManager} from "../PositionManager.sol";
-import {PermitERC721} from "./PermitERC721.sol";
-
+import { ERC721 }           from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 // TODO: determine if tokens should be burnable
-import {ERC721Burnable} from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+import { ERC721Burnable }   from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+
+import { Strings }  from "@openzeppelin/contracts/utils/Strings.sol";
+import { Base64 }   from "@base64-sol/base64.sol";
+
+import { IPositionManager}  from "../PositionManager.sol";
+import { PermitERC721 }     from "./PermitERC721.sol";
 
 abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
     constructor(

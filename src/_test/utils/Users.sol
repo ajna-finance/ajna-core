@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20Pool} from "../../ERC20Pool.sol";
+import { ERC20Pool }    from "../../ERC20Pool.sol";
+
+import { IERC20 }       from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract UserWithCollateral {
     function approveAndDepositTokenAsCollateral(

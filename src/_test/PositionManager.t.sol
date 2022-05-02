@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
+import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken }     from "./utils/Users.sol";
 
-import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
-import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
+import { Maths } from "../libraries/Maths.sol";
 
-import {ERC20Pool} from "../ERC20Pool.sol";
-import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
-import {PositionManager, IPositionManager} from "../PositionManager.sol";
-import {Maths} from "../libraries/Maths.sol";
+import { ERC20Pool }                            from "../ERC20Pool.sol";
+import { ERC20PoolFactory}                      from "../ERC20PoolFactory.sol";
+import { PositionManager, IPositionManager }    from "../PositionManager.sol";
+
 
 contract PositionManagerTest is DSTestPlus {
     PositionManager     internal _positionManager;

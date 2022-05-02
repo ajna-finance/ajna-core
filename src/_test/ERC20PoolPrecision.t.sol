@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
-import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
-import {CollateralToken, CollateralTokenWith6Decimals, QuoteToken, QuoteTokenWith6Decimals} from "./utils/Tokens.sol";
+import { CollateralToken, CollateralTokenWith6Decimals }    from "./utils/Tokens.sol";
+import { DSTestPlus }                                       from "./utils/DSTestPlus.sol";
+import { QuoteToken, QuoteTokenWith6Decimals }              from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken }           from "./utils/Users.sol";
 
-import {ERC20Pool} from "../ERC20Pool.sol";
-import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
 contract ERC20PoolPrecisionTest is DSTestPlus {
     uint256             internal constant BUCKET_PRICE = 2000.221618840727700609 * 1e18;

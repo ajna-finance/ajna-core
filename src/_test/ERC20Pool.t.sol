@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import {ERC20, IERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
-import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
-import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
+import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
+import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
 
-import {ERC20Pool} from "../ERC20Pool.sol";
-import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import { ERC20Pool }          from "../ERC20Pool.sol";
+import { ERC20PoolFactory }   from "../ERC20PoolFactory.sol";
 
 contract ERC20PoolTest is DSTestPlus {
     ERC20Pool          internal _pool;

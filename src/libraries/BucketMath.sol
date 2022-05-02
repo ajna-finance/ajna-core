@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.11;
 
-import {PRBMathSD59x18} from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 // https://stackoverflow.com/questions/42738640/division-in-ethereum-solidity
 // https://medium.com/coinmonks/math-in-solidity-part-5-exponent-and-logarithm-9aef8515136e

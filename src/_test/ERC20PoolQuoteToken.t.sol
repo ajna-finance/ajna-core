@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
-import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
-import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
-import "../libraries/BucketMath.sol";
+import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
+import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
 
-import {ERC20Pool} from "../ERC20Pool.sol";
-import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
-import "../libraries/Maths.sol";
 import "../libraries/Buckets.sol";
+import "../libraries/BucketMath.sol";
+import "../libraries/Maths.sol";
 
 contract ERC20PoolQuoteTokenTest is DSTestPlus {
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
