@@ -798,17 +798,11 @@ contract ERC20Pool is IPool, Clone {
         )
     {
         BorrowerInfo memory borrower = borrowers[_borrower];
-        uint256 borrowerDebt = borrower.debt;
         uint256 borrowerPendingDebt = borrower.debt;
         uint256 collateralEncumbered;
         uint256 collateralization = Maths.ONE_RAY;
 
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
-            borrowerDebt += getPendingInterest(
-                borrower.debt,
-                inflatorSnapshot,
-                borrower.inflatorSnapshot
-            );
             borrowerPendingDebt += getPendingInterest(
                 borrower.debt,
                 getPendingInflator(),
@@ -819,7 +813,7 @@ contract ERC20Pool is IPool, Clone {
         }
 
         return (
-            borrowerDebt,
+            borrower.debt,
             borrowerPendingDebt,
             borrower.collateralDeposited,
             collateralEncumbered,

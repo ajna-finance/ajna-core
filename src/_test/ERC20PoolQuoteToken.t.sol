@@ -83,14 +83,13 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             uint256 debt,
             uint256 snapshot,
             uint256 lpOutstanding,
-
         ) = pool.bucketAt(4_000.927678580567537368 * 1e18);
         assertEq(price, 4_000.927678580567537368 * 1e18);
         assertEq(upPrice, 4_000.927678580567537368 * 1e18);
         assertEq(downPrice, 0);
         assertEq(deposit, 10_000 * 1e45);
         assertEq(debt, 0);
-        assertEq(snapshot, 1 * 1e18);
+        assertEq(snapshot, Maths.ONE_RAY);
         assertEq(lpOutstanding, 10_000 * 1e27);
         // check lender's LP amount can be redeemed for correct amount of quote token
         assertEq(pool.lpBalance(address(lender), 4_000.927678580567537368 * 1e18), 10_000 * 1e27);
@@ -121,7 +120,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice, 0);
         assertEq(deposit, 20_000 * 1e45);
         assertEq(debt, 0);
-        assertEq(snapshot, 1 * 1e18);
+        assertEq(snapshot, Maths.ONE_RAY);
         assertEq(lpOutstanding, 20_000 * 1e27);
         assertEq(pool.lpBalance(address(lender), 2000.221618840727700609 * 1e18), 20_000 * 1e27);
         // check hpb down price pointer updated
@@ -149,7 +148,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice, 2_000.221618840727700609 * 1e18);
         assertEq(deposit, 30_000 * 1e45);
         assertEq(debt, 0);
-        assertEq(snapshot, 1 * 1e18);
+        assertEq(snapshot, Maths.ONE_RAY);
         assertEq(lpOutstanding, 30_000 * 1e27);
         assertEq(pool.lpBalance(address(lender), 3010.892022197881557845 * 1e18), 30_000 * 1e27);
         // check hdp down price pointer updated
@@ -183,7 +182,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice, 4_000.927678580567537368 * 1e18);
         assertEq(deposit, 40_000 * 1e45);
         assertEq(debt, 0);
-        assertEq(snapshot, 1 * 1e18);
+        assertEq(snapshot, Maths.ONE_RAY);
         assertEq(lpOutstanding, 40_000 * 1e27);
         assertEq(pool.lpBalance(address(lender), 5_007.644384905151472283 * 1e18), 40_000 * 1e27);
     }
@@ -215,6 +214,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(pool.hpb(), p4000);
         assertEq(pool.lup(), p2000);
 
+        uint256 collateralizationBeforeAdd = pool.getPoolCollateralization();
+        uint256 targetUtilizationBeforeAdd = pool.getPoolTargetUtilization();
+        uint256 actualUtilizationBeforeAdd = pool.getPoolActualUtilization();
+
         // Lender deposits more into the middle bucket, causing reallocation
         lender.addQuoteToken(pool, address(lender), 2_000 * 1e18, p3000);
         (, , , deposit, debt, , , ) = pool.bucketAt(p4000);
@@ -228,8 +231,14 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(debt, 0);
         assertEq(pool.hpb(), p4000);
         assertEq(pool.lup(), p3000);
+        assertGt(pool.getPoolCollateralization(), collateralizationBeforeAdd);
+        assertLt(pool.getPoolTargetUtilization(), targetUtilizationBeforeAdd);
+        assertLt(pool.getPoolActualUtilization(), actualUtilizationBeforeAdd);
 
         // Lender deposits in the top bucket, causing another reallocation
+        collateralizationBeforeAdd = pool.getPoolCollateralization();
+        targetUtilizationBeforeAdd = pool.getPoolTargetUtilization();
+        actualUtilizationBeforeAdd = pool.getPoolActualUtilization();
         lender.addQuoteToken(pool, address(lender), 3_000 * 1e18, p4000);
         (, , , deposit, debt, , , ) = pool.bucketAt(p4000);
         assertEq(deposit, 1600 * 1e45);
@@ -242,6 +251,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(debt, 0);
         assertEq(pool.hpb(), p4000);
         assertEq(pool.lup(), p4000);
+        assertGt(pool.getPoolCollateralization(), collateralizationBeforeAdd);
+        assertLt(pool.getPoolTargetUtilization(), targetUtilizationBeforeAdd);
+        assertLt(pool.getPoolActualUtilization(), actualUtilizationBeforeAdd);
     }
 
     // @notice: 1 lender and 1 borrower test adding quote token,
