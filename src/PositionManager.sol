@@ -4,79 +4,14 @@ pragma solidity 0.8.11;
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {console} from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
-import {PositionNFT} from "./base/PositionNFT.sol";
-import {IPool} from "./ERC20Pool.sol";
-import {Maths} from "./libraries/Maths.sol";
-
+import {IPositionManager} from "./interfaces/IPositionManager.sol";
+import {IPool} from "./interfaces/IPool.sol";
 import {Multicall} from "./base/Multicall.sol";
 import {PermitERC20} from "./base/PermitERC20.sol";
-
-interface IPositionManager {
-    struct MintParams {
-        address recipient;
-        address pool;
-    }
-
-    struct MemorializePositionsParams {
-        uint256 tokenId;
-        address owner;
-        address pool;
-        uint256[] prices; // the array of price buckets with LP tokens to be tracked by a NFT
-    }
-
-    struct BurnParams {
-        uint256 tokenId;
-        address recipient;
-        uint256 price;
-    }
-
-    struct IncreaseLiquidityParams {
-        uint256 tokenId;
-        address recipient;
-        address pool;
-        uint256 amount;
-        uint256 price;
-    }
-
-    struct DecreaseLiquidityParams {
-        uint256 tokenId;
-        address recipient;
-        address pool;
-        uint256 price;
-        uint256 lpTokens;
-    }
-
-    struct ConstructTokenURIParams {
-        uint256 tokenId;
-        address pool;
-        uint256[] prices;
-    }
-
-    function mint(MintParams calldata params) external payable returns (uint256 tokenId);
-
-    function memorializePositions(MemorializePositionsParams calldata params) external;
-
-    function burn(BurnParams calldata params) external payable;
-
-    function increaseLiquidity(IncreaseLiquidityParams calldata params) external payable;
-
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params) external payable;
-}
+import {PositionNFT} from "./base/PositionNFT.sol";
+import {Maths} from "./libraries/Maths.sol";
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20 {
-    event Mint(address lender, address pool, uint256 tokenId);
-    event MemorializePosition(address lender, uint256 tokenId);
-    event Burn(address lender, uint256 price);
-    event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
-    event DecreaseLiquidity(address lender, uint256 collateral, uint256 quote, uint256 price);
-
-    /// @dev Caller is not approved to interact with the token
-    error NotApproved();
-    /// @dev increaseLiquidity() call failed
-    error IncreaseLiquidityFailed();
-    /// @dev Unable to burn as liquidity still present at price
-    error LiquidityNotRemoved();
-
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
     /// @dev Mapping of tokenIds to Position struct

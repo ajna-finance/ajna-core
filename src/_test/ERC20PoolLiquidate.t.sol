@@ -9,6 +9,7 @@ import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
 import {Maths} from "../libraries/Maths.sol";
+import {IPool} from "../interfaces/IPool.sol";
 
 contract ERC20PoolLiquidateTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -55,7 +56,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceLow);
 
         // should revert when no debt
-        vm.expectRevert(ERC20Pool.NoDebtToLiquidate.selector);
+        vm.expectRevert(IPool.NoDebtToLiquidate.selector);
         lender.liquidate(pool, address(borrower));
 
         // borrowers deposit collateral
@@ -85,7 +86,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // should revert when borrower collateralized
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.BorrowerIsCollateralized.selector,
+                IPool.BorrowerIsCollateralized.selector,
                 20.066473628656401978000000001 * 1e27
             )
         );
@@ -236,7 +237,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerDebt, 12_000 * 1e45);
         assertEq(borrowerPendingDebt, 12_000 * 1e45);
         assertEq(collateralDeposited, 2 * 1e27);
-        assertEq(collateralEncumbered, 119.602479459700546041001090552 * 1e27);
+        assertEq(collateralEncumbered, 119.602479459700546041001090553 * 1e27);
         assertEq(collateralization, 0.016722061357213668315000000 * 1e27);
         assertEq(borrowerInflator, 1 * 1e27);
 
@@ -338,7 +339,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerDebt, 12_000 * 1e45);
         assertEq(borrowerPendingDebt, 14_061.7115323370164519872904080 * 1e45);
         assertEq(collateralDeposited, 2 * 1e27);
-        assertEq(collateralEncumbered, 140.151297059547691733986086344 * 1e27);
+        assertEq(collateralEncumbered, 140.151297059547691733986086345 * 1e27);
         assertEq(collateralization, 0.014270292476495861630562031 * 1e27);
         assertEq(borrowerInflator, 1 * 1e27);
 

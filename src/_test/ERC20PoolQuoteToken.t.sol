@@ -11,6 +11,7 @@ import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
 import "../libraries/Maths.sol";
 import "../libraries/Buckets.sol";
+import {IPool} from "../interfaces/IPool.sol";
 
 contract ERC20PoolQuoteTokenTest is DSTestPlus {
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
@@ -57,7 +58,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
     // @notice:     attempts to addQuoteToken at invalid price
     function testDepositQuoteToken() public {
         // should revert when depositing at invalid price
-        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
+        vm.expectRevert(IPool.InvalidPrice.selector);
         lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 10_049.48314 * 1e18);
 
         assertEq(pool.hpb(), 0);
@@ -779,7 +780,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // removal should revert if pool remains undercollateralized
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.PoolUndercollateralized.selector,
+                IPool.PoolUndercollateralized.selector,
                 0.127923769382684562609750000 * 1e27
             )
         );

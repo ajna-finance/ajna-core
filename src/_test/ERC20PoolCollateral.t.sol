@@ -9,6 +9,7 @@ import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 import {Buckets} from "../libraries/Buckets.sol";
 import {Maths} from "../libraries/Maths.sol";
+import {IPool} from "../interfaces/IPool.sol";
 
 contract ERC20PoolCollateralTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -57,7 +58,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
     function testAddRemoveCollateral() public {
         // should revert if trying to remove collateral when no available
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.AmountExceedsAvailableCollateral.selector, 0)
+            abi.encodeWithSelector(IPool.AmountExceedsAvailableCollateral.selector, 0)
         );
         borrower.removeCollateral(pool, 10 * 1e18);
         // lender deposits 20_000 DAI in 5 buckets each
@@ -130,7 +131,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         // should revert if trying to remove all collateral deposited
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.AmountExceedsAvailableCollateral.selector,
+                IPool.AmountExceedsAvailableCollateral.selector,
                 deposited - borrowerEncumbered
             )
         );
@@ -221,11 +222,11 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         uint256 priceMed = 3_010.892022197881557845 * 1e18;
         uint256 priceLow = 1_004.989662429170775094 * 1e18;
         // should fail if invalid price
-        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
+        vm.expectRevert(IPool.InvalidPrice.selector);
         lender.claimCollateral(pool, address(lender), 10_000 * 1e18, 4_000 * 1e18);
 
         // should revert if no lp tokens in bucket
-        vm.expectRevert(ERC20Pool.NoClaimToBucket.selector);
+        vm.expectRevert(IPool.NoClaimToBucket.selector);
         lender.claimCollateral(pool, address(lender), 1 * 1e18, priceHigh);
 
         // lender deposit DAI in 3 buckets

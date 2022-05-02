@@ -7,6 +7,7 @@ import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
 
 import {ERC20Pool} from "../ERC20Pool.sol";
 import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import {IPool} from "../interfaces/IPool.sol";
 
 contract ERC20PoolRepayTest is DSTestPlus {
     ERC20Pool internal pool;
@@ -165,7 +166,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(pool.totalCollateral(), 200 * 1e27);
 
         // repay should revert if no debt
-        vm.expectRevert(ERC20Pool.NoDebtToRepay.selector);
+        vm.expectRevert(IPool.NoDebtToRepay.selector);
         borrower.repay(pool, 10_000 * 1e18);
 
         // borrower takes loan of 25_000 DAI from 3 buckets
@@ -208,7 +209,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(borrowerDebt, 2_000 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
         // repay should revert if amount not available
-        vm.expectRevert(ERC20Pool.InsufficientBalanceForRepay.selector);
+        vm.expectRevert(IPool.InsufficientBalanceForRepay.selector);
         borrower.repay(pool, 50_000 * 1e18);
 
         // repay debt partially 10_000 DAI
