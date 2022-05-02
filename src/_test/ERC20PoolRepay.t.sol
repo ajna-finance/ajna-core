@@ -76,7 +76,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
             uint256 borrowerPendingDebt,
             uint256 depositedCollateral,
             , , , ) = pool.getBorrowerInfo(address(borrower));
-        assertEq(borrowerDebt, 25_000 * 1e45);  // FIXME: shows 25_000.002219685535643948678400000000000000000000000
+        assertEq(borrowerDebt, 25_000 * 1e45);
         assertEq(borrowerPendingDebt, 25_000.0022196855356439486784 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
 
