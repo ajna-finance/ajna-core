@@ -60,32 +60,4 @@ abstract contract Interest {
                 )
             );
     }
-
-    // TODO: fix this
-    /// @notice Called by lenders to update interest rate of the pool when actual > target utilization
-    // function updateInterestRate() external {
-    //     // RAY
-    //     uint256 actualUtilization = IPool(address(this)).getPoolActualUtilization();
-    //     if (
-    //         actualUtilization != 0 &&
-    //         previousRateUpdate < block.timestamp &&
-    //         IPool(address(this)).getPoolCollateralization() > Maths.ONE_RAY
-    //     ) {
-    //         uint256 oldRate = previousRate;
-    //         IPool(address(this)).accumulatePoolInterest();
-
-    //         previousRate = Maths.wmul(
-    //             previousRate,
-    //             (
-    //                 Maths.sub(
-    //                     Maths.add(Maths.rayToWad(actualUtilization), Maths.ONE_WAD),
-    //                     Maths.rayToWad(IPool(address(this)).getPoolTargetUtilization())
-    //                 )
-    //             )
-    //         );
-    //         previousRateUpdate = block.timestamp;
-    //         emit UpdateInterestRate(oldRate, previousRate);
-    //     }
-    // }
-
 }
