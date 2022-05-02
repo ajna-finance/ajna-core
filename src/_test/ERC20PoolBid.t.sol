@@ -11,6 +11,8 @@ import { ERC20PoolFactory}  from "../ERC20PoolFactory.sol";
 import { Buckets }      from "../libraries/Buckets.sol";
 import { BucketMath }   from "../libraries/BucketMath.sol";
 
+import { IPool } from "../interfaces/IPool.sol";
+
 contract ERC20PoolBidTest is DSTestPlus {
     ERC20Pool          internal _pool;
     CollateralToken    internal _collateral;
@@ -55,7 +57,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         _bidder.purchaseBid(_pool, _p1, 1_000);
 
         // should revert if bidder doesn't have enough collateral
-        vm.expectRevert(ERC20Pool.InsufficientCollateralBalance.selector);
+        vm.expectRevert(IPool.InsufficientCollateralBalance.selector);
         _bidder.purchaseBid(_pool, 2_000_000 * 1e18, _p4000);
         // should revert if trying to purchase more than on bucket
         (, , , uint256 amount, uint256 bucketDebt, , , ) = _pool.bucketAt(_p4000);
@@ -243,7 +245,7 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         // should revert when leave pool undercollateralized
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.PoolUndercollateralized.selector, 0.05 * 1e27)
+            abi.encodeWithSelector(IPool.PoolUndercollateralized.selector, 0.05 * 1e27)
         );
         _bidder.purchaseBid(_pool, 1_000 * 1e18, _p4000);
     }

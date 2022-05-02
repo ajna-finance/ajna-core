@@ -3,11 +3,13 @@ pragma solidity 0.8.11;
 
 import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
 import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken }     from "./utils/Users.sol";
+import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
 
-import { ERC20Pool }                            from "../ERC20Pool.sol";
-import { ERC20PoolFactory }                     from "../ERC20PoolFactory.sol";
-import { PositionManager, IPositionManager }    from "../PositionManager.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+import { PositionManager }  from "../PositionManager.sol";
+
+import { IPositionManager } from "../interfaces/IPositionManager.sol";
 
 contract MulticallTest is DSTestPlus {
     PositionManager     internal _positionManager;
@@ -154,7 +156,7 @@ contract MulticallTest is DSTestPlus {
 
         // attempt to modify the NFT from an unapproved EOA
         vm.prank(externalCaller);
-        vm.expectRevert(PositionManager.NotApproved.selector);
+        vm.expectRevert(IPositionManager.NotApproved.selector);
         _positionManager.multicall(callsToExecute);
 
         vm.expectEmit(true, true, true, true);
@@ -162,7 +164,7 @@ contract MulticallTest is DSTestPlus {
 
         // attempt to increase liquidity and then burn the NFT without decreasing liquidity
         vm.prank(recipient);
-        vm.expectRevert(PositionManager.LiquidityNotRemoved.selector);
+        vm.expectRevert(IPositionManager.LiquidityNotRemoved.selector);
         _positionManager.multicall(callsToExecute);
 
         // TODO: add case for custom error string -> figure out how to induce such a revert

@@ -5,8 +5,10 @@ import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
 import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
 import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
 
-import { ERC20Pool }          from "../ERC20Pool.sol";
-import { ERC20PoolFactory }   from "../ERC20PoolFactory.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+
+import { IPool } from "../interfaces/IPool.sol";
 
 contract ERC20PoolTest is DSTestPlus {
     ERC20Pool          internal _pool;
@@ -82,7 +84,7 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(_pool.lastInflatorSnapshotUpdate(),    8200);
 
         // Attempt to call initialize() to reset global variables and check for revert
-        vm.expectRevert(ERC20Pool.AlreadyInitialized.selector);
+        vm.expectRevert(IPool.AlreadyInitialized.selector);
         _pool.initialize();
 
         // check that global variables weren't reset

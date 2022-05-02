@@ -507,7 +507,7 @@ library Buckets {
     ) public returns (uint256) {
         Bucket storage bucket = buckets_[price_];
         bucket.price = price_;
-        bucket.inflatorSnapshot = Maths.ONE_WAD;
+        bucket.inflatorSnapshot = Maths.ONE_RAY;
 
         if (price_ > hpb_) {
             bucket.down = hpb_;

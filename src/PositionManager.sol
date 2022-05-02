@@ -3,80 +3,16 @@ pragma solidity 0.8.11;
 
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import { IPool } from "./ERC20Pool.sol";
+import { IPool }            from "./interfaces/IPool.sol";
+import { IPositionManager } from "./interfaces/IPositionManager.sol";
 
 import { Multicall }    from "./base/Multicall.sol";
 import { PermitERC20 }  from "./base/PermitERC20.sol";
 import { PositionNFT }  from "./base/PositionNFT.sol";
 
-import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
-
-interface IPositionManager {
-    struct MintParams {
-        address recipient;
-        address pool;
-    }
-
-    struct MemorializePositionsParams {
-        uint256 tokenId;
-        address owner;
-        address pool;
-        uint256[] prices; // the array of price buckets with LP tokens to be tracked by a NFT
-    }
-
-    struct BurnParams {
-        uint256 tokenId;
-        address recipient;
-        uint256 price;
-    }
-
-    struct IncreaseLiquidityParams {
-        uint256 tokenId;
-        address recipient;
-        address pool;
-        uint256 amount;
-        uint256 price;
-    }
-
-    struct DecreaseLiquidityParams {
-        uint256 tokenId;
-        address recipient;
-        address pool;
-        uint256 price;
-        uint256 lpTokens;
-    }
-
-    struct ConstructTokenURIParams {
-        uint256 tokenId;
-        address pool;
-        uint256[] prices;
-    }
-
-    function mint(MintParams calldata params) external payable returns (uint256 tokenId);
-
-    function memorializePositions(MemorializePositionsParams calldata params) external;
-
-    function burn(BurnParams calldata params) external payable;
-
-    function increaseLiquidity(IncreaseLiquidityParams calldata params) external payable;
-
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params) external payable;
-}
+import { Maths } from "./libraries/Maths.sol";
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20 {
-    event Mint(address lender, address pool, uint256 tokenId);
-    event MemorializePosition(address lender, uint256 tokenId);
-    event Burn(address lender, uint256 price);
-    event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
-    event DecreaseLiquidity(address lender, uint256 collateral, uint256 quote, uint256 price);
-
-    /// @dev Caller is not approved to interact with the token
-    error NotApproved();
-    /// @dev increaseLiquidity() call failed
-    error IncreaseLiquidityFailed();
-    /// @dev Unable to burn as liquidity still present at price
-    error LiquidityNotRemoved();
-
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
     /// @dev Mapping of tokenIds to Position struct
@@ -120,16 +56,16 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     /// @notice Called by lenders to add quote tokens and receive a representative NFT
     /// @param params_ Calldata struct supplying inputs required to add quote tokens, and receive the NFT
-    /// @return tokenId The tokenId of the newly minted NFT
-    function mint(MintParams calldata params_) external payable returns (uint256 tokenId) {
-        _safeMint(params_.recipient, (tokenId = _nextId++));
+    /// @return tokenId_ The tokenId of the newly minted NFT
+    function mint(MintParams calldata params_) external payable returns (uint256 tokenId_) {
+        _safeMint(params_.recipient, (tokenId_ = _nextId++));
 
         // create a new position associated with the newly minted tokenId
-        Position storage position = positions[tokenId];
+        Position storage position = positions[tokenId_];
         position.pool = params_.pool;
 
-        emit Mint(params_.recipient, params_.pool, tokenId);
-        return tokenId;
+        emit Mint(params_.recipient, params_.pool, tokenId_);
+        return tokenId_;
     }
 
     /// @notice Called to memorialize existing positions with a given NFT
@@ -212,14 +148,14 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             params_.price
         );
 
-        pool.removeQuoteToken(params_.recipient, quoteTokenToRemove / 10**27, params_.price);
+        pool.removeQuoteToken(params_.recipient, Maths.radToWad(quoteTokenToRemove), params_.price);
 
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
             // claim any unencumbered collateral accrued to the price bucket
             pool.claimCollateral(
                 params_.recipient,
-                collateralToRemove / 10**9,
+                Maths.rayToWad(collateralToRemove),
                 params_.price
             );
         }

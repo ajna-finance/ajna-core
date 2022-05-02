@@ -8,9 +8,9 @@ import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
+import { IPool } from "../interfaces/IPool.sol";
+
 import "../libraries/Buckets.sol";
-import "../libraries/BucketMath.sol";
-import "../libraries/Maths.sol";
 
 contract ERC20PoolQuoteTokenTest is DSTestPlus {
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
@@ -52,7 +52,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
     // @notice:     attempts to addQuoteToken at invalid price
     function testDepositQuoteToken() external {
         // should revert when depositing at invalid price
-        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
+        vm.expectRevert(IPool.InvalidPrice.selector);
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, 10_049.48314 * 1e18);
 
         assertEq(_pool.hpb(), 0);
@@ -85,10 +85,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice,     0);
         assertEq(deposit,       10_000 * 1e45);
         assertEq(debt,          0);
-        assertEq(snapshot,      1 * 1e18);
+        assertEq(snapshot,      1 * 1e27);
         assertEq(lpOutstanding, 10_000 * 1e27);
         // check lender's LP amount can be redeemed for correct amount of quote token
-        assertEq(_pool.lpBalance(address(_lender), 4_000.927678580567537368 * 1e18), 10_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender), _p4000), 10_000 * 1e27);
         (uint256 collateralTokens, uint256 quoteTokens) = _pool.getLPTokenExchangeValue(
             10_000 * 1e27,
             _p4000
@@ -114,7 +114,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice,     0);
         assertEq(deposit,       20_000 * 1e45);
         assertEq(debt,          0);
-        assertEq(snapshot,      1 * 1e18);
+        assertEq(snapshot,      1 * 1e27);
         assertEq(lpOutstanding, 20_000 * 1e27);
 
         assertEq(_pool.lpBalance(address(_lender), _p2000), 20_000 * 1e27);
@@ -141,7 +141,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice,     _p2000);
         assertEq(deposit,       30_000 * 1e45);
         assertEq(debt,          0);
-        assertEq(snapshot,      1 * 1e18);
+        assertEq(snapshot,      1 * 1e27);
         assertEq(lpOutstanding, 30_000 * 1e27);
 
         assertEq(_pool.lpBalance(address(_lender), _p3010), 30_000 * 1e27);
@@ -175,7 +175,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(downPrice,     _p4000);
         assertEq(deposit,       40_000 * 1e45);
         assertEq(debt,          0);
-        assertEq(snapshot,      1 * 1e18);
+        assertEq(snapshot,      1 * 1e27);
         assertEq(lpOutstanding, 40_000 * 1e27);
 
         assertEq(_pool.lpBalance(address(_lender), _p5007), 40_000 * 1e27);
@@ -205,6 +205,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p2000);
 
+        uint256 collateralizationBeforeAdd = _pool.getPoolCollateralization();
+        uint256 targetUtilizationBeforeAdd = _pool.getPoolTargetUtilization();
+        uint256 actualUtilizationBeforeAdd = _pool.getPoolActualUtilization();
+
         // Lender deposits more into the middle bucket, causing reallocation
         _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, _p3010);
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p4000);
@@ -220,7 +224,14 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p3010);
 
+        assertGt(_pool.getPoolCollateralization(), collateralizationBeforeAdd);
+        assertLt(_pool.getPoolTargetUtilization(), targetUtilizationBeforeAdd);
+        assertLt(_pool.getPoolActualUtilization(), actualUtilizationBeforeAdd);
+
         // Lender deposits in the top bucket, causing another reallocation
+        collateralizationBeforeAdd = _pool.getPoolCollateralization();
+        targetUtilizationBeforeAdd = _pool.getPoolTargetUtilization();
+        actualUtilizationBeforeAdd = _pool.getPoolActualUtilization();
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p4000);
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p4000);
         assertEq(deposit,   1600 * 1e45);
@@ -234,6 +245,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p4000);
+
+        assertGt(_pool.getPoolCollateralization(), collateralizationBeforeAdd);
+        assertLt(_pool.getPoolTargetUtilization(), targetUtilizationBeforeAdd);
+        assertLt(_pool.getPoolActualUtilization(), actualUtilizationBeforeAdd);
     }
 
     // @notice: 1 lender and 1 borrower test adding quote token,
@@ -760,7 +775,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // removal should revert if pool remains undercollateralized
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.PoolUndercollateralized.selector,
+                IPool.PoolUndercollateralized.selector,
                 0.127923769382684562609750000 * 1e27
             )
         );

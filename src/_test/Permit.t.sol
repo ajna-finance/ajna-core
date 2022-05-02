@@ -5,9 +5,11 @@ import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
 import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
 import { UserWithCollateral, UserWithQuoteToken }     from "./utils/Users.sol";
 
-import { ERC20Pool }                            from "../ERC20Pool.sol";
-import { ERC20PoolFactory }                     from "../ERC20PoolFactory.sol";
-import { PositionManager, IPositionManager }    from "../PositionManager.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+import { PositionManager }  from "../PositionManager.sol";
+
+import {IPositionManager} from "../interfaces/IPositionManager.sol";
 
 import { AjnaToken } from "../tokens/Ajna.sol";
 
@@ -141,7 +143,7 @@ contract PermitTest is DSTestPlus {
             );
 
         vm.prank(unapprovedSpender);
-        vm.expectRevert(PositionManager.NotApproved.selector);
+        vm.expectRevert(IPositionManager.NotApproved.selector);
         _positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
     }
 

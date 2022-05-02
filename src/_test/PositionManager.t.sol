@@ -3,14 +3,15 @@ pragma solidity 0.8.11;
 
 import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
 import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken }     from "./utils/Users.sol";
+import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
-import { ERC20Pool }                            from "../ERC20Pool.sol";
-import { ERC20PoolFactory}                      from "../ERC20PoolFactory.sol";
-import { PositionManager, IPositionManager }    from "../PositionManager.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory}  from "../ERC20PoolFactory.sol";
+import { PositionManager }  from "../PositionManager.sol";
 
+import { IPositionManager } from "../interfaces/IPositionManager.sol";
 
 contract PositionManagerTest is DSTestPlus {
     PositionManager     internal _positionManager;
@@ -264,7 +265,7 @@ contract PositionManagerTest is DSTestPlus {
 
         // should revert if called by a non-recipient address
         vm.prank(externalCaller);
-        vm.expectRevert(PositionManager.NotApproved.selector);
+        vm.expectRevert(IPositionManager.NotApproved.selector);
 
         _positionManager.increaseLiquidity(increaseLiquidityParams);
     }
@@ -401,7 +402,7 @@ contract PositionManagerTest is DSTestPlus {
                 testBucketPrice
             );
 
-        vm.expectRevert(PositionManager.NotApproved.selector);
+        vm.expectRevert(IPositionManager.NotApproved.selector);
         _positionManager.increaseLiquidity(increaseLiquidityParams);
 
         // check new owner can decreaseLiquidity
@@ -435,7 +436,7 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // should revert if liquidity not removed
-        vm.expectRevert(PositionManager.LiquidityNotRemoved.selector);
+        vm.expectRevert(IPositionManager.LiquidityNotRemoved.selector);
         vm.prank(testAddress);
         _positionManager.burn(burnParams);
 

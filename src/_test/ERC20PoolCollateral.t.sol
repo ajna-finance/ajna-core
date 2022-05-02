@@ -11,6 +11,8 @@ import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 import { Buckets }  from "../libraries/Buckets.sol";
 import { Maths }    from "../libraries/Maths.sol";
 
+import { IPool } from "../interfaces/IPool.sol";
+
 contract ERC20PoolCollateralTest is DSTestPlus {
     ERC20Pool           internal _pool;
     CollateralToken     internal _collateral;
@@ -52,7 +54,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
     function testAddRemoveCollateral() external {
         // should revert if trying to remove collateral when no available
         vm.expectRevert(
-            abi.encodeWithSelector(ERC20Pool.AmountExceedsAvailableCollateral.selector, 0)
+            abi.encodeWithSelector(IPool.AmountExceedsAvailableCollateral.selector, 0)
         );
         _borrower.removeCollateral(_pool, 10 * 1e18);
         // lender deposits 20_000 DAI in 5 buckets each
@@ -70,20 +72,20 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_borrower)), 100 * 1e18);
         assertEq(_collateral.balanceOf(address(_pool)),     0);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_borrower), address(_pool), 100 * 1e18);
+        emit Transfer(address(_borrower), address(_pool), 70 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateral(address(_borrower), 100 * 1e27);
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        emit AddCollateral(address(_borrower), 70 * 1e27);
+        _borrower.addCollateral(_pool, 70 * 1e18);
 
         // check balances
-        assertEq(_collateral.balanceOf(address(_borrower)), 0);
-        assertEq(_collateral.balanceOf(address(_pool)),     100 * 1e18);
-        assertEq(_pool.totalCollateral(),                   100 * 1e27);
+        assertEq(_collateral.balanceOf(address(_borrower)), 30 * 1e18);
+        assertEq(_collateral.balanceOf(address(_pool)),     70 * 1e18);
+        assertEq(_pool.totalCollateral(),                   70 * 1e27);
 
         // check borrower
         (, , uint256 deposited, uint256 borrowerEncumbered, uint256 borrowerCollateralization, ,)
             = _pool.getBorrowerInfo(address(_borrower));
-        assertEq(deposited,                 100 * 1e27);
+        assertEq(deposited,                 70 * 1e27);
         assertEq(borrowerEncumbered,        0);
         assertEq(borrowerCollateralization, Maths.ONE_RAY);
 
@@ -92,9 +94,9 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(
             address(_borrower)
         );
-        assertEq(deposited,                         100 * 1e27);
+        assertEq(deposited,                         70 * 1e27);
         assertEq(borrowerEncumbered,                3.993893827662208275880152017 * 1e27);
-        assertEq(borrowerCollateralization,         25.038221924525757361415000003 * 1e27);
+        assertEq(borrowerCollateralization,         17.526755347168030152990500002 * 1e27);
         assertEq(_pool.getPoolCollateralization(),  borrowerCollateralization);
 
         // check pool state after loan
@@ -104,10 +106,27 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(poolEncumbered,    borrowerEncumbered);
         assertGt(actualUtilization, targetUtilization);
 
+        // add some collateral
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_borrower), address(_pool), 30 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit AddCollateral(address(_borrower), 30 * 1e27);
+        _borrower.addCollateral(_pool, 30 * 1e18);
+        (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(
+            address(_borrower)
+        );
+        assertEq(deposited, 100 * 1e27);
+        assertEq(borrowerEncumbered, 3.993893827662208275880152017 * 1e27);
+        // ensure collateralization increased and target utilization decreased
+        assertLt(collateralization, _pool.getPoolCollateralization());
+        assertGt(targetUtilization, _pool.getPoolTargetUtilization());
+        collateralization = _pool.getPoolCollateralization();
+        targetUtilization = _pool.getPoolTargetUtilization();
+
         // should revert if trying to remove all collateral deposited
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.AmountExceedsAvailableCollateral.selector,
+                IPool.AmountExceedsAvailableCollateral.selector,
                 deposited - borrowerEncumbered
             )
         );
@@ -118,16 +137,50 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(
             address(_borrower)
         );
-        assertEq(deposited,                         80 * 1e27);
-        assertEq(borrowerEncumbered,                3.993893827662208275880152017 * 1e27);
-        assertEq(borrowerCollateralization,         20.030577539620605889132000002 * 1e27);
-        assertEq(_pool.getPoolCollateralization(),  borrowerCollateralization);
+        assertEq(deposited,                 80 * 1e27);
+        assertEq(borrowerEncumbered,        3.993893827662208275880152017 * 1e27);
+        assertEq(borrowerCollateralization, 20.030577539620605889132000002 * 1e27);
+
+        assertEq(_pool.getPoolCollateralization(), borrowerCollateralization);
+        // ensure collateralization decreased and target utilization increased
+        assertGt(collateralization, _pool.getPoolCollateralization());
+        assertLt(targetUtilization, _pool.getPoolTargetUtilization());
+
+        collateralization = _pool.getPoolCollateralization();
+        actualUtilization = _pool.getPoolActualUtilization();
+        targetUtilization = _pool.getPoolTargetUtilization();
+
+        // borrower repays part of the loan
+        _quote.mint(address(_borrower), 5_000 * 1e18);
+        _borrower.approveToken(_quote, address(_pool), 5_000 * 1e18);
+        _borrower.repay(_pool, 5_000 * 1e18);
+        (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(
+            address(_borrower)
+        );
+        assertEq(deposited,                 80 * 1e27);
+        assertEq(borrowerEncumbered,        2.995420370746656206910114013 * 1e27);
+        assertEq(borrowerCollateralization, 26.707436719494141185509333334 * 1e27);
+
+        assertEq(_pool.getPoolCollateralization(), borrowerCollateralization);
+        // collateralization should increase, decreasing target utilization
+        assertLt(collateralization, _pool.getPoolCollateralization());
+        assertGt(actualUtilization, _pool.getPoolActualUtilization());
+        assertGt(targetUtilization, _pool.getPoolTargetUtilization());
+
+        actualUtilization = _pool.getPoolActualUtilization();
+        targetUtilization = _pool.getPoolTargetUtilization();
 
         // borrower pays back entire loan and accumulated debt
-        _quote.mint(address(_borrower), 20_001 * 1e18);
-        _borrower.approveToken(_quote, address(_pool), 20_001 * 1e18);
-        _borrower.repay(_pool, 20_001 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
+        _quote.mint(address(_borrower), 15_001 * 1e18);
+        _borrower.approveToken(_quote, address(_pool), 15_001 * 1e18);
+        _borrower.repay(_pool, 15_001 * 1e18);
+        // since collateralization dropped to 100%, target utilization should increase
+        assertEq(_pool.getPoolCollateralization(),  Maths.ONE_RAY);
+        assertGt(actualUtilization,                 _pool.getPoolActualUtilization());
+        assertLt(targetUtilization,                 _pool.getPoolTargetUtilization());
+
+        actualUtilization = _pool.getPoolActualUtilization();
+        targetUtilization = _pool.getPoolTargetUtilization();
 
         // remove remaining collateral
         vm.expectEmit(true, true, false, true);
@@ -135,22 +188,27 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectEmit(true, false, false, true);
         emit RemoveCollateral(address(_borrower), 80 * 1e27);
         _borrower.removeCollateral(_pool, 80 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
+        assertEq(_pool.getPoolCollateralization(),  Maths.ONE_RAY);
+        assertEq(actualUtilization,                 _pool.getPoolActualUtilization());
+        assertEq(targetUtilization,                 _pool.getPoolTargetUtilization());
 
         // check borrower balances
-        (, , deposited, borrowerEncumbered, , , ) = _pool.getBorrowerInfo(address(_borrower));
-        assertEq(deposited,                                 0);
-        assertEq(borrowerEncumbered,                        0);
-        assertEq(_collateral.balanceOf(address(_borrower)), 100 * 1e18);
+        (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(
+            address(_borrower)
+        );
+        assertEq(deposited,                 0);
+        assertEq(borrowerEncumbered,        0);
+        assertEq(borrowerCollateralization, Maths.ONE_RAY);
 
+        assertEq(_collateral.balanceOf(address(_borrower)), 100 * 1e18);
         // check pool balances
-        poolEncumbered      = _pool.getEncumberedCollateral(_pool.totalDebt());
-        targetUtilization   = _pool.getPoolTargetUtilization();
-        actualUtilization   = _pool.getPoolActualUtilization();
-        assertEq(poolEncumbered, borrowerEncumbered);
-        assertEq(targetUtilization,                     Maths.ONE_RAY);
-        assertEq(actualUtilization,                     0);
-        assertEq(_pool.totalCollateral(),               0);
+        poolEncumbered = _pool.getEncumberedCollateral(_pool.totalDebt());
+        assertEq(poolEncumbered,                    borrowerEncumbered);
+        assertEq(_pool.getPoolCollateralization(),  borrowerCollateralization);
+        assertEq(_pool.getPoolTargetUtilization(),  Maths.ONE_RAY);
+        assertEq(_pool.getPoolActualUtilization(),  0);
+        assertEq(_pool.totalCollateral(),           0);
+
         assertEq(_collateral.balanceOf(address(_pool)), 0);
     }
 
@@ -166,11 +224,11 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         uint256 priceMed    = _p3010;
         uint256 priceLow    = _p1004;
         // should fail if invalid price
-        vm.expectRevert(ERC20Pool.InvalidPrice.selector);
+        vm.expectRevert(IPool.InvalidPrice.selector);
         _lender.claimCollateral(_pool, address(_lender), 10_000 * 1e18, 4_000 * 1e18);
 
         // should revert if no lp tokens in bucket
-        vm.expectRevert(ERC20Pool.NoClaimToBucket.selector);
+        vm.expectRevert(IPool.NoClaimToBucket.selector);
         _lender.claimCollateral(_pool, address(_lender), 1 * 1e18, priceHigh);
 
         // lender deposit DAI in 3 buckets

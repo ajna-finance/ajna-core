@@ -8,8 +8,9 @@ import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
-import { Buckets }  from "../libraries/Buckets.sol";
-import { Maths }    from "../libraries/Maths.sol";
+import { Maths } from "../libraries/Maths.sol";
+
+import { IPool } from "../interfaces/IPool.sol";
 
 contract ERC20PoolLiquidateTest is DSTestPlus {
     ERC20Pool           internal _pool;
@@ -51,7 +52,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLow);
 
         // should revert when no debt
-        vm.expectRevert(ERC20Pool.NoDebtToLiquidate.selector);
+        vm.expectRevert(IPool.NoDebtToLiquidate.selector);
         _lender.liquidate(_pool, address(_borrower));
 
         // borrowers deposit collateral
@@ -81,7 +82,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         // should revert when borrower collateralized
         vm.expectRevert(
             abi.encodeWithSelector(
-                ERC20Pool.BorrowerIsCollateralized.selector,
+                IPool.BorrowerIsCollateralized.selector,
                 20.066473628656401978000000001 * 1e27
             )
         );
@@ -331,7 +332,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             uint256 borrowerInflator,
 
         ) = _pool.getBorrowerInfo(address(_borrower));
-        assertEq(borrowerDebt,          14_061.7115323370164519872904080 * 1e45);
+        assertEq(borrowerDebt,          12_000 * 1e45);
         assertEq(borrowerPendingDebt,   14_061.7115323370164519872904080 * 1e45);
         assertEq(collateralDeposited,   2 * 1e27);
         assertEq(collateralEncumbered,  140.151297059547691733986086344 * 1e27);
