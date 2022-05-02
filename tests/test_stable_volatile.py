@@ -16,7 +16,8 @@ MAX_BUCKET = 1623  # 3293.70191, highest bucket for initial deposits, is exceede
 SECONDS_PER_YEAR = 3600 * 24 * 365
 MIN_UTILIZATION = 0.4
 MAX_UTILIZATION = 0.8
-GOAL_UTILIZATION = 0.6
+GOAL_UTILIZATION = 0.6      # borrowers should collateralize such that target utilization approaches this
+MIN_PARTICIPATION = 10000   # in quote token, the minimum amount to lend
 
 
 # set of buckets deposited into, indexed by lender index
@@ -53,7 +54,7 @@ def borrowers(ajna_protocol, pool_client, weth_dai_pool):
         borrower = ajna_protocol.add_borrower()
         weth_client.top_up(borrower, amount)
         weth_client.approve_max(weth_dai_pool, borrower)
-        dai_client.top_up(borrower, int(amount * 0.20))  # for repayment of interest
+        dai_client.top_up(borrower, 100_000 * 10**18)  # for repayment of interest
         dai_client.approve_max(weth_dai_pool, borrower)
         assert weth_client.get_contract().balanceOf(borrower) >= amount
         borrowers.append(borrower)
@@ -122,7 +123,7 @@ def draw_initial_debt(borrowers, pool_client, bucket_math, test_utils, target_ut
         pool_price = pool.lup()
         if pool_price == 0:
             pool_price = 3293.70191 * 10**18  # MAX_BUCKET
-        collateralization_ratio = min(1 / target_utilization, 2.5)  # cap at 250% collateralization
+        collateralization_ratio = min((1 / target_utilization) + 0.05, 2.5)  # cap at 250% collateralization
         collateral_to_deposit = borrow_amount / pool_price * collateralization_ratio / 10**9
         assert collateral_balance > collateral_to_deposit
         pool_client.deposit_collateral(collateral_to_deposit, borrower_index)
@@ -163,7 +164,9 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
                 try:
                     remove_quote_token(lenders[user_index], user_index, price, pool)
                 except VirtualMachineError as ex:
-                    print(f" ERROR removing liquidity at {price / 10**18:.1f}: {ex}")
+                    print(f" ERROR removing liquidity at {price / 10**18:.1f}, "
+                          f"collateralized at {pool.getPoolCollateralization()/10**27:.1%}: {ex}")
+                    print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hpb())))
                     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             else:
                 price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, gas_validator)
@@ -225,12 +228,12 @@ def draw_debt(borrower, borrower_index, pool, gas_validator, collateralization=1
     gas_validator.validate(tx)
 
 
-def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, liquidity_coefficient=1.0):
+def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, ):
     dai = Contract(pool.quoteToken())
     lup_index = bucket_math.priceToIndex(pool.lup())
     index_offset = ((lender_index % 6) - 2) * 2
     price = bucket_math.indexToPrice(lup_index + index_offset)
-    quantity = int(30_000 * ((lender_index % 4) + 1)) * liquidity_coefficient * 10**18
+    quantity = int(MIN_PARTICIPATION * ((lender_index % 4) + 1) ** 2) * 10**18
     if dai.balanceOf(lender) > quantity:
         print(f" lender {lender_index} adding {quantity / 10**18:.1f} liquidity at {price / 10**18:.1f}")
         try:
@@ -256,7 +259,7 @@ def remove_quote_token(lender, lender_index, price, pool):
         (_, claimable_quote) = pool.getLPTokenExchangeValue(lp_balance, price)
         claimable_quote = claimable_quote * 1.1 / 10**27  # include extra for unaccumulated interest
         print(f" lender {lender_index} removing {claimable_quote / 10**18:.1f} at {price / 10**18:.1f}")
-        pool.removeQuoteToken(lender, claimable_quote, price, {"from": lender})
+        tx = pool.removeQuoteToken(lender, claimable_quote, price, {"from": lender})
     else:
         print(f" lender {lender_index} has no claim to bucket {price / 10**18:.1f}")
 
