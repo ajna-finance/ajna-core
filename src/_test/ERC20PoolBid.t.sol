@@ -49,10 +49,10 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(), 9_000 * 1e45);
 
         // borrower takes a loan of 4000 DAI making bucket 4000 to be fully utilized
-        borrower.addCollateral(_pool, 100 * 1e18);
-        borrower.borrow(_pool, 4_000 * 1e18, 3_000 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 4_000 * 1e18, 3_000 * 1e18);
         assertEq(_pool.lup(), 3_010.892022197881557845 * 1e18);
-        assertEq_(pool.getPoolCollateralization(), 75.272300554947038946124999990 * 1e27);
+        assertEq(_pool.getPoolCollateralization(), 75.272300554947038946124999990 * 1e27);
 
         // should revert if invalid price
         vm.expectRevert(BucketMath.PriceOutsideBoundry.selector);
