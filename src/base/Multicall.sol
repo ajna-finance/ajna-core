@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.11;
 
 /// @notice Functionality to enable contracts to implement multicall method for method call aggregation into single transactions
 /// @dev Implementing multicall internally enables gas savings compared to making a call to externally deployed contracts
 abstract contract Multicall {
+
     /// @notice Make a series of contract calls in a single transaction
-    /// @param data Externally aggregated function calls serialized into a byte array
-    /// @return results Array of the results from each aggregated call
-    function multicall(bytes[] calldata data) public returns (bytes[] memory results) {
-        results = new bytes[](data.length);
-        for (uint256 i = 0; i < data.length; ) {
-            (bool success, bytes memory result) = address(this).delegatecall(data[i]);
+    /// @param data_ Externally aggregated function calls serialized into a byte array
+    /// @return results_ Array of the results from each aggregated call
+    function multicall(bytes[] calldata data_) public returns (bytes[] memory results_) {
+        results_ = new bytes[](data_.length);
+        for (uint256 i = 0; i < data_.length; ) {
+            (bool success, bytes memory result) = address(this).delegatecall(data_[i]);
 
             // Process any failing calls and revert the transaction accordingly
             if (!success) {
                 handleRevert(result);
             }
 
-            results[i] = result;
+            results_[i] = result;
 
             // increment call counter in gas efficient way
             unchecked {
@@ -31,9 +31,9 @@ abstract contract Multicall {
     /// @dev Supports Panic, Error, and Custom Errors
     /// @dev Retrieved from discussion here: https://ethereum.stackexchange.com/a/123588
     /// @dev Based upon Superfluid code: https://github.com/superfluid-finance/protocol-monorepo/blob/dev/packages/ethereum-contracts/contracts/libs/CallUtils.sol
-    /// @param _result The failing call result to process and bubble up revert from
-    function handleRevert(bytes memory _result) internal pure {
-        uint256 len = _result.length;
+    /// @param result_ The failing call result to process and bubble up revert from
+    function handleRevert(bytes memory result_) internal pure {
+        uint256 len = result_.length;
 
         if (len < 4) {
             revert("Multicall: transaction reverted silently");
@@ -41,7 +41,7 @@ abstract contract Multicall {
 
         bytes4 errorSelector;
         assembly {
-            errorSelector := mload(add(_result, 0x20))
+            errorSelector := mload(add(result_, 0x20))
         }
 
         // handle Panic(uint256) built in errors
@@ -51,7 +51,7 @@ abstract contract Multicall {
             string memory reason = "Multicall: target panicked: 0x__";
             uint256 errorCode;
             assembly {
-                errorCode := mload(add(_result, 0x24))
+                errorCode := mload(add(result_, 0x24))
                 let reasonWord := mload(add(reason, 0x20))
                 // [0..9] is converted to ['0'..'9']
                 // [0xa..0xf] is not correctly converted to ['a'..'f']
@@ -72,8 +72,9 @@ abstract contract Multicall {
             // handle custom errors
             // handle errors with strings
             assembly {
-                revert(add(_result, 32), len)
+                revert(add(result_, 32), len)
             }
         }
     }
+
 }

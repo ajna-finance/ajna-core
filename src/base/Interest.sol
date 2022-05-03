@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.11;
 
-import {Maths} from "../libraries/Maths.sol";
-import {IPool} from "../interfaces/IPool.sol";
+import { IPool } from "../interfaces/IPool.sol";
+
+import { Maths } from "../libraries/Maths.sol";
 
 /// @notice Interest related functionality
 abstract contract Interest {
@@ -14,17 +14,17 @@ abstract contract Interest {
     uint256 public lastInflatorSnapshotUpdate;
 
     /// @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
-    /// @param _borrower Pointer to the struct which is accumulating interest on their debt
+    /// @param borrower_ Pointer to the struct which is accumulating interest on their debt
     /// @dev Only adds debt if a borrower has already initiated a debt position
-    function accumulateBorrowerInterest(IPool.BorrowerInfo storage _borrower) internal {
-        if (_borrower.debt != 0 && _borrower.inflatorSnapshot != 0) {
-            _borrower.debt += getPendingInterest(
-                _borrower.debt,
+    function accumulateBorrowerInterest(IPool.BorrowerInfo storage borrower_) internal {
+        if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
+            borrower_.debt += getPendingInterest(
+                borrower_.debt,
                 inflatorSnapshot,
-                _borrower.inflatorSnapshot
+                borrower_.inflatorSnapshot
             );
         }
-        _borrower.inflatorSnapshot = inflatorSnapshot;
+        borrower_.inflatorSnapshot = inflatorSnapshot;
     }
 
     /// @notice Calculate the pending inflator based upon previous rate and last update
@@ -32,6 +32,7 @@ abstract contract Interest {
     function getPendingInflator() public view returns (uint256) {
         // calculate annualized interest rate
         uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
+
         // secondsSinceLastUpdate is unscaled
         uint256 secondsSinceLastUpdate = Maths.sub(block.timestamp, lastInflatorSnapshotUpdate);
 
@@ -43,21 +44,18 @@ abstract contract Interest {
     }
 
     /// @notice Calculate the amount of unaccrued interest for a specified amount of debt
-    /// @param _debt RAD - The total book debt
-    /// @param _pendingInflator RAY - The next debt inflator value
-    /// @param _currentInflator RAY - The current debt inflator value
+    /// @param debt_ RAD - The total book debt
+    /// @param pendingInflator_ RAY - The next debt inflator value
+    /// @param currentInflator_ RAY - The current debt inflator value
     /// @return RAD - The additional debt pending accumulation
-    function getPendingInterest(
-        uint256 _debt,
-        uint256 _pendingInflator,
-        uint256 _currentInflator
-    ) internal pure returns (uint256) {
+    function getPendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
         return
             Maths.rayToRad(
                 Maths.rmul(
-                    Maths.radToRay(_debt),
-                    Maths.sub(Maths.rmul(_pendingInflator, _currentInflator), Maths.ONE_RAY)
+                    Maths.radToRay(debt_),
+                    Maths.sub(Maths.rmul(pendingInflator_, currentInflator_), Maths.ONE_RAY)
                 )
             );
     }
+
 }

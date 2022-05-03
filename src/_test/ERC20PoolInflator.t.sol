@@ -1,79 +1,76 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
+import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
-import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
-import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
-import {ERC20Pool} from "../ERC20Pool.sol";
-import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract ERC20PoolInflatorTest is DSTestPlus {
-    ERC20Pool internal pool;
-    CollateralToken internal collateral;
-    QuoteToken internal quote;
 
-    UserWithCollateral internal borrower;
-    UserWithQuoteToken internal lender;
+    CollateralToken    internal _collateral;
+    ERC20Pool          internal _pool;
+    QuoteToken         internal _quote;
+    UserWithCollateral internal _borrower;
+    UserWithQuoteToken internal _lender;
 
-    function setUp() public {
-        collateral = new CollateralToken();
-        quote = new QuoteToken();
+    function setUp() external {
+        _collateral = new CollateralToken();
+        _quote      = new QuoteToken();
+        _pool       = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _borrower   = new UserWithCollateral();
+        _lender     = new UserWithQuoteToken();
 
-        ERC20PoolFactory factory = new ERC20PoolFactory();
-        pool = factory.deployPool(address(collateral), address(quote));
-
-        borrower = new UserWithCollateral();
-        collateral.mint(address(borrower), 100 * 1e18);
-        borrower.approveToken(collateral, address(pool), 100 * 1e18);
-
-        lender = new UserWithQuoteToken();
-        quote.mint(address(lender), 200_000 * 1e18);
-        lender.approveToken(quote, address(pool), 200_000 * 1e18);
+        _collateral.mint(address(_borrower), 100 * 1e18);
+        _quote.mint(address(_lender), 200_000 * 1e18);
+        _borrower.approveToken(_collateral, address(_pool), 100 * 1e18);
+        _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
     // @notice: with 1 lender and 1 borrower quote token is deposited
     // @notice: then borrower adds collateral, borrows and repays over time
     // @notice: to check inflator correctness
-    function testInflator() public {
-        uint256 inflatorSnapshot = pool.inflatorSnapshot();
-        uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
-        assertEq(inflatorSnapshot, 1 * 1e27);
+    function testInflator() external {
+        uint256 inflatorSnapshot = _pool.inflatorSnapshot();
+        uint256 lastInflatorSnapshotUpdate = _pool.lastInflatorSnapshotUpdate();
+        assertEq(inflatorSnapshot,           1 * 1e27);
         assertEq(lastInflatorSnapshotUpdate, block.timestamp);
 
         skip(8200);
-        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 4_000.927678580567537368 * 1e18);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
         );
 
         skip(8200);
-        borrower.addCollateral(pool, 10 * 1e18);
+        _borrower.addCollateral(_pool, 10 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
         );
 
         skip(8200);
-        borrower.borrow(pool, 10_000 * 1e18, 4000 * 1e18);
+        _borrower.borrow(_pool, 10_000 * 1e18, 4000 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
         );
 
         skip(8200);
-        borrower.approveToken(quote, address(pool), 1_000 * 1e18);
-        borrower.repay(pool, 1_000 * 1e18);
+        _borrower.approveToken(_quote, address(_pool), 1_000 * 1e18);
+        _borrower.repay(_pool, 1_000 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
         );
 
         skip(8200);
-        borrower.removeCollateral(pool, 1 * 1e18);
+        _borrower.removeCollateral(_pool, 1 * 1e18);
 
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
             lastInflatorSnapshotUpdate
@@ -81,40 +78,38 @@ contract ERC20PoolInflatorTest is DSTestPlus {
     }
 
     // @notice: With 1 lender pending inflator is tested against calculated inflator
-    function testCalculatePendingInflator() public {
-        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, 4_000.927678580567537368 * 1e18);
+    function testCalculatePendingInflator() external {
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
         uint256 calculatedInflator = calculateInflator();
 
         skip(8200);
 
-        assertGt(pool.getPendingInflator(), 0);
-        assertGt(pool.getPendingInflator(), calculatedInflator);
+        assertGt(_pool.getPendingInflator(), 0);
+        assertGt(_pool.getPendingInflator(), calculatedInflator);
     }
 
     function assertPoolInflator(uint256 lastInflatorSnapshotUpdate)
         internal
         returns (uint256 newInflatorSnapshot, uint256 newLastInflatorSnapshotUpdate)
     {
-        assertEq(pool.lastInflatorSnapshotUpdate(), block.timestamp);
-        assertGt(pool.lastInflatorSnapshotUpdate(), lastInflatorSnapshotUpdate);
+        assertEq(_pool.lastInflatorSnapshotUpdate(), block.timestamp);
+        assertGt(_pool.lastInflatorSnapshotUpdate(), lastInflatorSnapshotUpdate);
+        assertEq(_pool.inflatorSnapshot(),           calculateInflator());
 
-        assertEq(pool.inflatorSnapshot(), calculateInflator());
-
-        newInflatorSnapshot = pool.inflatorSnapshot();
-        newLastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
+        newInflatorSnapshot           = _pool.inflatorSnapshot();
+        newLastInflatorSnapshotUpdate = _pool.lastInflatorSnapshotUpdate();
     }
 
     function calculateInflator() internal view returns (uint256 calculatedInflator) {
-        uint256 secondsSinceLastUpdate = block.timestamp - pool.lastInflatorSnapshotUpdate();
-
-        uint256 spr = pool.previousRate() / (3600 * 24 * 365);
-
-        calculatedInflator = PRBMathUD60x18.mul(
-            pool.inflatorSnapshot(),
+        uint256 secondsSinceLastUpdate = block.timestamp - _pool.lastInflatorSnapshotUpdate();
+        uint256 spr                    = _pool.previousRate() / (3600 * 24 * 365);
+        calculatedInflator            = PRBMathUD60x18.mul(
+            _pool.inflatorSnapshot(),
             PRBMathUD60x18.pow(
                 PRBMathUD60x18.fromUint(1) + spr,
                 PRBMathUD60x18.fromUint(secondsSinceLastUpdate)
             )
         );
     }
+
 }

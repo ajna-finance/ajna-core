@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.11;
 
-import {PRBMathSD59x18} from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 // https://stackoverflow.com/questions/42738640/division-in-ethereum-solidity
 // https://medium.com/coinmonks/math-in-solidity-part-5-exponent-and-logarithm-9aef8515136e
@@ -17,6 +16,7 @@ import {PRBMathSD59x18} from "@prb-math/contracts/PRBMathSD59x18.sol";
 // - Fixed Point (Open Source License): https://github.com/paulrberg/prb-math/tree/v1.0.3
 
 library BucketMath {
+
     using PRBMathSD59x18 for int256;
 
     uint256 public constant WAD = 10**18;
@@ -41,12 +41,12 @@ library BucketMath {
     /// @notice Calculates the index for a given bucket price
     /// @dev Throws if price exceeds maximum constant
     /// @dev Price expected to be inputted as a 18 decimal WAD
-    function priceToIndex(uint256 price) public pure returns (int256 index) {
-        if (price > MAX_PRICE) {
+    function priceToIndex(uint256 price_) public pure returns (int256 index_) {
+        if (price_ > MAX_PRICE) {
             revert PriceOutsideBoundry();
         }
 
-        if (price < MIN_PRICE) {
+        if (price_ < MIN_PRICE) {
             revert PriceOutsideBoundry();
         }
 
@@ -57,13 +57,13 @@ library BucketMath {
         // index = (log(FLOAT_STEP) * price) /  MAX_PRICE;
 
         // V3
-        index = PRBMathSD59x18.div(
-            PRBMathSD59x18.log2(int256(price)),
+        index_ = PRBMathSD59x18.div(
+            PRBMathSD59x18.log2(int256(price_)),
             PRBMathSD59x18.log2(FLOAT_STEP_INT)
         );
-        int256 ceilIndex = PRBMathSD59x18.ceil(index);
-        if (index < 0) {
-            if (ceilIndex - index > 0.5 * 1e18) {
+        int256 ceilIndex = PRBMathSD59x18.ceil(index_);
+        if (index_ < 0) {
+            if (ceilIndex - index_ > 0.5 * 1e18) {
                 return PRBMathSD59x18.toInt(ceilIndex) - 1;
             }
             return PRBMathSD59x18.toInt(ceilIndex);
@@ -75,12 +75,12 @@ library BucketMath {
     /// @dev Throws if index exceeds maximum constant
     /// @dev Uses fixed-point math to get around lack of floating point numbers in EVM
     /// @dev Price expected to be inputted as a 18 decimal WAD
-    function indexToPrice(int256 index) public pure returns (uint256 price) {
-        if (index > MAX_PRICE_INDEX) {
+    function indexToPrice(int256 index_) public pure returns (uint256 price_) {
+        if (index_ > MAX_PRICE_INDEX) {
             revert IndexOutsideBoundry();
         }
 
-        if (index < MIN_PRICE_INDEX) {
+        if (index_ < MIN_PRICE_INDEX) {
             revert IndexOutsideBoundry();
         }
 
@@ -92,10 +92,10 @@ library BucketMath {
 
         // V3
         // x^y = 2^(y*log_2(x))
-        price = uint256(
+        price_ = uint256(
             PRBMathSD59x18.exp2(
                 PRBMathSD59x18.mul(
-                    PRBMathSD59x18.fromInt(index),
+                    PRBMathSD59x18.fromInt(index_),
                     PRBMathSD59x18.log2(FLOAT_STEP_INT)
                 )
             )
@@ -105,24 +105,25 @@ library BucketMath {
     /// @notice Determine if a given price is within the constant range
     /// @dev Price needs to be cast to int, since indices can be negative
     /// @return A boolean indicating if the given price is valid
-    function isValidPrice(uint256 _price) public pure returns (bool) {
-        int256 index = priceToIndex(_price);
+    function isValidPrice(uint256 price_) public pure returns (bool) {
+        int256 index = priceToIndex(price_);
         uint256 price = indexToPrice(index);
 
-        return _price == price;
+        return price_ == price;
     }
 
     /// @notice Determine if a given index is within the constant range
     /// @return A boolean indicating if the given index is valid
-    function isValidIndex(int256 _index) public pure returns (bool) {
-        return (_index >= MIN_PRICE_INDEX && _index <= MAX_PRICE_INDEX);
+    function isValidIndex(int256 index_) public pure returns (bool) {
+        return (index_ >= MIN_PRICE_INDEX && index_ <= MAX_PRICE_INDEX);
     }
 
     /// @notice Determine closest bucket index for a given price
-    /// @return index closest bucket index
-    /// @return price closest bucket price
-    function getClosestBucket(uint256 _price) external pure returns (int256 index, uint256 price) {
-        index = priceToIndex(_price);
-        price = indexToPrice(index);
+    /// @return index_ closest bucket index
+    /// @return bucketPrice_ closest bucket price
+    function getClosestBucket(uint256 price_) external pure returns (int256 index_, uint256 bucketPrice_) {
+        index_ = priceToIndex(price_);
+        bucketPrice_ = indexToPrice(index_);
     }
+
 }

@@ -1,76 +1,71 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+import { PositionManager }  from "../PositionManager.sol";
 
-import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
-import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
+import { IPositionManager } from "../interfaces/IPositionManager.sol";
 
-import {ERC20Pool} from "../ERC20Pool.sol";
-import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
-import {PositionManager} from "../PositionManager.sol";
-import {IPositionManager} from "../interfaces/IPositionManager.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract MulticallTest is DSTestPlus {
-    PositionManager internal positionManager;
-    ERC20Pool internal pool;
-    ERC20PoolFactory internal factory;
-
-    CollateralToken internal collateral;
-    QuoteToken internal quote;
 
     // nonce for generating random addresses
-    uint16 nonce = 0;
+    uint16 internal _nonce = 0;
 
-    function setUp() public {
-        collateral = new CollateralToken();
-        quote = new QuoteToken();
+    CollateralToken  internal _collateral;
+    ERC20Pool        internal _pool;
+    ERC20PoolFactory internal _factory;
+    PositionManager  internal _positionManager;
+    QuoteToken       internal _quote;
 
-        factory = new ERC20PoolFactory();
-        pool = factory.deployPool(address(collateral), address(quote));
-
-        positionManager = new PositionManager();
+    function setUp() external {
+        _collateral      = new CollateralToken();
+        _quote           = new QuoteToken();
+        _pool            = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _positionManager = new PositionManager();
     }
 
     // TODO: move this to _test/utils/...
     function generateAddress() private returns (address addr) {
         // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        addr = address(
-            uint160(uint256(keccak256(abi.encodePacked(nonce, blockhash(block.number)))))
-        );
-        nonce++;
+        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
+        _nonce++;
     }
 
     function mintAndApproveQuoteTokens(address operator, uint256 mintAmount) private {
-        quote.mint(operator, mintAmount * 1e18);
+        _quote.mint(operator, mintAmount * 1e18);
 
         vm.prank(operator);
-        quote.approve(address(pool), type(uint256).max);
+        _quote.approve(address(_pool), type(uint256).max);
         vm.prank(operator);
-        quote.approve(address(positionManager), type(uint256).max);
+        _quote.approve(address(_positionManager), type(uint256).max);
     }
 
     /// @notice Use multicall to aggregate memorializePosition and increaseLiquidity method calls into one tx
-    function testMulticallMemorializeIncreaseLiquidity() public {
+    function testMulticallMemorializeIncreaseLiquidity() external {
         address testAddress = generateAddress();
-        uint256 mintAmount = 10000 * 1e18;
+        uint256 mintAmount  = 10000 * 1e18;
 
         mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         // add quote tokens to several buckets
-        uint256 priceOne = 4_000.927678580567537368 * 1e18;
-        uint256 priceTwo = 3_010.892022197881557845 * 1e18;
-        uint256 priceThree = 1_004.989662429170775094 * 1e18;
-        pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceOne);
-        pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceTwo);
-        pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceThree);
+        uint256 priceOne   = _p4000;
+        uint256 priceTwo   = _p3010;
+        uint256 priceThree = _p1004;
+        _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceOne);
+        _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceTwo);
+        _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceThree);
 
         // mint an NFT capable of representing the positions
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(
             testAddress,
-            address(pool)
+            address(_pool)
         );
-        uint256 tokenId = positionManager.mint(mintParams);
+        uint256 tokenId = _positionManager.mint(mintParams);
 
         // Prepare to memorialize the extant positions with the just minted NFT
         uint256[] memory pricesToMemorialize = new uint256[](3);
@@ -79,16 +74,16 @@ contract MulticallTest is DSTestPlus {
         pricesToMemorialize[2] = priceThree;
 
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager
-            .MemorializePositionsParams(tokenId, testAddress, address(pool), pricesToMemorialize);
+            .MemorializePositionsParams(tokenId, testAddress, address(_pool), pricesToMemorialize);
 
         // Prepare to add quotte tokens to a new price bucket and associate with NFT
-        uint256 additionalAmount = 1000 * 1e18;
-        uint256 newPriceToAddQuoteTokensTo = 5_007.644384905151472283 * 1e18;
+        uint256 additionalAmount           = 1000 * 1e18;
+        uint256 newPriceToAddQuoteTokensTo = _p5007;
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
             .IncreaseLiquidityParams(
                 tokenId,
                 testAddress,
-                address(pool),
+                address(_pool),
                 additionalAmount,
                 newPriceToAddQuoteTokensTo
             );
@@ -105,7 +100,7 @@ contract MulticallTest is DSTestPlus {
             increaseLiquidityParams
         );
 
-        uint256 lpTokensAtNewPrice = positionManager.getLPTokens(
+        uint256 lpTokensAtNewPrice = _positionManager.getLPTokens(
             tokenId,
             newPriceToAddQuoteTokensTo
         );
@@ -118,30 +113,30 @@ contract MulticallTest is DSTestPlus {
         emit IncreaseLiquidity(testAddress, additionalAmount, newPriceToAddQuoteTokensTo);
 
         vm.prank(testAddress);
-        positionManager.multicall(callsToExecute);
+        _positionManager.multicall(callsToExecute);
 
-        lpTokensAtNewPrice = positionManager.getLPTokens(tokenId, newPriceToAddQuoteTokensTo);
+        lpTokensAtNewPrice = _positionManager.getLPTokens(tokenId, newPriceToAddQuoteTokensTo);
         assertGt(lpTokensAtNewPrice, 0);
     }
 
     /// @notice Attempt two different multicalls that should revert and verify the revert reason is captured and returned properly
     function testMulticallRevertString() public {
-        address recipient = generateAddress();
+        address recipient      = generateAddress();
         address externalCaller = generateAddress();
 
         // mint an NFT
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(
             recipient,
-            address(pool)
+            address(_pool)
         );
-        uint256 tokenId = positionManager.mint(mintParams);
+        uint256 tokenId = _positionManager.mint(mintParams);
 
         uint256 mintAmount = 10000 * 1e18;
-        uint256 mintPrice = 5_007.644384905151472283 * 1e18;
+        uint256 mintPrice  = _p5007;
         mintAndApproveQuoteTokens(recipient, mintAmount);
 
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
-            .IncreaseLiquidityParams(tokenId, recipient, address(pool), mintAmount, mintPrice);
+            .IncreaseLiquidityParams(tokenId, recipient, address(_pool), mintAmount, mintPrice);
 
         // construct BurnParams
         IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(
@@ -162,7 +157,7 @@ contract MulticallTest is DSTestPlus {
         // attempt to modify the NFT from an unapproved EOA
         vm.prank(externalCaller);
         vm.expectRevert(IPositionManager.NotApproved.selector);
-        positionManager.multicall(callsToExecute);
+        _positionManager.multicall(callsToExecute);
 
         vm.expectEmit(true, true, true, true);
         emit IncreaseLiquidity(recipient, mintAmount, mintPrice);
@@ -170,8 +165,9 @@ contract MulticallTest is DSTestPlus {
         // attempt to increase liquidity and then burn the NFT without decreasing liquidity
         vm.prank(recipient);
         vm.expectRevert(IPositionManager.LiquidityNotRemoved.selector);
-        positionManager.multicall(callsToExecute);
+        _positionManager.multicall(callsToExecute);
 
         // TODO: add case for custom error string -> figure out how to induce such a revert
     }
+
 }

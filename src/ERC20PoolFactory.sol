@@ -2,16 +2,17 @@
 
 pragma solidity 0.8.11;
 
-import {ClonesWithImmutableArgs} from "@clones/ClonesWithImmutableArgs.sol";
+import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
 
-import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ERC20Pool} from "./ERC20Pool.sol";
+import { ERC20Pool } from "./ERC20Pool.sol";
 
 contract ERC20PoolFactory {
+
     using ClonesWithImmutableArgs for address;
 
-    ERC20Pool public implementation;
     mapping(address => mapping(address => address)) public deployedPools;
+
+    ERC20Pool public implementation;
 
     event PoolCreated(ERC20Pool pool);
 
@@ -22,22 +23,22 @@ contract ERC20PoolFactory {
         implementation = new ERC20Pool();
     }
 
-    function deployPool(address collateral, address quote) external returns (ERC20Pool pool) {
-        if (collateral == address(0) || quote == address(0)) {
+    function deployPool(address collateral_, address quote_) external returns (ERC20Pool pool_) {
+        if (collateral_ == address(0) || quote_ == address(0)) {
             revert WethOnly();
         }
 
-        if (deployedPools[collateral][quote] != address(0)) {
+        if (deployedPools[collateral_][quote_] != address(0)) {
             revert PoolAlreadyExists();
         }
 
-        bytes memory data = abi.encodePacked(collateral, quote);
+        bytes memory data = abi.encodePacked(collateral_, quote_);
 
-        pool = ERC20Pool(address(implementation).clone(data));
-        pool.initialize();
+        pool_ = ERC20Pool(address(implementation).clone(data));
+        pool_.initialize();
 
-        deployedPools[collateral][quote] = address(pool);
-        emit PoolCreated(pool);
+        deployedPools[collateral_][quote_] = address(pool_);
+        emit PoolCreated(pool_);
     }
 
     // TODO: https://ethereum.stackexchange.com/questions/100025/calculate-deterministic-address-with-create2-when-cloning-contract-with-factory

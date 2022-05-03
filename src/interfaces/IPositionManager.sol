@@ -16,14 +16,14 @@ interface IPositionManager {
     /// @dev Unable to burn as liquidity still present at price
     error LiquidityNotRemoved();
 
-    function mint(MintParams calldata params) external payable returns (uint256 tokenId);
+    function mint(MintParams calldata params_) external payable returns (uint256 tokenId_);
 
     struct MintParams {
         address recipient;
         address pool;
     }
 
-    function memorializePositions(MemorializePositionsParams calldata params) external;
+    function memorializePositions(MemorializePositionsParams calldata params_) external;
 
     struct MemorializePositionsParams {
         uint256 tokenId;
@@ -32,7 +32,7 @@ interface IPositionManager {
         uint256[] prices; // the array of price buckets with LP tokens to be tracked by a NFT
     }
 
-    function burn(BurnParams calldata params) external payable;
+    function burn(BurnParams calldata params_) external payable;
 
     struct BurnParams {
         uint256 tokenId;
@@ -40,7 +40,7 @@ interface IPositionManager {
         uint256 price;
     }
 
-    function increaseLiquidity(IncreaseLiquidityParams calldata params) external payable;
+    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external payable;
 
     struct IncreaseLiquidityParams {
         uint256 tokenId;
@@ -50,7 +50,7 @@ interface IPositionManager {
         uint256 price;
     }
 
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params) external payable;
+    function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external payable;
 
     struct DecreaseLiquidityParams {
         uint256 tokenId;
@@ -65,4 +65,5 @@ interface IPositionManager {
         address pool;
         uint256[] prices;
     }
+
 }

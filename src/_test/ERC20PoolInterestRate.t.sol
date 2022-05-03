@@ -1,124 +1,121 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import {PRBMathUD60x18} from "@prb-math/contracts/PRBMathUD60x18.sol";
+import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import {DSTestPlus} from "./utils/DSTestPlus.sol";
-import {UserWithCollateral, UserWithQuoteToken} from "./utils/Users.sol";
-import {CollateralToken, QuoteToken} from "./utils/Tokens.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
-import {ERC20Pool} from "../ERC20Pool.sol";
-import {ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract ERC20PoolInterestRateTest is DSTestPlus {
-    ERC20Pool internal pool;
-    CollateralToken internal collateral;
-    QuoteToken internal quote;
 
-    UserWithCollateral internal borrower;
-    UserWithQuoteToken internal lender;
+    CollateralToken    internal _collateral;
+    ERC20Pool          internal _pool;
+    QuoteToken         internal _quote;
+    UserWithCollateral internal _borrower;
+    UserWithQuoteToken internal _lender;
 
-    function setUp() public {
-        collateral = new CollateralToken();
-        quote = new QuoteToken();
+    function setUp() external {
+        _collateral = new CollateralToken();
+        _quote      = new QuoteToken();
+        _pool       = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _borrower   = new UserWithCollateral();
+        _lender     = new UserWithQuoteToken();
 
-        ERC20PoolFactory factory = new ERC20PoolFactory();
-        pool = factory.deployPool(address(collateral), address(quote));
-
-        borrower = new UserWithCollateral();
-        collateral.mint(address(borrower), 100 * 1e18);
-        borrower.approveToken(collateral, address(pool), 100 * 1e18);
-        borrower.approveToken(quote, address(pool), 1);
-
-        lender = new UserWithQuoteToken();
-        quote.mint(address(lender), 200_000 * 1e18);
-        lender.approveToken(quote, address(pool), 200_000 * 1e18);
+        _collateral.mint(address(_borrower), 100 * 1e18);
+        _quote.mint(address(_lender), 200_000 * 1e18);
+        _borrower.approveToken(_collateral, address(_pool), 100 * 1e18);
+        _borrower.approveToken(_quote, address(_pool), 1);
+        _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
     // @notice: with 1 lender and 1 borrower quote token is deposited
     // @notice: then borrower adds collateral and borrows interest
     // @notice: rate is checked for correctness
-    function testUpdateInterestRate() public {
-        uint256 priceHigh = 4_000.927678580567537368 * 1e18;
-        uint256 priceMed = 3_514.334495390401848927 * 1e18;
-        uint256 priceLow = 2_503.519024294695168295 * 1e18;
+    function testUpdateInterestRate() external {
+        uint256 priceHigh  = _p4000;
+        uint256 priceMed   = _p3514;
+        uint256 priceLow   = _p2503;
+        uint256 updateTime = _pool.previousRateUpdate();
 
-        assertEq(pool.previousRate(), 0.05 * 1e18);
-
-        uint256 updateTime = pool.previousRateUpdate();
+        assertEq(_pool.previousRate(), 0.05 * 1e18);
 
         // should silently not update when actual utilization is 0
-        pool.updateInterestRate();
-        assertEq(pool.previousRate(), 0.05 * 1e18);
-        assertEq(pool.previousRateUpdate(), updateTime);
+        _pool.updateInterestRate();
+        assertEq(_pool.previousRate(),       0.05 * 1e18);
+        assertEq(_pool.previousRateUpdate(), updateTime);
 
         // raise pool utilization
         // lender deposits 10_000 DAI in 3 buckets each
-        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceHigh);
-        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceMed);
-        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLow);
 
         // borrower deposits 100 MKR collateral and draws debt
-        borrower.addCollateral(pool, 100 * 1e18);
-        borrower.borrow(pool, 25_000 * 1e18, 2500 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 25_000 * 1e18, 2500 * 1e18);
 
         skip(8200);
 
-        assertEq(pool.getPoolActualUtilization(), 0.833333333333333333333333333 * 1e27);
-        assertEq(pool.getPoolTargetUtilization(), 0.099859436886217129237589653 * 1e27);
+        assertEq(_pool.getPoolActualUtilization(), 0.833333333333333333333333333 * 1e27);
+        assertEq(_pool.getPoolTargetUtilization(), 0.099859436886217129237589653 * 1e27);
 
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.086673629908233477 * 1e18);
-        lender.updateInterestRate(pool);
+        _lender.updateInterestRate(_pool);
 
-        assertEq(pool.previousRate(), 0.086673629908233477 * 1e18);
-        assertEq(pool.previousRateUpdate(), 8200);
-        assertEq(pool.lastInflatorSnapshotUpdate(), 8200);
+        assertEq(_pool.previousRate(),               0.086673629908233477 * 1e18);
+        assertEq(_pool.previousRateUpdate(),         8200);
+        assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
     }
 
     // @notice: with 1 lender and 1 borrower quote token is deposited
     // @notice: then borrower adds collateral and borrows interest
     // @notice: rate is checked for correctness, pool is underutilized
-    function testUpdateInterestRateUnderutilized() public {
-        uint256 priceHigh = 4_000.927678580567537368 * 1e18;
+    function testUpdateInterestRateUnderutilized() external {
+        uint256 priceHigh = _p4000;
 
-        assertEq(pool.previousRate(), 0.05 * 1e18);
-        lender.addQuoteToken(pool, address(lender), 1_000 * 1e18, priceHigh);
+        assertEq(_pool.previousRate(), 0.05 * 1e18);
+        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHigh);
         skip(14);
 
         // borrower draws debt with a low collateralization ratio
-        borrower.addCollateral(pool, 0.049988406706455432 * 1e18);
-        borrower.borrow(pool, 200 * 1e18, 0);
+        _borrower.addCollateral(_pool, 0.049988406706455432 * 1e18);
+        _borrower.borrow(_pool, 200 * 1e18, 0);
         skip(14);
 
-        assertLt(pool.getPoolActualUtilization(), pool.getPoolTargetUtilization());
+        assertLt(_pool.getPoolActualUtilization(), _pool.getPoolTargetUtilization());
 
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.009999996670471735 * 1e18);
-        lender.updateInterestRate(pool);
-        assertEq(pool.previousRate(), 0.009999996670471735 * 1e18);
+        _lender.updateInterestRate(_pool);
+        assertEq(_pool.previousRate(), 0.009999996670471735 * 1e18);
     }
 
     // @notice Ensure an underutilized and undercollateralized pool does not produce an underflow.
-    function testUndercollateralized() public {
-        uint256 price = 3_514.334495390401848927 * 1e18;
+    function testUndercollateralized() external {
+        uint256 price = _p3514;
 
-        lender.addQuoteToken(pool, address(lender), 10_000 * 1e18, price);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, price);
         skip(14);
 
         // borrower utilizes the entire pool
-        borrower.addCollateral(pool, 0.000284548895761533 * 1e18);
-        borrower.borrow(pool, 1 * 1e18, 0);
-        uint256 lastRate = pool.previousRate();
+        _borrower.addCollateral(_pool, 0.000284548895761533 * 1e18);
+        _borrower.borrow(_pool, 1 * 1e18, 0);
+        uint256 lastRate = _pool.previousRate();
         skip(3600 * 24);
 
         // debt accumulates, and the borrower becomes undercollateralized
-        borrower.repay(pool, 1); // repay 1 WAD to trigger accumulation
-        (, , , , uint256 collateralization, , ) = pool.getBorrowerInfo(address(borrower));
+        _borrower.repay(_pool, 1); // repay 1 WAD to trigger accumulation
+        (, , , , uint256 collateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
         assertLt(collateralization, 1 * 1e27);
 
         // rate should not change while pool is undercollateralized
-        lender.updateInterestRate(pool);
-        assertEq(pool.previousRate(), lastRate);
+        _lender.updateInterestRate(_pool);
+        assertEq(_pool.previousRate(), lastRate);
     }
+
 }

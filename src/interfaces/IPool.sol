@@ -49,43 +49,26 @@ interface IPool {
     error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
 
-    function addQuoteToken(
-        address _recipient,
-        uint256 _amount,
-        uint256 _price
-    ) external returns (uint256 lpTokens);
+    function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
 
-    function removeQuoteToken(
-        address _recipient,
-        uint256 _amount,
-        uint256 _price
-    ) external;
+    function removeQuoteToken(address recipient_, uint256 amount_, uint256 price_) external;
 
-    function addCollateral(uint256 _amount) external;
+    function addCollateral(uint256 amount_) external;
 
-    function removeCollateral(uint256 _amount) external;
+    function removeCollateral(uint256 amount_) external;
 
-    function claimCollateral(
-        address _recipient,
-        uint256 _amount,
-        uint256 _price
-    ) external;
+    function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external;
 
-    function borrow(uint256 _amount, uint256 _stopPrice) external;
+    function borrow(uint256 amount_, uint256 stopPrice_) external;
 
-    function repay(uint256 _amount) external;
+    function repay(uint256 amount_) external;
 
-    function purchaseBid(uint256 _amount, uint256 _price) external;
+    function purchaseBid(uint256 amount_, uint256 price_) external;
 
-    function getLPTokenBalance(address _owner, uint256 _price)
-        external
-        view
-        returns (uint256 lpTokens);
+    function getLPTokenBalance(address owner_, uint256 price_) external view returns (uint256 lpTokens_);
 
-    function getLPTokenExchangeValue(uint256 _lpTokens, uint256 _price)
-        external
-        view
-        returns (uint256 _collateralTokens, uint256 _quoteTokens);
+    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);
 
-    function liquidate(address _borrower) external;
+    function liquidate(address borrower_) external;
+
 }
