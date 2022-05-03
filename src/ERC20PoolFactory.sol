@@ -9,8 +9,8 @@ import { ERC20Pool } from "./ERC20Pool.sol";
 contract ERC20PoolFactory {
     using ClonesWithImmutableArgs for address;
 
-    ERC20Pool public implementation;
     mapping(address => mapping(address => address)) public deployedPools;
+    ERC20Pool                                       public implementation;
 
     event PoolCreated(ERC20Pool pool);
 

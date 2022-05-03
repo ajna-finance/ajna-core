@@ -3,19 +3,19 @@ pragma solidity 0.8.11;
 
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
-import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
 contract ERC20PoolInflatorTest is DSTestPlus {
-    ERC20Pool           internal _pool;
-    CollateralToken     internal _collateral;
-    QuoteToken          internal _quote;
-    UserWithCollateral  internal _borrower;
-    UserWithQuoteToken  internal _lender;
+    ERC20Pool          internal _pool;
+    CollateralToken    internal _collateral;
+    QuoteToken         internal _quote;
+    UserWithCollateral internal _borrower;
+    UserWithQuoteToken internal _lender;
 
     function setUp() external {
         _collateral = new CollateralToken();
@@ -37,8 +37,8 @@ contract ERC20PoolInflatorTest is DSTestPlus {
     function testInflator() external {
         uint256 inflatorSnapshot = _pool.inflatorSnapshot();
         uint256 lastInflatorSnapshotUpdate = _pool.lastInflatorSnapshotUpdate();
-        assertEq(inflatorSnapshot,              1 * 1e27);
-        assertEq(lastInflatorSnapshotUpdate,    block.timestamp);
+        assertEq(inflatorSnapshot,           1 * 1e27);
+        assertEq(lastInflatorSnapshotUpdate, block.timestamp);
 
         skip(8200);
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
@@ -92,18 +92,18 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         internal
         returns (uint256 newInflatorSnapshot, uint256 newLastInflatorSnapshotUpdate)
     {
-        assertEq(_pool.lastInflatorSnapshotUpdate(),    block.timestamp);
-        assertGt(_pool.lastInflatorSnapshotUpdate(),    lastInflatorSnapshotUpdate);
-        assertEq(_pool.inflatorSnapshot(),              calculateInflator());
+        assertEq(_pool.lastInflatorSnapshotUpdate(), block.timestamp);
+        assertGt(_pool.lastInflatorSnapshotUpdate(), lastInflatorSnapshotUpdate);
+        assertEq(_pool.inflatorSnapshot(),           calculateInflator());
 
-        newInflatorSnapshot             = _pool.inflatorSnapshot();
-        newLastInflatorSnapshotUpdate   = _pool.lastInflatorSnapshotUpdate();
+        newInflatorSnapshot           = _pool.inflatorSnapshot();
+        newLastInflatorSnapshotUpdate = _pool.lastInflatorSnapshotUpdate();
     }
 
     function calculateInflator() internal view returns (uint256 calculatedInflator) {
-        uint256 secondsSinceLastUpdate  = block.timestamp - _pool.lastInflatorSnapshotUpdate();
-        uint256 spr                     = _pool.previousRate() / (3600 * 24 * 365);
-        calculatedInflator             = PRBMathUD60x18.mul(
+        uint256 secondsSinceLastUpdate = block.timestamp - _pool.lastInflatorSnapshotUpdate();
+        uint256 spr                    = _pool.previousRate() / (3600 * 24 * 365);
+        calculatedInflator            = PRBMathUD60x18.mul(
             _pool.inflatorSnapshot(),
             PRBMathUD60x18.pow(
                 PRBMathUD60x18.fromUint(1) + spr,

@@ -1,36 +1,36 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
-import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
-import { ERC20Pool }        from "../ERC20Pool.sol";
-import { ERC20PoolFactory}  from "../ERC20PoolFactory.sol";
-import { PositionManager }  from "../PositionManager.sol";
+import { ERC20Pool }       from "../ERC20Pool.sol";
+import { ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import { PositionManager } from "../PositionManager.sol";
 
 import { IPositionManager } from "../interfaces/IPositionManager.sol";
 
 contract PositionManagerTest is DSTestPlus {
-    PositionManager     internal _positionManager;
-    ERC20Pool           internal _pool;
-    ERC20PoolFactory    internal _factory;
-    CollateralToken     internal _collateral;
-    QuoteToken          internal _quote;
+    PositionManager  internal _positionManager;
+    ERC20Pool        internal _pool;
+    ERC20PoolFactory internal _factory;
+    CollateralToken  internal _collateral;
+    QuoteToken       internal _quote;
     // UserWithQuoteToken internal alice;
-    address             internal _alice;
+    address          internal _alice;
     // nonce for generating random addresses
-    uint16              internal _nonce;
+    uint16           internal _nonce;
 
     function setUp() public {
-        _alice              = 0x02B9219F667d91fBe64F8f77F691dE3D1000F223;
-        _collateral         = new CollateralToken();
-        _quote              = new QuoteToken();
-        _factory            = new ERC20PoolFactory();
-        _pool               = _factory.deployPool(address(_collateral), address(_quote));
-        _positionManager    = new PositionManager();
+        _alice           = 0x02B9219F667d91fBe64F8f77F691dE3D1000F223;
+        _collateral      = new CollateralToken();
+        _quote           = new QuoteToken();
+        _factory         = new ERC20PoolFactory();
+        _pool            = _factory.deployPool(address(_collateral), address(_quote));
+        _positionManager = new PositionManager();
 
         // TODO: move logic to internal methods
         _quote.mint(_alice, 30000000000 * 1e18);
@@ -121,8 +121,8 @@ contract PositionManagerTest is DSTestPlus {
 
     // @notice: Tests base NFT minting functionality
     function testMint() external {
-        uint256 mintAmount  = 50 * 1e18;
-        uint256 mintPrice   = _p1004;
+        uint256 mintAmount = 50 * 1e18;
+        uint256 mintPrice  = _p1004;
 
         mintAndApproveQuoteTokens(_alice, mintAmount);
 
@@ -151,9 +151,9 @@ contract PositionManagerTest is DSTestPlus {
         mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         // call pool contract directly to add quote tokens
-        uint256 priceOne    = _p4000;
-        uint256 priceTwo    = _p3010;
-        uint256 priceThree  = _p1004;
+        uint256 priceOne   = _p4000;
+        uint256 priceTwo   = _p3010;
+        uint256 priceThree = _p1004;
 
         _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceOne);
         _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceTwo);
@@ -252,11 +252,11 @@ contract PositionManagerTest is DSTestPlus {
     // @notice: recipient reverts:
     // @notice:     attempts to increase liquidity when not permited
     function testIncreaseLiquidityPermissions() external {
-        address recipient       = generateAddress();
-        address externalCaller  = generateAddress();
-        uint256 tokenId         = mintNFT(recipient, address(_pool));
-        uint256 mintAmount      = 10000 * 1e18;
-        uint256 mintPrice       = 1000 * 10**18;
+        address recipient      = generateAddress();
+        address externalCaller = generateAddress();
+        uint256 tokenId        = mintNFT(recipient, address(_pool));
+        uint256 mintAmount     = 10000 * 1e18;
+        uint256 mintPrice      = 1000 * 10**18;
 
         mintAndApproveQuoteTokens(recipient, mintAmount);
 

@@ -2,8 +2,9 @@
 
 pragma solidity 0.8.11;
 
-import {Maths} from "../libraries/Maths.sol";
-import {IPool} from "../interfaces/IPool.sol";
+import { Maths } from "../libraries/Maths.sol";
+
+import { IPool } from "../interfaces/IPool.sol";
 
 /// @notice Interest related functionality
 abstract contract Interest {

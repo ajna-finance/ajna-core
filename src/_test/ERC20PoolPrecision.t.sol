@@ -1,42 +1,42 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, CollateralTokenWith6Decimals }    from "./utils/Tokens.sol";
-import { DSTestPlus }                                       from "./utils/DSTestPlus.sol";
-import { QuoteToken, QuoteTokenWith6Decimals }              from "./utils/Tokens.sol";
-import { UserWithCollateral, UserWithQuoteToken }           from "./utils/Users.sol";
+import { CollateralToken, CollateralTokenWith6Decimals } from "./utils/Tokens.sol";
+import { DSTestPlus }                                    from "./utils/DSTestPlus.sol";
+import { QuoteToken, QuoteTokenWith6Decimals }           from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken }        from "./utils/Users.sol";
 
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
 contract ERC20PoolPrecisionTest is DSTestPlus {
-    uint256             internal constant BUCKET_PRICE = 2000.221618840727700609 * 1e18;
+    uint256            internal constant BUCKET_PRICE = 2000.221618840727700609 * 1e18;
 
-    ERC20Pool           internal _pool;
-    uint256             internal _quotePoolPrecision = 10**45;
-    uint256             internal _collateralPoolPrecision = 10**27;
-    CollateralToken     internal _collateral;
-    uint256             internal _collateralPrecision;
-    QuoteToken          internal _quote;
-    uint256             internal _quotePrecision;
-    UserWithCollateral  internal _borrower;
-    UserWithQuoteToken  internal _lender;
-    UserWithCollateral  internal _bidder;
+    ERC20Pool          internal _pool;
+    uint256            internal _quotePoolPrecision = 10**45;
+    uint256            internal _collateralPoolPrecision = 10**27;
+    CollateralToken    internal _collateral;
+    uint256            internal _collateralPrecision;
+    QuoteToken         internal _quote;
+    uint256            internal _quotePrecision;
+    UserWithCollateral internal _borrower;
+    UserWithQuoteToken internal _lender;
+    UserWithCollateral internal _bidder;
 
     function setUp() external virtual {
-        _collateralPrecision    = 10**18;
-        _quotePrecision         = 10**18;
-        _collateral             = new CollateralToken();
-        _quote                  = new QuoteToken();
+        _collateralPrecision = 10**18;
+        _quotePrecision      = 10**18;
+        _collateral          = new CollateralToken();
+        _quote               = new QuoteToken();
 
         init();
     }
 
     function init() internal {
-        _pool       = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _borrower   = new UserWithCollateral();
-        _bidder     = new UserWithCollateral();
-        _lender     = new UserWithQuoteToken();
+        _pool     = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _borrower = new UserWithCollateral();
+        _bidder   = new UserWithCollateral();
+        _lender   = new UserWithQuoteToken();
 
         _collateral.mint(address(_borrower), 100 * _collateralPrecision);
         _collateral.mint(address(_bidder), 100 * _collateralPrecision);
@@ -62,9 +62,9 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         emit AddQuoteToken(address(_lender), BUCKET_PRICE, 20_000 * _quotePoolPrecision, 0);
         _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, BUCKET_PRICE);
         // check balances
-        assertEq(_pool.totalQuoteToken(),               20_000 * _quotePoolPrecision);
-        assertEq(_quote.balanceOf(address(_pool)),      20_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_lender)),    180_000 * _quotePrecision);
+        assertEq(_pool.totalQuoteToken(),            20_000 * _quotePoolPrecision);
+        assertEq(_quote.balanceOf(address(_pool)),   20_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_lender)), 180_000 * _quotePrecision);
 
         // remove 10_000 quote token with 6 decimal precision
         vm.expectEmit(true, true, false, true);
@@ -73,9 +73,9 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         emit RemoveQuoteToken(address(_lender), BUCKET_PRICE, 10_000 * _quotePoolPrecision, 0);
         _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, BUCKET_PRICE);
         // check balances
-        assertEq(_pool.totalQuoteToken(),               10_000 * _quotePoolPrecision);
-        assertEq(_quote.balanceOf(address(_pool)),      10_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_lender)),    190_000 * _quotePrecision);
+        assertEq(_pool.totalQuoteToken(),            10_000 * _quotePoolPrecision);
+        assertEq(_quote.balanceOf(address(_pool)),   10_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_lender)), 190_000 * _quotePrecision);
 
         // borrow 10_000 quote token with 6 decimal precision
         _borrower.addCollateral(_pool, 100 * 1e18);
@@ -122,13 +122,13 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         );
         _bidder.purchaseBid(_pool, 1_000 * 1e18, BUCKET_PRICE);
         // check balances
-        assertEq(_pool.totalQuoteToken(),                   4_000 * _quotePoolPrecision);
-        assertEq(_pool.totalDebt(),                         5_000 * _quotePoolPrecision);
-        assertEq(_pool.totalCollateral(),                   100 * _collateralPoolPrecision);
-        assertEq(_quote.balanceOf(address(_pool)),          4_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_lender)),        190_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_borrower)),      5_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_bidder)),        1_000 * _quotePrecision);
+        assertEq(_pool.totalQuoteToken(),              4_000 * _quotePoolPrecision);
+        assertEq(_pool.totalDebt(),                    5_000 * _quotePoolPrecision);
+        assertEq(_pool.totalCollateral(),              100 * _collateralPoolPrecision);
+        assertEq(_quote.balanceOf(address(_pool)),     4_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_lender)),   190_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_borrower)), 5_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_bidder)),   1_000 * _quotePrecision);
 
         assertCollateralBalancesAfterBid();
 
@@ -143,13 +143,13 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         );
         _lender.claimCollateral(_pool, address(_lender), 0.499944601428501671 * 1e18, BUCKET_PRICE);
         // // check balances
-        assertEq(_pool.totalQuoteToken(),                   4_000 * _quotePoolPrecision);
-        assertEq(_pool.totalDebt(),                         5_000 * _quotePoolPrecision);
-        assertEq(_pool.totalCollateral(),                   100 * _collateralPoolPrecision);
-        assertEq(_quote.balanceOf(address(_pool)),          4_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_lender)),        190_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_borrower)),      5_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_bidder)),        1_000 * _quotePrecision);
+        assertEq(_pool.totalQuoteToken(),              4_000 * _quotePoolPrecision);
+        assertEq(_pool.totalDebt(),                    5_000 * _quotePoolPrecision);
+        assertEq(_pool.totalCollateral(),              100 * _collateralPoolPrecision);
+        assertEq(_quote.balanceOf(address(_pool)),     4_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_lender)),   190_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_borrower)), 5_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_bidder)),   1_000 * _quotePrecision);
 
         assertCollateralBalancesAfterClaim();
 
@@ -160,12 +160,12 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         _borrower.removeCollateral(_pool, 0.499944601428501671 * 1e18);
         assertEq(_pool.totalCollateral(),                    99.500055398571498329 * 10**27);
         // check balances
-        assertEq(_pool.totalQuoteToken(),                   4_000 * _quotePoolPrecision);
-        assertEq(_pool.totalDebt(),                         5_000 * _quotePoolPrecision);
-        assertEq(_quote.balanceOf(address(_pool)),          4_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_lender)),        190_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_borrower)),      5_000 * _quotePrecision);
-        assertEq(_quote.balanceOf(address(_bidder)),        1_000 * _quotePrecision);
+        assertEq(_pool.totalQuoteToken(),              4_000 * _quotePoolPrecision);
+        assertEq(_pool.totalDebt(),                    5_000 * _quotePoolPrecision);
+        assertEq(_quote.balanceOf(address(_pool)),     4_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_lender)),   190_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_borrower)), 5_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_bidder)),   1_000 * _quotePrecision);
 
         assertCollateralBalancesAfterRemove();
     }
@@ -203,10 +203,10 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
 
 contract QuoteTokenWith6DecimalPrecisionTest is ERC20PoolPrecisionTest {
     function setUp() external override {
-        _collateralPrecision    = 10**18;
-        _quotePrecision         = 10**6;
-        _collateral             = new CollateralToken();
-        _quote                  = new QuoteTokenWith6Decimals();
+        _collateralPrecision = 10**18;
+        _quotePrecision      = 10**6;
+        _collateral          = new CollateralToken();
+        _quote               = new QuoteTokenWith6Decimals();
 
         init();
     }
@@ -214,10 +214,10 @@ contract QuoteTokenWith6DecimalPrecisionTest is ERC20PoolPrecisionTest {
 
 contract CollateralWith6DecimalPrecisionTest is ERC20PoolPrecisionTest {
     function setUp() external override {
-        _collateralPrecision    = 10**6;
-        _quotePrecision         = 10**18;
-        _collateral             = new CollateralTokenWith6Decimals();
-        _quote                  = new QuoteToken();
+        _collateralPrecision = 10**6;
+        _quotePrecision      = 10**18;
+        _collateral          = new CollateralTokenWith6Decimals();
+        _quote               = new QuoteToken();
 
         init();
     }
@@ -255,10 +255,10 @@ contract CollateralWith6DecimalPrecisionTest is ERC20PoolPrecisionTest {
 
 contract CollateralAndQuoteWith6DecimalPrecisionTest is ERC20PoolPrecisionTest {
     function setUp() external override {
-        _collateralPrecision    = 10**6;
-        _quotePrecision         = 10**6;
-        _collateral             = new CollateralTokenWith6Decimals();
-        _quote                  = new QuoteTokenWith6Decimals();
+        _collateralPrecision = 10**6;
+        _quotePrecision      = 10**6;
+        _collateral          = new CollateralTokenWith6Decimals();
+        _quote               = new QuoteTokenWith6Decimals();
 
         init();
     }

@@ -3,20 +3,19 @@ pragma solidity 0.8.11;
 
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
-import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
 contract ERC20PoolInterestRateTest is DSTestPlus {
-    ERC20Pool               internal _pool;
-    CollateralToken         internal _collateral;
-    QuoteToken              internal _quote;
-
-    UserWithCollateral      internal _borrower;
-    UserWithQuoteToken      internal _lender;
+    ERC20Pool          internal _pool;
+    CollateralToken    internal _collateral;
+    QuoteToken         internal _quote;
+    UserWithCollateral internal _borrower;
+    UserWithQuoteToken internal _lender;
 
     function setUp() external {
         _collateral = new CollateralToken();
@@ -36,17 +35,17 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
     // @notice: then borrower adds collateral and borrows interest
     // @notice: rate is checked for correctness
     function testUpdateInterestRate() external {
-        uint256 priceHigh   = _p4000;
-        uint256 priceMed    = _p3514;
-        uint256 priceLow    = _p2503;
-        uint256 updateTime  = _pool.previousRateUpdate();
+        uint256 priceHigh  = _p4000;
+        uint256 priceMed   = _p3514;
+        uint256 priceLow   = _p2503;
+        uint256 updateTime = _pool.previousRateUpdate();
 
         assertEq(_pool.previousRate(), 0.05 * 1e18);
 
         // should silently not update when actual utilization is 0
         _pool.updateInterestRate();
-        assertEq(_pool.previousRate(),          0.05 * 1e18);
-        assertEq(_pool.previousRateUpdate(),    updateTime);
+        assertEq(_pool.previousRate(),       0.05 * 1e18);
+        assertEq(_pool.previousRateUpdate(), updateTime);
 
         // raise pool utilization
         // lender deposits 10_000 DAI in 3 buckets each
@@ -67,9 +66,9 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         emit UpdateInterestRate(0.05 * 1e18, 0.086673629908233477 * 1e18);
         _lender.updateInterestRate(_pool);
 
-        assertEq(_pool.previousRate(),                  0.086673629908233477 * 1e18);
-        assertEq(_pool.previousRateUpdate(),            8200);
-        assertEq(_pool.lastInflatorSnapshotUpdate(),    8200);
+        assertEq(_pool.previousRate(),               0.086673629908233477 * 1e18);
+        assertEq(_pool.previousRateUpdate(),         8200);
+        assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
     }
 
     // @notice: with 1 lender and 1 borrower quote token is deposited

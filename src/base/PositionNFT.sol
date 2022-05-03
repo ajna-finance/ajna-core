@@ -8,7 +8,7 @@ import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extension
 
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-import { Base64}  from "@base64-sol/base64.sol";
+import { Base64 }  from "@base64-sol/base64.sol";
 
 import { IPositionManager } from "../interfaces/IPositionManager.sol";
 

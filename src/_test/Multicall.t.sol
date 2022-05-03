@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
-import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
@@ -12,19 +12,19 @@ import { PositionManager }  from "../PositionManager.sol";
 import { IPositionManager } from "../interfaces/IPositionManager.sol";
 
 contract MulticallTest is DSTestPlus {
-    PositionManager     internal _positionManager;
-    ERC20Pool           internal _pool;
-    ERC20PoolFactory    internal _factory;
-    CollateralToken     internal _collateral;
-    QuoteToken          internal _quote;
+    PositionManager  internal _positionManager;
+    ERC20Pool        internal _pool;
+    ERC20PoolFactory internal _factory;
+    CollateralToken  internal _collateral;
+    QuoteToken       internal _quote;
     // nonce for generating random addresses
-    uint16              internal _nonce = 0;
+    uint16           internal _nonce = 0;
 
     function setUp() external {
-        _collateral         = new CollateralToken();
-        _quote              = new QuoteToken();
-        _pool               = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _positionManager    = new PositionManager();
+        _collateral      = new CollateralToken();
+        _quote           = new QuoteToken();
+        _pool            = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _positionManager = new PositionManager();
     }
 
     // TODO: move this to _test/utils/...
@@ -53,9 +53,9 @@ contract MulticallTest is DSTestPlus {
         mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         // add quote tokens to several buckets
-        uint256 priceOne    = _p4000;
-        uint256 priceTwo    = _p3010;
-        uint256 priceThree  = _p1004;
+        uint256 priceOne   = _p4000;
+        uint256 priceTwo   = _p3010;
+        uint256 priceThree = _p1004;
         _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceOne);
         _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceTwo);
         _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceThree);
@@ -77,8 +77,8 @@ contract MulticallTest is DSTestPlus {
             .MemorializePositionsParams(tokenId, testAddress, address(_pool), pricesToMemorialize);
 
         // Prepare to add quotte tokens to a new price bucket and associate with NFT
-        uint256 additionalAmount            = 1000 * 1e18;
-        uint256 newPriceToAddQuoteTokensTo  = _p5007;
+        uint256 additionalAmount           = 1000 * 1e18;
+        uint256 newPriceToAddQuoteTokensTo = _p5007;
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
             .IncreaseLiquidityParams(
                 tokenId,
@@ -121,18 +121,18 @@ contract MulticallTest is DSTestPlus {
 
     /// @notice Attempt two different multicalls that should revert and verify the revert reason is captured and returned properly
     function testMulticallRevertString() public {
-        address recipient       = generateAddress();
-        address externalCaller  = generateAddress();
+        address recipient      = generateAddress();
+        address externalCaller = generateAddress();
 
         // mint an NFT
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(
             recipient,
             address(_pool)
         );
-        uint256 tokenId     = _positionManager.mint(mintParams);
+        uint256 tokenId = _positionManager.mint(mintParams);
 
-        uint256 mintAmount  = 10000 * 1e18;
-        uint256 mintPrice   = _p5007;
+        uint256 mintAmount = 10000 * 1e18;
+        uint256 mintPrice  = _p5007;
         mintAndApproveQuoteTokens(recipient, mintAmount);
 
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager

@@ -2,8 +2,8 @@
 
 pragma solidity 0.8.11;
 
-import { ERC20 }        from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 }    from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { BitMaps } from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
@@ -24,10 +24,10 @@ contract ERC20Pool is IPool, Clone, Interest {
     using Buckets for mapping(uint256 => Buckets.Bucket);
 
     // price (WAD) -> bucket
-    mapping(uint256 => Buckets.Bucket)  private _buckets;
-    BitMaps.BitMap                      private _bitmap;
+    mapping(uint256 => Buckets.Bucket) private _buckets;
+    BitMaps.BitMap                     private _bitmap;
     /// @dev Counter used by onlyOnce modifier
-    uint8                               private _poolInitializations = 0;
+    uint8                              private _poolInitializations = 0;
 
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
@@ -57,10 +57,10 @@ contract ERC20Pool is IPool, Clone, Interest {
         collateralScale = 10**(27 - collateral().decimals());
         quoteTokenScale = 10**(45 - quoteToken().decimals());
 
-        inflatorSnapshot            = Maths.ONE_RAY;
-        lastInflatorSnapshotUpdate  = block.timestamp;
-        previousRate                = Maths.wdiv(5, 100);
-        previousRateUpdate          = block.timestamp;
+        inflatorSnapshot           = Maths.ONE_RAY;
+        lastInflatorSnapshotUpdate = block.timestamp;
+        previousRate               = Maths.wdiv(5, 100);
+        previousRateUpdate         = block.timestamp;
 
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
@@ -165,8 +165,8 @@ contract ERC20Pool is IPool, Clone, Interest {
         // convert amount from WAD to collateral pool precision - RAY
         amount_ = Maths.wadToRay(amount_);
 
-        borrowers[msg.sender].collateralDeposited   += amount_;
-        totalCollateral                             += amount_;
+        borrowers[msg.sender].collateralDeposited += amount_;
+        totalCollateral                           += amount_;
 
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
@@ -192,8 +192,8 @@ contract ERC20Pool is IPool, Clone, Interest {
             });
         }
 
-        borrower.collateralDeposited    -= amount_;
-        totalCollateral                 -= amount_;
+        borrower.collateralDeposited -= amount_;
+        totalCollateral              -= amount_;
 
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
         emit RemoveCollateral(msg.sender, amount_);
@@ -377,8 +377,8 @@ contract ERC20Pool is IPool, Clone, Interest {
         totalCollateral -= requiredCollateral;
 
         // borrower accounting
-        borrower.debt                   = 0;
-        borrower.collateralDeposited    -= requiredCollateral;
+        borrower.debt                = 0;
+        borrower.collateralDeposited -= requiredCollateral;
 
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
@@ -408,8 +408,8 @@ contract ERC20Pool is IPool, Clone, Interest {
         return _buckets.bucketAt(price_);
     }
 
-    function isBucketInitialized(uint256 _price) public view returns (bool) {
-        return BitMaps.get(_bitmap, _price);
+    function isBucketInitialized(uint256 price_) public view returns (bool) {
+        return BitMaps.get(_bitmap, price_);
     }
 
     /// @notice Calculate unaccrued interest for a particular bucket, which may be added to
@@ -432,9 +432,9 @@ contract ERC20Pool is IPool, Clone, Interest {
             // RAY
             uint256 pendingInflator = getPendingInflator();
             // RAD
-            totalDebt                   += getPendingInterest(totalDebt, pendingInflator, inflatorSnapshot);
-            inflatorSnapshot            = pendingInflator;
-            lastInflatorSnapshotUpdate  = block.timestamp;
+            totalDebt                  += getPendingInterest(totalDebt, pendingInflator, inflatorSnapshot);
+            inflatorSnapshot           = pendingInflator;
+            lastInflatorSnapshotUpdate = block.timestamp;
         }
     }
 
@@ -656,8 +656,8 @@ contract ERC20Pool is IPool, Clone, Interest {
         uint256 lenderShare = Maths.rdiv(lpTokens_, lpOutstanding);
 
         // calculate the amount of collateral and quote tokens equivalent to the lenderShare
-        collateralTokens_   = Maths.rmul(bucketCollateral, lenderShare);
-        quoteTokens_        = Maths.rayToRad(
+        collateralTokens_ = Maths.rmul(bucketCollateral, lenderShare);
+        quoteTokens_      = Maths.rayToRad(
                     Maths.rmul(Maths.radToRay(Maths.add(onDeposit, debt)), lenderShare)
         );
     }

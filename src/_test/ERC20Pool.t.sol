@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
-import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken }   from "./utils/Users.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
@@ -48,28 +48,28 @@ contract ERC20PoolTest is DSTestPlus {
             uint256 lpOutstanding,
             uint256 bucketCollateral
         ) = _pool.bucketAt(_p1004);
-        assertEq(deposit,           0);
-        assertEq(debt,              0);
-        assertEq(bucketInflator,    0);
-        assertEq(lpOutstanding,     0);
-        assertEq(bucketCollateral,  0);
+        assertEq(deposit,          0);
+        assertEq(debt,             0);
+        assertEq(bucketInflator,   0);
+        assertEq(lpOutstanding,    0);
+        assertEq(bucketCollateral, 0);
 
         (, , , deposit, debt, bucketInflator, lpOutstanding, bucketCollateral) = _pool.bucketAt(
             _p2793
         );
-        assertEq(deposit,           0);
-        assertEq(debt,              0);
-        assertEq(bucketInflator,    0);
-        assertEq(lpOutstanding,     0);
-        assertEq(bucketCollateral,  0);
+        assertEq(deposit,          0);
+        assertEq(debt,             0);
+        assertEq(bucketInflator,   0);
+        assertEq(lpOutstanding,    0);
+        assertEq(bucketCollateral, 0);
     }
 
     // @notice: Check that initialize can only be called once
     function testInitialize() external {
         uint256 initialInflator = 1 * 10**27;
 
-        assertEq(_pool.inflatorSnapshot(),              initialInflator);
-        assertEq(_pool.lastInflatorSnapshotUpdate(),    0);
+        assertEq(_pool.inflatorSnapshot(),           initialInflator);
+        assertEq(_pool.lastInflatorSnapshotUpdate(), 0);
 
         // Add quote tokens to the pool to allow initial values to change
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
@@ -80,15 +80,15 @@ contract ERC20PoolTest is DSTestPlus {
         _borrower.addCollateral(_pool, 2 * 1e18);
         _borrower.borrow(_pool, 1000 * 1e18, 3000 * 1e18);
 
-        assertGt(_pool.inflatorSnapshot(),              initialInflator);
-        assertEq(_pool.lastInflatorSnapshotUpdate(),    8200);
+        assertGt(_pool.inflatorSnapshot(),           initialInflator);
+        assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
 
         // Attempt to call initialize() to reset global variables and check for revert
         vm.expectRevert(IPool.AlreadyInitialized.selector);
         _pool.initialize();
 
         // check that global variables weren't reset
-        assertGt(_pool.inflatorSnapshot(),              initialInflator);
-        assertEq(_pool.lastInflatorSnapshotUpdate(),    8200);
+        assertGt(_pool.inflatorSnapshot(),           initialInflator);
+        assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
     }
 }

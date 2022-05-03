@@ -10,9 +10,9 @@ import "../ERC20PoolFactory.sol";
 
 contract PoolFactoryTest is DSTestPlus {
     ERC20PoolFactory internal _factory;
-    ERC20           internal _collateral;
-    ERC20           internal _quote;
-    uint256         internal _count;
+    ERC20            internal _collateral;
+    ERC20            internal _quote;
+    uint256          internal _count;
 
     function setUp() external {
         _factory    = new ERC20PoolFactory();
@@ -24,8 +24,8 @@ contract PoolFactoryTest is DSTestPlus {
     function testDeployPool() external {
         ERC20Pool pool = _factory.deployPool(address(_collateral), address(_quote));
 
-        assertEq(address(_collateral),  address(pool.collateral()));
-        assertEq(address(_quote),       address(pool.quoteToken()));
+        assertEq(address(_collateral), address(pool.collateral()));
+        assertEq(address(_quote),      address(pool.quoteToken()));
     }
 
     // @notice: Tests revert if actor attempts to deploy ETH pool

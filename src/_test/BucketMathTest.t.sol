@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { DSTestPlus }   from "./utils/DSTestPlus.sol";
+import { DSTestPlus } from "./utils/DSTestPlus.sol";
 
 import "../libraries/BucketMath.sol";
 
@@ -36,47 +36,47 @@ contract BucketMathTest is DSTestPlus {
         assertEq(BucketMath.indexToPrice(-3232),                BucketMath.MIN_PRICE);
         assertEq(BucketMath.priceToIndex(BucketMath.MIN_PRICE), -3232);
 
-        assertEq(BucketMath.indexToPrice(2169),         _p49910);
-        assertEq(BucketMath.priceToIndex(_p49910),      2169);
+        assertEq(BucketMath.indexToPrice(2169),    _p49910);
+        assertEq(BucketMath.priceToIndex(_p49910), 2169);
 
-        assertEq(BucketMath.indexToPrice(1524),        _p2000);
-        assertEq(BucketMath.priceToIndex(_p2000),       1524);
+        assertEq(BucketMath.indexToPrice(1524),   _p2000);
+        assertEq(BucketMath.priceToIndex(_p2000), 1524);
 
-        assertEq(BucketMath.indexToPrice(1000),         _p146);
-        assertEq(BucketMath.priceToIndex(_p146),        1000);
+        assertEq(BucketMath.indexToPrice(1000),  _p146);
+        assertEq(BucketMath.priceToIndex(_p146), 1000);
 
-        assertEq(BucketMath.indexToPrice(999),          _p145);
-        assertEq(BucketMath.priceToIndex(_p145),        999);
+        assertEq(BucketMath.indexToPrice(999),   _p145);
+        assertEq(BucketMath.priceToIndex(_p145), 999);
 
-        assertEq(BucketMath.indexToPrice(333),          _p5_26);
-        assertEq(BucketMath.priceToIndex(_p5_26),       333);
+        assertEq(BucketMath.indexToPrice(333),    _p5_26);
+        assertEq(BucketMath.priceToIndex(_p5_26), 333);
 
-        assertEq(BucketMath.indexToPrice(100),          _p1_64);
-        assertEq(BucketMath.priceToIndex(_p1_64),       100);
+        assertEq(BucketMath.indexToPrice(100),    _p1_64);
+        assertEq(BucketMath.priceToIndex(_p1_64), 100);
 
-        assertEq(BucketMath.indexToPrice(55),           _p1_31);
-        assertEq(BucketMath.priceToIndex(_p1_31),       55);
+        assertEq(BucketMath.indexToPrice(55),     _p1_31);
+        assertEq(BucketMath.priceToIndex(_p1_31), 55);
 
-        assertEq(BucketMath.indexToPrice(10),           _p1_05);
-        assertEq(BucketMath.priceToIndex(_p1_05),       10);
+        assertEq(BucketMath.indexToPrice(10),     _p1_05);
+        assertEq(BucketMath.priceToIndex(_p1_05), 10);
 
-        assertEq(BucketMath.indexToPrice(-2000),        _p0_000046);
-        assertEq(BucketMath.priceToIndex(_p0_000046),   -2000);
+        assertEq(BucketMath.indexToPrice(-2000),      _p0_000046);
+        assertEq(BucketMath.priceToIndex(_p0_000046), -2000);
 
-        assertEq(BucketMath.indexToPrice(-1000),        _p0_006822);
-        assertEq(BucketMath.priceToIndex(_p0_006822),   -1000);
+        assertEq(BucketMath.indexToPrice(-1000),      _p0_006822);
+        assertEq(BucketMath.priceToIndex(_p0_006822), -1000);
 
-        assertEq(BucketMath.indexToPrice(-999),         _p0_006856);
-        assertEq(BucketMath.priceToIndex(_p0_006856),   -999);
+        assertEq(BucketMath.indexToPrice(-999),       _p0_006856);
+        assertEq(BucketMath.priceToIndex(_p0_006856), -999);
 
-        assertEq(BucketMath.indexToPrice(-333),         _p0_189977);
-        assertEq(BucketMath.priceToIndex(_p0_189977),   -333);
+        assertEq(BucketMath.indexToPrice(-333),       _p0_189977);
+        assertEq(BucketMath.priceToIndex(_p0_189977), -333);
 
-        assertEq(BucketMath.indexToPrice(-100),         _p0_607286);
-        assertEq(BucketMath.priceToIndex(_p0_607286),   -100);
+        assertEq(BucketMath.indexToPrice(-100),       _p0_607286);
+        assertEq(BucketMath.priceToIndex(_p0_607286), -100);
 
-        assertEq(BucketMath.indexToPrice(-10),          _p0_951347);
-        assertEq(BucketMath.priceToIndex(_p0_951347),   -10);
+        assertEq(BucketMath.indexToPrice(-10),        _p0_951347);
+        assertEq(BucketMath.priceToIndex(_p0_951347), -10);
 
     }
 

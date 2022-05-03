@@ -39,8 +39,8 @@ abstract contract PermitERC721 is ERC721, IPermit {
         string memory symbol_,
         string memory version_
     ) ERC721(name_, symbol_) {
-        _nameHash       = keccak256(bytes(name_));
-        _versionHash    = keccak256(bytes(version_));
+        _nameHash    = keccak256(bytes(name_));
+        _versionHash = keccak256(bytes(version_));
     }
 
     /// @notice Calculate the EIP-712 compliant DOMAIN_SEPERATOR for ledgible signature encoding

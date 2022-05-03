@@ -1,38 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }              from "./utils/Tokens.sol";
-import { DSTestPlus }                               from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken }     from "./utils/Users.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 import { PositionManager }  from "../PositionManager.sol";
 
-import {IPositionManager} from "../interfaces/IPositionManager.sol";
+import { IPositionManager } from "../interfaces/IPositionManager.sol";
 
 import { AjnaToken } from "../tokens/Ajna.sol";
 
 contract PermitTest is DSTestPlus {
-    PositionManager     internal _positionManager;
-    ERC20Pool           internal _pool;
-    ERC20PoolFactory    internal _factory;
-    CollateralToken     internal _collateral;
-    QuoteToken          internal _quote;
-    AjnaToken           internal _ajnaToken = new AjnaToken(10_000 * 1e18);
-    ERC20Pool           internal _ajnaTokenPool;
+    PositionManager  internal _positionManager;
+    ERC20Pool        internal _pool;
+    ERC20PoolFactory internal _factory;
+    CollateralToken  internal _collateral;
+    QuoteToken       internal _quote;
+    AjnaToken        internal _ajnaToken = new AjnaToken(10_000 * 1e18);
+    ERC20Pool        internal _ajnaTokenPool;
     // nonce for generating random addresses
-    uint16              internal _nonce;
-    bytes32             internal constant PERMIT_NFT_TYPEHASH =
+    uint16           internal _nonce;
+    bytes32          internal constant PERMIT_NFT_TYPEHASH =
         0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
 
     function setUp() external {
-        _collateral         = new CollateralToken();
-        _quote              = new QuoteToken();
-        _factory            = new ERC20PoolFactory();
-        _pool               = _factory.deployPool(address(_collateral), address(_quote));
-        _ajnaTokenPool      = _factory.deployPool(address(_collateral), address(_ajnaToken));
-        _positionManager    = new PositionManager();
+        _collateral      = new CollateralToken();
+        _quote           = new QuoteToken();
+        _factory         = new ERC20PoolFactory();
+        _pool            = _factory.deployPool(address(_collateral), address(_quote));
+        _ajnaTokenPool   = _factory.deployPool(address(_collateral), address(_ajnaToken));
+        _positionManager = new PositionManager();
     }
 
     function generateAddress() private returns (address addr) {
@@ -75,16 +75,16 @@ contract PermitTest is DSTestPlus {
     // @notice:     attempts to increase liquidity unapproved spender
     // https://github.com/Rari-Capital/solmate/blob/7c34ed021cfeeefb1a4bff7e511a25ce8a68806b/src/test/ERC20.t.sol#L89-L103
     function testPermitAjnaNFTByEOA() external {
-        uint256 privateKey          = 0xBEEF;
-        address owner               = vm.addr(privateKey);
-        address spender             = generateAddress();
-        address unapprovedSpender   = generateAddress();
+        uint256 privateKey        = 0xBEEF;
+        address owner             = vm.addr(privateKey);
+        address spender           = generateAddress();
+        address unapprovedSpender = generateAddress();
 
-        mintAndApproveQuoteTokens(owner, 10000 * 1e18);
+        mintAndApproveQuoteTokens(owner,   10000 * 1e18);
         mintAndApproveQuoteTokens(spender, 10000 * 1e18);
 
-        uint256 deadline    = block.timestamp + 1000000;
-        uint256 tokenId     = mintNFT(owner, address(_pool));
+        uint256 deadline = block.timestamp + 1000000;
+        uint256 tokenId  = mintNFT(owner, address(_pool));
 
         // check EOA can be approved via Permit()
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
@@ -152,16 +152,16 @@ contract PermitTest is DSTestPlus {
     // @notice: unapproved spender reverts:
     // @notice:     attempts to transfer NFT when not permitted
     function testSafeTransferFromWithPermit() external {
-        uint256 privateKey          = 0xBEEF;
-        address owner               = vm.addr(privateKey);
-        address newOwner            = generateAddress();
-        address spender             = generateAddress();
-        address unapprovedSpender   = generateAddress();
+        uint256 privateKey        = 0xBEEF;
+        address owner             = vm.addr(privateKey);
+        address newOwner          = generateAddress();
+        address spender           = generateAddress();
+        address unapprovedSpender = generateAddress();
 
         mintAndApproveQuoteTokens(owner, 10000 * 1e18);
 
-        uint256 deadline    = block.timestamp + 1000000;
-        uint256 tokenId     = mintNFT(owner, address(_pool));
+        uint256 deadline = block.timestamp + 1000000;
+        uint256 tokenId  = mintNFT(owner, address(_pool));
 
         // generate permit signature
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(
@@ -218,12 +218,12 @@ contract PermitTest is DSTestPlus {
         _quote.mint(address(minter), 200_000 * 1e18);
         minter.approveToken(_quote, address(_pool), 200_000 * 1e18);
 
-        uint256 liquidityToAdd  = 10000 * 1e18;
-        uint256 price           = _p1004;
-        uint256 tokenId         = mintNFT(address(minter), address(_pool));
+        uint256 liquidityToAdd = 10000 * 1e18;
+        uint256 price          = _p1004;
+        uint256 tokenId        = mintNFT(address(minter), address(_pool));
 
-        UserWithQuoteToken contractSpender              = new UserWithQuoteToken();
-        UserWithQuoteToken unapprovedContractSpender    = new UserWithQuoteToken();
+        UserWithQuoteToken contractSpender           = new UserWithQuoteToken();
+        UserWithQuoteToken unapprovedContractSpender = new UserWithQuoteToken();
 
         uint256 deadline = block.timestamp + 1000000;
 
@@ -276,10 +276,10 @@ contract PermitTest is DSTestPlus {
 
     // @notice: Tests that Ajna token can be permitted for use by another EOA
     function testPermitAjnaERC20() external {
-        uint256 privateKey          = 0xBEEF;
-        address owner               = vm.addr(privateKey);
-        address spender             = generateAddress();
-        address unapprovedSpender   = generateAddress();
+        uint256 privateKey        = 0xBEEF;
+        address owner             = vm.addr(privateKey);
+        address spender           = generateAddress();
+        address unapprovedSpender = generateAddress();
 
         _ajnaToken.transfer(owner, 1 * 1e18);
         assert(_ajnaToken.balanceOf(owner) > 0);
@@ -288,8 +288,8 @@ contract PermitTest is DSTestPlus {
             "Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)"
         );
 
-        uint256 deadline        = block.timestamp + 1000000;
-        uint256 permitAmount    = 10 * 1e18;
+        uint256 deadline     = block.timestamp + 1000000;
+        uint256 permitAmount = 10 * 1e18;
 
         mintNFT(owner, address(_pool));
 
