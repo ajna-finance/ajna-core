@@ -188,12 +188,12 @@ library Buckets {
                     // pay entire debt on this bucket
                     amount_         -= curLup.debt;
                     curLup.onDeposit += curLup.debt;
-                    curLup.debt      = 0;
+                    curLup.debt       = 0;
                 } else {
                     // pay as much debt as possible and exit
                     curLup.onDeposit += amount_;
                     curLup.debt      -= amount_;
-                    amount_         = 0;
+                    amount_          = 0;
                     break;
                 }
             }
