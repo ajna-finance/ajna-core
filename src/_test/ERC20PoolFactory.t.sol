@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { DSTestPlus } from "./utils/DSTestPlus.sol";
-
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import "../ERC20Pool.sol";
-import "../ERC20PoolFactory.sol";
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+
+import { DSTestPlus } from "./utils/DSTestPlus.sol";
 
 contract PoolFactoryTest is DSTestPlus {
-    ERC20PoolFactory internal _factory;
+
     ERC20            internal _collateral;
     ERC20            internal _quote;
-    uint256          internal _count;
+    ERC20PoolFactory internal _factory;
+
+    uint256 internal _count;
 
     function setUp() external {
         _factory    = new ERC20PoolFactory();
@@ -43,4 +45,5 @@ contract PoolFactoryTest is DSTestPlus {
         vm.expectRevert(ERC20PoolFactory.PoolAlreadyExists.selector);
         _factory.deployPool(address(_collateral), address(_quote));
     }
+
 }

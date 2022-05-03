@@ -5,6 +5,7 @@ pragma solidity 0.8.11;
 import "./Maths.sol";
 
 library Buckets {
+
     error NoDepositToReallocateTo();
     error InsufficientLpBalance(uint256 balance);
     error BorrowPriceBelowStopPrice(uint256 borrowPrice);
@@ -73,7 +74,7 @@ library Buckets {
 
         uint256 exchangeRate = getExchangeRate(bucket_);
         uint256 claimable    = Maths.rayToRad(Maths.rmul(lpBalance_, exchangeRate));
-        
+
         amount_   = Maths.min(maxAmount_, claimable);
         lpTokens_ = Maths.rdiv(Maths.radToRay(amount_), exchangeRate);
 
@@ -173,9 +174,9 @@ library Buckets {
     /// @return The new pool LUP
     function repay(
         mapping(uint256 => Bucket) storage buckets_,
-        uint256 amount_, // RAD
-        uint256 lup_, // WAD
-        uint256 inflator_ // RAY
+        uint256 amount_,   // RAD
+        uint256 lup_,      // WAD
+        uint256 inflator_  // RAY
     ) public returns (uint256) {
         Bucket storage curLup = buckets_[lup_];
 
@@ -186,14 +187,14 @@ library Buckets {
 
                 if (amount_ > curLup.debt) {
                     // pay entire debt on this bucket
-                    amount_         -= curLup.debt;
+                    amount_          -= curLup.debt;
                     curLup.onDeposit += curLup.debt;
                     curLup.debt       = 0;
                 } else {
                     // pay as much debt as possible and exit
                     curLup.onDeposit += amount_;
                     curLup.debt      -= amount_;
-                    amount_          = 0;
+                    amount_           = 0;
                     break;
                 }
             }
@@ -388,9 +389,10 @@ library Buckets {
             if (amount_ > curLupDebt) {
                 bucket_.debt      += curLupDebt;
                 bucket_.onDeposit -= curLupDebt;
-                curLup.debt       = 0;
+                curLup.debt        = 0;
                 curLup.onDeposit  += curLupDebt;
-                amount_ -= curLupDebt;
+                amount_           -= curLupDebt;
+
                 if (curLup.price == curLup.up) {
                     // reached top-of-book; nowhere to go
                     break;
@@ -506,7 +508,8 @@ library Buckets {
         uint256 price_
     ) public returns (uint256) {
         Bucket storage bucket = buckets_[price_];
-        bucket.price = price_;
+
+        bucket.price            = price_;
         bucket.inflatorSnapshot = Maths.ONE_RAY;
 
         if (price_ > hpb_) {
@@ -533,4 +536,5 @@ library Buckets {
         }
         return hpb_;
     }
+
 }

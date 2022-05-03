@@ -3,16 +3,17 @@ pragma solidity 0.8.11;
 
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import { IPool }            from "./interfaces/IPool.sol";
-import { IPositionManager } from "./interfaces/IPositionManager.sol";
-
 import { Multicall }   from "./base/Multicall.sol";
 import { PermitERC20 } from "./base/PermitERC20.sol";
 import { PositionNFT } from "./base/PositionNFT.sol";
 
+import { IPool }            from "./interfaces/IPool.sol";
+import { IPositionManager } from "./interfaces/IPositionManager.sol";
+
 import { Maths } from "./libraries/Maths.sol";
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20 {
+
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
     /// @dev Mapping of tokenIds to Position struct
@@ -215,4 +216,5 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         quoteTokens_ = quote + (collateral * price_);
     }
+
 }

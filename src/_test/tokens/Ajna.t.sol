@@ -6,6 +6,7 @@ import { AjnaToken } from "../../tokens/Ajna.sol";
 import { DSTestPlus } from "../utils/DSTestPlus.sol";
 
 contract AjnaTokenTest is DSTestPlus {
+
     AjnaToken internal _token;
 
     function setUp() external {
@@ -21,4 +22,5 @@ contract AjnaTokenTest is DSTestPlus {
         assertEq(_token.symbol(),   "AJNA");
         assertEq(_token.decimals(), 18);
     }
+
 }

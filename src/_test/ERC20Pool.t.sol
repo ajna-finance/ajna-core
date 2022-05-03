@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
-
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
 import { IPool } from "../interfaces/IPool.sol";
 
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
+
 contract ERC20PoolTest is DSTestPlus {
-    ERC20Pool          internal _pool;
+
     CollateralToken    internal _collateral;
+    ERC20Pool          internal _pool;
     QuoteToken         internal _quote;
     UserWithCollateral internal _borrower;
     UserWithQuoteToken internal _lender;
@@ -23,10 +24,10 @@ contract ERC20PoolTest is DSTestPlus {
         _pool       = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
         _lender     = new UserWithQuoteToken();
         _borrower   = new UserWithCollateral();
-        
+
         _quote.mint(address(_lender), 200_000 * 1e18);
         _collateral.mint(address(_borrower), 200_000 * 1e18);
-        
+
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
         _borrower.approveToken(_collateral, address(_pool), 200_000 * 1e18);
     }
@@ -34,7 +35,7 @@ contract ERC20PoolTest is DSTestPlus {
     // @notice:Tests pool factory inputs match the pool created
     function testDeploy() external {
         assertEq(address(_collateral), address(_pool.collateral()));
-        assertEq(address(_quote), address(_pool.quoteToken()));
+        assertEq(address(_quote),      address(_pool.quoteToken()));
     }
 
     function testEmptyBucket() external {
@@ -48,15 +49,15 @@ contract ERC20PoolTest is DSTestPlus {
             uint256 lpOutstanding,
             uint256 bucketCollateral
         ) = _pool.bucketAt(_p1004);
+
         assertEq(deposit,          0);
         assertEq(debt,             0);
         assertEq(bucketInflator,   0);
         assertEq(lpOutstanding,    0);
         assertEq(bucketCollateral, 0);
 
-        (, , , deposit, debt, bucketInflator, lpOutstanding, bucketCollateral) = _pool.bucketAt(
-            _p2793
-        );
+        (, , , deposit, debt, bucketInflator, lpOutstanding, bucketCollateral) = _pool.bucketAt(_p2793);
+
         assertEq(deposit,          0);
         assertEq(debt,             0);
         assertEq(bucketInflator,   0);
@@ -91,4 +92,5 @@ contract ERC20PoolTest is DSTestPlus {
         assertGt(_pool.inflatorSnapshot(),           initialInflator);
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
     }
+
 }

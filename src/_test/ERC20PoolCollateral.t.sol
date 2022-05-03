@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
-
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+
+import { IPool } from "../interfaces/IPool.sol";
 
 import { Buckets } from "../libraries/Buckets.sol";
 import { Maths }   from "../libraries/Maths.sol";
 
-import { IPool } from "../interfaces/IPool.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract ERC20PoolCollateralTest is DSTestPlus {
-    ERC20Pool           internal _pool;
+
     CollateralToken     internal _collateral;
+    ERC20Pool           internal _pool;
     QuoteToken          internal _quote;
     UserWithCollateral  internal _borrower;
     UserWithCollateral  internal _borrower2;
@@ -394,7 +395,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(deposit,          0);
         assertEq(lpOutstanding,    1626279602486); // RAY dust
         assertEq(bucketCollateral, 360575690); // RAY dust
-        
+
         assertEq(_pool.lpBalance(address(_lender), _p9020), 1626279602486); // RAY dust
 
         (uint256 col, uint256 quoteVal) = _pool.getLPTokenExchangeValue(
@@ -415,4 +416,5 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         assertEq(_pool.lpBalance(address(_lender), _p10016), 1810432862926); // RAy dust
     }
+
 }

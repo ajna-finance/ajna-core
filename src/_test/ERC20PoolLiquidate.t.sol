@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
-
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
@@ -12,9 +8,14 @@ import { Maths } from "../libraries/Maths.sol";
 
 import { IPool } from "../interfaces/IPool.sol";
 
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
+
 contract ERC20PoolLiquidateTest is DSTestPlus {
-    ERC20Pool          internal _pool;
+
     CollateralToken    internal _collateral;
+    ERC20Pool          internal _pool;
     QuoteToken         internal _quote;
     UserWithCollateral internal _borrower;
     UserWithCollateral internal _borrower2;
@@ -67,6 +68,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
 
         // first borrower takes a loan of 11_000 DAI, pushing lup to 9_000
         _borrower.borrow(_pool, 11_000 * 1e18, 9_000 * 1e18);
+
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100
         _borrower2.borrow(_pool, 1_000 * 1e18, 100 * 1e18);
         (
@@ -198,6 +200,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         uint256 priceHigh    = _p9020;
         uint256 priceMed     = _p8002;
         uint256 priceLow     = _p100;
+
         // lender deposit in 3 buckets, price spaced
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHighest);
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHigh);
@@ -387,4 +390,5 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       1_000 * 1e45);
         assertEq(_pool.totalCollateral(), 200.189909584313202057545482525 * 1e27);
     }
+
 }

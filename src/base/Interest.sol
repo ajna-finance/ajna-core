@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.11;
 
-import { Maths } from "../libraries/Maths.sol";
-
 import { IPool } from "../interfaces/IPool.sol";
+
+import { Maths } from "../libraries/Maths.sol";
 
 /// @notice Interest related functionality
 abstract contract Interest {
@@ -33,6 +32,7 @@ abstract contract Interest {
     function getPendingInflator() public view returns (uint256) {
         // calculate annualized interest rate
         uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
+
         // secondsSinceLastUpdate is unscaled
         uint256 secondsSinceLastUpdate = Maths.sub(block.timestamp, lastInflatorSnapshotUpdate);
 
@@ -48,11 +48,7 @@ abstract contract Interest {
     /// @param pendingInflator_ RAY - The next debt inflator value
     /// @param currentInflator_ RAY - The current debt inflator value
     /// @return RAD - The additional debt pending accumulation
-    function getPendingInterest(
-        uint256 debt_,
-        uint256 pendingInflator_,
-        uint256 currentInflator_
-    ) internal pure returns (uint256) {
+    function getPendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
         return
             Maths.rayToRad(
                 Maths.rmul(
@@ -61,4 +57,5 @@ abstract contract Interest {
                 )
             );
     }
+
 }

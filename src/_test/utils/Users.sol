@@ -6,6 +6,7 @@ import { ERC20Pool } from "../../ERC20Pool.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract UserWithCollateral {
+
     function approveAndDepositTokenAsCollateral(
         IERC20 token_,
         ERC20Pool pool_,
@@ -38,9 +39,11 @@ contract UserWithCollateral {
     function removeCollateral(ERC20Pool pool_, uint256 amount_) public {
         pool_.removeCollateral(amount_);
     }
+
 }
 
 contract UserWithQuoteToken {
+
     function addQuoteToken(
         ERC20Pool pool,
         address recipient,
@@ -102,4 +105,5 @@ contract UserWithQuoteToken {
     function updateInterestRate(ERC20Pool pool) public {
         pool.updateInterestRate();
     }
+
 }

@@ -7,10 +7,12 @@ import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
 import { ERC20Pool } from "./ERC20Pool.sol";
 
 contract ERC20PoolFactory {
+
     using ClonesWithImmutableArgs for address;
 
     mapping(address => mapping(address => address)) public deployedPools;
-    ERC20Pool                                       public implementation;
+
+    ERC20Pool public implementation;
 
     event PoolCreated(ERC20Pool pool);
 

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.11;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
@@ -17,6 +16,7 @@ import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 // - Fixed Point (Open Source License): https://github.com/paulrberg/prb-math/tree/v1.0.3
 
 library BucketMath {
+
     using PRBMathSD59x18 for int256;
 
     uint256 public constant WAD = 10**18;
@@ -125,4 +125,5 @@ library BucketMath {
         index_ = priceToIndex(price_);
         bucketPrice_ = indexToPrice(index_);
     }
+
 }

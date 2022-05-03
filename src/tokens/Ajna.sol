@@ -6,6 +6,7 @@ import { ERC20 }       from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20Permit } from "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 
 contract AjnaToken is ERC20("AjnaToken", "AJNA"), ERC20Permit {
+
     constructor(uint256 initialSupply) ERC20Permit("AjnaToken") {
         _mint(msg.sender, initialSupply);
     }
@@ -20,4 +21,5 @@ contract AjnaToken is ERC20("AjnaToken", "AJNA"), ERC20Permit {
 
         require(from_ != address(this), "Cannot transfer tokens from the contract itself");
     }
+
 }

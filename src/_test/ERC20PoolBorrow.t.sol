@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
-
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+
+import { IPool } from "../interfaces/IPool.sol";
 
 import { Buckets } from "../libraries/Buckets.sol";
 import { Maths }   from "../libraries/Maths.sol";
 
-import { IPool } from "../interfaces/IPool.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract ERC20PoolBorrowTest is DSTestPlus {
-    ERC20Pool           internal _pool;
+
     CollateralToken     internal _collateral;
+    ERC20Pool           internal _pool;
     QuoteToken          internal _quote;
     UserWithCollateral  internal _borrower;
     UserWithCollateral  internal _borrower2;
@@ -107,10 +108,12 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check bucket deposit and debt at 3_010.892022197881557845
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(priceMed);
         assertEq(deposit, 9_000 * 1e45);
+
         // check borrower balance
         (uint256 borrowerDebt, uint256 depositedCollateral, ) = _pool.borrowers(address(_borrower));
         assertEq(borrowerDebt,        21_000 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
+
         // check pool balances
         assertEq(_pool.totalQuoteToken(),          29_000 * 1e45);
         assertEq(_pool.totalDebt(),                21_000 * 1e45);
@@ -143,14 +146,17 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceLow);
         assertEq(debt,    0);
         assertEq(deposit, 10_000 * 1e45);
+
         // check bucket debt at 3_010.892022197881557845
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceMed);
         assertEq(debt,    10000.013001099216594901568631 * 1e45);
         assertEq(deposit, 0);
+
         // check bucket debt at 3_514.334495390401848927
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceHigh);
         assertEq(debt,    10_000 * 1e45);
         assertEq(deposit, 0);
+
         // check bucket debt at 4_000.927678580567537368
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceHighest);
         assertEq(debt,    10_000 * 1e45);
@@ -160,6 +166,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         (borrowerDebt, depositedCollateral, ) = _pool.borrowers(address(_borrower));
         assertEq(borrowerDebt,        30_000.2730230835484929329412510 * 1e45);
         assertEq(depositedCollateral, 100 * 1e27);
+
         // check pool balances
         assertEq(_pool.totalQuoteToken(),          20_000 * 1e45);
         assertEq(_pool.totalDebt(),                30_000.2730230835484929329412510 * 1e45);
@@ -186,18 +193,22 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceLow);
         assertEq(debt,    0);
         assertEq(deposit, 10_000 * 1e45);
+
         // check bucket debt at 3_010.892022197881557845
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceMed);
         assertEq(debt,    0);
         assertEq(deposit, 10_000.0130010992165949015686310 * 1e45);
+
         // check bucket debt at 3_514.334495390401848927
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceHigh);
         assertEq(debt,    0);
         assertEq(deposit, 10_000.130010992165949015686310 * 1e45);
+
         // check bucket debt at 4_000.927678580567537368
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceHighest);
         assertEq(debt,    0);
         assertEq(deposit, 10_000.130010992165949015686310 * 1e45);
+
         // check bucket debt at 5_007.644384905151472283
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p5007);
         assertEq(debt,    30_000.2730230835484929329412510 * 1e45);
@@ -252,6 +263,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         uint256 poolCollateralizationAfterB2Actions = _pool.getPoolCollateralization();
         uint256 targetUtilizationAfterAddCollateral = _pool.getPoolTargetUtilization();
         uint256 actualUtilizationAfterAddCollateral = _pool.getPoolActualUtilization();
+
         assertEq(_pool.getPoolCollateralization(),    2.040226051217542254621180000 * 1e27);
         assertGt(poolCollateralizationAfterB2Actions, poolCollateralizationAfterB1Actions);
         assertEq(actualUtilizationAfterAddCollateral, actualUtilizationAfterBorrow);
@@ -328,4 +340,5 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
     // TODO: finish implemeting
     function testGetMinimumPoolPrice() external {}
+
 }

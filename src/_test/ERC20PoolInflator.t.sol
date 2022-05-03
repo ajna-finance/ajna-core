@@ -3,16 +3,17 @@ pragma solidity 0.8.11;
 
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
+import { ERC20Pool }        from "../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+
 import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
 import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
 import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
-import { ERC20Pool }        from "../ERC20Pool.sol";
-import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
-
 contract ERC20PoolInflatorTest is DSTestPlus {
-    ERC20Pool          internal _pool;
+
     CollateralToken    internal _collateral;
+    ERC20Pool          internal _pool;
     QuoteToken         internal _quote;
     UserWithCollateral internal _borrower;
     UserWithQuoteToken internal _lender;
@@ -24,7 +25,6 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         _borrower   = new UserWithCollateral();
         _lender     = new UserWithQuoteToken();
 
-        
         _collateral.mint(address(_borrower), 100 * 1e18);
         _quote.mint(address(_lender), 200_000 * 1e18);
         _borrower.approveToken(_collateral, address(_pool), 100 * 1e18);
@@ -111,4 +111,5 @@ contract ERC20PoolInflatorTest is DSTestPlus {
             )
         );
     }
+
 }

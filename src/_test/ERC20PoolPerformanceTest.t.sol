@@ -1,21 +1,24 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
-
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
+
 contract ERC20PoolPerformanceTest is DSTestPlus {
-    ERC20Pool            internal _pool;
+
+    uint8 internal constant MAX_USERS = type(uint8).max;
+
     CollateralToken      internal _collateral;
+    ERC20Pool            internal _pool;
     QuoteToken           internal _quote;
-    uint256              internal _count = 7000;
     UserWithCollateral[] internal _borrowers;
     UserWithQuoteToken[] internal _lenders;
-    uint8                internal constant MAX_USERS = type(uint8).max;
+
+    uint256 internal _count = 7000;
 
     function setUp() external {
         _collateral = new CollateralToken();
@@ -38,4 +41,5 @@ contract ERC20PoolPerformanceTest is DSTestPlus {
             _lenders.push(user);
         }
     }
+
 }

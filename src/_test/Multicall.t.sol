@@ -1,24 +1,26 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
-
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 import { PositionManager }  from "../PositionManager.sol";
 
 import { IPositionManager } from "../interfaces/IPositionManager.sol";
 
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
+
 contract MulticallTest is DSTestPlus {
-    PositionManager  internal _positionManager;
+
+    // nonce for generating random addresses
+    uint16 internal _nonce = 0;
+
+    CollateralToken  internal _collateral;
     ERC20Pool        internal _pool;
     ERC20PoolFactory internal _factory;
-    CollateralToken  internal _collateral;
+    PositionManager  internal _positionManager;
     QuoteToken       internal _quote;
-    // nonce for generating random addresses
-    uint16           internal _nonce = 0;
 
     function setUp() external {
         _collateral      = new CollateralToken();
@@ -30,9 +32,7 @@ contract MulticallTest is DSTestPlus {
     // TODO: move this to _test/utils/...
     function generateAddress() private returns (address addr) {
         // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        addr = address(
-            uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number)))))
-        );
+        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
         _nonce++;
     }
 
@@ -169,4 +169,5 @@ contract MulticallTest is DSTestPlus {
 
         // TODO: add case for custom error string -> figure out how to induce such a revert
     }
+
 }

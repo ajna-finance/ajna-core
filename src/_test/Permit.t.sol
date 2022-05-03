@@ -1,10 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
-
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 import { PositionManager }  from "../PositionManager.sol";
@@ -13,33 +9,38 @@ import { IPositionManager } from "../interfaces/IPositionManager.sol";
 
 import { AjnaToken } from "../tokens/Ajna.sol";
 
+import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
+import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
+
 contract PermitTest is DSTestPlus {
-    PositionManager  internal _positionManager;
+
+    bytes32 internal constant PERMIT_NFT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
+
+    // nonce for generating random addresses
+    uint16 internal _nonce;
+
+    AjnaToken        internal _ajnaToken = new AjnaToken(10_000 * 1e18);
+    CollateralToken  internal _collateral;
+    ERC20Pool        internal _ajnaTokenPool;
     ERC20Pool        internal _pool;
     ERC20PoolFactory internal _factory;
-    CollateralToken  internal _collateral;
+    PositionManager  internal _positionManager;
     QuoteToken       internal _quote;
-    AjnaToken        internal _ajnaToken = new AjnaToken(10_000 * 1e18);
-    ERC20Pool        internal _ajnaTokenPool;
-    // nonce for generating random addresses
-    uint16           internal _nonce;
-    bytes32          internal constant PERMIT_NFT_TYPEHASH =
-        0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
 
     function setUp() external {
         _collateral      = new CollateralToken();
         _quote           = new QuoteToken();
         _factory         = new ERC20PoolFactory();
-        _pool            = _factory.deployPool(address(_collateral), address(_quote));
-        _ajnaTokenPool   = _factory.deployPool(address(_collateral), address(_ajnaToken));
         _positionManager = new PositionManager();
+
+        _pool          = _factory.deployPool(address(_collateral), address(_quote));
+        _ajnaTokenPool = _factory.deployPool(address(_collateral), address(_ajnaToken));
     }
 
     function generateAddress() private returns (address addr) {
         // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        addr = address(
-            uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number)))))
-        );
+        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
         _nonce++;
     }
 
@@ -321,4 +322,5 @@ contract PermitTest is DSTestPlus {
         assert(_ajnaToken.allowance(owner, spender) > 0);
         assert(_ajnaToken.allowance(owner, unapprovedSpender) == 0);
     }
+
 }

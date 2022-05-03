@@ -65,4 +65,5 @@ interface IPositionManager {
         address pool;
         uint256[] prices;
     }
+
 }

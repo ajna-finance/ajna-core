@@ -14,23 +14,26 @@ import { PositionManager } from "../PositionManager.sol";
 import { IPositionManager } from "../interfaces/IPositionManager.sol";
 
 contract PositionManagerTest is DSTestPlus {
-    PositionManager  internal _positionManager;
+
+    // UserWithQuoteToken internal alice;
+    address internal _alice = 0x02B9219F667d91fBe64F8f77F691dE3D1000F223;
+
+    // nonce for generating random addresses
+    uint16 internal _nonce;
+
+    CollateralToken  internal _collateral;
     ERC20Pool        internal _pool;
     ERC20PoolFactory internal _factory;
-    CollateralToken  internal _collateral;
+    PositionManager  internal _positionManager;
     QuoteToken       internal _quote;
-    // UserWithQuoteToken internal alice;
-    address          internal _alice;
-    // nonce for generating random addresses
-    uint16           internal _nonce;
 
     function setUp() public {
-        _alice           = 0x02B9219F667d91fBe64F8f77F691dE3D1000F223;
         _collateral      = new CollateralToken();
         _quote           = new QuoteToken();
         _factory         = new ERC20PoolFactory();
-        _pool            = _factory.deployPool(address(_collateral), address(_quote));
         _positionManager = new PositionManager();
+
+        _pool = _factory.deployPool(address(_collateral), address(_quote));
 
         // TODO: move logic to internal methods
         _quote.mint(_alice, 30000000000 * 1e18);
@@ -45,14 +48,13 @@ contract PositionManagerTest is DSTestPlus {
         _quote.approve(address(_pool), type(uint256).max);
         vm.prank(operator_);
         _quote.approve(address(_positionManager), type(uint256).max);
+
     }
 
-    function mintAndApproveCollateralTokens(UserWithCollateral operator_, uint256 mintAmount_)
-        private
-    {
+    function mintAndApproveCollateralTokens(UserWithCollateral operator_, uint256 mintAmount_)private{
         _collateral.mint(address(operator_), mintAmount_ * 1e18);
 
-        operator_.approveToken(_collateral, address(_pool), mintAmount_);
+        operator_.approveToken(_collateral, address(_pool),            mintAmount_);
         operator_.approveToken(_collateral, address(_positionManager), mintAmount_);
     }
 
@@ -111,9 +113,7 @@ contract PositionManagerTest is DSTestPlus {
 
     function generateAddress() private returns (address addr) {
         // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        addr = address(
-            uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number)))))
-        );
+        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
         _nonce++;
     }
 
@@ -229,8 +229,8 @@ contract PositionManagerTest is DSTestPlus {
         (, address updatedPositionOwner, ) = _positionManager.positions(tokenId);
         uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, mintPrice);
 
-        assertEq(_pool.totalQuoteToken(),   Maths.wadToRad(mintAmount) / 4);
-        assertEq(updatedPositionOwner,      testAddress);
+        assertEq(_pool.totalQuoteToken(), Maths.wadToRad(mintAmount) / 4);
+        assertEq(updatedPositionOwner,   testAddress);
         assert(updatedLPTokens != 0);
 
         // Add liquidity to the same price again
@@ -469,4 +469,5 @@ contract PositionManagerTest is DSTestPlus {
     }
 
     function testGetPositionValueInQuoteTokens() external {}
+
 }

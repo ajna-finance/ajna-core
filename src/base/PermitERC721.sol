@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import { Address }  from "@openzeppelin/contracts/utils/Address.sol";
-import { ERC721 }   from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
+import { ERC721 }   from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { Address }  from "@openzeppelin/contracts/utils/Address.sol";
 
 interface IPermit {
     function permit(
@@ -20,6 +20,7 @@ interface IPermit {
 /// @notice Functionality to enable EIP-4494 permit calls as part of interactions with Position NFTs
 /// @dev spender https://eips.ethereum.org/EIPS/eip-4494
 abstract contract PermitERC721 is ERC721, IPermit {
+
     /// @dev Gets the current nonce for a token ID and then increments it, returning the original value
     function _getAndIncrementNonce(uint256 tokenId_) internal virtual returns (uint256);
 
@@ -139,4 +140,5 @@ abstract contract PermitERC721 is ERC721, IPermit {
             chainId_ := chainid()
         }
     }
+
 }

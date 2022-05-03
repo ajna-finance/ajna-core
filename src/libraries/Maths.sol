@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.11;
 
 library Maths {
+
     uint256 public constant WAD = 10**18;
     uint256 public constant ONE_WAD = 1 * WAD;
 
@@ -95,4 +95,5 @@ library Maths {
     function radToRay(uint256 x) internal pure returns (uint256) {
         return x / 10**18;
     }
+
 }

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.11;
 
 /// @notice Functionality to enable contracts to implement multicall method for method call aggregation into single transactions
 /// @dev Implementing multicall internally enables gas savings compared to making a call to externally deployed contracts
 abstract contract Multicall {
+
     /// @notice Make a series of contract calls in a single transaction
     /// @param data_ Externally aggregated function calls serialized into a byte array
     /// @return results_ Array of the results from each aggregated call
@@ -76,4 +76,5 @@ abstract contract Multicall {
             }
         }
     }
+
 }

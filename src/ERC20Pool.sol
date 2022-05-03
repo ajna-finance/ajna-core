@@ -2,32 +2,35 @@
 
 pragma solidity 0.8.11;
 
-import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-
-import { BitMaps } from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
-
 import { Clone } from "@clones/Clone.sol";
-
-import { IPool } from "./interfaces/IPool.sol";
-
-import { Interest } from "./base/Interest.sol";
-
-import "./libraries/Maths.sol";
-import "./libraries/BucketMath.sol";
-import "./libraries/Buckets.sol";
 
 import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
+import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { BitMaps }   from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+
+import { Interest } from "./base/Interest.sol";
+
+import { IPool } from "./interfaces/IPool.sol";
+
+import { Buckets }    from "./libraries/Buckets.sol";
+import { BucketMath } from "./libraries/BucketMath.sol";
+import { Maths }      from "./libraries/Maths.sol";
+
 contract ERC20Pool is IPool, Clone, Interest {
+
     using SafeERC20 for ERC20;
+
     using Buckets for mapping(uint256 => Buckets.Bucket);
+
+    /// @dev Counter used by onlyOnce modifier
+    uint8 private _poolInitializations = 0;
 
     // price (WAD) -> bucket
     mapping(uint256 => Buckets.Bucket) private _buckets;
-    BitMaps.BitMap                     private _bitmap;
-    /// @dev Counter used by onlyOnce modifier
-    uint8                              private _poolInitializations = 0;
+
+    BitMaps.BitMap private _bitmap;
 
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
@@ -35,15 +38,16 @@ contract ERC20Pool is IPool, Clone, Interest {
     uint256 public hpb; // WAD
     uint256 public lup; // WAD
 
+    uint256 public previousRateUpdate;
+    uint256 public totalCollateral;    // RAY
+    uint256 public totalQuoteToken;    // RAD
+    uint256 public totalDebt;          // RAD
+
+    // borrowers book: borrower address -> BorrowerInfo
+    mapping(address => BorrowerInfo) public borrowers;
+
     // lenders lp token balances: lender address -> price bucket (WAD) -> lender lp (RAY)
     mapping(address => mapping(uint256 => uint256)) public lpBalance;
-    // borrowers book: borrower address -> BorrowerInfo
-    mapping(address => BorrowerInfo)                public borrowers;
-
-    uint256 public previousRateUpdate;
-    uint256 public totalCollateral; // RAY
-    uint256 public totalQuoteToken; // RAD
-    uint256 public totalDebt; // RAD
 
     /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
@@ -103,9 +107,8 @@ contract ERC20Pool is IPool, Clone, Interest {
             lup = newLup;
         }
 
-        
-        lpBalance[recipient_][price_] += lpTokens; // update lender lp balance for current price bucket
-        totalQuoteToken                 += amount_; // update quote token accumulator
+        lpBalance[recipient_][price_] += lpTokens;  // update lender lp balance for current price bucket
+        totalQuoteToken               += amount_;   // update quote token accumulator
 
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
 
@@ -267,6 +270,7 @@ contract ERC20Pool is IPool, Clone, Interest {
     /// @param maxAmount_ WAD The maximum amount of quote token to repay
     function repay(uint256 maxAmount_) external {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) * quoteTokenScale;
+
         // convert amount from WAD to pool precision - RAD
         maxAmount_ = Maths.wadToRad(maxAmount_);
         if (availableAmount < maxAmount_) {
@@ -383,9 +387,9 @@ contract ERC20Pool is IPool, Clone, Interest {
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
 
-                /*****************************/
-                /*** Bucket Management ***/
-                /*****************************/
+    /*************************/
+    /*** Bucket Management ***/
+    /*************************/
 
     // TODO: rename bucketAtPrice & add bucketAtIndex
     // TODO: add return type
@@ -580,9 +584,9 @@ contract ERC20Pool is IPool, Clone, Interest {
         uint256 collateralization = Maths.ONE_RAY;
 
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
-            borrowerPendingDebt += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
-            collateralEncumbered = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization = Maths.rdiv(borrower.collateralDeposited, collateralEncumbered);
+            borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
+            collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
+            collateralization     = Maths.rdiv(borrower.collateralDeposited, collateralEncumbered);
         }
 
         return (
@@ -657,8 +661,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
         // calculate the amount of collateral and quote tokens equivalent to the lenderShare
         collateralTokens_ = Maths.rmul(bucketCollateral, lenderShare);
-        quoteTokens_      = Maths.rayToRad(
-                    Maths.rmul(Maths.radToRay(Maths.add(onDeposit, debt)), lenderShare)
-        );
+        quoteTokens_      = Maths.rayToRad(Maths.rmul(Maths.radToRay(Maths.add(onDeposit, debt)), lenderShare));
     }
+
 }

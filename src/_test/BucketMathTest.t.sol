@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
+import { BucketMath } from "../libraries/BucketMath.sol";
+
 import { DSTestPlus } from "./utils/DSTestPlus.sol";
 
-import "../libraries/BucketMath.sol";
-
 contract BucketMathTest is DSTestPlus {
+
     // @notice: Tests price maps to index
     // @notice: BucketMath revert:
     // @notice:     attempt to get index of bad price
@@ -23,10 +24,10 @@ contract BucketMathTest is DSTestPlus {
 
     // @notice: Tests validity of min and max prices
     function testIsValidPrice() public {
-        assertTrue(BucketMath.isValidPrice(BucketMath.MAX_PRICE));
-        assertTrue(BucketMath.isValidPrice(BucketMath.MIN_PRICE));
-        assertTrue(BucketMath.isValidPrice(_p49910));
-        assertTrue(!BucketMath.isValidPrice(2_000 * 10**18));
+        assertTrue( BucketMath.isValidPrice(BucketMath.MAX_PRICE));
+        assertTrue( BucketMath.isValidPrice(BucketMath.MIN_PRICE));
+        assertTrue( BucketMath.isValidPrice(_p49910));
+        assertTrue(!BucketMath.isValidPrice(2_000 * 10 ** 18));
     }
 
     // @notice: Tests verying prices map to indexes properly
@@ -85,8 +86,9 @@ contract BucketMathTest is DSTestPlus {
     function testPriceBucketCorrectness() public {
         for (int256 i = BucketMath.MIN_PRICE_INDEX; i < BucketMath.MAX_PRICE_INDEX; i++) {
             uint256 priceToTest = BucketMath.indexToPrice(i);
+
             assertEq(BucketMath.priceToIndex(priceToTest), i);
-            assertEq(priceToTest, BucketMath.indexToPrice(i));
+            assertEq(priceToTest,                          BucketMath.indexToPrice(i));
         }
     }
 
@@ -111,4 +113,5 @@ contract BucketMathTest is DSTestPlus {
         assertEq(BucketMath.indexToPrice(index), price);
         assertEq(BucketMath.priceToIndex(price), index);
     }
+
 }

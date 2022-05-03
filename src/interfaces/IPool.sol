@@ -70,4 +70,5 @@ interface IPool {
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);
 
     function liquidate(address borrower_) external;
+
 }
