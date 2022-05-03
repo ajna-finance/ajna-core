@@ -13,14 +13,14 @@ library Buckets {
     error InsufficientBucketLiquidity(uint256 amountAvailable);
 
     struct Bucket {
-        uint256 price; // WAD current bucket price
-        uint256 up; // WAD upper utilizable bucket price
-        uint256 down; // WAD next utilizable bucket price
-        uint256 onDeposit; // RAD quote token on deposit in bucket
-        uint256 debt; // RAD accumulated bucket debt
+        uint256 price;            // WAD current bucket price
+        uint256 up;               // WAD upper utilizable bucket price
+        uint256 down;             // WAD next utilizable bucket price
+        uint256 onDeposit;        // RAY quote token on deposit in bucket
+        uint256 debt;             // RAY accumulated bucket debt
         uint256 inflatorSnapshot; // RAY bucket inflator snapshot
-        uint256 lpOutstanding; // RAY outstanding Liquidity Provider LP tokens in a bucket
-        uint256 collateral; // RAY Current collateral tokens deposited in the bucket
+        uint256 lpOutstanding;    // RAY outstanding Liquidity Provider LP tokens in a bucket
+        uint256 collateral;       // RAY Current collateral tokens deposited in the bucket
     }
 
     /// @notice Called by a lender to add quote tokens to a bucket
@@ -44,7 +44,7 @@ library Buckets {
 
         accumulateBucketInterest(bucket, inflator_);
 
-        lpTokens_ = Maths.rdiv(Maths.radToRay(amount_), getExchangeRate(bucket));
+        lpTokens_ = Maths.rdiv(amount_, getExchangeRate(bucket));
         bucket.lpOutstanding += lpTokens_;
         bucket.onDeposit     += amount_;
 
@@ -66,9 +66,9 @@ library Buckets {
     function removeQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
-        uint256 maxAmount_, // RAD
+        uint256 maxAmount_, // RAY
         uint256 lpBalance_, // RAY
-        uint256 inflator_ // RAY
+        uint256 inflator_   // RAY
     ) public returns (uint256 amount_, uint256 lup_, uint256 lpTokens_) {
         accumulateBucketInterest(bucket_, inflator_);
 
@@ -76,7 +76,7 @@ library Buckets {
         uint256 claimable    = Maths.rayToRad(Maths.rmul(lpBalance_, exchangeRate));
 
         amount_   = Maths.min(maxAmount_, claimable);
-        lpTokens_ = Maths.rdiv(Maths.radToRay(amount_), exchangeRate);
+        lpTokens_ = Maths.rdiv(amount_, exchangeRate);
 
         // Remove from deposit first
         uint256 removeFromDeposit = Maths.min(amount_, bucket_.onDeposit);
@@ -96,8 +96,8 @@ library Buckets {
     /// @return lpRedemption_ The amount of LP tokens that will be redeemed
     function claimCollateral(
         mapping(uint256 => Bucket) storage buckets_,
-        uint256 price_, // WAD
-        uint256 amount_, // RAY
+        uint256 price_,    // WAD
+        uint256 amount_,   // RAY
         uint256 lpBalance_ // RAY
     ) public returns (uint256 lpRedemption_) {
         Bucket storage bucket = buckets_[price_];
@@ -120,22 +120,22 @@ library Buckets {
     /// @notice Called by a borrower to borrow from a given bucket
     /// @param buckets_ Mapping of buckets for a given pool
     /// @param amount_ The amount of quote tokens to borrow from the bucket
-    /// @param stop_ The lowest price desired to borrow at
+    /// @param limit_ The lowest price desired to borrow at
     /// @param lup_ The current pool LUP
     /// @param inflator_ The current pool inflator rate
     /// @return lup WAD The price at which the borrow executed
     function borrow(
         mapping(uint256 => Bucket) storage buckets_,
-        uint256 amount_, // RAD
-        uint256 stop_, // WAD
-        uint256 lup_, // WAD
+        uint256 amount_,  // RAY
+        uint256 limit_,   // WAD
+        uint256 lup_,     // WAD
         uint256 inflator_ // RAY
     ) public returns (uint256) {
         Bucket storage curLup = buckets_[lup_];
         uint256 amountRemaining = amount_;
 
         while (true) {
-            if (curLup.price < stop_) {
+            if (curLup.price < limit_) {
                 revert BorrowPriceBelowStopPrice({borrowPrice: curLup.price});
             }
 
@@ -174,7 +174,7 @@ library Buckets {
     /// @return The new pool LUP
     function repay(
         mapping(uint256 => Bucket) storage buckets_,
-        uint256 amount_,   // RAD
+        uint256 amount_,   // RAY
         uint256 lup_,      // WAD
         uint256 inflator_  // RAY
     ) public returns (uint256) {
@@ -220,9 +220,9 @@ library Buckets {
     function purchaseBid(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
-        uint256 amount_, // RAD
+        uint256 amount_,     // RAY
         uint256 collateral_, // RAY
-        uint256 inflator_ // RAY
+        uint256 inflator_    // RAY
     ) public returns (uint256 lup_) {
         accumulateBucketInterest(bucket_, inflator_);
 
@@ -252,10 +252,10 @@ library Buckets {
     /// @return requiredCollateral_ The amount of collateral to be liquidated
     function liquidate(
         mapping(uint256 => Bucket) storage buckets_,
-        uint256 debt_, // RAD
+        uint256 debt_,       // RAY
         uint256 collateral_, // RAY
-        uint256 hpb_, // WAD
-        uint256 inflator_ // RAY
+        uint256 hpb_,        // WAD
+        uint256 inflator_    // RAY
     ) public returns (uint256 requiredCollateral_) {
         Bucket storage bucket = buckets_[hpb_];
 
@@ -263,10 +263,7 @@ library Buckets {
             accumulateBucketInterest(bucket, inflator_);
             uint256 bucketDebtToPurchase = Maths.min(debt_, bucket.debt);
 
-            uint256 debtByPriceRay = Maths.rdiv(
-                Maths.radToRay(debt_),
-                Maths.wadToRay(bucket.price)
-            );
+            uint256 debtByPriceRay = Maths.rdiv(debt_, Maths.wadToRay(bucket.price));
             uint256 bucketRequiredCollateral = Maths.min(
                 Maths.min(debtByPriceRay, collateral_),
                 debtByPriceRay
@@ -306,7 +303,7 @@ library Buckets {
     function reallocateDown(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
-        uint256 amount_, // RAD
+        uint256 amount_,  // RAY
         uint256 inflator_ // RAY
     ) private returns (uint256 lup_) {
         lup_ = bucket_.price;
@@ -367,8 +364,8 @@ library Buckets {
     function reallocateUp(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
-        uint256 amount_,
-        uint256 lup_,
+        uint256 amount_,  // RAY
+        uint256 lup_,     // WAD
         uint256 inflator_ // RAY
     ) private returns (uint256) {
         Bucket storage curLup = buckets_[lup_];
@@ -416,11 +413,9 @@ library Buckets {
     /// @param inflator_ RAY - The current bucket inflator value
     function accumulateBucketInterest(Bucket storage bucket_, uint256 inflator_) private {
         if (bucket_.debt != 0) {
-            bucket_.debt += Maths.rayToRad(
-                Maths.rmul(
-                    Maths.radToRay(bucket_.debt),
-                    Maths.sub(Maths.rdiv(inflator_, bucket_.inflatorSnapshot), Maths.ONE_RAY)
-                )
+            bucket_.debt += Maths.rmul(
+                bucket_.debt,
+                Maths.sub(Maths.rdiv(inflator_, bucket_.inflatorSnapshot), Maths.ONE_RAY)
             );
             bucket_.inflatorSnapshot = inflator_;
         }
@@ -483,16 +478,15 @@ library Buckets {
         collateral       = bucket.collateral;
     }
 
-    // TODO: replace + with Maths.add()
     /// @notice Calculate the current exchange rate for Quote tokens / LP Tokens
     /// @dev Performs calculations in RAY terms and rounds up to determine size to minimize precision loss
     /// @return RAY The current rate at which quote tokens can be exchanged for LP tokens
     function getExchangeRate(Bucket storage bucket_) internal view returns (uint256) {
         uint256 size = bucket_.onDeposit +
             bucket_.debt +
-            Maths.rayToRad(Maths.rmul(bucket_.collateral, Maths.wadToRay(bucket_.price)));
+            Maths.rmul(bucket_.collateral, Maths.wadToRay(bucket_.price));
         if (size != 0 && bucket_.lpOutstanding != 0) {
-            return Maths.rdiv(Maths.radToRay(size), bucket_.lpOutstanding);
+            return Maths.rdiv(size, bucket_.lpOutstanding);
         }
         return Maths.ONE_RAY;
     }

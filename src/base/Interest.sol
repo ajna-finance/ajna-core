@@ -44,17 +44,15 @@ abstract contract Interest {
     }
 
     /// @notice Calculate the amount of unaccrued interest for a specified amount of debt
-    /// @param debt_ RAD - The total book debt
+    /// @param debt_            RAY - A debt amount (pool, bucket, or borrower)
     /// @param pendingInflator_ RAY - The next debt inflator value
     /// @param currentInflator_ RAY - The current debt inflator value
     /// @return RAD - The additional debt pending accumulation
     function getPendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
         return
-            Maths.rayToRad(
-                Maths.rmul(
-                    Maths.radToRay(debt_),
-                    Maths.sub(Maths.rmul(pendingInflator_, currentInflator_), Maths.ONE_RAY)
-                )
+            Maths.rmul(
+                debt_,
+                Maths.sub(Maths.rmul(pendingInflator_, currentInflator_), Maths.ONE_RAY)
             );
     }
 
