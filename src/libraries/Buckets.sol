@@ -308,7 +308,7 @@ library Buckets {
         lup = _bucket.price;
         // debt reallocation
         if (_amount > _bucket.onDeposit) {
-            uint256 reallocation = _amount - _bucket.onDeposit;
+            uint256 reallocation = _amount - _bucket.onDeposit + _bucket.debt;
             if (_bucket.down != 0) {
                 Bucket storage toBucket = buckets[_bucket.down];
 
@@ -317,7 +317,7 @@ library Buckets {
 
                     if (reallocation < toBucket.onDeposit) {
                         // reallocate all and exit
-                        _bucket.debt -= reallocation;
+                        _bucket.debt -= Maths.min(_bucket.debt, reallocation);
                         toBucket.debt += reallocation;
                         toBucket.onDeposit -= reallocation;
                         lup = toBucket.price;
@@ -325,7 +325,7 @@ library Buckets {
                     } else {
                         if (toBucket.onDeposit != 0) {
                             reallocation -= toBucket.onDeposit;
-                            _bucket.debt -= toBucket.onDeposit;
+                            _bucket.debt -= Maths.min(_bucket.debt, toBucket.onDeposit);
                             toBucket.debt += toBucket.onDeposit;
                             toBucket.onDeposit -= toBucket.onDeposit;
                         }

@@ -278,7 +278,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         // check balances
         assertEq(collateral.balanceOf(address(lender)), 0);
-        assertEq(pool.lpBalance(address(lender), priceMed), 4_000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), priceHigh), 3_000 * 1e27);
         assertEq(collateral.balanceOf(address(bidder)), 99.625086949701584271 * 1e18);
         assertEq(collateral.balanceOf(address(pool)), 100.374913050298415729 * 1e18);
         assertEq(quote.balanceOf(address(lender)), 188_000 * 1e18);
@@ -293,34 +293,34 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         );
         lender1.claimCollateral(pool, address(lender1), 0.3 * 1e18, priceHigh);
 
-        // lender claims 0.374913050298415729 collateral
+        // lender claims 0.2811 collateral
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(pool), address(lender), 0.374913050298415729 * 1e18);
+        emit Transfer(address(pool), address(lender), 0.2811 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit ClaimCollateral(
             address(lender),
             priceHigh,
-            0.374913050298415729 * 1e27,
-            1_499.999999999999996045523599297 * 1e27
+            0.2811 * 1e27,
+            2_999.095387863993426011052800000 * 1e27
         );
-        lender.claimCollateral(pool, address(lender), 0.374913050298415729 * 1e18, priceHigh);
+        lender.claimCollateral(pool, address(lender), 0.2811 * 1e18, priceHigh);
 
         // check 4_000.927678580567537368 bucket balance after collateral claimed
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = pool.bucketAt(
             4_000.927678580567537368 * 1e18
         );
         assertEq(deposit, 0);
-        assertEq(debt, 2_500 * 1e45);
-        assertEq(lpOutstanding, 2_500.000000000000003954476400703 * 1e27);
-        assertEq(bucketCollateral, 988389873);
+        assertEq(debt, 0);
+        assertEq(lpOutstanding, 1_000.9046121360065739889472 * 1e27);
+        assertEq(bucketCollateral, 0.093813050298415729988389873 * 1e27);
 
         // claimer lp tokens for pool should be diminished
-        assertEq(pool.lpBalance(address(lender), priceMed), 4_000.000000000000000000 * 1e27);
+        assertEq(pool.lpBalance(address(lender), priceHigh), 0.9046121360065739889472 * 1e27);
         // claimer collateral balance should increase with claimed amount
-        assertEq(collateral.balanceOf(address(lender)), 0.374913050298415729 * 1e18);
+        assertEq(collateral.balanceOf(address(lender)), 0.2811 * 1e18);
         // claimer quote token balance should stay the same
         assertEq(quote.balanceOf(address(lender)), 188_000 * 1e18);
-        assertEq(collateral.balanceOf(address(pool)), 100 * 1e18);
+        assertEq(collateral.balanceOf(address(pool)), 100.093813050298415729 * 1e18);
         assertEq(pool.totalCollateral(), 100 * 1e27);
         assertEq(quote.balanceOf(address(pool)), 7_500 * 1e18);
     }

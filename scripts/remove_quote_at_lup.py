@@ -59,7 +59,7 @@ def main():
     pool.removeQuoteToken(lender, 500 * 1e18, pool.lup(), {'from': lender})
     chain.sleep(60)
     chain.mine()
-    # pool.removeQuoteToken(lender, 501 * 1e18, pool.lup(), {'from': lender})
+    pool.removeQuoteToken(lender, 501 * 1e18, pool.lup(), {'from': lender})
 
     return (
         ajna_protocol,
