@@ -73,7 +73,7 @@ library Buckets {
         accumulateBucketInterest(bucket_, inflator_);
 
         uint256 exchangeRate = getExchangeRate(bucket_);
-        uint256 claimable    = Maths.rayToRad(Maths.rmul(lpBalance_, exchangeRate));
+        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);
 
         amount_   = Maths.min(maxAmount_, claimable);
         lpTokens_ = Maths.rdiv(amount_, exchangeRate);

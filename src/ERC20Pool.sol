@@ -59,7 +59,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
     function initialize() external onlyOnce {
         collateralScale = 10**(27 - collateral().decimals());
-        quoteTokenScale = 10**(45 - quoteToken().decimals());
+        quoteTokenScale = 10**(27 - quoteToken().decimals());
 
         inflatorSnapshot           = Maths.ONE_RAY;
         lastInflatorSnapshotUpdate = block.timestamp;
