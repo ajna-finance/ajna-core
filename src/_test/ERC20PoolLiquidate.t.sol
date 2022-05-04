@@ -251,12 +251,12 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _borrower2.addCollateral(_pool, 200 * 1e18);
 
         // check pool balance
-        assertEq(_pool.totalQuoteToken(),           13_000 * 1e45);
-        assertEq(_pool.totalDebt(),                 0);
-        assertEq(_pool.totalCollateral(),           202 * 1e27);
-        assertEq(_pool.hpb(),                       priceHighest);
-        assertEq(_pool.getPoolCollateralization(),  Maths.ONE_RAY);
-        assertEq(_pool.getPoolActualUtilization(),  0);
+        assertEq(_pool.totalQuoteToken(),          13_000 * 1e45);
+        assertEq(_pool.totalDebt(),                0);
+        assertEq(_pool.totalCollateral(),          202 * 1e27);
+        assertEq(_pool.hpb(),                      priceHighest);
+        assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
+        assertEq(_pool.getPoolActualUtilization(), 0);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
         _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18);
@@ -345,12 +345,12 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         );
 
         // check pool balance
-        assertEq(_pool.totalQuoteToken(),           0);
-        assertEq(_pool.totalDebt(),                 1_000 * 1e45);
-        assertEq(_pool.totalCollateral(),           200.455302902616749045232864441 * 1e27);
-        assertEq(_pool.getPoolCollateralization(),  Maths.rdiv(_pool.totalCollateral(), _pool.getEncumberedCollateral(_pool.totalDebt())));
-        assertEq(_pool.getPoolCollateralization(),  20.112155247098450521165631145 * 1e27);
-        assertEq(_pool.getPoolActualUtilization(),  1.000000000000000000000000000 * 1e27);
+        assertEq(_pool.totalQuoteToken(),          0);
+        assertEq(_pool.totalDebt(),                1_000 * 1e45);
+        assertEq(_pool.totalCollateral(),          200.455302902616749045232864441 * 1e27);
+        assertEq(_pool.getPoolCollateralization(), Maths.rdiv(_pool.totalCollateral(), _pool.getEncumberedCollateral(_pool.totalDebt())));
+        assertEq(_pool.getPoolCollateralization(), 20.112155247098450521165631145 * 1e27);
+        assertEq(_pool.getPoolActualUtilization(), 1.000000000000000000000000000 * 1e27);
     }
 
     // @notice: with 1 lender and 2 borrowers -- quote is deposited
@@ -373,12 +373,12 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _borrower2.addCollateral(_pool, 200 * 1e18);
 
         // check pool balance
-        assertEq(_pool.totalQuoteToken(),           13_000 * 1e45);
-        assertEq(_pool.totalDebt(),                 0);
-        assertEq(_pool.totalCollateral(),           202 * 1e27);
-        assertEq(_pool.hpb(),                       priceHighest);
-        assertEq(_pool.getPoolCollateralization(),  Maths.ONE_RAY);
-        assertEq(_pool.getPoolActualUtilization(),  0);
+        assertEq(_pool.totalQuoteToken(),          13_000 * 1e45);
+        assertEq(_pool.totalDebt(),                0);
+        assertEq(_pool.totalCollateral(),          202 * 1e27);
+        assertEq(_pool.hpb(),                      priceHighest);
+        assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
+        assertEq(_pool.getPoolActualUtilization(), 0);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_000
         _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18);
@@ -463,12 +463,12 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerInflator,     1.171809294361418037665607534 * 1e27);
 
         // check pool balance
-        assertEq(_pool.totalQuoteToken(),           0);
-        assertEq(_pool.totalDebt(),                 1_000 * 1e45);
-        assertEq(_pool.totalCollateral(),           200.189909584313202057545482525 * 1e27);
-        assertEq(_pool.getPoolCollateralization(),  Maths.rdiv(_pool.totalCollateral(), _pool.getEncumberedCollateral(_pool.totalDebt())));
-        assertEq(_pool.getPoolCollateralization(),  20.085527706983651821033780536 * 1e27);
-        assertEq(_pool.getPoolActualUtilization(),  1.000000000000000000000000000 * 1e27);
+        assertEq(_pool.totalQuoteToken(),          0);
+        assertEq(_pool.totalDebt(),                1_000 * 1e45);
+        assertEq(_pool.totalCollateral(),          200.189909584313202057545482525 * 1e27);
+        assertEq(_pool.getPoolCollateralization(), Maths.rdiv(_pool.totalCollateral(), _pool.getEncumberedCollateral(_pool.totalDebt())));
+        assertEq(_pool.getPoolCollateralization(), 20.085527706983651821033780536 * 1e27);
+        assertEq(_pool.getPoolActualUtilization(), 1.000000000000000000000000000 * 1e27);
     }
 
 }

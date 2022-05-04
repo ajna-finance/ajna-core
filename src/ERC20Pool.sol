@@ -108,7 +108,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         }
 
         lpBalance[recipient_][price_] += lpTokens;  // update lender lp balance for current price bucket
-        totalQuoteToken               += amount_;   // update quote token accumulator
+        totalQuoteToken                 += amount_;  // update quote token accumulator
 
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
 
@@ -585,8 +585,8 @@ contract ERC20Pool is IPool, Clone, Interest {
 
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
             borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
-            collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization     = Maths.rdiv(borrower.collateralDeposited, collateralEncumbered);
+            collateralEncumbered = getEncumberedCollateral(borrowerPendingDebt);
+            collateralization    = Maths.rdiv(borrower.collateralDeposited, collateralEncumbered);
         }
 
         return (

@@ -135,8 +135,8 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.getPoolCollateralization(),                 Maths.ONE_RAY);
         assertEq(_pool.getPoolActualUtilization(),                 0);
 
-        assertEq(_quote.balanceOf(address(_borrower)),             9_999.086351077915909657 * 1e18);
-        assertEq(_quote.balanceOf(address(_pool)),                 30_000.913648922084090343 * 1e18);
+        assertEq(_quote.balanceOf(address(_borrower)), 9_999.086351077915909657 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)),     30_000.913648922084090343 * 1e18);
 
         // check borrower debt
         (borrowerDebt, borrowerPendingDebt, depositedCollateral, , , , ) = _pool.getBorrowerInfo(
