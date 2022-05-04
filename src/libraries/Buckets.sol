@@ -106,9 +106,7 @@ library Buckets {
             revert ClaimExceedsCollateral({collateralAmount: bucket.collateral});
         }
 
-        uint256 exchangeRate = getExchangeRate(bucket);
-        lpRedemption_ = Maths.rdiv(Maths.rmul(amount_, Maths.wadToRay(bucket.price)), exchangeRate);
-
+        lpRedemption_ = Maths.rdiv(Maths.rmul(amount_, Maths.wadToRay(bucket.price)), getExchangeRate(bucket));
         if (lpRedemption_ > lpBalance_) {
             revert InsufficientLpBalance({balance: lpBalance_});
         }
@@ -132,7 +130,6 @@ library Buckets {
         uint256 inflator_ // RAY
     ) public returns (uint256) {
         Bucket storage curLup = buckets_[lup_];
-        uint256 amountRemaining = amount_;
 
         while (true) {
             if (curLup.price < stop_) {
@@ -143,15 +140,15 @@ library Buckets {
             accumulateBucketInterest(curLup, inflator_);
             curLup.inflatorSnapshot = inflator_;
 
-            if (amountRemaining > curLup.onDeposit) {
+            if (amount_ > curLup.onDeposit) {
                 // take all on deposit from this bucket
                 curLup.debt      += curLup.onDeposit;
-                amountRemaining  -= curLup.onDeposit;
+                amount_         -= curLup.onDeposit;
                 curLup.onDeposit -= curLup.onDeposit;
             } else {
                 // take all remaining amount for loan from this bucket and exit
-                curLup.onDeposit -= amountRemaining;
-                curLup.debt      += amountRemaining;
+                curLup.onDeposit -= amount_;
+                curLup.debt      += amount_;
                 break;
             }
 
@@ -187,14 +184,14 @@ library Buckets {
 
                 if (amount_ > curLup.debt) {
                     // pay entire debt on this bucket
-                    amount_          -= curLup.debt;
+                    amount_         -= curLup.debt;
                     curLup.onDeposit += curLup.debt;
-                    curLup.debt       = 0;
+                    curLup.debt      = 0;
                 } else {
                     // pay as much debt as possible and exit
                     curLup.onDeposit += amount_;
                     curLup.debt      -= amount_;
-                    amount_           = 0;
+                    amount_         = 0;
                     break;
                 }
             }
@@ -389,7 +386,7 @@ library Buckets {
             if (amount_ > curLupDebt) {
                 bucket_.debt      += curLupDebt;
                 bucket_.onDeposit -= curLupDebt;
-                curLup.debt        = 0;
+                curLup.debt       = 0;
                 curLup.onDeposit  += curLupDebt;
                 amount_           -= curLupDebt;
 

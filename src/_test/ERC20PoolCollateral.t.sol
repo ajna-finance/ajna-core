@@ -15,14 +15,14 @@ import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract ERC20PoolCollateralTest is DSTestPlus {
 
-    CollateralToken     internal _collateral;
-    ERC20Pool           internal _pool;
-    QuoteToken          internal _quote;
-    UserWithCollateral  internal _borrower;
-    UserWithCollateral  internal _borrower2;
-    UserWithQuoteToken  internal _lender;
-    UserWithQuoteToken  internal _lender1;
-    UserWithCollateral  internal _bidder;
+    CollateralToken    internal _collateral;
+    ERC20Pool          internal _pool;
+    QuoteToken         internal _quote;
+    UserWithCollateral internal _borrower;
+    UserWithCollateral internal _borrower2;
+    UserWithQuoteToken internal _lender;
+    UserWithQuoteToken internal _lender1;
+    UserWithCollateral internal _bidder;
 
     function setUp() external {
         _collateral = new CollateralToken();
