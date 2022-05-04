@@ -46,7 +46,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p4000);
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p3010);
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p1004);
-        assertEq(_pool.totalQuoteToken(), 9_000 * 1e45);
+        assertEq(_pool.totalQuoteToken(), 9_000 * 1e27);
 
         // borrower takes a loan of 4000 DAI making bucket 4000 to be fully utilized
         _borrower.addCollateral(_pool, 100 * 1e18);
@@ -77,18 +77,18 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_bidder)),      0);
         assertEq(_collateral.balanceOf(address(_pool)),   100 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),        5_000 * 1e18);
-        assertEq(_pool.totalQuoteToken(),                 5_000 * 1e45);
+        assertEq(_pool.totalQuoteToken(),                 5_000 * 1e27);
         assertEq(_pool.totalCollateral(),                 100 * 1e27);
 
         // check 4_000.927678580567537368 bucket balance before purchase bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(_p4000);
         assertEq(deposit, 0);
-        assertEq(debt,    3_000 * 1e45);
+        assertEq(debt,    3_000 * 1e27);
 
         // check 3_010.892022197881557845 bucket balance before purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p3010);
-        assertEq(deposit,          2_000 * 1e45);
-        assertEq(debt,             1_000 * 1e45);
+        assertEq(deposit,          2_000 * 1e27);
+        assertEq(debt,             1_000 * 1e27);
         assertEq(bucketCollateral, 0);
 
         // purchase 2000 bid from 4_000.927678580567537368 bucket
@@ -100,7 +100,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         emit Purchase(
             address(_bidder),
             _p4000,
-            2_000 * 1e45,
+            2_000 * 1e27,
             0.499884067064554306651186498 * 1e27
         );
         _bidder.purchaseBid(_pool, 2_000 * 1e18, _p4000);
@@ -110,18 +110,18 @@ contract ERC20PoolBidTest is DSTestPlus {
         // check 4_000.927678580567537368 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p4000);
         assertEq(deposit,          0);
-        assertEq(debt,             1_000 * 1e45);
+        assertEq(debt,             1_000 * 1e27);
         assertEq(bucketCollateral, 0.499884067064554306651186498 * 1e27);
 
         // check 3_010.892022197881557845 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p3010);
         assertEq(deposit,          0);
-        assertEq(debt,             3_000 * 1e45);
+        assertEq(debt,             3_000 * 1e27);
         assertEq(bucketCollateral, 0);
 
         // check 1_004.989662429170775094 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p1004);
-        assertEq(deposit,          3_000 * 1e45);
+        assertEq(deposit,          3_000 * 1e27);
         assertEq(debt,             0);
         assertEq(bucketCollateral, 0);
 
@@ -130,7 +130,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_bidder)),      2_000 * 1e18);
         assertEq(_collateral.balanceOf(address(_pool)),   100.499884067064554306 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),        3_000 * 1e18);
-        assertEq(_pool.totalQuoteToken(),                 3_000 * 1e45);
+        assertEq(_pool.totalQuoteToken(),                 3_000 * 1e27);
         assertEq(_pool.totalCollateral(),                 100 * 1e27);
     }
 
@@ -161,18 +161,18 @@ contract ERC20PoolBidTest is DSTestPlus {
         // check 4_000.927678580567537368 bucket balance before purchase Bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(_p4000);
         assertEq(deposit,          0);
-        assertEq(debt,             1_000 * 1e45);
+        assertEq(debt,             1_000 * 1e27);
         assertEq(bucketCollateral, 0);
 
         // check 3_010.892022197881557845 bucket balance before purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p3010);
         assertEq(deposit,          0);
-        assertEq(debt,             1_000 * 1e45);
+        assertEq(debt,             1_000 * 1e27);
         assertEq(bucketCollateral, 0);
 
         // check 2_000.221618840727700609 bucket balance before purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p2000);
-        assertEq(deposit,          5_000 * 1e45);
+        assertEq(deposit,          5_000 * 1e27);
         assertEq(debt,             0);
         assertEq(bucketCollateral, 0);
 
@@ -185,7 +185,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         emit Purchase(
             address(_bidder),
             _p4000,
-            1_000 * 1e45,
+            1_000 * 1e27,
             0.249942033532277153325593249 * 1e27
         );
         _bidder.purchaseBid(_pool, 1_000 * 1e18, _p4000);
@@ -202,13 +202,13 @@ contract ERC20PoolBidTest is DSTestPlus {
         // check 3_010.892022197881557845 bucket balance
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p3010);
         assertEq(deposit,          0);
-        assertEq(debt,             1_000 * 1e45);
+        assertEq(debt,             1_000 * 1e27);
         assertEq(bucketCollateral, 0);
 
         // check 2_000.221618840727700609 bucket balance
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p2000);
-        assertEq(deposit,          4_000 * 1e45);
-        assertEq(debt,             1_000 * 1e45);
+        assertEq(deposit,          4_000 * 1e27);
+        assertEq(debt,             1_000 * 1e27);
         assertEq(bucketCollateral, 0);
 
         // check bidder and pool balances

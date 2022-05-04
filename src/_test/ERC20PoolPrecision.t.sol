@@ -12,7 +12,7 @@ import { UserWithCollateral, UserWithQuoteToken }        from "./utils/Users.sol
 contract ERC20PoolPrecisionTest is DSTestPlus {
     uint256 internal constant BUCKET_PRICE = 2000.221618840727700609 * 1e18;
 
-    uint256 internal _quotePoolPrecision      = 10**45;
+    uint256 internal _quotePoolPrecision      = 10**27;
     uint256 internal _collateralPoolPrecision = 10**27;
     uint256 internal _collateralPrecision;
     uint256 internal _quotePrecision;
