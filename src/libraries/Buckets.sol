@@ -54,6 +54,8 @@ library Buckets {
         }
     }
 
+    event Debug(string where, uint256 value);
+
     /// @notice Called by a lender to remove quote tokens from a bucket
     /// @param buckets_ Mapping of buckets for a given pool
     /// @param bucket_ The price bucket from which quote tokens should be removed
@@ -72,11 +74,17 @@ library Buckets {
     ) public returns (uint256 amount_, uint256 lup_, uint256 lpTokens_) {
         accumulateBucketInterest(bucket_, inflator_);
 
-        uint256 exchangeRate = getExchangeRate(bucket_); // RAY
-        uint256 claimable    = Maths.rayToWad(Maths.rmul(lpBalance_, exchangeRate)); // TODO: improve efficiency
+        uint256 exchangeRate = getExchangeRate(bucket_);              // RAY
+        emit Debug("exchangeRate", exchangeRate);
+        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);  // RAY
+        emit Debug("claimable", claimable);
 
-        amount_   = Maths.min(maxAmount_, claimable);
-        lpTokens_ = Maths.rdiv(Maths.wadToRay(amount_), exchangeRate);
+        amount_ = Maths.min(Maths.wadToRay(maxAmount_), claimable);   // RAY
+        emit Debug("amount_", amount_);
+        lpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
+        emit Debug("lpTokens_", lpTokens_);
+
+        amount_ = Maths.rayToWad(amount_);
 
         // Remove from deposit first
         uint256 removeFromDeposit = Maths.min(amount_, bucket_.onDeposit);
