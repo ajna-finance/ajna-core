@@ -310,7 +310,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
         // convert amount from WAD to pool precision - RAD
         amount_ = Maths.wadToRay(amount_);
-        uint256 collateralRequired = Maths.rdiv(Maths.radToRay(amount_), Maths.wadToRay(price_));
+        uint256 collateralRequired = Maths.rdiv(amount_, Maths.wadToRay(price_));
         if (collateral().balanceOf(msg.sender) * collateralScale < collateralRequired) {
             revert InsufficientCollateralBalance();
         }
