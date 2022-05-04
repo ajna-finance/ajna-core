@@ -49,6 +49,13 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         _lender1.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
+    // TODO: move this somewhere more appropriate
+    function testRayToWadRounded() external {
+        uint256 amount = 5_000.00076103507940381999999950 * 1e27;
+        assertEq(Maths.rayToWad(amount), 5_000.000761035079403819 * 1e18);
+        assertEq(Maths.rayToWadRounded(amount), 5_000.000761035079403820 * 1e18);
+    }
+
     // TODO: Review each test and validate HPB and LUP are correct where appropriate.
 
     // @notice: 1 lender tests adding quote token
@@ -649,10 +656,10 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // confirm debt was reallocated
         (, , , deposit, debt, , lpOutstanding, ) = _pool.bucketAt(priceLow);
-        assertEq(deposit, 1_999.993626325045703531 * 1e18);
+        assertEq(deposit, 1_999.993626325045703530 * 1e18);
 
         // some debt accumulated between loan and reallocation
-        assertEq(debt, 4_000.008498233272395292 * 1e18);
+        assertEq(debt, 4_000.008498233272395293 * 1e18);
 
         assertEq(_pool.hpb(), priceLow);
         assertEq(_pool.lup(), priceLow);
@@ -792,9 +799,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // lender removes remaining DAI, including interest earned, from the lup
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_lender), 500.000076103507940381 * 1e18);
+        emit Transfer(address(_pool), address(_lender), 500.000076103507940382 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_lender), priceMed, 500.000076103507940381 * 1e18, priceLow);
+        emit RemoveQuoteToken(address(_lender), priceMed, 500.000076103507940382 * 1e18, priceLow);
         _lender.removeQuoteToken(_pool, address(_lender), 501 * 1e18, priceMed);
         (, , , deposit, debt, , lpOutstanding,) = _pool.bucketAt(priceHigh);
         assertEq(deposit,       0);
@@ -802,15 +809,15 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(lpOutstanding, 1_000 * 1e27);
         (, , , deposit, debt, , lpOutstanding,) = _pool.bucketAt(priceMed);
         assertEq(deposit,       0);
-        assertEq(debt,          0); // FIXME: shows dusty debt amount remaining
-        assertEq(lpOutstanding, 0); // FIXME: shows the whole bucket wasn't emptied
+        assertEq(debt,          0);
+        assertEq(lpOutstanding, 0);
         (, , , deposit, debt, , lpOutstanding,) = _pool.bucketAt(priceLow);  // nothing else can be removed
-        assertEq(deposit,       2_599.999923896492059619 * 1e18);
-        assertEq(debt,          400.000076103507940381 * 1e18);
+        assertEq(deposit,       2_599.999923896492059618 * 1e18);
+        assertEq(debt,          400.000076103507940382 * 1e18);
         assertEq(lpOutstanding, 3_000 * 1e27);
 
         assertEq(_pool.hpb(), priceHigh);
-//        assertEq(pool.lup(), priceLow);
+        assertEq(_pool.lup(), priceLow);
     }
 
     // @notice: 1 lender and 1 borrower deposits quote token
