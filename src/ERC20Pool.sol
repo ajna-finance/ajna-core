@@ -108,7 +108,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         }
 
         lpBalance[recipient_][price_] += lpTokens;  // update lender lp balance for current price bucket
-        totalQuoteToken                 += amount_;  // update quote token accumulator
+        totalQuoteToken               += amount_;   // update quote token accumulator
 
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
 

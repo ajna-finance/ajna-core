@@ -388,7 +388,7 @@ library Buckets {
                 bucket_.onDeposit -= curLupDebt;
                 curLup.debt       = 0;
                 curLup.onDeposit  += curLupDebt;
-                amount_          -= curLupDebt;
+                amount_           -= curLupDebt;
 
                 if (curLup.price == curLup.up) {
                     // reached top-of-book; nowhere to go
