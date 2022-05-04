@@ -61,10 +61,10 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _borrower2.addCollateral(_pool, 200 * 1e18);
 
         // check pool balance
-        assertEq(_pool.totalQuoteToken(), 21_000 * 1e45);
-        assertEq(_pool.totalDebt(),       0);
-        assertEq(_pool.totalCollateral(), 202 * 1e27);
-        assertEq(_pool.hpb(),             priceHigh);
+        assertEq(_pool.totalQuoteToken(),          21_000 * 1e45);
+        assertEq(_pool.totalDebt(),                0);
+        assertEq(_pool.totalCollateral(),          202 * 1e27);
+        assertEq(_pool.hpb(),                      priceHigh);
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
@@ -140,11 +140,11 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerInflator,     1 * 1e27);
 
         // check pool balance
-        assertEq(_pool.totalQuoteToken(),          9_000 * 1e45);
-        assertEq(_pool.totalDebt(),                12_000 * 1e45);
-        assertEq(_pool.totalCollateral(),          202 * 1e27);
-        assertEq(_pool.lup(),                      priceLow);
-        assertEq(_quote.balanceOf(address(_pool)), 9_000 * 1e18);
+        assertEq(_pool.totalQuoteToken(),            9_000 * 1e45);
+        assertEq(_pool.totalDebt(),                  12_000 * 1e45);
+        assertEq(_pool.totalCollateral(),            202 * 1e27);
+        assertEq(_pool.lup(),                        priceLow);
+        assertEq(_quote.balanceOf(address(_pool)),   9_000 * 1e18);
         assertEq(_pool.lastInflatorSnapshotUpdate(), 0);
 
         // check 10_016.501589292607751220 bucket balance before liquidate
@@ -209,8 +209,8 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
         assertEq(_pool.lup(),                        priceLow);
         assertEq(_quote.balanceOf(address(_pool)),   9_000 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), Maths.rdiv(_pool.totalCollateral(), _pool.getEncumberedCollateral(_pool.totalDebt())));
-        assertEq(_pool.getPoolActualUtilization(), 0.100001170097408238291382519 * 1e27);
+        assertEq(_pool.getPoolCollateralization(),   Maths.rdiv(_pool.totalCollateral(), _pool.getEncumberedCollateral(_pool.totalDebt())));
+        assertEq(_pool.getPoolActualUtilization(),   0.100001170097408238291382519 * 1e27);
 
         // check 10_016.501589292607751220 bucket balance after liquidate
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(priceHigh);
