@@ -32,11 +32,11 @@ contract ERC20PoolFactory is IPoolFactory {
 
         bytes memory data = abi.encodePacked(collateral_, quote_);
 
-        ERC20Pool pool_ = ERC20Pool(address(implementation).clone(data));
-        pool_.initialize();
+        ERC20Pool pool = ERC20Pool(address(implementation).clone(data));
+        pool.initialize();
 
-        deployedPools[collateral_][quote_] = address(pool_);
-        emit PoolCreated(address(pool_));
-        return address(pool_);
+        deployedPools[collateral_][quote_] = address(pool);
+        emit PoolCreated(address(pool));
+        return address(pool);
     }
 }

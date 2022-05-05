@@ -8,7 +8,7 @@ import { IPool } from "../interfaces/IPool.sol";
 
 import { Buckets }    from "../libraries/Buckets.sol";
 import { BucketMath } from "../libraries/BucketMath.sol";
-import { Maths } from "../libraries/Maths.sol";
+import { Maths }      from "../libraries/Maths.sol";
 
 import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";

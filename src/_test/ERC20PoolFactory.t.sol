@@ -26,11 +26,11 @@ contract PoolFactoryTest is DSTestPlus {
 
     // @notice: Tests pool deployment
     function testDeployPool() external {
-        address _poolAddress = _factory.deployPool(address(_collateral), address(_quote));
-        ERC20Pool _pool = ERC20Pool(_poolAddress);
+        address poolAddress = _factory.deployPool(address(_collateral), address(_quote));
+        ERC20Pool pool = ERC20Pool(poolAddress);
 
-        assertEq(address(_collateral), address(_pool.collateral()));
-        assertEq(address(_quote),      address(_pool.quoteToken()));
+        assertEq(address(_collateral), address(pool.collateral()));
+        assertEq(address(_quote),      address(pool.quoteToken()));
     }
 
     // @notice: Tests revert if actor attempts to deploy ETH pool
