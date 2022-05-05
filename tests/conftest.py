@@ -274,7 +274,7 @@ class TestUtils:
     def validate_debt(pool, borrowers, bucket_math, min_bucket_index=-3232, print_error=False):
         def pe(lhs_name, lhs_value, rhs_name, rhs_value):
             error = lhs_value - rhs_value
-            print(f"{lhs_name:>8} vs {rhs_name:<8} error: {error/1e45:>{48}.45f}")
+            print(f"{lhs_name:>8} vs {rhs_name:<8} error: {error/1e18:>{24}.18f}")
 
         borrower_debt_pending = 0
         for borrower in borrowers:
@@ -297,9 +297,9 @@ class TestUtils:
             pe("borrower", borrower_debt_pending, "pool", pool_debt_pending)
 
         # TODO: Get these to tie out to WAD (or RAD) precision.
-        # assert (bucket_debt_pending - borrower_debt_pending) / 1e27 == 0
-        # assert (bucket_debt_pending - pool_debt_pending) / 1e27 == 0
-        # assert (borrower_debt_pending - pool_debt_pending) / 1e27 == 0
+        # assert (bucket_debt_pending - borrower_debt_pending) / 1e18 == 0
+        # assert (bucket_debt_pending - pool_debt_pending) / 1e18 == 0
+        # assert (borrower_debt_pending - pool_debt_pending) / 1e18 == 0
 
     @staticmethod
     def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926,

@@ -279,7 +279,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
             collateral_to_withdraw = collateral_deposited - (collateral_encumbered * 1.667)
             print(f" borrower {borrower_index} is withdrawing {collateral_to_withdraw / 10**18:.1f} collateral")
-            tx = pool.removeCollateral(collateral_to_withdraw / 10**9, {"from": borrower})
+            tx = pool.removeCollateral(collateral_to_withdraw, {"from": borrower})
             gas_validator.validate(tx)
         else:
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
@@ -309,7 +309,7 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
             print(f"actual utlzn: {utilization:>6.1%}   "
                   f"target utlzn: {target:>6.1%}   "
                   f"collateralization: {collateralization:>6.1%}   "
-                  f"debt: {pool1.totalDebt()/10**45:>12.1f}")
+                  f"debt: {pool1.totalDebt()/10**18:>12.1f}")
             # hit the pool an hour at a time, calculating interest and then sending transactions
             actor_id = draw_and_bid(lenders, borrowers, actor_id, pool1, bucket_math, chain, tx_validator, test_utils)
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}")
