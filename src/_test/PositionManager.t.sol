@@ -230,7 +230,7 @@ contract PositionManagerTest is DSTestPlus {
         (, address updatedPositionOwner, ) = _positionManager.positions(tokenId);
         uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, mintPrice);
 
-        assertEq(_pool.totalQuoteToken(), Maths.wadToRay(mintAmount) / 4);
+        assertEq(_pool.totalQuoteToken(), mintAmount / 4);
         assertEq(updatedPositionOwner,   testAddress);
         assert(updatedLPTokens != 0);
 
@@ -239,13 +239,13 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 positionUpdatedTwiceTokens = _positionManager.getLPTokens(tokenId, mintPrice);
 
-        assertEq(_pool.totalQuoteToken(), Maths.wadToRay(mintAmount) / 2);
+        assertEq(_pool.totalQuoteToken(), mintAmount / 2);
         assert(positionUpdatedTwiceTokens > updatedLPTokens);
 
         // add liquidity to a different price, for same owner and tokenId
         increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 2, _p50159);
 
-        assertEq(_pool.totalQuoteToken(), Maths.wadToRay(mintAmount));
+        assertEq(_pool.totalQuoteToken(), mintAmount);
     }
 
     // @notice: Tests minting an NFT and failing to increase
@@ -275,7 +275,7 @@ contract PositionManagerTest is DSTestPlus {
     function testDecreaseLiquidityNoDebt() external {
         // generate a new address and set test params
         address testAddress = generateAddress();
-        uint256 mintAmount  = 10000 * 1e18;
+        uint256 mintAmount  = 10_000 * 1e18;
         uint256 mintPrice   = _p1004;
 
         mintAndApproveQuoteTokens(testAddress, mintAmount);
@@ -303,7 +303,7 @@ contract PositionManagerTest is DSTestPlus {
         );
 
         // check quote token removed
-        assertEq(_pool.totalQuoteToken(), Maths.wadToRay(mintAmount) - quoteTokensRemoved);
+        assertEq(_pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
 
         // check lp tokens matches expectations
         uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, mintPrice);
@@ -340,7 +340,7 @@ contract PositionManagerTest is DSTestPlus {
         testBorrower.borrow(_pool, 2_500 * 1e18, testBucketPrice);
         assertEq(_pool.lup(),       testBucketPrice);
         assertEq(_pool.hpb(),       testBucketPrice);
-        assertEq(_pool.totalDebt(), 2_500 * 1e27);
+        assertEq(_pool.totalDebt(), 2_500 * 1e18);
 
         UserWithCollateral testBidder = new UserWithCollateral();
         mintAndApproveCollateralTokens(testBidder, 50000 * 1e18);
@@ -454,7 +454,7 @@ contract PositionManagerTest is DSTestPlus {
             mintPrice,
             lpTokensToRemove
         );
-        assertEq(_pool.totalQuoteToken(), Maths.wadToRay(mintAmount) - quoteTokensRemoved);
+        assertEq(_pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
 
         // should emit Burn
         vm.expectEmit(true, true, true, true);

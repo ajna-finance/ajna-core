@@ -78,18 +78,18 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 70 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateral(address(_borrower), 70 * 1e27);
+        emit AddCollateral(address(_borrower), 70 * 1e18);
         _borrower.addCollateral(_pool, 70 * 1e18);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_borrower)), 30 * 1e18);
         assertEq(_collateral.balanceOf(address(_pool)),     70 * 1e18);
-        assertEq(_pool.totalCollateral(),                   70 * 1e27);
+        assertEq(_pool.totalCollateral(),                   70 * 1e18);
 
         // check borrower
         (, , uint256 deposited, uint256 borrowerEncumbered, uint256 borrowerCollateralization, ,)
             = _pool.getBorrowerInfo(address(_borrower));
-        assertEq(deposited,                 70 * 1e27);
+        assertEq(deposited,                 70 * 1e18);
         assertEq(borrowerEncumbered,        0);
         assertEq(borrowerCollateralization, Maths.ONE_RAY);
 
@@ -98,7 +98,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(
             address(_borrower)
         );
-        assertEq(deposited,                        70 * 1e27);
+        assertEq(deposited,                        70 * 1e18);
         assertEq(borrowerEncumbered,               3.993893827662208275880152017 * 1e27);
         assertEq(borrowerCollateralization,        17.526755347168030152990500002 * 1e27);
         assertEq(_pool.getPoolCollateralization(), borrowerCollateralization);
@@ -114,12 +114,12 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 30 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateral(address(_borrower), 30 * 1e27);
+        emit AddCollateral(address(_borrower), 30 * 1e18);
         _borrower.addCollateral(_pool, 30 * 1e18);
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(
             address(_borrower)
         );
-        assertEq(deposited,          100 * 1e27);
+        assertEq(deposited,          100 * 1e18);
         assertEq(borrowerEncumbered, 3.993893827662208275880152017 * 1e27);
         // ensure collateralization increased and target utilization decreased
         assertLt(collateralization, _pool.getPoolCollateralization());
@@ -131,7 +131,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IPool.AmountExceedsAvailableCollateral.selector,
-                deposited - borrowerEncumbered
+                96.006106172337791725 * 1e18
             )
         );
         _borrower.removeCollateral(_pool, 100 * 1e18);
@@ -141,7 +141,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(
             address(_borrower)
         );
-        assertEq(deposited,                 80 * 1e27);
+        assertEq(deposited,                 80 * 1e18);
         assertEq(borrowerEncumbered,        3.993893827662208275880152017 * 1e27);
         assertEq(borrowerCollateralization, 20.030577539620605889132000002 * 1e27);
 
@@ -161,7 +161,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(
             address(_borrower)
         );
-        assertEq(deposited,                 80 * 1e27);
+        assertEq(deposited,                 80 * 1e18);
         assertEq(borrowerEncumbered,        2.995420370746656206910114013 * 1e27);
         assertEq(borrowerCollateralization, 26.707436719494141185509333334 * 1e27);
 
@@ -190,7 +190,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_borrower), 80 * 1e18);
         vm.expectEmit(true, false, false, true);
-        emit RemoveCollateral(address(_borrower), 80 * 1e27);
+        emit RemoveCollateral(address(_borrower), 80 * 1e18);
         _borrower.removeCollateral(_pool, 80 * 1e18);
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
         assertEq(actualUtilization,                _pool.getPoolActualUtilization());
@@ -205,11 +205,11 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(borrowerCollateralization, Maths.ONE_RAY);
 
         assertEq(_collateral.balanceOf(address(_borrower)), 100 * 1e18);
-        // check pool balances
+        // // check pool balances
         poolEncumbered = _pool.getEncumberedCollateral(_pool.totalDebt());
         assertEq(poolEncumbered,                   borrowerEncumbered);
         assertEq(_pool.getPoolCollateralization(), borrowerCollateralization);
-        assertEq(_pool.getPoolTargetUtilization(), Maths.ONE_RAY);
+        assertEq(_pool.getPoolTargetUtilization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
         assertEq(_pool.totalCollateral(),          0);
 
@@ -271,8 +271,8 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             uint256 lpOutstanding,
             uint256 bucketCollateral
         ) = _pool.bucketAt(_p4000);
-        assertEq(deposit,          2_000 * 1e27);
-        assertEq(debt,             4_000 * 1e27);
+        assertEq(deposit,          2_000 * 1e18);
+        assertEq(debt,             4_000 * 1e18);
         assertEq(lpOutstanding,    6_000 * 1e27);
         assertEq(bucketCollateral, 0);
 
@@ -281,52 +281,52 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         // check 4_000.927678580567537368 bucket collateral after purchase Bid
         (, , , , , , , bucketCollateral) = _pool.bucketAt(priceHigh);
-        assertEq(bucketCollateral, 0.374913050298415729988389873 * 1e27);
+        assertEq(bucketCollateral, 0.374913050298415730 * 1e18);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_lender)),     0);
         assertEq(_pool.lpBalance(address(_lender), priceMed), 4_000 * 1e27);
-        assertEq(_collateral.balanceOf(address(_bidder)),     99.625086949701584271 * 1e18);
-        assertEq(_collateral.balanceOf(address(_pool)),       100.374913050298415729 * 1e18);
+        assertEq(_collateral.balanceOf(address(_bidder)),     99.625086949701584270 * 1e18);
+        assertEq(_collateral.balanceOf(address(_pool)),       100.374913050298415730 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)),          188_000 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),            9_500 * 1e18);
-        assertEq(_pool.totalCollateral(),                     100 * 1e27);
+        assertEq(_pool.totalCollateral(),                     100 * 1e18);
 
         _lender1.removeQuoteToken(_pool, address(_lender1), 2_000 * 1e18, priceHigh);
 
         // should revert if claiming larger amount of collateral than LP balance allows
         vm.expectRevert(
-            abi.encodeWithSelector(Buckets.InsufficientLpBalance.selector, 1000 * 1e27)
+            abi.encodeWithSelector(Buckets.InsufficientLpBalance.selector, 1_000.000000000000000015333334000 * 1e27)
         );
         _lender1.claimCollateral(_pool, address(_lender1), 0.3 * 1e18, priceHigh);
 
-        // lender claims 0.374913050298415729 collateral
+        // lender claims entire 0.37491305029841573 collateral from price bucket
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_lender), 0.374913050298415729 * 1e18);
+        emit Transfer(address(_pool), address(_lender), 0.37491305029841573 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit ClaimCollateral(
             address(_lender),
             priceHigh,
-            0.374913050298415729 * 1e27,
-            1_499.999999999999996045523599297 * 1e27
+            0.37491305029841573 * 1e18,
+            1_500.000000000000000034500001000 * 1e27
         );
-        _lender.claimCollateral(_pool, address(_lender), 0.374913050298415729 * 1e18, priceHigh);
+        _lender.claimCollateral(_pool, address(_lender), 0.37491305029841573 * 1e18, priceHigh);
 
         // check 4_000.927678580567537368 bucket balance after collateral claimed
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = _pool.bucketAt(_p4000);
         assertEq(deposit,          0);
-        assertEq(debt,             2_500 * 1e27);
-        assertEq(lpOutstanding,    2_500.000000000000003954476400703 * 1e27);
-        assertEq(bucketCollateral, 988389873);
+        assertEq(debt,             2_500 * 1e18);
+        assertEq(lpOutstanding,    2_499.999999999999999980833333000 * 1e27);
+        assertEq(bucketCollateral, 0);
 
         // claimer lp tokens for pool should be diminished
         assertEq(_pool.lpBalance(address(_lender), priceMed), 4_000.000000000000000000 * 1e27);
         // claimer collateral balance should increase with claimed amount
-        assertEq(_collateral.balanceOf(address(_lender)),     0.374913050298415729 * 1e18);
+        assertEq(_collateral.balanceOf(address(_lender)),     0.374913050298415730 * 1e18);
         // claimer quote token balance should stay the same
         assertEq(_quote.balanceOf(address(_lender)),    188_000 * 1e18);
         assertEq(_collateral.balanceOf(address(_pool)), 100 * 1e18);
-        assertEq(_pool.totalCollateral(),               100 * 1e27);
+        assertEq(_pool.totalCollateral(),               100 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),      7_500 * 1e18);
     }
 
@@ -365,59 +365,59 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(debt,             0);
         assertEq(deposit,          0);
         assertEq(lpOutstanding,    10_000 * 1e27);
-        assertEq(bucketCollateral, 1.198023071531052613216894034 * 1e27);
+        assertEq(bucketCollateral, 1.198023071531052613 * 1e18);
 
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = _pool.bucketAt(_p9020);
         assertEq(debt,             0);
         assertEq(deposit,          0);
         assertEq(lpOutstanding,    1_000 * 1e27);
-        assertEq(bucketCollateral, 0.221718140844638971360575690 * 1e27);
+        assertEq(bucketCollateral, 0.221718140844638971 * 1e18);
 
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = _pool.bucketAt(_p8002);
         assertEq(debt,             0);
         assertEq(deposit,          0);
         assertEq(lpOutstanding,    1_000 * 1e27);
-        assertEq(bucketCollateral, 0.124955885007559370189665835 * 1e27);
+        assertEq(bucketCollateral, 0.124955885007559370 * 1e18);
 
-        // claim collateral from bucket 8_002.824356287850613262
+        // claim all collateral from bucket 8_002.824356287850613262
         _lender.claimCollateral(_pool, address(_lender), 0.124955885007559370 * 1e18, _p8002);
 
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = _pool.bucketAt(_p8002);
         assertEq(debt,             0);
         assertEq(deposit,          0);
-        assertEq(lpOutstanding,    0.000000000000001517862363840 * 1e27);
-        assertEq(bucketCollateral, 0.000000000000000000189665835 * 1e27);
+        assertEq(lpOutstanding,    0);
+        assertEq(bucketCollateral, 0);
 
-        assertEq(_pool.lpBalance(address(_lender), _p8002), 0.000000000000001517862363840 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender), _p8002), 0);
 
-        // claim collateral from bucket 9_020.461710444470171420
+        // claim all collateral from bucket 9_020.461710444470171420
         _lender.claimCollateral(_pool, address(_lender), 0.221718140844638971 * 1e18, _p9020);
 
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = _pool.bucketAt(_p9020);
         assertEq(debt,             0);
         assertEq(deposit,          0);
-        assertEq(lpOutstanding,    1626279602486); // RAY dust
-        assertEq(bucketCollateral, 360575690); // RAY dust
+        assertEq(lpOutstanding,    0);
+        assertEq(bucketCollateral, 0);
 
-        assertEq(_pool.lpBalance(address(_lender), _p9020), 1626279602486); // RAY dust
+        assertEq(_pool.lpBalance(address(_lender), _p9020), 0);
 
         (uint256 col, uint256 quoteVal) = _pool.getLPTokenExchangeValue(
             _pool.getLPTokenBalance(address(_lender), 10_016.501589292607751220 * 1e18),
             10_016.501589292607751220 * 1e18
         );
-        assertEq(col,      1.198023071531052613216894034 * 1e27);
+        assertEq(col,      1.198023071531052613 * 1e18);
         assertEq(quoteVal, 0);
 
-        // claim collateral from bucket 10_016.501589292607751220
+        // claim all collateral from bucket 10_016.501589292607751220
         _lender.claimCollateral(_pool, address(_lender), 1.198023071531052613 * 1e18, _p10016);
 
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = _pool.bucketAt(_p10016);
         assertEq(debt,             0);
         assertEq(deposit,          0);
-        assertEq(lpOutstanding,    1810432862926); // RAY dust
-        assertEq(bucketCollateral, 216894034); // RAY dust
+        assertEq(lpOutstanding,    0);
+        assertEq(bucketCollateral, 0);
 
-        assertEq(_pool.lpBalance(address(_lender), _p10016), 1810432862926); // RAy dust
+        assertEq(_pool.lpBalance(address(_lender), _p10016), 0);
     }
 
 }
