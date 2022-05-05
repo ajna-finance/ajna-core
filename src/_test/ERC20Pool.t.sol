@@ -12,6 +12,7 @@ import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract ERC20PoolTest is DSTestPlus {
 
+    address            internal _poolAddress;
     CollateralToken    internal _collateral;
     ERC20Pool          internal _pool;
     QuoteToken         internal _quote;
@@ -19,9 +20,11 @@ contract ERC20PoolTest is DSTestPlus {
     UserWithQuoteToken internal _lender;
 
     function setUp() external {
-        _collateral = new CollateralToken();
-        _quote      = new QuoteToken();
-        _pool       = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _collateral  = new CollateralToken();
+        _quote       = new QuoteToken();
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _pool        = ERC20Pool(_poolAddress);  
+
         _lender     = new UserWithQuoteToken();
         _borrower   = new UserWithCollateral();
 

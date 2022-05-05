@@ -6,6 +6,8 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
+import { IPoolFactory } from "../interfaces/IPoolFactory.sol";
+
 import { DSTestPlus } from "./utils/DSTestPlus.sol";
 
 contract PoolFactoryTest is DSTestPlus {
@@ -24,7 +26,8 @@ contract PoolFactoryTest is DSTestPlus {
 
     // @notice: Tests pool deployment
     function testDeployPool() external {
-        ERC20Pool pool = _factory.deployPool(address(_collateral), address(_quote));
+        address poolAddress = _factory.deployPool(address(_collateral), address(_quote));
+        ERC20Pool pool = ERC20Pool(poolAddress);
 
         assertEq(address(_collateral), address(pool.collateral()));
         assertEq(address(_quote),      address(pool.quoteToken()));
@@ -32,17 +35,17 @@ contract PoolFactoryTest is DSTestPlus {
 
     // @notice: Tests revert if actor attempts to deploy ETH pool
     function testDeployPoolEther() external {
-        vm.expectRevert(ERC20PoolFactory.WethOnly.selector);
+        vm.expectRevert(IPoolFactory.WethOnly.selector);
         _factory.deployPool(address(_collateral), address(0));
 
-        vm.expectRevert(ERC20PoolFactory.WethOnly.selector);
+        vm.expectRevert(IPoolFactory.WethOnly.selector);
         _factory.deployPool(address(0), address(_collateral));
     }
 
     // @notice: Tests revert if actor attempts to deploy the same pair
     function testDeployPoolTwice() external {
         _factory.deployPool(address(_collateral), address(_quote));
-        vm.expectRevert(ERC20PoolFactory.PoolAlreadyExists.selector);
+        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
         _factory.deployPool(address(_collateral), address(_quote));
     }
 

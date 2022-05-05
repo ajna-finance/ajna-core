@@ -425,9 +425,9 @@ contract ERC20Pool is IPool, Clone, Interest {
         interest_ = debt != 0 ? getPendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
     }
 
-                /*****************************/
-                /*** Pool State Management ***/
-                /*****************************/
+    /*****************************/
+    /*** Pool State Management ***/
+    /*****************************/
 
     /// @notice Update the global borrower inflator
     /// @dev Requires time to have passed between update calls
@@ -560,9 +560,9 @@ contract ERC20Pool is IPool, Clone, Interest {
         }
     }
 
-                /*****************************/
-                /*** Borrower Management ***/
-                /*****************************/
+    /*****************************/
+    /*** Borrower Management ***/
+    /*****************************/
 
     /// @notice Returns a Tuple representing a given borrower's info struct
     function getBorrowerInfo(address borrower_)
@@ -621,9 +621,9 @@ contract ERC20Pool is IPool, Clone, Interest {
         return _buckets.estimatePrice(Maths.wadToRad(amount_), lup == 0 ? hpb : lup);
     }
 
-                /*****************************/
-                /*** Lender Management ***/
-                /*****************************/
+    /*****************************/
+    /*** Lender Management ***/
+    /*****************************/
 
     /// @notice Returns a given lender's LP tokens in a given price bucket
     /// @param owner_ The EOA to check token balance for
