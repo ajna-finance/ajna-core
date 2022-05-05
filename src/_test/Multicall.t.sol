@@ -16,17 +16,18 @@ contract MulticallTest is DSTestPlus {
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
+    address          internal _poolAddress;
     CollateralToken  internal _collateral;
     ERC20Pool        internal _pool;
-    ERC20PoolFactory internal _factory;
     PositionManager  internal _positionManager;
     QuoteToken       internal _quote;
 
     function setUp() external {
-        _collateral      = new CollateralToken();
-        _quote           = new QuoteToken();
-        _pool            = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _positionManager = new PositionManager();
+        _collateral             = new CollateralToken();
+        _quote                  = new QuoteToken();
+        _poolAddress            = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _pool                   = ERC20Pool(_poolAddress);
+        _positionManager        = new PositionManager();
     }
 
     // TODO: move this to _test/utils/...
