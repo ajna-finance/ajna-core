@@ -12,6 +12,7 @@ import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract ERC20PoolInterestRateTest is DSTestPlus {
 
+    address            internal _poolAddress;
     CollateralToken    internal _collateral;
     ERC20Pool          internal _pool;
     QuoteToken         internal _quote;
@@ -19,9 +20,11 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
     UserWithQuoteToken internal _lender;
 
     function setUp() external {
-        _collateral = new CollateralToken();
-        _quote      = new QuoteToken();
-        _pool       = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _collateral  = new CollateralToken();
+        _quote       = new QuoteToken();
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _pool        = ERC20Pool(_poolAddress);  
+
         _borrower   = new UserWithCollateral();
         _lender     = new UserWithQuoteToken();
 
@@ -60,14 +63,14 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
 
         skip(8200);
 
-        assertEq(_pool.getPoolActualUtilization(), 0.833333333333333333333333333 * 1e27);
-        assertEq(_pool.getPoolTargetUtilization(), 0.099859436886217129237589653 * 1e27);
+        assertEq(_pool.getPoolActualUtilization(), 0.833333333333333333 * 1e18);
+        assertEq(_pool.getPoolTargetUtilization(), 0.099859436886217129 * 1e18);
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.086673629908233477 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.050000000036673630 * 1e18);
         _lender.updateInterestRate(_pool);
 
-        assertEq(_pool.previousRate(),               0.086673629908233477 * 1e18);
+        assertEq(_pool.previousRate(),               0.050000000036673630 * 1e18);
         assertEq(_pool.previousRateUpdate(),         8200);
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
     }
@@ -90,9 +93,9 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertLt(_pool.getPoolActualUtilization(), _pool.getPoolTargetUtilization());
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.009999996670471735 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.049999999959999997 * 1e18);
         _lender.updateInterestRate(_pool);
-        assertEq(_pool.previousRate(), 0.009999996670471735 * 1e18);
+        assertEq(_pool.previousRate(), 0.049999999959999997 * 1e18);
     }
 
     // @notice Ensure an underutilized and undercollateralized pool does not produce an underflow.

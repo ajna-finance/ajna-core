@@ -20,6 +20,8 @@ contract PermitTest is DSTestPlus {
     // nonce for generating random addresses
     uint16 internal _nonce;
 
+    address          internal _ajnaTokenPoolAddress;
+    address          internal _poolAddress;
     AjnaToken        internal _ajnaToken = new AjnaToken(10_000 * 1e18);
     CollateralToken  internal _collateral;
     ERC20Pool        internal _ajnaTokenPool;
@@ -34,8 +36,10 @@ contract PermitTest is DSTestPlus {
         _factory         = new ERC20PoolFactory();
         _positionManager = new PositionManager();
 
-        _pool          = _factory.deployPool(address(_collateral), address(_quote));
-        _ajnaTokenPool = _factory.deployPool(address(_collateral), address(_ajnaToken));
+        _poolAddress          = _factory.deployPool(address(_collateral), address(_quote));
+        _pool                 = ERC20Pool(_poolAddress);  
+        _ajnaTokenPoolAddress = _factory.deployPool(address(_collateral), address(_ajnaToken));
+        _ajnaTokenPool        = ERC20Pool(_ajnaTokenPoolAddress);
     }
 
     function generateAddress() private returns (address addr) {

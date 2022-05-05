@@ -8,6 +8,7 @@ import { IPool } from "../interfaces/IPool.sol";
 
 import { Buckets }    from "../libraries/Buckets.sol";
 import { BucketMath } from "../libraries/BucketMath.sol";
+import { Maths }      from "../libraries/Maths.sol";
 
 import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
@@ -15,6 +16,7 @@ import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract ERC20PoolBidTest is DSTestPlus {
 
+    address            internal _poolAddress;
     CollateralToken    internal _collateral;
     ERC20Pool          internal _pool;
     QuoteToken         internal _quote;
@@ -23,9 +25,11 @@ contract ERC20PoolBidTest is DSTestPlus {
     UserWithCollateral internal _bidder;
 
     function setUp() external {
-        _collateral = new CollateralToken();
-        _quote      = new QuoteToken();
-        _pool       = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _collateral  = new CollateralToken();
+        _quote       = new QuoteToken();
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _pool        = ERC20Pool(_poolAddress);  
+
         _borrower   = new UserWithCollateral();
         _bidder     = new UserWithCollateral();
         _lender     = new UserWithQuoteToken();
@@ -46,7 +50,9 @@ contract ERC20PoolBidTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p4000);
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p3010);
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p1004);
-        assertEq(_pool.totalQuoteToken(), 9_000 * 1e18);
+        assertEq(_pool.totalQuoteToken(),          9_000 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
+        assertEq(_pool.getPoolActualUtilization(), 0);
 
         // borrower takes a loan of 4000 DAI making bucket 4000 to be fully utilized
         _borrower.addCollateral(_pool, 100 * 1e18);
@@ -61,6 +67,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         // should revert if bidder doesn't have enough collateral
         vm.expectRevert(IPool.InsufficientCollateralBalance.selector);
         _bidder.purchaseBid(_pool, 2_000_000 * 1e18, _p4000);
+
         // should revert if trying to purchase more than on bucket
         (, , , uint256 amount, uint256 bucketDebt, , , ) = _pool.bucketAt(_p4000);
 
@@ -72,13 +79,15 @@ contract ERC20PoolBidTest is DSTestPlus {
         );
         _bidder.purchaseBid(_pool, 4_000 * 1e18, _p4000);
 
-        // check bidder and pool balances
+        // check bidder and pool balances after borrowing and before purchaseBid
         assertEq(_collateral.balanceOf(address(_bidder)), 100 * 1e18);
         assertEq(_quote.balanceOf(address(_bidder)),      0);
         assertEq(_collateral.balanceOf(address(_pool)),   100 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),        5_000 * 1e18);
         assertEq(_pool.totalQuoteToken(),                 5_000 * 1e18);
         assertEq(_pool.totalCollateral(),                 100 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),        75.272300554947038946124999990 * 1e27);
+        assertEq(_pool.getPoolActualUtilization(),        0.444444444444444444 * 1e18);
 
         // check 4_000.927678580567537368 bucket balance before purchase bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(_p4000);
@@ -132,6 +141,8 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_pool)),        3_000 * 1e18);
         assertEq(_pool.totalQuoteToken(),                 3_000 * 1e18);
         assertEq(_pool.totalCollateral(),                 100 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),        25.124741560729269377350000003 * 1e27);
+        assertEq(_pool.getPoolActualUtilization(),        0.571428571428571429 * 1e18);
     }
 
     // @notice: lender deposits 7000 quote accross 3 buckets
@@ -154,6 +165,8 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_pool)),   100 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),        5_000 * 1e18);
         assertEq(_pool.totalCollateral(),                 100 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),        150.544601109894077892249999979 * 1e27);
+        assertEq(_pool.getPoolActualUtilization(),        0.285714285714285714 * 1e18);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p3010);
@@ -217,6 +230,9 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_pool)),   100.249942033532277153 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),        4_000 * 1e18);
         assertEq(_pool.totalCollateral(),                 100 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),        100.011080942036385030449999999 * 1e27);
+        assertEq(_pool.getPoolActualUtilization(),        0.333333333333333333 * 1e18);
+
     }
 
     function testPurchaseBidCannotReallocate() external {
