@@ -52,15 +52,6 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         _lender1.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    // TODO: move this somewhere more appropriate
-    function testRayToWadRounded() external {
-        uint256 amount = 5_000.00076103507940381999999950 * 1e27;
-        assertEq(Maths.rayToWad(amount), 5_000.000761035079403819 * 1e18);
-        assertEq(Maths.rayToWadRounded(amount), 5_000.000761035079403820 * 1e18);
-    }
-
-    // TODO: Review each test and validate HPB and LUP are correct where appropriate.
-
     // @notice: 1 lender tests adding quote token
     // @notice: lender Reverts:
     // @notice:     attempts to addQuoteToken at invalid price

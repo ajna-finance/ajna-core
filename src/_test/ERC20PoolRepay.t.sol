@@ -306,14 +306,12 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.getPoolCollateralization(), 500.855604669676520870471046520 * 1e27);
         assertEq(_pool.getPoolActualUtilization(), 0.066653752026328494 * 1e18);
 
-        // tie out pending debt
+        // first borrower repaid; tie out pending debt second borrower debt to reasonable percentage
         uint256 poolPendingDebt = _pool.totalDebt() + _pool.getPendingPoolInterest();
-        // first borrower repaid; only second borrower has debt
         (, borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower2));
-        // TODO: Pending debt should tie within 1 RAY, but it is ~0.4 quote tokens off.
-        //        assertEq(bucketPendingDebt, borrowerPendingDebt);
-        // assertEq(bucketPendingDebt, poolPendingDebt); // TODO: 1_999.687953503998446152 vs 1_999.687953503998446150
-        //        assertEq(borrowerPendingDebt, poolPendingDebt);
+        assertLt(wadPercentDifference(bucketPendingDebt, borrowerPendingDebt), 0.0002 * 1e18);
+        assertLt(wadPercentDifference(bucketPendingDebt, poolPendingDebt), 0.0002 * 1e18);
+        assertLt(wadPercentDifference(borrowerPendingDebt, poolPendingDebt), 0.0002 * 1e18);
 
         assertEq(_pool.hpb(),                                      priceHigh);
         assertEq(_pool.lup(),                                      priceHigh);

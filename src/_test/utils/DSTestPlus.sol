@@ -2,6 +2,7 @@
 pragma solidity 0.8.11;
 
 import { ERC20 }  from "@solmate/tokens/ERC20.sol";
+import { Maths }  from "../../libraries/Maths.sol";
 import { Test }   from "@std/Test.sol";
 import { Vm }     from "@std/Vm.sol";
 
@@ -89,6 +90,14 @@ contract DSTestPlus is Test {
 
     function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
         assertEq(address(erc1_), address(erc2_));
+    }
+
+    function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256) {
+        if (lhs < rhs) {
+            return Maths.ONE_WAD - Maths.wdiv(lhs, rhs);
+        } else {
+            return Maths.ONE_WAD - Maths.wdiv(rhs, lhs);
+        }
     }
 
 }
