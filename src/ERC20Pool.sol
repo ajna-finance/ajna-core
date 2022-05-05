@@ -515,7 +515,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
     /// @return WAD - The current pool target utilization
     function getPoolTargetUtilization() public view returns (uint256) {
-        return Maths.rayToWad(Maths.rdiv(Maths.ONE_RAY, getPoolCollateralization()));  // TODO: improve efficiency
+        return Maths.rayToWad(Maths.rdiv(Maths.ONE_RAY, getPoolCollateralization()));
     }
 
     /// @notice Called by lenders to update interest rate of the pool when actual > target utilization
