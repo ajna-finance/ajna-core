@@ -23,11 +23,11 @@ contract MulticallTest is DSTestPlus {
     QuoteToken       internal _quote;
 
     function setUp() external {
-        _collateral             = new CollateralToken();
-        _quote                  = new QuoteToken();
-        _poolAddress            = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _pool                   = ERC20Pool(_poolAddress);
-        _positionManager        = new PositionManager();
+        _collateral      = new CollateralToken();
+        _quote           = new QuoteToken();
+        _poolAddress     = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _pool            = ERC20Pool(_poolAddress);
+        _positionManager = new PositionManager();
     }
 
     // TODO: move this to _test/utils/...

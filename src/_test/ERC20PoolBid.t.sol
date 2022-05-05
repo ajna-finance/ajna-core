@@ -50,7 +50,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p4000);
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p3010);
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p1004);
-        assertEq(_pool.totalQuoteToken(), 9_000 * 1e45);
+        assertEq(_pool.totalQuoteToken(),          9_000 * 1e45);
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
