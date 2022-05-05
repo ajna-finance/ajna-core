@@ -12,6 +12,7 @@ contract ERC20PoolPerformanceTest is DSTestPlus {
 
     uint8 internal constant MAX_USERS = type(uint8).max;
 
+    address              internal _poolAddress;
     CollateralToken      internal _collateral;
     ERC20Pool            internal _pool;
     QuoteToken           internal _quote;
@@ -21,9 +22,10 @@ contract ERC20PoolPerformanceTest is DSTestPlus {
     uint256 internal _count = 7000;
 
     function setUp() external {
-        _collateral = new CollateralToken();
-        _quote      = new QuoteToken();
-        _pool       = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _collateral  = new CollateralToken();
+        _quote       = new QuoteToken();
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _pool        = ERC20Pool(_poolAddress);  
 
         for (uint256 i; i < MAX_USERS; ++i) {
             UserWithCollateral user = new UserWithCollateral();
