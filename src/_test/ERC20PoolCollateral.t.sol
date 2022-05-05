@@ -15,7 +15,7 @@ import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract ERC20PoolCollateralTest is DSTestPlus {
 
-    address            internal _poolAddress;
+    address             internal _poolAddress;
     CollateralToken     internal _collateral;
     ERC20Pool           internal _pool;
     QuoteToken          internal _quote;

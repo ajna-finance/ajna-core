@@ -236,9 +236,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceLow);
 
         // borrower1 takes a loan of 100_000 DAI
-        assertEq(_pool.estimatePriceForLoan(75_000 * 1e18),     priceHigh);
-        assertEq(_pool.estimatePriceForLoan(125_000 * 1e18),    priceMed);
-        assertEq(_pool.estimatePriceForLoan(175_000 * 1e18),    priceLow);
+        assertEq(_pool.estimatePriceForLoan(75_000 * 1e18),  priceHigh);
+        assertEq(_pool.estimatePriceForLoan(125_000 * 1e18), priceMed);
+        assertEq(_pool.estimatePriceForLoan(175_000 * 1e18), priceLow);
         _borrower.addCollateral(_pool, 51 * 1e18);
         _borrower.borrow(_pool, 100_000 * 1e18, 1_000 * 1e18);
 
