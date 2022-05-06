@@ -1135,4 +1135,119 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), 0);
     }
 
+    function testRemoveQuoteDeactivateBucket() public {
+        // test single bucket
+        // add tokens in bucket 1_004.989662429170775094
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p1004);
+        assertEq(_pool.hpb(), _p1004);
+        (, uint256 up, uint256 down, , , , , ) = _pool.bucketAt(_p1004);
+        assertEq(up,   _p1004);
+        assertEq(down, 0);
+
+        // remove tokens from 1_004.989662429170775094, bucket should be deactivated
+        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p1004);
+        assertEq(_pool.hpb(), 0);
+        (, up, down, , , , , ) = _pool.bucketAt(_p1004);
+        assertEq(up,   0);
+        assertEq(down, 0);
+
+        // test deactivate bucket with up and down buckets
+        // lender deposits 10000 DAI in 5 buckets each
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2000);
+
+        assertEq(_pool.hpb(), _p4000);
+        (, up, down, , , , , ) = _pool.bucketAt(_p3010);
+        assertEq(up,   _p3514);
+        assertEq(down, _p2503);
+        (, up, down, , , , , ) = _pool.bucketAt(_p3514);
+        assertEq(up,   _p4000);
+        assertEq(down, _p3010);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2503);
+        assertEq(up,   _p3010);
+        assertEq(down, _p2000);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2000);
+        assertEq(up,   _p2503);
+        assertEq(down, 0);
+
+        // remove tokens and deactivate middle bucket 3_010.892022197881557845
+        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3010);
+
+        assertEq(_pool.hpb(), _p4000);
+        (, up, down, , , , , ) = _pool.bucketAt(_p3010);
+        assertEq(up,   0);
+        assertEq(down, 0);
+        (, up, down, , , , , ) = _pool.bucketAt(_p3514);
+        assertEq(up,   _p4000);
+        assertEq(down, _p2503);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2503);
+        assertEq(up,   _p3514);
+        assertEq(down, _p2000);
+
+        // remove tokens and deactivate lowest bucket 2_000.221618840727700609
+        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2000);
+
+        assertEq(_pool.hpb(), _p4000);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2000);
+        assertEq(up,   0);
+        assertEq(down, 0);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2503);
+        assertEq(up,   _p3514);
+        assertEq(down, 0);
+
+        // remove tokens and deactivate HPB bucket 4_000.927678580567537368
+        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
+
+        assertEq(_pool.hpb(), _p3514);
+        (, up, down, , , , , ) = _pool.bucketAt(_p4000);
+        assertEq(up,   0);
+        assertEq(down, 0);
+        (, up, down, , , , , ) = _pool.bucketAt(_p3514);
+        assertEq(up,   _p3514);
+        assertEq(down, _p2503);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2503);
+        assertEq(up,   _p3514);
+        assertEq(down, 0);
+
+        // remove tokens and deactivate remaining buckets
+        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        assertEq(_pool.hpb(), _p2503);
+        (, up, down, , , , , ) = _pool.bucketAt(_p3514);
+        assertEq(up,   0);
+        assertEq(down, 0);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2503);
+        assertEq(up,   _p2503);
+        assertEq(down, 0);
+
+        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2503);
+        assertEq(_pool.hpb(), 0);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2503);
+        assertEq(up,   0);
+        assertEq(down, 0);
+
+        // recreate buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2000);
+
+        assertEq(_pool.hpb(), _p4000);
+        (, up, down, , , , , ) = _pool.bucketAt(_p3010);
+        assertEq(up,   _p3514);
+        assertEq(down, _p2503);
+        (, up, down, , , , , ) = _pool.bucketAt(_p3514);
+        assertEq(up,   _p4000);
+        assertEq(down, _p3010);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2503);
+        assertEq(up,   _p3010);
+        assertEq(down, _p2000);
+        (, up, down, , , , , ) = _pool.bucketAt(_p2000);
+        assertEq(up,   _p2503);
+        assertEq(down, 0);
+    }
+
 }
