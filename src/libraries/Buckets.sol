@@ -262,10 +262,10 @@ library Buckets {
             accumulateBucketInterest(bucket, inflator_);
             uint256 bucketDebtToPurchase = Maths.min(debt_, bucket.debt);
 
-            uint256 debtByPriceRay = Maths.rdiv(debt_, Maths.wadToRay(bucket.price));
+            uint256 debtByPrice = Maths.wdiv(debt_, bucket.price);
             uint256 bucketRequiredCollateral = Maths.min(
-                Maths.min(debtByPriceRay, collateral_),
-                debtByPriceRay
+                Maths.min(debtByPrice, collateral_),
+                debtByPrice
             );
 
             debt_               -= bucketDebtToPurchase;
