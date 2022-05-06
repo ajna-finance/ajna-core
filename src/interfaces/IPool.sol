@@ -4,8 +4,8 @@ pragma solidity 0.8.11;
 interface IPool {
 
     struct BorrowerInfo {
-        uint256 debt; // RAD
-        uint256 collateralDeposited; // RAY
+        uint256 debt; // WAD
+        uint256 collateralDeposited; // WAD
         uint256 inflatorSnapshot; // RAY, the inflator rate of the given borrower's last state change
     }
 

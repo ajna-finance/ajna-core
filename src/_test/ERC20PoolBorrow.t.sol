@@ -120,7 +120,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check pool balances
         assertEq(_pool.totalQuoteToken(),          29_000 * 1e18);
         assertEq(_pool.totalDebt(),                21_000 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), 14.337581058085150275452380951 * 1e27);
+        assertEq(_pool.getPoolCollateralization(), 14.337581058085150275 * 1e18);
         assertEq(
             _pool.getEncumberedCollateral(_pool.totalDebt()),
             _pool.getEncumberedCollateral(borrowerDebt)
@@ -173,7 +173,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check pool balances
         assertEq(_pool.totalQuoteToken(),          20_000 * 1e18);
         assertEq(_pool.totalDebt(),                30_000.273023083548492932 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), 10.036215403377052296661924376 * 1e27);
+        assertEq(_pool.getPoolCollateralization(), 10.036215403377052297 * 1e18);
         assertEq(
             _pool.getEncumberedCollateral(_pool.totalDebt()),
             _pool.getEncumberedCollateral(borrowerDebt)
@@ -249,7 +249,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
             _pool.getEncumberedCollateral(_pool.totalDebt()),
             _pool.getEncumberedCollateral(borrower1Debt)
         );
-        assertEq(poolCollateralizationAfterB1Actions, 1.020113025608771127310590000 * 1e27);
+        assertEq(poolCollateralizationAfterB1Actions, 1.020113025608771127 * 1e18);
 
         // check utilization after borrow - since pool is barely overcollateralized actual < target
         uint256 targetUtilizationAfterBorrow = _pool.getPoolTargetUtilization();
@@ -267,7 +267,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         uint256 targetUtilizationAfterAddCollateral = _pool.getPoolTargetUtilization();
         uint256 actualUtilizationAfterAddCollateral = _pool.getPoolActualUtilization();
 
-        assertEq(_pool.getPoolCollateralization(),    2.040226051217542254621180000 * 1e27);
+        assertEq(_pool.getPoolCollateralization(),    2.040226051217542255 * 1e18);
         assertGt(poolCollateralizationAfterB2Actions, poolCollateralizationAfterB1Actions);
         assertEq(actualUtilizationAfterAddCollateral, actualUtilizationAfterBorrow);
         assertLt(targetUtilizationAfterAddCollateral, targetUtilizationAfterBorrow);
@@ -276,7 +276,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IPool.PoolUndercollateralized.selector,
-                0.976275672074051610091314286 * 1e27
+                0.976275672074051610 * 1e18
             )
         );
         _borrower2.borrow(_pool, 5_000 * 1e18, 1_000 * 1e18);
