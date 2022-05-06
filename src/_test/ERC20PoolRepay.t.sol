@@ -67,7 +67,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_pool)),     100 * 1e18);
 
         assertEq(_pool.totalCollateral(),          100 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
+        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // borrower takes loan of 25_000 DAI from 3 buckets
@@ -77,8 +77,8 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(),                          5_000 * 1e18);
         assertEq(_pool.totalDebt(),                                25_000 * 1e18);
         assertEq(_pool.lup(),                                      priceLow);
-        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 8.303187167021213219818093536 * 1e27);
-        assertEq(_pool.getPoolCollateralization(),                 12.043568088791526231380000001 * 1e27);
+        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 8.303187167021213220 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),                 12.043568088791526231 * 1e18);
         assertEq(_pool.getPoolActualUtilization(),                 0.833333333333333333 * 1e18);
 
         assertEq(_quote.balanceOf(address(_borrower)), 35_000 * 1e18);
@@ -105,8 +105,8 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(),                          15_000 * 1e18);
         assertEq(_pool.totalDebt(),                                15_000.327247194808868366 * 1e18);
         assertEq(_pool.lup(),                                      priceMid);
-        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 3.749212295813495561695012810 * 1e27);
-        assertEq(_pool.getPoolCollateralization(),                 26.672269295516707278845353460 * 1e27);
+        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 3.749212295813495562 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),                 26.672269295516707277 * 1e18);
         assertEq(_pool.getPoolActualUtilization(),                 0.500005454060419282 * 1e18);
         assertEq(_quote.balanceOf(address(_borrower)),             25_000 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),                 15_000 * 1e18);
@@ -134,7 +134,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.lup(),                                      0);
         assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 0);
         assertEq(_pool.getPendingPoolInterest(),                   0);
-        assertEq(_pool.getPoolCollateralization(),                 Maths.ONE_RAY);
+        assertEq(_pool.getPoolCollateralization(),                 Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(),                 0);
 
         assertEq(_quote.balanceOf(address(_borrower)), 9_999.086351077915909657 * 1e18);
@@ -180,7 +180,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_pool)),      200 * 1e18);
 
         assertEq(_pool.totalCollateral(),          200 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_RAY);
+        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // repay should revert if no debt
@@ -197,10 +197,9 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.totalDebt(),                                27_000 * 1e18);
         assertEq(_pool.hpb(),                                      priceHigh);
         assertEq(_pool.lup(),                                      priceLow);
-        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 8.967442140382910277403541019 * 1e27);
-        assertEq(_pool.getPoolCollateralization(),                 22.302903868132455984037037038 * 1e27);
+        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 8.967442140382910277 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),                 22.302903868132455985 * 1e18);
         assertEq(_pool.getPoolActualUtilization(),                 0.9 * 1e18);
-        assertEq(_pool.getPoolCollateralization(),                 22.302903868132455984037037038 * 1e27);
 
         assertEq(_quote.balanceOf(address(_borrower)),  35_000 * 1e18);
         assertEq(_quote.balanceOf(address(_borrower2)), 12_000 * 1e18);
@@ -261,10 +260,9 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(),                          13_000 * 1e18);
         assertEq(_pool.totalDebt(),                                17_000.351029678848062342 * 1e18);
         assertEq(_pool.lup(),                                      priceMid);
-        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 4.249102307120473073413145494 * 1e27);
-        assertEq(_pool.getPoolCollateralization(),                 47.068765481322519062778241470 * 1e27);
+        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 4.249102307120473073 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),                 47.068765481322519067 * 1e18);
         assertEq(_pool.getPoolActualUtilization(),                 0.566671737036032801 * 1e18);
-        assertEq(_pool.getPoolCollateralization(),                 47.068765481322519062778241470 * 1e27);
 
         assertEq(_quote.balanceOf(address(_borrower)), 25_000 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),     13_000 * 1e18);
@@ -303,7 +301,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         assertEq(_pool.totalQuoteToken(),          28_000.715071443825413103 * 1e18);
         assertEq(_pool.totalDebt(),                1_999.635958235022649239 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), 500.855604669676520870471046520 * 1e27);
+        assertEq(_pool.getPoolCollateralization(), 500.855604669676520512 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.066653752026328494 * 1e18);
 
         // first borrower repaid; tie out pending debt second borrower debt to reasonable percentage
@@ -315,7 +313,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         assertEq(_pool.hpb(),                                      priceHigh);
         assertEq(_pool.lup(),                                      priceHigh);
-        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 0.399316685558313112714579918 * 1e27);
+        assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 0.399316685558313113 * 1e18);
 
         assertEq(_quote.balanceOf(address(_borrower)), 9_999.284928556174586897 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),     28_000.715071443825413103 * 1e18);
@@ -362,7 +360,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.getPendingPoolInterest(),                   0);
         assertEq(_pool.lup(),                                      0);
         assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 0);
-        assertEq(_pool.getPoolCollateralization(),                 Maths.ONE_RAY);
+        assertEq(_pool.getPoolCollateralization(),                 Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(),                 0);
 
         assertEq(_quote.balanceOf(address(_borrower2)), 9_999.973997801566810197 * 1e18);

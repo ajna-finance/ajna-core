@@ -114,7 +114,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         // debt accumulates, and the borrower becomes undercollateralized
         _borrower.repay(_pool, 1); // repay 1 WAD to trigger accumulation
         (, , , , uint256 collateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
-        assertLt(collateralization, 1 * 1e27);
+        assertLt(collateralization, 1 * 1e18);
 
         // rate should not change while pool is undercollateralized
         _lender.updateInterestRate(_pool);

@@ -148,7 +148,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
         totalQuoteToken -= amount;
         uint256 col = getPoolCollateralization();
-        if (col < Maths.ONE_RAY) {
+        if (col < Maths.ONE_WAD) {
             revert PoolUndercollateralized({collateralization: col});
         }
 
@@ -246,7 +246,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         totalDebt       += amount_;
 
         uint256 col = getPoolCollateralization();
-        if (col < Maths.ONE_RAY) {
+        if (col < Maths.ONE_WAD) {
             revert PoolUndercollateralized({collateralization: col});
         }
 
@@ -318,7 +318,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         totalQuoteToken -= amount_;
 
         uint256 col = getPoolCollateralization();
-        if (col < Maths.ONE_RAY) {
+        if (col < Maths.ONE_WAD) {
             revert PoolUndercollateralized({collateralization: col});
         }
 
@@ -355,7 +355,7 @@ contract ERC20Pool is IPool, Clone, Interest {
             debt
         );
 
-        if (collateralization > Maths.ONE_RAY) {
+        if (collateralization > Maths.ONE_WAD) {
             revert BorrowerIsCollateralized({collateralization: collateralization});
         }
 
@@ -477,10 +477,10 @@ contract ERC20Pool is IPool, Clone, Interest {
 
     /// @dev Used for both pool and borrower level debt
     /// @param debt_ - Debt to check encumbrance of
-    /// @return encumbrance_ RAY - The current encumbrance of a given debt balance
+    /// @return encumbrance_ WAD - The current encumbrance of a given debt balance
     function getEncumberedCollateral(uint256 debt_) public view returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
-        encumbrance_ = debt_ != 0 ? Maths.rdiv(Maths.wadToRay(debt_), Maths.wadToRay(lup)) : 0;
+        encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
     }
 
 
@@ -491,12 +491,12 @@ contract ERC20Pool is IPool, Clone, Interest {
         interest_ = totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
     }
 
-    /// @return RAY - The current collateralization of the pool given totalCollateral and totalDebt
+    /// @return WAD - The current collateralization of the pool given totalCollateral and totalDebt
     function getPoolCollateralization() public view returns (uint256) {
         if (lup != 0 && totalDebt != 0) {
-            return Maths.rdiv(Maths.wadToRay(totalCollateral), getEncumberedCollateral(totalDebt));
+            return Maths.wdiv(totalCollateral, getEncumberedCollateral(totalDebt));
         }
-        return Maths.ONE_RAY;
+        return Maths.ONE_WAD;
     }
 
     /// @notice Gets the current utilization of the pool
@@ -515,7 +515,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
     /// @return WAD - The current pool target utilization
     function getPoolTargetUtilization() public view returns (uint256) {
-        return Maths.rayToWad(Maths.rdiv(Maths.ONE_RAY, getPoolCollateralization()));
+        return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
     }
 
     /// @notice Called by lenders to update interest rate of the pool when actual > target utilization
@@ -525,7 +525,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         if (
             actualUtilization != 0 &&
             previousRateUpdate < block.timestamp &&
-            getPoolCollateralization() > Maths.ONE_RAY
+            getPoolCollateralization() > Maths.ONE_WAD
         ) {
             uint256 oldRate = previousRate;
             accumulatePoolInterest();
@@ -565,12 +565,12 @@ contract ERC20Pool is IPool, Clone, Interest {
         BorrowerInfo memory borrower = borrowers[borrower_];
         uint256 borrowerPendingDebt = borrower.debt;
         uint256 collateralEncumbered;
-        uint256 collateralization = Maths.ONE_RAY;
+        uint256 collateralization = Maths.ONE_WAD;
 
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
             borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
             collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization     = Maths.rdiv(Maths.wadToRay(borrower.collateralDeposited), collateralEncumbered);
+            collateralization     = Maths.wdiv(borrower.collateralDeposited, collateralEncumbered);
         }
 
         return (
@@ -586,17 +586,17 @@ contract ERC20Pool is IPool, Clone, Interest {
 
     /// @dev Supports passage of collateralDeposited and debt to enable calculation of potential borrower collateralization states, not just current.
     /// @param collateralDeposited_ RAY - Collateral amount to calculate a collateralization ratio for
-    /// @param debt_ RAD - Debt position to calculate encumbered quotient
-    /// @return RAY - The current collateralization of the borrowers given totalCollateral and totalDebt
+    /// @param debt_ WAD - Debt position to calculate encumbered quotient
+    /// @return WAD - The current collateralization of the borrowers given totalCollateral and totalDebt
     function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_)
         public
         view
         returns (uint256)
     {
         if (lup != 0 && debt_ != 0) {
-            return Maths.rdiv(Maths.wadToRay(collateralDeposited_), getEncumberedCollateral(debt_));
+            return Maths.wdiv(collateralDeposited_, getEncumberedCollateral(debt_));
         }
-        return Maths.ONE_RAY;
+        return Maths.ONE_WAD;
     }
 
     /// @notice Estimate the price at which a loan can be taken
