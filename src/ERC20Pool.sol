@@ -418,7 +418,7 @@ contract ERC20Pool is IPool, Clone, Interest {
     /// @dev Requires time to have passed between update calls
     function accumulatePoolInterest() private {
         if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
-            uint256 pendingInflator = getPendingInflator();                                                 // RAY
+            uint256 pendingInflator    = getPendingInflator();                                              // RAY
             totalDebt                  += getPendingInterest(totalDebt, pendingInflator, inflatorSnapshot); // WAD
             inflatorSnapshot           = pendingInflator;                                                   // RAY
             lastInflatorSnapshotUpdate = block.timestamp;
