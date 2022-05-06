@@ -166,7 +166,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
                     remove_quote_token(lenders[user_index], user_index, price, pool)
                 except VirtualMachineError as ex:
                     print(f" ERROR removing liquidity at {price / 10**18:.1f}, "
-                          f"collateralized at {pool.getPoolCollateralization()/10**27:.1%}: {ex}")
+                          f"collateralized at {pool.getPoolCollateralization()/10**18:.1%}: {ex}")
                     print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hpb())))
                     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             else:
@@ -285,7 +285,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth
@@ -305,7 +305,7 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
         while chain.time() < end_time:
             utilization = pool1.getPoolActualUtilization() / 10**18
             target = pool1.getPoolTargetUtilization() / 10**18
-            collateralization = pool1.getPoolCollateralization() / 10**27
+            collateralization = pool1.getPoolCollateralization() / 10**18
             print(f"actual utlzn: {utilization:>6.1%}   "
                   f"target utlzn: {target:>6.1%}   "
                   f"collateralization: {collateralization:>6.1%}   "
