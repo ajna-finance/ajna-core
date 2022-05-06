@@ -355,7 +355,7 @@ contract ERC20Pool is IPool, Clone, Interest {
             debt
         );
 
-        if (collateralization > Maths.ONE_RAY) {
+        if (collateralization > Maths.ONE_WAD) {
             revert BorrowerIsCollateralized({collateralization: collateralization});
         }
 

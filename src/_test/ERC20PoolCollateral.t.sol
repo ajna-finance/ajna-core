@@ -131,7 +131,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IPool.AmountExceedsAvailableCollateral.selector,
-                96.006106172337791725 * 1e18
+                99.999999996006106173 * 1e18
             )
         );
         _borrower.removeCollateral(_pool, 100 * 1e18);
@@ -142,7 +142,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             address(_borrower)
         );
         assertEq(deposited,                 80 * 1e18);
-        assertEq(borrowerEncumbered,        3.993893827662208275 * 1e18);
+        assertEq(borrowerEncumbered,        3.993893827662208276 * 1e18);
         assertEq(borrowerCollateralization, 20.030577539620605889 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), borrowerCollateralization);
@@ -162,7 +162,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
             address(_borrower)
         );
         assertEq(deposited,                 80 * 1e18);
-        assertEq(borrowerEncumbered,        2.995420370746656206 * 1e18);
+        assertEq(borrowerEncumbered,        2.995420370746656207 * 1e18);
         assertEq(borrowerCollateralization, 26.707436719494141185 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), borrowerCollateralization);
@@ -202,7 +202,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         );
         assertEq(deposited,                 0);
         assertEq(borrowerEncumbered,        0);
-        assertEq(borrowerCollateralization, Maths.ONE_RAY);
+        assertEq(borrowerCollateralization, Maths.ONE_WAD);
 
         assertEq(_collateral.balanceOf(address(_borrower)), 100 * 1e18);
         // // check pool balances

@@ -907,14 +907,14 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IPool.PoolUndercollateralized.selector,
-                0.127923769382684562 * 1e18
+                0.127923769382684563 * 1e18
             )
         );
         _lender.removeQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceLow);
 
         // check pool collateralization after borrowing
         uint256 collateralization = _pool.getPoolCollateralization();
-        assertEq(collateralization, 1.281361819597192738244850000 * 1e27);
+        assertEq(collateralization, 1.281361819597192738 * 1e18);
 
         // check pool utilization after borrowing
         targetUtilization = _pool.getPoolTargetUtilization();

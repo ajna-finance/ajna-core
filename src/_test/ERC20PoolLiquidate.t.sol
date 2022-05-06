@@ -120,7 +120,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IPool.BorrowerIsCollateralized.selector,
-                20.066473628656401978 * 1e18
+                20.066473628656401977 * 1e18
             )
         );
         _lender.liquidate(_pool, address(_borrower2));
@@ -138,8 +138,8 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerDebt,         11_000 * 1e18);
         assertEq(borrowerPendingDebt,  11_000 * 1e18);
         assertEq(collateralDeposited,  2 * 1e18);
-        assertEq(collateralEncumbered, 109.635606171392167204250999673 * 1e27);
-        assertEq(collateralization,    0.018242248753324001798181818 * 1e27);
+        assertEq(collateralEncumbered, 109.635606171392167204 * 1e18);
+        assertEq(collateralization,    0.018242248753324002 * 1e18);
         assertEq(borrowerInflator,     1 * 1e27);
 
         // check pool balance
@@ -195,7 +195,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerPendingDebt,  0);
         assertEq(collateralDeposited,  0.790937395069026649 * 1e18);
         assertEq(collateralEncumbered, 0);
-        assertEq(collateralization,    Maths.ONE_RAY);
+        assertEq(collateralization,    Maths.ONE_WAD);
         assertEq(borrowerInflator,     1.000013001099216594901568631 * 1e27);
         assertEq(_pool.getEncumberedCollateral(borrowerDebt), collateralEncumbered);
         assertEq(_pool.getBorrowerCollateralization(collateralDeposited, borrowerDebt), collateralization);
@@ -212,7 +212,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
         assertEq(_pool.lup(),                        priceLow);
         assertEq(_quote.balanceOf(address(_pool)),   9_000 * 1e18);
-        assertEq(_pool.getPoolCollateralization(),   20.145568336024044703 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),   20.145568336024044704 * 1e18);
         assertEq(_pool.getPoolActualUtilization(),   0.100001170097408238 * 1e18);
 
         // check 10_016.501589292607751220 bucket balance after liquidate
