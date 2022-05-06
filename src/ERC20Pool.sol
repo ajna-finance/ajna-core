@@ -472,7 +472,7 @@ contract ERC20Pool is IPool, Clone, Interest {
     // TODO: add a test for this
     /// @return minPrice_ RAY - The current minimum pool price
     function getMinimumPoolPrice() public view returns (uint256 minPrice_) {
-        minPrice_ = totalDebt != 0 ? Maths.rdiv(totalDebt, totalCollateral) : 0;
+        minPrice_ = totalDebt != 0 ? Maths.wdiv(totalDebt, totalCollateral) : 0;
     }
 
     /// @dev Used for both pool and borrower level debt
