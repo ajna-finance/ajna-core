@@ -274,7 +274,7 @@ class TestUtils:
     def validate_debt(pool, borrowers, bucket_math, min_bucket_index=-3232, print_error=False):
         def pe(lhs_name, lhs_value, rhs_name, rhs_value):
             error = lhs_value - rhs_value
-            print(f"{lhs_name:>8} vs {rhs_name:<8} error: {error/1e45:>{48}.45f}")
+            print(f"{lhs_name:>8} vs {rhs_name:<8} error: {error/1e18:>{24}.18f}")
 
         borrower_debt_pending = 0
         for borrower in borrowers:
@@ -297,9 +297,9 @@ class TestUtils:
             pe("borrower", borrower_debt_pending, "pool", pool_debt_pending)
 
         # TODO: Get these to tie out to WAD (or RAD) precision.
-        # assert (bucket_debt_pending - borrower_debt_pending) / 1e27 == 0
-        # assert (bucket_debt_pending - pool_debt_pending) / 1e27 == 0
-        # assert (borrower_debt_pending - pool_debt_pending) / 1e27 == 0
+        # assert (bucket_debt_pending - borrower_debt_pending) / 1e18 == 0
+        # assert (bucket_debt_pending - pool_debt_pending) / 1e18 == 0
+        # assert (borrower_debt_pending - pool_debt_pending) / 1e18 == 0
 
     @staticmethod
     def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926,
@@ -312,14 +312,10 @@ class TestUtils:
             return wad/1e18
         def ny(ray):
             return ray/1e27
-        def nd(rad):
-            return rad/1e45
         def fw(wad):
             return f"{nw(wad):>{w}.3f}"
         def fy(ray):
             return f"{ny(ray):>{w}.3f}"
-        def fd(rad):
-            return f"{nd(rad):>{w}.3f}"
 
         hpb = pool.hpb()
         lup = pool.lup()
@@ -353,10 +349,10 @@ class TestUtils:
                 lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
                 continue
             if csv:
-                lines.append(','.join([nw(price), pointer, nd(bucket_deposit), nd(bucket_debt), ny(bucket_collateral),
+                lines.append(','.join([nw(price), pointer, nw(bucket_deposit), nw(bucket_debt), nw(bucket_collateral),
                                        ny(bucket_lp), ny(bucket_inflator)]))
             else:
-                lines.append(''.join([fw(price), j(pointer), fd(bucket_deposit), fd(bucket_debt), fy(bucket_collateral),
+                lines.append(''.join([fw(price), j(pointer), fw(bucket_deposit), fw(bucket_debt), fw(bucket_collateral),
                                       fy(bucket_lp), f"{ny(bucket_inflator):>{w}.9f}"]))
         return '\n'.join(lines)
 

@@ -63,14 +63,14 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
 
         skip(8200);
 
-        assertEq(_pool.getPoolActualUtilization(), 0.833333333333333333333333333 * 1e27);
-        assertEq(_pool.getPoolTargetUtilization(), 0.099859436886217129237589653 * 1e27);
+        assertEq(_pool.getPoolActualUtilization(), 0.833333333333333333 * 1e18);
+        assertEq(_pool.getPoolTargetUtilization(), 0.099859436886217129 * 1e18);
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.086673629908233477 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.050000000036673630 * 1e18);
         _lender.updateInterestRate(_pool);
 
-        assertEq(_pool.previousRate(),               0.086673629908233477 * 1e18);
+        assertEq(_pool.previousRate(),               0.050000000036673630 * 1e18);
         assertEq(_pool.previousRateUpdate(),         8200);
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
     }
@@ -93,9 +93,9 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertLt(_pool.getPoolActualUtilization(), _pool.getPoolTargetUtilization());
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.009999996670471735 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.049999999959999997 * 1e18);
         _lender.updateInterestRate(_pool);
-        assertEq(_pool.previousRate(), 0.009999996670471735 * 1e18);
+        assertEq(_pool.previousRate(), 0.049999999959999997 * 1e18);
     }
 
     // @notice Ensure an underutilized and undercollateralized pool does not produce an underflow.
@@ -114,7 +114,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         // debt accumulates, and the borrower becomes undercollateralized
         _borrower.repay(_pool, 1); // repay 1 WAD to trigger accumulation
         (, , , , uint256 collateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
-        assertLt(collateralization, 1 * 1e27);
+        assertLt(collateralization, 1 * 1e18);
 
         // rate should not change while pool is undercollateralized
         _lender.updateInterestRate(_pool);
