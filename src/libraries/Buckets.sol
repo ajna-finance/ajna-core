@@ -540,7 +540,7 @@ library Buckets {
         bool isHighestBucket = bucket_.price == bucket_.up;
         bool isLowestBucket = bucket_.down == 0;
         if (isHighestBucket && !isLowestBucket) {                     // if highest bucket
-            buckets_[bucket_.down].up = buckets_[bucket_.down].price; // update up pointer of lower bucket
+            buckets_[bucket_.down].up = buckets_[bucket_.down].price; // make lower bucket the highest bucket
         } else if (!isHighestBucket && !isLowestBucket) {             // if middle bucket
             buckets_[bucket_.up].down = bucket_.down;                 // update down pointer of upper bucket
             buckets_[bucket_.down].up = bucket_.up;                   // update up pointer of lower bucket
