@@ -98,7 +98,7 @@ library Buckets {
     function claimCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
-        uint256 amount_, // RAY
+        uint256 amount_,   // WAD
         uint256 lpBalance_ // RAY
     ) public returns (uint256 lpRedemption_) {
 
