@@ -77,7 +77,7 @@ library Buckets {
 
         amount_ = Maths.min(Maths.wadToRay(maxAmount_), claimable);   // RAY
         lpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
-        amount_ = Maths.rayToWadRounded(amount_);
+        amount_ = Maths.rayToWad(amount_);
 
         // Remove from deposit first
         uint256 removeFromDeposit = Maths.min(amount_, bucket_.onDeposit);

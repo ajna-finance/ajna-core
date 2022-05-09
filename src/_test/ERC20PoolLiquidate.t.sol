@@ -207,7 +207,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
 
         // check pool balance and that interest accumulated
         assertEq(_pool.totalQuoteToken(),            9_000 * 1e18);
-        assertEq(_pool.totalDebt(),                  1000.013001099216594901 * 1e18);
+        assertEq(_pool.totalDebt(),                  1000.013001099216594902 * 1e18);
         assertEq(_pool.totalCollateral(),            200.790937395069026649 * 1e18);
         assertEq(_pool.inflatorSnapshot(),           1.000013001099216594901568631 * 1e27);
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
@@ -441,7 +441,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(bucketCollateral, 0.259811378170281892 * 1e18);
 
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(priceMed);
-        assertEq(debt,             0);
+        assertEq(debt,             0);  // FIXME: is 1 instead of 0
         assertEq(deposit,          0);
         assertEq(bucketCollateral, 0.146424467437014641 * 1e18);
 
