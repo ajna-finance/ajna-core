@@ -7,6 +7,9 @@ import { Vm }     from "@std/Vm.sol";
 
 contract DSTestPlus is Test {
 
+    // nonce for generating random addresses
+    uint16 internal _nonce = 0;
+
     // prices
     uint256 internal _p50159    = 50_159.593888626183666006 * 1e18;
     uint256 internal _p49910    = 49_910.043670274810022205 * 1e18;
@@ -89,6 +92,12 @@ contract DSTestPlus is Test {
 
     function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
         assertEq(address(erc1_), address(erc2_));
+    }
+
+    function generateAddress() internal returns (address addr) {
+        // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
+        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
+        _nonce++;
     }
 
 }
