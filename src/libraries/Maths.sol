@@ -84,6 +84,10 @@ library Maths {
         return x / 10**9;
     }
 
+    function rayToWadRounded(uint256 x) internal pure returns (uint256) {
+        return add(x, 10**9 / 2) / 10**9;
+    }
+
     function rayToRad(uint256 x) internal pure returns (uint256) {
         return x * 10**18;
     }

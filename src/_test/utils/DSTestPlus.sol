@@ -2,6 +2,7 @@
 pragma solidity 0.8.11;
 
 import { ERC20 }  from "@solmate/tokens/ERC20.sol";
+import { Maths }  from "../../libraries/Maths.sol";
 import { Test }   from "@std/Test.sol";
 import { Vm }     from "@std/Vm.sol";
 
@@ -98,6 +99,14 @@ contract DSTestPlus is Test {
         // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
         addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
         _nonce++;
+    }
+
+    function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256) {
+        if (lhs < rhs) {
+            return Maths.ONE_WAD - Maths.wdiv(lhs, rhs);
+        } else {
+            return Maths.ONE_WAD - Maths.wdiv(rhs, lhs);
+        }
     }
 
 }

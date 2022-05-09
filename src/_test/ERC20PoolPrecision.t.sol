@@ -12,8 +12,8 @@ import { UserWithCollateral, UserWithQuoteToken }        from "./utils/Users.sol
 contract ERC20PoolPrecisionTest is DSTestPlus {
     uint256 internal constant BUCKET_PRICE = 2000.221618840727700609 * 1e18;
 
-    uint256 internal _quotePoolPrecision      = 10**45;
-    uint256 internal _collateralPoolPrecision = 10**27;
+    uint256 internal _quotePoolPrecision      = 10**18;
+    uint256 internal _collateralPoolPrecision = 10**18;
     uint256 internal _collateralPrecision;
     uint256 internal _quotePrecision;
 
@@ -126,7 +126,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
             address(_bidder),
             BUCKET_PRICE,
             1_000 * _quotePoolPrecision,
-            0.499944601428501671562842199 * 10**27
+            0.499944601428501672 * 10**18
         );
         _bidder.purchaseBid(_pool, 1_000 * 1e18, BUCKET_PRICE);
 
@@ -147,8 +147,8 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         emit ClaimCollateral(
             address(_lender),
             BUCKET_PRICE,
-            0.499944601428501671000000000 * 10**27,
-            999.999999999999998874190864576 * 10**27
+            0.499944601428501671 * 10**18,
+            999.9999999999999987866 * 10**27
         );
         _lender.claimCollateral(_pool, address(_lender), 0.499944601428501671 * 1e18, BUCKET_PRICE);
 
@@ -166,9 +166,9 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         // remove collateral
         assertRemoveCollateral();
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateral(address(_borrower), 0.499944601428501671000000000 * 10**27);
+        emit RemoveCollateral(address(_borrower), 0.499944601428501671 * 10**18);
         _borrower.removeCollateral(_pool, 0.499944601428501671 * 1e18);
-        assertEq(_pool.totalCollateral(), 99.500055398571498329 * 10**27);
+        assertEq(_pool.totalCollateral(), 99.500055398571498329 * 10**18);
 
         // check balances
         assertEq(_pool.totalQuoteToken(),              4_000 * _quotePoolPrecision);
@@ -192,23 +192,23 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
     }
 
     function assertCollateralBalancesAfterBid() public virtual {
-        assertEq(_collateral.balanceOf(address(_pool)),     100.499944601428501671 * 10**18);
+        assertEq(_collateral.balanceOf(address(_pool)),     100.499944601428501672 * 10**18);
         assertEq(_collateral.balanceOf(address(_borrower)), 0);
-        assertEq(_collateral.balanceOf(address(_bidder)),   99.500055398571498329 * 10**18);
+        assertEq(_collateral.balanceOf(address(_bidder)),   99.500055398571498328 * 10**18);
     }
 
     function assertCollateralBalancesAfterClaim() public virtual {
-        assertEq(_collateral.balanceOf(address(_pool)),     100 * _collateralPrecision);
+        assertEq(_collateral.balanceOf(address(_pool)),     100.000000000000000001 * 10**18);
         assertEq(_collateral.balanceOf(address(_lender)),   0.499944601428501671 * 10**18);
         assertEq(_collateral.balanceOf(address(_borrower)), 0);
-        assertEq(_collateral.balanceOf(address(_bidder)),   99.500055398571498329 * 10**18);
+        assertEq(_collateral.balanceOf(address(_bidder)),   99.500055398571498328 * 10**18);
     }
 
     function assertCollateralBalancesAfterRemove() public virtual {
-        assertEq(_collateral.balanceOf(address(_pool)),     99.500055398571498329 * 10**18);
+        assertEq(_collateral.balanceOf(address(_pool)),     99.500055398571498330 * 10**18);
         assertEq(_collateral.balanceOf(address(_lender)),   0.499944601428501671 * 10**18);
         assertEq(_collateral.balanceOf(address(_borrower)), 0.499944601428501671 * 10**18);
-        assertEq(_collateral.balanceOf(address(_bidder)),   99.500055398571498329 * 10**18);
+        assertEq(_collateral.balanceOf(address(_bidder)),   99.500055398571498328 * 10**18);
     }
 
 }
