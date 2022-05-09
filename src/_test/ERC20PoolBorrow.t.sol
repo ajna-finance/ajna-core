@@ -152,7 +152,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // check bucket debt at 3_010.892022197881557845
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceMed);
-        assertEq(debt,    10000.013001099216594901 * 1e18);
+        assertEq(debt,    10000.013001099216594902 * 1e18);
         assertEq(deposit, 0);
 
         // check bucket debt at 3_514.334495390401848927
@@ -167,12 +167,12 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // check borrower balances
         (borrowerDebt, depositedCollateral, ) = _pool.borrowers(address(_borrower));
-        assertEq(borrowerDebt,        30_000.273023083548492932 * 1e18);
+        assertEq(borrowerDebt,        30_000.273023083548492933 * 1e18);
         assertEq(depositedCollateral, 100 * 1e18);
 
         // check pool balances
         assertEq(_pool.totalQuoteToken(),          20_000 * 1e18);
-        assertEq(_pool.totalDebt(),                30_000.273023083548492932 * 1e18);
+        assertEq(_pool.totalDebt(),                30_000.273023083548492933 * 1e18);
         assertEq(_pool.getPoolCollateralization(), 10.036215403377052297 * 1e18);
         assertEq(
             _pool.getEncumberedCollateral(_pool.totalDebt()),
@@ -200,26 +200,26 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // check bucket debt at 3_010.892022197881557845
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceMed);
         assertEq(debt,    0);
-        assertEq(deposit, 10_000.013001099216594901 * 1e18);
+        assertEq(deposit, 10_000.013001099216594902 * 1e18);
 
         // check bucket debt at 3_514.334495390401848927
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceHigh);
         assertEq(debt,    0);
-        assertEq(deposit, 10_000.130010992165949015 * 1e18);
+        assertEq(deposit, 10_000.130010992165949016 * 1e18);
 
         // check bucket debt at 4_000.927678580567537368
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceHighest);
         assertEq(debt,    0);
-        assertEq(deposit, 10_000.130010992165949015 * 1e18);
+        assertEq(deposit, 10_000.130010992165949016 * 1e18);
 
         // check bucket debt at 5_007.644384905151472283
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p5007);
-        assertEq(debt,    30_000.273023083548492931 * 1e18);
-        assertEq(deposit, 9_999.726976916451507069 * 1e18);
+        assertEq(debt,    30_000.273023083548492934 * 1e18);
+        assertEq(deposit, 9_999.726976916451507066 * 1e18);
 
         // check pool balances
         assertEq(_pool.totalQuoteToken(), 60_000 * 1e18);
-        assertEq(_pool.totalDebt(),       30_000.273023083548492932 * 1e18);
+        assertEq(_pool.totalDebt(),       30_000.273023083548492933 * 1e18);
     }
 
     // @notice: With 1 lender and 2 borrowers tests addQuoteToken, addCollateral and borrow
