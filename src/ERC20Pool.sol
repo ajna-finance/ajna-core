@@ -141,9 +141,17 @@ contract ERC20Pool is IPool, Clone, Interest {
             lup = newLup;
         }
 
-        // update HPB if removed from current, if no deposit nor debt in current HPB
-        if (price_ == hpb && bucket.onDeposit == 0 && bucket.debt == 0) {
-            hpb = getHpb();
+        if (bucket.onDeposit == 0 && bucket.debt == 0) {
+            // update HPB if removed from current
+            if (price_ == hpb) {
+                hpb = getHpb();
+            }
+
+            // bucket no longer used, deactivate bucket
+            if (bucket.lpOutstanding == 0 && bucket.collateral == 0) {
+                BitMaps.setTo(_bitmap, price_, false);
+                _buckets.deactivateBucket(bucket);
+            }
         }
 
         totalQuoteToken -= amount;
@@ -209,7 +217,15 @@ contract ERC20Pool is IPool, Clone, Interest {
             revert NoClaimToBucket();
         }
 
-        uint256 claimedLpTokens = _buckets.claimCollateral(price_, amount_, maxClaim);
+        Buckets.Bucket storage bucket = _buckets[price_];
+        uint256 claimedLpTokens = _buckets.claimCollateral(bucket, amount_, maxClaim);
+
+        // cleanup if bucket no longer used
+        if (bucket.debt == 0 && bucket.onDeposit == 0 && bucket.lpOutstanding == 0 && bucket.collateral == 0) {
+            // bucket no longer used, deactivate bucket
+            BitMaps.setTo(_bitmap, price_, false);
+            _buckets.deactivateBucket(bucket);
+        }
 
         lpBalance[recipient_][price_] -= claimedLpTokens;
 
@@ -368,6 +384,12 @@ contract ERC20Pool is IPool, Clone, Interest {
         // borrower accounting
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
+
+        // update HPB
+        uint256 curHpb = getHpb();
+        if (hpb != curHpb) {
+            hpb = curHpb;
+        }
 
         emit Liquidate(borrower_, debt, requiredCollateral);
     }

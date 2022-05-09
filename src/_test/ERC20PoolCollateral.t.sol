@@ -351,11 +351,14 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         // liquidate borrower
         _lender.liquidate(_pool, address(_borrower));
 
+        // check HPB updated accordingly
+        assertEq(_pool.hpb(), _p100);
+
         // check buckets debt and collateral after liquidation
         (
             ,
-            ,
-            ,
+            uint256 up,
+            uint256 down,
             uint256 deposit,
             uint256 debt,
             ,
@@ -387,6 +390,16 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(deposit,          0);
         assertEq(lpOutstanding,    0);
         assertEq(bucketCollateral, 0);
+        // check that the bucket was deactivated
+        (, up, down, , , , , ) = _pool.bucketAt(_p8002);
+        assertEq(up,   0);
+        assertEq(down, 0);
+        (, up, down, , , , , ) = _pool.bucketAt(_p9020);
+        assertEq(up,   _p10016);
+        assertEq(down, _p100);
+        (, up, down, , , , , ) = _pool.bucketAt(_p100);
+        assertEq(up,   _p9020);
+        assertEq(down, 0);
 
         assertEq(_pool.lpBalance(address(_lender), _p8002), 0);
 
@@ -398,6 +411,16 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(deposit,          0);
         assertEq(lpOutstanding,    0);
         assertEq(bucketCollateral, 0);
+        // check that the bucket was deactivated
+        (, up, down, , , , , ) = _pool.bucketAt(_p9020);
+        assertEq(up,   0);
+        assertEq(down, 0);
+        (, up, down, , , , , ) = _pool.bucketAt(_p10016);
+        assertEq(up,   _p10016);
+        assertEq(down, _p100);
+        (, up, down, , , , , ) = _pool.bucketAt(_p100);
+        assertEq(up,   _p10016);
+        assertEq(down, 0);
 
         assertEq(_pool.lpBalance(address(_lender), _p9020), 0);
 
@@ -416,6 +439,13 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(deposit,          0);
         assertEq(lpOutstanding,    0);
         assertEq(bucketCollateral, 0);
+        // check that the bucket was deactivated
+        (, up, down, , , , , ) = _pool.bucketAt(_p10016);
+        assertEq(up,   0);
+        assertEq(down, 0);
+        (, up, down, , , , , ) = _pool.bucketAt(_p100);
+        assertEq(up,   _p100);
+        assertEq(down, 0);
 
         assertEq(_pool.lpBalance(address(_lender), _p10016), 0);
     }

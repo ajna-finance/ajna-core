@@ -91,30 +91,29 @@ library Buckets {
 
     /// @notice Called by a lender to claim accumulated collateral
     /// @param buckets_ Mapping of buckets for a given pool
-    /// @param price_ The price bucket from which collateral should be claimed
+    /// @param bucket_ The price bucket from which collateral should be claimed
     /// @param amount_ The amount of collateral tokens to be claimed
     /// @param lpBalance_ The claimers current LP balance
     /// @return lpRedemption_ The amount of LP tokens that will be redeemed
     function claimCollateral(
         mapping(uint256 => Bucket) storage buckets_,
-        uint256 price_,    // WAD
+        Bucket storage bucket_,
         uint256 amount_,   // WAD
         uint256 lpBalance_ // RAY
     ) public returns (uint256 lpRedemption_) {
-        Bucket storage bucket = buckets_[price_];
 
-        if (amount_ > bucket.collateral) {
-            revert ClaimExceedsCollateral({collateralAmount: bucket.collateral});
+        if (amount_ > bucket_.collateral) {
+            revert ClaimExceedsCollateral({collateralAmount: bucket_.collateral});
         }
 
-        lpRedemption_ = Maths.rdiv(Maths.wadToRay(Maths.wmul(amount_, bucket.price)), getExchangeRate(bucket)); // TODO: improve efficiency
+        lpRedemption_ = Maths.rdiv(Maths.wadToRay(Maths.wmul(amount_, bucket_.price)), getExchangeRate(bucket_)); // TODO: improve efficiency
 
         if (lpRedemption_ > lpBalance_) {
             revert InsufficientLpBalance({balance: lpBalance_});
         }
 
-        bucket.collateral    -= amount_;
-        bucket.lpOutstanding -= lpRedemption_;
+        bucket_.collateral    -= amount_;
+        bucket_.lpOutstanding -= lpRedemption_;
     }
 
     /// @notice Called by a borrower to borrow from a given bucket
@@ -529,6 +528,26 @@ library Buckets {
             up   = buckets_[cur].up;
         }
         return hpb_;
+    }
+
+    /// @notice Removes state for an unused bucket and update surrounding price pointers
+    /// @param buckets_ Mapping of buckets for a given pool
+    /// @param bucket_ The current price bucket
+    function deactivateBucket(
+        mapping(uint256 => Bucket) storage buckets_,
+        Bucket storage bucket_
+    ) public {
+        bool isHighestBucket = bucket_.price == bucket_.up;
+        bool isLowestBucket = bucket_.down == 0;
+        if (isHighestBucket && !isLowestBucket) {                     // if highest bucket
+            buckets_[bucket_.down].up = buckets_[bucket_.down].price; // make lower bucket the highest bucket
+        } else if (!isHighestBucket && !isLowestBucket) {             // if middle bucket
+            buckets_[bucket_.up].down = bucket_.down;                 // update down pointer of upper bucket
+            buckets_[bucket_.down].up = bucket_.up;                   // update up pointer of lower bucket
+        } else if (!isHighestBucket && isLowestBucket) {              // if lowest bucket
+            buckets_[bucket_.up].down = 0;                            // make upper bucket the lowest bucket
+        }
+        delete buckets_[bucket_.price];
     }
 
 }
