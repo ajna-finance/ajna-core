@@ -223,7 +223,7 @@ library Buckets {
     ) public returns (uint256 lup_) {
         accumulateBucketInterest(bucket_, inflator_);
 
-        uint256 available = Maths.add(bucket_.onDeposit, bucket_.debt);
+        uint256 available = bucket_.onDeposit + bucket_.debt;
         if (amount_ > available) {
             revert InsufficientBucketLiquidity({amountAvailable: available});
         }

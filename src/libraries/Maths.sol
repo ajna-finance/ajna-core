@@ -12,10 +12,6 @@ library Maths {
     uint256 public constant RAD = 10**45;
     uint256 public constant ONE_RAD = 1 * RAD;
 
-    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require((z = x + y) >= x, "ds-math-add-overflow");
-    }
-
     function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require((z = x - y) <= x, "ds-math-sub-underflow");
     }
@@ -25,11 +21,11 @@ library Maths {
     }
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, y), WAD / 2) / WAD;
+        z = (mul(x, y) + WAD / 2) / WAD;
     }
 
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, WAD), y / 2) / y;
+        z = (mul(x, WAD) + y / 2) / y;
     }
 
     function max(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -49,11 +45,11 @@ library Maths {
     }
 
     function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, y), RAY / 2) / RAY;
+        z = (mul(x, y) + RAY / 2) / RAY;
     }
 
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = add(mul(x, RAY), y / 2) / y;
+        z = (mul(x, RAY) + y / 2) / y;
     }
 
     function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
@@ -81,7 +77,7 @@ library Maths {
     }
 
     function rayToWad(uint256 x) internal pure returns (uint256) {
-        return add(x, 10**9 / 2) / 10**9;
+        return (x + 10**9 / 2) / 10**9;
     }
 
     function rayToRad(uint256 x) internal pure returns (uint256) {
@@ -89,7 +85,7 @@ library Maths {
     }
 
     function radToWad(uint256 x) internal pure returns (uint256) {
-        return add(x, 10**27 / 2) / 10**27;
+        return (x + 10**27 / 2) / 10**27;
     }
 
     function radToWadTruncate(uint256 x) internal pure returns (uint256) {
@@ -97,7 +93,7 @@ library Maths {
     }
 
     function radToRay(uint256 x) internal pure returns (uint256) {
-        return add(x, 10**18 / 2) / 10**18;
+        return (x + 10**18 / 2) / 10**18;
     }
 
 }

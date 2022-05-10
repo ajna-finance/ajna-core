@@ -39,7 +39,7 @@ abstract contract Interest {
         return
             Maths.rmul(
                 inflatorSnapshot,
-                Maths.rpow(Maths.add(Maths.ONE_RAY, spr), secondsSinceLastUpdate)
+                Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate)
             );
     }
 
