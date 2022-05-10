@@ -34,7 +34,7 @@ abstract contract Interest {
         uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
 
         // secondsSinceLastUpdate is unscaled
-        uint256 secondsSinceLastUpdate = Maths.sub(block.timestamp, lastInflatorSnapshotUpdate);
+        uint256 secondsSinceLastUpdate = block.timestamp - lastInflatorSnapshotUpdate;
 
         return
             Maths.rmul(
@@ -53,7 +53,7 @@ abstract contract Interest {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
             Maths.radToWadTruncate(Maths.mul(
                 debt_,
-                Maths.sub(Maths.rdiv(pendingInflator_, currentInflator_), Maths.ONE_RAY)
+                Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY
             ));
     }
 

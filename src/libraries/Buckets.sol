@@ -413,7 +413,7 @@ library Buckets {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
             bucket_.debt += Maths.radToWadTruncate(Maths.mul(
                 bucket_.debt,
-                Maths.sub(Maths.rdiv(inflator_, bucket_.inflatorSnapshot), Maths.ONE_RAY)
+                Maths.rdiv(inflator_, bucket_.inflatorSnapshot) - Maths.ONE_RAY
             ));
             bucket_.inflatorSnapshot = inflator_;
         }
