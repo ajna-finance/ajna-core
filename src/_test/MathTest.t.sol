@@ -21,12 +21,22 @@ contract MathTest is DSTestPlus {
         assertEq(Maths.radToWad(0), 0);
     }
 
+    function testMultiplication() external {
+        uint256 debt     = 10_000.44444444444443999 * 1e18;
+        uint256 inflator = 1.02132007 * 1e27;
+
+        assertEq(debt * inflator,                         10_213.6546200311111065616975993 * 1e45);
+        assertEq(Maths.radToRay(debt * inflator),         10_213.6546200311111065616975993 * 1e27);
+        assertEq(Maths.radToWad(debt * inflator),         10_213.654620031111106562 * 1e18);
+        assertEq(Maths.radToWadTruncate(debt * inflator), 10_213.654620031111106561 * 1e18);
+    }
+
     function testDivision() external {
-        uint256 debt = 11_000.143012091382543917 * 1e18;
+        uint256 debt  = 11_000.143012091382543917 * 1e18;
         uint256 price = 1_001.6501589292607751220 * 1e18;
 
         assertEq(Maths.wdiv(debt, price), 10.98202093218880245 * 1e18);
-        assertEq(debt * 1e18 / price, 10.98202093218880245 * 1e18);
+        assertEq(debt * 1e18 / price,     10.98202093218880245 * 1e18);
     }
 
 }

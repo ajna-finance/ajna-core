@@ -12,10 +12,6 @@ library Maths {
     uint256 public constant RAD = 10**45;
     uint256 public constant ONE_RAD = 1 * RAD;
 
-    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        require(y == 0 || (z = x * y) / y == x, "ds-math-mul-overflow");
-    }
-
     function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
         z = (x * y + WAD / 2) / WAD;
     }

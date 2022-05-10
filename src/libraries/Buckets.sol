@@ -411,10 +411,9 @@ library Buckets {
     function accumulateBucketInterest(Bucket storage bucket_, uint256 inflator_) private {
         if (bucket_.debt != 0) {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-            bucket_.debt += Maths.radToWadTruncate(Maths.mul(
-                bucket_.debt,
-                Maths.rdiv(inflator_, bucket_.inflatorSnapshot) - Maths.ONE_RAY
-            ));
+            bucket_.debt += Maths.radToWadTruncate(
+                bucket_.debt * (Maths.rdiv(inflator_, bucket_.inflatorSnapshot) - Maths.ONE_RAY)
+            );
             bucket_.inflatorSnapshot = inflator_;
         }
     }
