@@ -58,7 +58,6 @@ library Buckets {
     /// @param buckets_ Mapping of buckets for a given pool
     /// @param bucket_ The price bucket from which quote tokens should be removed
     /// @param maxAmount_ The maximum amount of quote tokens to be removed
-    /// @param lpBalance_ The lender's current LP balance
     /// @param inflator_ The current pool inflator rate
     /// @return amount_ The actual amount being removed
     /// @return lup_ The new pool LUP
@@ -412,7 +411,7 @@ library Buckets {
     function accumulateBucketInterest(Bucket storage bucket_, uint256 inflator_) private {
         if (bucket_.debt != 0) {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-            bucket_.debt += Maths.radToWad(Maths.mul(
+            bucket_.debt += Maths.radToWadTruncate(Maths.mul(
                 bucket_.debt,
                 Maths.sub(Maths.rdiv(inflator_, bucket_.inflatorSnapshot), Maths.ONE_RAY)
             ));

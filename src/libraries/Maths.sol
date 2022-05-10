@@ -92,6 +92,10 @@ library Maths {
         return add(x, 10**27 / 2) / 10**27;
     }
 
+    function radToWadTruncate(uint256 x) internal pure returns (uint256) {
+        return x / 10**27;
+    }
+
     function radToRay(uint256 x) internal pure returns (uint256) {
         return add(x, 10**18 / 2) / 10**18;
     }
