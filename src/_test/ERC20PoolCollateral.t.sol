@@ -131,7 +131,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectRevert(
             abi.encodeWithSelector(
                 IPool.AmountExceedsAvailableCollateral.selector,
-                99.999999996006106173 * 1e18
+                99.999999996006106172 * 1e18
             )
         );
         _borrower.removeCollateral(_pool, 100 * 1e18);

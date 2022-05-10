@@ -254,7 +254,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(debt,    7_000.221018686682113325 * 1e18);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(priceLow);
-        assertEq(deposit, 10_000.09100769451616431 * 1e18);
+        assertEq(deposit, 10_000.091007694516164310 * 1e18);
         assertEq(debt,    0);
 
         // check balances
