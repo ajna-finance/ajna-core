@@ -660,8 +660,8 @@ contract ERC20Pool is IPool, Clone, Interest {
         uint256 lenderShare = Maths.rdiv(lpTokens_, lpOutstanding);
 
         // calculate the amount of collateral and quote tokens equivalent to the lenderShare
-        collateralTokens_ = Maths.radToWad(Maths.mul(bucketCollateral, lenderShare));
-        quoteTokens_      = Maths.radToWad(Maths.mul(onDeposit + debt, lenderShare));
+        collateralTokens_ = Maths.radToWad(bucketCollateral * lenderShare);
+        quoteTokens_      = Maths.radToWad((onDeposit + debt) * lenderShare);
     }
 
 }

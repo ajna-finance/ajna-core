@@ -17,11 +17,11 @@ library Maths {
     }
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = (mul(x, y) + WAD / 2) / WAD;
+        z = (x * y + WAD / 2) / WAD;
     }
 
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = (mul(x, WAD) + y / 2) / y;
+        z = (x * WAD + y / 2) / y;
     }
 
     function max(uint256 x, uint256 y) internal pure returns (uint256 z) {
@@ -41,11 +41,11 @@ library Maths {
     }
 
     function rmul(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = (mul(x, y) + RAY / 2) / RAY;
+        z = (x * y + RAY / 2) / RAY;
     }
 
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        z = (mul(x, RAY) + y / 2) / y;
+        z = (x * RAY + y / 2) / y;
     }
 
     function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
