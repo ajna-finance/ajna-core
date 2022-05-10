@@ -167,12 +167,12 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // check borrower balances
         (borrowerDebt, depositedCollateral, ) = _pool.borrowers(address(_borrower));
-        assertEq(borrowerDebt,        30_000.273023083548492933 * 1e18);
+        assertEq(borrowerDebt,        30_000.273023083548492932 * 1e18);
         assertEq(depositedCollateral, 100 * 1e18);
 
         // check pool balances
         assertEq(_pool.totalQuoteToken(),          20_000 * 1e18);
-        assertEq(_pool.totalDebt(),                30_000.273023083548492933 * 1e18);
+        assertEq(_pool.totalDebt(),                30_000.273023083548492932 * 1e18);
         assertEq(_pool.getPoolCollateralization(), 10.036215403377052297 * 1e18);
         assertEq(
             _pool.getEncumberedCollateral(_pool.totalDebt()),
@@ -219,7 +219,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // check pool balances
         assertEq(_pool.totalQuoteToken(), 60_000 * 1e18);
-        assertEq(_pool.totalDebt(),       30_000.273023083548492933 * 1e18);
+        assertEq(_pool.totalDebt(),       30_000.273023083548492932 * 1e18);
     }
 
     // @notice: With 1 lender and 2 borrowers tests addQuoteToken, addCollateral and borrow

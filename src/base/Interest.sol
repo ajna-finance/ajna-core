@@ -51,7 +51,7 @@ abstract contract Interest {
     function getPendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
         return
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-            Maths.radToWad(Maths.mul(
+            Maths.radToWadTruncate(Maths.mul(
                 debt_,
                 Maths.sub(Maths.rdiv(pendingInflator_, currentInflator_), Maths.ONE_RAY)
             ));
