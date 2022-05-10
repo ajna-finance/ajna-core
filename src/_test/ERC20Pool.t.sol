@@ -33,6 +33,7 @@ contract ERC20PoolTest is DSTestPlus {
 
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
         _borrower.approveToken(_collateral, address(_pool), 200_000 * 1e18);
+        _borrower.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
     // @notice:Tests pool factory inputs match the pool created
@@ -94,6 +95,49 @@ contract ERC20PoolTest is DSTestPlus {
         // check that global variables weren't reset
         assertGt(_pool.inflatorSnapshot(),           initialInflator);
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
+    }
+
+   function testDebtAccumulatorSingleBucket() external {
+
+        _lender.addQuoteToken(_pool, address(_lender), 100_000 * 1e18, _p4000);
+
+        skip(820000);
+
+        _borrower.addCollateral(_pool, 200 * 1e18);
+        _borrower.borrow(_pool, 1000 * 1e18, 3000 * 1e18);
+
+        skip(820000);
+        _borrower.borrow(_pool, 1000 * 1e18, 3000 * 1e18);
+
+        (, , , , uint256 bucketDebt, , , ) = _pool.bucketAt(_p4000);
+        (uint256 borrowerDebt, , , , , , ) = _pool.getBorrowerInfo(address(_borrower));
+        assertEq(_pool.totalDebt(), bucketDebt);
+        assertEq(_pool.totalDebt(), borrowerDebt);
+
+        skip(820000);
+        _borrower.repay(_pool, 1000 * 1e18);
+
+        (, , , , bucketDebt, , , ) = _pool.bucketAt(_p4000);
+        (borrowerDebt, , , , , , ) = _pool.getBorrowerInfo(address(_borrower));
+        assertEq(_pool.totalDebt(), bucketDebt);
+        assertEq(_pool.totalDebt(), borrowerDebt);
+
+        skip(820000);
+        _borrower.borrow(_pool, 3000 * 1e18, 3000 * 1e18);
+
+        (, , , , bucketDebt, , , ) = _pool.bucketAt(_p4000);
+        (borrowerDebt, , , , , , ) = _pool.getBorrowerInfo(address(_borrower));
+        assertEq(_pool.totalDebt(), bucketDebt);
+        assertEq(_pool.totalDebt(), borrowerDebt);
+
+        skip(820000);
+        _borrower.repay(_pool, 3000 * 1e18);
+
+        (, , , , bucketDebt, , , ) = _pool.bucketAt(_p4000);
+        (borrowerDebt, , , , , , ) = _pool.getBorrowerInfo(address(_borrower));
+        assertEq(_pool.totalDebt(), bucketDebt);
+        assertEq(_pool.totalDebt(), borrowerDebt);
+
     }
 
 }

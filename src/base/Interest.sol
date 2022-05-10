@@ -53,7 +53,7 @@ abstract contract Interest {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
             Maths.radToWad(Maths.mul(
                 debt_,
-                Maths.sub(Maths.rmul(pendingInflator_, currentInflator_), Maths.ONE_RAY)
+                Maths.sub(Maths.rdiv(pendingInflator_, currentInflator_), Maths.ONE_RAY)
             ));
     }
 
