@@ -34,12 +34,12 @@ abstract contract Interest {
         uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
 
         // secondsSinceLastUpdate is unscaled
-        uint256 secondsSinceLastUpdate = Maths.sub(block.timestamp, lastInflatorSnapshotUpdate);
+        uint256 secondsSinceLastUpdate = block.timestamp - lastInflatorSnapshotUpdate;
 
         return
             Maths.rmul(
                 inflatorSnapshot,
-                Maths.rpow(Maths.add(Maths.ONE_RAY, spr), secondsSinceLastUpdate)
+                Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate)
             );
     }
 
@@ -51,10 +51,7 @@ abstract contract Interest {
     function getPendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
         return
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-            Maths.radToWadTruncate(Maths.mul(
-                debt_,
-                Maths.sub(Maths.rdiv(pendingInflator_, currentInflator_), Maths.ONE_RAY)
-            ));
+            Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
     }
 
 }
