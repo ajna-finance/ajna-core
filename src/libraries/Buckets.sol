@@ -105,7 +105,7 @@ library Buckets {
             revert ClaimExceedsCollateral({collateralAmount: bucket_.collateral});
         }
 
-        lpRedemption_ = Maths.rdiv(Maths.wadToRay(Maths.wmul(amount_, bucket_.price)), getExchangeRate(bucket_)); // TODO: improve efficiency
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, bucket_.price), getExchangeRate(bucket_));
 
         if (lpRedemption_ > lpBalance_) {
             revert InsufficientLpBalance({balance: lpBalance_});
@@ -483,7 +483,7 @@ library Buckets {
             bucket_.debt +
             Maths.wmul(bucket_.collateral, bucket_.price);
         if (size != 0 && bucket_.lpOutstanding != 0) {
-            return Maths.rdiv(Maths.wadToRay(size), bucket_.lpOutstanding);
+            return Maths.wrdivr(size, bucket_.lpOutstanding);
         }
         return Maths.ONE_RAY;
     }
