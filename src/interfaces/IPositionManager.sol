@@ -16,6 +16,11 @@ interface IPositionManager {
     /// @dev Unable to burn as liquidity still present at price
     error LiquidityNotRemoved();
 
+    /**
+     * @notice Called by lenders to add quote tokens and receive a representative NFT
+     * @param params_ Calldata struct supplying inputs required to add quote tokens, and receive the NFT
+     * @return tokenId_ The tokenId of the newly minted NFT
+    */
     function mint(MintParams calldata params_) external payable returns (uint256 tokenId_);
 
     struct MintParams {
@@ -23,6 +28,12 @@ interface IPositionManager {
         address pool;
     }
 
+    /**
+     * @notice Called to memorialize existing positions with a given NFT
+     * @dev The array of price is expected to be constructed off chain by scanning events for that lender
+     * @dev The NFT must have already been created, and only TODO: (X) prices can be memorialized at a time
+     * @param params_ Calldata struct supplying inputs required to conduct the memorialization
+    */
     function memorializePositions(MemorializePositionsParams calldata params_) external;
 
     struct MemorializePositionsParams {
@@ -32,6 +43,11 @@ interface IPositionManager {
         uint256[] prices; // the array of price buckets with LP tokens to be tracked by a NFT
     }
 
+    /**
+     * @notice Called by lenders to burn an existing NFT
+     * @dev Requires that all lp tokens have been removed from the NFT prior to calling
+     * @param params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT
+    */
     function burn(BurnParams calldata params_) external payable;
 
     struct BurnParams {
@@ -40,6 +56,10 @@ interface IPositionManager {
         uint256 price;
     }
 
+    /**
+     * @notice Called by lenders to add liquidity to an existing position
+     * @param params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT
+    */
     function increaseLiquidity(IncreaseLiquidityParams calldata params_) external payable;
 
     struct IncreaseLiquidityParams {
@@ -50,6 +70,10 @@ interface IPositionManager {
         uint256 price;
     }
 
+    /**
+     * @notice Called by lenders to remove liquidity from an existing position
+     * @param params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT
+    */
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external payable;
 
     struct DecreaseLiquidityParams {

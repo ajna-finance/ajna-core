@@ -76,7 +76,7 @@ abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
         return string(abi.encodePacked(""));
     }
 
-    /// @dev Override required by solidity to use ERC721Enumerable library
+    /** @dev Override required by solidity to use ERC721Enumerable library */ 
     function _beforeTokenTransfer(
         address from_,
         address to_,
@@ -85,7 +85,7 @@ abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
         super._beforeTokenTransfer(from_, to_, tokenId_);
     }
 
-    /// @dev Override required by solidity to use ERC721Enumerable library
+    /** @dev Override required by solidity to use ERC721Enumerable library */ 
     function supportsInterface(bytes4 interfaceId_)
         public
         view

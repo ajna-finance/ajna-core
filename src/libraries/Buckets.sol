@@ -12,26 +12,39 @@ library Buckets {
     error ClaimExceedsCollateral(uint256 collateralAmount);
     error InsufficientBucketLiquidity(uint256 amountAvailable);
 
+    /**
+     * @notice struct holding bucket info
+     * @param price current bucket price, WAD
+     * @param up               upper utilizable bucket price, WAD
+     * @param down             next utilizable bucket price, WAD
+     * @param onDeposit        quote token on deposit in bucket, WAD
+     * @param debt             accumulated bucket debt, WAD
+     * @param inflatorSnapshot bucket inflator snapshot, RAY
+     * @param lpOutstanding    outstanding Liquidity Provider LP tokens in a bucket, RAY
+     * @param collateral       current collateral tokens deposited in the bucket, RAY
+    */
     struct Bucket {
-        uint256 price;            // WAD current bucket price
-        uint256 up;               // WAD upper utilizable bucket price
-        uint256 down;             // WAD next utilizable bucket price
-        uint256 onDeposit;        // WAD quote token on deposit in bucket
-        uint256 debt;             // WAD accumulated bucket debt
-        uint256 inflatorSnapshot; // RAY bucket inflator snapshot
-        uint256 lpOutstanding;    // RAY outstanding Liquidity Provider LP tokens in a bucket
-        uint256 collateral;       // RAY Current collateral tokens deposited in the bucket
+        uint256 price;
+        uint256 up;
+        uint256 down;
+        uint256 onDeposit;
+        uint256 debt;
+        uint256 inflatorSnapshot;
+        uint256 lpOutstanding;
+        uint256 collateral;
     }
 
-    /// @notice Called by a lender to add quote tokens to a bucket
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param price_ The price bucket to which quote tokens should be added
-    /// @param amount_ The amount of quote tokens to be added
-    /// @param lup_ The current pool LUP
-    /// @param inflator_ The current pool inflator rate
-    /// @param reallocate_ Boolean to check if assets need to be reallocated
-    /// @return newLup_ The new pool LUP
-    /// @return lpTokens_ The amount of lpTokens received by the lender for the added quote tokens
+    /**
+     * @notice Called by a lender to add quote tokens to a bucket
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param price_ The price bucket to which quote tokens should be added
+     * @param amount_ The amount of quote tokens to be added
+     * @param lup_ The current pool LUP
+     * @param inflator_ The current pool inflator rate
+     * @param reallocate_ Boolean to check if assets need to be reallocated
+     * @return newLup_ The new pool LUP
+     * @return lpTokens_ The amount of lpTokens received by the lender for the added quote tokens
+    */
     function addQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         uint256 price_,
@@ -54,14 +67,16 @@ library Buckets {
         }
     }
 
-    /// @notice Called by a lender to remove quote tokens from a bucket
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param bucket_ The price bucket from which quote tokens should be removed
-    /// @param maxAmount_ The maximum amount of quote tokens to be removed
-    /// @param inflator_ The current pool inflator rate
-    /// @return amount_ The actual amount being removed
-    /// @return lup_ The new pool LUP
-    /// @return lpTokens_ The amount of lpTokens removed equivalent to the quote tokens removed
+    /**
+     * @notice Called by a lender to remove quote tokens from a bucket
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param bucket_ The price bucket from which quote tokens should be removed
+     * @param maxAmount_ The maximum amount of quote tokens to be removed
+     * @param inflator_ The current pool inflator rate
+     * @return amount_ The actual amount being removed
+     * @return lup_ The new pool LUP
+     * @return lpTokens_ The amount of lpTokens removed equivalent to the quote tokens removed
+    */
     function removeQuoteToken(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
@@ -88,12 +103,14 @@ library Buckets {
         bucket_.lpOutstanding -= lpTokens_;
     }
 
-    /// @notice Called by a lender to claim accumulated collateral
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param bucket_ The price bucket from which collateral should be claimed
-    /// @param amount_ The amount of collateral tokens to be claimed
-    /// @param lpBalance_ The claimers current LP balance
-    /// @return lpRedemption_ The amount of LP tokens that will be redeemed
+    /**
+     * @notice Called by a lender to claim accumulated collateral
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param bucket_ The price bucket from which collateral should be claimed
+     * @param amount_ The amount of collateral tokens to be claimed
+     * @param lpBalance_ The claimers current LP balance
+     * @return lpRedemption_ The amount of LP tokens that will be redeemed
+    */
     function claimCollateral(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
@@ -115,13 +132,15 @@ library Buckets {
         bucket_.lpOutstanding -= lpRedemption_;
     }
 
-    /// @notice Called by a borrower to borrow from a given bucket
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param amount_ The amount of quote tokens to borrow from the bucket
-    /// @param limit_ The lowest price desired to borrow at
-    /// @param lup_ The current pool LUP
-    /// @param inflator_ The current pool inflator rate
-    /// @return lup WAD The price at which the borrow executed
+    /**
+     * @notice Called by a borrower to borrow from a given bucket
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param amount_ The amount of quote tokens to borrow from the bucket
+     * @param limit_ The lowest price desired to borrow at
+     * @param lup_ The current pool LUP
+     * @param inflator_ The current pool inflator rate
+     * @return lup WAD The price at which the borrow executed
+    */
     function borrow(
         mapping(uint256 => Bucket) storage buckets_,
         uint256 amount_,  // WAD
@@ -163,12 +182,14 @@ library Buckets {
         return lup_;
     }
 
-    /// @notice Called by a borrower to repay quote tokens as part of reducing their position
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param amount_ The amount of quote tokens to repay to the bucket
-    /// @param lup_ The current pool LUP
-    /// @param inflator_ The current pool inflator rate
-    /// @return The new pool LUP
+    /**
+     * @notice Called by a borrower to repay quote tokens as part of reducing their position
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param amount_ The amount of quote tokens to repay to the bucket
+     * @param lup_ The current pool LUP
+     * @param inflator_ The current pool inflator rate
+     * @return The new pool LUP
+    */
     function repay(
         mapping(uint256 => Bucket) storage buckets_,
         uint256 amount_,   // WAD
@@ -207,13 +228,15 @@ library Buckets {
         return curLup.price;
     }
 
-    /// @notice Puchase a given amount of quote tokens for given collateral tokens
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param bucket_ The price bucket at which the exchange will occur
-    /// @param amount_ The amount of quote tokens to receive
-    /// @param collateral_ The amount of collateral to exchange
-    /// @param inflator_ The current pool inflator rate
-    /// @return lup_ The new pool LUP
+    /**
+     * @notice Puchase a given amount of quote tokens for given collateral tokens
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param bucket_ The price bucket at which the exchange will occur
+     * @param amount_ The amount of quote tokens to receive
+     * @param collateral_ The amount of collateral to exchange
+     * @param inflator_ The current pool inflator rate
+     * @return lup_ The new pool LUP
+    */
     function purchaseBid(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
@@ -240,13 +263,15 @@ library Buckets {
         bucket_.collateral += collateral_;
     }
 
-    /// @notice Liquidate a given position's collateral
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param debt_ The amount of debt to cover
-    /// @param collateral_ The amount of collateral deposited
-    /// @param hpb_ The pool's highest price bucket
-    /// @param inflator_ The current pool inflator rate
-    /// @return requiredCollateral_ The amount of collateral to be liquidated
+    /**
+     * @notice Liquidate a given position's collateral
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param debt_ The amount of debt to cover
+     * @param collateral_ The amount of collateral deposited
+     * @param hpb_ The pool's highest price bucket
+     * @param inflator_ The current pool inflator rate
+     * @return requiredCollateral_ The amount of collateral to be liquidated
+    */
     function liquidate(
         mapping(uint256 => Bucket) storage buckets_,
         uint256 debt_,       // WAD
@@ -289,14 +314,16 @@ library Buckets {
         }
     }
 
-    /// @notice Moves assets in a bucket to a bucket's down pointers
-    /// @dev Occurs when quote tokens are being removed
-    /// @dev Should continue until all of the desired quote tokens have been removed
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param bucket_ The given bucket whose assets are being reallocated
-    /// @param amount_ The amount of quote tokens requiring reallocation
-    /// @param inflator_ The current pool inflator rate
-    /// @return lup_ The price to which assets were reallocated
+    /**
+     * @notice Moves assets in a bucket to a bucket's down pointers
+     * @dev Occurs when quote tokens are being removed
+     * @dev Should continue until all of the desired quote tokens have been removed
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param bucket_ The given bucket whose assets are being reallocated
+     * @param amount_ The amount of quote tokens requiring reallocation
+     * @param inflator_ The current pool inflator rate
+     * @return lup_ The price to which assets were reallocated
+    */
     function reallocateDown(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
@@ -349,15 +376,17 @@ library Buckets {
         }
     }
 
-    /// @notice Moves assets in a bucket to a bucket's up pointers
-    /// @dev Should continue until all desired quote tokens are added
-    /// @dev Occcurs when quote tokens are being added
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param bucket_ The given bucket whose assets are being reallocated
-    /// @param amount_ The amount of quote tokens requiring reallocation
-    /// @param lup_ The current pool lup
-    /// @param inflator_ The current pool inflator rate
-    /// @return The price to which assets were reallocated
+    /**
+     * @notice Moves assets in a bucket to a bucket's up pointers
+     * @dev Should continue until all desired quote tokens are added
+     * @dev Occcurs when quote tokens are being added
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param bucket_ The given bucket whose assets are being reallocated
+     * @param amount_ The amount of quote tokens requiring reallocation
+     * @param lup_ The current pool lup
+     * @param inflator_ The current pool inflator rate
+     * @return The price to which assets were reallocated
+    */
     function reallocateUp(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
@@ -405,9 +434,11 @@ library Buckets {
         return curLup.price;
     }
 
-    /// @notice Update bucket.debt with interest accumulated since last state change
-    /// @param bucket_ The bucket being updated
-    /// @param inflator_ RAY - The current bucket inflator value
+    /**
+     * @notice Update bucket.debt with interest accumulated since last state change
+     * @param bucket_ The bucket being updated
+     * @param inflator_ RAY - The current bucket inflator value
+    */
     function accumulateBucketInterest(Bucket storage bucket_, uint256 inflator_) private {
         if (bucket_.debt != 0) {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
@@ -418,10 +449,12 @@ library Buckets {
         }
     }
 
-    /// @notice Estimate the price at which a loan can be taken
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param amount_ The amount of quote tokens desired to borrow
-    /// @param hpb_ The current highest price bucket of the pool
+    /**
+     * @notice Estimate the price at which a loan can be taken
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param amount_ The amount of quote tokens desired to borrow
+     * @param hpb_ The current highest price bucket of the pool
+    */
     function estimatePrice(
         mapping(uint256 => Bucket) storage buckets_,
         uint256 amount_,
@@ -446,9 +479,11 @@ library Buckets {
         return 0;
     }
 
-    /// @notice Return the information of the bucket at a given price
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param price_ The price of the bucket to retrieve information from
+    /**
+     * @notice Return the information of the bucket at a given price
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param price_ The price of the bucket to retrieve information from
+    */
     function bucketAt(mapping(uint256 => Bucket) storage buckets_, uint256 price_)
         public
         view
@@ -475,9 +510,11 @@ library Buckets {
         collateral       = bucket.collateral;
     }
 
-    /// @notice Calculate the current exchange rate for Quote tokens / LP Tokens
-    /// @dev Performs calculations in RAY terms and rounds up to determine size to minimize precision loss
-    /// @return RAY The current rate at which quote tokens can be exchanged for LP tokens
+    /**
+     * @notice Calculate the current exchange rate for Quote tokens / LP Tokens
+     * @dev Performs calculations in RAY terms and rounds up to determine size to minimize precision loss
+     * @return RAY The current rate at which quote tokens can be exchanged for LP tokens
+    */
     function getExchangeRate(Bucket storage bucket_) internal view returns (uint256) {
         uint256 size = bucket_.onDeposit +
             bucket_.debt +
@@ -488,11 +525,13 @@ library Buckets {
         return Maths.ONE_RAY;
     }
 
-    /// @notice Set state for a new bucket and update surrounding price pointers
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param hpb_ The current highest price bucket of the pool
-    /// @param price_ The price of the bucket to retrieve information from
-    /// @return The new HPB given the newly initialized bucket
+    /**
+     * @notice Set state for a new bucket and update surrounding price pointers
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param hpb_ The current highest price bucket of the pool
+     * @param price_ The price of the bucket to retrieve information from
+     * @return The new HPB given the newly initialized bucket
+    */
     function initializeBucket(
         mapping(uint256 => Bucket) storage buckets_,
         uint256 hpb_,
@@ -528,9 +567,11 @@ library Buckets {
         return hpb_;
     }
 
-    /// @notice Removes state for an unused bucket and update surrounding price pointers
-    /// @param buckets_ Mapping of buckets for a given pool
-    /// @param bucket_ The current price bucket
+    /**
+     * @notice Removes state for an unused bucket and update surrounding price pointers
+     * @param buckets_ Mapping of buckets for a given pool
+     * @param bucket_ The current price bucket
+    */
     function deactivateBucket(
         mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_
