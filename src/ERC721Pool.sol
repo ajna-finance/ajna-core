@@ -85,9 +85,21 @@ contract ERC721Pool is IPool, Clone, Interest {
     }
 
     /// @inheritdoc IPool
-    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external {}
+    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external {
 
-    function addCollateral(uint256 amount_) external {}
+    }
+
+    /// @inheritdoc IPool
+    function addCollateral(uint256 amount_) external {
+        // accumulatePoolInterest();
+
+        // borrowers[msg.sender].collateralDeposited += amount_;
+        // totalCollateral                           += amount_;
+
+        // // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
+        // collateral().safeTransferFrom(msg.sender, address(this), amount_);
+        // emit AddCollateral(msg.sender, amount_);
+    }
 
     function removeCollateral(uint256 amount_) external {}
 
@@ -109,5 +121,28 @@ contract ERC721Pool is IPool, Clone, Interest {
 
     function liquidate(address borrower_) external {}
 
+
+    /*************************/
+    /*** Bucket Management ***/
+    /*************************/
+
+    /// @notice Get a bucket struct for a given price
+    /// @param price_ The price of the bucket to retrieve
+    function bucketAt(uint256 price_)
+        public
+        view
+        returns (
+            uint256 price,
+            uint256 up,
+            uint256 down,
+            uint256 onDeposit,
+            uint256 debt,
+            uint256 bucketInflator,
+            uint256 lpOutstanding,
+            uint256 bucketCollateral
+        )
+    {
+        return _buckets.bucketAt(price_);
+    }
 
 }

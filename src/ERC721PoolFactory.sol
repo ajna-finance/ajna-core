@@ -27,14 +27,14 @@ contract ERC721PoolFactory is IPoolFactory, FactoryValidation {
     /// @inheritdoc IPoolFactory
     function deployPool(address collateral_, address quote_) external WETHOnly(collateral_, quote_) returns (address) {
         // check that collateral is ERC721
-        if (isERC721(collateral_) != true) {
-            revert ERC721Only();
-        }
+        // if (isERC721(collateral_) != true) {
+        //     revert ERC721Only();
+        // }
 
-        // check that quote is not ERC721
-        if (isERC721(quote_)) {
-            revert ERC20Only();
-        }
+        // // check that quote is not ERC721
+        // if (isERC721(quote_)) {
+        //     revert ERC20Only();
+        // }
 
         if (deployedPools[collateral_][quote_] != address(0)) {
             revert PoolAlreadyExists();

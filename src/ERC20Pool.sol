@@ -4,7 +4,7 @@ pragma solidity 0.8.11;
 
 import { Clone } from "@clones/Clone.sol";
 
-import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
+import { console }     from "@std/console.sol";
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -160,8 +160,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
     }
 
-    /// @notice Called by borrowers to add collateral to the pool
-    /// @param amount_ The amount of collateral in deposit tokens to be added to the pool
+    /// @inheritdoc IPool
     function addCollateral(uint256 amount_) external {
         accumulatePoolInterest();
 

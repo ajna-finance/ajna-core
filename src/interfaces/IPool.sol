@@ -63,6 +63,8 @@ interface IPool {
     /// @param price_ The bucket from which quote tokens will be removed
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external;
 
+    /// @notice Called by borrowers to add collateral to the pool
+    /// @param amount_ The amount of collateral in deposit tokens to be added to the pool
     function addCollateral(uint256 amount_) external;
 
     function removeCollateral(uint256 amount_) external;
