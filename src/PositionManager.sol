@@ -55,9 +55,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         return constructTokenURI(params);
     }
 
-    /// @notice Called by lenders to add quote tokens and receive a representative NFT
-    /// @param params_ Calldata struct supplying inputs required to add quote tokens, and receive the NFT
-    /// @return tokenId_ The tokenId of the newly minted NFT
     function mint(MintParams calldata params_) external payable returns (uint256 tokenId_) {
         _safeMint(params_.recipient, (tokenId_ = _nextId++));
 
@@ -69,10 +66,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         return tokenId_;
     }
 
-    /// @notice Called to memorialize existing positions with a given NFT
-    /// @dev The array of price is expected to be constructed off chain by scanning events for that lender
-    /// @dev The NFT must have already been created, and only TODO: (X) prices can be memorialized at a time
-    /// @param params_ Calldata struct supplying inputs required to conduct the memorialization
+    /// TODO: (X) prices can be memorialized at a time
     function memorializePositions(MemorializePositionsParams calldata params_) external {
         Position storage position = positions[params_.tokenId];
         for (uint256 i = 0; i < params_.prices.length; ) {
@@ -90,9 +84,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     // TODO: update burn check to ensure all position prices have removed liquidity
-    /// @notice Called by lenders to burn an existing NFT
-    /// @dev Requires that all lp tokens have been removed from the NFT prior to calling
-    /// @param params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT
     function burn(BurnParams calldata params_)
         external
         payable
@@ -106,8 +97,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         delete positions[params_.tokenId];
     }
 
-    /// @notice Called by lenders to add liquidity to an existing position
-    /// @param params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT
     function increaseLiquidity(IncreaseLiquidityParams calldata params_)
         external
         payable
@@ -132,8 +121,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         emit IncreaseLiquidity(params_.recipient, params_.amount, params_.price);
     }
 
-    /// @notice Called by lenders to remove liquidity from an existing position
-    /// @param params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_)
         external
         payable
@@ -174,8 +161,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         );
     }
 
-    /// @notice Override ERC721 afterTokenTransfer hook to ensure that transferred NFT's are properly tracked within the PositionManager data struct
-    /// @dev This call also executes upon Mint
+    /**
+     * @notice Override ERC721 afterTokenTransfer hook to ensure that transferred NFT's are properly tracked within the PositionManager data struct
+     * @dev This call also executes upon Mint
+    */
     function _afterTokenTransfer(
         address,
         address to_,
@@ -185,21 +174,24 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         position.owner = to_;
     }
 
-    /// @dev used for tracking nonce input to permit function
+    /** @dev used for tracking nonce input to permit function */
     function _getAndIncrementNonce(uint256 tokenId_) internal override returns (uint256) {
         return uint256(positions[tokenId_].nonce++);
     }
 
     // -------------------- Position State View functions --------------------
 
-    /// @notice Returns the lpTokens accrued to a given tokenId, price pairing
-    /// @dev Nested mappings aren't returned normally as part of the default getter for a mapping
+    /**
+     * @notice Returns the lpTokens accrued to a given tokenId, price pairing
+     * @dev Nested mappings aren't returned normally as part of the default getter for a mapping
+    */
     function getLPTokens(uint256 tokenId_, uint256 price_) external view returns (uint256 lpTokens_) {
         lpTokens_ = positions[tokenId_].lpTokens[price_];
     }
-
-    /// @notice Called to determine the amount of quote and collateral tokens, in quote terms, represented by a given tokenId
-    /// @return quoteTokens_ The value of a NFT in terms of the pools quote token
+    /**
+     * @notice Called to determine the amount of quote and collateral tokens, in quote terms, represented by a given tokenId
+     * @return quoteTokens_ The value of a NFT in terms of the pools quote token
+    */
     function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_)
         external
         view
