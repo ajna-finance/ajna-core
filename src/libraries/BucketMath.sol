@@ -38,9 +38,11 @@ library BucketMath {
         return x >= 0 ? uint256(x) : uint256(-x);
     }
 
-    /// @notice Calculates the index for a given bucket price
-    /// @dev Throws if price exceeds maximum constant
-    /// @dev Price expected to be inputted as a 18 decimal WAD
+    /**
+     * @notice Calculates the index for a given bucket price
+     * @dev Throws if price exceeds maximum constant
+     * @dev Price expected to be inputted as a 18 decimal WAD
+    */
     function priceToIndex(uint256 price_) public pure returns (int256 index_) {
         if (price_ > MAX_PRICE) {
             revert PriceOutsideBoundry();
@@ -71,10 +73,12 @@ library BucketMath {
         return PRBMathSD59x18.toInt(ceilIndex);
     }
 
-    /// @notice Calculates the bucket price for a given index
-    /// @dev Throws if index exceeds maximum constant
-    /// @dev Uses fixed-point math to get around lack of floating point numbers in EVM
-    /// @dev Price expected to be inputted as a 18 decimal WAD
+    /**
+     * @notice Calculates the bucket price for a given index
+     * @dev Throws if index exceeds maximum constant
+     * @dev Uses fixed-point math to get around lack of floating point numbers in EVM
+     * @dev Price expected to be inputted as a 18 decimal WAD
+    */
     function indexToPrice(int256 index_) public pure returns (uint256 price_) {
         if (index_ > MAX_PRICE_INDEX) {
             revert IndexOutsideBoundry();
@@ -102,9 +106,11 @@ library BucketMath {
         );
     }
 
-    /// @notice Determine if a given price is within the constant range
-    /// @dev Price needs to be cast to int, since indices can be negative
-    /// @return A boolean indicating if the given price is valid
+    /**
+     * @notice Determine if a given price is within the constant range
+     * @dev Price needs to be cast to int, since indices can be negative
+     * @return A boolean indicating if the given price is valid
+    */
     function isValidPrice(uint256 price_) public pure returns (bool) {
         int256 index = priceToIndex(price_);
         uint256 price = indexToPrice(index);
@@ -112,15 +118,19 @@ library BucketMath {
         return price_ == price;
     }
 
-    /// @notice Determine if a given index is within the constant range
-    /// @return A boolean indicating if the given index is valid
+    /**
+     * @notice Determine if a given index is within the constant range
+     * @return A boolean indicating if the given index is valid
+    */
     function isValidIndex(int256 index_) public pure returns (bool) {
         return (index_ >= MIN_PRICE_INDEX && index_ <= MAX_PRICE_INDEX);
     }
 
-    /// @notice Determine closest bucket index for a given price
-    /// @return index_ closest bucket index
-    /// @return bucketPrice_ closest bucket price
+    /**
+     * @notice Determine closest bucket index for a given price
+     * @return index_ closest bucket index
+     * @return bucketPrice_ closest bucket price
+    */
     function getClosestBucket(uint256 price_) external pure returns (int256 index_, uint256 bucketPrice_) {
         index_ = priceToIndex(price_);
         bucketPrice_ = indexToPrice(index_);
