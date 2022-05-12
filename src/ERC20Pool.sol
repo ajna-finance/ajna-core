@@ -80,11 +80,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         return ERC20(_getArgAddress(0x14));
     }
 
-    /// @notice Called by lenders to add an amount of credit at a specified price bucket
-    /// @param recipient_ The recipient adding quote tokens
-    /// @param amount_ The amount of quote token to be added by a lender
-    /// @param price_ The bucket to which the quote tokens will be added
-    /// @return The amount of LP Tokens received for the added quote tokens
+    /// @inheritdoc IPool
     function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external returns (uint256) {
         if (!BucketMath.isValidPrice(price_)) {
             revert InvalidPrice();
@@ -116,10 +112,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         return lpTokens;
     }
 
-    /// @notice Called by lenders to remove an amount of credit at a specified price bucket
-    /// @param recipient_ The recipient removing quote tokens
-    /// @param maxAmount_ The maximum amount of quote token to be removed by a lender
-    /// @param price_ The bucket from which quote tokens will be removed
+    /// @inheritdoc IPool
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external {
         if (!BucketMath.isValidPrice(price_)) {
             revert InvalidPrice();

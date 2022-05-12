@@ -3,12 +3,14 @@ pragma solidity 0.8.11;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { ERC20Pool }        from "../ERC20Pool.sol";
-import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+import { ERC20Pool }        from "../../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../../ERC20PoolFactory.sol";
 
-import { IPoolFactory } from "../interfaces/IPoolFactory.sol";
+import { FactoryValidation } from "../../base/FactoryValidation.sol";
 
-import { DSTestPlus } from "./utils/DSTestPlus.sol";
+import { IPoolFactory } from "../../interfaces/IPoolFactory.sol";
+
+import { DSTestPlus } from "../utils/DSTestPlus.sol";
 
 contract PoolFactoryTest is DSTestPlus {
 
@@ -35,10 +37,10 @@ contract PoolFactoryTest is DSTestPlus {
 
     // @notice: Tests revert if actor attempts to deploy ETH pool
     function testDeployPoolEther() external {
-        vm.expectRevert(IPoolFactory.WethOnly.selector);
+        vm.expectRevert(FactoryValidation.WethOnly.selector);
         _factory.deployPool(address(_collateral), address(0));
 
-        vm.expectRevert(IPoolFactory.WethOnly.selector);
+        vm.expectRevert(FactoryValidation.WethOnly.selector);
         _factory.deployPool(address(0), address(_collateral));
     }
 

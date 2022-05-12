@@ -7,7 +7,7 @@ interface IPoolFactory {
 
     event PoolCreated(address pool);
 
-    error WethOnly();
+    error ERC20Only();
     error PoolAlreadyExists();
 
     /// @notice Deploys a cloned pool for the given collateral and quote token

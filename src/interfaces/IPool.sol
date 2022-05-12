@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
+/// @title Ajna Pool
 interface IPool {
 
     struct BorrowerInfo {
@@ -49,9 +50,18 @@ interface IPool {
     error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
 
+    /// @notice Called by lenders to add an amount of credit at a specified price bucket
+    /// @param recipient_ The recipient adding quote tokens
+    /// @param amount_ The amount of quote token to be added by a lender
+    /// @param price_ The bucket to which the quote tokens will be added
+    /// @return lpTokens_ The amount of LP Tokens received for the added quote tokens
     function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
 
-    function removeQuoteToken(address recipient_, uint256 amount_, uint256 price_) external;
+    /// @notice Called by lenders to remove an amount of credit at a specified price bucket
+    /// @param recipient_ The recipient removing quote tokens
+    /// @param maxAmount_ The maximum amount of quote token to be removed by a lender
+    /// @param price_ The bucket from which quote tokens will be removed
+    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external;
 
     function addCollateral(uint256 amount_) external;
 
