@@ -409,8 +409,8 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(collateralization,    0.014270292476495862 * 1e18);
         assertEq(borrowerInflator,     1 * 1e27);
 
-        // TODO: fix these asserts -> pending debt is not 0
         // check pool and borrowers collateralization after both borrows
+        assertLt(borrowerDebt, borrowerPendingDebt);
         assertEq(_pool.getEncumberedCollateral(borrowerPendingDebt), collateralEncumbered);
         assertEq(_pool.getBorrowerCollateralization(collateralDeposited, borrowerPendingDebt), collateralization);
         assertEq(
@@ -419,7 +419,6 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         );
 
         assertEq(_pool.getPoolCollateralization(), 1.345606594670868806 * 1e18);
-        // assertEq(_pool.getPoolCollateralization(), 1);
         assertEq(_pool.getPoolActualUtilization(), 1 * 1e18);
 
         // liquidate borrower
