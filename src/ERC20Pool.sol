@@ -41,7 +41,6 @@ contract ERC20Pool is IPool, Clone, Interest {
     uint256 public previousRateUpdate;
     uint256 public totalCollateral;    // WAD
     uint256 public totalQuoteToken;    // WAD
-    uint256 public totalDebt;          // WAD
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
@@ -428,17 +427,6 @@ contract ERC20Pool is IPool, Clone, Interest {
     /*** Pool State Management ***/
     /*****************************/
 
-    /// @notice Update the global borrower inflator
-    /// @dev Requires time to have passed between update calls
-    function accumulatePoolInterest() private {
-        if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
-            uint256 pendingInflator    = getPendingInflator();                                              // RAY
-            totalDebt                  += getPendingInterest(totalDebt, pendingInflator, inflatorSnapshot); // WAD
-            inflatorSnapshot           = pendingInflator;                                                   // RAY
-            lastInflatorSnapshotUpdate = block.timestamp;
-        }
-    }
-
     /// @notice Returns the current Hight Utilizable Price (HUP) bucket
     /// @dev Starting at the LUP, iterate through down pointers until no quote tokens are available
     /// @dev LUP should always be >= HUP
@@ -495,14 +483,6 @@ contract ERC20Pool is IPool, Clone, Interest {
     function getEncumberedCollateral(uint256 debt_) public view returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
         encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
-    }
-
-
-    /// @notice Calculate unaccrued interest for the pool, which may be added to totalDebt
-    /// @notice to discover pending pool debt
-    /// @return interest_ - Unaccumulated pool interest, WAD
-    function getPendingPoolInterest() external view returns (uint256 interest_) {
-        interest_ = totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
     }
 
     /// @return WAD - The current collateralization of the pool given totalCollateral and totalDebt

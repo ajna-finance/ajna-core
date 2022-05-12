@@ -13,6 +13,9 @@ abstract contract Interest {
     uint256 public inflatorSnapshot; // RAY
     uint256 public lastInflatorSnapshotUpdate;
 
+    /// @dev The total global debt, in quote tokens, across all buckets in the pool
+    uint256 public totalDebt;          // WAD
+
     /// @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
     /// @param borrower_ Pointer to the struct which is accumulating interest on their debt
     /// @dev Only adds debt if a borrower has already initiated a debt position
@@ -25,6 +28,17 @@ abstract contract Interest {
             );
         }
         borrower_.inflatorSnapshot = inflatorSnapshot;
+    }
+
+    /// @notice Update the global borrower inflator
+    /// @dev Requires time to have passed between update calls
+    function accumulatePoolInterest() internal {
+        if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
+            uint256 pendingInflator    = getPendingInflator();                                              // RAY
+            totalDebt                  += getPendingInterest(totalDebt, pendingInflator, inflatorSnapshot); // WAD
+            inflatorSnapshot           = pendingInflator;                                                   // RAY
+            lastInflatorSnapshotUpdate = block.timestamp;
+        }
     }
 
     /// @notice Calculate the pending inflator based upon previous rate and last update
@@ -52,6 +66,13 @@ abstract contract Interest {
         return
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
             Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
+    }
+
+    /// @notice Calculate unaccrued interest for the pool, which may be added to totalDebt
+    /// @notice to discover pending pool debt
+    /// @return interest_ - Unaccumulated pool interest, WAD
+    function getPendingPoolInterest() external view returns (uint256 interest_) {
+        interest_ = totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
     }
 
 }

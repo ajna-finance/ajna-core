@@ -36,7 +36,6 @@ contract ERC721Pool is IPool, Clone, Interest {
     uint256 public previousRateUpdate;
     uint256 public totalCollateral;    // WAD
     uint256 public totalQuoteToken;    // WAD
-    uint256 public totalDebt;          // WAD
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public borrowers;
