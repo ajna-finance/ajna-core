@@ -245,7 +245,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
         if (
             borrower.collateralDeposited <=
-            Maths.rayToWad(getEncumberedCollateral(Maths.add(borrower.debt, amount_)))
+            Maths.rayToWad(getEncumberedCollateral(borrower.debt + amount_))
         ) {
             revert InsufficientCollateralForBorrow();
         }
@@ -521,11 +521,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         if (totalDebt == 0) {
             return 0;
         }
-        return
-            Maths.wdiv(
-                totalDebt,
-                Maths.add(totalQuoteToken, totalDebt)
-            );
+        return Maths.wdiv(totalDebt, totalQuoteToken + totalDebt);
     }
 
     /// @return WAD - The current pool target utilization
@@ -548,10 +544,8 @@ contract ERC20Pool is IPool, Clone, Interest {
             previousRate = Maths.wmul(
                 previousRate,
                 (
-                    Maths.sub(
-                        Maths.add(Maths.rayToWad(actualUtilization), Maths.ONE_WAD),
-                        Maths.rayToWad(getPoolTargetUtilization())
-                    )
+                    Maths.rayToWad(actualUtilization) + Maths.ONE_WAD
+                        - Maths.rayToWad(getPoolTargetUtilization())
                 )
             );
             previousRateUpdate = block.timestamp;
@@ -659,8 +653,8 @@ contract ERC20Pool is IPool, Clone, Interest {
         uint256 lenderShare = Maths.rdiv(lpTokens_, lpOutstanding);
 
         // calculate the amount of collateral and quote tokens equivalent to the lenderShare
-        collateralTokens_ = Maths.radToWad(Maths.mul(bucketCollateral, lenderShare));
-        quoteTokens_      = Maths.radToWad(Maths.mul(Maths.add(onDeposit, debt), lenderShare));
+        collateralTokens_ = Maths.radToWad(bucketCollateral * lenderShare);
+        quoteTokens_      = Maths.radToWad((onDeposit + debt) * lenderShare);
     }
 
 }

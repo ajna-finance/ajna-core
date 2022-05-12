@@ -58,7 +58,6 @@ library Buckets {
     /// @param buckets_ Mapping of buckets for a given pool
     /// @param bucket_ The price bucket from which quote tokens should be removed
     /// @param maxAmount_ The maximum amount of quote tokens to be removed
-    /// @param lpBalance_ The lender's current LP balance
     /// @param inflator_ The current pool inflator rate
     /// @return amount_ The actual amount being removed
     /// @return lup_ The new pool LUP
@@ -77,7 +76,7 @@ library Buckets {
 
         amount_ = Maths.min(Maths.wadToRay(maxAmount_), claimable);   // RAY
         lpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
-        amount_ = Maths.rayToWadRounded(amount_);
+        amount_ = Maths.rayToWad(amount_);
 
         // Remove from deposit first
         uint256 removeFromDeposit = Maths.min(amount_, bucket_.onDeposit);
@@ -224,7 +223,7 @@ library Buckets {
     ) public returns (uint256 lup_) {
         accumulateBucketInterest(bucket_, inflator_);
 
-        uint256 available = Maths.add(bucket_.onDeposit, bucket_.debt);
+        uint256 available = bucket_.onDeposit + bucket_.debt;
         if (amount_ > available) {
             revert InsufficientBucketLiquidity({amountAvailable: available});
         }
@@ -412,10 +411,9 @@ library Buckets {
     function accumulateBucketInterest(Bucket storage bucket_, uint256 inflator_) private {
         if (bucket_.debt != 0) {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-            bucket_.debt += Maths.radToWad(Maths.mul(
-                bucket_.debt,
-                Maths.sub(Maths.rdiv(inflator_, bucket_.inflatorSnapshot), Maths.ONE_RAY)
-            ));
+            bucket_.debt += Maths.radToWadTruncate(
+                bucket_.debt * (Maths.rdiv(inflator_, bucket_.inflatorSnapshot) - Maths.ONE_RAY)
+            );
             bucket_.inflatorSnapshot = inflator_;
         }
     }

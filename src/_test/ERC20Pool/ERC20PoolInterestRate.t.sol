@@ -93,9 +93,9 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertLt(_pool.getPoolActualUtilization(), _pool.getPoolTargetUtilization());
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.049999999959999997 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.049999999959999999 * 1e18);
         _lender.updateInterestRate(_pool);
-        assertEq(_pool.previousRate(), 0.049999999959999997 * 1e18);
+        assertEq(_pool.previousRate(), 0.049999999959999999 * 1e18);
     }
 
     // @notice Ensure an underutilized and undercollateralized pool does not produce an underflow.
