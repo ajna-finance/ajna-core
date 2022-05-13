@@ -85,9 +85,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         // borrower deposit 10 MKR collateral
         _borrower.addCollateral(_pool, 10 * 1e18);
 
-        // should revert if stop price exceeded
+        // should revert if limit price exceeded
         vm.expectRevert(
-            abi.encodeWithSelector(Buckets.BorrowPriceBelowStopPrice.selector, priceHigh)
+            abi.encodeWithSelector(Buckets.BorrowPriceBelowLimitPrice.selector, priceHigh)
         );
         _borrower.borrow(_pool, 15_000 * 1e18, 4_000 * 1e18);
 

@@ -5,9 +5,9 @@ interface IPool {
 
     /**
      * @notice struct holding borrower related info per price bucket
-     * @param debt                 borrower debt, WAD
-     * @param collateralDeposited  collateral deposited by borrower, WAD
-     * @param inflatorSnapshot     current borrower inflator snapshot, RAY
+     * @param debt borrower debt, WAD
+     * @param collateralDeposited collateral deposited by borrower, WAD
+     * @param inflatorSnapshot current borrower inflator snapshot, RAY
     */
     struct BorrowerInfo {
         uint256 debt;
@@ -15,68 +15,59 @@ interface IPool {
         uint256 inflatorSnapshot;
     }
 
+
     /**
      * @notice Emitted when lender adds quote token to the pool
      * @param lender recipient that added quote tokens
-     * @param price  price at which quote tokens were added
+     * @param price price at which quote tokens were added
      * @param amount amount of quote tokens added to the pool
-     * @param lup    LUP calculated after deposit
+     * @param lup LUP calculated after deposit
     */
     event AddQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lup);
 
     /**
      * @notice Emitted when lender removes quote token from the pool
      * @param lender recipient that removed quote tokens
-     * @param price  price at which quote tokens were removed
+     * @param price price at which quote tokens were removed
      * @param amount amount of quote tokens removed from the pool
-     * @param lup    LUP calculated after removal
+     * @param lup LUP calculated after removal
     */
-    event RemoveQuoteToken(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lup
-    );
+    event RemoveQuoteToken(address indexed lender, uint256 indexed price, uint256 amount, uint256 lup);
 
     /**
      * @notice Emitted when borrower locks collateral in the pool
      * @param borrower msg.sender
-     * @param amount   amount of collateral locked in the pool
+     * @param amount amount of collateral locked in the pool
     */
     event AddCollateral(address indexed borrower, uint256 amount);
 
     /**
      * @notice Emitted when borrower removes collateral from the pool
      * @param borrower msg.sender
-     * @param amount   amount of collateral removed from the pool
+     * @param amount amount of collateral removed from the pool
     */
     event RemoveCollateral(address indexed borrower, uint256 amount);
 
     /**
      * @notice Emitted when lender claims unencumbered collateral
      * @param claimer recipient that claimed collateral
-     * @param price   price at which unencumbered collateral was claimed
+     * @param price price at which unencumbered collateral was claimed
     */
-    event ClaimCollateral(
-        address indexed claimer,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lps
-    );
+    event ClaimCollateral(address indexed claimer, uint256 indexed price, uint256 amount, uint256 lps);
 
     /**
      * @notice Emitted when borrower borrows quote tokens from pool
      * @param borrower msg.sender
-     * @param lup      LUP after borrow
-     * @param amount   amount of quote tokens borrowed from the pool
+     * @param lup LUP after borrow
+     * @param amount amount of quote tokens borrowed from the pool
     */
     event Borrow(address indexed borrower, uint256 lup, uint256 amount);
 
     /**
      * @notice Emitted when borrower repays quote tokens to the pool
      * @param borrower msg.sender
-     * @param lup      LUP after repay
-     * @param amount   amount of quote tokens repayed to the pool
+     * @param lup LUP after repay
+     * @param amount amount of quote tokens repayed to the pool
     */
     event Repay(address indexed borrower, uint256 lup, uint256 amount);
 
@@ -89,45 +80,76 @@ interface IPool {
 
     /**
      * @notice Emitted when collateral is exchanged for quote tokens
-     * @param bidder     msg.sender
-     * @param price      price at which collateral was exchanged for quote tokens
-     * @param amount     amount of quote tokens purchased
+     * @param bidder msg.sender
+     * @param price price at which collateral was exchanged for quote tokens
+     * @param amount amount of quote tokens purchased
      * @param collateral amount of collateral exchanged for quote tokens
     */
-    event Purchase(
-        address indexed bidder,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 collateral
-    );
+    event Purchase(address indexed bidder, uint256 indexed price, uint256 amount, uint256 collateral);
 
     /**
      * @notice Emitted when a borrower is liquidated
-     * @param borrower   borrower that was liquidated
-     * @param debt       debt recovered after borrower was liquidated
+     * @param borrower borrower that was liquidated
+     * @param debt debt recovered after borrower was liquidated
      * @param collateral collateral used to recover debt when user liquidated
     */
     event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
 
+
+    /** @notice pool already initialized  */
     error AlreadyInitialized();
+
+    /** @notice invalid price bucket provided  */
     error InvalidPrice();
+
+    /** @notice recipient doesn't have any collateral to claim */
     error NoClaimToBucket();
+
+    /** @notice no debt to be repaid by borrower */
     error NoDebtToRepay();
+
+    /** @notice no debt to be liquidated for borrower */
     error NoDebtToLiquidate();
+
+    /** @notice borrower doesn't have enough tokens to repay desired amount */
     error InsufficientBalanceForRepay();
+
+    /** @notice not enough collateral to purchase bid */
     error InsufficientCollateralBalance();
+
+    /** @notice borrower doesn't have enough collateral to borrow desired amount */
     error InsufficientCollateralForBorrow();
+
+    /**
+     * @notice not enough liquidity in pool to borrow desired amount
+     * @param amountAvailable amount of quote tokens available in pool
+    */
     error InsufficientLiquidity(uint256 amountAvailable);
+
+    /**
+     * @notice pool is undercollateralized after remove quote token, borrow or purchase bid actions
+     * @param collateralization collateralization of the pool
+    */
     error PoolUndercollateralized(uint256 collateralization);
+
+    /**
+     * @notice borrower is not eligible for liquidation
+     * @param collateralization borrower collateralization
+    */
     error BorrowerIsCollateralized(uint256 collateralization);
-    error AmountExceedsTotalClaimableQuoteToken(uint256 totalClaimable);
+
+    /**
+     * @notice borrower doesn't have enough collateral to remove from pool 
+     * @param availableCollateral available collateral in pool that can be removed by borrower
+    */
     error AmountExceedsAvailableCollateral(uint256 availableCollateral);
+
 
     /**
      * @notice Called by lenders to add an amount of credit at a specified price bucket
-     * @param  recipient_ The recipient adding quote tokens
-     * @param  amount_ The amount of quote token to be added by a lender
-     * @param  price_ The bucket to which the quote tokens will be added
+     * @param recipient_ The recipient adding quote tokens
+     * @param amount_ The amount of quote token to be added by a lender
+     * @param price_ The bucket to which the quote tokens will be added
      * @return lpTokens_ The amount of LP Tokens received for the added quote tokens
     */
     function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
@@ -199,7 +221,7 @@ interface IPool {
      * @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens
      * @param lpTokens_ The number of lpTokens to calculate amounts for
      * @param price_ The price bucket for which the value should be calculated
-    * @return collateralTokens_ - The equivalent value of collateral tokens for the given LP Tokens, WAD
+     * @return collateralTokens_ - The equivalent value of collateral tokens for the given LP Tokens, WAD
      * @return quoteTokens_ - The equivalent value of quote tokens for the given LP Tokens, WAD
     */
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);

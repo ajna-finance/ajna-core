@@ -376,18 +376,12 @@ contract ERC20Pool is IPool, Clone, Interest {
      * @notice Get a bucket struct for a given price
      * @param price_ The price of the bucket to retrieve
     */
-    function bucketAt(uint256 price_)
+    function bucketAt(uint256 price_) 
         public
         view
         returns (
-            uint256 price,
-            uint256 up,
-            uint256 down,
-            uint256 onDeposit,
-            uint256 debt,
-            uint256 bucketInflator,
-            uint256 lpOutstanding,
-            uint256 bucketCollateral
+            uint256 price, uint256 up, uint256 down, uint256 onDeposit,
+            uint256 debt, uint256 bucketInflator, uint256 lpOutstanding, uint256 bucketCollateral
         )
     {
         return _buckets.bucketAt(price_);
@@ -552,18 +546,7 @@ contract ERC20Pool is IPool, Clone, Interest {
     /*****************************/
 
     /** @notice Returns a Tuple representing a given borrower's info struct */
-    function getBorrowerInfo(address borrower_)
-        public
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
+    function getBorrowerInfo(address borrower_) public view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256)
     {
         BorrowerInfo memory borrower = borrowers[borrower_];
         uint256 borrowerPendingDebt = borrower.debt;
@@ -593,11 +576,7 @@ contract ERC20Pool is IPool, Clone, Interest {
      * @param debt_ WAD - Debt position to calculate encumbered quotient
      * @return WAD - The current collateralization of the borrowers given totalCollateral and totalDebt
     */
-    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_)
-        public
-        view
-        returns (uint256)
-    {
+    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view returns (uint256) {
         if (lup != 0 && debt_ != 0) {
             return Maths.wdiv(collateralDeposited_, getEncumberedCollateral(debt_));
         }
@@ -618,11 +597,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         return lpBalance[owner_][price_];
     }
 
-    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_)
-        external
-        view
-        returns (uint256 collateralTokens_, uint256 quoteTokens_)
-    {
+    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_) {
         require(BucketMath.isValidPrice(price_), "ajna/invalid-bucket-price");
 
         (

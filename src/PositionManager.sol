@@ -16,10 +16,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
-    /// @dev Mapping of tokenIds to Position struct
+    /** @dev Mapping of tokenIds to Position struct */
     mapping(uint256 => Position) public positions;
 
-    /// @dev Details about Ajna positions - used by Lenders interacting through PositionManager instead of directly with the Pool
+    /** @dev Details about Ajna positions - used by Lenders interacting through PositionManager instead of directly with the Pool */
     struct Position {
         uint96 nonce; // nonce used for permits
         address owner; // owner of a position
@@ -27,7 +27,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         mapping(uint256 => uint256) lpTokens; // priceIndex => lpTokens
     }
 
-    /// @dev The ID of the next token that will be minted. Skips 0
+    /** @dev The ID of the next token that will be minted. Skips 0 */
     uint176 private _nextId = 1;
 
     modifier isAuthorizedForToken(uint256 tokenId_) {
@@ -46,11 +46,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         // TODO: access the prices at which a tokenId has added liquidity
         uint256[] memory prices;
 
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(
-            tokenId_,
-            position.pool,
-            prices
-        );
+        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, position.pool, prices);
 
         return constructTokenURI(params);
     }
@@ -84,11 +80,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     // TODO: update burn check to ensure all position prices have removed liquidity
-    function burn(BurnParams calldata params_)
-        external
-        payable
-        isAuthorizedForToken(params_.tokenId)
-    {
+    function burn(BurnParams calldata params_) external payable isAuthorizedForToken(params_.tokenId) {
         Position storage position = positions[params_.tokenId];
         if (position.lpTokens[params_.price] != 0) {
             revert LiquidityNotRemoved();
@@ -97,19 +89,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         delete positions[params_.tokenId];
     }
 
-    function increaseLiquidity(IncreaseLiquidityParams calldata params_)
-        external
-        payable
-        isAuthorizedForToken(params_.tokenId)
-    {
+    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external payable isAuthorizedForToken(params_.tokenId) {
         Position storage position = positions[params_.tokenId];
 
         // call out to pool contract to add quote tokens
-        uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(
-            params_.recipient,
-            params_.amount,
-            params_.price
-        );
+        uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(params_.recipient, params_.amount, params_.price);
         // TODO: figure out how to test this case
         if (lpTokensAdded == 0) {
             revert IncreaseLiquidityFailed();
@@ -121,55 +105,34 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         emit IncreaseLiquidity(params_.recipient, params_.amount, params_.price);
     }
 
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params_)
-        external
-        payable
-        isAuthorizedForToken(params_.tokenId)
-    {
+    function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external payable isAuthorizedForToken(params_.tokenId) {
         Position storage position = positions[params_.tokenId];
 
         IPool pool = IPool(params_.pool);
 
-        // calulate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool.getLPTokenExchangeValue(
-            params_.lpTokens,
-            params_.price
-        );
+        // calculate equivalent underlying assets for given lpTokens
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool.getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         pool.removeQuoteToken(params_.recipient, quoteTokenToRemove, params_.price);
 
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
             // claim any unencumbered collateral accrued to the price bucket
-            pool.claimCollateral(
-                params_.recipient,
-                Maths.rayToWad(collateralToRemove),
-                params_.price
-            );
+            pool.claimCollateral(params_.recipient, Maths.rayToWad(collateralToRemove), params_.price);
         }
 
         // update position with newly removed lp shares
         position.lpTokens[params_.price] -= params_.lpTokens;
 
         // TODO: check if price updates
-
-        emit DecreaseLiquidity(
-            params_.recipient,
-            collateralToRemove,
-            quoteTokenToRemove,
-            params_.price
-        );
+        emit DecreaseLiquidity(params_.recipient, collateralToRemove, quoteTokenToRemove, params_.price);
     }
 
     /**
      * @notice Override ERC721 afterTokenTransfer hook to ensure that transferred NFT's are properly tracked within the PositionManager data struct
      * @dev This call also executes upon Mint
     */
-    function _afterTokenTransfer(
-        address,
-        address to_,
-        uint256 tokenId_
-    ) internal virtual override(ERC721) {
+    function _afterTokenTransfer(address, address to_, uint256 tokenId_) internal virtual override(ERC721) {
         Position storage position = positions[tokenId_];
         position.owner = to_;
     }
@@ -192,17 +155,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
      * @notice Called to determine the amount of quote and collateral tokens, in quote terms, represented by a given tokenId
      * @return quoteTokens_ The value of a NFT in terms of the pools quote token
     */
-    function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_)
-        external
-        view
-        returns (uint256 quoteTokens_)
-    {
+    function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external view returns (uint256 quoteTokens_) {
         Position storage position = positions[tokenId_];
 
-        uint256 lpTokens = position.lpTokens[price_];
-
         (uint256 collateral, uint256 quote) = IPool(position.pool).getLPTokenExchangeValue(
-            lpTokens,
+            position.lpTokens[price_],
             price_
         );
 
