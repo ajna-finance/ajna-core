@@ -7,6 +7,10 @@ pragma solidity 0.8.11;
  */
 interface IPositionManager {
 
+    /**************/
+    /*** Events ***/
+    /**************/
+
     /**
      *  @notice Emitted when representative NFT minted
      *  @param  lender_  Lender address
@@ -45,6 +49,10 @@ interface IPositionManager {
     */
     event DecreaseLiquidity(address lender_, uint256 collateral_, uint256 quote_, uint256 price_);
 
+    /*********************/
+    /*** Custom Errors ***/
+    /*********************/
+
     /**
      *  @notice Caller is not approved to interact with the token
      */
@@ -59,6 +67,10 @@ interface IPositionManager {
      *  @notice Unable to burn as liquidity still present at price
      */
     error LiquidityNotRemoved();
+
+    /**************************/
+    /*** External Functions ***/
+    /**************************/
 
     /**
      *  @notice Called by lenders to add quote tokens and receive a representative NFT
@@ -125,7 +137,7 @@ interface IPositionManager {
     function increaseLiquidity(IncreaseLiquidityParams calldata params_) external payable;
 
     /**
-     *  @notice struct holding parameters for increasing liquidity
+     *  @notice Struct holding parameters for increasing liquidity
      *  @param  tokenId   The tokenId of the NFT tracking liquidity
      *  @param  recipient The NFT owner address
      *  @param  pool      The pool address to deposit quote tokens
