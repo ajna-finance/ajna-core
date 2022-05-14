@@ -10,6 +10,17 @@ interface IPositionManager {
     /**************/
     /*** Events ***/
     /**************/
+<<<<<<< HEAD
+=======
+
+    /**
+     *  @notice Emitted when representative NFT minted
+     *  @param  lender_  Lender address
+     *  @param  pool_    Pool address
+     *  @param  tokenId_ The tokenId of the newly minted NFT
+    */
+    event Mint(address lender_, address pool_, uint256 tokenId_);
+>>>>>>> 7f9edcf (feat: add section labels)
 
     /**
      *  @notice Emitted when an existing NFT was burned.
@@ -41,6 +52,10 @@ interface IPositionManager {
      */
     event MemorializePosition(address lender_, uint256 tokenId_);
 
+    /*********************/
+    /*** Custom Errors ***/
+    /*********************/
+
     /**
      *  @notice Emitted when representative NFT minted.
      *  @param  lender_  Lender address.
@@ -62,6 +77,10 @@ interface IPositionManager {
      *  @notice Unable to burn as liquidity still present at price.
      */
     error LiquidityNotRemoved();
+
+    /**************************/
+    /*** External Functions ***/
+    /**************************/
 
     /**
      *  @notice Caller is not approved to interact with the token.
