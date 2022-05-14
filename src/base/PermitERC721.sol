@@ -38,9 +38,7 @@ abstract contract PermitERC721 is ERC721, IPermit {
 
     /** @notice Computes the nameHash and versionHash based upon constructor input */
     constructor(
-        string memory name_,
-        string memory symbol_,
-        string memory version_
+        string memory name_, string memory symbol_, string memory version_
     ) ERC721(name_, symbol_) {
         _nameHash    = keccak256(bytes(name_));
         _versionHash = keccak256(bytes(version_));
@@ -74,12 +72,7 @@ abstract contract PermitERC721 is ERC721, IPermit {
      * @param s_ Component of secp256k1 signature
     */
     function permit(
-        address spender_,
-        uint256 tokenId_,
-        uint256 deadline_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
+        address spender_, uint256 tokenId_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
     ) external payable {
         require(block.timestamp <= deadline_, "ajna/nft-permit-expired");
 
@@ -128,14 +121,7 @@ abstract contract PermitERC721 is ERC721, IPermit {
      * @param s_ Component of secp256k1 signature
     */
     function safeTransferFromWithPermit(
-        address from_,
-        address to_,
-        address spender_,
-        uint256 tokenId_,
-        uint256 deadline_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
+        address from_, address to_, address spender_, uint256 tokenId_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
     ) external {
         this.permit(spender_, tokenId_, deadline_, v_, r_, s_);
         safeTransferFrom(from_, to_, tokenId_);
