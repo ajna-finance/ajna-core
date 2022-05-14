@@ -56,6 +56,10 @@ interface IPositionManager {
 =======
 >>>>>>> 428bcd7 (feat: add alignment in interfaces, update underscore syntax)
 
+    /*********************/
+    /*** Custom Errors ***/
+    /*********************/
+
     /**
      *  @notice Caller is not approved to interact with the token
      */
