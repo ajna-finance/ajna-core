@@ -48,10 +48,13 @@ interface IPositionManager {
      *  @param  price_      The price at quote tokens were added
     */
     event DecreaseLiquidity(address lender_, uint256 collateral_, uint256 quote_, uint256 price_);
+<<<<<<< HEAD
 
     /*********************/
     /*** Custom Errors ***/
     /*********************/
+=======
+>>>>>>> 428bcd7 (feat: add alignment in interfaces, update underscore syntax)
 
     /**
      *  @notice Caller is not approved to interact with the token
