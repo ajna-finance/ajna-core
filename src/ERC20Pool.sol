@@ -148,7 +148,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         totalQuoteToken -= amount;
         uint256 col = getPoolCollateralization();
         if (col < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({collateralization: col});
+            revert PoolUndercollateralized({collateralization_: col});
         }
 
         lpBalance[recipient_][price_] -= lpTokens;
@@ -179,7 +179,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
         if (borrower.collateralDeposited - encumberedBorrowerCollateral < amount_) {
             revert AmountExceedsAvailableCollateral({
-                availableCollateral: borrower.collateralDeposited - encumberedBorrowerCollateral
+                availableCollateral_: borrower.collateralDeposited - encumberedBorrowerCollateral
             });
         }
 
@@ -218,7 +218,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
     function borrow(uint256 amount_, uint256 limitPrice_) external {
         if (amount_ > totalQuoteToken) {
-            revert InsufficientLiquidity({amountAvailable: totalQuoteToken});
+            revert InsufficientLiquidity({amountAvailable_: totalQuoteToken});
         }
 
         accumulatePoolInterest();
@@ -242,7 +242,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
         uint256 col = getPoolCollateralization();
         if (col < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({collateralization: col});
+            revert PoolUndercollateralized({collateralization_: col});
         }
 
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
@@ -309,7 +309,7 @@ contract ERC20Pool is IPool, Clone, Interest {
 
         uint256 col = getPoolCollateralization();
         if (col < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({collateralization: col});
+            revert PoolUndercollateralized({collateralization_: col});
         }
 
         // move required collateral from sender to pool
@@ -344,7 +344,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         );
 
         if (collateralization > Maths.ONE_WAD) {
-            revert BorrowerIsCollateralized({collateralization: collateralization});
+            revert BorrowerIsCollateralized({collateralization_: collateralization});
         }
 
         uint256 requiredCollateral = _buckets.liquidate(debt, collateralDeposited, hpb, inflatorSnapshot);
@@ -376,7 +376,7 @@ contract ERC20Pool is IPool, Clone, Interest {
      * @notice Get a bucket struct for a given price
      * @param price_ The price of the bucket to retrieve
     */
-    function bucketAt(uint256 price_) 
+    function bucketAt(uint256 price_)
         public
         view
         returns (
