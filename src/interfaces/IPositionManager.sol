@@ -152,6 +152,19 @@ interface IPositionManager {
         address pool;
     }
 
+    /**
+     *  @notice Struct holding position info.
+     *  @param  nonce    Nonce used for permits.
+     *  @param  owner    Address of owner of the position.
+     *  @param  lpTokens Mapping of price to lpTokens for the owner.
+     */
+    struct Position {
+        uint96 nonce;
+        address owner;
+        address pool;
+        mapping(uint256 => uint256) lpTokens;
+    }
+
     /************************/
     /*** Lender Functions ***/
     /************************/
@@ -189,5 +202,29 @@ interface IPositionManager {
      *  @return tokenId_ The tokenId of the newly minted NFT.
      */
     function mint(MintParams calldata params_) external payable returns (uint256 tokenId_);
+
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
+
+    /**
+     *  @notice Returns the lpTokens accrued to a given tokenId, price pairing.
+     *  @dev    Nested mappings aren't returned normally as part of the default getter for a mapping.
+     *  @param  tokenId_  Unique ID of token.
+     *  @param  price_    Price of bucket to check LP balance of.
+     *  @return lpTokens_ Balance of lpTokens in the price bucket for this position.
+    */
+    function getLPTokens(uint256 tokenId_, uint256 price_) external view returns (uint256 lpTokens_);
+
+    /**
+     *  @notice Called to determine the amount of quote and collateral tokens, in quote terms, represented by a given tokenId.
+     *  @param  tokenId_      Unique ID of token.
+     *  @param  price_        The price bucket to check the position value of.
+     *  @return quoteTokens_ Value fo the LP tokens in the price bucket for this position, in quote token.
+    */
+    function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external view returns (uint256 quoteTokens_);
+
+    // TODO: Not sure how to make an interface for a function that returns a struct with a mapping.
+    // function positions(uint256 tokenId_) external view returns ()
 
 }

@@ -180,11 +180,68 @@ interface IPool {
     /*** State Variables ***/
     /***********************/
 
-    // TODO: Add natspec for all public variables and override.
+    // TODO: Investigate `collateral()` and `quoteToken()` functions.
 
-    /**************************/
-    /*** Borrower Functions ***/
-    /**************************/
+    /**
+     *  @notice Returns the `collateralScale` state variable.
+     *  @return collateralScale_ The precision of the collateral ERC-20 token based on decimals.
+     */
+    function collateralScale() external view returns (uint256 collateralScale_);
+
+    /**
+     *  @notice Returns the `quoteTokenScale` state variable.
+     *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
+     */
+    function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
+
+    /**
+     *  @notice Returns the `hpb` state variable.
+     *  @return hpb_ The price value of the current Highest Price Bucket (HPB).
+     */
+    function hpb() external view returns (uint256 hpb_);
+
+    /**
+     *  @notice Returns the `lup` state variable.
+     *  @return lup_ The price value of the current Lowest Utilized Price (LUP) bucket.
+     */
+    function lup() external view returns (uint256 lup_);
+
+    /**
+     *  @notice Returns the `previousRateUpdate` state variable.
+     *  @return previousRateUpdate_ The timestamp of the last rate update.
+     */
+    function previousRateUpdate() external view returns (uint256 previousRateUpdate_);
+
+    /**
+     *  @notice Returns the `totalCollateral` state variable.
+     *  @return totalCollateral_ THe total amount of collateral in the system, in WAD units.
+     */
+    function totalCollateral() external view returns (uint256 totalCollateral_);
+
+    /**
+     *  @notice Returns the `totalQuoteToken` state variable.
+     *  @return totalQuoteToken_ The total amount of quote token in the system, in WAD units.
+     */
+    function totalQuoteToken() external view returns (uint256 totalQuoteToken_);
+
+    /**
+     *  @notice Returns the `totalDebt` state variable.
+     *  @return totalDebt_ The total amount of debt in the system, in WAD units.
+     */
+    function totalDebt() external view returns (uint256 totalDebt_);
+
+    /*****************************/
+    /*** Inititalize Functions ***/
+    /*****************************/
+
+    /**
+     *  @notice Initializes a new pool, setting initial state variables.
+     */
+    function initialize() external;
+
+    /***********************************/
+    /*** Borrower External Functions ***/
+    /***********************************/
 
     /**
      *  @notice Called by borrowers to add collateral to the pool.
@@ -212,9 +269,9 @@ interface IPool {
      */
     function repay(uint256 maxAmount_) external;
 
-    /************************/
-    /*** Lender Functions ***/
-    /************************/
+    /*********************************/
+    /*** Lender External Functions ***/
+    /*********************************/
 
     /**
      *  @notice Called by lenders to add an amount of credit at a specified price bucket.
@@ -241,10 +298,9 @@ interface IPool {
      */
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external;
 
-
-    /************************************************/
-    /*** External Collateral Management Functions ***/
-    /************************************************/
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
 
     /**
      *  @notice Exchanges collateral for quote token.
@@ -259,17 +315,135 @@ interface IPool {
      */
     function liquidate(address borrower_) external;
 
-    /**********************/
-    /*** View Functions ***/
-    /**********************/
+    /**
+     *  @notice Called to update the pool interest rate when actual > target utilization.
+     */
+    function updateInterestRate() external;
+
+    /*******************************/
+    /*** Borrower View Functions ***/
+    /*******************************/
+
+    /**
+     *  @notice Mapping of borrower addresses to {BorrowerInfo} structs.
+     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
+     *  @param  borrower_           Address of the borrower.
+     *  @return debt                Amount of debt that the borrower has, in quote token.
+     *  @return collateralDeposited Amount of collateral that the borrower has deposited, in collateral token.
+     *  @return inflatorSnapshot    Snapshot of inflator value used to track interest on loans.
+     */
+    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateralDeposited, uint256 inflatorSnapshot);
+
+    /**
+     *  @notice Returns the collateralization based on given collateral deposited and debt.
+     *  @dev    Supports passage of collateralDeposited and debt to enable calculation of potential borrower collateralization states, not just current.
+     *  @param  collateralDeposited_       Collateral amount to calculate a collateralization ratio for, in RAY units.
+     *  @param  debt_                      Debt position to calculate encumbered quotient, in RAY units.
+     *  @return borrowerCollateralization_ The current collateralization of the borrowers given totalCollateral and totalDebt
+     */
+    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) external view returns (uint256 borrowerCollateralization_);
+
+    /**
+     *  @notice Returns a tuple of information about a given borrower.
+     *  @param  borrower_                 Address of the borrower.
+     *  @return debt_                     Amount of debt that the borrower has, in quote token.
+     *  @return pendingDebt_              Amount of unaccrued debt that the borrower has, in quote token.
+     *  @return collateralDeposited_      Amount of collateral that tne borrower has deposited, in collateral token.
+     *  @return collateralEncumbered_     Amount of collateral that the borrower has encumbered, in collateral token.
+     *  @return collateralization_        Collateral ratio of the borrower's pool position.
+     *  @return borrowerInflatorSnapshot_ Snapshot of the borrower's inflator value.
+     *  @return inflatorSnapshot_         Snapshot of the pool's inflator value.
+     */
+    function getBorrowerInfo(address borrower_) external view returns (
+        uint256 debt_,
+        uint256 pendingDebt_,
+        uint256 collateralDeposited_,
+        uint256 collateralEncumbered_,
+        uint256 collateralization_,
+        uint256 borrowerInflatorSnapshot_,
+        uint256 inflatorSnapshot_
+    );
+
+    /*****************************/
+    /*** Lender View Functions ***/
+    /*****************************/
 
     /**
      *  @notice Returns a given lender's LP tokens in a given price bucket.
-     *  @param  owner_    The EOA to check token balance for.
-     *  @param  price_    The price bucket for which the value should be calculated, WAD units.
-     *  @return lpTokens_ The EOA's lp token balance in the bucket, RAY units.
+     *  TODO:   Is this function necessary given we have `lpBalance`?
+     *  @param  owner_     The EOA to check token balance for.
+     *  @param  price_     The price bucket for which the value should be calculated, WAD units.
+     *  @return lpBalance_ The EOA's lp token balance in the bucket, RAY units.
      */
-    function getLPTokenBalance(address owner_, uint256 price_) external view returns (uint256 lpTokens_);
+    function getLPTokenBalance(address owner_, uint256 price_) external view returns (uint256 lpBalance_);
+
+    /**
+     *  @notice Nested mapping of lender's LP token balance at different price buckets.
+     *  @param  lp_          Address of the LP.
+     *  @param  priceBucket_ Price of the bucket.
+     *  @return balance_     LP token balance of the lender at the queried price bucket.
+     */
+    function lpBalance(address lp_, uint256 priceBucket_) external view returns (uint256 balance_);
+
+    /***************************/
+    /*** Pool View Functions ***/
+    /***************************/
+
+    /**
+     *  @notice Get a bucket struct for a given price.
+     *  @param  price_            The price of the bucket to retrieve.
+     *  @return bucketPrice_      The price of the bucket.
+     *  @return up_               The price of the next higher priced utlized bucket.
+     *  @return down_             The price of the next lower price utilized bucket.
+     *  @return onDeposit_        The amount of quote token available as liquidity in the bucket.
+     *  @return debt_             The amount of quote token debt in the bucket.
+     *  @return bucketInflator_   The inflator snapshot value in the bucket.
+     *  @return lpOutstanding_    The amount of outstanding LP tokens in the bucket.
+     *  @return bucketCollateral_ The amount of collateral posted in the bucket.
+    */
+    function bucketAt(uint256 price_)
+        external view
+        returns (
+            uint256 bucketPrice_,
+            uint256 up_,
+            uint256 down_,
+            uint256 onDeposit_,
+            uint256 debt_,
+            uint256 bucketInflator_,
+            uint256 lpOutstanding_,
+            uint256 bucketCollateral_
+        );
+
+    /**
+     *  @notice Estimate the price for which a loan can be taken.
+     *  @param  amount_  Amount of debt to draw.
+     *  @return price_   Price of the loan.
+     */
+    function estimatePriceForLoan(uint256 amount_) external view returns (uint256 price_);
+
+    /**
+     *  @notice Returns the total encumbered collateral resulting from a given amount of debt.
+     *  @dev    Used for both pool and borrower level debt.
+     *  @param  debt_        Amount of debt for corresponding collateral encumbrance.
+     *  @return encumbrance_ The current encumbrance of a given debt balance, in WAD units.
+     */
+    function getEncumberedCollateral(uint256 debt_) external view returns (uint256 encumbrance_);
+
+    /**
+     *  @notice Returns the current Highest Price Bucket (HPB).
+     *  @dev    Starting at the current HPB, iterate through down pointers until a new HPB found.
+     *  @dev    HPB should have at on deposit or debt different than 0.
+     *  @return hpb_ The current Highest Price Bucket (HPB).
+     */
+    function getHpb() external view returns (uint256 hpb_);
+
+    /**
+     *  @notice Returns the current Highest Utilizable Price (HUP) bucket.
+     *  @dev    Starting at the LUP, iterate through down pointers until no quote tokens are available.
+     *  @dev    LUP should always be >= HUP.
+     *  @return hup_ The current Highest Utilizable Price (HUP) bucket.
+     */
+    function getHup() external view returns (uint256 hup_);
 
     /**
      *  @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens.
@@ -279,5 +453,50 @@ interface IPool {
      *  @return quoteTokens_      The equivalent value of quote tokens for the given LP Tokens, WAD units.
      */
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);
+
+    /**
+     *  @notice Returns the current minimum pool price.
+     *  @return minPrice_ The current minimum pool price.
+     */
+    function getMinimumPoolPrice() external view returns (uint256 minPrice_);
+
+    /**
+     *  @notice Returns the amount of pending (unaccrued) interest for a given bucket.
+     *  @param  price_    The price of the bucket to query.
+     *  @return interest_ The current amount of unaccrued interest againt the queried bucket.
+     */
+    function getPendingBucketInterest(uint256 price_) external view returns (uint256 interest_);
+
+    /**
+     * @notice Calculate unaccrued interest for the pool, which may be added to totalDebt.
+     * @return interest_ Unaccumulated pool interest, in WAD units.
+     */
+    function getPendingPoolInterest() external view returns (uint256 interest_);
+
+    /**
+     * @notice Gets the current utilization of the pool
+     * @dev    Will return 0 unless the pool has been borrowed from.
+     * @return poolActualUtilization_ The current pool actual utilization, in WAD units.
+     */
+    function getPoolActualUtilization() external view returns (uint256 poolActualUtilization_);
+
+    /**
+     * @notice Calculate the current collateralization ratio of the pool, based on `totalDebt` and `totalCollateral`.
+     * @return poolCollateralization_ Current pool collateralization ratio.
+     */
+    function getPoolCollateralization() external view returns (uint256 poolCollateralization_);
+
+    /**
+     * @notice Gets the current target utilization of the pool
+     * @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
+     */
+    function getPoolTargetUtilization() external view returns (uint256 poolTargetUtilization_);
+
+    /**
+     *  @notice Returns whether a bucket price has been initialized or not.
+     *  @param  price_               The price of the bucket.
+     *  @param  isBucketInitialized_ Boolean indicating if the bucket has been initialized at this price.
+     */
+    function isBucketInitialized(uint256 price_) external view returns (bool isBucketInitialized_);
 
 }
