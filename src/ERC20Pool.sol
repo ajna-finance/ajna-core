@@ -415,10 +415,10 @@ contract ERC20Pool is IPool, Clone, Interest {
     }
 
     function getHup() public view override returns (uint256 hup_) {
-        uint256 curPrice = lup;
+        hup_ = lup;
         while (true) {
             (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = _buckets.bucketAt(
-                curPrice
+                hup_
             );
             if (price == down || onDeposit != 0) {
                 break;
@@ -429,25 +429,22 @@ contract ERC20Pool is IPool, Clone, Interest {
             if (downAmount == 0) {
                 break;
             }
-            curPrice = down;
+            hup_ = down;
         }
-        return curPrice;
     }
 
     function getHpb() public view override returns (uint256 hpb_) {
-        uint256 curHpb = hpb;
+        hpb_ = hpb;
         while (true) {
             (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = _buckets.bucketAt(curHpb);
             if (onDeposit != 0 || debt != 0) {
                 break;
             } else if (down == 0) {
-                curHpb = 0;
+                hpb_ = 0;
                 break;
             }
-
-            curHpb = down;
+            hpb_ = down;
         }
-        return curHpb;
     }
 
     // TODO: Add a test for this
@@ -563,7 +560,9 @@ contract ERC20Pool is IPool, Clone, Interest {
     }
 
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
-        require(BucketMath.isValidPrice(price_), "ajna/invalid-bucket-price");
+        if (!BucketMath.isValidPrice(price_)) {
+            revert InvalidPrice();
+        }
 
         (
             ,
