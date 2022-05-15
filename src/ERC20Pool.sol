@@ -372,31 +372,26 @@ contract ERC20Pool is IPool, Clone, Interest {
 
     // TODO: rename bucketAtPrice & add bucketAtIndex
     // TODO: add return type
-    /**
-     * @notice Get a bucket struct for a given price
-     * @param price_ The price of the bucket to retrieve
-    */
     function bucketAt(uint256 price_)
-        public
-        view
+        public override view
         returns (
-            uint256 price, uint256 up, uint256 down, uint256 onDeposit,
-            uint256 debt, uint256 bucketInflator, uint256 lpOutstanding, uint256 bucketCollateral
+            uint256 bucketPrice_,
+            uint256 up_,
+            uint256 down_,
+            uint256 onDeposit_,
+            uint256 debt_,
+            uint256 bucketInflator_,
+            uint256 lpOutstanding_,
+            uint256 bucketCollateral_
         )
     {
         return _buckets.bucketAt(price_);
     }
 
-    function isBucketInitialized(uint256 price_) public view override returns (bool) {
+    function isBucketInitialized(uint256 price_) public view override returns (bool isBucketInitialized_) {
         return BitMaps.get(_bitmap, price_);
     }
 
-    /**
-     * @notice Calculate unaccrued interest for a particular bucket, which may be added to
-     * @notice bucket debt to discover pending bucket debt
-     * @param price_ The price bucket for which interest should be calculated, WAD
-     * @return interest_ - Unaccumulated bucket interest, WAD
-    */
     function getPendingBucketInterest(uint256 price_) external view override returns (uint256 interest_) {
         (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(price_);
         interest_ = debt != 0 ? getPendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
@@ -419,13 +414,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         }
     }
 
-    /**
-     * @notice Returns the current Hight Utilizable Price (HUP) bucket
-     * @dev Starting at the LUP, iterate through down pointers until no quote tokens are available
-     * @dev LUP should always be >= HUP
-     * @return The current HUP
-    */
-    function getHup() public view override returns (uint256) {
+    function getHup() public view override returns (uint256 hup_) {
         uint256 curPrice = lup;
         while (true) {
             (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = _buckets.bucketAt(
@@ -445,13 +434,7 @@ contract ERC20Pool is IPool, Clone, Interest {
         return curPrice;
     }
 
-    /**
-     * @notice Returns the next Highest Deposited Bucket (HPB)
-     * @dev Starting at the current HPB, iterate through down pointers until a new HPB found
-     * @dev HPB should have at on deposit or debt different than 0
-     * @return The next HPB
-    */
-    function getHpb() public view override returns (uint256) {
+    function getHpb() public view override returns (uint256 hpb_) {
         uint256 curHpb = hpb;
         while (true) {
             (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = _buckets.bucketAt(curHpb);
@@ -467,57 +450,38 @@ contract ERC20Pool is IPool, Clone, Interest {
         return curHpb;
     }
 
-    // TODO: add a test for this
-    /** @return minPrice_ RAY - The current minimum pool price */
+    // TODO: Add a test for this
     function getMinimumPoolPrice() public view override returns (uint256 minPrice_) {
         minPrice_ = totalDebt != 0 ? Maths.wdiv(totalDebt, totalCollateral) : 0;
     }
 
-    /**
-     * @dev Used for both pool and borrower level debt
-     * @param debt_ - Debt to check encumbrance of
-     * @return encumbrance_ WAD - The current encumbrance of a given debt balance
-    */
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
         encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
     }
 
-    /**
-     * @notice Calculate unaccrued interest for the pool, which may be added to totalDebt
-     * @notice to discover pending pool debt
-     * @return interest_ - Unaccumulated pool interest, WAD
-    */
     function getPendingPoolInterest() external view override returns (uint256 interest_) {
         interest_ = totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
     }
 
-    /** @return WAD - The current collateralization of the pool given totalCollateral and totalDebt */
-    function getPoolCollateralization() public view override returns (uint256) {
+    function getPoolCollateralization() public view override returns (uint256 poolCollateralization_) {
         if (lup != 0 && totalDebt != 0) {
             return Maths.wdiv(totalCollateral, getEncumberedCollateral(totalDebt));
         }
         return Maths.ONE_WAD;
     }
 
-    /**
-     * @notice Gets the current utilization of the pool
-     * @dev Will return 0 unless the pool has been borrowed from
-     * @return WAD - The current pool actual utilization
-    */
-    function getPoolActualUtilization() public view override returns (uint256) {
+    function getPoolActualUtilization() public view override returns (uint256 poolActualUtilization_) {
         if (totalDebt == 0) {
             return 0;
         }
         return Maths.wdiv(totalDebt, totalQuoteToken + totalDebt);
     }
 
-    /** @return WAD - The current pool target utilization */
-    function getPoolTargetUtilization() public view override returns (uint256) {
+    function getPoolTargetUtilization() public view override returns (uint256 poolTargetUtilization_) {
         return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
     }
 
-    /** @notice Called by lenders to update interest rate of the pool when actual > target utilization */
     function updateInterestRate() external override {
         // RAY
         uint256 actualUtilization = getPoolActualUtilization();
@@ -545,8 +509,16 @@ contract ERC20Pool is IPool, Clone, Interest {
     /*** Borrower Management ***/
     /*****************************/
 
-    /** @notice Returns a Tuple representing a given borrower's info struct */
-    function getBorrowerInfo(address borrower_) public view override returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256)
+    function getBorrowerInfo(address borrower_)
+        public view override returns (
+            uint256 debt_,
+            uint256 pendingDebt_,
+            uint256 collateralDeposited_,
+            uint256 collateralEncumbered_,
+            uint256 collateralization_,
+            uint256 borrowerInflatorSnapshot_,
+            uint256 inflatorSnapshot_
+        )
     {
         BorrowerInfo memory borrower = borrowers[borrower_];
         uint256 borrowerPendingDebt = borrower.debt;
@@ -570,21 +542,14 @@ contract ERC20Pool is IPool, Clone, Interest {
         );
     }
 
-    /**
-     * @dev Supports passage of collateralDeposited and debt to enable calculation of potential borrower collateralization states, not just current.
-     * @param collateralDeposited_ RAY - Collateral amount to calculate a collateralization ratio for
-     * @param debt_ WAD - Debt position to calculate encumbered quotient
-     * @return WAD - The current collateralization of the borrowers given totalCollateral and totalDebt
-    */
-    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256) {
+    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256 borrowerCollateralization_) {
         if (lup != 0 && debt_ != 0) {
             return Maths.wdiv(collateralDeposited_, getEncumberedCollateral(debt_));
         }
         return Maths.ONE_WAD;
     }
 
-    /** @notice Estimate the price at which a loan can be taken */
-    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256) {
+    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256 price_) {
         // convert amount from WAD to collateral pool precision - RAD
         return _buckets.estimatePrice(amount_, lup == 0 ? hpb : lup);
     }
@@ -593,7 +558,7 @@ contract ERC20Pool is IPool, Clone, Interest {
     /*** Lender Management ***/
     /*****************************/
 
-    function getLPTokenBalance(address owner_, uint256 price_) external view override returns (uint256) {
+    function getLPTokenBalance(address owner_, uint256 price_) external view override returns (uint256 lpBalance_) {
         return lpBalance[owner_][price_];
     }
 
