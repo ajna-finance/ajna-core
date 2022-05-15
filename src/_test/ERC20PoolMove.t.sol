@@ -22,6 +22,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
     UserWithCollateral internal _borrower;
     UserWithCollateral internal _borrower2;
     UserWithQuoteToken internal _lender;
+    UserWithQuoteToken internal _lender2;
 
     function setUp() external {
         _collateral  = new CollateralToken();
@@ -32,14 +33,17 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _borrower   = new UserWithCollateral();
         _borrower2  = new UserWithCollateral();
         _lender     = new UserWithQuoteToken();
+        _lender2     = new UserWithQuoteToken();
 
         _collateral.mint(address(_borrower), 100 * 1e18);
         _collateral.mint(address(_borrower2), 100 * 1e18);
         _quote.mint(address(_lender), 200_000 * 1e18);
+        _quote.mint(address(_lender2), 200_000 * 1e18);
 
         _borrower.approveToken(_collateral, address(_pool), 100 * 1e18);
         _borrower2.approveToken(_collateral, address(_pool), 100 * 1e18);
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
+        _lender2.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
     // unutilized -> unutilized
@@ -52,7 +56,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
         _lender.addQuoteToken(_pool, address(_lender), 30_000 * 1e18, _p2503);
 
-        //lender moves 10_000 DAI down
+        // lender moves 10_000 DAI down
         _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2503);
         
@@ -65,596 +69,563 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(debt, 0);
         assertEq(deposit, 40_000 * 1e18);
         assertEq(_pool.lpBalance(address(_lender), _p2503), 40_000 * 1e27);
-        assert(_pool.lup() == 0);
+        assertEq(_pool.lup(), 0);
     }
 
-
-
-    /*
-    # from_bucket < to_bucket
-    MoveQuoteTestUnutilizedToUnutilizedUp(proxy).run()
-    assert round(pool.buckets[7].lp_token_balance[333]) == Decimal(11000)
-    assert round(pool.buckets[7].on_deposit) == Decimal(11000)
-    assert round(pool.buckets[5].lp_token_balance[333]) == Decimal(29000)
-    assert round(pool.buckets[5].on_deposit) == Decimal(29000)
-    pool.clear()
-
-    MoveQuoteTestUnutilizedToUnutilizedUpHpb(proxy).run()
-    assert round(pool.buckets[8].debt) == Decimal(1000)
-    assert round(pool.buckets[8].on_deposit) == Decimal(0)
-    assert round(pool.buckets[8].lp_token_balance[333]) == Decimal(1000)
-
-    assert round(pool.buckets[6].debt) == Decimal(20000)
-    assert round(pool.buckets[6].on_deposit) == Decimal(0)
-    assert round(pool.buckets[6].lp_token_balance[333]) == Decimal(20000)
-
-    assert round(pool.buckets[4].debt) == Decimal(0)
-    assert round(pool.buckets[4].on_deposit) == Decimal(49000)
-    assert round(pool.buckets[4].lp_token_balance[333]) == Decimal(49000)
-    pool.lup() == 6
-    pool.clear()
-    */
-
-
-
-
-
-
-    /*
-    class MoveQuoteTestUnutilizedToUnutilizedUp(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(30000), 5)
-
-            pool.move_quote_token(333, Decimal(1000), 5, 7)
-
-    class MoveQuoteTestUnutilizedToUnutilizedUpHpb(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(30000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(1000), 4, 8)
-
-
-
-    class MoveQuoteTestUtilizedToUntilizedDown(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(35000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(100), 7, 4)
-
-
-    class MoveQuoteTestFromLupMovesUtilizedToUntilizedAllDepositPartialDebt(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(500), 4)
-            self.lend_quote_token(333, Decimal(2000), 3)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(19500), 5, 3)
-
-    class MoveQuoteTestFromLupMovesUtilizedToUntilizedPartialDepositAllDebt(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(500), 4)
-            self.lend_quote_token(333, Decimal(2000), 3)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(19500), 5, 8)
-        
-
-    class MoveQuoteTestLupMovesUtilizedToUnutilized(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(46000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(8000), 7, 4)
-
-    class MoveQuoteTestUnutilizedToUtilizedUp(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(35000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(100), 4, 7)
-
-    class MoveQuoteTestUtilizedToUtilizedUp(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(35000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(500), 6, 7)
-
-
-    class MoveQuoteTestUtilizedToUtilizedDown(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(35000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(500), 7, 6)
-
-    class MoveQuoteTestFromLupMovesUtilizedToUtilizedWholeBucket(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(20000), 5, 7)
-
-    class MoveQuoteTestFromLupMovesUtilizedToUtilizedAllDebtPartialDeposit(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(1100), 5, 7)
-
-    class MoveQuoteTestFromLupMovesUtilizedToUtilizedAllDebtPartialDepositTwoLenders(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(5000), 7)
-            self.lend_quote_token(333, Decimal(10000), 6)
-            self.lend_quote_token(333, Decimal(10000), 5)
-            self.lend_quote_token(333, Decimal(25000), 4)
-
-            self.lend_quote_token(357, Decimal(5000), 7)
-            self.lend_quote_token(357, Decimal(10000), 6)
-            self.lend_quote_token(357, Decimal(10000), 5)
-            self.lend_quote_token(357, Decimal(25000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(1100), 5, 7)
-
-    class MoveQuoteTestFromLupStaysUtilizedToUnutilized(Scenario):
-        def run(self):
-            print(f"our test!")
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(15000), 5, 4)
-
-    class MoveQuoteTestToLupStaysUtilizedToUtilized(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(5000), 7, 5)
-
-
-    class MoveQuoteTestToLupStaysUntilizedToUtilized(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(5000), 4, 5)
-
-    class MoveQuoteTestLupMovesUnutilizedToUtilized(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(4500), 4, 7)
-
-    class MoveQuoteTestFromLupStaysUtilizedToUtilizedPartialDebt(Scenario):
-        def run(self):
-            pool = self.pool
-            self.lend_quote_token(333, Decimal(10000), 7)
-            self.lend_quote_token(333, Decimal(20000), 6)
-            self.lend_quote_token(333, Decimal(20000), 5)
-            self.lend_quote_token(333, Decimal(50000), 4)
-
-            self.deposit_collateral(153, Decimal(5000))
-            self.pool.borrow(153, Decimal(31000), 0)
-            SimulationClock.advance_time_by_quantum(12)
-
-            pool.move_quote_token(333, Decimal(500), 5, 7)
-        */
-
-
-
-
-
-    /*
-    // @notice: With 1 lender and 1 borrower tests
-    // @notice: addQuoteToken (subsequently reallocation), addCollateral and borrow
-    // @notice: borrower reverts:
-    // @notice:     attempts to borrow more than available quote
-    // @notice:     attempts to borrow more than their collateral supports
-    // @notice:     attempts to borrow but stop price is exceeded
-    function testBorrow() external {
-        uint256 priceHighest = _p4000;
-        uint256 priceHigh    = _p3514;
-        uint256 priceMed     = _p3010;
-        uint256 priceLow     = _p2503;
-        uint256 priceLowest  = _p2000;
-
-        // lender deposits 10000 DAI in 5 buckets each
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHighest);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLow);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLowest);
-
-        // check pool balance
-        assertEq(_pool.totalQuoteToken(),                      50_000 * 1e18);
-        assertEq(_pool.totalDebt(),                            0);
-        assertEq(_pool.hpb(),                                  priceHighest);
-        assertEq(_pool.getPendingPoolInterest(),               0);
-        assertEq(_pool.getPendingBucketInterest(priceHighest), 0);
-
-        // should revert if borrower wants to borrow a greater amount than in pool
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.InsufficientLiquidity.selector,
-                _pool.totalQuoteToken() - _pool.totalDebt()
-            )
-        );
-        _borrower.borrow(_pool, 60_000 * 1e18, 2_000 * 1e18);
-
-        // should revert if insufficient collateral deposited by borrower
-        vm.expectRevert(IPool.InsufficientCollateralForBorrow.selector);
-        _borrower.borrow(_pool, 10_000 * 1e18, 4_000 * 1e18);
-
-        // borrower deposit 10 MKR collateral
+    // from_bucket < to_bucket
+    function testMoveUnutilizedToUnutilizedUp() external {
+
+        // lender deposits 60_000 DAI accross 3 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 30_000 * 1e18, _p2503);
+
+        // lender moves 10_000 DAI up
+        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18,  _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+         
+        (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 0);
+        assertEq(deposit, 20_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 20_000 * 1e27);
+
+        (, , ,deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 0);
+        assertEq(deposit, 20_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 20_000 * 1e27);
+        assertEq(_pool.lup(), 0);
+    }
+
+    function testMoveUnutilizedToUnutilizedUpHpb() external {
+        // lender deposits 60_000 DAI accross 3 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 30_000 * 1e18, _p2503);
+
+        // borrower deposit 10 MKR collateral, borrows 15_000 DAI
         _borrower.addCollateral(_pool, 10 * 1e18);
+        _borrower.borrow(_pool, 15_000 * 1e18, 2_000 * 1e18);
 
-        // should revert if stop price exceeded
-        vm.expectRevert(
-            abi.encodeWithSelector(Buckets.BorrowPriceBelowStopPrice.selector, priceHigh)
-        );
-        _borrower.borrow(_pool, 15_000 * 1e18, 4_000 * 1e18);
+        // lender moves 10_000 DAI up to new HUP
+        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18,  _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p5007);
+         
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p3010);
+        assertEq(debt, 0);
+        assertEq(deposit, 20_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3010), 20_000 * 1e27);
 
-        // borrower deposits additional 90 MKR collateral
-        _borrower.addCollateral(_pool, 90 * 1e18);
-
-        // get a 21_000 DAI loan from 3 buckets, loan price should be 3000 DAI
-        assertEq(_pool.estimatePriceForLoan(21_000 * 1e18), priceMed);
-
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
-        emit Borrow(address(_borrower), priceMed, 21_000 * 1e18);
-        _borrower.borrow(_pool, 21_000 * 1e18, 2_500 * 1e18);
-
-        assertEq(_quote.balanceOf(address(_borrower)), 21_000 * 1e18);
-        assertEq(_quote.balanceOf(address(_pool)),     29_000 * 1e18);
-        assertEq(_pool.hpb(),                          priceHighest);
-        assertEq(_pool.lup(),                          priceMed);
-
-        // check bucket deposit and debt at 3_010.892022197881557845
-        (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(priceMed);
-        assertEq(deposit, 9_000 * 1e18);
-
-        // check borrower balance
-        (uint256 borrowerDebt, uint256 depositedCollateral, ) = _pool.borrowers(address(_borrower));
-        assertEq(borrowerDebt,        21_000 * 1e18);
-        assertEq(depositedCollateral, 100 * 1e18);
-
-        // check pool balances
-        assertEq(_pool.totalQuoteToken(),          29_000 * 1e18);
-        assertEq(_pool.totalDebt(),                21_000 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), 14.337581058085150275 * 1e18);
-        assertEq(
-            _pool.getEncumberedCollateral(_pool.totalDebt()),
-            _pool.getEncumberedCollateral(borrowerDebt)
-        );
-
-        skip(8200);
-
-        // tie out borrower and pool debt
-        (, uint256 borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower));
-        uint256 poolPendingDebt = _pool.totalDebt() + _pool.getPendingPoolInterest();
-        assertEq(borrowerPendingDebt, poolPendingDebt);
-
-        // borrow remaining 9_000 DAI from LUP
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_borrower), 9_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
-        emit Borrow(address(_borrower), priceMed, 9_000 * 1e18);
-        _borrower.borrow(_pool, 9_000 * 1e18, priceLow);
-
-        assertEq(_quote.balanceOf(address(_borrower)), 30_000 * 1e18);
-        assertEq(_quote.balanceOf(address(_pool)),     20_000 * 1e18);
-        assertEq(_pool.hpb(),                          priceHighest);
-        assertEq(_pool.lup(),                          priceMed);
-
-        // check bucket debt at 2_503.519024294695168295
-        (, , , deposit, debt, , , ) = _pool.bucketAt(priceLow);
-        assertEq(debt,    0);
-        assertEq(deposit, 10_000 * 1e18);
-
-        // check bucket debt at 3_010.892022197881557845
-        (, , , deposit, debt, , , ) = _pool.bucketAt(priceMed);
-        assertEq(debt,    10000.013001099216594901 * 1e18);
-        assertEq(deposit, 0);
-
-        // check bucket debt at 3_514.334495390401848927
-        (, , , deposit, debt, , , ) = _pool.bucketAt(priceHigh);
-        assertEq(debt,    10_000 * 1e18);
-        assertEq(deposit, 0);
-
-        // check bucket debt at 4_000.927678580567537368
-        (, , , deposit, debt, , , ) = _pool.bucketAt(priceHighest);
-        assertEq(debt,    10_000 * 1e18);
-        assertEq(deposit, 0);
-
-        // check borrower balances
-        (borrowerDebt, depositedCollateral, ) = _pool.borrowers(address(_borrower));
-        assertEq(borrowerDebt,        30_000.273023083548492932 * 1e18);
-        assertEq(depositedCollateral, 100 * 1e18);
-
-        // check pool balances
-        assertEq(_pool.totalQuoteToken(),          20_000 * 1e18);
-        assertEq(_pool.totalDebt(),                30_000.273023083548492932 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), 10.036215403377052297 * 1e18);
-        assertEq(
-            _pool.getEncumberedCollateral(_pool.totalDebt()),
-            _pool.getEncumberedCollateral(borrowerDebt)
-        );
-
-        (, borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower));
-        poolPendingDebt = _pool.totalDebt() + _pool.getPendingPoolInterest();
-        assertEq(borrowerPendingDebt, poolPendingDebt);
-
-        // deposit at 5_007.644384905151472283 price and reallocate entire debt
-        _lender.addQuoteToken(_pool, address(_lender), 40_000 * 1e18, _p5007);
-        assertEq(_pool.hpb(), _p5007);
-        assertEq(_pool.lup(), _p5007);
-
-        (, borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower));
-        poolPendingDebt = _pool.totalDebt() + _pool.getPendingPoolInterest();
-        assertEq(borrowerPendingDebt, poolPendingDebt);
-
-        // check bucket debt at 2_503.519024294695168295
-        (, , , deposit, debt, , , ) = _pool.bucketAt(priceLow);
-        assertEq(debt,    0);
-        assertEq(deposit, 10_000 * 1e18);
-
-        // check bucket debt at 3_010.892022197881557845
-        (, , , deposit, debt, , , ) = _pool.bucketAt(priceMed);
-        assertEq(debt,    0);
-        assertEq(deposit, 10_000.013001099216594901 * 1e18);
-
-        // check bucket debt at 3_514.334495390401848927
-        (, , , deposit, debt, , , ) = _pool.bucketAt(priceHigh);
-        assertEq(debt,    0);
-        assertEq(deposit, 10_000.130010992165949015 * 1e18);
-
-        // check bucket debt at 4_000.927678580567537368
-        (, , , deposit, debt, , , ) = _pool.bucketAt(priceHighest);
-        assertEq(debt,    0);
-        assertEq(deposit, 10_000.130010992165949015 * 1e18);
-
-        // check bucket debt at 5_007.644384905151472283
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p5007);
-        assertEq(debt,    30_000.273023083548492931 * 1e18);
-        assertEq(deposit, 9_999.726976916451507069 * 1e18);
+        assertEq(debt, 10_000 * 1e18);
+        assertEq(deposit, 0);
+        assertEq(_pool.lpBalance(address(_lender), _p5007), 10_000 * 1e27);
 
-        // check pool balances
-        assertEq(_pool.totalQuoteToken(), 60_000 * 1e18);
-        assertEq(_pool.totalDebt(),       30_000.273023083548492932 * 1e18);
+        assertEq(_pool.lup(), _p3514);
     }
 
-    // @notice: With 1 lender and 2 borrowers tests addQuoteToken, addCollateral and borrow
-    // @notice: on an undercollateralized pool
-    // @notice: borrower2 reverts: attempts to borrow when pool is undercollateralized
-    function testBorrowPoolUndercollateralization() external {
-        uint256 priceHigh = _p2000;
-        uint256 priceMed  = _p1004;
-        uint256 priceLow  = _p502;
+    // unutilized -> utilized
 
-        // lender deposits 200_000 DAI in 3 buckets
-        _lender.addQuoteToken(_pool, address(_lender), 100_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceLow);
+    // lup stays
+    // from_bucket [unutilized] < to_bucket [utilized] - amount < lup.debt
+    function testMoveLupStaysUnutilizedToUtilizedUp() external {
 
-        // borrower1 takes a loan of 100_000 DAI
-        assertEq(_pool.estimatePriceForLoan(75_000 * 1e18),  priceHigh);
-        assertEq(_pool.estimatePriceForLoan(125_000 * 1e18), priceMed);
-        assertEq(_pool.estimatePriceForLoan(175_000 * 1e18), priceLow);
-        _borrower.addCollateral(_pool, 51 * 1e18);
-        _borrower.borrow(_pool, 100_000 * 1e18, 1_000 * 1e18);
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
 
-        // check pool collateralization after borrower1 takes loan
-        uint256 poolCollateralizationAfterB1Actions = _pool.getPoolCollateralization();
-        (uint256 borrower1Debt, , ) = _pool.borrowers(address(_borrower));
-        assertEq(
-            _pool.getEncumberedCollateral(_pool.totalDebt()),
-            _pool.getEncumberedCollateral(borrower1Debt)
-        );
-        assertEq(poolCollateralizationAfterB1Actions, 1.020113025608771127 * 1e18);
-
-        // check utilization after borrow - since pool is barely overcollateralized actual < target
-        uint256 targetUtilizationAfterBorrow = _pool.getPoolTargetUtilization();
-        uint256 actualUtilizationAfterBorrow = _pool.getPoolActualUtilization();
-        assertLt(actualUtilizationAfterBorrow, targetUtilizationAfterBorrow);
-
-        // borrower2 adds collateral to attempt a borrow
-        assertEq(_pool.estimatePriceForLoan(25_000 * 1e18),  priceMed);
-        assertEq(_pool.estimatePriceForLoan(75_000 * 1e18),  priceLow);
-        assertEq(_pool.estimatePriceForLoan(175_000 * 1e18), 0);
-        _borrower2.addCollateral(_pool, 51 * 1e18);
-
-        // check collateralization / utilization after borrower adds collateral
-        uint256 poolCollateralizationAfterB2Actions = _pool.getPoolCollateralization();
-        uint256 targetUtilizationAfterAddCollateral = _pool.getPoolTargetUtilization();
-        uint256 actualUtilizationAfterAddCollateral = _pool.getPoolActualUtilization();
-
-        assertEq(_pool.getPoolCollateralization(),    2.040226051217542255 * 1e18);
-        assertGt(poolCollateralizationAfterB2Actions, poolCollateralizationAfterB1Actions);
-        assertEq(actualUtilizationAfterAddCollateral, actualUtilizationAfterBorrow);
-        assertLt(targetUtilizationAfterAddCollateral, targetUtilizationAfterBorrow);
-
-        // should revert when taking a loan of 5_000 DAI that will drive pool undercollateralized
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.PoolUndercollateralized.selector,
-                0.976275672074051610 * 1e18
-            )
-        );
-        _borrower2.borrow(_pool, 5_000 * 1e18, 1_000 * 1e18);
-    }
-
-    // @notice: With 1 lender and 1 borrower tests addQuoteToken, addCollateral and borrow
-    // @notice: verifying collateral
-    function testBorrowTestCollateralValidation() external {
-        uint256 priceLow = _p13_57;
-        // lender deposits 10_000 DAI at 13.578453165083418466 * 1e18
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLow);
+        // borrower deposit 100 MKR collateral, borrows 35_000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
-        // should not revert when borrower takes a loan on 10_000 DAI
-        _borrower.borrow(_pool, 1_000 * 1e18, 13.537 * 1e18);
-        skip(3600);
+        _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18);
 
-        // tie out debt between bucket, borrower, and pool
-        (, , , , uint256 debt, , , )              = _pool.bucketAt(priceLow);
-        uint256 bucketPendingDebt                 = debt + _pool.getPendingBucketInterest(priceLow);
-        (, uint256 borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower));
-        uint256 poolPendingDebt                   = _pool.totalDebt() + _pool.getPendingPoolInterest();
-        assertEq(bucketPendingDebt,   borrowerPendingDebt);
-        assertEq(bucketPendingDebt,   poolPendingDebt);
-        assertEq(borrowerPendingDebt, poolPendingDebt);
+        // lender moves 100 DAI up
+        _lender.removeQuoteToken(_pool, address(_lender), 100 * 1e18,  _p502);
+        _lender.addQuoteToken(_pool, address(_lender), 100 * 1e18, _p3514);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
+        assertEq(debt, 0);
+        assertEq(deposit, 49_900 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p502), 49_900 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 10_100 * 1e18);
+        assertEq(deposit, 0);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 10_100 * 1e27);
+
+        assertEq(_pool.lup(), _p2503);
     }
 
-    // @notice: With 1 lender and 2 borrower tests HUP moves down
-    // @notice: when pool is borrowed against and moves up when
-    // @notice: quote token is added
-    function testGetHup() external {
-        uint256 priceHigh = _p2000;
-        uint256 priceMed  = _p1004;
-        uint256 priceLow  = _p502;
+    // from_bucket [unutilized] < to_bucket [utilized] (LUP) - just move deposit
+    function testMoveToLupStaysUnutilizedToUtilizedUp() external {
 
-        // lender deposits 150_000 DAI in 3 buckets
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceLow);
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
 
-        // borrow max possible from hdp
-        _borrower.addCollateral(_pool, 51 * 1e18);
-        _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18);
+        // borrower deposits 100 MKR collateral, borrows 35_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18);
 
-        // check hup is below lup and lup equals hdp
-        assertEq(_pool.lup(),    priceHigh);
-        assertEq(_pool.hpb(),    _pool.lup());
-        assertEq(_pool.getHup(), priceMed);
+        // lender moves 5_000 DAI up
+        _lender.removeQuoteToken(_pool, address(_lender), 5_000 * 1e18,  _p502);
+        _lender.addQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p2503);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
+        assertEq(debt, 0);
+        assertEq(deposit, 45_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p502), 45_000 * 1e27);
 
-        // borrow max possible from previous hup
-        _borrower2.addCollateral(_pool, 51 * 1e18);
-        _borrower2.borrow(_pool, 50_000 * 1e18, 1000 * 1e18);
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 5_000 * 1e18);
+        assertEq(deposit, 20_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 25_000 * 1e27);
 
-        // check hup moves down
-        assertEq(_pool.getHup(), priceLow);
-        assert(_pool.getHup() < _pool.lup());
-
-        // add additional quote token to the maxed out priceMed bucket
-        _lender.addQuoteToken(_pool, address(_lender), 1000 * 1e18, priceMed);
-
-        // check hup moves up as additional quote tokens become available
-        assertEq(_pool.getHup(), priceMed);
-        assertEq(_pool.getHup(), _pool.lup());
+        assertEq(_pool.lup(), _p2503);
     }
 
-    // TODO: finish implemeting
-    function testGetMinimumPoolPrice() external {}
-    */
+    // lup moves up
+    // from_bucket [unutilized] < to_bucket [utilized]
+    function testMoveLupUpUnutilizedToUtilizedUp() external {
 
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 31_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 31_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 5_000 DAI up
+        _lender.removeQuoteToken(_pool, address(_lender), 5_000 * 1e18,  _p502);
+        _lender.addQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p3514);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
+        assertEq(debt, 0);
+        assertEq(deposit, 45_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p502), 45_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 0);
+        assertEq(deposit, 20_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 20_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 15_000 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 15_000 * 1e27);
+
+        assertEq(_pool.lup(), _p3010);
+    }
+
+    // utilized -> unutilized
+
+    // lup stays
+    // from_bucket [utilized] > to_bucket [unutilized] - amount < lup.deposit
+    function testMoveLupStaysUtilizedToUnutilizedDown() external {
+
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 35_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 100 DAI down
+        _lender.removeQuoteToken(_pool, address(_lender), 100 * 1e18,  _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 100 * 1e18, _p502);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
+        assertEq(debt, 0);
+        assertEq(deposit, 50_100 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p502), 50_100 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 5_100 * 1e18);
+        assertEq(deposit, 14_900 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 20_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 9_900 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 9_900 * 1e27);
+
+        assertEq(_pool.lup(), _p2503);
+    }
+
+    // from_bucket [utilized] (LUP) > to_bucket [unutilized] - from_bucket.deposit >= amount -> HUP moves
+    function testMoveFromLupStaysUtilizedToUnutilizedDown() external {
+
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 35_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 15_000 DAI down
+        _lender.removeQuoteToken(_pool, address(_lender), 15_000 * 1e18,  _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 15_000 * 1e18, _p502);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
+        assertEq(debt, 0);
+        assertEq(deposit, 65_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p502), 65_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 5_000 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 5_000 * 1e27);
+
+        assertEq(_pool.lup(), _p2503);
+    }
+
+    // lup moves down
+    // from_bucket [utilized] (LUP) > to_bucket [unutilized] - from_bucket.deposit < amount
+    function testMoveFromLupMovesUtilizedToUnutilizedAllDepositPartialDebt() external {
+
+        // lender deposits 52_500 DAI accross 5 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18, _p2000);
+        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 31_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 31_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 19_000 DAI down
+        _lender.removeQuoteToken(_pool, address(_lender), 19_500 * 1e18,  _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 19_500 * 1e18, _p502);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
+        assertEq(debt, 0);
+        assertEq(deposit, 21_500 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p502), 21_500 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p2000);
+        assertEq(debt, 500 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2000), 500 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 500 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 500 * 1e27);
+
+        assertEq(_pool.lup(), _p502);
+    }
+
+    // from_bucket [utilized] > to_bucket [unutilized]
+    function testMoveLupMovesUtilizedToUntilized() external {
+
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 46_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 8_000 DAI down
+        _lender.removeQuoteToken(_pool, address(_lender), 8_000 * 1e18,  _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 8_000 * 1e18, _p502);
+        
+        (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
+        assertEq(debt, 4_000 * 1e18);
+        assertEq(deposit, 54_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p502), 58_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 20_000 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 20_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 2_000 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 2_000 * 1e27);
+
+        assertEq(_pool.lup(), _p502);
+    }
+
+
+    // lup moves up
+    // from_bucket [utilized] (LUP) < to_bucket [unutilized] (HPB) - from_bucket.debt < amount
+    function testMoveFromLupMovesUtilizedToUntilizedPartialDepositAllDebt() external {
+
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 31_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 31_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 5_000 DAI up to new HPB
+        _lender.removeQuoteToken(_pool, address(_lender), 5_000 * 1e18,  _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p9020);
+        
+        (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 0 * 1e18);
+        assertEq(deposit, 15_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 15_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p9020);
+        assertEq(debt, 5_000 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p9020), 5_000 * 1e27);
+
+        assertEq(_pool.lup(), _p3010);
+    }
+
+
+    // utilized -> utilized
+    // lup stays
+
+    //from_bucket [utilized] > to_bucket [utilized] (LUP) - just move debt
+    function testMoveToLupStaysUtilizedToUtilized() external {
+
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 46_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 500 DAI down
+        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18,  _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18, _p2503);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 16_500 * 1e18);
+        assertEq(deposit, 4_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 20_500 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 9_500 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 9_500 * 1e27);
+
+        assertEq(_pool.lup(), _p2503);
+    }
+
+    // from_bucket [utilized] (LUP) < to_bucket [utilized] - from_bucket.debt > amount
+    function testMoveFromLupStaysUtilizedToUtilizedPartialDebt() external {
+        
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 46_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 500 DAI up
+        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18,  _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18, _p3514);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 15_500 * 1e18);
+        assertEq(deposit, 4_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 19_500 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 10_500 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 10_500 * 1e27);
+
+        assertEq(_pool.lup(), _p2503);
+    }
+
+    // from_bucket > to_bucket - debt moves 
+    function testMoveUtilizedToUtilizedDown() external {
+
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 46_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 500 DAI down
+        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18,  _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18, _p3010);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p3010);
+        assertEq(debt, 20_500 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3010), 20_500 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 9_500 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 9_500 * 1e27);
+
+        assertEq(_pool.lup(), _p2503);
+    }
+
+    // from_bucket > to_bucket - debt moves
+    function testMoveUtilizedToUtilizedUp() external {
+
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR collateral, borrows 46_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 500 DAI up
+        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18,  _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18, _p3514);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p3010);
+        assertEq(debt, 19_500 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3010), 19_500 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 10_500 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 10_500 * 1e27);
+
+        assertEq(_pool.lup(), _p2503);
+    }   
+
+
+
+    // lup moves up
+    // from_bucket [utilized] (LUP) < to_bucket [utilized] - from_bucket.debt <= amount, HUP stays
+    function testMoveFromLupMovesUtilizedToUtilizedWholeBucket() external {
+
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposit 100 MKR, borrows 46_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 20_000 DAI up
+        _lender.removeQuoteToken(_pool, address(_lender), 20_000 * 1e18,  _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3514);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 0 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 0 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 30_000 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 30_000 * 1e27);
+
+        assertEq(_pool.lup(), _p3010);
+    }  
+
+    function testMoveFromLupMovesUtilizedToUtilizedAllDebtPartialDeposit() external {
+
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR, borrows 46_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 18_000 DAI up
+        _lender.removeQuoteToken(_pool, address(_lender), 18_000 * 1e18,  _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 18_000 * 1e18, _p3514);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 0 * 1e18);
+        assertEq(deposit, 2_000 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 2_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 28_000 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 28_000 * 1e27);
+
+        assertEq(_pool.lup(), _p3010);
+    }
+
+    
+    function testMoveFromLupMovesUtilizedToUtilizedAllDebtPartialDepositTwoLenders() external {
+        // lender & lender2 each deposit 50_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p3514);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 25_000 * 1e18, _p502);
+
+        _lender2.addQuoteToken(_pool, address(_lender2), 5_000 * 1e18, _p3514);
+        _lender2.addQuoteToken(_pool, address(_lender2), 10_000 * 1e18, _p3010);
+        _lender2.addQuoteToken(_pool, address(_lender2), 10_000 * 1e18, _p2503);
+        _lender2.addQuoteToken(_pool, address(_lender2), 25_000 * 1e18, _p502);
+
+        // borrower deposits 100 MKR, borrows 31_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 31_000 * 1e18, 2_000 * 1e18);
+        assertEq(_pool.lup(), _p2503);
+
+        // lender moves 1_100 DAI up
+        _lender.removeQuoteToken(_pool, address(_lender), 1_100 * 1e18,  _p2503);
+        _lender.addQuoteToken(_pool, address(_lender), 1_100 * 1e18, _p3514);
+        
+        (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt, 0 * 1e18);
+        assertEq(deposit, 18_900 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 8_900 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender2), _p2503), 10_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
+        assertEq(debt, 11_100 * 1e18);
+        assertEq(deposit, 0 * 1e18);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 6_100 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender2), _p3514), 5_000 * 1e27);
+
+        assertEq(_pool.lup(), _p3010);
+    }
 }
