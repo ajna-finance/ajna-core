@@ -298,11 +298,6 @@ interface IPool {
      */
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external;
 
-    /**
-     *  @notice Called by lenders to update the pool interest rate when actual > target utilization.
-     */
-    function updateInterestRate() external;
-
     /*******************************/
     /*** Pool External Functions ***/
     /*******************************/
@@ -319,6 +314,11 @@ interface IPool {
      *  @param  borrower_ The address of the borrower being liquidated.
      */
     function liquidate(address borrower_) external;
+
+    /**
+     *  @notice Called to update the pool interest rate when actual > target utilization.
+     */
+    function updateInterestRate() external;
 
     /*******************************/
     /*** Borrower View Functions ***/
