@@ -180,7 +180,45 @@ interface IPool {
     /*** State Variables ***/
     /***********************/
 
-    // TODO: Add natspec for all public variables and override.
+    /**
+     *  @notice Returns the `collateralScale` state variable.
+     */
+    function collateralScale() external view returns (uint256 collateralScale_);
+
+    /**
+     *  @notice Returns the `quoteTokenScale` state variable.
+     */
+    function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
+
+    /**
+     *  @notice Returns the `hpb` state variable.
+     */
+    function hpb() external view returns (uint256 hpb_);
+
+    /**
+     *  @notice Returns the `lup` state variable.
+     */
+    function lup() external view returns (uint256 lup_);
+
+    /**
+     *  @notice Returns the `previousRateUpdate` state variable.
+     */
+    function previousRateUpdate() external view returns (uint256 previousRateUpdate_);
+
+    /**
+     *  @notice Returns the `totalCollateral` state variable.
+     */
+    function totalCollateral() external view returns (uint256 totalCollateral_);
+
+    /**
+     *  @notice Returns the `totalQuoteToken` state variable.
+     */
+    function totalQuoteToken() external view returns (uint256 totalQuoteToken_);
+
+    /**
+     *  @notice Returns the `totalDebt` state variable.
+     */
+    function totalDebt() external view returns (uint256 totalDebt_);
 
     /**************************/
     /*** Borrower Functions ***/
@@ -264,6 +302,15 @@ interface IPool {
     /**********************/
 
     /**
+     *  @notice Mapping of borrower addresses to {BorrowerInfo} structs.
+     *  @param  borrower_            Address of the borrower.
+     *  @return debt_                Amount of debt that a given borrower has, in quote token.
+     *  @return collateralDeposited_ Amount of collateral that a borrower has deposited, in collateral token.
+     *  @return inflatorSnapshot_    "Snapshot" of inflator value used to track interest on loans.
+     */
+    function borrowers(address borrower_) external view returns (uint256 debt_, uint256 collateralDeposited_, uint256 inflatorSnapshot_);
+
+    /**
      *  @notice Returns a given lender's LP tokens in a given price bucket.
      *  @param  owner_    The EOA to check token balance for.
      *  @param  price_    The price bucket for which the value should be calculated, WAD units.
@@ -279,5 +326,13 @@ interface IPool {
      *  @return quoteTokens_      The equivalent value of quote tokens for the given LP Tokens, WAD units.
      */
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);
+
+    /**
+     *  @notice Nested mapping of lender's LP token balance at different price buckets.
+     *  @param  lp_          Address of the LP.
+     *  @param  priceBucket_ Price of the bucket.
+     *  @return balance_     LP token balance of the lender at the queried price bucket.
+     */
+    function lpBalance(address lp_, uint256 priceBucket_) external view returns (uint256 balance_);
 
 }
