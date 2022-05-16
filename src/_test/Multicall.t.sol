@@ -111,7 +111,7 @@ contract MulticallTest is DSTestPlus {
         emit MemorializePosition(testAddress, tokenId);
 
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(testAddress, additionalAmount, newPriceToAddQuoteTokensTo);
+        emit IncreaseLiquidity(testAddress, newPriceToAddQuoteTokensTo, additionalAmount);
 
         vm.prank(testAddress);
         _positionManager.multicall(callsToExecute);
@@ -140,11 +140,7 @@ contract MulticallTest is DSTestPlus {
             .IncreaseLiquidityParams(tokenId, recipient, address(_pool), mintAmount, mintPrice);
 
         // construct BurnParams
-        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(
-            tokenId,
-            recipient,
-            mintPrice
-        );
+        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, recipient, mintPrice);
 
         bytes[] memory callsToExecute = new bytes[](2);
 
@@ -161,7 +157,7 @@ contract MulticallTest is DSTestPlus {
         _positionManager.multicall(callsToExecute);
 
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(recipient, mintAmount, mintPrice);
+        emit IncreaseLiquidity(recipient, mintPrice, mintAmount);
 
         // attempt to increase liquidity and then burn the NFT without decreasing liquidity
         vm.prank(recipient);

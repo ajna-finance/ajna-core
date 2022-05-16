@@ -16,30 +16,30 @@ interface IPositionManager {
      *  @param  lender_ Lender address.
      *  @param  price_  The bucket price corresponding to NFT that was burned.
      */
-    event Burn(address lender_, uint256 price_);
+    event Burn(address indexed lender_, uint256 indexed price_);
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
      *  @param  lender_     Lender address.
+     *  @param  price_      The price at quote tokens were added.
      *  @param  collateral_ The amount of collateral removed from the pool.
      *  @param  quote_      The amount of quote tokens removed from the pool.
-     *  @param  price_      The price at quote tokens were added.
      */
-    event DecreaseLiquidity(address lender_, uint256 collateral_, uint256 quote_, uint256 price_);
+    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 collateral_, uint256 quote_);
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
      *  @param  lender_ Lender address.
-     *  @param  amount_ The amount of quote tokens added to the pool.
      *  @param  price_  The price at quote tokens were added.
+     *  @param  amount_ The amount of quote tokens added to the pool.
      */
-    event IncreaseLiquidity(address lender_, uint256 amount_, uint256 price_);
+    event IncreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 amount_);
 
     /**
      *  @notice Emitted when existing positions were memorialized for a given NFT.
      *  @param  tokenId_ The tokenId of the NFT.
      */
-    event MemorializePosition(address lender_, uint256 tokenId_);
+    event MemorializePosition(address indexed lender_, uint256 tokenId_);
 
     /**
      *  @notice Emitted when representative NFT minted.
@@ -47,7 +47,7 @@ interface IPositionManager {
      *  @param  pool_    Pool address.
      *  @param  tokenId_ The tokenId of the newly minted NFT.
      */
-    event Mint(address lender_, address pool_, uint256 tokenId_);
+    event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
 
     /*********************/
     /*** Custom Errors ***/
