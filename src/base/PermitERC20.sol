@@ -14,14 +14,7 @@ interface IERC20PermitAllowed {
      * @dev This is the permit interface used by DAI and CHAI
     */
     function permit(
-        address owner_,
-        address spender_,
-        uint256 nonce_,
-        uint256 expiry_,
-        bool allowed_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
+        address owner_, address spender_, uint256 nonce_, uint256 expiry_, bool allowed_, uint8 v_, bytes32 r_, bytes32 s_
     ) external;
 
 }
@@ -40,13 +33,7 @@ abstract contract PermitERC20 {
      * @dev Owner is passed through to enable implementing clone contracts to be called by other contracts.
     */
     function permitToken(
-        address owner_,
-        address token_,
-        uint256 value_,
-        uint256 deadline_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
+        address owner_, address token_, uint256 value_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
     ) public payable {
         IERC20Permit(token_).permit(owner_, address(this), value_, deadline_, v_, r_, s_);
     }
@@ -58,13 +45,7 @@ abstract contract PermitERC20 {
      * @dev Owner is passed through to enable implementing clone contracts to be called by other contracts.
     */
     function permitTokenIfNecessary(
-        address owner_,
-        address token_,
-        uint256 value_,
-        uint256 deadline_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
+        address owner_, address token_, uint256 value_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
     ) external payable {
         if (IERC20(token_).allowance(owner_, address(this)) < value_) {
             permitToken(owner_, token_, value_, deadline_, v_, r_, s_);
@@ -76,13 +57,7 @@ abstract contract PermitERC20 {
      * @dev Used by tokens like DAI which have a non-standard Permit() interface
     */
     function permitTokensWithAllowedParam(
-        address owner_,
-        address token_,
-        uint256 nonce_,
-        uint256 expiry_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
+        address owner_, address token_, uint256 nonce_, uint256 expiry_, uint8 v_, bytes32 r_, bytes32 s_
     ) public payable {
         IERC20PermitAllowed(token_).permit(owner_, address(this), nonce_, expiry_, true, v_, r_, s_);
     }
@@ -95,13 +70,7 @@ abstract contract PermitERC20 {
      * @dev Owner is passed through to enable implementing clone contracts to be called by other contracts.
     */
     function permitTokensWithAllowedParamIfNecessary(
-        address owner_,
-        address token_,
-        uint256 nonce_,
-        uint256 expiry_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
+        address owner_, address token_, uint256 nonce_, uint256 expiry_, uint8 v_, bytes32 r_, bytes32 s_
     ) external payable {
         if (IERC20(token_).allowance(owner_, address(this)) < type(uint256).max) {
             permitTokensWithAllowedParam(owner_, token_, nonce_, expiry_, v_, r_, s_);

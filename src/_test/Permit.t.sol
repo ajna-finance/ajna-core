@@ -123,13 +123,13 @@ contract PermitTest is DSTestPlus {
                 owner,
                 address(_pool),
                 (10000 * 1e18) / 4,
-                1_004.989662429170775094 * 10**18
+                _p1004
             );
 
         uint256 balanceBeforeAdd = _quote.balanceOf(owner);
 
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(owner, (10000 * 1e18) / 4, 1_004.989662429170775094 * 10**18);
+        emit IncreaseLiquidity(owner, _p1004, (10000 * 1e18) / 4);
 
         vm.prank(spender);
         _positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
@@ -144,7 +144,7 @@ contract PermitTest is DSTestPlus {
                 owner,
                 address(_pool),
                 (10000 * 1e18) / 4,
-                1_004.989662429170775094 * 10**18
+                _p1004
             );
 
         vm.prank(unapprovedSpender);

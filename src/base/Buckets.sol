@@ -10,22 +10,16 @@ abstract contract Buckets {
     /// @dev price (WAD) -> bucket
     mapping(uint256 => Buckets.Bucket) internal _buckets;
 
-    error NoDepositToReallocateTo();
-    error InsufficientLpBalance(uint256 balance);
-    error BorrowPriceBelowStopPrice(uint256 borrowPrice);
-    error ClaimExceedsCollateral(uint256 collateralAmount);
-    error InsufficientBucketLiquidity(uint256 amountAvailable);
-
-    /**
+   /**
      * @notice struct holding bucket info
      * @param price current bucket price, WAD
-     * @param up               upper utilizable bucket price, WAD
-     * @param down             next utilizable bucket price, WAD
-     * @param onDeposit        quote token on deposit in bucket, WAD
-     * @param debt             accumulated bucket debt, WAD
+     * @param up upper utilizable bucket price, WAD
+     * @param down next utilizable bucket price, WAD
+     * @param onDeposit quote token on deposit in bucket, WAD
+     * @param debt accumulated bucket debt, WAD
      * @param inflatorSnapshot bucket inflator snapshot, RAY
-     * @param lpOutstanding    outstanding Liquidity Provider LP tokens in a bucket, RAY
-     * @param collateral       current collateral tokens deposited in the bucket, RAY
+     * @param lpOutstanding outstanding Liquidity Provider LP tokens in a bucket, RAY
+     * @param collateral urrent collateral tokens deposited in the bucket, RAY
     */
     struct Bucket {
         uint256 price;
@@ -37,6 +31,33 @@ abstract contract Buckets {
         uint256 lpOutstanding;
         uint256 collateral;
     }
+
+    /** @notice raised when there is no bucket to reallocate debt to */
+    error NoDepositToReallocateTo();
+
+    /**
+     * @notice amount of LP tokens needed to be redeemed for claimed collateral is greater than claimer's balance
+     * @param balance claimer's LP tokens balance
+    */
+    error InsufficientLpBalance(uint256 balance);
+
+    /**
+     * @notice loan cannot be executed at a price greater than desired limit price
+     * @param borrowPrice the price below limit price
+    */
+    error BorrowPriceBelowLimitPrice(uint256 borrowPrice);
+
+    /**
+     * @notice the amount of collateral to be claimed exceeds available collateral in bucket
+     * @param collateralAmount available collateral in bucket
+    */
+    error ClaimExceedsCollateral(uint256 collateralAmount);
+
+    /**
+     * @notice the amount of quote tokens to receive when purchse bid is greater than amount in bucket
+     * @param amountAvailable amount of quote tokens in bucket
+    */
+    error InsufficientBucketLiquidity(uint256 amountAvailable);
 
     /**
      * @notice Called by a lender to add quote tokens to a bucket
@@ -72,17 +93,18 @@ abstract contract Buckets {
     /**
      * @notice Called by a lender to remove quote tokens from a bucket
      * @param price_ The price bucket from which quote tokens should be removed
-     * @param maxAmount_ The maximum amount of quote tokens to be removed
-     * @param inflator_ The current pool inflator rate
+     * @param maxAmount_ The maximum amount of quote tokens to be removed, WAD
+     * @param lpBalance_ The LP balance for current lender, RAY
+     * @param inflator_ The current pool inflator rate, RAY
      * @return amount_ The actual amount being removed
      * @return lup_ The new pool LUP
      * @return lpTokens_ The amount of lpTokens removed equivalent to the quote tokens removed
     */
     function removeQuoteTokenFromBucket(
-        uint256 price_,     // WAD
-        uint256 maxAmount_, // WAD
-        uint256 lpBalance_, // RAY
-        uint256 inflator_   // RAY
+        uint256 price_,
+        uint256 maxAmount_,
+        uint256 lpBalance_,
+        uint256 inflator_
     ) public returns (uint256 amount_, uint256 lup_, uint256 lpTokens_) {
         Bucket storage bucket = _buckets[price_];
 
@@ -108,14 +130,14 @@ abstract contract Buckets {
     /**
      * @notice Called by a lender to claim accumulated collateral
      * @param price_ The price bucket from which collateral should be claimed
-     * @param amount_ The amount of collateral tokens to be claimed
-     * @param lpBalance_ The claimers current LP balance
+     * @param amount_ The amount of collateral tokens to be claimed, WAD
+     * @param lpBalance_ The claimers current LP balance, RAY
      * @return lpRedemption_ The amount of LP tokens that will be redeemed
     */
     function claimCollateralFromBucket(
-        uint256 price_,    // WAD
-        uint256 amount_,   // WAD
-        uint256 lpBalance_ // RAY
+        uint256 price_,
+        uint256 amount_,
+        uint256 lpBalance_
     ) public returns (uint256 lpRedemption_) {
         Bucket storage bucket = _buckets[price_];
 
@@ -135,23 +157,23 @@ abstract contract Buckets {
 
     /**
      * @notice Called by a borrower to borrow from a given bucket
-     * @param amount_ The amount of quote tokens to borrow from the bucket
-     * @param limit_ The lowest price desired to borrow at
-     * @param lup_ The current pool LUP
-     * @param inflator_ The current pool inflator rate
+     * @param amount_ The amount of quote tokens to borrow from the bucket, WAD
+     * @param limit_ The lowest price desired to borrow at, WAD
+     * @param lup_ The current pool LUP, WAD
+     * @param inflator_ The current pool inflator rate, RAY
      * @return lup WAD The price at which the borrow executed
     */
     function borrowFromBucket(
-        uint256 amount_,  // WAD
-        uint256 limit_,   // WAD
-        uint256 lup_,     // WAD
-        uint256 inflator_ // RAY
+        uint256 amount_,
+        uint256 limit_,
+        uint256 lup_,
+        uint256 inflator_
     ) public returns (uint256) {
         Bucket storage curLup = _buckets[lup_];
 
         while (true) {
             if (curLup.price < limit_) {
-                revert BorrowPriceBelowStopPrice({borrowPrice: curLup.price});
+                revert BorrowPriceBelowLimitPrice({borrowPrice: curLup.price});
             }
 
             // accumulate bucket interest
@@ -183,15 +205,15 @@ abstract contract Buckets {
 
     /**
      * @notice Called by a borrower to repay quote tokens as part of reducing their position
-     * @param amount_ The amount of quote tokens to repay to the bucket
-     * @param lup_ The current pool LUP
-     * @param inflator_ The current pool inflator rate
+     * @param amount_ The amount of quote tokens to repay to the bucket, WAD
+     * @param lup_ The current pool LUP, WAD
+     * @param inflator_ The current pool inflator rate, RAY
      * @return The new pool LUP
     */
     function repayBucket(
-        uint256 amount_,   // WAD
-        uint256 lup_,      // WAD
-        uint256 inflator_  // RAY
+        uint256 amount_,
+        uint256 lup_,
+        uint256 inflator_
     ) public returns (uint256) {
         Bucket storage curLup = _buckets[lup_];
 
@@ -227,10 +249,10 @@ abstract contract Buckets {
 
     /**
      * @notice Puchase a given amount of quote tokens for given collateral tokens
-     * @param price_ The price bucket at which the exchange will occur
-     * @param amount_ The amount of quote tokens to receive
-     * @param collateral_ The amount of collateral to exchange
-     * @param inflator_ The current pool inflator rate
+     * @param price_ The price bucket at which the exchange will occur, WAD
+     * @param amount_ The amount of quote tokens to receive, WAD
+     * @param collateral_ The amount of collateral to exchange, WAD
+     * @param inflator_ The current pool inflator rate, RAY
      * @return lup_ The new pool LUP
     */
     function purchaseBidFromBucket(
@@ -262,10 +284,10 @@ abstract contract Buckets {
 
     /**
      * @notice Liquidate a given position's collateral
-     * @param debt_ The amount of debt to cover
-     * @param collateral_ The amount of collateral deposited
-     * @param hpb_ The pool's highest price bucket
-     * @param inflator_ The current pool inflator rate
+     * @param debt_ The amount of debt to cover, WAD
+     * @param collateral_ The amount of collateral deposited, WAD
+     * @param hpb_ The pool's highest price bucket, WAD
+     * @param inflator_ The current pool inflator rate, RAY
      * @return requiredCollateral_ The amount of collateral to be liquidated
     */
     function liquidateAtBucket(
@@ -314,14 +336,14 @@ abstract contract Buckets {
      * @dev Occurs when quote tokens are being removed
      * @dev Should continue until all of the desired quote tokens have been removed
      * @param bucket_ The given bucket whose assets are being reallocated
-     * @param amount_ The amount of quote tokens requiring reallocation
-     * @param inflator_ The current pool inflator rate
+     * @param amount_ The amount of quote tokens requiring reallocation, WAD
+     * @param inflator_ The current pool inflator rate, RAY
      * @return lup_ The price to which assets were reallocated
     */
     function reallocateDown(
         Bucket storage bucket_,
-        uint256 amount_,  // WAD
-        uint256 inflator_ // RAY
+        uint256 amount_,
+        uint256 inflator_
     ) private returns (uint256 lup_) {
         lup_ = bucket_.price;
         // debt reallocation
@@ -374,16 +396,16 @@ abstract contract Buckets {
      * @dev Should continue until all desired quote tokens are added
      * @dev Occcurs when quote tokens are being added
      * @param bucket_ The given bucket whose assets are being reallocated
-     * @param amount_ The amount of quote tokens requiring reallocation
-     * @param lup_ The current pool lup
-     * @param inflator_ The current pool inflator rate
+     * @param amount_ The amount of quote tokens requiring reallocation, WAD
+     * @param lup_ The current pool lup, WAD
+     * @param inflator_ The current pool inflator rate, RAY
      * @return The price to which assets were reallocated
     */
     function reallocateUp(
         Bucket storage bucket_,
-        uint256 amount_,  // WAD
-        uint256 lup_,     // WAD
-        uint256 inflator_ // RAY
+        uint256 amount_,
+        uint256 lup_,
+        uint256 inflator_
     ) private returns (uint256) {
         Bucket storage curLup = _buckets[lup_];
 
@@ -442,8 +464,8 @@ abstract contract Buckets {
 
     /**
      * @notice Estimate the price at which a loan can be taken
-     * @param amount_ The amount of quote tokens desired to borrow
-     * @param hpb_ The current highest price bucket of the pool
+     * @param amount_ The amount of quote tokens desired to borrow, WAD
+     * @param hpb_ The current highest price bucket of the pool, WAD
     */
     function estimatePrice(
         uint256 amount_,
@@ -469,21 +491,23 @@ abstract contract Buckets {
     }
 
     /**
-     * @notice Return the information of the bucket at a given price
-     * @param price_ The price of the bucket to retrieve information from
+     *  @notice Get a bucket struct for a given price.
+     *  @param  price_             The price of the bucket to retrieve.
+     *  @return price              The price of the bucket.
+     *  @return up                 The price of the next higher priced utlized bucket.
+     *  @return down               The price of the next lower price utilized bucket.
+     *  @return onDeposit          The amount of quote token available as liquidity in the bucket.
+     *  @return debt               The amount of quote token debt in the bucket.
+     *  @return inflatorSnapshot   The inflator snapshot value in the bucket.
+     *  @return lpOutstanding      The amount of outstanding LP tokens in the bucket.
+     *  @return collateral         The amount of collateral posted in the bucket.
     */
     function bucketAt(uint256 price_)
         public
         view
         returns (
-            uint256 price,
-            uint256 up,
-            uint256 down,
-            uint256 onDeposit,
-            uint256 debt,
-            uint256 inflatorSnapshot,
-            uint256 lpOutstanding,
-            uint256 collateral
+            uint256 price, uint256 up, uint256 down, uint256 onDeposit,
+            uint256 debt, uint256 inflatorSnapshot, uint256 lpOutstanding, uint256 collateral
         )
     {
         Bucket memory bucket = _buckets[price_];
@@ -515,8 +539,8 @@ abstract contract Buckets {
 
     /**
      * @notice Set state for a new bucket and update surrounding price pointers
-     * @param hpb_ The current highest price bucket of the pool
-     * @param price_ The price of the bucket to retrieve information from
+     * @param hpb_ The current highest price bucket of the pool, WAD
+     * @param price_ The price of the bucket to retrieve information from, WAD
      * @return The new HPB given the newly initialized bucket
     */
     function initializeBucket(
@@ -555,10 +579,10 @@ abstract contract Buckets {
 
     /**
      * @notice Removes state for an unused bucket and update surrounding price pointers
-     * @param price_ The price bucket to deactivate
+     * @param price_ The price bucket to deactivate, WAD
     */
     function deactivateBucket(
-        uint256 price_ // WAD
+        uint256 price_
     ) public {
         Bucket storage bucket = _buckets[price_];
 

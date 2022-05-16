@@ -31,7 +31,10 @@ library BucketMath {
     // step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
     int256 public constant FLOAT_STEP_INT = 1005000000000000000;
 
+    /** @notice raised when price is not in (min, max) valid prices interval */
     error PriceOutsideBoundry();
+
+    /** @notice raised when index price is not in (min, max) valid indexes interval */
     error IndexOutsideBoundry();
 
     function abs(int256 x) private pure returns (uint256) {

@@ -45,48 +45,26 @@ contract DSTestPlus is Test {
     uint256 internal _p1        = 1 * 1e18;
 
     // PositionManager events
-    event Mint(address lender, address pool, uint256 tokenId);
-    event MemorializePosition(address lender, uint256 tokenId);
-    event Burn(address lender, uint256 price);
-    event IncreaseLiquidity(address lender, uint256 amount, uint256 price);
-    event DecreaseLiquidity(
-        address lender,
-        uint256 collateral,
-        uint256 quote,
-        uint256 price
-    );
+    event Burn(address indexed lender_, uint256 indexed price_);
+    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 collateral_, uint256 quote_);
+    event IncreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 amount_);
+    event MemorializePosition(address indexed lender_, uint256 tokenId_);
+    event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
 
+    // Pool events
+    event AddCollateral(address indexed borrower_, uint256 amount_);
+    event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
+    event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
+    event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
+    event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
+    event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
+    event RemoveCollateral(address indexed borrower_, uint256 amount_);
+    event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
+    event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
+    event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
+
+    // ERC20 events
     event Transfer(address indexed src, address indexed dst, uint256 wad);
-    event AddQuoteToken(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lup
-    );
-    event RemoveQuoteToken(
-        address indexed lender,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lup
-    );
-    event AddCollateral(address indexed borrower, uint256 amount);
-    event RemoveCollateral(address indexed borrower, uint256 amount);
-    event ClaimCollateral(
-        address indexed claimer,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 lps
-    );
-    event Borrow(address indexed borrower, uint256 lup, uint256 amount);
-    event Repay(address indexed borrower, uint256 lup, uint256 amount);
-    event UpdateInterestRate(uint256 oldRate, uint256 newRate);
-    event Purchase(
-        address indexed bidder,
-        uint256 indexed price,
-        uint256 amount,
-        uint256 collateral
-    );
-    event Liquidate(address indexed borrower, uint256 debt, uint256 collateral);
 
     function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
         assertEq(address(erc1_), address(erc2_));

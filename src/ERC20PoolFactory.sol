@@ -20,8 +20,8 @@ contract ERC20PoolFactory is IPoolFactory {
         implementation = new ERC20Pool();
     }
 
-    /// @inheritdoc IPoolFactory
-    function deployPool(address collateral_, address quote_) external returns (address) {
+    /** @inheritdoc IPoolFactory*/
+    function deployPool(address collateral_, address quote_) external override returns (address pool_) {
         if (collateral_ == address(0) || quote_ == address(0)) {
             revert WethOnly();
         }

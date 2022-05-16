@@ -44,7 +44,7 @@ library Maths {
         z = (x * RAY + y / 2) / y;
     }
 
-    /// @notice Multiplies a WAD by a RAY and returns a RAY
+    /** @notice Multiplies a WAD by a RAY and returns a RAY */
     function wrdivr(uint256 x, uint256 y) internal pure returns (uint256 z) {
         return (x * 1e36 + y / 2) / y;
     }
