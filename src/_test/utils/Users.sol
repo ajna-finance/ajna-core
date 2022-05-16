@@ -62,6 +62,17 @@ contract UserWithQuoteToken {
         pool.removeQuoteToken(recipient, amount, price);
     }
 
+    function moveQuoteToken(
+        ERC20Pool pool,
+        address recipient,
+        uint256 amount,
+        uint256 from_price,
+        uint256 to_price
+    ) public {
+        pool.removeQuoteToken(recipient, amount, from_price);
+        pool.addQuoteToken(recipient, amount, to_price);
+    }
+
     function borrow(
         ERC20Pool pool,
         uint256 amount,

@@ -81,8 +81,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 30_000 * 1e18, _p2503);
 
         // lender moves 10_000 DAI up
-        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18,  _p2503);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        _lender.moveQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2503, _p3514);
          
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt, 0);
@@ -107,8 +106,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _borrower.borrow(_pool, 15_000 * 1e18, 2_000 * 1e18);
 
         // lender moves 10_000 DAI up to new HUP
-        _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18,  _p2503);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p5007);
+        _lender.moveQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p2503, _p5007);
          
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p3010);
         assertEq(debt, 0);
@@ -140,8 +138,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18);
 
         // lender moves 100 DAI up
-        _lender.removeQuoteToken(_pool, address(_lender), 100 * 1e18,  _p502);
-        _lender.addQuoteToken(_pool, address(_lender), 100 * 1e18, _p3514);
+        _lender.moveQuoteToken(_pool, address(_lender), 100 * 1e18, _p502, _p3514);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
         assertEq(debt, 0);
@@ -170,8 +167,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18);
 
         // lender moves 5_000 DAI up
-        _lender.removeQuoteToken(_pool, address(_lender), 5_000 * 1e18,  _p502);
-        _lender.addQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p2503);
+        _lender.moveQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p502, _p2503);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
         assertEq(debt, 0);
@@ -202,8 +198,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 5_000 DAI up
-        _lender.removeQuoteToken(_pool, address(_lender), 5_000 * 1e18,  _p502);
-        _lender.addQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p3514);
+        _lender.moveQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p502, _p3514);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
         assertEq(debt, 0);
@@ -241,8 +236,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 100 DAI down
-        _lender.removeQuoteToken(_pool, address(_lender), 100 * 1e18,  _p3514);
-        _lender.addQuoteToken(_pool, address(_lender), 100 * 1e18, _p502);
+        _lender.moveQuoteToken(_pool, address(_lender), 100 * 1e18, _p3514, _p502);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
         assertEq(debt, 0);
@@ -277,8 +271,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 15_000 DAI down
-        _lender.removeQuoteToken(_pool, address(_lender), 15_000 * 1e18,  _p2503);
-        _lender.addQuoteToken(_pool, address(_lender), 15_000 * 1e18, _p502);
+        _lender.moveQuoteToken(_pool, address(_lender), 15_000 * 1e18, _p2503, _p502);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
         assertEq(debt, 0);
@@ -310,8 +303,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 19_000 DAI down
-        _lender.removeQuoteToken(_pool, address(_lender), 19_500 * 1e18,  _p2503);
-        _lender.addQuoteToken(_pool, address(_lender), 19_500 * 1e18, _p502);
+        _lender.moveQuoteToken(_pool, address(_lender), 19_500 * 1e18, _p2503, _p502);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
         assertEq(debt, 0);
@@ -346,8 +338,8 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 8_000 DAI down
-        _lender.removeQuoteToken(_pool, address(_lender), 8_000 * 1e18,  _p3514);
-        _lender.addQuoteToken(_pool, address(_lender), 8_000 * 1e18, _p502);
+        _lender.moveQuoteToken(_pool, address(_lender), 8_000 * 1e18, _p3514, _p502);
+
         
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
         assertEq(debt, 4_000 * 1e18);
@@ -384,8 +376,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 5_000 DAI up to new HPB
-        _lender.removeQuoteToken(_pool, address(_lender), 5_000 * 1e18,  _p2503);
-        _lender.addQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p9020);
+        _lender.moveQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p2503, _p9020);
         
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt, 0 * 1e18);
@@ -419,8 +410,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 500 DAI down
-        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18,  _p3514);
-        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18, _p2503);
+        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, _p3514, _p2503);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt, 16_500 * 1e18);
@@ -450,8 +440,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 500 DAI up
-        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18,  _p2503);
-        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18, _p3514);
+        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, _p2503, _p3514);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt, 15_500 * 1e18);
@@ -481,8 +470,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 500 DAI down
-        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18,  _p3514);
-        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18, _p3010);
+        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, _p3514, _p3010);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p3010);
         assertEq(debt, 20_500 * 1e18);
@@ -512,8 +500,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 500 DAI up
-        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18,  _p3010);
-        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18, _p3514);
+        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, _p3010, _p3514);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p3010);
         assertEq(debt, 19_500 * 1e18);
@@ -546,8 +533,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 20_000 DAI up
-        _lender.removeQuoteToken(_pool, address(_lender), 20_000 * 1e18,  _p2503);
-        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3514);
+        _lender.moveQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503, _p3514);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt, 0 * 1e18);
@@ -576,8 +562,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 18_000 DAI up
-        _lender.removeQuoteToken(_pool, address(_lender), 18_000 * 1e18,  _p2503);
-        _lender.addQuoteToken(_pool, address(_lender), 18_000 * 1e18, _p3514);
+        _lender.moveQuoteToken(_pool, address(_lender), 18_000 * 1e18, _p2503, _p3514);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt, 0 * 1e18);
@@ -611,8 +596,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), _p2503);
 
         // lender moves 1_100 DAI up
-        _lender.removeQuoteToken(_pool, address(_lender), 1_100 * 1e18,  _p2503);
-        _lender.addQuoteToken(_pool, address(_lender), 1_100 * 1e18, _p3514);
+        _lender.moveQuoteToken(_pool, address(_lender), 1_100 * 1e18, _p2503, _p3514);
         
         (, , ,uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt, 0 * 1e18);
