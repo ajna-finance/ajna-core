@@ -40,11 +40,12 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    // @notice: with 1 lender and 2 borrowers -- quote is deposited
-    // @notice: borrow occurs, time passes then successful liquidation
-    // @notice: is called
-    // @notice: lender reverts:
-    // @notice:    attempts to call liquidate on borrower that is collateralized
+    /**
+     *  @notice With 1 lender and 2 borrowers -- quote is deposited and borrow occurs.
+     *          Time passes then successful liquidation is called.
+     *          Lender reverts:
+     *              attempts to call liquidate on borrower that is collateralized.
+     */
     function testLiquidateTwoBorrowers() external {
         // lender deposit in 3 buckets, price spaced
         uint256 priceHigh = _p10016;
@@ -151,9 +152,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.lastInflatorSnapshotUpdate(), 0);
 
         // check 10_016.501589292607751220 bucket balance before liquidate
-        (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(
-            priceHigh
-        );
+        (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(priceHigh);
         assertEq(debt,             10_000 * 1e18);
         assertEq(deposit,          0);
         assertEq(bucketCollateral, 0);
@@ -174,11 +173,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
 
         // liquidate borrower
         vm.expectEmit(true, false, false, true);
-        emit Liquidate(
-            address(_borrower),
-            11_000.143012091382543917 * 1e18,
-            1.209062604930973351 * 1e18
-        );
+        emit Liquidate(address(_borrower), 11_000.143012091382543917 * 1e18, 1.209062604930973351 * 1e18);
         _lender.liquidate(_pool, address(_borrower));
 
         // check borrower 1 balances and that interest accumulated
@@ -234,9 +229,11 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
     }
 
-    // @notice: with 1 lender and 2 borrowers --  quote is deposited
-    // @notice: borrow occurs then successful liquidation is called.
-    // @notice: borrower balances are checked
+    /**
+     *  @notice With 1 lender and 2 borrowers -- quote is deposited,
+     *          borrow occurs then successful liquidation is called.
+     *          Borrower balances are checked.
+     */
     function testLiquidateScenario1NoTimeWarp() external {
         uint256 priceHighest = _p10016;
         uint256 priceHigh    = _p9020;
@@ -299,9 +296,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _lender.liquidate(_pool, address(_borrower));
 
         // check buckets debt and collateral after liquidation
-        (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(
-            priceHighest
-        );
+        (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(priceHighest);
         assertEq(debt,             0);
         assertEq(deposit,          0);
         assertEq(bucketCollateral, 1.198023071531052613 * 1e18);
@@ -356,9 +351,11 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.hpb(),                      _p100);
     }
 
-    // @notice: with 1 lender and 2 borrowers -- quote is deposited
-    // @notice: borrows occur accross a time skip then successful liquidation is called.
-    // @notice: borrower balances are checked
+    /**
+     *  @notice With 1 lender and 2 borrowers -- quote is deposited,
+     *          borrows occur accross a time skip then successful liquidation is called.
+     *          Borrower balances are checked.
+     */
     function testLiquidateScenario1TimeWarp() external {
         uint256 priceHighest = _p10016;
         uint256 priceHigh    = _p9020;
@@ -425,9 +422,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _lender.liquidate(_pool, address(_borrower));
 
         // check buckets debt and collateral after liquidation
-        (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(
-            priceHighest
-        );
+        (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(priceHighest);
         assertEq(debt,             0);
         assertEq(deposit,          0);
         assertEq(bucketCollateral, 1.403854570079501409 * 1e18);
@@ -442,7 +437,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(deposit,          0);
         assertEq(bucketCollateral, 0.146424467437014641 * 1e18);
 
-        (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(100.332368143282009890 * 1e18);
+        (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(priceLow);
         assertEq(debt,             999.999999999999999999 * 1e18);
         assertEq(deposit,          0);
         assertEq(bucketCollateral, 0);

@@ -41,8 +41,9 @@ contract ERC20PoolRepayTest is DSTestPlus {
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    // @notice: 1 lender 1 borrower deposits quote token
-    // @notice: borrows, partially repay then overpay purposefully
+    /**
+     *  @notice 1 lender 1 borrower deposits quote token, borrows, partially repay then overpay purposefully.
+     */
     function testOverRepayOneBorrower() external {
         uint256 priceHigh = _p5007;
         uint256 priceMid  = _p4000;
@@ -120,13 +121,9 @@ contract ERC20PoolRepayTest is DSTestPlus {
         // overpay debt w/ repay 16_000 DAI
         skip(8200);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_borrower), address(_pool), 15_000.520048194378317056 * 1e18);
+        emit Transfer(address(_borrower), address(_pool), _p15000);
         vm.expectEmit(true, true, false, true);
-        emit Repay(
-            address(_borrower),
-            0,
-            15_000.520048194378317056 * 1e18
-        );
+        emit Repay(address(_borrower), 0, _p15000);
         _borrower.repay(_pool, 16_000 * 1e18);
 
         // check balances
@@ -142,19 +139,18 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_pool)),     30_000.520048194378317056 * 1e18);
 
         // check borrower debt
-        (borrowerDebt, borrowerPendingDebt, depositedCollateral, , , , ) = _pool.getBorrowerInfo(
-            address(_borrower)
-        );
+        (borrowerDebt, borrowerPendingDebt, depositedCollateral, , , , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(borrowerDebt,        0);
         assertEq(depositedCollateral, 100 * 1e18);
         assertEq(borrowerPendingDebt, 0);
     }
 
-    // @notice: 1 lender 2 borrowers deposits quote token
-    // @notice: borrows, repays, withdraws collateral
-    // @notice: borrower reverts:
-    // @notice:     attempts to repay with no debt
-    // @notice:     attempts to repay with insufficent balance
+    /**
+     *  @notice 1 lender 2 borrowers deposits quote token, borrows, repays, withdraws collateral
+     *          Borrower reverts:
+     *              attempts to repay with no debt.
+     *              attempts to repay with insufficent balance.
+     */
     function testRepayTwoBorrower() external {
         uint256 priceHigh = _p5007;
         uint256 priceMid = _p4000;
@@ -324,6 +320,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         (borrowerDebt, depositedCollateral, ) = _pool.borrowers(address(_borrower2));
         assertEq(borrowerDebt,        2_000 * 1e18);
         assertEq(depositedCollateral, 100 * 1e18);
+
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower2), address(_pool), 2000.026002198433189803 * 1e18);
         vm.expectEmit(true, true, false, true);

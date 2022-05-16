@@ -11,6 +11,7 @@ contract DSTestPlus is Test {
     // prices
     uint256 internal _p50159    = 50_159.593888626183666006 * 1e18;
     uint256 internal _p49910    = 49_910.043670274810022205 * 1e18;
+    uint256 internal _p15000    = 15_000.520048194378317056 * 1e18;
     uint256 internal _p10016    = 10_016.501589292607751220 * 1e18;
     uint256 internal _p9020     = 9_020.461710444470171420 * 1e18;
     uint256 internal _p8002     = 8_002.824356287850613262 * 1e18;
@@ -18,6 +19,7 @@ contract DSTestPlus is Test {
     uint256 internal _p4000     = 4_000.927678580567537368 * 1e18;
     uint256 internal _p3514     = 3_514.334495390401848927 * 1e18;
     uint256 internal _p3010     = 3_010.892022197881557845 * 1e18;
+    uint256 internal _p3002     = 3_002.895231777120270013 * 1e18;
     uint256 internal _p2850     = 2_850.155149230026939621 * 1e18;
     uint256 internal _p2835     = 2_835.975272865698470386 * 1e18;
     uint256 internal _p2821     = 2_821.865943149948749647 * 1e18;
@@ -27,6 +29,7 @@ contract DSTestPlus is Test {
     uint256 internal _p2503     = 2_503.519024294695168295 * 1e18;
     uint256 internal _p2000     = 2_000.221618840727700609 * 1e18;
     uint256 internal _p1004     = 1_004.989662429170775094 * 1e18;
+    uint256 internal _p1000     = 1_000.023113960510762449 * 1e18;
     uint256 internal _p502      = 502.433988063349232760 * 1e18;
     uint256 internal _p146      = 146.575625611106531706 * 1e18;
     uint256 internal _p145      = 145.846393642892072537 * 1e18;
@@ -70,12 +73,8 @@ contract DSTestPlus is Test {
         assertEq(address(erc1_), address(erc2_));
     }
 
-    function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256) {
-        if (lhs < rhs) {
-            return Maths.ONE_WAD - Maths.wdiv(lhs, rhs);
-        } else {
-            return Maths.ONE_WAD - Maths.wdiv(rhs, lhs);
-        }
+    function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
+        difference_ = lhs < rhs ? Maths.ONE_WAD - Maths.wdiv(lhs, rhs) : Maths.ONE_WAD - Maths.wdiv(rhs, lhs);
     }
 
 }

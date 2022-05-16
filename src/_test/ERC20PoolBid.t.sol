@@ -43,9 +43,10 @@ contract ERC20PoolBidTest is DSTestPlus {
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    // @notice: lender deposits 9000 quote accross 3 buckets
-    // @notice: borrower borrows 4000
-    // @notice: bidder successfully purchases 6000 quote partially in 2 purchases
+    /**
+     *  @notice Lender deposits 9000 quote accross 3 buckets and borrower borrows 4000.
+     *          Bidder successfully purchases 6000 quote partially in 2 purchases.
+     */
     function testPurchaseBidPartialAmount() external {
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p4000);
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p3010);
@@ -73,8 +74,7 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         vm.expectRevert(
             abi.encodeWithSelector(
-                Buckets.InsufficientBucketLiquidity.selector,
-                amount + bucketDebt
+                Buckets.InsufficientBucketLiquidity.selector, amount + bucketDebt
             )
         );
         _bidder.purchaseBid(_pool, 4_000 * 1e18, _p4000);
@@ -106,12 +106,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_bidder), 2_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Purchase(
-            address(_bidder),
-            _p4000,
-            2_000 * 1e18,
-            0.499884067064554307 * 1e18
-        );
+        emit Purchase(address(_bidder), _p4000, 2_000 * 1e18, 0.499884067064554307 * 1e18);
         _bidder.purchaseBid(_pool, 2_000 * 1e18, _p4000);
 
         assertEq(_pool.lup(), _p1004);
@@ -145,9 +140,10 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.getPoolActualUtilization(),        0.571428571428571429 * 1e18);
     }
 
-    // @notice: lender deposits 7000 quote accross 3 buckets
-    // @notice: borrower borrows 2000 quote
-    // @notice: bidder successfully purchases 6000 quote fully accross 2 purchases
+    /**
+     *  @notice Lender deposits 7000 quote accross 3 buckets and borrower borrows 2000 quote.
+     *          Bidder successfully purchases 6000 quote fully accross 2 purchases.
+     */
     function testPurchaseBidEntireAmount() external {
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p4000);
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p3010);
@@ -195,12 +191,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_bidder), 1_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Purchase(
-            address(_bidder),
-            _p4000,
-            1_000 * 1e18,
-            0.249942033532277153 * 1e18
-        );
+        emit Purchase(address(_bidder), _p4000, 1_000 * 1e18, 0.249942033532277153 * 1e18);
         _bidder.purchaseBid(_pool, 1_000 * 1e18, _p4000);
 
         assertEq(_pool.hpb(), _p3010); // hbp should be pushed downwards
@@ -254,9 +245,10 @@ contract ERC20PoolBidTest is DSTestPlus {
         _bidder.purchaseBid(_pool, 1_000 * 1e18, _p4000);
     }
 
-    // @notice: lender deposits 4000 quote accross 3 buckets
-    // @notice: borrower borrows 2000 quote
-    // @notice: bidder attempts to purchase 1000 quote, it reverts
+    /**
+     *  @notice Lender deposits 4000 quote accross 3 buckets and borrower borrows 2000 quote.
+     *          Bidder reverts: attempt to purchase 1000 quote.
+     */
     function testPurchaseBidUndercollateralized() external {
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p4000);
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p3010);
