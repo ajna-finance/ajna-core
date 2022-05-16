@@ -94,7 +94,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         // update position with newly added lp shares
         position.lpTokens[params_.price] += lpTokensAdded;
 
-        emit IncreaseLiquidity(params_.recipient, params_.amount, params_.price);
+        emit IncreaseLiquidity(params_.recipient, params_.price, params_.amount);
     }
 
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
@@ -117,7 +117,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         position.lpTokens[params_.price] -= params_.lpTokens;
 
         // TODO: check if price updates
-        emit DecreaseLiquidity(params_.recipient, collateralToRemove, quoteTokenToRemove, params_.price);
+        emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteTokenToRemove);
     }
 
     /**

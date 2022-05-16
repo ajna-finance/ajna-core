@@ -78,7 +78,7 @@ contract PositionManagerTest is DSTestPlus {
             .IncreaseLiquidityParams(tokenId_, recipient_, pool_, amount_, price_);
 
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(recipient_, amount_, price_);
+        emit IncreaseLiquidity(recipient_, price_, amount_);
 
         vm.prank(increaseLiquidityParams.recipient);
         _positionManager.increaseLiquidity(increaseLiquidityParams);
@@ -100,12 +100,7 @@ contract PositionManagerTest is DSTestPlus {
             .DecreaseLiquidityParams(tokenId_, recipient_, pool_, price_, lpTokensToRemove_);
 
         vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(
-            recipient_,
-            collateralTokensToBeRemoved,
-            quoteTokensToBeRemoved,
-            price_
-        );
+        emit DecreaseLiquidity(recipient_, price_, collateralTokensToBeRemoved, quoteTokensToBeRemoved);
 
         // decrease liquidity and check change in balances
         vm.prank(recipient_);
@@ -294,13 +289,7 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(lpTokensToRemove, 2_500 * 1e18);
 
         // decrease liquidity
-        (, uint256 quoteTokensRemoved) = decreaseLiquidity(
-            tokenId,
-            testAddress,
-            address(_pool),
-            mintPrice,
-            lpTokensToRemove
-        );
+        (, uint256 quoteTokensRemoved) = decreaseLiquidity(tokenId, testAddress, address(_pool), mintPrice, lpTokensToRemove);
 
         // check quote token removed
         assertEq(_pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
@@ -430,11 +419,7 @@ contract PositionManagerTest is DSTestPlus {
         increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintPrice);
 
         // construct BurnParams
-        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(
-            tokenId,
-            testAddress,
-            mintPrice
-        );
+        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, testAddress, mintPrice);
 
         // should revert if liquidity not removed
         vm.expectRevert(IPositionManager.LiquidityNotRemoved.selector);
@@ -447,13 +432,7 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(lpTokensToRemove, 10_000 * 10**27);
 
         // decrease liquidity
-        (, uint256 quoteTokensRemoved) = decreaseLiquidity(
-            tokenId,
-            testAddress,
-            address(_pool),
-            mintPrice,
-            lpTokensToRemove
-        );
+        (, uint256 quoteTokensRemoved) = decreaseLiquidity(tokenId, testAddress, address(_pool), mintPrice, lpTokensToRemove);
         assertEq(_pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
 
         // should emit Burn
