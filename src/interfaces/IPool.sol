@@ -390,31 +390,6 @@ interface IPool {
     /***************************/
 
     /**
-     *  @notice Get a bucket struct for a given price.
-     *  @param  price_            The price of the bucket to retrieve.
-     *  @return bucketPrice_      The price of the bucket.
-     *  @return up_               The price of the next higher priced utlized bucket.
-     *  @return down_             The price of the next lower price utilized bucket.
-     *  @return onDeposit_        The amount of quote token available as liquidity in the bucket.
-     *  @return debt_             The amount of quote token debt in the bucket.
-     *  @return bucketInflator_   The inflator snapshot value in the bucket.
-     *  @return lpOutstanding_    The amount of outstanding LP tokens in the bucket.
-     *  @return bucketCollateral_ The amount of collateral posted in the bucket.
-    */
-    function bucketAt(uint256 price_)
-        external view
-        returns (
-            uint256 bucketPrice_,
-            uint256 up_,
-            uint256 down_,
-            uint256 onDeposit_,
-            uint256 debt_,
-            uint256 bucketInflator_,
-            uint256 lpOutstanding_,
-            uint256 bucketCollateral_
-        );
-
-    /**
      *  @notice Estimate the price for which a loan can be taken.
      *  @param  amount_  Amount of debt to draw.
      *  @return price_   Price of the loan.
