@@ -4,9 +4,10 @@ pragma solidity 0.8.11;
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
+import { Buckets } from "../base/Buckets.sol";
+
 import { IPool } from "../interfaces/IPool.sol";
 
-import { Buckets } from "../libraries/Buckets.sol";
 import { Maths }   from "../libraries/Maths.sol";
 
 import { DSTestPlus }                             from "./utils/DSTestPlus.sol";

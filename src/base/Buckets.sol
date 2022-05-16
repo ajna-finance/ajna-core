@@ -2,9 +2,13 @@
 
 pragma solidity 0.8.11;
 
-import "./Maths.sol";
+import "../libraries/Maths.sol";
 
-library Buckets {
+abstract contract Buckets {
+
+    /// @notice Mapping of buckets for a given pool
+    /// @dev price (WAD) -> bucket
+    mapping(uint256 => Buckets.Bucket) internal _buckets;
 
     error NoDepositToReallocateTo();
     error InsufficientLpBalance(uint256 balance);
@@ -36,7 +40,6 @@ library Buckets {
 
     /**
      * @notice Called by a lender to add quote tokens to a bucket
-     * @param buckets_ Mapping of buckets for a given pool
      * @param price_ The price bucket to which quote tokens should be added
      * @param amount_ The amount of quote tokens to be added
      * @param lup_ The current pool LUP
@@ -45,15 +48,14 @@ library Buckets {
      * @return newLup_ The new pool LUP
      * @return lpTokens_ The amount of lpTokens received by the lender for the added quote tokens
     */
-    function addQuoteToken(
-        mapping(uint256 => Bucket) storage buckets_,
+    function addQuoteTokenToBucket(
         uint256 price_,
         uint256 amount_,
         uint256 lup_,
         uint256 inflator_,
         bool reallocate_
     ) public returns (uint256 newLup_, uint256 lpTokens_) {
-        Bucket storage bucket = buckets_[price_];
+        Bucket storage bucket = _buckets[price_];
 
         accumulateBucketInterest(bucket, inflator_);
 
@@ -63,30 +65,30 @@ library Buckets {
 
         newLup_ = lup_;
         if (reallocate_) {
-            newLup_ = reallocateUp(buckets_, bucket, amount_, lup_, inflator_);
+            newLup_ = reallocateUp(bucket, amount_, lup_, inflator_);
         }
     }
 
     /**
      * @notice Called by a lender to remove quote tokens from a bucket
-     * @param buckets_ Mapping of buckets for a given pool
-     * @param bucket_ The price bucket from which quote tokens should be removed
+     * @param price_ The price bucket from which quote tokens should be removed
      * @param maxAmount_ The maximum amount of quote tokens to be removed
      * @param inflator_ The current pool inflator rate
      * @return amount_ The actual amount being removed
      * @return lup_ The new pool LUP
      * @return lpTokens_ The amount of lpTokens removed equivalent to the quote tokens removed
     */
-    function removeQuoteToken(
-        mapping(uint256 => Bucket) storage buckets_,
-        Bucket storage bucket_,
+    function removeQuoteTokenFromBucket(
+        uint256 price_,     // WAD
         uint256 maxAmount_, // WAD
         uint256 lpBalance_, // RAY
         uint256 inflator_   // RAY
     ) public returns (uint256 amount_, uint256 lup_, uint256 lpTokens_) {
-        accumulateBucketInterest(bucket_, inflator_);
+        Bucket storage bucket = _buckets[price_];
 
-        uint256 exchangeRate = getExchangeRate(bucket_);              // RAY
+        accumulateBucketInterest(bucket, inflator_);
+
+        uint256 exchangeRate = getExchangeRate(bucket);              // RAY
         uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);  // RAY
 
         amount_ = Maths.min(Maths.wadToRay(maxAmount_), claimable);   // RAY
@@ -94,61 +96,58 @@ library Buckets {
         amount_ = Maths.rayToWad(amount_);
 
         // Remove from deposit first
-        uint256 removeFromDeposit = Maths.min(amount_, bucket_.onDeposit);
-        bucket_.onDeposit -= removeFromDeposit;
+        uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit);
+        bucket.onDeposit -= removeFromDeposit;
 
         // Reallocate debt to fund remaining withdrawal
-        lup_ = reallocateDown(buckets_, bucket_, amount_ - removeFromDeposit, inflator_);
+        lup_ = reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
 
-        bucket_.lpOutstanding -= lpTokens_;
+        bucket.lpOutstanding -= lpTokens_;
     }
 
     /**
      * @notice Called by a lender to claim accumulated collateral
-     * @param buckets_ Mapping of buckets for a given pool
-     * @param bucket_ The price bucket from which collateral should be claimed
+     * @param price_ The price bucket from which collateral should be claimed
      * @param amount_ The amount of collateral tokens to be claimed
      * @param lpBalance_ The claimers current LP balance
      * @return lpRedemption_ The amount of LP tokens that will be redeemed
     */
-    function claimCollateral(
-        mapping(uint256 => Bucket) storage buckets_,
-        Bucket storage bucket_,
+    function claimCollateralFromBucket(
+        uint256 price_,    // WAD
         uint256 amount_,   // WAD
         uint256 lpBalance_ // RAY
     ) public returns (uint256 lpRedemption_) {
+        Bucket storage bucket = _buckets[price_];
 
-        if (amount_ > bucket_.collateral) {
-            revert ClaimExceedsCollateral({collateralAmount: bucket_.collateral});
+        if (amount_ > bucket.collateral) {
+            revert ClaimExceedsCollateral({collateralAmount: bucket.collateral});
         }
 
-        lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, bucket_.price), getExchangeRate(bucket_));
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, bucket.price), getExchangeRate(bucket));
 
         if (lpRedemption_ > lpBalance_) {
             revert InsufficientLpBalance({balance: lpBalance_});
         }
 
-        bucket_.collateral    -= amount_;
-        bucket_.lpOutstanding -= lpRedemption_;
+        bucket.collateral    -= amount_;
+        bucket.lpOutstanding -= lpRedemption_;
     }
 
     /**
      * @notice Called by a borrower to borrow from a given bucket
-     * @param buckets_ Mapping of buckets for a given pool
      * @param amount_ The amount of quote tokens to borrow from the bucket
      * @param limit_ The lowest price desired to borrow at
      * @param lup_ The current pool LUP
      * @param inflator_ The current pool inflator rate
      * @return lup WAD The price at which the borrow executed
     */
-    function borrow(
-        mapping(uint256 => Bucket) storage buckets_,
+    function borrowFromBucket(
         uint256 amount_,  // WAD
         uint256 limit_,   // WAD
         uint256 lup_,     // WAD
         uint256 inflator_ // RAY
     ) public returns (uint256) {
-        Bucket storage curLup = buckets_[lup_];
+        Bucket storage curLup = _buckets[lup_];
 
         while (true) {
             if (curLup.price < limit_) {
@@ -172,7 +171,7 @@ library Buckets {
             }
 
             // move to next bucket
-            curLup = buckets_[curLup.down];
+            curLup = _buckets[curLup.down];
         }
 
         if (lup_ > curLup.price || lup_ == 0) {
@@ -184,19 +183,17 @@ library Buckets {
 
     /**
      * @notice Called by a borrower to repay quote tokens as part of reducing their position
-     * @param buckets_ Mapping of buckets for a given pool
      * @param amount_ The amount of quote tokens to repay to the bucket
      * @param lup_ The current pool LUP
      * @param inflator_ The current pool inflator rate
      * @return The new pool LUP
     */
-    function repay(
-        mapping(uint256 => Bucket) storage buckets_,
+    function repayBucket(
         uint256 amount_,   // WAD
         uint256 lup_,      // WAD
         uint256 inflator_  // RAY
     ) public returns (uint256) {
-        Bucket storage curLup = buckets_[lup_];
+        Bucket storage curLup = _buckets[lup_];
 
         while (true) {
             // accumulate bucket interest
@@ -222,7 +219,7 @@ library Buckets {
                 break;
             }
             // move to upper bucket
-            curLup = buckets_[curLup.up];
+            curLup = _buckets[curLup.up];
         }
 
         return curLup.price;
@@ -230,56 +227,54 @@ library Buckets {
 
     /**
      * @notice Puchase a given amount of quote tokens for given collateral tokens
-     * @param buckets_ Mapping of buckets for a given pool
-     * @param bucket_ The price bucket at which the exchange will occur
+     * @param price_ The price bucket at which the exchange will occur
      * @param amount_ The amount of quote tokens to receive
      * @param collateral_ The amount of collateral to exchange
      * @param inflator_ The current pool inflator rate
      * @return lup_ The new pool LUP
     */
-    function purchaseBid(
-        mapping(uint256 => Bucket) storage buckets_,
-        Bucket storage bucket_,
+    function purchaseBidFromBucket(
+        uint256 price_,      // WAD
         uint256 amount_,     // WAD
         uint256 collateral_, // WAD
         uint256 inflator_    // RAY
     ) public returns (uint256 lup_) {
-        accumulateBucketInterest(bucket_, inflator_);
+        Bucket storage bucket = _buckets[price_];
 
-        uint256 available = bucket_.onDeposit + bucket_.debt;
+        accumulateBucketInterest(bucket, inflator_);
+
+        uint256 available = bucket.onDeposit + bucket.debt;
         if (amount_ > available) {
             revert InsufficientBucketLiquidity({amountAvailable: available});
         }
 
         // Exchange collateral for quote token on deposit
-        uint256 purchaseFromDeposit = Maths.min(amount_, bucket_.onDeposit);
+        uint256 purchaseFromDeposit = Maths.min(amount_, bucket.onDeposit);
 
-        bucket_.onDeposit -= purchaseFromDeposit;
+        bucket.onDeposit -= purchaseFromDeposit;
         amount_          -= purchaseFromDeposit;
 
         // Reallocate debt to exchange for collateral
-        lup_ = reallocateDown(buckets_, bucket_, amount_, inflator_);
+        lup_ = reallocateDown(bucket, amount_, inflator_);
 
-        bucket_.collateral += collateral_;
+        bucket.collateral += collateral_;
     }
 
     /**
      * @notice Liquidate a given position's collateral
-     * @param buckets_ Mapping of buckets for a given pool
      * @param debt_ The amount of debt to cover
      * @param collateral_ The amount of collateral deposited
      * @param hpb_ The pool's highest price bucket
      * @param inflator_ The current pool inflator rate
      * @return requiredCollateral_ The amount of collateral to be liquidated
     */
-    function liquidate(
-        mapping(uint256 => Bucket) storage buckets_,
+    function liquidateAtBucket(
         uint256 debt_,       // WAD
         uint256 collateral_, // WAD
         uint256 hpb_,        // WAD
         uint256 inflator_    // RAY
     ) public returns (uint256 requiredCollateral_) {
-        Bucket storage bucket = buckets_[hpb_];
+        Bucket storage bucket = _buckets[hpb_];
 
         while (true) {
             accumulateBucketInterest(bucket, inflator_);
@@ -310,7 +305,7 @@ library Buckets {
                 break;
             }
 
-            bucket = buckets_[bucket.down];
+            bucket = _buckets[bucket.down];
         }
     }
 
@@ -318,14 +313,12 @@ library Buckets {
      * @notice Moves assets in a bucket to a bucket's down pointers
      * @dev Occurs when quote tokens are being removed
      * @dev Should continue until all of the desired quote tokens have been removed
-     * @param buckets_ Mapping of buckets for a given pool
      * @param bucket_ The given bucket whose assets are being reallocated
      * @param amount_ The amount of quote tokens requiring reallocation
      * @param inflator_ The current pool inflator rate
      * @return lup_ The price to which assets were reallocated
     */
     function reallocateDown(
-        mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
         uint256 amount_,  // WAD
         uint256 inflator_ // RAY
@@ -335,7 +328,7 @@ library Buckets {
         if (amount_ > bucket_.onDeposit) {
             uint256 reallocation = amount_ - bucket_.onDeposit;
             if (bucket_.down != 0) {
-                Bucket storage toBucket = buckets_[bucket_.down];
+                Bucket storage toBucket = _buckets[bucket_.down];
 
                 while (true) {
                     accumulateBucketInterest(toBucket, inflator_);
@@ -365,7 +358,7 @@ library Buckets {
                         break;
                     }
 
-                    toBucket = buckets_[toBucket.down];
+                    toBucket = _buckets[toBucket.down];
                 }
             } else {
                 // lup started at the bottom
@@ -380,7 +373,6 @@ library Buckets {
      * @notice Moves assets in a bucket to a bucket's up pointers
      * @dev Should continue until all desired quote tokens are added
      * @dev Occcurs when quote tokens are being added
-     * @param buckets_ Mapping of buckets for a given pool
      * @param bucket_ The given bucket whose assets are being reallocated
      * @param amount_ The amount of quote tokens requiring reallocation
      * @param lup_ The current pool lup
@@ -388,13 +380,12 @@ library Buckets {
      * @return The price to which assets were reallocated
     */
     function reallocateUp(
-        mapping(uint256 => Bucket) storage buckets_,
         Bucket storage bucket_,
         uint256 amount_,  // WAD
         uint256 lup_,     // WAD
         uint256 inflator_ // RAY
     ) private returns (uint256) {
-        Bucket storage curLup = buckets_[lup_];
+        Bucket storage curLup = _buckets[lup_];
 
         uint256 curLupDebt;
 
@@ -428,7 +419,7 @@ library Buckets {
                 break;
             }
 
-            curLup = buckets_[curLup.up];
+            curLup = _buckets[curLup.up];
         }
 
         return curLup.price;
@@ -451,16 +442,14 @@ library Buckets {
 
     /**
      * @notice Estimate the price at which a loan can be taken
-     * @param buckets_ Mapping of buckets for a given pool
      * @param amount_ The amount of quote tokens desired to borrow
      * @param hpb_ The current highest price bucket of the pool
     */
     function estimatePrice(
-        mapping(uint256 => Bucket) storage buckets_,
         uint256 amount_,
         uint256 hpb_
     ) public view returns (uint256) {
-        Bucket memory curLup = buckets_[hpb_];
+        Bucket memory curLup = _buckets[hpb_];
 
         while (true) {
             if (amount_ > curLup.onDeposit) {
@@ -472,7 +461,7 @@ library Buckets {
             if (curLup.down == 0) {
                 return 0;
             } else {
-                curLup = buckets_[curLup.down];
+                curLup = _buckets[curLup.down];
             }
         }
 
@@ -481,10 +470,9 @@ library Buckets {
 
     /**
      * @notice Return the information of the bucket at a given price
-     * @param buckets_ Mapping of buckets for a given pool
      * @param price_ The price of the bucket to retrieve information from
     */
-    function bucketAt(mapping(uint256 => Bucket) storage buckets_, uint256 price_)
+    function bucketAt(uint256 price_)
         public
         view
         returns (
@@ -498,7 +486,7 @@ library Buckets {
             uint256 collateral
         )
     {
-        Bucket memory bucket = buckets_[price_];
+        Bucket memory bucket = _buckets[price_];
 
         price            = bucket.price;
         up               = bucket.up;
@@ -527,17 +515,15 @@ library Buckets {
 
     /**
      * @notice Set state for a new bucket and update surrounding price pointers
-     * @param buckets_ Mapping of buckets for a given pool
      * @param hpb_ The current highest price bucket of the pool
      * @param price_ The price of the bucket to retrieve information from
      * @return The new HPB given the newly initialized bucket
     */
     function initializeBucket(
-        mapping(uint256 => Bucket) storage buckets_,
         uint256 hpb_,
         uint256 price_
     ) public returns (uint256) {
-        Bucket storage bucket = buckets_[price_];
+        Bucket storage bucket = _buckets[price_];
 
         bucket.price            = price_;
         bucket.inflatorSnapshot = Maths.ONE_RAY;
@@ -548,45 +534,45 @@ library Buckets {
         }
 
         uint256 cur  = hpb_;
-        uint256 down = buckets_[hpb_].down;
-        uint256 up   = buckets_[hpb_].up;
+        uint256 down = _buckets[hpb_].down;
+        uint256 up   = _buckets[hpb_].up;
 
         // update price pointers
         while (true) {
             if (price_ > down) {
-                buckets_[cur].down = price_;
+                _buckets[cur].down = price_;
                 bucket.up          = cur;
                 bucket.down        = down;
-                buckets_[down].up  = price_;
+                _buckets[down].up  = price_;
                 break;
             }
             cur  = down;
-            down = buckets_[cur].down;
-            up   = buckets_[cur].up;
+            down = _buckets[cur].down;
+            up   = _buckets[cur].up;
         }
         return hpb_;
     }
 
     /**
      * @notice Removes state for an unused bucket and update surrounding price pointers
-     * @param buckets_ Mapping of buckets for a given pool
-     * @param bucket_ The current price bucket
+     * @param price_ The price bucket to deactivate
     */
     function deactivateBucket(
-        mapping(uint256 => Bucket) storage buckets_,
-        Bucket storage bucket_
+        uint256 price_ // WAD
     ) public {
-        bool isHighestBucket = bucket_.price == bucket_.up;
-        bool isLowestBucket = bucket_.down == 0;
+        Bucket storage bucket = _buckets[price_];
+
+        bool isHighestBucket = bucket.price == bucket.up;
+        bool isLowestBucket = bucket.down == 0;
         if (isHighestBucket && !isLowestBucket) {                     // if highest bucket
-            buckets_[bucket_.down].up = buckets_[bucket_.down].price; // make lower bucket the highest bucket
+            _buckets[bucket.down].up = _buckets[bucket.down].price; // make lower bucket the highest bucket
         } else if (!isHighestBucket && !isLowestBucket) {             // if middle bucket
-            buckets_[bucket_.up].down = bucket_.down;                 // update down pointer of upper bucket
-            buckets_[bucket_.down].up = bucket_.up;                   // update up pointer of lower bucket
+            _buckets[bucket.up].down = bucket.down;                 // update down pointer of upper bucket
+            _buckets[bucket.down].up = bucket.up;                   // update up pointer of lower bucket
         } else if (!isHighestBucket && isLowestBucket) {              // if lowest bucket
-            buckets_[bucket_.up].down = 0;                            // make upper bucket the lowest bucket
+            _buckets[bucket.up].down = 0;                            // make upper bucket the lowest bucket
         }
-        delete buckets_[bucket_.price];
+        delete _buckets[bucket.price];
     }
 
 }

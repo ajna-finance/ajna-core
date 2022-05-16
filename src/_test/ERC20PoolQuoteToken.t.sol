@@ -6,7 +6,7 @@ import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
 
 import { IPool } from "../interfaces/IPool.sol";
 
-import "../libraries/Buckets.sol";
+import "../base/Buckets.sol";
 
 import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
