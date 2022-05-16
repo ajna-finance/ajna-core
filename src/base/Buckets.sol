@@ -256,10 +256,10 @@ abstract contract Buckets {
      * @return lup_ The new pool LUP
     */
     function purchaseBidFromBucket(
-        uint256 price_,      // WAD
-        uint256 amount_,     // WAD
-        uint256 collateral_, // WAD
-        uint256 inflator_    // RAY
+        uint256 price_,
+        uint256 amount_,
+        uint256 collateral_,
+        uint256 inflator_
     ) public returns (uint256 lup_) {
         Bucket storage bucket = _buckets[price_];
 
