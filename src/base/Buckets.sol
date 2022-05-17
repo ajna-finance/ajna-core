@@ -75,7 +75,7 @@ abstract contract Buckets {
      */
     function addQuoteTokenToBucket(
         uint256 price_, uint256 amount_, uint256 lup_, uint256 inflator_, bool reallocate_
-    ) public returns (uint256 newLup_, uint256 lpTokens_) {
+    ) internal returns (uint256 newLup_, uint256 lpTokens_) {
         Bucket storage bucket = _buckets[price_];
 
         // accumulate bucket interest
@@ -109,7 +109,7 @@ abstract contract Buckets {
      */
     function removeQuoteTokenFromBucket(
         Bucket memory bucket_, uint256 maxAmount_, uint256 lpBalance_, uint256 inflator_
-    ) public returns (uint256 amount_, uint256 lup_, uint256 lpTokens_) {
+    ) internal returns (uint256 amount_, uint256 lup_, uint256 lpTokens_) {
 
         // accumulate bucket interest
         if (bucket_.debt != 0) {
@@ -147,7 +147,7 @@ abstract contract Buckets {
      */
     function claimCollateralFromBucket(
         Bucket memory bucket_, uint256 amount_, uint256 lpBalance_
-    ) public returns (uint256 lpRedemption_) {
+    ) internal returns (uint256 lpRedemption_) {
 
         if (amount_ > bucket_.collateral) {
             revert ClaimExceedsCollateral({collateralAmount: bucket_.collateral});
@@ -178,7 +178,7 @@ abstract contract Buckets {
      */
     function borrowFromBucket(
         uint256 amount_, uint256 limit_, uint256 lup_, uint256 inflator_
-    ) public returns (uint256) {
+    ) internal returns (uint256) {
         Bucket storage curLup = _buckets[lup_];
 
         while (true) {
@@ -222,7 +222,7 @@ abstract contract Buckets {
      *  @param  inflator_ The current pool inflator rate, RAY
      *  @return The new pool LUP
      */
-    function repayBucket(uint256 amount_, uint256 lup_, uint256 inflator_) public returns (uint256) {
+    function repayBucket(uint256 amount_, uint256 lup_, uint256 inflator_) internal returns (uint256) {
         Bucket storage curLup = _buckets[lup_];
 
         while (true) {
@@ -266,7 +266,7 @@ abstract contract Buckets {
      */
     function purchaseBidFromBucket(
         Bucket memory bucket_, uint256 amount_, uint256 collateral_, uint256 inflator_
-    ) public returns (uint256 lup_) {
+    ) internal returns (uint256 lup_) {
 
         // accumulate bucket interest
         if (bucket_.debt != 0) {
@@ -306,7 +306,7 @@ abstract contract Buckets {
      */
     function liquidateAtBucket(
         uint256 debt_, uint256 collateral_, uint256 hpb_, uint256 inflator_
-    ) public returns (uint256 requiredCollateral_) {
+    ) internal returns (uint256 requiredCollateral_) {
         Bucket storage bucket = _buckets[hpb_];
 
         while (true) {
@@ -472,8 +472,8 @@ abstract contract Buckets {
      *  @return debt_             New calculated debt
      */
     function calculateBucketInterest(
-        uint256 bucketDebt_, uint256 inflatorSnapshot_, uint256 inflator_)
-    private pure returns (uint256 debt_) {
+        uint256 bucketDebt_, uint256 inflatorSnapshot_, uint256 inflator_
+    ) private pure returns (uint256 debt_) {
         debt_ = bucketDebt_ + Maths.radToWadTruncate(
             bucketDebt_ * (Maths.rdiv(inflator_, inflatorSnapshot_) - Maths.ONE_RAY)
         );
@@ -554,7 +554,7 @@ abstract contract Buckets {
      */
     function calculateExchangeRate(
         uint256 price_, uint256 onDeposit_, uint256 debt_, uint256 collateral_, uint256 lpOutstanding_
-    ) internal pure returns (uint256 exchangeRate_) {
+    ) public pure returns (uint256 exchangeRate_) {
         uint256 size = onDeposit_ + debt_ + Maths.wmul(collateral_, price_);
         exchangeRate_ = (size != 0 && lpOutstanding_ != 0) ? Maths.wrdivr(size, lpOutstanding_) : Maths.ONE_RAY;    
     }
@@ -565,7 +565,7 @@ abstract contract Buckets {
      *  @param  price_ The price of the bucket to retrieve information from, WAD
      *  @return The new HPB given the newly initialized bucket
      */
-    function initializeBucket(uint256 hpb_, uint256 price_) public returns (uint256) {
+    function initializeBucket(uint256 hpb_, uint256 price_) internal returns (uint256) {
         Bucket storage bucket = _buckets[price_];
 
         bucket.price            = price_;
@@ -600,7 +600,7 @@ abstract contract Buckets {
      *  @notice Removes state for an unused bucket and update surrounding price pointers
      *  @param  bucket_ The price bucket to deactivate
      */
-    function deactivateBucket(Bucket memory bucket_) public {
+    function deactivateBucket(Bucket memory bucket_) internal {
         bool isHighestBucket = bucket_.price == bucket_.up;
         bool isLowestBucket = bucket_.down == 0;
         if (isHighestBucket && !isLowestBucket) {                       // if highest bucket
