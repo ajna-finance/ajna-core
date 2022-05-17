@@ -81,7 +81,7 @@ abstract contract Buckets {
      */
     function addQuoteTokenToBucket(
         uint256 price_, uint256 amount_, uint256 hpb_, uint256 lup_, uint256 inflator_, bool reallocate_
-    ) public returns (uint256 newHpb_, uint256 newLup_, uint256 lpTokens_) {
+    ) internal returns (uint256 newHpb_, uint256 newLup_, uint256 lpTokens_) {
         newHpb_ = hpb_;
         // create bucket if doesn't exist
         if (!BitMaps.get(_bitmap, price_)) {
@@ -116,7 +116,7 @@ abstract contract Buckets {
      */
     function removeQuoteTokenFromBucket(
         uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 hpb_, uint256 inflator_
-    ) public returns (uint256 amount_, uint256 lup_, uint256 lpTokens_, bool updateHpb_, bool deactivate_) {
+    ) internal returns (uint256 amount_, uint256 lup_, uint256 lpTokens_, bool updateHpb_, bool deactivate_) {
         Bucket storage bucket = _buckets[price_];
 
         accumulateBucketInterest(bucket, inflator_);
@@ -155,7 +155,7 @@ abstract contract Buckets {
      */
     function claimCollateralFromBucket(
         uint256 price_, uint256 amount_, uint256 lpBalance_
-    ) public returns (uint256 lpRedemption_) {
+    ) internal returns (uint256 lpRedemption_) {
         Bucket storage bucket = _buckets[price_];
 
         if (amount_ > bucket.collateral) {
@@ -188,7 +188,7 @@ abstract contract Buckets {
      */
     function borrowFromBucket(
         uint256 amount_, uint256 limit_, uint256 lup_, uint256 inflator_
-    ) public returns (uint256) {
+    ) internal returns (uint256) {
         Bucket storage curLup = _buckets[lup_];
 
         while (true) {
@@ -230,7 +230,7 @@ abstract contract Buckets {
      *  @param inflator_ The current pool inflator rate, RAY
      *  @return The new pool LUP
      */
-    function repayBucket(uint256 amount_, uint256 lup_, uint256 inflator_) public returns (uint256) {
+    function repayBucket(uint256 amount_, uint256 lup_, uint256 inflator_) internal returns (uint256) {
         Bucket storage curLup = _buckets[lup_];
 
         while (true) {
@@ -274,7 +274,7 @@ abstract contract Buckets {
      */
     function purchaseBidFromBucket(
         uint256 price_, uint256 amount_, uint256 collateral_, uint256 inflator_
-    ) public returns (uint256 lup_, bool isEmpty_) {
+    ) internal returns (uint256 lup_, bool isEmpty_) {
         Bucket storage bucket = _buckets[price_];
 
         accumulateBucketInterest(bucket, inflator_);
@@ -307,7 +307,7 @@ abstract contract Buckets {
      */
     function liquidateAtBucket(
         uint256 debt_, uint256 collateral_, uint256 hpb_, uint256 inflator_
-    ) public returns (uint256 requiredCollateral_) {
+    ) internal returns (uint256 requiredCollateral_) {
         Bucket storage bucket = _buckets[hpb_];
 
         while (true) {
@@ -548,7 +548,7 @@ abstract contract Buckets {
      *  @param price_ The price of the bucket to retrieve information from, WAD
      *  @return The new HPB given the newly initialized bucket
      */
-    function initializeBucket(uint256 hpb_, uint256 price_) public returns (uint256) {
+    function initializeBucket(uint256 hpb_, uint256 price_) private returns (uint256) {
         Bucket storage bucket = _buckets[price_];
 
         bucket.price            = price_;
@@ -584,7 +584,7 @@ abstract contract Buckets {
      *  @notice Removes state for an unused bucket and update surrounding price pointers
      *  @param price_ The price bucket to deactivate.
      */
-    function deactivateBucket(uint256 price_) public {
+    function deactivateBucket(uint256 price_) internal {
         BitMaps.setTo(_bitmap, price_, false);
         Bucket memory bucket = _buckets[price_];
         bool isHighestBucket = bucket.price == bucket.up;
