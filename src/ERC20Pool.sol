@@ -515,7 +515,7 @@ contract ERC20Pool is IPool, Clone, Interest {
     }
 
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
-        require(BucketMath.isValidPrice(price_), "P:AQT:INVALID_PRICE");
+        require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
 
         (
             ,
