@@ -74,11 +74,11 @@ contract PermitTest is DSTestPlus {
         return _positionManager.mint(mintParams);
     }
 
-    // @notice: owner, spender, and unapproved spender mint, approve
-    // @notice: and increase liquidity testing permission
-    // @notice:  position manager reverts:
-    // @notice:     attempts to increase liquidity unapproved spender
-    // https://github.com/Rari-Capital/solmate/blob/7c34ed021cfeeefb1a4bff7e511a25ce8a68806b/src/test/ERC20.t.sol#L89-L103
+    /**
+     *  @notice Owner, spender, and unapproved spender mint, approve and increase liquidity testing permission.
+     *          Position manager reverts: attempts to increase liquidity unapproved spender.
+     *          https://github.com/Rari-Capital/solmate/blob/7c34ed021cfeeefb1a4bff7e511a25ce8a68806b/src/test/ERC20.t.sol#L89-L103
+     */
     function testPermitAjnaNFTByEOA() external {
         uint256 privateKey        = 0xBEEF;
         address owner             = vm.addr(privateKey);
@@ -117,14 +117,9 @@ contract PermitTest is DSTestPlus {
         assertTrue(_positionManager.getApproved(tokenId) != unapprovedSpender);
 
         // check can add liquidity as approved spender
-        IPositionManager.IncreaseLiquidityParams
-            memory increaseLiquidityParamsApproved = IPositionManager.IncreaseLiquidityParams(
-                tokenId,
-                owner,
-                address(_pool),
-                (10000 * 1e18) / 4,
-                _p1004
-            );
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParamsApproved = IPositionManager.IncreaseLiquidityParams(
+            tokenId, owner, address(_pool), (10000 * 1e18) / 4, _p1004
+        );
 
         uint256 balanceBeforeAdd = _quote.balanceOf(owner);
 
@@ -138,24 +133,20 @@ contract PermitTest is DSTestPlus {
         assert(_quote.balanceOf(owner) < balanceBeforeAdd);
 
         // attempt and fail to add liquidity as unapprovedSpender
-        IPositionManager.IncreaseLiquidityParams
-            memory increaseLiquidityParamsUnapproved = IPositionManager.IncreaseLiquidityParams(
-                tokenId,
-                owner,
-                address(_pool),
-                (10000 * 1e18) / 4,
-                _p1004
-            );
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParamsUnapproved = IPositionManager.IncreaseLiquidityParams(
+            tokenId, owner, address(_pool), (10000 * 1e18) / 4, _p1004
+        );
 
         vm.prank(unapprovedSpender);
         vm.expectRevert(IPositionManager.NotApproved.selector);
         _positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
     }
 
-    // @notice: owner, newowner, spender, unapproved spender testing permission
-    // @notice: generate permit sig and allow approved spender to transfer NFT
-    // @notice: unapproved spender reverts:
-    // @notice:     attempts to transfer NFT when not permitted
+    /**
+     *  @notice Owner, newowner, spender, unapproved spender testing permission.
+     *          Generate permit sig and allow approved spender to transfer NFT.
+     *          Unapproved spender reverts: attempts to transfer NFT when not permitted.
+     */
     function testSafeTransferFromWithPermit() external {
         uint256 privateKey        = 0xBEEF;
         address owner             = vm.addr(privateKey);
@@ -183,36 +174,20 @@ contract PermitTest is DSTestPlus {
         // it should block an unapproved spender from interacting with the NFT
         vm.expectRevert("ERC721: transfer caller is not owner nor approved");
         vm.prank(unapprovedSpender);
-        _positionManager.safeTransferFromWithPermit(
-            owner,
-            newOwner,
-            spender,
-            tokenId,
-            deadline,
-            v,
-            r,
-            s
-        );
+        _positionManager.safeTransferFromWithPermit(owner, newOwner, spender, tokenId, deadline, v, r, s);
 
         // it should allow the permitted spender to interact with the NFT
         vm.prank(spender);
-        _positionManager.safeTransferFromWithPermit(
-            owner,
-            newOwner,
-            spender,
-            tokenId,
-            deadline,
-            v,
-            r,
-            s
-        );
+        _positionManager.safeTransferFromWithPermit(owner, newOwner, spender, tokenId, deadline, v, r, s);
 
         (, address ownerAfterTransfer, ) = _positionManager.positions(tokenId);
         assertEq(newOwner, ownerAfterTransfer);
         assert(ownerAfterTransfer != owner);
     }
 
-    // @notice: Tests that contract can be approved to increase liquidity
+    /**
+     *  @notice Tests that contract can be approved to increase liquidity.
+     */
     // TODO: finish implementing -> Requires updating test contracts to have an owner set to our private key, with that owner then signing a message hash provided by a contract view function.
     // contracts don't have private keys, so will have to use EIP-1271 here
     // https://soliditydeveloper.com/meta-transactions
@@ -263,14 +238,9 @@ contract PermitTest is DSTestPlus {
         assertTrue(_positionManager.getApproved(tokenId) != address(unapprovedContractSpender));
 
         // check can add liquidity as approved contract spender
-        IPositionManager.IncreaseLiquidityParams
-            memory increaseLiquidityParamsApproved = IPositionManager.IncreaseLiquidityParams(
-                tokenId,
-                address(minter),
-                address(_pool),
-                liquidityToAdd,
-                price
-            );
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParamsApproved = IPositionManager.IncreaseLiquidityParams(
+            tokenId, address(minter), address(_pool), liquidityToAdd, price
+        );
 
         vm.expectEmit(true, true, true, true);
         emit IncreaseLiquidity(address(minter), liquidityToAdd, price);
@@ -279,7 +249,9 @@ contract PermitTest is DSTestPlus {
         _positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
     }
 
-    // @notice: Tests that Ajna token can be permitted for use by another EOA
+    /**
+     *  @notice Tests that Ajna token can be permitted for use by another EOA.
+     */
     function testPermitAjnaERC20() external {
         uint256 privateKey        = 0xBEEF;
         address owner             = vm.addr(privateKey);

@@ -36,24 +36,16 @@ contract ERC20PoolTest is DSTestPlus {
         _borrower.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    // @notice:Tests pool factory inputs match the pool created
+    /**
+     *  @notice Tests pool factory inputs match the pool created.
+     */
     function testDeploy() external {
         assertEq(address(_collateral), address(_pool.collateral()));
         assertEq(address(_quote),      address(_pool.quoteToken()));
     }
 
     function testEmptyBucket() external {
-        (
-            ,
-            ,
-            ,
-            uint256 deposit,
-            uint256 debt,
-            uint256 bucketInflator,
-            uint256 lpOutstanding,
-            uint256 bucketCollateral
-        ) = _pool.bucketAt(_p1004);
-
+        (, , , uint256 deposit, uint256 debt, uint256 bucketInflator, uint256 lpOutstanding, uint256 bucketCollateral) = _pool.bucketAt(_p1004);
         assertEq(deposit,          0);
         assertEq(debt,             0);
         assertEq(bucketInflator,   0);
@@ -61,7 +53,6 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
 
         (, , , deposit, debt, bucketInflator, lpOutstanding, bucketCollateral) = _pool.bucketAt(_p2793);
-
         assertEq(deposit,          0);
         assertEq(debt,             0);
         assertEq(bucketInflator,   0);
@@ -69,7 +60,9 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
     }
 
-    // @notice: Check that initialize can only be called once
+    /**
+     *  @notice Check that initialize can only be called once.
+     */
     function testInitialize() external {
         uint256 initialInflator = 1 * 10**27;
 

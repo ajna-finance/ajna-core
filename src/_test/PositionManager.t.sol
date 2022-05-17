@@ -40,7 +40,9 @@ contract PositionManagerTest is DSTestPlus {
         _quote.mint(_alice, 30000000000 * 1e18);
     }
 
-    // -------------------- Utility Functions --------------------
+    /*************************/
+    /*** Utility Functions ***/
+    /*************************/
 
     function mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) private {
         _quote.mint(operator_, mintAmount_ * 1e18);
@@ -59,7 +61,9 @@ contract PositionManagerTest is DSTestPlus {
         operator_.approveToken(_collateral, address(_positionManager), mintAmount_);
     }
 
-    // abstract away NFT Minting logic for use by multiple tests
+    /**
+     *  @dev Abstract away NFT Minting logic for use by multiple tests.
+     */
     function mintNFT(address minter_, address pool_) private returns (uint256 tokenId) {
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(minter_, pool_);
 
@@ -68,14 +72,11 @@ contract PositionManagerTest is DSTestPlus {
     }
 
     function increaseLiquidity(
-        uint256 tokenId_,
-        address recipient_,
-        address pool_,
-        uint256 amount_,
-        uint256 price_
+        uint256 tokenId_, address recipient_, address pool_, uint256 amount_, uint256 price_
     ) private {
-        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
-            .IncreaseLiquidityParams(tokenId_, recipient_, pool_, amount_, price_);
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
+            tokenId_, recipient_, pool_, amount_, price_
+        );
 
         vm.expectEmit(true, true, true, true);
         emit IncreaseLiquidity(recipient_, price_, amount_);
@@ -85,19 +86,13 @@ contract PositionManagerTest is DSTestPlus {
     }
 
     function decreaseLiquidity(
-        uint256 tokenId_,
-        address recipient_,
-        address pool_,
-        uint256 price_,
-        uint256 lpTokensToRemove_
+        uint256 tokenId_, address recipient_, address pool_, uint256 price_, uint256 lpTokensToRemove_
     ) private returns (uint256 collateralTokensToBeRemoved, uint256 quoteTokensToBeRemoved) {
-        (collateralTokensToBeRemoved, quoteTokensToBeRemoved) = _pool.getLPTokenExchangeValue(
-            lpTokensToRemove_,
-            price_
-        );
+        (collateralTokensToBeRemoved, quoteTokensToBeRemoved) = _pool.getLPTokenExchangeValue(lpTokensToRemove_, price_);
 
-        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager
-            .DecreaseLiquidityParams(tokenId_, recipient_, pool_, price_, lpTokensToRemove_);
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
+            tokenId_, recipient_, pool_, price_, lpTokensToRemove_
+        );
 
         vm.expectEmit(true, true, true, true);
         emit DecreaseLiquidity(recipient_, price_, collateralTokensToBeRemoved, quoteTokensToBeRemoved);
@@ -115,7 +110,9 @@ contract PositionManagerTest is DSTestPlus {
 
     // -------------------- Tests --------------------
 
-    // @notice: Tests base NFT minting functionality
+    /**
+     *  @notice Tests base NFT minting functionality.
+     */
     function testMint() external {
         uint256 mintAmount = 50 * 1e18;
         uint256 mintPrice  = _p1004;
@@ -138,8 +135,10 @@ contract PositionManagerTest is DSTestPlus {
         assert(lpTokens == 0);
     }
 
-    // @notice: Tests attachment of a created position to an already existing NFT
-    // @notice: LP tokens are checked to verify ownership of position
+    /**
+     *  @notice Tests attachment of a created position to an already existing NFT.
+     *          LP tokens are checked to verify ownership of position.
+     */
     function testMemorializePositions() external {
         address testAddress = generateAddress();
         uint256 mintAmount  = 10000 * 1e18;
@@ -165,8 +164,9 @@ contract PositionManagerTest is DSTestPlus {
         uint256 tokenId = mintNFT(testAddress, address(_pool));
 
         // memorialize quote tokens into minted NFT
-        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager
-            .MemorializePositionsParams(tokenId, testAddress, address(_pool), prices);
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId, testAddress, address(_pool), prices
+        );
 
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
@@ -188,7 +188,9 @@ contract PositionManagerTest is DSTestPlus {
     // TODO: implement test case where multiple users mints multiple NFTs to multiple pools
     function testMintMultiple() external {}
 
-    // @notice: Tests a contract minting an NFT
+    /**
+     *  @notice Tests a contract minting an NFT.
+     */
     function testMintToContract() external {
         UserWithQuoteToken lender = new UserWithQuoteToken();
         _quote.mint(address(lender), 200_000 * 1e18);
@@ -201,7 +203,9 @@ contract PositionManagerTest is DSTestPlus {
         mintNFT(address(lender), address(_pool));
     }
 
-    // @notice: Tests minting an NFT, increasing liquidity at two different prices
+    /**
+     *  @notice Tests minting an NFT, increasing liquidity at two different prices.
+     */
     function testIncreaseLiquidity() external {
         // generate a new address
         address testAddress = generateAddress();
@@ -243,10 +247,10 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(), mintAmount);
     }
 
-    // @notice: Tests minting an NFT and failing to increase
-    // @notice: liquidity for invalid recipient
-    // @notice: recipient reverts:
-    // @notice:     attempts to increase liquidity when not permited
+    /**
+     *  @notice Tests minting an NFT and failing to increase liquidity for invalid recipient.
+     *          Recipient reverts: attempts to increase liquidity when not permited.
+     */
     function testIncreaseLiquidityPermissions() external {
         address recipient      = generateAddress();
         address externalCaller = generateAddress();
@@ -256,8 +260,9 @@ contract PositionManagerTest is DSTestPlus {
 
         mintAndApproveQuoteTokens(recipient, mintAmount);
 
-        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
-            .IncreaseLiquidityParams(tokenId, recipient, address(_pool), mintAmount / 4, mintPrice);
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
+            tokenId, recipient, address(_pool), mintAmount / 4, mintPrice
+        );
 
         // should revert if called by a non-recipient address
         vm.prank(externalCaller);
@@ -266,7 +271,9 @@ contract PositionManagerTest is DSTestPlus {
         _positionManager.increaseLiquidity(increaseLiquidityParams);
     }
 
-    // @notice: Tests minting an NFT, increasing liquidity and decreasing liquidity
+    /**
+     *  @notice Tests minting an NFT, increasing liquidity and decreasing liquidity.
+     */
     function testDecreaseLiquidityNoDebt() external {
         // generate a new address and set test params
         address testAddress = generateAddress();
@@ -301,8 +308,9 @@ contract PositionManagerTest is DSTestPlus {
         // TODO: check balance of collateral and quote
     }
 
-    // @notice: Tests minting an NFT, increasing liquidity, borrowing,
-    // @notice: purchasing then decreasing liquidity
+    /**
+     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity.
+     */
     function testDecreaseLiquidityWithDebt() external {
         // generate a new address and set test params
         address testLender      = generateAddress();
@@ -348,10 +356,11 @@ contract PositionManagerTest is DSTestPlus {
         assertTrue(updatedLPTokens < originalLPTokens);
     }
 
-    // @notice: Tests minting an NFT, transfering NFT, increasing liquidity
-    // @notice: checks that old owner cannot increase liquidity
-    // @notice: old owner reverts:
-    // @notice:    attempts to increase liquidity without permission
+    /**
+     *  @notice Tests minting an NFT, transfering NFT, increasing liquidity.
+     *          Checks that old owner cannot increase liquidity.
+     *          Old owner reverts: attempts to increase liquidity without permission.
+     */
     function testNFTTransfer() external {
         // generate addresses and set test params
         address testMinter      = generateAddress();
@@ -383,14 +392,9 @@ contract PositionManagerTest is DSTestPlus {
         uint256 nextMintAmount = 50000 * 1e18;
         mintAndApproveQuoteTokens(originalOwner, nextMintAmount);
 
-        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
-            .IncreaseLiquidityParams(
-                tokenId,
-                originalOwner,
-                address(_pool),
-                mintAmount / 4,
-                testBucketPrice
-            );
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
+            tokenId, originalOwner, address(_pool), mintAmount / 4, testBucketPrice
+        );
 
         vm.expectRevert(IPositionManager.NotApproved.selector);
         _positionManager.increaseLiquidity(increaseLiquidityParams);
@@ -401,10 +405,11 @@ contract PositionManagerTest is DSTestPlus {
         decreaseLiquidity(tokenId, newOwner, address(_pool), testBucketPrice, lpTokensToAttempt);
     }
 
-    // @notice: Tests NFT position can & can't be burned
-    // @notice: based on liquidity attached to it
-    // @notice: owner reverts:
-    // @notice:    attempts to burn NFT with liquidity
+    /**
+     *  @notice Tests NFT position can & can't be burned based on liquidity attached to it.
+     *          Checks that old owner cannot increase liquidity.
+     *          Owner reverts: attempts to burn NFT with liquidity.
+     */
     function testBurn() external {
         // generate a new address and set test params
         address testAddress = generateAddress();
