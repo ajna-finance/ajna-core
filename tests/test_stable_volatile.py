@@ -47,7 +47,7 @@ def lenders(ajna_protocol, pool_client, weth_dai_pool):
 @pytest.fixture
 def borrowers(ajna_protocol, pool_client, weth_dai_pool):
     weth_client = pool_client.get_collateral_token()
-    amount = 15_000 * 10**18
+    amount = 14_000 * 10**18
     dai_client = pool_client.get_quote_token()
     borrowers = []
     for _ in range(100):
@@ -195,7 +195,7 @@ def update_interest_rate(lenders, pool) -> int:
     # Update the interest rate
     tx = pool.updateInterestRate({"from": lenders[random.randrange(0, len(lenders))]})
     if 'UpdateInterestRate' in tx.events:
-        interest_rate = tx.events['UpdateInterestRate'][0][0]['newRate'] / 10**18
+        interest_rate = tx.events['UpdateInterestRate'][0][0]['newRate_'] / 10**18
         print(f" updated interest rate to {interest_rate:.3%}")
     else:
         interest_rate = pool.previousRate() / 10**18
