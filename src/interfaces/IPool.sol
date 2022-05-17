@@ -443,35 +443,28 @@ interface IPool {
     function getPendingBucketInterest(uint256 price_) external view returns (uint256 interest_);
 
     /**
-     * @notice Calculate unaccrued interest for the pool, which may be added to totalDebt.
-     * @return interest_ Unaccumulated pool interest, in WAD units.
+     *  @notice Calculate unaccrued interest for the pool, which may be added to totalDebt.
+     *  @return interest_ Unaccumulated pool interest, in WAD units.
      */
     function getPendingPoolInterest() external view returns (uint256 interest_);
 
     /**
-     * @notice Gets the current utilization of the pool
-     * @dev    Will return 0 unless the pool has been borrowed from.
-     * @return poolActualUtilization_ The current pool actual utilization, in WAD units.
+     *  @notice Gets the current utilization of the pool
+     *  @dev    Will return 0 unless the pool has been borrowed from.
+     *  @return poolActualUtilization_ The current pool actual utilization, in WAD units.
      */
     function getPoolActualUtilization() external view returns (uint256 poolActualUtilization_);
 
     /**
-     * @notice Calculate the current collateralization ratio of the pool, based on `totalDebt` and `totalCollateral`.
-     * @return poolCollateralization_ Current pool collateralization ratio.
+     *  @notice Calculate the current collateralization ratio of the pool, based on `totalDebt` and `totalCollateral`.
+     *  @return poolCollateralization_ Current pool collateralization ratio.
      */
     function getPoolCollateralization() external view returns (uint256 poolCollateralization_);
 
     /**
-     * @notice Gets the current target utilization of the pool
-     * @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
+     *  @notice Gets the current target utilization of the pool
+     *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
      */
     function getPoolTargetUtilization() external view returns (uint256 poolTargetUtilization_);
-
-    /**
-     *  @notice Returns whether a bucket price has been initialized or not.
-     *  @param  price_               The price of the bucket.
-     *  @param  isBucketInitialized_ Boolean indicating if the bucket has been initialized at this price.
-     */
-    function isBucketInitialized(uint256 price_) external view returns (bool isBucketInitialized_);
 
 }

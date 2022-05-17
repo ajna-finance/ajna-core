@@ -8,7 +8,6 @@ import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { BitMaps }   from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
 import { Buckets }    from "./base/Buckets.sol";
 import { Interest } from "./base/Interest.sol";
@@ -24,8 +23,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
     /// @dev Counter used by onlyOnce modifier
     uint8 private _poolInitializations = 0;
-
-    BitMaps.BitMap private _bitmap;
 
     uint256 public override collateralScale;
     uint256 public override quoteTokenScale;
@@ -44,7 +41,9 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     // lenders lp token balances: lender address -> price bucket [WAD] -> lender lp [RAY]
     mapping(address => mapping(uint256 => uint256)) public override lpBalance;
 
-    /** @notice Modifier to protect a clone's initialize method from repeated updates */
+    /**
+     *  @notice Modifier to protect a clone's initialize method from repeated updates.
+     */
     modifier onlyOnce() {
         if (_poolInitializations != 0) {
             revert AlreadyInitialized();
@@ -65,12 +64,16 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         _poolInitializations += 1;
     }
 
-    /**  @dev Pure function used to facilitate accessing token via clone state */
+    /**
+     *  @dev Pure function used to facilitate accessing token via clone state.
+     */
     function collateral() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0));
     }
 
-    /** @dev Pure function used to facilitate accessing token via clone state */
+    /**
+     *  @dev Pure function used to facilitate accessing token via clone state.
+     */
     function quoteToken() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0x14));
     }
@@ -82,19 +85,12 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
         accumulatePoolInterest();
 
-        // create bucket if doesn't exist
-        if (!BitMaps.get(_bitmap, price_)) {
-            hpb = initializeBucket(hpb, price_);
-            BitMaps.setTo(_bitmap, price_, true);
-        }
-
         // deposit amount
         bool reallocate = (totalDebt != 0 && price_ > lup);
-        (uint256 newLup, uint256 lpTokens) = addQuoteTokenToBucket(price_, amount_, lup, inflatorSnapshot, reallocate);
+        (uint256 newHpb, uint256 newLup, uint256 lpTokens) = addQuoteTokenToBucket(price_, amount_, hpb, lup, inflatorSnapshot, reallocate);
 
-        if (reallocate) {
-            lup = newLup;
-        }
+        if (lup != newLup) lup = newLup;
+        if (hpb != newHpb) hpb = newHpb;
 
         lpBalance[recipient_][price_] += lpTokens;  // update lender lp balance for current price bucket
         totalQuoteToken               += amount_;   // update quote token accumulator
@@ -114,32 +110,18 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         accumulatePoolInterest();
 
         // remove from bucket
-        (uint256 amount, uint256 newLup, uint256 lpTokens) = removeQuoteTokenFromBucket(
-            price_,
-            maxAmount_,
-            lpBalance[recipient_][price_],
-            inflatorSnapshot
+        (uint256 amount, uint256 newLup, uint256 lpTokens, bool updateHpb, bool deactivate) = removeQuoteTokenFromBucket(
+            price_, maxAmount_, lpBalance[recipient_][price_], hpb, inflatorSnapshot
         );
 
         // move lup down only if removal happened at or above lup and new lup different than current
-        if (price_ >= lup && newLup < lup) {
-            lup = newLup;
-        }
+        if (price_ >= lup && newLup < lup) lup = newLup;
 
-        // check if hpb needs to be updated or bucket deactivated following removal
-        Buckets.Bucket memory bucket = _buckets[price_];
-        if (bucket.onDeposit == 0 && bucket.debt == 0) {
-            // update HPB if removed from current
-            if (price_ == hpb) {
-                hpb = getHpb();
-            }
+        // update hpb if required
+        if (updateHpb) hpb = getHpb();
 
-            // bucket no longer used, deactivate bucket
-            if (bucket.lpOutstanding == 0 && bucket.collateral == 0) {
-                BitMaps.setTo(_bitmap, price_, false);
-                deactivateBucket(price_);
-            }
-        }
+        // deactivate bucket if required
+        if (deactivate) deactivateBucket(price_);
 
         totalQuoteToken -= amount;
         uint256 col = getPoolCollateralization();
@@ -197,15 +179,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         }
 
         uint256 claimedLpTokens = claimCollateralFromBucket(price_, amount_, maxClaim);
-
-        // cleanup if bucket no longer used
-        Buckets.Bucket memory bucket = _buckets[price_];
-        if (bucket.debt == 0 && bucket.onDeposit == 0 && bucket.lpOutstanding == 0 && bucket.collateral == 0) {
-            // bucket no longer used, deactivate bucket
-            BitMaps.setTo(_bitmap, price_, false);
-            deactivateBucket(price_);
-        }
-
         lpBalance[recipient_][price_] -= claimedLpTokens;
 
         collateral().safeTransfer(recipient_, amount_ / collateralScale);
@@ -267,9 +240,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         totalDebt       -= Maths.min(totalDebt, amount);
 
         // reset LUP if no debt in pool
-        if (totalDebt == 0) {
-            lup = 0;
-        }
+        if (totalDebt == 0) lup = 0;
 
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, lup, amount);
@@ -288,18 +259,13 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
         accumulatePoolInterest();
 
-        uint256 newLup = purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
+        (uint256 newLup, bool isEmpty) = purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
 
         // move lup down only if removal happened at lup or higher and new lup different than current
-        if (price_ >= lup && newLup < lup) {
-            lup = newLup;
-        }
+        if (price_ >= lup && newLup < lup) lup = newLup;
 
         // update HPB if removed from current, if no deposit nor debt in current HPB and if LUP not 0
-        Buckets.Bucket memory bucket = _buckets[price_];
-        if (price_ == hpb && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
-            hpb = getHpb();
-        }
+        if (price_ == hpb && isEmpty && lup != 0) hpb = getHpb();
 
         totalQuoteToken -= amount_;
 
@@ -309,11 +275,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         }
 
         // move required collateral from sender to pool
-        collateral().safeTransferFrom(
-            msg.sender,
-            address(this),
-            collateralRequired / collateralScale
-        );
+        collateral().safeTransferFrom(msg.sender, address(this), collateralRequired / collateralScale);
 
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
@@ -334,10 +296,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
             revert NoDebtToLiquidate();
         }
 
-        uint256 collateralization = getBorrowerCollateralization(
-            borrower.collateralDeposited,
-            debt
-        );
+        uint256 collateralization = getBorrowerCollateralization(borrower.collateralDeposited, debt);
 
         if (collateralization > Maths.ONE_WAD) {
             revert BorrowerIsCollateralized({collateralization_: collateralization});
@@ -355,9 +314,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
         // update HPB
         uint256 curHpb = getHpb();
-        if (hpb != curHpb) {
-            hpb = curHpb;
-        }
+        if (hpb != curHpb) hpb = curHpb;
 
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
@@ -365,10 +322,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     /*************************/
     /*** Bucket Management ***/
     /*************************/
-
-    function isBucketInitialized(uint256 price_) public view override returns (bool isBucketInitialized_) {
-        return BitMaps.get(_bitmap, price_);
-    }
 
     function getPendingBucketInterest(uint256 price_) external view override returns (uint256 interest_) {
         (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(price_);
@@ -380,9 +333,9 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     /*****************************/
 
     /**
-     * @notice Update the global borrower inflator
-     * @dev Requires time to have passed between update calls
-    */
+     *  @notice Update the global borrower inflator
+     *  @dev    Requires time to have passed between update calls
+     */
     function accumulatePoolInterest() private {
         if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
             uint256 pendingInflator    = getPendingInflator();                                              // RAY
