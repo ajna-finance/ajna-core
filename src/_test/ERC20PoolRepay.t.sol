@@ -26,7 +26,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _pool        = ERC20Pool(_poolAddress);  
+        _pool        = ERC20Pool(_poolAddress);
 
         _borrower   = new UserWithCollateral();
         _borrower2  = new UserWithCollateral();
@@ -181,7 +181,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // repay should revert if no debt
-        vm.expectRevert(IPool.NoDebtToRepay.selector);
+        vm.expectRevert("P:R:NO_DEBT");
         _borrower.repay(_pool, 10_000 * 1e18);
 
         // borrower takes loan of 25_000 DAI from 3 buckets
@@ -229,7 +229,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(borrowerDebt,        2_000 * 1e18);
         assertEq(depositedCollateral, 100 * 1e18);
         // repay should revert if amount not available
-        vm.expectRevert(IPool.InsufficientBalanceForRepay.selector);
+        vm.expectRevert("P:R:INSUF_BAL");
         _borrower.repay(_pool, 50_000 * 1e18);
 
         // repay debt partially 10_000 DAI

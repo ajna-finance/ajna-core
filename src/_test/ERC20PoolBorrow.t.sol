@@ -27,7 +27,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _pool        = ERC20Pool(_poolAddress);  
+        _pool        = ERC20Pool(_poolAddress);
 
         _borrower   = new UserWithCollateral();
         _borrower2  = new UserWithCollateral();
@@ -71,25 +71,18 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.getPendingBucketInterest(priceHighest), 0);
 
         // should revert if borrower wants to borrow a greater amount than in pool
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.InsufficientLiquidity.selector,
-                _pool.totalQuoteToken() - _pool.totalDebt()
-            )
-        );
+        vm.expectRevert("P:B:INSUF_LIQ");
         _borrower.borrow(_pool, 60_000 * 1e18, 2_000 * 1e18);
 
         // should revert if insufficient collateral deposited by borrower
-        vm.expectRevert(IPool.InsufficientCollateralForBorrow.selector);
+        vm.expectRevert("P:B:INSUF_COLLAT");
         _borrower.borrow(_pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // borrower deposit 10 MKR collateral
         _borrower.addCollateral(_pool, 10 * 1e18);
 
         // should revert if limit price exceeded
-        vm.expectRevert(
-            abi.encodeWithSelector(Buckets.BorrowPriceBelowLimitPrice.selector, priceHigh)
-        );
+        vm.expectRevert("B:B:PRICE_LT_LIMIT");
         _borrower.borrow(_pool, 15_000 * 1e18, 4_000 * 1e18);
 
         // borrower deposits additional 90 MKR collateral
@@ -276,12 +269,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertLt(targetUtilizationAfterAddCollateral, targetUtilizationAfterBorrow);
 
         // should revert when taking a loan of 5_000 DAI that will drive pool undercollateralized
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.PoolUndercollateralized.selector,
-                0.976275672074051610 * 1e18
-            )
-        );
+        vm.expectRevert("P:B:POOL_UNDER_COLLAT");
         _borrower2.borrow(_pool, 5_000 * 1e18, 1_000 * 1e18);
     }
 

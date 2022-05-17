@@ -13,7 +13,7 @@ contract BucketMathTest is DSTestPlus {
     function testPriceToIndex() public {
         uint256 badPrice = 5 * 10**10;
 
-        vm.expectRevert(BucketMath.PriceOutsideBoundry.selector);
+        vm.expectRevert("BM:PTI:OOB");
         BucketMath.priceToIndex(badPrice);
 
         uint256 priceToTest = 5 * 10**18;

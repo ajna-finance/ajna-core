@@ -37,7 +37,7 @@ contract PermitTest is DSTestPlus {
         _positionManager = new PositionManager();
 
         _poolAddress          = _factory.deployPool(address(_collateral), address(_quote));
-        _pool                 = ERC20Pool(_poolAddress);  
+        _pool                 = ERC20Pool(_poolAddress);
         _ajnaTokenPoolAddress = _factory.deployPool(address(_collateral), address(_ajnaToken));
         _ajnaTokenPool        = ERC20Pool(_ajnaTokenPoolAddress);
     }
@@ -138,7 +138,7 @@ contract PermitTest is DSTestPlus {
         );
 
         vm.prank(unapprovedSpender);
-        vm.expectRevert(IPositionManager.NotApproved.selector);
+        vm.expectRevert("PM:NO_AUTH");
         _positionManager.increaseLiquidity(increaseLiquidityParamsUnapproved);
     }
 

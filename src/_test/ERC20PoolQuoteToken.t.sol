@@ -29,7 +29,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _pool        = ERC20Pool(_poolAddress);  
+        _pool        = ERC20Pool(_poolAddress);
 
         _borrower   = new UserWithCollateral();
         _borrower2  = new UserWithCollateral();
@@ -59,7 +59,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
      */
     function testDepositQuoteToken() external {
         // should revert when depositing at invalid price
-        vm.expectRevert(IPool.InvalidPrice.selector);
+        vm.expectRevert("P:AQT:INVALID_PRICE");
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, 10_049.48314 * 1e18);
 
         assertEq(_pool.hpb(), 0);
@@ -463,7 +463,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         skip(3600);
 
         // should revert if trying to remove entire amount lended
-        vm.expectRevert(Buckets.NoDepositToReallocateTo.selector);
+        vm.expectRevert("B:RD:NO_REALLOC_LOCATION");
         _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
 
         // confirm our LP balance still entitles us to our share of the utilized bucket
@@ -961,12 +961,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.lup(), priceLow);
 
         // removal should revert if pool remains undercollateralized
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.PoolUndercollateralized.selector,
-                0.127923769382684563 * 1e18
-            )
-        );
+        vm.expectRevert("P:RQT:POOL_UNDER_COLLAT");
         _lender.removeQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceLow);
 
         // check pool collateralization after borrowing
@@ -1094,7 +1089,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // should revert if not enough funds in pool
         assertEq(_pool.totalQuoteToken(), 0);
 
-        vm.expectRevert(abi.encodeWithSelector(Buckets.NoDepositToReallocateTo.selector));
+        vm.expectRevert("B:RD:NO_REALLOC_LOCATION");
         _lender.removeQuoteToken(_pool, address(_lender), _p1000, _p8002);
 
         // borrower repays their initial loan principal

@@ -26,7 +26,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _pool        = ERC20Pool(_poolAddress);  
+        _pool        = ERC20Pool(_poolAddress);
 
         _borrower   = new UserWithCollateral();
         _borrower2  = new UserWithCollateral();
@@ -57,7 +57,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLow);
 
         // should revert when no debt
-        vm.expectRevert(IPool.NoDebtToLiquidate.selector);
+        vm.expectRevert("P:L:NO_DEBT");
         _lender.liquidate(_pool, address(_borrower));
 
         // borrowers deposit collateral
@@ -118,12 +118,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.getPoolActualUtilization(), 0.571428571428571429 * 1e18);
 
         // should revert when borrower collateralized
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.BorrowerIsCollateralized.selector,
-                20.066473628656401977 * 1e18
-            )
-        );
+        vm.expectRevert("P:L:BORROWER_OK");
         _lender.liquidate(_pool, address(_borrower2));
 
         // check borrower 1 is undercollateralized

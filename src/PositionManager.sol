@@ -23,9 +23,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     uint176 private _nextId = 1;
 
     modifier isAuthorizedForToken(uint256 tokenId_) {
-        if (_isApprovedOrOwner(msg.sender, tokenId_) == false) {
-            revert NotApproved();
-        }
+        require(_isApprovedOrOwner(msg.sender, tokenId_), "PM:NO_AUTH");
         _;
     }
 
@@ -73,26 +71,19 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     // TODO: Update burn check to ensure all position prices have removed liquidity
     function burn(BurnParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
-        Position storage position = positions[params_.tokenId];
-        if (position.lpTokens[params_.price] != 0) {
-            revert LiquidityNotRemoved();
-        }
+        require(positions[params_.tokenId].lpTokens[params_.price] == 0, "PM:B:LIQ_NOT_REMOVED");
         emit Burn(msg.sender, params_.price);
         delete positions[params_.tokenId];
     }
 
     function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
-        Position storage position = positions[params_.tokenId];
-
-        // call out to pool contract to add quote tokens
+        // Call out to pool contract to add quote tokens
         uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(params_.recipient, params_.amount, params_.price);
         // TODO: figure out how to test this case
-        if (lpTokensAdded == 0) {
-            revert IncreaseLiquidityFailed();
-        }
+        require(lpTokensAdded != 0, "PM:IL:NO_LP_TOKENS");
 
         // update position with newly added lp shares
-        position.lpTokens[params_.price] += lpTokensAdded;
+        positions[params_.tokenId].lpTokens[params_.price] += lpTokensAdded;
 
         emit IncreaseLiquidity(params_.recipient, params_.price, params_.amount);
     }

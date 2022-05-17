@@ -29,7 +29,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _pool        = ERC20Pool(_poolAddress);  
+        _pool        = ERC20Pool(_poolAddress);
 
         _borrower   = new UserWithCollateral();
         _borrower2  = new UserWithCollateral();
@@ -56,9 +56,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
      */
     function testAddRemoveCollateral() external {
         // should revert if trying to remove collateral when no available
-        vm.expectRevert(
-            abi.encodeWithSelector(IPool.AmountExceedsAvailableCollateral.selector, 0)
-        );
+        vm.expectRevert("P:RC:AMT_GT_AVAIL_COLLAT");
         _borrower.removeCollateral(_pool, 10 * 1e18);
         // lender deposits 20_000 DAI in 5 buckets each
         _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p5007);
@@ -123,12 +121,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         targetUtilization = _pool.getPoolTargetUtilization();
 
         // should revert if trying to remove all collateral deposited
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.AmountExceedsAvailableCollateral.selector,
-                99.999999996006106172 * 1e18
-            )
-        );
+        vm.expectRevert("P:RC:AMT_GT_AVAIL_COLLAT");
         _borrower.removeCollateral(_pool, 100 * 1e18);
 
         // remove some collateral
@@ -219,11 +212,11 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         uint256 priceMed  = _p3010;
         uint256 priceLow  = _p1004;
         // should fail if invalid price
-        vm.expectRevert(IPool.InvalidPrice.selector);
+        vm.expectRevert("P:CC:INVALID_PRICE");
         _lender.claimCollateral(_pool, address(_lender), 10_000 * 1e18, 4_000 * 1e18);
 
         // should revert if no lp tokens in bucket
-        vm.expectRevert(IPool.NoClaimToBucket.selector);
+        vm.expectRevert("P:CC:NO_CLAIM_TO_BUCKET");
         _lender.claimCollateral(_pool, address(_lender), 1 * 1e18, priceHigh);
 
         // lender deposit DAI in 3 buckets
@@ -242,7 +235,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(_pool.lpBalance(address(_lender1), priceHigh), 3_000 * 1e27);
 
         // should revert when claiming collateral if no purchase bid was done on bucket
-        vm.expectRevert(abi.encodeWithSelector(Buckets.ClaimExceedsCollateral.selector, 0));
+        vm.expectRevert("B:CC:AMT_GT_COLLAT");
 
         _lender.claimCollateral(_pool, address(_lender), 1 * 1e18, priceHigh);
 
@@ -277,9 +270,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         _lender1.removeQuoteToken(_pool, address(_lender1), 2_000 * 1e18, priceHigh);
 
         // should revert if claiming larger amount of collateral than LP balance allows
-        vm.expectRevert(
-            abi.encodeWithSelector(Buckets.InsufficientLpBalance.selector, 1_000.000000000000000015333334000 * 1e27)
-        );
+        vm.expectRevert("B:CC:INSUF_LP_BAL");
         _lender1.claimCollateral(_pool, address(_lender1), 0.3 * 1e18, priceHigh);
 
         // lender claims entire 0.37491305029841573 collateral from price bucket

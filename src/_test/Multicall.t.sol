@@ -145,7 +145,7 @@ contract MulticallTest is DSTestPlus {
 
         // attempt to modify the NFT from an unapproved EOA
         vm.prank(externalCaller);
-        vm.expectRevert(IPositionManager.NotApproved.selector);
+        vm.expectRevert("PM:NO_AUTH");
         _positionManager.multicall(callsToExecute);
 
         vm.expectEmit(true, true, true, true);
@@ -153,7 +153,7 @@ contract MulticallTest is DSTestPlus {
 
         // attempt to increase liquidity and then burn the NFT without decreasing liquidity
         vm.prank(recipient);
-        vm.expectRevert(IPositionManager.LiquidityNotRemoved.selector);
+        vm.expectRevert("PM:B:LIQ_NOT_REMOVED");
         _positionManager.multicall(callsToExecute);
 
         // TODO: add case for custom error string -> figure out how to induce such a revert
