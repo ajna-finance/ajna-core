@@ -38,28 +38,28 @@ def main():
 
     pool.addQuoteToken(
         lenders[0],
-        10_000 * 1e45,
+        10_000 * 1e18,
         ajna_protocol.bucket_math.indexToPrice(1600),
         {"from": lenders[0]},
     )
     pool.addQuoteToken(
         lenders[0],
-        1_000 * 1e45,
+        1_000 * 1e18,
         ajna_protocol.bucket_math.indexToPrice(1500),
         {"from": lenders[0]},
     )
     pool.addQuoteToken(
         lenders[0],
-        10_000 * 1e45,
+        10_000 * 1e18,
         ajna_protocol.bucket_math.indexToPrice(1400),
         {"from": lenders[0]},
     )
 
-    pool.addCollateral(100 * 1e27, {"from": borrowers[0]})
-    pool.addCollateral(100 * 1e27, {"from": borrowers[1]})
+    pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
+    pool.addCollateral(100 * 1e18, {"from": borrowers[1]})
 
-    pool.borrow(10_000 * 1e45, 1 * 1e18, {"from": borrowers[0]})
-    pool.borrow(10_000 * 1e45, 1 * 1e18, {"from": borrowers[1]})
+    pool.borrow(10_000 * 1e18, 1 * 1e18, {"from": borrowers[0]})
+    pool.borrow(10_000 * 1e18, 1 * 1e18, {"from": borrowers[1]})
 
     return (
         ajna_protocol,

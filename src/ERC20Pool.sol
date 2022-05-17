@@ -114,8 +114,9 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         accumulatePoolInterest();
 
         // remove from bucket
+        Buckets.Bucket memory bucket = _buckets[price_];
         (uint256 amount, uint256 newLup, uint256 lpTokens) = removeQuoteTokenFromBucket(
-            price_,
+            bucket,
             maxAmount_,
             lpBalance[recipient_][price_],
             inflatorSnapshot
@@ -127,7 +128,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         }
 
         // check if hpb needs to be updated or bucket deactivated following removal
-        Buckets.Bucket memory bucket = _buckets[price_];
         if (bucket.onDeposit == 0 && bucket.debt == 0) {
             // update HPB if removed from current
             if (price_ == hpb) {
@@ -137,7 +137,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
             // bucket no longer used, deactivate bucket
             if (bucket.lpOutstanding == 0 && bucket.collateral == 0) {
                 BitMaps.setTo(_bitmap, price_, false);
-                deactivateBucket(price_);
+                deactivateBucket(bucket);
             }
         }
 
@@ -196,14 +196,14 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
             revert NoClaimToBucket();
         }
 
-        uint256 claimedLpTokens = claimCollateralFromBucket(price_, amount_, maxClaim);
+        Buckets.Bucket memory bucket = _buckets[price_];
+        uint256 claimedLpTokens = claimCollateralFromBucket(bucket, amount_, maxClaim);
 
         // cleanup if bucket no longer used
-        Buckets.Bucket memory bucket = _buckets[price_];
         if (bucket.debt == 0 && bucket.onDeposit == 0 && bucket.lpOutstanding == 0 && bucket.collateral == 0) {
             // bucket no longer used, deactivate bucket
             BitMaps.setTo(_bitmap, price_, false);
-            deactivateBucket(price_);
+            deactivateBucket(bucket);
         }
 
         lpBalance[recipient_][price_] -= claimedLpTokens;
@@ -288,7 +288,8 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
         accumulatePoolInterest();
 
-        uint256 newLup = purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
+        Buckets.Bucket memory bucket = _buckets[price_];
+        uint256 newLup = purchaseBidFromBucket(bucket, amount_, collateralRequired, inflatorSnapshot);
 
         // move lup down only if removal happened at lup or higher and new lup different than current
         if (price_ >= lup && newLup < lup) {
@@ -296,7 +297,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         }
 
         // update HPB if removed from current, if no deposit nor debt in current HPB and if LUP not 0
-        Buckets.Bucket memory bucket = _buckets[price_];
         if (price_ == hpb && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
             hpb = getHpb();
         }
