@@ -195,18 +195,6 @@ interface IPool {
     function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
 
     /**
-     *  @notice Returns the `hpb` state variable.
-     *  @return hpb_ The price value of the current Highest Price Bucket (HPB).
-     */
-    function hpb() external view returns (uint256 hpb_);
-
-    /**
-     *  @notice Returns the `lup` state variable.
-     *  @return lup_ The price value of the current Lowest Utilized Price (LUP) bucket.
-     */
-    function lup() external view returns (uint256 lup_);
-
-    /**
      *  @notice Returns the `previousRateUpdate` state variable.
      *  @return previousRateUpdate_ The timestamp of the last rate update.
      */
@@ -403,22 +391,6 @@ interface IPool {
      *  @return encumbrance_ The current encumbrance of a given debt balance, in WAD units.
      */
     function getEncumberedCollateral(uint256 debt_) external view returns (uint256 encumbrance_);
-
-    /**
-     *  @notice Returns the current Highest Price Bucket (HPB).
-     *  @dev    Starting at the current HPB, iterate through down pointers until a new HPB found.
-     *  @dev    HPB should have at on deposit or debt different than 0.
-     *  @return hpb_ The current Highest Price Bucket (HPB).
-     */
-    function getHpb() external view returns (uint256 hpb_);
-
-    /**
-     *  @notice Returns the current Highest Utilizable Price (HUP) bucket.
-     *  @dev    Starting at the LUP, iterate through down pointers until no quote tokens are available.
-     *  @dev    LUP should always be >= HUP.
-     *  @return hup_ The current Highest Utilizable Price (HUP) bucket.
-     */
-    function getHup() external view returns (uint256 hup_);
 
     /**
      *  @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens.

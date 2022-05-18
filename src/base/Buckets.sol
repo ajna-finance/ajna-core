@@ -17,6 +17,15 @@ abstract contract Buckets {
     BitMaps.BitMap internal _bitmap;
 
     /**
+     *  @notice The price value of the current Highest Price Bucket (HPB). WAD
+     */
+    uint256 public hpb;
+    /**
+     *  @notice The price value of the current Lowest Utilized Price (LUP) bucket. WAD
+     */
+    uint256 public lup;
+
+    /**
      *  @notice struct holding bucket info
      *  @param price            Current bucket price, WAD
      *  @param up               Upper utilizable bucket price, WAD
@@ -71,19 +80,15 @@ abstract contract Buckets {
      *  @notice Called by a lender to add quote tokens to a bucket
      *  @param  price_      The price bucket to which quote tokens should be added.
      *  @param  amount_     The amount of quote tokens to be added.
-     *  @param  hpb_        The current pool HPB.
-     *  @param  lup_        The current pool LUP.
+     *  @param  totalDebt_  The amount of total debt.
      *  @param  inflator_   The current pool inflator rate.
-     *  @param  reallocate_ Boolean to check if assets need to be reallocated.
-     *  @return newHpb_     The new pool HPB.
-     *  @return newLup_     The new pool LUP.
      *  @return lpTokens_   The amount of lpTokens received by the lender for the added quote tokens.
      */
     function addQuoteTokenToBucket(
-        uint256 price_, uint256 amount_, uint256 hpb_, uint256 lup_, uint256 inflator_, bool reallocate_
-    ) internal returns (uint256 newHpb_, uint256 newLup_, uint256 lpTokens_) {
+        uint256 price_, uint256 amount_, uint256 totalDebt_, uint256 inflator_
+    ) internal returns (uint256 lpTokens_) {
         // create bucket and update HPB if doesn't exist
-        newHpb_ = !BitMaps.get(_bitmap, price_) ? initializeBucket(hpb_, price_) : hpb_;
+        uint256 newHpb = !BitMaps.get(_bitmap, price_) ? initializeBucket(hpb, price_) : hpb;
 
         Bucket storage bucket = _buckets[price_];
         accumulateBucketInterest(bucket, inflator_);
@@ -92,7 +97,12 @@ abstract contract Buckets {
         bucket.lpOutstanding += lpTokens_;
         bucket.onDeposit     += amount_;
 
-        newLup_ = reallocate_? reallocateUp(bucket, amount_, lup_, inflator_) : lup_;
+        bool reallocate = totalDebt_ != 0 && price_ > lup;
+        uint256 newLup = reallocate ? reallocateUp(bucket, amount_, inflator_) : lup;
+
+        // update LUP and HPB
+        if (lup != newLup) lup = newLup;
+        if (hpb != newHpb) hpb = newHpb;
     }
 
     /**
@@ -100,16 +110,13 @@ abstract contract Buckets {
      *  @param  price_     The price bucket from which quote tokens should be removed
      *  @param  maxAmount_ The maximum amount of quote tokens to be removed, WAD
      *  @param  lpBalance_ The LP balance for current lender, RAY
-     *  @param  hpb_       The current pool HPB
      *  @param  inflator_  The current pool inflator rate, RAY
-     *  @return newHpb_    The new pool HPB
-     *  @return newLup_    The new pool LUP
      *  @return amount_    The actual amount being removed
      *  @return lpTokens_  The amount of lpTokens removed equivalent to the quote tokens removed
      */
     function removeQuoteTokenFromBucket(
-        uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 hpb_, uint256 inflator_
-    ) internal returns (uint256 newHpb_, uint256 newLup_, uint256 amount_, uint256 lpTokens_) {
+        uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 inflator_
+    ) internal returns (uint256 amount_, uint256 lpTokens_) {
         Bucket storage bucket = _buckets[price_];
         accumulateBucketInterest(bucket, inflator_);
 
@@ -125,14 +132,18 @@ abstract contract Buckets {
         bucket.onDeposit -= removeFromDeposit;
 
         // Reallocate debt to fund remaining withdrawal
-        newLup_ = reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
+        uint256 newLup = reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
+        // move lup down only if removal happened at or above lup and new lup different than current
+        if (price_ >= lup && newLup < lup) lup = newLup;
 
         bucket.lpOutstanding -= lpTokens_;
 
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
         bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
 
-        newHpb_ = (isEmpty && price_ == hpb_) ? getHpb(hpb_) : hpb_;
+        uint256 newHpb = (isEmpty && price_ == hpb) ? getHpb() : hpb;
+        // update hpb if required
+        if (newHpb != hpb) hpb = newHpb;
 
         if (isEmpty && noClaim) deactivateBucket(bucket);
     }
@@ -172,14 +183,12 @@ abstract contract Buckets {
      *  @notice Called by a borrower to borrow from a given bucket
      *  @param  amount_   The amount of quote tokens to borrow from the bucket, WAD
      *  @param  limit_    The lowest price desired to borrow at, WAD
-     *  @param  lup_      The current pool LUP, WAD
      *  @param  inflator_ The current pool inflator rate, RAY
-     *  @return newLup_   The price at which the borrow executed, WAD
      */
-    function borrowFromBucket(
-        uint256 amount_, uint256 limit_, uint256 lup_, uint256 inflator_
-    ) internal returns (uint256 newLup_) {
-        Bucket storage curLup = _buckets[lup_];
+    function borrowFromBucket(uint256 amount_, uint256 limit_, uint256 inflator_) internal {
+        // if first loan then borrow at HPB price, otherwise at LUP
+        uint256 price = lup == 0 ? hpb : lup;
+        Bucket storage curLup = _buckets[price];
 
         while (true) {
             if (curLup.price < limit_) {
@@ -206,20 +215,17 @@ abstract contract Buckets {
             curLup = _buckets[curLup.down];
         }
 
-        newLup_ = (lup_ > curLup.price || lup_ == 0) ? curLup.price : lup_;
+        lup = (price > curLup.price || price == 0) ? curLup.price : price;
     }
 
     /**
      *  @notice Called by a borrower to repay quote tokens as part of reducing their position
-     *  @param  amount_   The amount of quote tokens to repay to the bucket, WAD
-     *  @param  lup_      The current pool LUP, WAD
-     *  @param  inflator_ The current pool inflator rate, RAY
-     *  @return newLup_   The new pool LUP
+     *  @param  amount_       The amount of quote tokens to repay to the bucket, WAD
+     *  @param  inflator_     The current pool inflator rate, RAY
+     *  @param  reconcile_    True if all debt in pool is repaid
      */
-    function repayBucket(
-        uint256 amount_, uint256 lup_, uint256 inflator_
-    ) internal returns (uint256 newLup_) {
-        Bucket storage curLup = _buckets[lup_];
+    function repayBucket(uint256 amount_, uint256 inflator_, bool reconcile_) internal {
+        Bucket storage curLup = _buckets[lup];
 
         while (true) {
             // accumulate bucket interest
@@ -246,7 +252,9 @@ abstract contract Buckets {
             curLup = _buckets[curLup.up];
         }
 
-        newLup_ = curLup.price;
+        // reset LUP if no debt in pool
+        if (reconcile_) lup = 0;
+        else if (lup != curLup.price) lup = curLup.price;
     }
 
     /**
@@ -254,14 +262,11 @@ abstract contract Buckets {
      *  @param  price_      The price bucket at which the exchange will occur, WAD
      *  @param  amount_     The amount of quote tokens to receive, WAD
      *  @param  collateral_ The amount of collateral to exchange, WAD
-     *  @param  hpb_        The current pool HPB
      *  @param  inflator_   The current pool inflator rate, RAY
-     *  @return newHpb_     The new pool HPB
-     *  @return newLup_     The new pool LUP
      */
     function purchaseBidFromBucket(
-        uint256 price_, uint256 amount_, uint256 collateral_, uint256 hpb_, uint256 inflator_
-    ) internal returns (uint256 newHpb_, uint256 newLup_) {
+        uint256 price_, uint256 amount_, uint256 collateral_, uint256 inflator_
+    ) internal {
         Bucket storage bucket = _buckets[price_];
         accumulateBucketInterest(bucket, inflator_);
 
@@ -277,8 +282,12 @@ abstract contract Buckets {
         amount_          -= purchaseFromDeposit;
 
         // Reallocate debt to exchange for collateral
-        newLup_ = reallocateDown(bucket, amount_, inflator_);
-        newHpb_ = (bucket.onDeposit == 0 && bucket.debt == 0) ? getHpb(hpb_) : hpb_;
+        uint256 newLup = reallocateDown(bucket, amount_, inflator_);
+        uint256 newHpb = (bucket.onDeposit == 0 && bucket.debt == 0) ? getHpb() : hpb;
+
+        // update LUP and HPB
+        if (lup != newLup) lup = newLup;
+        if (hpb != newHpb) hpb = newHpb;
 
         bucket.collateral += collateral_;
     }
@@ -287,15 +296,13 @@ abstract contract Buckets {
      *  @notice Liquidate a given position's collateral
      *  @param  debt_               The amount of debt to cover, WAD
      *  @param  collateral_         The amount of collateral deposited, WAD
-     *  @param  hpb_                The pool's highest price bucket, WAD
      *  @param  inflator_           The current pool inflator rate, RAY
-     *  @return newHpb_             The new highest price bucket of the pool (HPB)
      *  @return requiredCollateral_ The amount of collateral to be liquidated
      */
     function liquidateAtBucket(
-        uint256 debt_, uint256 collateral_, uint256 hpb_, uint256 inflator_
-    ) internal returns (uint256 newHpb_, uint256 requiredCollateral_) {
-        Bucket storage bucket = _buckets[hpb_];
+        uint256 debt_, uint256 collateral_, uint256 inflator_
+    ) internal returns (uint256 requiredCollateral_) {
+        Bucket storage bucket = _buckets[hpb];
 
         while (true) {
             accumulateBucketInterest(bucket, inflator_);
@@ -326,7 +333,10 @@ abstract contract Buckets {
 
             bucket = _buckets[bucket.down];
         }
-        newHpb_ = getHpb(hpb_);
+        
+        uint256 newHpb = getHpb();
+        // update HPB
+        if (hpb != newHpb) hpb = newHpb;
     }
 
     /**
@@ -393,14 +403,13 @@ abstract contract Buckets {
      *  @dev    Occcurs when quote tokens are being added
      *  @param  bucket_   The given bucket whose assets are being reallocated
      *  @param  amount_   The amount of quote tokens requiring reallocation, WAD
-     *  @param  lup_      The current pool lup, WAD
      *  @param  inflator_ The current pool inflator rate, RAY
-     *  @return newLup_   The price to which assets were reallocated
+     *  @return lup_      The price to which assets were reallocated
      */
     function reallocateUp(
-        Bucket storage bucket_, uint256 amount_, uint256 lup_, uint256 inflator_
-    ) private returns (uint256 newLup_) {
-        Bucket storage curLup = _buckets[lup_];
+        Bucket storage bucket_, uint256 amount_, uint256 inflator_
+    ) private returns (uint256 lup_) {
+        Bucket storage curLup = _buckets[lup];
 
         uint256 curLupDebt;
 
@@ -432,7 +441,7 @@ abstract contract Buckets {
             curLup = _buckets[curLup.up];
         }
 
-        newLup_ = curLup.price;
+        lup_ = curLup.price;
     }
 
     /**
@@ -593,11 +602,10 @@ abstract contract Buckets {
      *  @notice Returns the current Highest Utilizable Price (HUP) bucket.
      *  @dev    Starting at the LUP, iterate through down pointers until no quote tokens are available.
      *  @dev    LUP should always be >= HUP.
-     *  @param  lup_ The current LUP.
      *  @return hup_ The current Highest Utilizable Price (HUP) bucket.
      */
-    function getHup(uint256 lup_) public view returns (uint256 hup_) {
-        hup_ = lup_;
+    function getHup() public view returns (uint256 hup_) {
+        hup_ = lup;
         while (true) {
             (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = bucketAt(hup_);
 
@@ -616,11 +624,10 @@ abstract contract Buckets {
      *  @notice Returns the current Highest Price Bucket (HPB).
      *  @dev    Starting at the current HPB, iterate through down pointers until a new HPB found.
      *  @dev    HPB should have at on deposit or debt different than 0.
-     *  @param  hpb_    The current Highest Price Bucket (HPB).
-     *  @return newHpb_ The updated Highest Price Bucket (HPB).
+     *  @return newHpb_ The current Highest Price Bucket (HPB).
      */
-    function getHpb(uint256 hpb_) public view returns (uint256 newHpb_) {
-        newHpb_ = hpb_;
+    function getHpb() public view returns (uint256 newHpb_) {
+        newHpb_ = hpb;
         while (true) {
             (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = bucketAt(newHpb_);
             if (onDeposit != 0 || debt != 0) {

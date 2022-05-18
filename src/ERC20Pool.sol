@@ -9,7 +9,7 @@ import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { Buckets }    from "./base/Buckets.sol";
+import { Buckets }  from "./base/Buckets.sol";
 import { Interest } from "./base/Interest.sol";
 
 import { IPool } from "./interfaces/IPool.sol";
@@ -26,9 +26,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
     uint256 public override collateralScale;
     uint256 public override quoteTokenScale;
-
-    uint256 public override hpb; // [WAD]
-    uint256 public override lup; // [WAD]
 
     uint256 public override previousRateUpdate;
     uint256 public override totalCollateral;    // [WAD]
@@ -78,7 +75,9 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         return ERC20(_getArgAddress(0x14));
     }
 
-    function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external override returns (uint256) {
+    function addQuoteToken(
+        address recipient_, uint256 amount_, uint256 price_
+    ) external override returns (uint256 lpTokens_) {
         if (!BucketMath.isValidPrice(price_)) {
             revert InvalidPrice();
         }
@@ -86,20 +85,14 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         accumulatePoolInterest();
 
         // deposit amount
-        bool reallocate = (totalDebt != 0 && price_ > lup);
-        (uint256 newHpb, uint256 newLup, uint256 lpTokens) = addQuoteTokenToBucket(price_, amount_, hpb, lup, inflatorSnapshot, reallocate);
+        lpTokens_ = addQuoteTokenToBucket(price_, amount_, totalDebt, inflatorSnapshot);
 
-        if (lup != newLup) lup = newLup;
-        if (hpb != newHpb) hpb = newHpb;
-
-        lpBalance[recipient_][price_] += lpTokens;  // update lender lp balance for current price bucket
+        lpBalance[recipient_][price_] += lpTokens_;  // update lender lp balance for current price bucket
         totalQuoteToken               += amount_;   // update quote token accumulator
 
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
 
-        //  TODO: emit _amount / quoteTokenScale
         emit AddQuoteToken(recipient_, price_, amount_, lup);
-        return lpTokens;
     }
 
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
@@ -110,17 +103,12 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         accumulatePoolInterest();
 
         // remove from bucket
-        (uint256 newHpb, uint256 newLup, uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
-            price_, maxAmount_, lpBalance[recipient_][price_], hpb, inflatorSnapshot
+        (uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
+            price_, maxAmount_, lpBalance[recipient_][price_], inflatorSnapshot
         );
 
-        // move lup down only if removal happened at or above lup and new lup different than current
-        if (price_ >= lup && newLup < lup) lup = newLup;
-
-        // update hpb if required
-        if (newHpb != hpb) hpb = newHpb;
-
         totalQuoteToken -= amount;
+
         uint256 col = getPoolCollateralization();
         if (col < Maths.ONE_WAD) {
             revert PoolUndercollateralized({collateralization_: col});
@@ -128,7 +116,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
         lpBalance[recipient_][price_] -= lpTokens;
 
-        //  TODO: emit _amount / quoteTokenScale
         quoteToken().safeTransfer(recipient_, amount / quoteTokenScale);
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
     }
@@ -192,8 +179,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
-        // if first loan then borrow at HPB
-        lup = borrowFromBucket(amount_, limitPrice_, lup == 0 ? hpb : lup, inflatorSnapshot);
+        borrowFromBucket(amount_, limitPrice_, inflatorSnapshot);
 
         if (
             borrower.collateralDeposited <=
@@ -230,14 +216,11 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         accumulateBorrowerInterest(borrower);
 
         uint256 amount = Maths.min(maxAmount_, borrower.debt);
-        lup = repayBucket(amount, lup, inflatorSnapshot);
+        repayBucket(amount, inflatorSnapshot, amount >= totalDebt);
 
         borrower.debt   -= amount;
         totalQuoteToken += amount;
         totalDebt       -= Maths.min(totalDebt, amount);
-
-        // reset LUP if no debt in pool
-        if (totalDebt == 0) lup = 0;
 
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, lup, amount);
@@ -256,13 +239,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
         accumulatePoolInterest();
 
-        (uint256 newHpb, uint256 newLup) = purchaseBidFromBucket(price_, amount_, collateralRequired, hpb, inflatorSnapshot);
-
-        // move LUP down only if removal happened at LUP or higher and new LUP different than current
-        if (price_ >= lup && newLup < lup) lup = newLup;
-
-        // update HPB if removed from current, if LUP not 0 and if new HPB different than current
-        if (price_ == hpb && lup != 0 && hpb != newHpb) hpb = newHpb;
+        purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
 
         totalQuoteToken -= amount_;
 
@@ -299,9 +276,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
             revert BorrowerIsCollateralized({collateralization_: collateralization});
         }
 
-        (uint256 newHpb, uint256 requiredCollateral) = liquidateAtBucket(debt, collateralDeposited, hpb, inflatorSnapshot);
-        // update HPB
-        if (hpb != newHpb) hpb = newHpb;
+        uint256 requiredCollateral = liquidateAtBucket(debt, collateralDeposited, inflatorSnapshot);
 
         // pool level accounting
         totalDebt       -= borrower.debt;
@@ -338,14 +313,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
             inflatorSnapshot           = pendingInflator;                                                   // RAY
             lastInflatorSnapshotUpdate = block.timestamp;
         }
-    }
-
-    function getHup() public view override returns (uint256 hup_) {
-        hup_ = getHup(lup);
-    }
-
-    function getHpb() public view override returns (uint256 hpb_) {
-        hpb_ = getHpb(hpb);
     }
 
     // TODO: Add a test for this
