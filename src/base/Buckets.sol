@@ -159,15 +159,11 @@ abstract contract Buckets {
     ) internal returns (uint256 lpRedemption_) {
         Bucket storage bucket = _buckets[price_];
 
-        if (amount_ > bucket.collateral) {
-            revert ClaimExceedsCollateral({collateralAmount: bucket.collateral});
-        }
+        require(amount_ <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
 
         lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, bucket.price), getExchangeRate(bucket));
 
-        if (lpRedemption_ > lpBalance_) {
-            revert InsufficientLpBalance({balance: lpBalance_});
-        }
+        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
 
         bucket.collateral    -= amount_;
         bucket.lpOutstanding -= lpRedemption_;
@@ -190,9 +186,7 @@ abstract contract Buckets {
         Bucket storage curLup = _buckets[price];
 
         while (true) {
-            if (curLup.price < limit_) {
-                revert BorrowPriceBelowLimitPrice({borrowPrice: curLup.price});
-            }
+            require(curLup.price >= limit_, "B:B:PRICE_LT_LIMIT");
 
             // accumulate bucket interest
             accumulateBucketInterest(curLup, inflator_);
@@ -270,9 +264,8 @@ abstract contract Buckets {
         accumulateBucketInterest(bucket, inflator_);
 
         uint256 available = bucket.onDeposit + bucket.debt;
-        if (amount_ > available) {
-            revert InsufficientBucketLiquidity({amountAvailable: available});
-        }
+
+        require(amount_ <= available, "B:PB:INSUF_BUCKET_LIQ");
 
         // Exchange collateral for quote token on deposit
         uint256 purchaseFromDeposit = Maths.min(amount_, bucket.onDeposit);
@@ -377,9 +370,7 @@ abstract contract Buckets {
 
                     if (toBucket.down == 0) {
                         // last bucket, nowhere to go, guard against reallocation failures
-                        if (reallocation != 0) {
-                            revert NoDepositToReallocateTo();
-                        }
+                        require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
                         lup_ = toBucket.price;
                         break;
                     }
@@ -387,10 +378,7 @@ abstract contract Buckets {
                     toBucket = _buckets[toBucket.down];
                 }
             } else {
-                // lup started at the bottom
-                if (reallocation != 0) {
-                    revert NoDepositToReallocateTo();
-                }
+                require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
             }
         }
     }

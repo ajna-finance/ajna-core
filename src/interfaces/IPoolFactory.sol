@@ -7,25 +7,15 @@ pragma solidity 0.8.11;
  */
 interface IPoolFactory {
 
-    /*********************/
-    /*** Custom Errors ***/
-    /*********************/
-
-    /**
-     *  @notice A pool with same collateral and quote token already exists.
-     */
-    error PoolAlreadyExists();
+    /**************/
+    /*** Events ***/
+    /**************/
 
     /**
      *  @notice Emitted when a new pool is created.
-     *  @param  pool The address of the new pool.
+     *  @param  pool_ The address of the new pool.
      */
-    event PoolCreated(address pool);
-
-    /**
-     *  @notice ETH cannot be used for collateral or quote token, use WETH.
-     */
-    error WethOnly();
+    event PoolCreated(address pool_);
 
     /**************************/
     /*** External Functions ***/

@@ -52,9 +52,10 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         _borrower.approveToken(_quote, address(_pool), 10_000 * _quotePrecision);
     }
 
-    // @notice: 1 lender and 1 borrower tests adding quote token, removing quote token borrowing
-    // @notice: removing quote token, borrowing and repaying
-    // @notice: with 10^45 and 10^27 precision
+    /**
+     *  @notice 1 lender and 1 borrower tests adding quote token, removing quote token borrowing
+     *          removing quote token, borrowing and repaying with 10^18 precision.
+     */
     function testPrecision() external virtual {
         assertEq(_collateral.balanceOf(address(_borrower)), 100 * _collateralPrecision);
         assertEq(_quote.balanceOf(address(_lender)),        200_000 * _quotePrecision);
@@ -122,12 +123,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_bidder), 1_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
-        emit Purchase(
-            address(_bidder),
-            BUCKET_PRICE,
-            1_000 * _quotePoolPrecision,
-            0.499944601428501672 * 10**18
-        );
+        emit Purchase(address(_bidder), BUCKET_PRICE, 1_000 * _quotePoolPrecision, 0.499944601428501672 * 10**18);
         _bidder.purchaseBid(_pool, 1_000 * 1e18, BUCKET_PRICE);
 
         // check balances
@@ -144,12 +140,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         // claim collateral
         assertClaimCollateral();
         vm.expectEmit(true, true, false, true);
-        emit ClaimCollateral(
-            address(_lender),
-            BUCKET_PRICE,
-            0.499944601428501671 * 10**18,
-            999.9999999999999987866 * 10**27
-        );
+        emit ClaimCollateral(address(_lender), BUCKET_PRICE, 0.499944601428501671 * 10**18, 999.9999999999999987866 * 10**27);
         _lender.claimCollateral(_pool, address(_lender), 0.499944601428501671 * 1e18, BUCKET_PRICE);
 
         // check balances

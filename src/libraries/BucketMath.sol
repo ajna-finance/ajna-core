@@ -31,12 +31,6 @@ library BucketMath {
     // step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
     int256 public constant FLOAT_STEP_INT = 1005000000000000000;
 
-    /** @notice raised when price is not in (min, max) valid prices interval */
-    error PriceOutsideBoundry();
-
-    /** @notice raised when index price is not in (min, max) valid indexes interval */
-    error IndexOutsideBoundry();
-
     function abs(int256 x) private pure returns (uint256) {
         return x >= 0 ? uint256(x) : uint256(-x);
     }
@@ -47,13 +41,7 @@ library BucketMath {
      * @dev Price expected to be inputted as a 18 decimal WAD
     */
     function priceToIndex(uint256 price_) public pure returns (int256 index_) {
-        if (price_ > MAX_PRICE) {
-            revert PriceOutsideBoundry();
-        }
-
-        if (price_ < MIN_PRICE) {
-            revert PriceOutsideBoundry();
-        }
+        require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
 
         // V1
         // index = (price - MIN_PRICE) / FLOAT_STEP;
@@ -83,13 +71,7 @@ library BucketMath {
      * @dev Price expected to be inputted as a 18 decimal WAD
     */
     function indexToPrice(int256 index_) public pure returns (uint256 price_) {
-        if (index_ > MAX_PRICE_INDEX) {
-            revert IndexOutsideBoundry();
-        }
-
-        if (index_ < MIN_PRICE_INDEX) {
-            revert IndexOutsideBoundry();
-        }
+        require(index_ >= MIN_PRICE_INDEX && index_ <= MAX_PRICE_INDEX, "BM:ITP:OOB");
 
         // V1
         // price = MIN_PRICE + (FLOAT_STEP * index);
