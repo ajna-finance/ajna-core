@@ -94,7 +94,7 @@ abstract contract Buckets {
         Bucket storage bucket = _buckets[price_];
         accumulateBucketInterest(bucket, inflator_);
 
-        uint256 exchangeRate = getExchangeRate(bucket);                 // RAY
+        uint256 exchangeRate = getExchangeRate(bucket);                // RAY
         uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
 
         amount_   = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
