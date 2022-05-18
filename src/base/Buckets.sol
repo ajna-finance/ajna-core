@@ -129,22 +129,21 @@ abstract contract Buckets {
 
         // Remove from deposit first
         uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit);
-        bucket.onDeposit -= removeFromDeposit;
+        bucket.onDeposit     -= removeFromDeposit;
+        bucket.lpOutstanding -= lpTokens_;
 
         // Reallocate debt to fund remaining withdrawal
         uint256 newLup = reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
-        // move lup down only if removal happened at or above lup and new lup different than current
-        if (price_ >= lup && newLup < lup) lup = newLup;
-
-        bucket.lpOutstanding -= lpTokens_;
 
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
         bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
 
         uint256 newHpb = (isEmpty && price_ == hpb) ? getHpb() : hpb;
+        // move lup down only if removal happened at or above lup and new lup different than current
+        if (price_ >= lup && newLup < lup) lup = newLup;
         // update hpb if required
         if (newHpb != hpb) hpb = newHpb;
-
+        // cleanup if bucket no longer used
         if (isEmpty && noClaim) deactivateBucket(bucket);
     }
 
@@ -280,6 +279,7 @@ abstract contract Buckets {
 
         bucket.onDeposit -= purchaseFromDeposit;
         amount_          -= purchaseFromDeposit;
+        bucket.collateral += collateral_;
 
         // Reallocate debt to exchange for collateral
         uint256 newLup = reallocateDown(bucket, amount_, inflator_);
@@ -288,8 +288,6 @@ abstract contract Buckets {
         // update LUP and HPB
         if (lup != newLup) lup = newLup;
         if (hpb != newHpb) hpb = newHpb;
-
-        bucket.collateral += collateral_;
     }
 
     /**

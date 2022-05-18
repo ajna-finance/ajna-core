@@ -91,7 +91,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         totalQuoteToken               += amount_;   // update quote token accumulator
 
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
-
         emit AddQuoteToken(recipient_, price_, amount_, lup);
     }
 
