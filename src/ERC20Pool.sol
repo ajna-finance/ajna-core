@@ -110,7 +110,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         accumulatePoolInterest();
 
         // remove from bucket
-        (uint256 amount, uint256 newLup, uint256 lpTokens, bool updateHpb, bool deactivate) = removeQuoteTokenFromBucket(
+        (uint256 newHpb, uint256 newLup, uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
             price_, maxAmount_, lpBalance[recipient_][price_], hpb, inflatorSnapshot
         );
 
@@ -118,10 +118,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         if (price_ >= lup && newLup < lup) lup = newLup;
 
         // update hpb if required
-        if (updateHpb) hpb = getHpb();
-
-        // deactivate bucket if required
-        if (deactivate) deactivateBucket(price_);
+        if (newHpb != hpb) hpb = newHpb;
 
         totalQuoteToken -= amount;
         uint256 col = getPoolCollateralization();
@@ -265,7 +262,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         if (price_ >= lup && newLup < lup) lup = newLup;
 
         // update HPB if removed from current, if no deposit nor debt in current HPB and if LUP not 0
-        if (price_ == hpb && isEmpty && lup != 0) hpb = getHpb();
+        if (price_ == hpb && isEmpty && lup != 0) hpb = getHpb(hpb);
 
         totalQuoteToken -= amount_;
 
@@ -313,7 +310,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         borrower.collateralDeposited -= requiredCollateral;
 
         // update HPB
-        uint256 curHpb = getHpb();
+        uint256 curHpb = getHpb(hpb);
         if (hpb != curHpb) hpb = curHpb;
 
         emit Liquidate(borrower_, debt, requiredCollateral);
@@ -346,33 +343,11 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     }
 
     function getHup() public view override returns (uint256 hup_) {
-        hup_ = lup;
-        while (true) {
-            (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = bucketAt(hup_);
-
-            if (price == down || onDeposit != 0) break;
-
-            // check that there are available quote tokens on deposit in down bucket
-            (, , , uint256 downAmount, , , , ) = bucketAt(down);
-
-            if (downAmount == 0) break;
-
-            hup_ = down;
-        }
+        hup_ = getHup(lup);
     }
 
     function getHpb() public view override returns (uint256 hpb_) {
-        hpb_ = hpb;
-        while (true) {
-            (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = bucketAt(hpb_);
-            if (onDeposit != 0 || debt != 0) {
-                break;
-            } else if (down == 0) {
-                hpb_ = 0;
-                break;
-            }
-            hpb_ = down;
-        }
+        hpb_ = getHpb(hpb);
     }
 
     // TODO: Add a test for this

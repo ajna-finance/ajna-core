@@ -103,20 +103,19 @@ abstract contract Buckets {
 
     /**
      *  @notice Called by a lender to remove quote tokens from a bucket
-     *  @param price_       The price bucket from which quote tokens should be removed
-     *  @param maxAmount_   The maximum amount of quote tokens to be removed, WAD
-     *  @param lpBalance_   The LP balance for current lender, RAY
-     *  @param hpb_         The current pool HPB
-     *  @param inflator_    The current pool inflator rate, RAY
-     *  @return amount_     The actual amount being removed
-     *  @return lup_        The new pool LUP
-     *  @return lpTokens_   The amount of lpTokens removed equivalent to the quote tokens removed
-     *  @return updateHpb_  True if HPB was changed and should be updated
-     *  @return deactivate_ Deactivate bucket
+     *  @param  price_     The price bucket from which quote tokens should be removed
+     *  @param  maxAmount_ The maximum amount of quote tokens to be removed, WAD
+     *  @param  lpBalance_ The LP balance for current lender, RAY
+     *  @param  hpb_       The current pool HPB
+     *  @param  inflator_  The current pool inflator rate, RAY
+     *  @return newHpb_    The new pool HPB
+     *  @return lup_       The new pool LUP
+     *  @return amount_    The actual amount being removed
+     *  @return lpTokens_  The amount of lpTokens removed equivalent to the quote tokens removed
      */
     function removeQuoteTokenFromBucket(
         uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 hpb_, uint256 inflator_
-    ) internal returns (uint256 amount_, uint256 lup_, uint256 lpTokens_, bool updateHpb_, bool deactivate_) {
+    ) internal returns (uint256 newHpb_, uint256 lup_, uint256 amount_, uint256 lpTokens_) {
         Bucket storage bucket = _buckets[price_];
 
         accumulateBucketInterest(bucket, inflator_);
@@ -124,9 +123,9 @@ abstract contract Buckets {
         uint256 exchangeRate = getExchangeRate(bucket);              // RAY
         uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);  // RAY
 
-        amount_ = Maths.min(Maths.wadToRay(maxAmount_), claimable);   // RAY
+        amount_   = Maths.min(Maths.wadToRay(maxAmount_), claimable);   // RAY
         lpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
-        amount_ = Maths.rayToWad(amount_);
+        amount_   = Maths.rayToWad(amount_);
 
         // Remove from deposit first
         uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit);
@@ -137,11 +136,12 @@ abstract contract Buckets {
 
         bucket.lpOutstanding -= lpTokens_;
 
+        newHpb_ = hpb_;
         if (bucket.onDeposit == 0 && bucket.debt == 0) {
             // HPB should be updated if removed from current
-            if (price_ == hpb_) updateHpb_ = true;
+            if (price_ == hpb_) newHpb_ = getHpb(hpb_);
             // bucket should be deactivated
-            if (bucket.lpOutstanding == 0 && bucket.collateral == 0) deactivate_ = true;
+            if (bucket.lpOutstanding == 0 && bucket.collateral == 0) deactivateBucket(bucket);
         }
 
     }
@@ -174,7 +174,7 @@ abstract contract Buckets {
         // cleanup if bucket no longer used
         if (bucket.debt == 0 && bucket.onDeposit == 0 && bucket.lpOutstanding == 0 && bucket.collateral == 0) {
             // bucket no longer used, deactivate bucket
-            deactivateBucket(price_);
+            deactivateBucket(bucket);
         }
     }
 
@@ -582,22 +582,21 @@ abstract contract Buckets {
 
     /**
      *  @notice Removes state for an unused bucket and update surrounding price pointers
-     *  @param price_ The price bucket to deactivate.
+     *  @param  bucket_ The price bucket to deactivate.
      */
-    function deactivateBucket(uint256 price_) internal {
-        BitMaps.setTo(_bitmap, price_, false);
-        Bucket memory bucket = _buckets[price_];
-        bool isHighestBucket = bucket.price == bucket.up;
-        bool isLowestBucket = bucket.down == 0;
+    function deactivateBucket(Bucket storage bucket_) private {
+        BitMaps.setTo(_bitmap, bucket_.price, false);
+        bool isHighestBucket = bucket_.price == bucket_.up;
+        bool isLowestBucket = bucket_.down == 0;
         if (isHighestBucket && !isLowestBucket) {                     // if highest bucket
-            _buckets[bucket.down].up = _buckets[bucket.down].price; // make lower bucket the highest bucket
+            _buckets[bucket_.down].up = _buckets[bucket_.down].price; // make lower bucket the highest bucket
         } else if (!isHighestBucket && !isLowestBucket) {             // if middle bucket
-            _buckets[bucket.up].down = bucket.down;                 // update down pointer of upper bucket
-            _buckets[bucket.down].up = bucket.up;                   // update up pointer of lower bucket
+            _buckets[bucket_.up].down = bucket_.down;                 // update down pointer of upper bucket
+            _buckets[bucket_.down].up = bucket_.up;                   // update up pointer of lower bucket
         } else if (!isHighestBucket && isLowestBucket) {              // if lowest bucket
-            _buckets[bucket.up].down = 0;                            // make upper bucket the lowest bucket
+            _buckets[bucket_.up].down = 0;                            // make upper bucket the lowest bucket
         }
-        delete _buckets[price_];
+        delete _buckets[bucket_.price];
     }
 
     /**
@@ -607,6 +606,51 @@ abstract contract Buckets {
      */
     function isBucketInitialized(uint256 price_) public view returns (bool isBucketInitialized_) {
         return BitMaps.get(_bitmap, price_);
+    }
+
+
+    /**
+     *  @notice Returns the current Highest Utilizable Price (HUP) bucket.
+     *  @dev    Starting at the LUP, iterate through down pointers until no quote tokens are available.
+     *  @dev    LUP should always be >= HUP.
+     *  @param  lup_ The current LUP.
+     *  @return hup_ The current Highest Utilizable Price (HUP) bucket.
+     */
+    function getHup(uint256 lup_) public view returns (uint256 hup_) {
+        hup_ = lup_;
+        while (true) {
+            (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = bucketAt(hup_);
+
+            if (price == down || onDeposit != 0) break;
+
+            // check that there are available quote tokens on deposit in down bucket
+            (, , , uint256 downAmount, , , , ) = bucketAt(down);
+
+            if (downAmount == 0) break;
+
+            hup_ = down;
+        }
+    }
+
+    /**
+     *  @notice Returns the current Highest Price Bucket (HPB).
+     *  @dev    Starting at the current HPB, iterate through down pointers until a new HPB found.
+     *  @dev    HPB should have at on deposit or debt different than 0.
+     *  @param  hpb_    The current Highest Price Bucket (HPB).
+     *  @return newHpb_ The updated Highest Price Bucket (HPB).
+     */
+    function getHpb(uint256 hpb_) public view returns (uint256 newHpb_) {
+        newHpb_ = hpb_;
+        while (true) {
+            (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = bucketAt(newHpb_);
+            if (onDeposit != 0 || debt != 0) {
+                break;
+            } else if (down == 0) {
+                newHpb_ = 0;
+                break;
+            }
+            newHpb_ = down;
+        }
     }
 
 }
