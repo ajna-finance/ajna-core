@@ -92,74 +92,6 @@ interface IPool {
      */
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
 
-    /*********************/
-    /*** Custom Errors ***/
-    /*********************/
-
-    /**
-     *  @notice Pool already initialized.
-     */
-    error AlreadyInitialized();
-
-    /**
-     *  @notice Borrower doesn't have enough collateral to remove from pool.
-     *  @param  availableCollateral_ Available collateral in pool that can be removed by borrower.
-     */
-    error AmountExceedsAvailableCollateral(uint256 availableCollateral_);
-
-    /**
-     *  @notice Borrower is not eligible for liquidation.
-     *  @param  collateralization_ Borrower collateralization.
-     */
-    error BorrowerIsCollateralized(uint256 collateralization_);
-
-    /**
-     *  @notice Borrower doesn't have enough tokens to repay desired amount.
-     */
-    error InsufficientBalanceForRepay();
-
-    /**
-     *  @notice Not enough collateral to purchase bid.
-     */
-    error InsufficientCollateralBalance();
-
-    /**
-     *  @notice Borrower doesn't have enough collateral to borrow desired amount.
-     */
-    error InsufficientCollateralForBorrow();
-
-    /**
-     *  @notice Not enough liquidity in pool to borrow desired amount.
-     *  @param  amountAvailable_ Amount of quote tokens available in pool.
-     */
-    error InsufficientLiquidity(uint256 amountAvailable_);
-
-    /**
-     *  @notice Invalid price bucket provided.
-     */
-    error InvalidPrice();
-
-    /**
-     *  @notice Recipient doesn't have any collateral to claim.
-     */
-    error NoClaimToBucket();
-
-    /**
-     *  @notice No debt to be liquidated for borrower.
-     */
-    error NoDebtToLiquidate();
-
-    /**
-     *  @notice No debt to be repaid by borrower.
-     */
-    error NoDebtToRepay();
-
-    /**
-     *  @notice Pool is undercollateralized after remove quote token, borrow or purchase bid actions.
-     *  @param  collateralization_ Collateralization of the pool.
-     */
-    error PoolUndercollateralized(uint256 collateralization_);
-
     /***************/
     /*** Structs ***/
     /***************/
@@ -193,18 +125,6 @@ interface IPool {
      *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
      */
     function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
-
-    /**
-     *  @notice Returns the `hpb` state variable.
-     *  @return hpb_ The price value of the current Highest Price Bucket (HPB).
-     */
-    function hpb() external view returns (uint256 hpb_);
-
-    /**
-     *  @notice Returns the `lup` state variable.
-     *  @return lup_ The price value of the current Lowest Utilized Price (LUP) bucket.
-     */
-    function lup() external view returns (uint256 lup_);
 
     /**
      *  @notice Returns the `previousRateUpdate` state variable.
@@ -405,22 +325,6 @@ interface IPool {
     function getEncumberedCollateral(uint256 debt_) external view returns (uint256 encumbrance_);
 
     /**
-     *  @notice Returns the current Highest Price Bucket (HPB).
-     *  @dev    Starting at the current HPB, iterate through down pointers until a new HPB found.
-     *  @dev    HPB should have at on deposit or debt different than 0.
-     *  @return hpb_ The current Highest Price Bucket (HPB).
-     */
-    function getHpb() external view returns (uint256 hpb_);
-
-    /**
-     *  @notice Returns the current Highest Utilizable Price (HUP) bucket.
-     *  @dev    Starting at the LUP, iterate through down pointers until no quote tokens are available.
-     *  @dev    LUP should always be >= HUP.
-     *  @return hup_ The current Highest Utilizable Price (HUP) bucket.
-     */
-    function getHup() external view returns (uint256 hup_);
-
-    /**
      *  @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens.
      *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
      *  @param  price_            The price bucket for which the value should be calculated.
@@ -443,35 +347,28 @@ interface IPool {
     function getPendingBucketInterest(uint256 price_) external view returns (uint256 interest_);
 
     /**
-     * @notice Calculate unaccrued interest for the pool, which may be added to totalDebt.
-     * @return interest_ Unaccumulated pool interest, in WAD units.
+     *  @notice Calculate unaccrued interest for the pool, which may be added to totalDebt.
+     *  @return interest_ Unaccumulated pool interest, in WAD units.
      */
     function getPendingPoolInterest() external view returns (uint256 interest_);
 
     /**
-     * @notice Gets the current utilization of the pool
-     * @dev    Will return 0 unless the pool has been borrowed from.
-     * @return poolActualUtilization_ The current pool actual utilization, in WAD units.
+     *  @notice Gets the current utilization of the pool
+     *  @dev    Will return 0 unless the pool has been borrowed from.
+     *  @return poolActualUtilization_ The current pool actual utilization, in WAD units.
      */
     function getPoolActualUtilization() external view returns (uint256 poolActualUtilization_);
 
     /**
-     * @notice Calculate the current collateralization ratio of the pool, based on `totalDebt` and `totalCollateral`.
-     * @return poolCollateralization_ Current pool collateralization ratio.
+     *  @notice Calculate the current collateralization ratio of the pool, based on `totalDebt` and `totalCollateral`.
+     *  @return poolCollateralization_ Current pool collateralization ratio.
      */
     function getPoolCollateralization() external view returns (uint256 poolCollateralization_);
 
     /**
-     * @notice Gets the current target utilization of the pool
-     * @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
+     *  @notice Gets the current target utilization of the pool
+     *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
      */
     function getPoolTargetUtilization() external view returns (uint256 poolTargetUtilization_);
-
-    /**
-     *  @notice Returns whether a bucket price has been initialized or not.
-     *  @param  price_               The price of the bucket.
-     *  @param  isBucketInitialized_ Boolean indicating if the bucket has been initialized at this price.
-     */
-    function isBucketInitialized(uint256 price_) external view returns (bool isBucketInitialized_);
 
 }

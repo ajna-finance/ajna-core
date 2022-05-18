@@ -35,9 +35,10 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    // @notice: with 1 lender and 1 borrower quote token is deposited
-    // @notice: then borrower adds collateral and borrows interest
-    // @notice: rate is checked for correctness
+    /**
+     *  @notice With 1 lender and 1 borrower quote token is deposited then borrower adds collateral and borrows interest.
+     *          Rate is checked for correctness.
+     */
     function testUpdateInterestRate() external {
         uint256 priceHigh  = _p4000;
         uint256 priceMed   = _p3514;
@@ -75,9 +76,10 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
     }
 
-    // @notice: with 1 lender and 1 borrower quote token is deposited
-    // @notice: then borrower adds collateral and borrows interest
-    // @notice: rate is checked for correctness, pool is underutilized
+    /**
+     *  @notice With 1 lender and 1 borrower quote token is deposited then borrower adds collateral and borrows interest.
+     *          Rate is checked for correctness, pool is underutilized.
+     */
     function testUpdateInterestRateUnderutilized() external {
         uint256 priceHigh = _p4000;
 
@@ -98,7 +100,9 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         assertEq(_pool.previousRate(), 0.049999999959999999 * 1e18);
     }
 
-    // @notice Ensure an underutilized and undercollateralized pool does not produce an underflow.
+    /**
+     *  @notice Ensure an underutilized and undercollateralized pool does not produce an underflow.
+     */
     function testUndercollateralized() external {
         uint256 price = _p3514;
 

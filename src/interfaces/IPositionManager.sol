@@ -49,25 +49,6 @@ interface IPositionManager {
      */
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
 
-    /*********************/
-    /*** Custom Errors ***/
-    /*********************/
-
-    /**
-     *  @notice `increaseLiquidity()` call failed.
-     */
-    error IncreaseLiquidityFailed();
-
-    /**
-     *  @notice Unable to burn as liquidity still present at price.
-     */
-    error LiquidityNotRemoved();
-
-    /**
-     *  @notice Caller is not approved to interact with the token.
-     */
-    error NotApproved();
-
     /***************/
     /*** Structs ***/
     /***************/

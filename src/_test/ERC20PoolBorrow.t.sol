@@ -28,7 +28,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _pool        = ERC20Pool(_poolAddress);  
+        _pool        = ERC20Pool(_poolAddress);
 
         _borrower   = new UserWithCollateral();
         _borrower2  = new UserWithCollateral();
@@ -43,12 +43,13 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    // @notice: With 1 lender and 1 borrower tests
-    // @notice: addQuoteToken (subsequently reallocation), addCollateral and borrow
-    // @notice: borrower reverts:
-    // @notice:     attempts to borrow more than available quote
-    // @notice:     attempts to borrow more than their collateral supports
-    // @notice:     attempts to borrow but stop price is exceeded
+    /**
+     *  @notice With 1 lender and 1 borrower tests addQuoteToken (subsequently reallocation), addCollateral and borrow.
+     *          Borrower reverts:
+     *              attempts to borrow more than available quote.
+     *              attempts to borrow more than their collateral supports.
+     *              attempts to borrow but stop price is exceeded.
+     */
     function testBorrow() external {
         uint256 priceHighest = _p4000;
         uint256 priceHigh    = _p3514;
@@ -71,25 +72,18 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.getPendingBucketInterest(priceHighest), 0);
 
         // should revert if borrower wants to borrow a greater amount than in pool
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.InsufficientLiquidity.selector,
-                _pool.totalQuoteToken() - _pool.totalDebt()
-            )
-        );
+        vm.expectRevert("P:B:INSUF_LIQ");
         _borrower.borrow(_pool, 60_000 * 1e18, 2_000 * 1e18);
 
         // should revert if insufficient collateral deposited by borrower
-        vm.expectRevert(IPool.InsufficientCollateralForBorrow.selector);
+        vm.expectRevert("P:B:INSUF_COLLAT");
         _borrower.borrow(_pool, 10_000 * 1e18, 4_000 * 1e18);
 
         // borrower deposit 10 MKR collateral
         _borrower.addCollateral(_pool, 10 * 1e18);
 
         // should revert if limit price exceeded
-        vm.expectRevert(
-            abi.encodeWithSelector(Buckets.BorrowPriceBelowLimitPrice.selector, priceHigh)
-        );
+        vm.expectRevert("B:B:PRICE_LT_LIMIT");
         _borrower.borrow(_pool, 15_000 * 1e18, 4_000 * 1e18);
 
         // borrower deposits additional 90 MKR collateral
@@ -223,9 +217,11 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       30_000.273023083548492932 * 1e18);
     }
 
-    // @notice: With 1 lender and 2 borrowers tests addQuoteToken, addCollateral and borrow
-    // @notice: on an undercollateralized pool
-    // @notice: borrower2 reverts: attempts to borrow when pool is undercollateralized
+    /**
+     *  @notice With 1 lender and 2 borrowers tests addQuoteToken,
+     *          addCollateral and borrow on an undercollateralized pool.
+     *          Borrower2 reverts: attempts to borrow when pool is undercollateralized.
+     */
     function testBorrowPoolUndercollateralization() external {
         uint256 priceHigh = _p2000;
         uint256 priceMed  = _p1004;
@@ -274,17 +270,14 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertLt(targetUtilizationAfterAddCollateral, targetUtilizationAfterBorrow);
 
         // should revert when taking a loan of 5_000 DAI that will drive pool undercollateralized
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                IPool.PoolUndercollateralized.selector,
-                0.976275672074051610 * 1e18
-            )
-        );
+        vm.expectRevert("P:B:POOL_UNDER_COLLAT");
         _borrower2.borrow(_pool, 5_000 * 1e18, 1_000 * 1e18);
     }
 
-    // @notice: With 1 lender and 1 borrower tests addQuoteToken, addCollateral and borrow
-    // @notice: verifying collateral
+    /**
+     *  @notice With 1 lender and 1 borrower tests addQuoteToken, addCollateral and borrow.
+     *          Collateral amount is verified for correctness.
+     */
     function testBorrowTestCollateralValidation() external {
         uint256 priceLow = _p13_57;
         // lender deposits 10_000 DAI at 13.578453165083418466 * 1e18
@@ -304,9 +297,12 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(borrowerPendingDebt, poolPendingDebt);
     }
 
-    // @notice: With 1 lender and 2 borrower tests HUP moves down
-    // @notice: when pool is borrowed against and moves up when
-    // @notice: quote token is added
+    /**
+     *  @notice With 1 lender and 2 borrower tests HUP
+     *          moves down when pool is borrowed against
+     *          and
+     *          moves up when quote token is added.
+     */
     function testGetHup() external {
         uint256 priceHigh = _p2000;
         uint256 priceMed  = _p1004;
