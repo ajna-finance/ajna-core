@@ -48,35 +48,6 @@ abstract contract Buckets {
     }
 
     /**
-     *  @notice Raised when there is no bucket to reallocate debt to
-     */
-    error NoDepositToReallocateTo();
-
-    /**
-     *  @notice amount of LP tokens needed to be redeemed for claimed collateral is greater than claimer's balance
-     *  @param balance Claimer's LP tokens balance.
-     */
-    error InsufficientLpBalance(uint256 balance);
-
-    /**
-     *  @notice loan cannot be executed at a price greater than desired limit price
-     *  @param borrowPrice The price below limit price.
-     */
-    error BorrowPriceBelowLimitPrice(uint256 borrowPrice);
-
-    /**
-     *  @notice the amount of collateral to be claimed exceeds available collateral in bucket
-     *  @param collateralAmount Available collateral in bucket.
-     */
-    error ClaimExceedsCollateral(uint256 collateralAmount);
-
-    /**
-     *  @notice the amount of quote tokens to receive when purchse bid is greater than amount in bucket
-     *  @param amountAvailable Amount of quote tokens in bucket
-     */
-    error InsufficientBucketLiquidity(uint256 amountAvailable);
-
-    /**
      *  @notice Called by a lender to add quote tokens to a bucket
      *  @param  price_      The price bucket to which quote tokens should be added.
      *  @param  amount_     The amount of quote tokens to be added.
