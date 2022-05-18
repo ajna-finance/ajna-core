@@ -256,13 +256,13 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
         accumulatePoolInterest();
 
-        (uint256 newLup, bool isEmpty) = purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
+        (uint256 newHpb, uint256 newLup) = purchaseBidFromBucket(price_, amount_, collateralRequired, hpb, inflatorSnapshot);
 
-        // move lup down only if removal happened at lup or higher and new lup different than current
+        // move LUP down only if removal happened at LUP or higher and new LUP different than current
         if (price_ >= lup && newLup < lup) lup = newLup;
 
-        // update HPB if removed from current, if no deposit nor debt in current HPB and if LUP not 0
-        if (price_ == hpb && isEmpty && lup != 0) hpb = getHpb(hpb);
+        // update HPB if removed from current, if LUP not 0 and if new HPB different than current
+        if (price_ == hpb && lup != 0 && hpb != newHpb) hpb = newHpb;
 
         totalQuoteToken -= amount_;
 
@@ -299,7 +299,9 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
             revert BorrowerIsCollateralized({collateralization_: collateralization});
         }
 
-        uint256 requiredCollateral = liquidateAtBucket(debt, collateralDeposited, hpb, inflatorSnapshot);
+        (uint256 newHpb, uint256 requiredCollateral) = liquidateAtBucket(debt, collateralDeposited, hpb, inflatorSnapshot);
+        // update HPB
+        if (hpb != newHpb) hpb = newHpb;
 
         // pool level accounting
         totalDebt       -= borrower.debt;
@@ -308,10 +310,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         // borrower accounting
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
-
-        // update HPB
-        uint256 curHpb = getHpb(hpb);
-        if (hpb != curHpb) hpb = curHpb;
 
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
