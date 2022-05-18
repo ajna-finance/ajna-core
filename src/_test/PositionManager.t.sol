@@ -266,7 +266,7 @@ contract PositionManagerTest is DSTestPlus {
 
         // should revert if called by a non-recipient address
         vm.prank(externalCaller);
-        vm.expectRevert(IPositionManager.NotApproved.selector);
+        vm.expectRevert("PM:NO_AUTH");
 
         _positionManager.increaseLiquidity(increaseLiquidityParams);
     }
@@ -396,7 +396,7 @@ contract PositionManagerTest is DSTestPlus {
             tokenId, originalOwner, address(_pool), mintAmount / 4, testBucketPrice
         );
 
-        vm.expectRevert(IPositionManager.NotApproved.selector);
+        vm.expectRevert("PM:NO_AUTH");
         _positionManager.increaseLiquidity(increaseLiquidityParams);
 
         // check new owner can decreaseLiquidity
@@ -427,7 +427,7 @@ contract PositionManagerTest is DSTestPlus {
         IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, testAddress, mintPrice);
 
         // should revert if liquidity not removed
-        vm.expectRevert(IPositionManager.LiquidityNotRemoved.selector);
+        vm.expectRevert("PM:B:LIQ_NOT_REMOVED");
         vm.prank(testAddress);
         _positionManager.burn(burnParams);
 

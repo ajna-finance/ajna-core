@@ -28,7 +28,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _pool        = ERC20Pool(_poolAddress);  
+        _pool        = ERC20Pool(_poolAddress);
 
         _borrower   = new UserWithCollateral();
         _bidder     = new UserWithCollateral();
@@ -62,21 +62,17 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.getPoolCollateralization(), 75.272300554947038956 * 1e18);
 
         // should revert if invalid price
-        vm.expectRevert(BucketMath.PriceOutsideBoundry.selector);
+        vm.expectRevert("BM:PTI:OOB");
         _bidder.purchaseBid(_pool, _p1, 1_000);
 
         // should revert if bidder doesn't have enough collateral
-        vm.expectRevert(IPool.InsufficientCollateralBalance.selector);
+        vm.expectRevert("P:PB:INSUF_COLLAT");
         _bidder.purchaseBid(_pool, 2_000_000 * 1e18, _p4000);
 
-        // should revert if trying to purchase more than on bucket
         (, , , uint256 amount, uint256 bucketDebt, , , ) = _pool.bucketAt(_p4000);
 
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                Buckets.InsufficientBucketLiquidity.selector, amount + bucketDebt
-            )
-        );
+        // should revert if trying to purchase more than on bucket
+        vm.expectRevert("B:PB:INSUF_BUCKET_LIQ");
         _bidder.purchaseBid(_pool, 4_000 * 1e18, _p4000);
 
         // check bidder and pool balances after borrowing and before purchaseBid
@@ -241,7 +237,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.lup(), _p3010);
 
         // should revert if trying to bid more than available liquidity (1000 vs 500)
-        vm.expectRevert(Buckets.NoDepositToReallocateTo.selector);
+        vm.expectRevert("B:RD:NO_REALLOC_LOCATION");
         _bidder.purchaseBid(_pool, 1_000 * 1e18, _p4000);
     }
 
@@ -264,9 +260,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.lup(), _p3010);
 
         // should revert when leave pool undercollateralized
-        vm.expectRevert(
-            abi.encodeWithSelector(IPool.PoolUndercollateralized.selector, 0.05 * 1e18)
-        );
+        vm.expectRevert("P:PB:POOL_UNDER_COLLAT");
         _bidder.purchaseBid(_pool, 1_000 * 1e18, _p4000);
     }
 

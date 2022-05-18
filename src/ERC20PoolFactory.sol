@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.11;
 
 import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
@@ -22,13 +21,8 @@ contract ERC20PoolFactory is IPoolFactory {
 
     /** @inheritdoc IPoolFactory*/
     function deployPool(address collateral_, address quote_) external override returns (address pool_) {
-        if (collateral_ == address(0) || quote_ == address(0)) {
-            revert WethOnly();
-        }
-
-        if (deployedPools[collateral_][quote_] != address(0)) {
-            revert PoolAlreadyExists();
-        }
+        require(collateral_ != address(0) && quote_ != address(0), "PF:DP:ZERO_ADDR");
+        require(deployedPools[collateral_][quote_] == address(0),  "PF:DP:POOL_EXISTS");
 
         bytes memory data = abi.encodePacked(collateral_, quote_);
 

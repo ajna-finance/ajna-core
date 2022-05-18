@@ -39,10 +39,10 @@ contract PoolFactoryTest is DSTestPlus {
      *  @notice Tests revert if actor attempts to deploy ETH pool.
      */
     function testDeployPoolEther() external {
-        vm.expectRevert(IPoolFactory.WethOnly.selector);
+        vm.expectRevert("PF:DP:ZERO_ADDR");
         _factory.deployPool(address(_collateral), address(0));
 
-        vm.expectRevert(IPoolFactory.WethOnly.selector);
+        vm.expectRevert("PF:DP:ZERO_ADDR");
         _factory.deployPool(address(0), address(_collateral));
     }
 
@@ -51,7 +51,7 @@ contract PoolFactoryTest is DSTestPlus {
      */
     function testDeployPoolTwice() external {
         _factory.deployPool(address(_collateral), address(_quote));
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        vm.expectRevert("PF:DP:POOL_EXISTS");
         _factory.deployPool(address(_collateral), address(_quote));
     }
 

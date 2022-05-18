@@ -23,7 +23,7 @@ contract ERC20PoolTest is DSTestPlus {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
-        _pool        = ERC20Pool(_poolAddress);  
+        _pool        = ERC20Pool(_poolAddress);
 
         _lender     = new UserWithQuoteToken();
         _borrower   = new UserWithCollateral();
@@ -82,7 +82,7 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
 
         // Attempt to call initialize() to reset global variables and check for revert
-        vm.expectRevert(IPool.AlreadyInitialized.selector);
+        vm.expectRevert("P:INITIALIZED");
         _pool.initialize();
 
         // check that global variables weren't reset

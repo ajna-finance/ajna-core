@@ -28,33 +28,6 @@ library Buckets {
         uint256 collateral;
     }
 
-    /** @notice raised when there is no bucket to reallocate debt to */
-    error NoDepositToReallocateTo();
-
-    /**
-     * @notice amount of LP tokens needed to be redeemed for claimed collateral is greater than claimer's balance
-     * @param balance claimer's LP tokens balance
-    */
-    error InsufficientLpBalance(uint256 balance);
-
-    /**
-     * @notice loan cannot be executed at a price greater than desired limit price
-     * @param borrowPrice the price below limit price
-    */
-    error BorrowPriceBelowLimitPrice(uint256 borrowPrice);
-
-    /**
-     * @notice the amount of collateral to be claimed exceeds available collateral in bucket
-     * @param collateralAmount available collateral in bucket
-    */
-    error ClaimExceedsCollateral(uint256 collateralAmount);
-
-    /**
-     * @notice the amount of quote tokens to receive when purchse bid is greater than amount in bucket
-     * @param amountAvailable amount of quote tokens in bucket
-    */
-    error InsufficientBucketLiquidity(uint256 amountAvailable);
-
     /**
      * @notice Called by a lender to add quote tokens to a bucket
      * @param buckets_ Mapping of buckets for a given pool
@@ -127,16 +100,11 @@ library Buckets {
     function claimCollateral(
         mapping(uint256 => Bucket) storage buckets_, Bucket storage bucket_, uint256 amount_, uint256 lpBalance_
     ) public returns (uint256 lpRedemption_) {
-
-        if (amount_ > bucket_.collateral) {
-            revert ClaimExceedsCollateral({collateralAmount: bucket_.collateral});
-        }
+        require(amount_ <= bucket_.collateral, "B:CC:AMT_GT_COLLAT");
 
         lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, bucket_.price), getExchangeRate(bucket_));
 
-        if (lpRedemption_ > lpBalance_) {
-            revert InsufficientLpBalance({balance: lpBalance_});
-        }
+        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
 
         bucket_.collateral    -= amount_;
         bucket_.lpOutstanding -= lpRedemption_;
@@ -157,9 +125,7 @@ library Buckets {
         Bucket storage curLup = buckets_[lup_];
 
         while (true) {
-            if (curLup.price < limit_) {
-                revert BorrowPriceBelowLimitPrice({borrowPrice: curLup.price});
-            }
+            require(curLup.price >= limit_, "B:B:PRICE_LT_LIMIT");
 
             // accumulate bucket interest
             accumulateBucketInterest(curLup, inflator_);
@@ -246,9 +212,8 @@ library Buckets {
         accumulateBucketInterest(bucket_, inflator_);
 
         uint256 available = bucket_.onDeposit + bucket_.debt;
-        if (amount_ > available) {
-            revert InsufficientBucketLiquidity({amountAvailable: available});
-        }
+
+        require(amount_ <= available, "B:PB:INSUF_BUCKET_LIQ");
 
         // Exchange collateral for quote token on deposit
         uint256 purchaseFromDeposit = Maths.min(amount_, bucket_.onDeposit);
@@ -349,10 +314,7 @@ library Buckets {
                     }
 
                     if (toBucket.down == 0) {
-                        // last bucket, nowhere to go, guard against reallocation failures
-                        if (reallocation != 0) {
-                            revert NoDepositToReallocateTo();
-                        }
+                        require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
                         lup_ = toBucket.price;
                         break;
                     }
@@ -360,10 +322,7 @@ library Buckets {
                     toBucket = buckets_[toBucket.down];
                 }
             } else {
-                // lup started at the bottom
-                if (reallocation != 0) {
-                    revert NoDepositToReallocateTo();
-                }
+                require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
             }
         }
     }
