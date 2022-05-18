@@ -87,20 +87,23 @@ abstract contract Buckets {
     function addQuoteTokenToBucket(
         uint256 price_, uint256 amount_, uint256 totalDebt_, uint256 inflator_
     ) internal returns (uint256 lpTokens_) {
-        // create bucket and update HPB if doesn't exist
+        // initialize bucket if required and get new HPB
         uint256 newHpb = !BitMaps.get(_bitmap, price_) ? initializeBucket(hpb, price_) : hpb;
 
         Bucket storage bucket = _buckets[price_];
         accumulateBucketInterest(bucket, inflator_);
 
         lpTokens_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(bucket));
+
+        // bucket accounting
         bucket.lpOutstanding += lpTokens_;
         bucket.onDeposit     += amount_;
 
+        // debt reallocation
         bool reallocate = totalDebt_ != 0 && price_ > lup;
         uint256 newLup = reallocate ? reallocateUp(bucket, amount_, inflator_) : lup;
 
-        // update LUP and HPB
+        // HPB and LUP management
         if (lup != newLup) lup = newLup;
         if (hpb != newHpb) hpb = newHpb;
     }
@@ -127,24 +130,24 @@ abstract contract Buckets {
         lpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
         amount_   = Maths.rayToWad(amount_);
 
-        // Remove from deposit first
-        uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit);
+        // bucket accounting
+        uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit); // Remove from deposit first
         bucket.onDeposit     -= removeFromDeposit;
         bucket.lpOutstanding -= lpTokens_;
 
-        // Reallocate debt to fund remaining withdrawal
+        // debt reallocation
         uint256 newLup = reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
 
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
         bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
 
+        // HPB and LUP management
         uint256 newHpb = (isEmpty && price_ == hpb) ? getHpb() : hpb;
-        // move lup down only if removal happened at or above lup and new lup different than current
-        if (price_ >= lup && newLup < lup) lup = newLup;
-        // update hpb if required
+        if (price_ >= lup && newLup < lup) lup = newLup; // move lup down only if removal happened at or above lup
         if (newHpb != hpb) hpb = newHpb;
-        // cleanup if bucket no longer used
-        if (isEmpty && noClaim) deactivateBucket(bucket);
+
+        // bucket management
+        if (isEmpty && noClaim) deactivateBucket(bucket); // cleanup if bucket no longer used
     }
 
     /**
@@ -165,13 +168,14 @@ abstract contract Buckets {
 
         require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
 
+        // bucket accounting
         bucket.collateral    -= amount_;
         bucket.lpOutstanding -= lpRedemption_;
 
-        // cleanup if bucket no longer used
+        // bucket management
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
         bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
-        if (isEmpty && noClaim) deactivateBucket(bucket);
+        if (isEmpty && noClaim) deactivateBucket(bucket); // cleanup if bucket no longer used
     }
 
     /**
@@ -188,7 +192,6 @@ abstract contract Buckets {
         while (true) {
             require(curLup.price >= limit_, "B:B:PRICE_LT_LIMIT");
 
-            // accumulate bucket interest
             accumulateBucketInterest(curLup, inflator_);
             curLup.inflatorSnapshot = inflator_;
 
@@ -204,10 +207,10 @@ abstract contract Buckets {
                 break;
             }
 
-            // move to next bucket
-            curLup = _buckets[curLup.down];
+            curLup = _buckets[curLup.down]; // move to next bucket
         }
 
+        // HPB and LUP management
         lup = (price > curLup.price || price == 0) ? curLup.price : price;
     }
 
@@ -221,7 +224,6 @@ abstract contract Buckets {
         Bucket storage curLup = _buckets[lup];
 
         while (true) {
-            // accumulate bucket interest
             if (curLup.debt != 0) {
                 accumulateBucketInterest(curLup, inflator_);
 
@@ -241,13 +243,12 @@ abstract contract Buckets {
 
             if (curLup.price == curLup.up) break; // nowhere to go
 
-            // move to upper bucket
-            curLup = _buckets[curLup.up];
+            curLup = _buckets[curLup.up]; // move to upper bucket
         }
 
-        // reset LUP if no debt in pool
-        if (reconcile_) lup = 0;
-        else if (lup != curLup.price) lup = curLup.price;
+        // HPB and LUP management
+        if (reconcile_) lup = 0;                         // reset LUP if no debt in pool
+        else if (lup != curLup.price) lup = curLup.price; // update LUP to current price
     }
 
     /**
@@ -270,15 +271,16 @@ abstract contract Buckets {
         // Exchange collateral for quote token on deposit
         uint256 purchaseFromDeposit = Maths.min(amount_, bucket.onDeposit);
 
-        bucket.onDeposit -= purchaseFromDeposit;
         amount_          -= purchaseFromDeposit;
+        // bucket accounting
+        bucket.onDeposit -= purchaseFromDeposit;
         bucket.collateral += collateral_;
 
-        // Reallocate debt to exchange for collateral
+        // debt reallocation
         uint256 newLup = reallocateDown(bucket, amount_, inflator_);
         uint256 newHpb = (bucket.onDeposit == 0 && bucket.debt == 0) ? getHpb() : hpb;
 
-        // update LUP and HPB
+        // HPB and LUP management
         if (lup != newLup) lup = newLup;
         if (hpb != newHpb) hpb = newHpb;
     }
@@ -319,14 +321,13 @@ abstract contract Buckets {
                 break;
             }
 
-            // stop if all debt reconciliated
-            if (debt_ == 0) break;
+            if (debt_ == 0) break; // stop if all debt reconciliated
 
             bucket = _buckets[bucket.down];
         }
-        
+
+        // HPB and LUP management
         uint256 newHpb = getHpb();
-        // update HPB
         if (hpb != newHpb) hpb = newHpb;
     }
 
@@ -402,7 +403,6 @@ abstract contract Buckets {
         while (true) {
             if (curLup.price == bucket_.price) break; // reached deposit bucket; nowhere to go
 
-            // accumulate bucket interest
             accumulateBucketInterest(curLup, inflator_);
 
             curLupDebt = curLup.debt;
