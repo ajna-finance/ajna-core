@@ -70,8 +70,6 @@ contract ERC20PoolBidTest is DSTestPlus {
         vm.expectRevert("P:PB:INSUF_COLLAT");
         _bidder.purchaseBid(_pool, 2_000_000 * 1e18, _p4000);
 
-        (, , , uint256 amount, uint256 bucketDebt, , , ) = _pool.bucketAt(_p4000);
-
         // should revert if trying to purchase more than on bucket
         vm.expectRevert("B:PB:INSUF_BUCKET_LIQ");
         _bidder.purchaseBid(_pool, 4_000 * 1e18, _p4000);
