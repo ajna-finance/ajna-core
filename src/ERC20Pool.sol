@@ -117,6 +117,15 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
     }
 
+    function moveQuoteToken(
+        address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_
+    ) external override {
+        // TODO implement move properly
+        this.removeQuoteToken(recipient_, amount_, fromPrice_);
+        this.addQuoteToken(recipient_, amount_, toPrice_);
+        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, amount_, lup);
+    }
+
     function addCollateral(uint256 amount_) external override {
         accumulatePoolInterest();
 
