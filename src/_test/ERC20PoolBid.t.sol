@@ -6,7 +6,8 @@ import { ERC20PoolFactory} from "../ERC20PoolFactory.sol";
 
 import { IPool } from "../interfaces/IPool.sol";
 
-import { Buckets }    from "../libraries/Buckets.sol";
+import { Buckets }    from "../base/Buckets.sol";
+
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
 
@@ -68,8 +69,6 @@ contract ERC20PoolBidTest is DSTestPlus {
         // should revert if bidder doesn't have enough collateral
         vm.expectRevert("P:PB:INSUF_COLLAT");
         _bidder.purchaseBid(_pool, 2_000_000 * 1e18, _p4000);
-
-        (, , , uint256 amount, uint256 bucketDebt, , , ) = _pool.bucketAt(_p4000);
 
         // should revert if trying to purchase more than on bucket
         vm.expectRevert("B:PB:INSUF_BUCKET_LIQ");
