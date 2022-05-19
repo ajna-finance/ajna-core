@@ -9,15 +9,16 @@ import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { Buckets }  from "./base/Buckets.sol";
-import { Interest } from "./base/Interest.sol";
+import { Buckets }       from "./base/Buckets.sol";
+import { Interest }      from "./base/Interest.sol";
+import { LenderManager } from "./base/LenderManager.sol";
 
 import { IPool } from "./interfaces/IPool.sol";
 
 import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
-contract ERC20Pool is IPool, Buckets, Clone, Interest {
+contract ERC20Pool is IPool, Buckets, Clone, Interest, LenderManager {
 
     using SafeERC20 for ERC20;
 
@@ -33,9 +34,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public override borrowers;
-
-    // lenders lp token balances: lender address -> price bucket [WAD] -> lender lp [RAY]
-    mapping(address => mapping(uint256 => uint256)) public override lpBalance;
 
     /**
      *  @notice Modifier to protect a clone's initialize method from repeated updates.
@@ -377,36 +375,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     function estimatePriceForLoan(uint256 amount_) public view override returns (uint256 price_) {
         // convert amount from WAD to collateral pool precision - RAD
         return estimatePrice(amount_, lup == 0 ? hpb : lup);
-    }
-
-    /*****************************/
-    /*** Lender Management ***/
-    /*****************************/
-
-    function getLPTokenBalance(address owner_, uint256 price_) external view override returns (uint256 lpBalance_) {
-        return lpBalance[owner_][price_];
-    }
-
-    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
-        require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
-
-        (
-            ,
-            ,
-            ,
-            uint256 onDeposit,
-            uint256 debt,
-            ,
-            uint256 lpOutstanding,
-            uint256 bucketCollateral
-        ) = bucketAt(price_);
-
-        // calculate lpTokens share of all outstanding lpTokens for the bucket
-        uint256 lenderShare = Maths.rdiv(lpTokens_, lpOutstanding);
-
-        // calculate the amount of collateral and quote tokens equivalent to the lenderShare
-        collateralTokens_ = Maths.radToWad(bucketCollateral * lenderShare);
-        quoteTokens_      = Maths.radToWad((onDeposit + debt) * lenderShare);
     }
 
 }
