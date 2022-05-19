@@ -118,12 +118,26 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     }
 
     function moveQuoteToken(
-        address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_
+        address recipient_, uint256 maxAmount_, uint256 fromPrice_, uint256 toPrice_
     ) external override {
-        // TODO implement move properly
-        this.removeQuoteToken(recipient_, amount_, fromPrice_);
-        this.addQuoteToken(recipient_, amount_, toPrice_);
-        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, amount_, lup);
+        require(BucketMath.isValidPrice(toPrice_), "P:MQT:INVALID_TO_PRICE");
+        require(fromPrice_ != toPrice_, "P:MQT:SAME_PRICE");
+
+        accumulatePoolInterest();
+
+        (uint256 amount, uint256 fromLpTokens, uint256 toLpTokens) = moveQuoteTokenFromBucket(
+            fromPrice_, toPrice_, maxAmount_, lpBalance[recipient_][fromPrice_], inflatorSnapshot
+        );
+
+        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:RQT:POOL_UNDER_COLLAT");
+
+        // lender accounting
+        lpBalance[recipient_][fromPrice_] -= fromLpTokens;
+        lpBalance[recipient_][toPrice_]   += toLpTokens;
+
+        // this.removeQuoteToken(recipient_, maxAmount_, fromPrice_);
+        // this.addQuoteToken(recipient_, maxAmount_, toPrice_);
+        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, amount, lup);
     }
 
     function addCollateral(uint256 amount_) external override {

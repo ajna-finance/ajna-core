@@ -122,6 +122,53 @@ abstract contract Buckets {
     }
 
     /**
+     *  @notice Called by a lender to remove quote tokens from a bucket
+     *  @param  fromPrice_  The price bucket from where quote tokens should be moved
+     *  @param  toPrice_    The price bucket where quote tokens should be moved
+     *  @param  maxAmount_  The maximum amount of quote tokens to be moved, WAD
+     *  @param  lpBalance_  The LP balance for current lender, RAY
+     *  @param  inflator_   The current pool inflator rate, RAY
+     *  @return amount_     The actual amount being moved
+     *  @return fromLpTokens_ The amount of lpTokens moved from bucket
+     *  @return toLpTokens_   The amount of lpTokens moved to bucket
+     */
+    function moveQuoteTokenFromBucket(
+        uint256 fromPrice_, uint256 toPrice_, uint256 maxAmount_, uint256 lpBalance_, uint256 inflator_
+    ) internal returns (uint256 amount_, uint256 fromLpTokens_, uint256 toLpTokens_) {
+        uint256 newHpb = !BitMaps.get(_bitmap, toPrice_) ? initializeBucket(hpb, toPrice_) : hpb;
+        uint256 newLup = lup;
+
+        Bucket storage fromBucket = _buckets[fromPrice_];
+        accumulateBucketInterest(fromBucket, inflator_);
+
+        uint256 exchangeRate = getExchangeRate(fromBucket);                // RAY
+        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
+
+        amount_       = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
+        fromLpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
+        amount_       = Maths.rayToWad(amount_);
+
+        Bucket storage toBucket = _buckets[toPrice_];
+
+        if (lup != 0 && (fromBucket.debt != 0 && toBucket.debt == 0)) {
+            if (toPrice_ > hpb) {
+                // Move liquidity upward from a partially-utilized LUP,
+                // when the lender is moving more quote token than is currently utilized.
+                if (fromPrice_ == lup && amount_ > fromBucket.debt) {
+                    uint256 debtToMove = Maths.max(amount_ - fromBucket.onDeposit, 0);
+                    uint256 depositToMove = amount_ - debtToMove;
+                    newLup = reallocateDown(toBucket, depositToMove, inflator_);
+                }
+            }
+        }
+
+        // bucket management
+        bool isEmpty = fromBucket.onDeposit == 0 && fromBucket.debt == 0;
+        bool noClaim = fromBucket.lpOutstanding == 0 && fromBucket.collateral == 0;
+        if (isEmpty && noClaim) deactivateBucket(fromBucket); // cleanup if bucket no longer used
+    }
+
+    /**
      *  @notice Called by a lender to claim accumulated collateral
      *  @param  price_        The price bucket from which collateral should be claimed
      *  @param  amount_       The amount of collateral tokens to be claimed, WAD
