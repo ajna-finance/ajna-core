@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
+import { Buckets } from "./Buckets.sol";
+
 import { IPool } from "../interfaces/IPool.sol";
 
 import { Maths } from "../libraries/Maths.sol";
@@ -8,9 +10,10 @@ import { Maths } from "../libraries/Maths.sol";
 /**
  * @notice Interest related functionality
 */
-abstract contract Interest {
+abstract contract Interest is Buckets {
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
+
     uint256 public previousRate; // WAD
     uint256 public inflatorSnapshot; // RAY
     uint256 public lastInflatorSnapshotUpdate;
@@ -76,6 +79,16 @@ abstract contract Interest {
         return
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
             Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
+    }
+
+    /**
+     *  @notice Returns the amount of pending (unaccrued) interest for a given bucket.
+     *  @param  price_    The price of the bucket to query.
+     *  @return interest_ The current amount of unaccrued interest againt the queried bucket.
+     */
+    function getPendingBucketInterest(uint256 price_) external view returns (uint256 interest_) {
+        (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(price_);
+        interest_ = debt != 0 ? getPendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
     }
 
     /**

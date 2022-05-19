@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.11;
 
 import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
@@ -22,8 +21,10 @@ contract ERC20PoolFactory is IPoolFactory, FactoryValidation {
         implementation = new ERC20Pool();
     }
 
-    /// @inheritdoc IPoolFactory
-    function deployPool(address collateral_, address quote_) external WETHOnly(collateral_, quote_) returns (address) {
+    // function deployPool(address collateral_, address quote_) external WETHOnly(collateral_, quote_) returns (address) {
+
+    /** @inheritdoc IPoolFactory*/
+    function deployPool(address collateral_, address quote_) external override returns (address pool_) {
 
         // TODO: figure out why this doesn't return
         // check that quote and collateral are not ERC721
@@ -31,9 +32,8 @@ contract ERC20PoolFactory is IPoolFactory, FactoryValidation {
         //     revert ERC20Only();
         // }
 
-        if (deployedPools[collateral_][quote_] != address(0)) {
-            revert PoolAlreadyExists();
-        }
+        require(collateral_ != address(0) && quote_ != address(0), "ERC20PF:DP:ZERO_ADDR");
+        require(deployedPools[collateral_][quote_] == address(0),  "ERC20PF:DP:POOL_EXISTS");
 
         bytes memory data = abi.encodePacked(collateral_, quote_);
 

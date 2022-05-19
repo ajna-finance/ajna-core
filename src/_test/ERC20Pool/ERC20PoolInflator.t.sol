@@ -34,9 +34,11 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    // @notice: with 1 lender and 1 borrower quote token is deposited
-    // @notice: then borrower adds collateral, borrows and repays over time
-    // @notice: to check inflator correctness
+    /**
+     *  @notice With 1 lender and 1 borrower quote token is deposited
+     *          then borrower adds collateral, borrows and repays over time.
+     *          Inflator is checked for correctness.
+     */
     function testInflator() external {
         uint256 inflatorSnapshot = _pool.inflatorSnapshot();
         uint256 lastInflatorSnapshotUpdate = _pool.lastInflatorSnapshotUpdate();
@@ -45,42 +47,29 @@ contract ERC20PoolInflatorTest is DSTestPlus {
 
         skip(8200);
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
-
-        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            lastInflatorSnapshotUpdate
-        );
+        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
         _borrower.addCollateral(_pool, 10 * 1e18);
-
-        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            lastInflatorSnapshotUpdate
-        );
+        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
         _borrower.borrow(_pool, 10_000 * 1e18, 4000 * 1e18);
-
-        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            lastInflatorSnapshotUpdate
-        );
+        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
         _borrower.approveToken(_quote, address(_pool), 1_000 * 1e18);
         _borrower.repay(_pool, 1_000 * 1e18);
-
-        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            lastInflatorSnapshotUpdate
-        );
+        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
         _borrower.removeCollateral(_pool, 1 * 1e18);
-
-        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(
-            lastInflatorSnapshotUpdate
-        );
+        (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
     }
 
-    // @notice: With 1 lender pending inflator is tested against calculated inflator
+    /**
+     *  @notice With 1 lender pending inflator is tested against calculated inflator.
+     */
     function testCalculatePendingInflator() external {
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
         uint256 calculatedInflator = calculateInflator();

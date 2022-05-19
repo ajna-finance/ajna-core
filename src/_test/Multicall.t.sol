@@ -36,7 +36,9 @@ contract MulticallTest is DSTestPlus {
         _quote.approve(address(_positionManager), type(uint256).max);
     }
 
-    /// @notice Use multicall to aggregate memorializePosition and increaseLiquidity method calls into one tx
+    /**
+     *  @notice Use multicall to aggregate memorializePosition and increaseLiquidity method calls into one tx.
+     */
     function testMulticallMemorializeIncreaseLiquidity() external {
         address testAddress = generateAddress();
         uint256 mintAmount  = 10000 * 1e18;
@@ -52,10 +54,7 @@ contract MulticallTest is DSTestPlus {
         _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceThree);
 
         // mint an NFT capable of representing the positions
-        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(
-            testAddress,
-            address(_pool)
-        );
+        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(testAddress, address(_pool));
         uint256 tokenId = _positionManager.mint(mintParams);
 
         // Prepare to memorialize the extant positions with the just minted NFT
@@ -64,20 +63,16 @@ contract MulticallTest is DSTestPlus {
         pricesToMemorialize[1] = priceTwo;
         pricesToMemorialize[2] = priceThree;
 
-        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager
-            .MemorializePositionsParams(tokenId, testAddress, address(_pool), pricesToMemorialize);
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId, testAddress, address(_pool), pricesToMemorialize
+        );
 
         // Prepare to add quotte tokens to a new price bucket and associate with NFT
         uint256 additionalAmount           = 1000 * 1e18;
         uint256 newPriceToAddQuoteTokensTo = _p5007;
-        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
-            .IncreaseLiquidityParams(
-                tokenId,
-                testAddress,
-                address(_pool),
-                additionalAmount,
-                newPriceToAddQuoteTokensTo
-            );
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
+            tokenId, testAddress, address(_pool), additionalAmount, newPriceToAddQuoteTokensTo
+        );
 
         bytes[] memory callsToExecute = new bytes[](2);
 
@@ -91,17 +86,14 @@ contract MulticallTest is DSTestPlus {
             increaseLiquidityParams
         );
 
-        uint256 lpTokensAtNewPrice = _positionManager.getLPTokens(
-            tokenId,
-            newPriceToAddQuoteTokensTo
-        );
+        uint256 lpTokensAtNewPrice = _positionManager.getLPTokens(tokenId, newPriceToAddQuoteTokensTo);
         assertEq(lpTokensAtNewPrice, 0);
 
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
 
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(testAddress, additionalAmount, newPriceToAddQuoteTokensTo);
+        emit IncreaseLiquidity(testAddress, newPriceToAddQuoteTokensTo, additionalAmount);
 
         vm.prank(testAddress);
         _positionManager.multicall(callsToExecute);
@@ -110,31 +102,27 @@ contract MulticallTest is DSTestPlus {
         assertGt(lpTokensAtNewPrice, 0);
     }
 
-    /// @notice Attempt two different multicalls that should revert and verify the revert reason is captured and returned properly
+    /**
+     *  @notice Attempt two different multicalls that should revert and verify the revert reason is captured and returned properly.
+     */
     function testMulticallRevertString() public {
         address recipient      = generateAddress();
         address externalCaller = generateAddress();
 
         // mint an NFT
-        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(
-            recipient,
-            address(_pool)
-        );
+        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(recipient, address(_pool));
         uint256 tokenId = _positionManager.mint(mintParams);
 
         uint256 mintAmount = 10000 * 1e18;
         uint256 mintPrice  = _p5007;
         mintAndApproveQuoteTokens(recipient, mintAmount);
 
-        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager
-            .IncreaseLiquidityParams(tokenId, recipient, address(_pool), mintAmount, mintPrice);
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
+            tokenId, recipient, address(_pool), mintAmount, mintPrice
+        );
 
         // construct BurnParams
-        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(
-            tokenId,
-            recipient,
-            mintPrice
-        );
+        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, recipient, mintPrice);
 
         bytes[] memory callsToExecute = new bytes[](2);
 
@@ -147,15 +135,15 @@ contract MulticallTest is DSTestPlus {
 
         // attempt to modify the NFT from an unapproved EOA
         vm.prank(externalCaller);
-        vm.expectRevert(IPositionManager.NotApproved.selector);
+        vm.expectRevert("PM:NO_AUTH");
         _positionManager.multicall(callsToExecute);
 
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(recipient, mintAmount, mintPrice);
+        emit IncreaseLiquidity(recipient, mintPrice, mintAmount);
 
         // attempt to increase liquidity and then burn the NFT without decreasing liquidity
         vm.prank(recipient);
-        vm.expectRevert(IPositionManager.LiquidityNotRemoved.selector);
+        vm.expectRevert("PM:B:LIQ_NOT_REMOVED");
         _positionManager.multicall(callsToExecute);
 
         // TODO: add case for custom error string -> figure out how to induce such a revert

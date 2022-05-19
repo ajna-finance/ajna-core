@@ -11,7 +11,7 @@ clean  :; forge clean
 install :; git submodule update --init --recursive
 
 # Builds
-build  :; forge clean && forge build --optimize --optimize-runs 1000000
+build  :; forge clean && forge build --optimize --optimizer-runs 1000000
 
 # Tests
 test   :; forge clean && forge test --optimize --optimizer-runs 1000000 -v # --ffi # enable if you need the `ffi` cheat code on HEVM

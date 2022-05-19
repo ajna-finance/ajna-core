@@ -24,8 +24,11 @@ contract ERC721PoolFactory is IPoolFactory, FactoryValidation {
         implementation = new ERC721Pool();
     }
 
-    /// @inheritdoc IPoolFactory
-    function deployPool(address collateral_, address quote_) external WETHOnly(collateral_, quote_) returns (address) {
+    /** @inheritdoc IPoolFactory*/
+    function deployPool(address collateral_, address quote_) external override returns (address) {
+        require(collateral_ != address(0) && quote_ != address(0), "ERC721PF:DP:ZERO_ADDR");
+        require(deployedPools[collateral_][quote_] == address(0),  "ERC721PF:DP:POOL_EXISTS");
+
         // check that collateral is ERC721
         // if (isERC721(collateral_) != true) {
         //     revert ERC721Only();
@@ -35,10 +38,6 @@ contract ERC721PoolFactory is IPoolFactory, FactoryValidation {
         // if (isERC721(quote_)) {
         //     revert ERC20Only();
         // }
-
-        if (deployedPools[collateral_][quote_] != address(0)) {
-            revert PoolAlreadyExists();
-        }
 
         bytes memory data = abi.encodePacked(collateral_, quote_);
 
