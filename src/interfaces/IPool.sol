@@ -144,12 +144,6 @@ interface IPool {
      */
     function totalQuoteToken() external view returns (uint256 totalQuoteToken_);
 
-    /**
-     *  @notice Returns the `totalDebt` state variable.
-     *  @return totalDebt_ The total amount of debt in the system, in WAD units.
-     */
-    function totalDebt() external view returns (uint256 totalDebt_);
-
     /*****************************/
     /*** Inititalize Functions ***/
     /*****************************/
@@ -338,19 +332,6 @@ interface IPool {
      *  @return minPrice_ The current minimum pool price.
      */
     function getMinimumPoolPrice() external view returns (uint256 minPrice_);
-
-    /**
-     *  @notice Returns the amount of pending (unaccrued) interest for a given bucket.
-     *  @param  price_    The price of the bucket to query.
-     *  @return interest_ The current amount of unaccrued interest againt the queried bucket.
-     */
-    function getPendingBucketInterest(uint256 price_) external view returns (uint256 interest_);
-
-    /**
-     *  @notice Calculate unaccrued interest for the pool, which may be added to totalDebt.
-     *  @return interest_ Unaccumulated pool interest, in WAD units.
-     */
-    function getPendingPoolInterest() external view returns (uint256 interest_);
 
     /**
      *  @notice Gets the current utilization of the pool

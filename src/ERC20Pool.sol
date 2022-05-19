@@ -30,7 +30,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     uint256 public override previousRateUpdate;
     uint256 public override totalCollateral;    // [WAD]
     uint256 public override totalQuoteToken;    // [WAD]
-    uint256 public override totalDebt;          // [WAD]
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public override borrowers;
@@ -276,31 +275,9 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
 
-    /*************************/
-    /*** Bucket Management ***/
-    /*************************/
-
-    function getPendingBucketInterest(uint256 price_) external view override returns (uint256 interest_) {
-        (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(price_);
-        interest_ = debt != 0 ? getPendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
-    }
-
     /*****************************/
     /*** Pool State Management ***/
     /*****************************/
-
-    /**
-     *  @notice Update the global borrower inflator
-     *  @dev    Requires time to have passed between update calls
-     */
-    function accumulatePoolInterest() private {
-        if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
-            uint256 pendingInflator    = getPendingInflator();                                              // RAY
-            totalDebt                  += getPendingInterest(totalDebt, pendingInflator, inflatorSnapshot); // WAD
-            inflatorSnapshot           = pendingInflator;                                                   // RAY
-            lastInflatorSnapshotUpdate = block.timestamp;
-        }
-    }
 
     // TODO: Add a test for this
     function getMinimumPoolPrice() public view override returns (uint256 minPrice_) {
@@ -310,10 +287,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
         encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
-    }
-
-    function getPendingPoolInterest() external view override returns (uint256 interest_) {
-        interest_ = totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
     }
 
     function getPoolCollateralization() public view override returns (uint256 poolCollateralization_) {
