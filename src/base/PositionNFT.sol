@@ -15,16 +15,11 @@ import { PermitERC721 } from "./PermitERC721.sol";
 abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
 
     constructor(
-        string memory name_,
-        string memory symbol_,
-        string memory version_
-    ) PermitERC721(name_, symbol_, version_) {}
+        string memory name_, string memory symbol_, string memory version_
+    ) PermitERC721(name_, symbol_, version_) {
+    }
 
-    function constructTokenURI(IPositionManager.ConstructTokenURIParams memory params_)
-        public
-        pure
-        returns (string memory)
-    {
+    function constructTokenURI(IPositionManager.ConstructTokenURIParams memory params_) public pure returns (string memory) {
         string memory _name = string(
             abi.encodePacked("Ajna Token #", Strings.toString(params_.tokenId))
         );
@@ -77,21 +72,12 @@ abstract contract PositionNFT is ERC721, ERC721Enumerable, PermitERC721 {
     }
 
     /** @dev Override required by solidity to use ERC721Enumerable library */ 
-    function _beforeTokenTransfer(
-        address from_,
-        address to_,
-        uint256 tokenId_
-    ) internal override(ERC721, ERC721Enumerable) {
+    function _beforeTokenTransfer(address from_, address to_, uint256 tokenId_) internal override(ERC721, ERC721Enumerable) {
         super._beforeTokenTransfer(from_, to_, tokenId_);
     }
 
     /** @dev Override required by solidity to use ERC721Enumerable library */ 
-    function supportsInterface(bytes4 interfaceId_)
-        public
-        view
-        override(ERC721, ERC721Enumerable)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId_) public view override(ERC721, ERC721Enumerable) returns (bool) {
         return super.supportsInterface(interfaceId_);
     }
 

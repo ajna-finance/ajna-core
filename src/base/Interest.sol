@@ -11,6 +11,7 @@ import { Maths } from "../libraries/Maths.sol";
 abstract contract Interest {
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
+
     uint256 public previousRate; // WAD
     uint256 public inflatorSnapshot; // RAY
     uint256 public lastInflatorSnapshotUpdate;

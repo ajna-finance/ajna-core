@@ -8,56 +8,45 @@ import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { BitMaps }   from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
+import { Buckets }  from "./base/Buckets.sol";
 import { Interest } from "./base/Interest.sol";
 
 import { IPool } from "./interfaces/IPool.sol";
 
-import { Buckets }    from "./libraries/Buckets.sol";
 import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
-contract ERC20Pool is IPool, Clone, Interest {
+contract ERC20Pool is IPool, Buckets, Clone, Interest {
 
     using SafeERC20 for ERC20;
-
-    using Buckets for mapping(uint256 => Buckets.Bucket);
 
     /// @dev Counter used by onlyOnce modifier
     uint8 private _poolInitializations = 0;
 
-    // price (WAD) -> bucket
-    mapping(uint256 => Buckets.Bucket) private _buckets;
+    uint256 public override collateralScale;
+    uint256 public override quoteTokenScale;
 
-    BitMaps.BitMap private _bitmap;
-
-    uint256 public collateralScale;
-    uint256 public quoteTokenScale;
-
-    uint256 public hpb; // WAD
-    uint256 public lup; // WAD
-
-    uint256 public previousRateUpdate;
-    uint256 public totalCollateral;    // WAD
-    uint256 public totalQuoteToken;    // WAD
-    uint256 public totalDebt;          // WAD
+    uint256 public override previousRateUpdate;
+    uint256 public override totalCollateral;    // [WAD]
+    uint256 public override totalQuoteToken;    // [WAD]
+    uint256 public override totalDebt;          // [WAD]
 
     // borrowers book: borrower address -> BorrowerInfo
-    mapping(address => BorrowerInfo) public borrowers;
+    mapping(address => BorrowerInfo) public override borrowers;
 
-    // lenders lp token balances: lender address -> price bucket (WAD) -> lender lp (RAY)
-    mapping(address => mapping(uint256 => uint256)) public lpBalance;
+    // lenders lp token balances: lender address -> price bucket [WAD] -> lender lp [RAY]
+    mapping(address => mapping(uint256 => uint256)) public override lpBalance;
 
-    /** @notice Modifier to protect a clone's initialize method from repeated updates */
+    /**
+     *  @notice Modifier to protect a clone's initialize method from repeated updates.
+     */
     modifier onlyOnce() {
-        if (_poolInitializations != 0) {
-            revert AlreadyInitialized();
-        }
+        require(_poolInitializations == 0, "P:INITIALIZED");
         _;
     }
 
-    function initialize() external onlyOnce {
+    function initialize() external override onlyOnce {
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
@@ -70,254 +59,187 @@ contract ERC20Pool is IPool, Clone, Interest {
         _poolInitializations += 1;
     }
 
-    /**  @dev Pure function used to facilitate accessing token via clone state */
+    /**
+     *  @dev Pure function used to facilitate accessing token via clone state.
+     */
     function collateral() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0));
     }
 
-    /** @dev Pure function used to facilitate accessing token via clone state */
+    /**
+     *  @dev Pure function used to facilitate accessing token via clone state.
+     */
     function quoteToken() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0x14));
     }
 
-    function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external returns (uint256) {
-        if (!BucketMath.isValidPrice(price_)) {
-            revert InvalidPrice();
-        }
+    function addQuoteToken(
+        address recipient_, uint256 amount_, uint256 price_
+    ) external override returns (uint256 lpTokens_) {
+        require(BucketMath.isValidPrice(price_), "P:AQT:INVALID_PRICE");
 
         accumulatePoolInterest();
 
-        // create bucket if doesn't exist
-        if (!BitMaps.get(_bitmap, price_)) {
-            hpb = _buckets.initializeBucket(hpb, price_);
-            BitMaps.setTo(_bitmap, price_, true);
-        }
+        // deposit quote token amount and get awarded LP tokens
+        lpTokens_ = addQuoteTokenToBucket(price_, amount_, totalDebt, inflatorSnapshot);
 
-        // deposit amount
-        bool reallocate = (totalDebt != 0 && price_ > lup);
-        (uint256 newLup, uint256 lpTokens) = _buckets.addQuoteToken(price_, amount_, lup, inflatorSnapshot, reallocate);
+        // pool level accounting
+        totalQuoteToken               += amount_;
 
-        if (reallocate) {
-            lup = newLup;
-        }
+        // lender accounting
+        lpBalance[recipient_][price_] += lpTokens_;
 
-        lpBalance[recipient_][price_] += lpTokens;  // update lender lp balance for current price bucket
-        totalQuoteToken               += amount_;   // update quote token accumulator
-
+        // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
-
-        //  TODO: emit _amount / quoteTokenScale
         emit AddQuoteToken(recipient_, price_, amount_, lup);
-        return lpTokens;
     }
 
-    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external {
-        if (!BucketMath.isValidPrice(price_)) {
-            revert InvalidPrice();
-        }
+    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
+        require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         accumulatePoolInterest();
 
-        // remove from bucket
-        Buckets.Bucket storage bucket = _buckets[price_];
-        (uint256 amount, uint256 newLup, uint256 lpTokens) = _buckets.removeQuoteToken(
-            bucket,
-            maxAmount_,
-            lpBalance[recipient_][price_],
-            inflatorSnapshot
+        // remove quote token amount and get LP tokens burned
+        (uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
+            price_, maxAmount_, lpBalance[recipient_][price_], inflatorSnapshot
         );
 
-        // move lup down only if removal happened at or above lup and new lup different than current
-        if (price_ >= lup && newLup < lup) {
-            lup = newLup;
-        }
-
-        if (bucket.onDeposit == 0 && bucket.debt == 0) {
-            // update HPB if removed from current
-            if (price_ == hpb) {
-                hpb = getHpb();
-            }
-
-            // bucket no longer used, deactivate bucket
-            if (bucket.lpOutstanding == 0 && bucket.collateral == 0) {
-                BitMaps.setTo(_bitmap, price_, false);
-                _buckets.deactivateBucket(bucket);
-            }
-        }
-
+        // pool level accounting
         totalQuoteToken -= amount;
-        uint256 col = getPoolCollateralization();
-        if (col < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({collateralization: col});
-        }
 
+        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:RQT:POOL_UNDER_COLLAT");
+
+        // lender accounting
         lpBalance[recipient_][price_] -= lpTokens;
 
-        //  TODO: emit _amount / quoteTokenScale
+        // move quote token amount from pool to lender
         quoteToken().safeTransfer(recipient_, amount / quoteTokenScale);
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
     }
 
-    function addCollateral(uint256 amount_) external {
+    function addCollateral(uint256 amount_) external override {
         accumulatePoolInterest();
 
-        borrowers[msg.sender].collateralDeposited += amount_;
+        // pool level accounting
         totalCollateral                           += amount_;
 
+        // borrower accounting
+        borrowers[msg.sender].collateralDeposited += amount_;
+
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
+        // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit AddCollateral(msg.sender, amount_);
     }
 
-    function removeCollateral(uint256 amount_) external {
+    function removeCollateral(uint256 amount_) external override {
         accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
         uint256 encumberedBorrowerCollateral = Maths.rayToWad(getEncumberedCollateral(borrower.debt));
+        require(borrower.collateralDeposited - encumberedBorrowerCollateral >= amount_, "P:RC:AMT_GT_AVAIL_COLLAT");
 
-        if (borrower.collateralDeposited - encumberedBorrowerCollateral < amount_) {
-            revert AmountExceedsAvailableCollateral({
-                availableCollateral: borrower.collateralDeposited - encumberedBorrowerCollateral
-            });
-        }
-
-        borrower.collateralDeposited -= amount_;
+        // pool level accounting
         totalCollateral              -= amount_;
 
+        // borrower accounting
+        borrower.collateralDeposited -= amount_;
+
+        // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
         emit RemoveCollateral(msg.sender, amount_);
     }
 
-    function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external {
-        if (!BucketMath.isValidPrice(price_)) {
-            revert InvalidPrice();
-        }
+    function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external override {
+        require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
         uint256 maxClaim = lpBalance[recipient_][price_];
-        if (maxClaim == 0) {
-            revert NoClaimToBucket();
-        }
+        require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
 
-        Buckets.Bucket storage bucket = _buckets[price_];
-        uint256 claimedLpTokens = _buckets.claimCollateral(bucket, amount_, maxClaim);
+        // claim collateral and get amount of LP tokens burned for claim
+        uint256 claimedLpTokens = claimCollateralFromBucket(price_, amount_, maxClaim);
 
-        // cleanup if bucket no longer used
-        if (bucket.debt == 0 && bucket.onDeposit == 0 && bucket.lpOutstanding == 0 && bucket.collateral == 0) {
-            // bucket no longer used, deactivate bucket
-            BitMaps.setTo(_bitmap, price_, false);
-            _buckets.deactivateBucket(bucket);
-        }
-
+        // lender accounting
         lpBalance[recipient_][price_] -= claimedLpTokens;
 
+        // move claimed collateral from pool to claimer
         collateral().safeTransfer(recipient_, amount_ / collateralScale);
         emit ClaimCollateral(recipient_, price_, amount_, claimedLpTokens);
     }
 
-    function borrow(uint256 amount_, uint256 limitPrice_) external {
-        if (amount_ > totalQuoteToken) {
-            revert InsufficientLiquidity({amountAvailable: totalQuoteToken});
-        }
+    function borrow(uint256 amount_, uint256 limitPrice_) external override {
+        require(amount_ <= totalQuoteToken, "P:B:INSUF_LIQ");
 
         accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
-        // if first loan then borrow at HPB
-        lup = _buckets.borrow(amount_, limitPrice_, lup == 0 ? hpb : lup, inflatorSnapshot);
+        // borrow amount from buckets with limit price
+        borrowFromBucket(amount_, limitPrice_, inflatorSnapshot);
 
-        if (
-            borrower.collateralDeposited <=
-            Maths.rayToWad(getEncumberedCollateral(borrower.debt + amount_))
-        ) {
-            revert InsufficientCollateralForBorrow();
-        }
+        require(borrower.collateralDeposited > Maths.rayToWad(getEncumberedCollateral(borrower.debt + amount_)), "P:B:INSUF_COLLAT");
 
-        borrower.debt   += amount_;
+        // pool level accounting
         totalQuoteToken -= amount_;
         totalDebt       += amount_;
 
-        uint256 col = getPoolCollateralization();
-        if (col < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({collateralization: col});
-        }
+        // borrower accounting
+        borrower.debt   += amount_;
 
+        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
+
+        // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, lup, amount_);
     }
 
-    function repay(uint256 maxAmount_) external {
+    function repay(uint256 maxAmount_) external override {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) * quoteTokenScale;
 
-        if (availableAmount < maxAmount_) {
-            revert InsufficientBalanceForRepay();
-        }
+        require(availableAmount >= maxAmount_, "P:R:INSUF_BAL");
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
-        if (borrower.debt == 0) {
-            revert NoDebtToRepay();
-        }
+        require(borrower.debt != 0, "P:R:NO_DEBT");
+
         accumulatePoolInterest();
         accumulateBorrowerInterest(borrower);
 
         uint256 amount = Maths.min(maxAmount_, borrower.debt);
-        lup = _buckets.repay(amount, lup, inflatorSnapshot);
+        repayBucket(amount, inflatorSnapshot, amount >= totalDebt);
 
-        borrower.debt   -= amount;
+        // pool level accounting
         totalQuoteToken += amount;
         totalDebt       -= Maths.min(totalDebt, amount);
 
-        // reset LUP if no debt in pool
-        if (totalDebt == 0) {
-            lup = 0;
-        }
+        // borrower accounting
+        borrower.debt   -= amount;
 
+        // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, lup, amount);
     }
 
-    function purchaseBid(uint256 amount_, uint256 price_) external {
-        if (!BucketMath.isValidPrice(price_)) {
-            revert InvalidPrice();
-        }
+    function purchaseBid(uint256 amount_, uint256 price_) external override {
+        require(BucketMath.isValidPrice(price_), "P:PB:INVALID_PRICE");
 
         // convert amount from WAD to pool precision - RAD
         uint256 collateralRequired = Maths.wdiv(amount_, price_);
-        if (collateral().balanceOf(msg.sender) * collateralScale < collateralRequired) {
-            revert InsufficientCollateralBalance();
-        }
+        require(collateral().balanceOf(msg.sender) * collateralScale >= collateralRequired, "P:PB:INSUF_COLLAT");
 
         accumulatePoolInterest();
 
-        Buckets.Bucket storage bucket = _buckets[price_];
-        uint256 newLup = _buckets.purchaseBid(bucket, amount_, collateralRequired, inflatorSnapshot);
+        purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
 
-        // move lup down only if removal happened at lup or higher and new lup different than current
-        if (price_ >= lup && newLup < lup) {
-            lup = newLup;
-        }
-
-        // update HPB if removed from current, if no deposit nor debt in current HPB and if LUP not 0
-        if (price_ == hpb && bucket.onDeposit == 0 && bucket.debt == 0 && lup != 0) {
-            hpb = getHpb();
-        }
-
+        // pool level accounting
         totalQuoteToken -= amount_;
 
-        uint256 col = getPoolCollateralization();
-        if (col < Maths.ONE_WAD) {
-            revert PoolUndercollateralized({collateralization: col});
-        }
+        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
 
         // move required collateral from sender to pool
-        collateral().safeTransferFrom(
-            msg.sender,
-            address(this),
-            collateralRequired / collateralScale
-        );
+        collateral().safeTransferFrom(msg.sender, address(this), collateralRequired / collateralScale);
 
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
@@ -325,7 +247,7 @@ contract ERC20Pool is IPool, Clone, Interest {
     }
 
     // TODO: replace local variables with references to borrower.<> (CHECK GAS SAVINGS)
-    function liquidate(address borrower_) external {
+    function liquidate(address borrower_) external override {
         accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[borrower_];
@@ -334,20 +256,14 @@ contract ERC20Pool is IPool, Clone, Interest {
         uint256 debt                = borrower.debt;
         uint256 collateralDeposited = borrower.collateralDeposited;
 
-        if (debt == 0) {
-            revert NoDebtToLiquidate();
-        }
-
-        uint256 collateralization = getBorrowerCollateralization(
-            borrower.collateralDeposited,
-            debt
+        require(debt != 0, "P:L:NO_DEBT");
+        require(
+            getBorrowerCollateralization(collateralDeposited, debt) <= Maths.ONE_WAD,
+            "P:L:BORROWER_OK"
         );
 
-        if (collateralization > Maths.ONE_WAD) {
-            revert BorrowerIsCollateralized({collateralization: collateralization});
-        }
-
-        uint256 requiredCollateral = _buckets.liquidate(debt, collateralDeposited, hpb, inflatorSnapshot);
+        // liquidate borrower and get collateral required to liquidate
+        uint256 requiredCollateral = liquidateAtBucket(debt, collateralDeposited, inflatorSnapshot);
 
         // pool level accounting
         totalDebt       -= borrower.debt;
@@ -357,12 +273,6 @@ contract ERC20Pool is IPool, Clone, Interest {
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
 
-        // update HPB
-        uint256 curHpb = getHpb();
-        if (hpb != curHpb) {
-            hpb = curHpb;
-        }
-
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
 
@@ -370,40 +280,7 @@ contract ERC20Pool is IPool, Clone, Interest {
     /*** Bucket Management ***/
     /*************************/
 
-    // TODO: rename bucketAtPrice & add bucketAtIndex
-    // TODO: add return type
-    /**
-     * @notice Get a bucket struct for a given price
-     * @param price_ The price of the bucket to retrieve
-    */
-    function bucketAt(uint256 price_)
-        public
-        view
-        returns (
-            uint256 price,
-            uint256 up,
-            uint256 down,
-            uint256 onDeposit,
-            uint256 debt,
-            uint256 bucketInflator,
-            uint256 lpOutstanding,
-            uint256 bucketCollateral
-        )
-    {
-        return _buckets.bucketAt(price_);
-    }
-
-    function isBucketInitialized(uint256 price_) public view returns (bool) {
-        return BitMaps.get(_bitmap, price_);
-    }
-
-    /**
-     * @notice Calculate unaccrued interest for a particular bucket, which may be added to
-     * @notice bucket debt to discover pending bucket debt
-     * @param price_ The price bucket for which interest should be calculated, WAD
-     * @return interest_ - Unaccumulated bucket interest, WAD
-    */
-    function getPendingBucketInterest(uint256 price_) external view returns (uint256 interest_) {
+    function getPendingBucketInterest(uint256 price_) external view override returns (uint256 interest_) {
         (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(price_);
         interest_ = debt != 0 ? getPendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
     }
@@ -413,9 +290,9 @@ contract ERC20Pool is IPool, Clone, Interest {
     /*****************************/
 
     /**
-     * @notice Update the global borrower inflator
-     * @dev Requires time to have passed between update calls
-    */
+     *  @notice Update the global borrower inflator
+     *  @dev    Requires time to have passed between update calls
+     */
     function accumulatePoolInterest() private {
         if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
             uint256 pendingInflator    = getPendingInflator();                                              // RAY
@@ -425,106 +302,39 @@ contract ERC20Pool is IPool, Clone, Interest {
         }
     }
 
-    /**
-     * @notice Returns the current Hight Utilizable Price (HUP) bucket
-     * @dev Starting at the LUP, iterate through down pointers until no quote tokens are available
-     * @dev LUP should always be >= HUP
-     * @return The current HUP
-    */
-    function getHup() public view returns (uint256) {
-        uint256 curPrice = lup;
-        while (true) {
-            (uint256 price, , uint256 down, uint256 onDeposit, , , , ) = _buckets.bucketAt(
-                curPrice
-            );
-            if (price == down || onDeposit != 0) {
-                break;
-            }
-
-            // check that there are available quote tokens on deposit in down bucket
-            (, , , uint256 downAmount, , , , ) = _buckets.bucketAt(down);
-            if (downAmount == 0) {
-                break;
-            }
-            curPrice = down;
-        }
-        return curPrice;
-    }
-
-    /**
-     * @notice Returns the next Highest Deposited Bucket (HPB)
-     * @dev Starting at the current HPB, iterate through down pointers until a new HPB found
-     * @dev HPB should have at on deposit or debt different than 0
-     * @return The next HPB
-    */
-    function getHpb() public view returns (uint256) {
-        uint256 curHpb = hpb;
-        while (true) {
-            (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = _buckets.bucketAt(curHpb);
-            if (onDeposit != 0 || debt != 0) {
-                break;
-            } else if (down == 0) {
-                curHpb = 0;
-                break;
-            }
-
-            curHpb = down;
-        }
-        return curHpb;
-    }
-
-    // TODO: add a test for this
-    /** @return minPrice_ RAY - The current minimum pool price */
-    function getMinimumPoolPrice() public view returns (uint256 minPrice_) {
+    // TODO: Add a test for this
+    function getMinimumPoolPrice() public view override returns (uint256 minPrice_) {
         minPrice_ = totalDebt != 0 ? Maths.wdiv(totalDebt, totalCollateral) : 0;
     }
 
-    /**
-     * @dev Used for both pool and borrower level debt
-     * @param debt_ - Debt to check encumbrance of
-     * @return encumbrance_ WAD - The current encumbrance of a given debt balance
-    */
-    function getEncumberedCollateral(uint256 debt_) public view returns (uint256 encumbrance_) {
+    function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
         encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
     }
 
-    /**
-     * @notice Calculate unaccrued interest for the pool, which may be added to totalDebt
-     * @notice to discover pending pool debt
-     * @return interest_ - Unaccumulated pool interest, WAD
-    */
-    function getPendingPoolInterest() external view returns (uint256 interest_) {
+    function getPendingPoolInterest() external view override returns (uint256 interest_) {
         interest_ = totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
     }
 
-    /** @return WAD - The current collateralization of the pool given totalCollateral and totalDebt */
-    function getPoolCollateralization() public view returns (uint256) {
+    function getPoolCollateralization() public view override returns (uint256 poolCollateralization_) {
         if (lup != 0 && totalDebt != 0) {
             return Maths.wdiv(totalCollateral, getEncumberedCollateral(totalDebt));
         }
         return Maths.ONE_WAD;
     }
 
-    /**
-     * @notice Gets the current utilization of the pool
-     * @dev Will return 0 unless the pool has been borrowed from
-     * @return WAD - The current pool actual utilization
-    */
-    function getPoolActualUtilization() public view returns (uint256) {
+    function getPoolActualUtilization() public view override returns (uint256 poolActualUtilization_) {
         if (totalDebt == 0) {
             return 0;
         }
         return Maths.wdiv(totalDebt, totalQuoteToken + totalDebt);
     }
 
-    /** @return WAD - The current pool target utilization */
-    function getPoolTargetUtilization() public view returns (uint256) {
+    function getPoolTargetUtilization() public view override returns (uint256 poolTargetUtilization_) {
         return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
     }
 
-    /** @notice Called by lenders to update interest rate of the pool when actual > target utilization */
-    function updateInterestRate() external {
+    function updateInterestRate() external override {
         // RAY
         uint256 actualUtilization = getPoolActualUtilization();
         if (
@@ -551,18 +361,15 @@ contract ERC20Pool is IPool, Clone, Interest {
     /*** Borrower Management ***/
     /*****************************/
 
-    /** @notice Returns a Tuple representing a given borrower's info struct */
     function getBorrowerInfo(address borrower_)
-        public
-        view
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256
+        public view override returns (
+            uint256 debt_,
+            uint256 pendingDebt_,
+            uint256 collateralDeposited_,
+            uint256 collateralEncumbered_,
+            uint256 collateralization_,
+            uint256 borrowerInflatorSnapshot_,
+            uint256 inflatorSnapshot_
         )
     {
         BorrowerInfo memory borrower = borrowers[borrower_];
@@ -587,43 +394,28 @@ contract ERC20Pool is IPool, Clone, Interest {
         );
     }
 
-    /**
-     * @dev Supports passage of collateralDeposited and debt to enable calculation of potential borrower collateralization states, not just current.
-     * @param collateralDeposited_ RAY - Collateral amount to calculate a collateralization ratio for
-     * @param debt_ WAD - Debt position to calculate encumbered quotient
-     * @return WAD - The current collateralization of the borrowers given totalCollateral and totalDebt
-    */
-    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_)
-        public
-        view
-        returns (uint256)
-    {
+    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256 borrowerCollateralization_) {
         if (lup != 0 && debt_ != 0) {
             return Maths.wdiv(collateralDeposited_, getEncumberedCollateral(debt_));
         }
         return Maths.ONE_WAD;
     }
 
-    /** @notice Estimate the price at which a loan can be taken */
-    function estimatePriceForLoan(uint256 amount_) public view returns (uint256) {
+    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256 price_) {
         // convert amount from WAD to collateral pool precision - RAD
-        return _buckets.estimatePrice(amount_, lup == 0 ? hpb : lup);
+        return estimatePrice(amount_, lup == 0 ? hpb : lup);
     }
 
     /*****************************/
     /*** Lender Management ***/
     /*****************************/
 
-    function getLPTokenBalance(address owner_, uint256 price_) external view returns (uint256) {
+    function getLPTokenBalance(address owner_, uint256 price_) external view override returns (uint256 lpBalance_) {
         return lpBalance[owner_][price_];
     }
 
-    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_)
-        external
-        view
-        returns (uint256 collateralTokens_, uint256 quoteTokens_)
-    {
-        require(BucketMath.isValidPrice(price_), "ajna/invalid-bucket-price");
+    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
+        require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
 
         (
             ,

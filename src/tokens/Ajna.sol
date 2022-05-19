@@ -11,11 +11,7 @@ contract AjnaToken is ERC20("AjnaToken", "AJNA"), ERC20Permit {
         _mint(msg.sender, initialSupply);
     }
 
-    function _beforeTokenTransfer(
-        address from_,
-        address,
-        uint256
-    ) internal view override {
+    function _beforeTokenTransfer(address from_, address, uint256) internal view override {
         // This can be achived by setting _balances[address(this)] to the max value uint256.
         // But _balances are private variable in the OpenZeppelin ERC20 contract implementation.
 
