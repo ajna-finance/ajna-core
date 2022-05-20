@@ -144,12 +144,6 @@ interface IPool {
      */
     function totalQuoteToken() external view returns (uint256 totalQuoteToken_);
 
-    /**
-     *  @notice Returns the `totalDebt` state variable.
-     *  @return totalDebt_ The total amount of debt in the system, in WAD units.
-     */
-    function totalDebt() external view returns (uint256 totalDebt_);
-
     /*****************************/
     /*** Inititalize Functions ***/
     /*****************************/
@@ -284,27 +278,6 @@ interface IPool {
         uint256 inflatorSnapshot_
     );
 
-    /*****************************/
-    /*** Lender View Functions ***/
-    /*****************************/
-
-    /**
-     *  @notice Returns a given lender's LP tokens in a given price bucket.
-     *  TODO:   Is this function necessary given we have `lpBalance`?
-     *  @param  owner_     The EOA to check token balance for.
-     *  @param  price_     The price bucket for which the value should be calculated, WAD units.
-     *  @return lpBalance_ The EOA's lp token balance in the bucket, RAY units.
-     */
-    function getLPTokenBalance(address owner_, uint256 price_) external view returns (uint256 lpBalance_);
-
-    /**
-     *  @notice Nested mapping of lender's LP token balance at different price buckets.
-     *  @param  lp_          Address of the LP.
-     *  @param  priceBucket_ Price of the bucket.
-     *  @return balance_     LP token balance of the lender at the queried price bucket.
-     */
-    function lpBalance(address lp_, uint256 priceBucket_) external view returns (uint256 balance_);
-
     /***************************/
     /*** Pool View Functions ***/
     /***************************/
@@ -325,32 +298,10 @@ interface IPool {
     function getEncumberedCollateral(uint256 debt_) external view returns (uint256 encumbrance_);
 
     /**
-     *  @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens.
-     *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
-     *  @param  price_            The price bucket for which the value should be calculated.
-     *  @return collateralTokens_ The equivalent value of collateral tokens for the given LP Tokens, WAD units.
-     *  @return quoteTokens_      The equivalent value of quote tokens for the given LP Tokens, WAD units.
-     */
-    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);
-
-    /**
      *  @notice Returns the current minimum pool price.
      *  @return minPrice_ The current minimum pool price.
      */
     function getMinimumPoolPrice() external view returns (uint256 minPrice_);
-
-    /**
-     *  @notice Returns the amount of pending (unaccrued) interest for a given bucket.
-     *  @param  price_    The price of the bucket to query.
-     *  @return interest_ The current amount of unaccrued interest againt the queried bucket.
-     */
-    function getPendingBucketInterest(uint256 price_) external view returns (uint256 interest_);
-
-    /**
-     *  @notice Calculate unaccrued interest for the pool, which may be added to totalDebt.
-     *  @return interest_ Unaccumulated pool interest, in WAD units.
-     */
-    function getPendingPoolInterest() external view returns (uint256 interest_);
 
     /**
      *  @notice Gets the current utilization of the pool

@@ -9,15 +9,16 @@ import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { Buckets }  from "./base/Buckets.sol";
-import { Interest } from "./base/Interest.sol";
+import { Buckets }       from "./base/Buckets.sol";
+import { Interest }      from "./base/Interest.sol";
+import { LenderManager } from "./base/LenderManager.sol";
 
 import { IPool } from "./interfaces/IPool.sol";
 
 import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
-contract ERC20Pool is IPool, Buckets, Clone, Interest {
+contract ERC20Pool is IPool, Buckets, Clone, Interest, LenderManager {
 
     using SafeERC20 for ERC20;
 
@@ -30,13 +31,9 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     uint256 public override previousRateUpdate;
     uint256 public override totalCollateral;    // [WAD]
     uint256 public override totalQuoteToken;    // [WAD]
-    uint256 public override totalDebt;          // [WAD]
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public override borrowers;
-
-    // lenders lp token balances: lender address -> price bucket [WAD] -> lender lp [RAY]
-    mapping(address => mapping(uint256 => uint256)) public override lpBalance;
 
     /**
      *  @notice Modifier to protect a clone's initialize method from repeated updates.
@@ -276,31 +273,9 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
 
-    /*************************/
-    /*** Bucket Management ***/
-    /*************************/
-
-    function getPendingBucketInterest(uint256 price_) external view override returns (uint256 interest_) {
-        (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(price_);
-        interest_ = debt != 0 ? getPendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
-    }
-
     /*****************************/
     /*** Pool State Management ***/
     /*****************************/
-
-    /**
-     *  @notice Update the global borrower inflator
-     *  @dev    Requires time to have passed between update calls
-     */
-    function accumulatePoolInterest() private {
-        if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
-            uint256 pendingInflator    = getPendingInflator();                                              // RAY
-            totalDebt                  += getPendingInterest(totalDebt, pendingInflator, inflatorSnapshot); // WAD
-            inflatorSnapshot           = pendingInflator;                                                   // RAY
-            lastInflatorSnapshotUpdate = block.timestamp;
-        }
-    }
 
     // TODO: Add a test for this
     function getMinimumPoolPrice() public view override returns (uint256 minPrice_) {
@@ -310,10 +285,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
         encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
-    }
-
-    function getPendingPoolInterest() external view override returns (uint256 interest_) {
-        interest_ = totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
     }
 
     function getPoolCollateralization() public view override returns (uint256 poolCollateralization_) {
@@ -404,36 +375,6 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest {
     function estimatePriceForLoan(uint256 amount_) public view override returns (uint256 price_) {
         // convert amount from WAD to collateral pool precision - RAD
         return estimatePrice(amount_, lup == 0 ? hpb : lup);
-    }
-
-    /*****************************/
-    /*** Lender Management ***/
-    /*****************************/
-
-    function getLPTokenBalance(address owner_, uint256 price_) external view override returns (uint256 lpBalance_) {
-        return lpBalance[owner_][price_];
-    }
-
-    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
-        require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
-
-        (
-            ,
-            ,
-            ,
-            uint256 onDeposit,
-            uint256 debt,
-            ,
-            uint256 lpOutstanding,
-            uint256 bucketCollateral
-        ) = bucketAt(price_);
-
-        // calculate lpTokens share of all outstanding lpTokens for the bucket
-        uint256 lenderShare = Maths.rdiv(lpTokens_, lpOutstanding);
-
-        // calculate the amount of collateral and quote tokens equivalent to the lenderShare
-        collateralTokens_ = Maths.radToWad(bucketCollateral * lenderShare);
-        quoteTokens_      = Maths.radToWad((onDeposit + debt) * lenderShare);
     }
 
 }

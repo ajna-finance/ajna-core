@@ -253,7 +253,7 @@ def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, ):
 
 
 def remove_quote_token(lender, lender_index, price, pool):
-    lp_balance = pool.getLPTokenBalance(lender, price)
+    lp_balance = pool.lpBalance(lender, price)
     (_, _, _, quote, _, _, lp_outstanding, _) = pool.bucketAt(price)
     if lp_balance > 0:
         assert lp_outstanding > 0
