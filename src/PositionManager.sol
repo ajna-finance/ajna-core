@@ -57,7 +57,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         Position storage position = positions[params_.tokenId];
         for (uint256 i = 0; i < params_.prices.length; ) {
-            position.lpTokens[params_.prices[i]] = ILenderManager(params_.pool).getLPTokenBalance(
+            position.lpTokens[params_.prices[i]] = ILenderManager(params_.pool).lpBalance(
                 params_.owner,
                 params_.prices[i]
             );

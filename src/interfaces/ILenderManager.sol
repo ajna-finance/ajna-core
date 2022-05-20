@@ -8,15 +8,6 @@ pragma solidity 0.8.11;
 interface ILenderManager {
 
     /**
-     *  @notice Returns a given lender's LP tokens in a given price bucket.
-     *  TODO:   Is this function necessary given we have `lpBalance`?
-     *  @param  owner_     The EOA to check token balance for.
-     *  @param  price_     The price bucket for which the value should be calculated, WAD units.
-     *  @return lpBalance_ The EOA's lp token balance in the bucket, RAY units.
-     */
-    function getLPTokenBalance(address owner_, uint256 price_) external view returns (uint256 lpBalance_);
-
-    /**
      *  @notice Nested mapping of lender's LP token balance at different price buckets.
      *  @param  lp_          Address of the LP.
      *  @param  priceBucket_ Price of the bucket.
