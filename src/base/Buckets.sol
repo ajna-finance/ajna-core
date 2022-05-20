@@ -141,10 +141,9 @@ abstract contract Buckets {
         accumulateBucketInterest(fromBucket, inflator_);
 
         uint256 exchangeRate = getExchangeRate(fromBucket);
-
-        require(amount_ <= Maths.rmul(lpBalance_, exchangeRate), "B:MQT:AMT_GT_CLAIM");
-
         lpRedemption_ = Maths.rdiv(Maths.wadToRay(amount_), exchangeRate);
+
+        require(lpRedemption_ <= lpBalance_, "B:MQT:AMT_GT_CLAIM");
 
         Bucket storage toBucket = _buckets[toPrice_];
         accumulateBucketInterest(toBucket, inflator_);
@@ -189,13 +188,15 @@ abstract contract Buckets {
             }
         }
 
+        bool isEmpty = fromBucket.onDeposit == 0 && fromBucket.debt == 0;
+        bool noClaim = fromBucket.lpOutstanding == 0 && fromBucket.collateral == 0;
+
         // HPB and LUP management
         if (newLup != lup) lup = newLup;
+        newHpb = (isEmpty && fromBucket.price == newHpb) ? getHpb() : newHpb;
         if (newHpb != hpb) hpb = newHpb;
 
         // bucket management
-        bool isEmpty = fromBucket.onDeposit == 0 && fromBucket.debt == 0;
-        bool noClaim = fromBucket.lpOutstanding == 0 && fromBucket.collateral == 0;
         if (isEmpty && noClaim) deactivateBucket(fromBucket); // cleanup if bucket no longer used
     }
 

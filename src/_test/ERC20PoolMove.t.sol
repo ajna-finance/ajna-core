@@ -58,23 +58,40 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
         _lender.addQuoteToken(_pool, address(_lender), 30_000 * 1e18, _p2503);
 
+        assertEq(_pool.hpb(), _p3514);
+        assertEq(_pool.lup(), 0);
+
         // lender moves 10_000 DAI down
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), _p3514, _p2503, 10_000 * 1e18, 0);
         _lender.moveQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514, _p2503);
         
-        (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p3514);
+        (, uint256 up, uint256 down, uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p3514);
         assertEq(debt,    0);
         assertEq(deposit, 0);
+        // check that bucket was deactivated
+        assertEq(up, 0);
+        assertEq(down, 0);
 
         assertEq(_pool.lpBalance(address(_lender), _p3514), 0);
 
-        (, , ,deposit, debt, , , ) = _pool.bucketAt(_p2503);
+        (, up, down, deposit, debt, , , ) = _pool.bucketAt(_p3010);
+        assertEq(debt,    0);
+        assertEq(deposit, 20_000 * 1e18);
+        assertEq(up,      _p3010);
+        assertEq(down,    _p2503);
+
+        assertEq(_pool.lpBalance(address(_lender), _p3010), 20_000 * 1e27);
+
+        (, up, down, deposit, debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt,    0);
         assertEq(deposit, 40_000 * 1e18);
+        assertEq(up,      _p3010);
+        assertEq(down,    0);
 
         assertEq(_pool.lpBalance(address(_lender), _p2503), 40_000 * 1e27);
 
+        assertEq(_pool.hpb(), _p3010);
         assertEq(_pool.lup(), 0);
     }
 
@@ -725,6 +742,14 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.lup(), 0);
         assertEq(_pool.hpb(), _p3010);
 
+        // should revert if moving to an invalid price bucket
+        vm.expectRevert("P:MQT:INVALID_TO_PRICE");
+        _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, _p3010, 3_000 * 1e18);
+
+        // should revert if trying to move more than entitled
+        vm.expectRevert("B:MQT:AMT_GT_CLAIM");
+        _lender.moveQuoteToken(_pool, address(_lender), 10_001 * 1e18, _p3010, _p3514);
+
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), _p3010, _p3514, 2_000 * 1e18, 0);
         _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, _p3010, _p3514);
@@ -756,6 +781,10 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         assertEq(_pool.lup(), _p2779);
         assertEq(_pool.hpb(), _p2793);
+
+        // should revert if moving leaves pool undercollateralized
+        vm.expectRevert("P:MQT:POOL_UNDER_COLLAT");
+        _lender.moveQuoteToken(_pool, address(_lender), 8_000 * 1e18, _p2779, _p1);
 
         // lender moves 1000 DAI to upper bucket
         vm.expectEmit(true, true, true, true);
