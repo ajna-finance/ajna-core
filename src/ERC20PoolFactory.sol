@@ -33,4 +33,5 @@ contract ERC20PoolFactory is IPoolFactory {
         deployedPools[collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
     }
+
 }
