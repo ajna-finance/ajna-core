@@ -123,44 +123,75 @@ abstract contract Buckets {
 
     /**
      *  @notice Called by a lender to remove quote tokens from a bucket
-     *  @param  fromPrice_  The price bucket from where quote tokens should be moved
-     *  @param  toPrice_    The price bucket where quote tokens should be moved
-     *  @param  maxAmount_  The maximum amount of quote tokens to be moved, WAD
-     *  @param  lpBalance_  The LP balance for current lender, RAY
-     *  @param  inflator_   The current pool inflator rate, RAY
-     *  @return amount_     The actual amount being moved
-     *  @return fromLpTokens_ The amount of lpTokens moved from bucket
-     *  @return toLpTokens_   The amount of lpTokens moved to bucket
+     *  @param  fromPrice_    The price bucket from where quote tokens should be moved
+     *  @param  toPrice_      The price bucket where quote tokens should be moved
+     *  @param  amount_       The amount of quote tokens to be moved, WAD
+     *  @param  lpBalance_    The LP balance for current lender, RAY
+     *  @param  inflator_     The current pool inflator rate, RAY
+     *  @return lpRedemption_ The amount of lpTokens moved from bucket
+     *  @return lpAward_      The amount of lpTokens moved to bucket
      */
     function moveQuoteTokenFromBucket(
-        uint256 fromPrice_, uint256 toPrice_, uint256 maxAmount_, uint256 lpBalance_, uint256 inflator_
-    ) internal returns (uint256 amount_, uint256 fromLpTokens_, uint256 toLpTokens_) {
+        uint256 fromPrice_, uint256 toPrice_, uint256 amount_, uint256 lpBalance_, uint256 inflator_
+    ) internal returns (uint256 lpRedemption_, uint256 lpAward_) {
         uint256 newHpb = !BitMaps.get(_bitmap, toPrice_) ? initializeBucket(hpb, toPrice_) : hpb;
         uint256 newLup = lup;
 
         Bucket storage fromBucket = _buckets[fromPrice_];
         accumulateBucketInterest(fromBucket, inflator_);
 
-        uint256 exchangeRate = getExchangeRate(fromBucket);                // RAY
-        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
+        uint256 exchangeRate = getExchangeRate(fromBucket);
 
-        amount_       = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
-        fromLpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
-        amount_       = Maths.rayToWad(amount_);
+        require(amount_ <= Maths.rmul(lpBalance_, exchangeRate), "B:MQT:AMT_GT_CLAIM");
+
+        lpRedemption_ = Maths.rdiv(Maths.wadToRay(amount_), exchangeRate);
 
         Bucket storage toBucket = _buckets[toPrice_];
+        accumulateBucketInterest(toBucket, inflator_);
 
-        if (lup != 0 && (fromBucket.debt != 0 && toBucket.debt == 0)) {
-            if (toPrice_ > hpb) {
-                // Move liquidity upward from a partially-utilized LUP,
-                // when the lender is moving more quote token than is currently utilized.
-                if (fromPrice_ == lup && amount_ > fromBucket.debt) {
-                    uint256 debtToMove = Maths.max(amount_ - fromBucket.onDeposit, 0);
-                    uint256 depositToMove = amount_ - debtToMove;
-                    newLup = reallocateDown(toBucket, depositToMove, inflator_);
-                }
+        lpAward_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(toBucket));
+
+        // move LP tokens
+        fromBucket.lpOutstanding -= lpRedemption_;
+        toBucket.lpOutstanding   += lpAward_;
+
+        bool moveUp = fromPrice_ < toPrice_;
+        bool atLup  = newLup != 0 && fromPrice_ == newLup;
+
+        if (atLup) {
+            uint256 debtToMove    = (amount_ > fromBucket.onDeposit) ? amount_ - fromBucket.onDeposit : 0;
+            uint256 depositToMove = amount_ - debtToMove;
+
+            // move debt
+            if (moveUp) {
+                fromBucket.debt -= debtToMove;
+                toBucket.debt   += debtToMove;
+            }
+
+            // move deposit
+            fromBucket.onDeposit -= depositToMove;
+            toBucket.onDeposit   += moveUp ? depositToMove : amount_;
+
+            newLup = moveUp ? reallocateUp(toBucket, depositToMove, inflator_) : reallocateDown(fromBucket, debtToMove, inflator_);
+        } else {
+            bool aboveLup = newLup !=0 && newLup < Maths.min(fromPrice_, toPrice_);
+            if (aboveLup) {
+                // move debt
+                fromBucket.debt -= amount_;
+                toBucket.debt   += amount_;
+            } else {
+                // move deposit
+                fromBucket.onDeposit -= moveUp ? amount_ : Maths.min(amount_, fromBucket.onDeposit);
+                toBucket.onDeposit   += amount_;
+
+                if (newLup != 0 && toPrice_ > Maths.max(fromPrice_, newLup)) newLup = reallocateUp(toBucket,  amount_, inflator_);
+                else if (newLup != 0 && fromPrice_ >= Maths.max(toPrice_, newLup)) newLup = reallocateDown(fromBucket, amount_, inflator_);
             }
         }
+
+        // HPB and LUP management
+        if (newLup != lup) lup = newLup;
+        if (newHpb != hpb) hpb = newHpb;
 
         // bucket management
         bool isEmpty = fromBucket.onDeposit == 0 && fromBucket.debt == 0;

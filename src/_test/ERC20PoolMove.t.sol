@@ -14,7 +14,7 @@ import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
 import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
-// TODO implement negative tests / reverts
+// TODO implement negative tests / reverts and bucket cleanup logic
 contract ERC20PoolBorrowTest is DSTestPlus {
 
     address            internal _poolAddress;
