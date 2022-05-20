@@ -85,12 +85,6 @@ interface IPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
-    /**
-     *  @notice Emitted when pool interest rate is updated.
-     *  @param  oldRate_ Old pool interest rate.
-     *  @param  newRate_ New pool interest rate.
-     */
-    event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
 
     /***************/
     /*** Structs ***/
@@ -125,24 +119,6 @@ interface IPool {
      *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
      */
     function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
-
-    /**
-     *  @notice Returns the `previousRateUpdate` state variable.
-     *  @return previousRateUpdate_ The timestamp of the last rate update.
-     */
-    function previousRateUpdate() external view returns (uint256 previousRateUpdate_);
-
-    /**
-     *  @notice Returns the `totalCollateral` state variable.
-     *  @return totalCollateral_ THe total amount of collateral in the system, in WAD units.
-     */
-    function totalCollateral() external view returns (uint256 totalCollateral_);
-
-    /**
-     *  @notice Returns the `totalQuoteToken` state variable.
-     *  @return totalQuoteToken_ The total amount of quote token in the system, in WAD units.
-     */
-    function totalQuoteToken() external view returns (uint256 totalQuoteToken_);
 
     /*****************************/
     /*** Inititalize Functions ***/
@@ -229,11 +205,6 @@ interface IPool {
      */
     function liquidate(address borrower_) external;
 
-    /**
-     *  @notice Called to update the pool interest rate when actual > target utilization.
-     */
-    function updateInterestRate() external;
-
     /*******************************/
     /*** Borrower View Functions ***/
     /*******************************/
@@ -288,38 +259,5 @@ interface IPool {
      *  @return price_   Price of the loan.
      */
     function estimatePriceForLoan(uint256 amount_) external view returns (uint256 price_);
-
-    /**
-     *  @notice Returns the total encumbered collateral resulting from a given amount of debt.
-     *  @dev    Used for both pool and borrower level debt.
-     *  @param  debt_        Amount of debt for corresponding collateral encumbrance.
-     *  @return encumbrance_ The current encumbrance of a given debt balance, in WAD units.
-     */
-    function getEncumberedCollateral(uint256 debt_) external view returns (uint256 encumbrance_);
-
-    /**
-     *  @notice Returns the current minimum pool price.
-     *  @return minPrice_ The current minimum pool price.
-     */
-    function getMinimumPoolPrice() external view returns (uint256 minPrice_);
-
-    /**
-     *  @notice Gets the current utilization of the pool
-     *  @dev    Will return 0 unless the pool has been borrowed from.
-     *  @return poolActualUtilization_ The current pool actual utilization, in WAD units.
-     */
-    function getPoolActualUtilization() external view returns (uint256 poolActualUtilization_);
-
-    /**
-     *  @notice Calculate the current collateralization ratio of the pool, based on `totalDebt` and `totalCollateral`.
-     *  @return poolCollateralization_ Current pool collateralization ratio.
-     */
-    function getPoolCollateralization() external view returns (uint256 poolCollateralization_);
-
-    /**
-     *  @notice Gets the current target utilization of the pool
-     *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
-     */
-    function getPoolTargetUtilization() external view returns (uint256 poolTargetUtilization_);
 
 }

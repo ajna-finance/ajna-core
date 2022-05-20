@@ -1,25 +1,24 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import { Buckets } from "./Buckets.sol";
+import { PoolState } from "./PoolState.sol";
 
-import { IPool }   from "../interfaces/IPool.sol";
+import { IInterest } from "../interfaces/IInterest.sol";
+import { IPool }     from "../interfaces/IPool.sol";
 
-import { Maths }   from "../libraries/Maths.sol";
+import { Maths }     from "../libraries/Maths.sol";
 
 /**
  * @notice Interest related functionality
 */
-abstract contract Interest is Buckets {
+abstract contract Interest is IInterest, PoolState {
 
     uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
 
-    uint256 public previousRate; // WAD
     uint256 public inflatorSnapshot; // RAY
     uint256 public lastInflatorSnapshotUpdate;
-
-    /// @dev WAD The total global debt, in quote tokens, across all buckets in the pool
-    uint256 public totalDebt;
+    uint256 public previousRate; // WAD
+    uint256 public override previousRateUpdate;
 
     /**
      * @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
@@ -98,6 +97,29 @@ abstract contract Interest is Buckets {
     */
     function getPendingPoolInterest() external view returns (uint256 interest_) {
         interest_ = totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
+    }
+
+    function updateInterestRate() external override {
+        // RAY
+        uint256 actualUtilization = getPoolActualUtilization();
+        if (
+            actualUtilization != 0 &&
+            previousRateUpdate < block.timestamp &&
+            getPoolCollateralization() > Maths.ONE_WAD
+        ) {
+            uint256 oldRate = previousRate;
+            accumulatePoolInterest();
+
+            previousRate = Maths.wmul(
+                previousRate,
+                (
+                    Maths.rayToWad(actualUtilization) + Maths.ONE_WAD
+                        - Maths.rayToWad(getPoolTargetUtilization())
+                )
+            );
+            previousRateUpdate = block.timestamp;
+            emit UpdateInterestRate(oldRate, previousRate);
+        }
     }
 
 }
