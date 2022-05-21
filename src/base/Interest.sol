@@ -3,8 +3,8 @@ pragma solidity 0.8.11;
 
 import { PoolState } from "./PoolState.sol";
 
-import { IInterest } from "../interfaces/IInterest.sol";
-import { IPool }     from "../interfaces/IPool.sol";
+import { IBorrowerManager } from "../interfaces/IBorrowerManager.sol";
+import { IInterest }        from "../interfaces/IInterest.sol";
 
 import { Maths }     from "../libraries/Maths.sol";
 
@@ -25,7 +25,7 @@ abstract contract Interest is IInterest, PoolState {
      * @param borrower_ Pointer to the struct which is accumulating interest on their debt
      * @dev Only adds debt if a borrower has already initiated a debt position
     */
-    function accumulateBorrowerInterest(IPool.BorrowerInfo storage borrower_) internal {
+    function accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo storage borrower_) internal {
         if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
             borrower_.debt += getPendingInterest(
                 borrower_.debt,
