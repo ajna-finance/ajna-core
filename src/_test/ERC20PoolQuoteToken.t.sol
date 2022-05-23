@@ -1307,4 +1307,110 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(down, 0);
     }
 
+   function testinflatorSnapshotUpdateWith3600SpacedTime() external {
+       inflatorSnapshotUpdateScenario(3600);
+   }
+
+   function testinflatorSnapshotUpdateWith864000SpacedTime() external {
+       inflatorSnapshotUpdateScenario(864000);
+   }
+
+   function inflatorSnapshotUpdateScenario(uint256 seconds_) internal {
+        // lender deposits 100_000 DAI accross 4 buckets
+        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3514);
+        skip(seconds_);
+        (, , , uint256 deposit, uint256 debt, uint256 inflator, uint256 lpOutstanding, ) = _pool.bucketAt(_p3514);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p3010);
+        skip(seconds_);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3514);
+        assertGt(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3010);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+
+        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p2503);
+        skip(seconds_);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3514);
+        assertGt(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3010);
+        assertGt(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p2503);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+
+        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p502);
+        skip(seconds_);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3514);
+        assertGt(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3010);
+        assertGt(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p2503);
+        assertGt(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p502);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+
+        // borrower deposits 100 MKR collateral, borrows 46_000 DAI
+        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+
+        skip(864000);
+
+        assertEq(_pool.lup(), _p2503);
+
+        _lender.removeQuoteToken(_pool, address(_lender), 8_000 * 1e18, _p3514);
+
+        // test bucket inflator snapshots - all buckets were touched so all snapshots should be updated
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3514);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3010);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p2503);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p502);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+
+        _lender.addQuoteToken(_pool, address(_lender), 8_000 * 1e18, _p502);
+
+        // test bucket inflator snapshots - all buckets were touched so all snapshots should be updated
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3514);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p3010);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p2503);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+        (, , , deposit, debt, inflator, lpOutstanding, ) = _pool.bucketAt(_p502);
+        assertEq(_pool.inflatorSnapshot(), inflator);
+
+        (, , , deposit, debt, , lpOutstanding, ) = _pool.bucketAt(_p3514);
+        assertEq(deposit,       0 * 1e18);
+        assertEq(debt,          2_013.708017035263937818 * 1e18);
+        assertEq(lpOutstanding, 2_010.951401428476992610619098997 * 1e27);
+
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 2_010.951401428476992610619098997 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p3010);
+        assertEq(debt,          20_027.416034070527875637 * 1e18);
+        assertEq(deposit,       0);
+        assertEq(lpOutstanding, 2_010.951401428476992610619098997 * 1e27);
+
+        assertEq(_pool.lpBalance(address(_lender), _p3010), 20_000 * 1e27);
+
+        (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
+        assertEq(debt,          20_021.932827256422300510 * 1e18);
+        assertEq(deposit,       0);
+        assertEq(lpOutstanding, 2_010.951401428476992610619098997 * 1e27);
+
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 20_000 * 1e27);
+
+        (, , , deposit, debt, , lpOutstanding, ) = _pool.bucketAt(_p502);
+        assertEq(debt,          4_000 * 1e18);
+        assertEq(deposit,       54_000 * 1e18);
+        assertEq(lpOutstanding, 58_000 * 1e27);
+
+        assertEq(_pool.lpBalance(address(_lender), _p502), 58_000 * 1e27);
+
+        assertEq(_pool.hpb(), _p3514);
+        assertEq(_pool.lup(), _p502);
+    }
+
 }
