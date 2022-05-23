@@ -11,8 +11,9 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { ERC721 }    from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { BitMaps }   from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
-import { Buckets }  from "./base/Buckets.sol";
-import { Interest } from "./base/Interest.sol";
+import { Buckets }       from "./base/Buckets.sol";
+import { Interest }      from "./base/Interest.sol";
+import { LenderManager } from "./base/LenderManager.sol";
 
 import { IPool } from "./interfaces/IPool.sol";
 
@@ -20,12 +21,18 @@ import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
 
-contract ERC721Pool is IPool, Buckets, Clone, Interest {
+contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
 
     using SafeERC20 for ERC20;
 
     /// @dev Counter used by onlyOnce modifier
     uint8 private _poolInitializations = 0;
+
+    /// @dev Array of tokenIds that can be used for a given NFT Subset type pool
+    uint256[] public _tokenIdsAllowed;
+
+    /// @dev Array of tokenIds that are currently being used as collateral
+    uint256[] public collateralTokenIdsAdded;
 
     uint256 public override quoteTokenScale;
 
@@ -33,16 +40,35 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest {
     uint256 public override totalCollateral;    // [WAD]
     uint256 public override totalQuoteToken;    // [WAD]
 
-    // borrowers book: borrower address -> BorrowerInfo
-    mapping(address => BorrowerInfo) public override borrowers;
-
-    // lenders lp token balances: lender address -> price bucket [WAD] -> lender lp [RAY]
-    mapping(address => mapping(uint256 => uint256)) public override lpBalance;
+    // TODO: rename
+    // borrowers book: borrower address -> NFTBorrowerInfo
+    mapping(address => NFTBorrowerInfo) public NFTborrowers;
 
     /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
         require(_poolInitializations == 0, "P:INITIALIZED");
         _;
+    }
+
+    // TODO: convert to modifier and add check at start of each method
+    function onlySubset(uint256 tokenId_) internal {
+        if (_tokenIdsAllowed.length != 0) {
+            bool isAllowed = false;
+            for (uint i; i < _tokenIdsAllowed.length;) {
+                if (_tokenIdsAllowed[i] == tokenId_) {
+                    // corresponding tokenId found break out of loop
+                    isAllowed = true;
+                    break;
+                }
+                // increment call counter in gas efficient way by skipping safemath checks
+                unchecked {
+                    ++i;
+                }
+            }
+            if (isAllowed == false) {
+                revert("P:ONLY_SUBSET");
+            }
+        }
     }
 
     function initialize() external onlyOnce {
@@ -57,6 +83,24 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest {
         _poolInitializations += 1;
     }
 
+    /**
+     * @notice Called by deployNFTSubsetPool()
+     * @dev Used to initialize pools that only support a subset of tokenIds
+     */
+    function initializeSubset(uint256[] memory tokenIds_) external onlyOnce {
+        quoteTokenScale = 10**(18 - quoteToken().decimals());
+
+        inflatorSnapshot           = Maths.ONE_RAY;
+        lastInflatorSnapshotUpdate = block.timestamp;
+        previousRate               = Maths.wdiv(5, 100);
+        previousRateUpdate         = block.timestamp;
+
+        // increment initializations count to ensure these values can't be updated
+        _poolInitializations += 1;
+
+        _tokenIdsAllowed = tokenIds_;
+    }
+
     /// @dev Quote tokens are always non-fungible
     /// @dev Pure function used to facilitate accessing token via clone state
     function collateral() public pure returns (ERC721) {
@@ -69,29 +113,101 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest {
         return ERC20(_getArgAddress(0x14));
     }
 
-    /// @inheritdoc IPool
-    function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external returns (uint256 lpTokens_) {
+    function addQuoteToken(
+        address recipient_, uint256 amount_, uint256 price_
+    ) external override returns (uint256 lpTokens_) {
+        require(BucketMath.isValidPrice(price_), "P:AQT:INVALID_PRICE");
 
+        accumulatePoolInterest();
+
+        // deposit quote token amount and get awarded LP tokens
+        lpTokens_ = addQuoteTokenToBucket(price_, amount_, totalDebt, inflatorSnapshot);
+
+        // pool level accounting
+        totalQuoteToken               += amount_;
+
+        // lender accounting
+        lpBalance[recipient_][price_] += lpTokens_;
+
+        // move quote token amount from lender to pool
+        quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
+        emit AddQuoteToken(recipient_, price_, amount_, lup);
     }
 
-    /// @inheritdoc IPool
-    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external {
+    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
+        require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
+        accumulatePoolInterest();
+
+        // remove quote token amount and get LP tokens burned
+        (uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
+            price_, maxAmount_, lpBalance[recipient_][price_], inflatorSnapshot
+        );
+
+        // pool level accounting
+        totalQuoteToken -= amount;
+
+        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:RQT:POOL_UNDER_COLLAT");
+
+        // lender accounting
+        lpBalance[recipient_][price_] -= lpTokens;
+
+        // move quote token amount from pool to lender
+        quoteToken().safeTransfer(recipient_, amount / quoteTokenScale);
+        emit RemoveQuoteToken(recipient_, price_, amount, lup);
     }
 
-    /// @inheritdoc IPool
-    function addCollateral(uint256 amount_) external {
-        // accumulatePoolInterest();
+    function addCollateral(uint256 tokenId_) external  override {
+        // check if collateral is valid
+        onlySubset(tokenId_);
 
-        // borrowers[msg.sender].collateralDeposited += amount_;
-        // totalCollateral                           += amount_;
+        accumulatePoolInterest();
 
-        // // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
-        // collateral().safeTransferFrom(msg.sender, address(this), amount_);
-        // emit AddCollateral(msg.sender, amount_);
+        // pool level accounting
+        collateralTokenIdsAdded.push(tokenId_);
+        totalCollateral = collateralTokenIdsAdded.length;
+
+        // borrower accounting
+        NFTborrowers[msg.sender].collateralDeposited.push(tokenId_);
+
+        // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
+        // move collateral from sender to pool
+        collateral().safeTransferFrom(msg.sender, address(this), tokenId_);
+        emit AddCollateral(msg.sender, tokenId_);
     }
 
-    function removeCollateral(uint256 amount_) external {}
+    // TODO: finish implementing
+    function addCollateralMultiple(uint256[] memory tokenIds_) external {
+        for (uint i; i < tokenIds_.length;) {
+            onlySubset(tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
+        // TODO: finish implementing
+    }
+
+    // TODO: finish implementing
+    // TODO: add support for find and remove -> require struct?
+    function removeCollateral(uint256 tokenId_) external {
+        accumulatePoolInterest();
+
+        NFTBorrowerInfo memory borrower = NFTborrowers[msg.sender];
+        // accumulateBorrowerInterest(borrower);
+
+        uint256 encumberedBorrowerCollateral = Maths.rayToWad(getEncumberedCollateral(borrower.debt));
+        // require(borrower.collateralDeposited - encumberedBorrowerCollateral >= amount_, "P:RC:AMT_GT_AVAIL_COLLAT");
+
+        // // pool level accounting
+        // totalCollateral              -= 1;
+
+        // // borrower accounting
+        // borrower.collateralDeposited -= amount_;
+
+        // // move collateral from pool to sender
+        // collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+        // emit RemoveCollateral(msg.sender, amount_);
+    }
 
     function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external {}
 
@@ -106,6 +222,10 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest {
     /*****************************/
     /*** Pool State Management ***/
     /*****************************/
+
+    function getCollateralDeposited() public view returns(uint256[] memory) {
+        return collateralTokenIdsAdded;
+    }
 
     // TODO: Add a test for this
     function getMinimumPoolPrice() public view override returns (uint256 minPrice_) {
@@ -163,18 +283,21 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest {
     /*** Borrower Management ***/
     /*****************************/
 
+    // TODO: fix this
+    // TODO: rename and add in parallel with ERC20 getBorrowerInfo
+    // TODO: fix encumberance and collateralization checks for ERC721
     function getBorrowerInfo(address borrower_)
-        public view override returns (
+        public view returns (
             uint256 debt_,
             uint256 pendingDebt_,
-            uint256 collateralDeposited_,
+            uint256[] memory collateralDeposited_,
             uint256 collateralEncumbered_,
             uint256 collateralization_,
             uint256 borrowerInflatorSnapshot_,
             uint256 inflatorSnapshot_
         )
     {
-        BorrowerInfo memory borrower = borrowers[borrower_];
+        NFTBorrowerInfo memory borrower = NFTborrowers[borrower_];
         uint256 borrowerPendingDebt = borrower.debt;
         uint256 collateralEncumbered;
         uint256 collateralization = Maths.ONE_WAD;
@@ -182,7 +305,7 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest {
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
             borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
             collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization     = Maths.wdiv(borrower.collateralDeposited, collateralEncumbered);
+            collateralization     = Maths.wdiv(borrower.collateralDeposited.length, collateralEncumbered);
         }
 
         return (
@@ -208,35 +331,15 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest {
         return estimatePrice(amount_, lup == 0 ? hpb : lup);
     }
 
-    /*****************************/
-    /*** Lender Management ***/
-    /*****************************/
-
-    function getLPTokenBalance(address owner_, uint256 price_) external view override returns (uint256 lpBalance_) {
-        return lpBalance[owner_][price_];
+    // Implementing this method allows contracts to receive ERC721 tokens
+    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
     }
-
-    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
-        require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
-
-        (
-            ,
-            ,
-            ,
-            uint256 onDeposit,
-            uint256 debt,
-            ,
-            uint256 lpOutstanding,
-            uint256 bucketCollateral
-        ) = bucketAt(price_);
-
-        // calculate lpTokens share of all outstanding lpTokens for the bucket
-        uint256 lenderShare = Maths.rdiv(lpTokens_, lpOutstanding);
-
-        // calculate the amount of collateral and quote tokens equivalent to the lenderShare
-        collateralTokens_ = Maths.radToWad(bucketCollateral * lenderShare);
-        quoteTokens_      = Maths.radToWad((onDeposit + debt) * lenderShare);
-    }
-
 
 }

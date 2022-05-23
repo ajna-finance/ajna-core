@@ -6,7 +6,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20Pool }        from "../../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../ERC20PoolFactory.sol";
 
-import { FactoryValidation } from "../../base/FactoryValidation.sol";
+import { PoolDeployer } from "../../base/PoolDeployer.sol";
 
 import { IPoolFactory } from "../../interfaces/IPoolFactory.sol";
 
@@ -41,10 +41,10 @@ contract PoolFactoryTest is DSTestPlus {
      *  @notice Tests revert if actor attempts to deploy ETH pool.
      */
     function testDeployPoolEther() external {
-        vm.expectRevert("ERC20PF:DP:ZERO_ADDR");
+        vm.expectRevert("PF:DP:ZERO_ADDR");
         _factory.deployPool(address(_collateral), address(0));
 
-        vm.expectRevert("ERC20PF:DP:ZERO_ADDR");
+        vm.expectRevert("PF:DP:ZERO_ADDR");
         _factory.deployPool(address(0), address(_collateral));
     }
 
@@ -53,7 +53,7 @@ contract PoolFactoryTest is DSTestPlus {
      */
     function testDeployPoolTwice() external {
         _factory.deployPool(address(_collateral), address(_quote));
-        vm.expectRevert("ERC20PF:DP:POOL_EXISTS");
+        vm.expectRevert("PF:DP:POOL_EXISTS");
         _factory.deployPool(address(_collateral), address(_quote));
     }
 

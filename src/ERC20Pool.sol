@@ -36,7 +36,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest, LenderManager {
     uint256 public override totalQuoteToken;    // [WAD]
 
     // borrowers book: borrower address -> BorrowerInfo
-    mapping(address => BorrowerInfo) public override borrowers;
+    mapping(address => BorrowerInfo) public borrowers;
 
     /**
      *  @notice Modifier to protect a clone's initialize method from repeated updates.
@@ -285,6 +285,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest, LenderManager {
         minPrice_ = totalDebt != 0 ? Maths.wdiv(totalDebt, totalCollateral) : 0;
     }
 
+    // TODO: fix bug here related to RAY vs WAD
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
         encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
@@ -336,7 +337,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest, LenderManager {
     /*****************************/
 
     function getBorrowerInfo(address borrower_)
-        public view override returns (
+        public view returns (
             uint256 debt_,
             uint256 pendingDebt_,
             uint256 collateralDeposited_,

@@ -108,6 +108,18 @@ interface IPool {
         uint256 inflatorSnapshot;
     }
 
+     /**
+     *  @notice Struct holding borrower related info per price bucket, for borrowers using NFTs as collateral.
+     *  @param  debt                Borrower debt, WAD units.
+     *  @param  collateralDeposited Collateral deposited by borrower, WAD units.
+     *  @param  inflatorSnapshot    Current borrower inflator snapshot, RAY units.
+     */
+    struct NFTBorrowerInfo {
+        uint256   debt;
+        uint256[] collateralDeposited;
+        uint256   inflatorSnapshot;
+    }
+
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -238,7 +250,17 @@ interface IPool {
      *  @return collateralDeposited Amount of collateral that the borrower has deposited, in collateral token.
      *  @return inflatorSnapshot    Snapshot of inflator value used to track interest on loans.
      */
-    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateralDeposited, uint256 inflatorSnapshot);
+    // function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateralDeposited, uint256 inflatorSnapshot);
+
+    /**
+     *  @notice Mapping of borrower addresses to {BorrowerInfo} structs.
+     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
+     *  @param  borrower_           Address of the borrower.
+     *  @return debt                Amount of debt that the borrower has, in quote token.
+     *  @return collateralDeposited Array of tokenIds that a borrower has deposited.
+     *  @return inflatorSnapshot    Snapshot of inflator value used to track interest on loans.
+     */
+    // function NFTborrowers(address borrower_) external view returns (uint256 debt, uint256[] memory collateralDeposited, uint256 inflatorSnapshot);
 
     /**
      *  @notice Returns the collateralization based on given collateral deposited and debt.
@@ -260,15 +282,15 @@ interface IPool {
      *  @return borrowerInflatorSnapshot_ Snapshot of the borrower's inflator value.
      *  @return inflatorSnapshot_         Snapshot of the pool's inflator value.
      */
-    function getBorrowerInfo(address borrower_) external view returns (
-        uint256 debt_,
-        uint256 pendingDebt_,
-        uint256 collateralDeposited_,
-        uint256 collateralEncumbered_,
-        uint256 collateralization_,
-        uint256 borrowerInflatorSnapshot_,
-        uint256 inflatorSnapshot_
-    );
+    // function getBorrowerInfo(address borrower_) external view returns (
+    //     uint256 debt_,
+    //     uint256 pendingDebt_,
+    //     uint256 collateralDeposited_,
+    //     uint256 collateralEncumbered_,
+    //     uint256 collateralization_,
+    //     uint256 borrowerInflatorSnapshot_,
+    //     uint256 inflatorSnapshot_
+    // );
 
     /***************************/
     /*** Pool View Functions ***/
