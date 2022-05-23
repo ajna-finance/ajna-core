@@ -7,6 +7,7 @@ import { Multicall }   from "./base/Multicall.sol";
 import { PermitERC20 } from "./base/PermitERC20.sol";
 import { PositionNFT } from "./base/PositionNFT.sol";
 
+import { ILenderManager }   from "./interfaces/ILenderManager.sol";
 import { IPool }            from "./interfaces/IPool.sol";
 import { IPositionManager } from "./interfaces/IPositionManager.sol";
 
@@ -56,7 +57,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         Position storage position = positions[params_.tokenId];
         for (uint256 i = 0; i < params_.prices.length; ) {
-            position.lpTokens[params_.prices[i]] = IPool(params_.pool).getLPTokenBalance(
+            position.lpTokens[params_.prices[i]] = ILenderManager(params_.pool).lpBalance(
                 params_.owner,
                 params_.prices[i]
             );
@@ -94,7 +95,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IPool pool = IPool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool.getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         pool.removeQuoteToken(params_.recipient, quoteTokenToRemove, params_.price);
 
@@ -136,7 +137,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256 quoteTokens_) {
         Position storage position = positions[tokenId_];
 
-        (uint256 collateral, uint256 quote) = IPool(position.pool).getLPTokenExchangeValue(
+        (uint256 collateral, uint256 quote) = ILenderManager(position.pool).getLPTokenExchangeValue(
             position.lpTokens[price_],
             price_
         );

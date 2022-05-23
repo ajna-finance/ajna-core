@@ -412,8 +412,8 @@ abstract contract Buckets {
             bucket_.debt += Maths.radToWadTruncate(
                 bucket_.debt * (Maths.rdiv(inflator_, bucket_.inflatorSnapshot) - Maths.ONE_RAY)
             );
-            bucket_.inflatorSnapshot = inflator_;
         }
+        bucket_.inflatorSnapshot = inflator_;
     }
 
     /**

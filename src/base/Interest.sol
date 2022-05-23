@@ -3,9 +3,9 @@ pragma solidity 0.8.11;
 
 import { Buckets } from "./Buckets.sol";
 
-import { IPool } from "../interfaces/IPool.sol";
+import { IPool }   from "../interfaces/IPool.sol";
 
-import { Maths } from "../libraries/Maths.sol";
+import { Maths }   from "../libraries/Maths.sol";
 
 /**
  * @notice Interest related functionality
