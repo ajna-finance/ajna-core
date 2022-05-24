@@ -49,6 +49,11 @@ library Maths {
         return (x * 1e36 + y / 2) / y;
     }
 
+    /** @notice Divides a WAD by a RAY and returns a WAD */
+    function wrdivw(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        return (x * 1e27 + y / 2) / y;
+    }
+
     /** @notice Divides a WAD by a WAD and returns a RAY */
     function wwdivr(uint256 x, uint256 y) internal pure returns (uint256 z) {
         return (x * 1e27 + y / 2) / y;
