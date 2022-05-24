@@ -120,11 +120,11 @@ contract ERC721PoolTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
 
         // check subset tokenIds are successfully initialized
-        assertEq(_tokenIds[0], _NFTSubsetPool._tokenIdsAllowed(0));
-        assertEq(_tokenIds[1], _NFTSubsetPool._tokenIdsAllowed(1));
-        assertEq(_tokenIds[2], _NFTSubsetPool._tokenIdsAllowed(2));
-        assertEq(50, _NFTSubsetPool._tokenIdsAllowed(2));
-        assert(2 != _NFTSubsetPool._tokenIdsAllowed(1));
+        assertEq(_tokenIds[0], _NFTSubsetPool.getTokenIdsAllowed()[0]);
+        assertEq(_tokenIds[1], _NFTSubsetPool.getTokenIdsAllowed()[1]);
+        assertEq(_tokenIds[2], _NFTSubsetPool.getTokenIdsAllowed()[2]);
+        assertEq(50, _NFTSubsetPool.getTokenIdsAllowed()[2]);
+        assert(2 != _NFTSubsetPool.getTokenIdsAllowed()[1]);
     }
 
     // TODO: move and expand this test case in separate file

@@ -10,6 +10,7 @@ import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721 }    from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { BitMaps }   from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+import { EnumerableSet }   from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { Buckets }       from "./base/Buckets.sol";
 import { Interest }      from "./base/Interest.sol";
@@ -25,14 +26,15 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
 
     using SafeERC20 for ERC20;
 
+    using EnumerableSet for EnumerableSet.UintSet;
+
     /// @dev Counter used by onlyOnce modifier
     uint8 private _poolInitializations = 0;
 
-    /// @dev Array of tokenIds that can be used for a given NFT Subset type pool
-    uint256[] public _tokenIdsAllowed;
-
-    /// @dev Array of tokenIds that are currently being used as collateral
-    uint256[] public collateralTokenIdsAdded;
+    /// @dev Set of tokenIds that are currently being used as collateral
+    EnumerableSet.UintSet internal _collateralTokenIdsAdded;
+    /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
+    EnumerableSet.UintSet internal _tokenIdsAllowed;
 
     uint256 public override quoteTokenScale;
 
@@ -52,19 +54,10 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
 
     // TODO: convert to modifier and add check at start of each method
     function onlySubset(uint256 tokenId_) internal {
-        if (_tokenIdsAllowed.length != 0) {
-            bool isAllowed = false;
-            for (uint i; i < _tokenIdsAllowed.length;) {
-                if (_tokenIdsAllowed[i] == tokenId_) {
-                    // corresponding tokenId found break out of loop
-                    isAllowed = true;
-                    break;
-                }
-                // increment call counter in gas efficient way by skipping safemath checks
-                unchecked {
-                    ++i;
-                }
-            }
+        if (_tokenIdsAllowed.length() != 0) {
+
+            bool isAllowed = _tokenIdsAllowed.contains(tokenId_);
+
             if (isAllowed == false) {
                 revert("P:ONLY_SUBSET");
             }
@@ -98,7 +91,13 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
 
-        _tokenIdsAllowed = tokenIds_;
+        // add subset of tokenIds allowed in the pool
+        for (uint256 id; id < tokenIds_.length;) {
+            _tokenIdsAllowed.add(tokenIds_[id]);
+            unchecked {
+                ++id;
+            }
+        }
     }
 
     /// @dev Quote tokens are always non-fungible
@@ -164,8 +163,8 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
         accumulatePoolInterest();
 
         // pool level accounting
-        collateralTokenIdsAdded.push(tokenId_);
-        totalCollateral = collateralTokenIdsAdded.length;
+        _collateralTokenIdsAdded.add(tokenId_);
+        totalCollateral = _collateralTokenIdsAdded.length();
 
         // borrower accounting
         NFTborrowers[msg.sender].collateralDeposited.push(tokenId_);
@@ -177,6 +176,8 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     }
 
     // TODO: finish implementing
+    // TODO: move check to onlySubsetMultiple()
+    // TODO: update to incrementally add if contains, otherwise skip?
     function addCollateralMultiple(uint256[] memory tokenIds_) external {
         for (uint i; i < tokenIds_.length;) {
             onlySubset(tokenIds_[i]);
@@ -203,6 +204,7 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
 
         // // borrower accounting
         // borrower.collateralDeposited -= amount_;
+        _collateralTokenIdsAdded.remove(tokenId_);
 
         // // move collateral from pool to sender
         // collateral().safeTransfer(msg.sender, amount_ / collateralScale);
@@ -223,8 +225,14 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     /*** Pool State Management ***/
     /*****************************/
 
+    // WARNING: This is an extremely gas intensive operation and should only be done in view accessors
     function getCollateralDeposited() public view returns(uint256[] memory) {
-        return collateralTokenIdsAdded;
+        return _collateralTokenIdsAdded.values();
+    }
+
+    // WARNING: This is an extremely gas intensive operation and should only be done in view accessors
+    function getTokenIdsAllowed() public view returns(uint256[] memory) {
+        return _tokenIdsAllowed.values();
     }
 
     // TODO: Add a test for this
