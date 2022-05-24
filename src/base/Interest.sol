@@ -112,10 +112,7 @@ abstract contract Interest is IInterest, PoolState {
 
             previousRate = Maths.wmul(
                 previousRate,
-                (
-                    Maths.rayToWad(actualUtilization) + Maths.ONE_WAD
-                        - Maths.rayToWad(getPoolTargetUtilization())
-                )
+                (actualUtilization + Maths.ONE_WAD - getPoolTargetUtilization())
             );
             previousRateUpdate = block.timestamp;
             emit UpdateInterestRate(oldRate, previousRate);
