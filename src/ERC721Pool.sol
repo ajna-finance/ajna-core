@@ -6,11 +6,11 @@ import { Clone } from "@clones/Clone.sol";
 
 import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
 
-import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ERC721 }    from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { BitMaps }   from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
-import { EnumerableSet }   from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ERC20 }         from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { Buckets }       from "./base/Buckets.sol";
 import { Interest }      from "./base/Interest.sol";
@@ -44,7 +44,7 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
 
     // TODO: rename
     // borrowers book: borrower address -> NFTBorrowerInfo
-    mapping(address => NFTBorrowerInfo) public NFTborrowers;
+    mapping(address => NFTBorrowerInfo) internal NFTborrowers;
 
     /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
@@ -156,6 +156,7 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
     }
 
+    // TODO: create seperate NFT specific events
     function addCollateral(uint256 tokenId_) external  override {
         // check if collateral is valid
         onlySubset(tokenId_);
@@ -167,7 +168,8 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
         totalCollateral = _collateralTokenIdsAdded.length();
 
         // borrower accounting
-        NFTborrowers[msg.sender].collateralDeposited.push(tokenId_);
+        // NFTborrowers[msg.sender].collateralDeposited.push(tokenId_);
+        NFTborrowers[msg.sender].collateralDeposited.add(tokenId_);
 
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
         // move collateral from sender to pool
@@ -193,27 +195,40 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     function removeCollateral(uint256 tokenId_) external {
         accumulatePoolInterest();
 
-        NFTBorrowerInfo memory borrower = NFTborrowers[msg.sender];
-        // accumulateBorrowerInterest(borrower);
+        NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
+        accumulateNFTBorrowerInterest(borrower);
 
-        uint256 encumberedBorrowerCollateral = Maths.rayToWad(getEncumberedCollateral(borrower.debt));
-        // require(borrower.collateralDeposited - encumberedBorrowerCollateral >= amount_, "P:RC:AMT_GT_AVAIL_COLLAT");
+        // TODO: finish updating this -> how to deal with rounding?
+        uint256 encumberedBorrowerCollateral = Maths.rayToWad(getNFTEncumberedCollateral(borrower.debt));
+        require(borrower.collateralDeposited - encumberedBorrowerCollateral >= amount_, "P:RC:AMT_GT_AVAIL_COLLAT");
 
-        // // pool level accounting
-        // totalCollateral              -= 1;
-
-        // // borrower accounting
-        // borrower.collateralDeposited -= amount_;
+        // pool level accounting
         _collateralTokenIdsAdded.remove(tokenId_);
+        totalCollateral = _collateralTokenIdsAdded.length();
 
-        // // move collateral from pool to sender
-        // collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-        // emit RemoveCollateral(msg.sender, amount_);
+        // borrower accounting
+        borrower.collateralDeposited.remove(tokenId_);
+
+        // move collateral from pool to sender
+        collateral().safeTransferFrom(address(this), msg.sender, tokenId_);
+        emit RemoveCollateral(msg.sender, tokenId_);
     }
 
     function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external {}
 
-    function borrow(uint256 amount_, uint256 stopPrice_) external {}
+    function borrow(uint256 amount_, uint256 limitPrice_) external {
+        require(amount_ <= totalQuoteToken, "P:B:INSUF_LIQ");
+
+        accumulatePoolInterest();
+
+        NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
+        accumulateNFTBorrowerInterest(borrower);
+
+        // borrow amount from buckets with limit price
+        borrowFromBucket(amount_, limitPrice_, inflatorSnapshot);
+
+        require(borrower.collateralDeposited > Maths.rayToWad(getNFTEncumberedCollateral(borrower.debt + amount_)), "P:B:INSUF_COLLAT");
+    }
 
     function repay(uint256 amount_) external {}
 
@@ -241,6 +256,12 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     }
 
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
+        // Calculate encumbrance as RAY to maintain precision
+        encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
+    }
+
+    // TODO: round up to whole units
+    function getNFTEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
         encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
     }
@@ -305,7 +326,7 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
             uint256 inflatorSnapshot_
         )
     {
-        NFTBorrowerInfo memory borrower = NFTborrowers[borrower_];
+        NFTBorrowerInfo storage borrower = NFTborrowers[borrower_];
         uint256 borrowerPendingDebt = borrower.debt;
         uint256 collateralEncumbered;
         uint256 collateralization = Maths.ONE_WAD;
@@ -313,13 +334,13 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
             borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
             collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization     = Maths.wdiv(borrower.collateralDeposited.length, collateralEncumbered);
+            collateralization     = Maths.wdiv(borrower.collateralDeposited.length(), collateralEncumbered);
         }
 
         return (
             borrower.debt,
             borrowerPendingDebt,
-            borrower.collateralDeposited,
+            borrower.collateralDeposited.values(),
             collateralEncumbered,
             collateralization,
             borrower.inflatorSnapshot,

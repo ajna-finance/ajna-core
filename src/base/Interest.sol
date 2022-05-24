@@ -24,9 +24,27 @@ abstract contract Interest is Buckets {
     /**
      * @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
      * @param borrower_ Pointer to the struct which is accumulating interest on their debt
+     * @dev Only used by Borrowers using fungible tokens as collateral
      * @dev Only adds debt if a borrower has already initiated a debt position
     */
     function accumulateBorrowerInterest(IPool.BorrowerInfo storage borrower_) internal {
+        if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
+            borrower_.debt += getPendingInterest(
+                borrower_.debt,
+                inflatorSnapshot,
+                borrower_.inflatorSnapshot
+            );
+        }
+        borrower_.inflatorSnapshot = inflatorSnapshot;
+    }
+
+    /**
+     * @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
+     * @param borrower_ Pointer to the struct which is accumulating interest on their debt
+     * @dev Only used by Borrowers using NFTs as collateral
+     * @dev Only adds debt if a borrower has already initiated a debt position
+    */
+    function accumulateNFTBorrowerInterest(IPool.NFTBorrowerInfo storage borrower_) internal {
         if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
             borrower_.debt += getPendingInterest(
                 borrower_.debt,

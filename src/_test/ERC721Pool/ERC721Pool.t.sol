@@ -143,8 +143,23 @@ contract ERC721PoolTest is DSTestPlus {
         assertEq(_NFTSubsetPool.getCollateralDeposited().length, 1);
     }
 
+    function testBorrowNFTSubset() external {
+
+    }
+
     function testRemoveCollateralNFTSubset() external {
-    
+        // add iniitial collateral to pool
+        vm.prank((address(_borrower)));
+        _NFTSubsetPool.addCollateral(1);
+        assertEq(_NFTSubsetPool.getCollateralDeposited().length, 1);
+
+        // borrow from pool
+
+        // remove collateral
+        vm.prank((address(_borrower)));
+        _NFTSubsetPool.removeCollateral(1);
+        assertEq(_NFTSubsetPool.getCollateralDeposited().length, 0);
+
     }
 
 }
