@@ -57,7 +57,6 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
     }
 
     function estimatePriceForLoan(uint256 amount_) public view override returns (uint256 price_) {
-        // convert amount from WAD to collateral pool precision - RAD
         return estimatePrice(amount_, lup == 0 ? hpb : lup);
     }
 

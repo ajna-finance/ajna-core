@@ -6,7 +6,7 @@ import { PoolState } from "./PoolState.sol";
 import { IBorrowerManager } from "../interfaces/IBorrowerManager.sol";
 import { IInterest }        from "../interfaces/IInterest.sol";
 
-import { Maths }     from "../libraries/Maths.sol";
+import { Maths } from "../libraries/Maths.sol";
 
 /**
  * @notice Interest related functionality
