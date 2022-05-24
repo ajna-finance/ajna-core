@@ -60,6 +60,7 @@ contract DSTestPlus is Test {
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
     event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
+    event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
     event RemoveCollateral(address indexed borrower_, uint256 amount_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
