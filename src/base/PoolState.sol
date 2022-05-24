@@ -25,7 +25,7 @@ abstract contract PoolState is IPoolState, Buckets {
 
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
-        encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
+        encumbrance_ = debt_ != 0 ? Maths.wwdivr(debt_, lup) : 0;
     }
 
     function getMinimumPoolPrice() public view override returns (uint256 minPrice_) {
