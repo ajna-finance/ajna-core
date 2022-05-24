@@ -38,6 +38,7 @@ contract MathTest is DSTestPlus {
         assertEq(Maths.wdiv(debt, price),   10.98202093218880245 * 1e18);
         assertEq(debt * 1e18 / price,       10.98202093218880245 * 1e18);
         assertEq(Maths.wwdivr(debt, price), 10.982020932188802450191601163 * 1e27);
+
         assertEq(Maths.wrdivw(20 * 1e18, 10.982020932188802450191601163 * 1e27), 1.821158430082671857 * 1e18);
 
         uint256 exchangeRate = 1.09232010 * 1e27;
