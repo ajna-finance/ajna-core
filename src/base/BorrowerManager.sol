@@ -35,7 +35,7 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
             borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
             collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization     = Maths.wdiv(borrower.collateralDeposited, collateralEncumbered);
+            collateralization     = Maths.wrdivw(borrower.collateralDeposited, collateralEncumbered);
         }
 
         return (

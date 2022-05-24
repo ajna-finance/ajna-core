@@ -41,7 +41,7 @@ abstract contract PoolState is IPoolState, Buckets {
 
     function getPoolCollateralization() public view override returns (uint256 poolCollateralization_) {
         if (lup != 0 && totalDebt != 0) {
-            return Maths.wdiv(totalCollateral, getEncumberedCollateral(totalDebt));
+            return Maths.wrdivw(totalCollateral, getEncumberedCollateral(totalDebt));
         }
         return Maths.ONE_WAD;
     }
