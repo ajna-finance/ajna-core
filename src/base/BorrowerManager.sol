@@ -51,7 +51,7 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
 
     function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256 borrowerCollateralization_) {
         if (lup != 0 && debt_ != 0) {
-            return Maths.wdiv(collateralDeposited_, getEncumberedCollateral(debt_));
+            return Maths.wrdivw(collateralDeposited_, getEncumberedCollateral(debt_));
         }
         return Maths.ONE_WAD;
     }
