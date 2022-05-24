@@ -53,6 +53,16 @@ interface IPool {
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
 
     /**
+     *  @notice Emitted when lender moves quote token from a bucket price to another.
+     *  @param  lender_ Recipient that moved quote tokens.
+     *  @param  from_   Price bucket from which quote tokens were moved.
+     *  @param  to_     Price bucket where quote tokens were moved.
+     *  @param  amount_ Amount of quote tokens moved.
+     *  @param  lup_    LUP calculated after removal.
+     */
+    event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
+
+    /**
      *  @notice Emitted when collateral is exchanged for quote tokens.
      *  @param  bidder_     `msg.sender`.
      *  @param  price_      Price at which collateral was exchanged for quote tokens.
@@ -203,6 +213,15 @@ interface IPool {
      *  @param  price_     The bucket from which unencumbered collateral will be claimed.
      */
     function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external;
+
+    /**
+     *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
+     *  @param  recipient_ The recipient moving quote tokens.
+     *  @param  amount_    The amount of quote token to be moved by a lender.
+     *  @param  fromPrice_ The bucket from which the quote tokens will be removed.
+     *  @param  toPrice_   The bucket to which the quote tokens will be added.
+     */
+    function moveQuoteToken(address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_) external;
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.

@@ -138,3 +138,86 @@ def test_quote_removal_below_lup(
             print(
                 f"Remove quote token below lup            - {test_utils.get_usage(tx.gas_used)}"
             )
+
+
+def test_quote_move_from_lup_with_reallocation(
+    lenders,
+    borrowers,
+    mkr_dai_pool,
+    capsys,
+    test_utils,
+    bucket_math,
+):
+
+    with test_utils.GasWatcher(
+        ["moveQuoteToken", "addCollateral", "addQuoteToken", "borrow"]
+    ):
+        lender = lenders[0]
+        borrower = borrowers[0]
+
+        mkr_dai_pool.addQuoteToken(
+            lender, 3_400 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
+        )
+        mkr_dai_pool.addQuoteToken(
+            lender, 3_400 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+        )
+
+        # borrower takes a loan of 3000 DAI
+        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
+        mkr_dai_pool.borrow(3_000 * 10**18, 4000 * 10**18, {"from": borrower})
+
+        # lender moves 400 DAI
+        tx = mkr_dai_pool.moveQuoteToken(
+            lender, 400 * 10**18, bucket_math.indexToPrice(1663), bucket_math.indexToPrice(1000), {"from": lender}
+        )
+
+        with capsys.disabled():
+            print("\n==================================")
+            print("Gas estimations:")
+            print("==================================")
+            print(
+                f"Move quote token from lup           - {test_utils.get_usage(tx.gas_used)}"
+            )
+
+
+def test_quote_move_to_lup(
+    lenders,
+    borrowers,
+    mkr_dai_pool,
+    capsys,
+    test_utils,
+    bucket_math,
+):
+
+    with test_utils.GasWatcher(
+        ["moveQuoteToken", "addCollateral", "addQuoteToken", "borrow"]
+    ):
+        lender = lenders[0]
+        borrower = borrowers[0]
+
+        mkr_dai_pool.addQuoteToken(
+            lender, 5_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
+        )
+        mkr_dai_pool.addQuoteToken(
+            lender, 5_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+        )
+        mkr_dai_pool.addQuoteToken(
+            lender, 5_000 * 10**18, bucket_math.indexToPrice(1524), {"from": lender}
+        )
+
+        # borrower takes a loan of 3000 DAI
+        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
+        mkr_dai_pool.borrow(3_000 * 10**18, 4000 * 10**18, {"from": borrower})
+
+        # lender moves 1000 DAI to lup
+        tx = mkr_dai_pool.moveQuoteToken(
+            lender, 5_000 * 10**18, bucket_math.indexToPrice(1606), bucket_math.indexToPrice(1663), {"from": lender}
+        )
+
+        with capsys.disabled():
+            print("\n==================================")
+            print("Gas estimations:")
+            print("==================================")
+            print(
+                f"Move quote token to lup            - {test_utils.get_usage(tx.gas_used)}"
+            )

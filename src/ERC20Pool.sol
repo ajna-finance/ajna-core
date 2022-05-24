@@ -114,6 +114,27 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest, LenderManager {
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
     }
 
+    function moveQuoteToken(
+        address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_
+    ) external override {
+        require(BucketMath.isValidPrice(toPrice_), "P:MQT:INVALID_TO_PRICE");
+        require(fromPrice_ != toPrice_, "P:MQT:SAME_PRICE");
+
+        accumulatePoolInterest();
+
+        (uint256 fromLpTokens, uint256 toLpTokens) = moveQuoteTokenFromBucket(
+            fromPrice_, toPrice_, amount_, lpBalance[recipient_][fromPrice_], inflatorSnapshot
+        );
+
+        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");
+
+        // lender accounting
+        lpBalance[recipient_][fromPrice_] -= fromLpTokens;
+        lpBalance[recipient_][toPrice_]   += toLpTokens;
+
+        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, amount_, lup);
+    }
+
     function addCollateral(uint256 amount_) external override {
         accumulatePoolInterest();
 

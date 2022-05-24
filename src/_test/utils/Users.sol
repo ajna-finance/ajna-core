@@ -40,28 +40,34 @@ contract UserWithCollateral {
 
 contract UserWithQuoteToken {
 
-    function addQuoteToken(ERC20Pool pool, address recipient, uint256 amount, uint256 price) public {
-        pool.addQuoteToken(recipient, amount, price);
+    function addQuoteToken(ERC20Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {
+        pool_.addQuoteToken(recipient_, amount_, price_);
     }
 
-    function removeQuoteToken(ERC20Pool pool, address recipient, uint256 amount, uint256 price) public {
-        pool.removeQuoteToken(recipient, amount, price);
+    function removeQuoteToken(ERC20Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {
+        pool_.removeQuoteToken(recipient_, amount_, price_);
     }
 
-    function borrow(ERC20Pool pool, uint256 amount, uint256 stopPrice) public {
-        pool.borrow(amount, stopPrice);
+    function moveQuoteToken(
+        ERC20Pool pool_, address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_
+    ) public {
+        pool_.moveQuoteToken(recipient_, amount_, fromPrice_, toPrice_);
     }
 
-    function claimCollateral(ERC20Pool pool, address recipient, uint256 amount, uint256 price) public {
-        pool.claimCollateral(recipient, amount, price);
+    function borrow(ERC20Pool pool_, uint256 amount_, uint256 limitPrice_) public {
+        pool_.borrow(amount_, limitPrice_);
     }
 
-    function liquidate(ERC20Pool pool, address borrower) public {
-        pool.liquidate(borrower);
+    function claimCollateral(ERC20Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {
+        pool_.claimCollateral(recipient_, amount_, price_);
     }
 
-    function approveToken(IERC20 token, address spender, uint256 amount) public {
-        token.approve(spender, amount);
+    function liquidate(ERC20Pool pool_, address borrower_) public {
+        pool_.liquidate(borrower_);
+    }
+
+    function approveToken(IERC20 token_, address spender_, uint256 amount_) public {
+        token_.approve(spender_, amount_);
     }
 
     // Implementing this method allows contracts to receive ERC721 tokens
@@ -70,8 +76,8 @@ contract UserWithQuoteToken {
         return this.onERC721Received.selector;
     }
 
-    function updateInterestRate(ERC20Pool pool) public {
-        pool.updateInterestRate();
+    function updateInterestRate(ERC20Pool pool_) public {
+        pool_.updateInterestRate();
     }
 
 }
