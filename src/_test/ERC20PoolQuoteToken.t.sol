@@ -579,7 +579,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         uint256 poolCollateralizationAfterBorrow = _pool.getPoolCollateralization();
         uint256 targetUtilizationAfterBorrow     = _pool.getPoolTargetUtilization();
         uint256 actualUtilizationAfterBorrow     = _pool.getPoolActualUtilization();
-        assertEq(poolCollateralizationAfterBorrow, 133.364255952685584575 * 1e18);
+        assertEq(poolCollateralizationAfterBorrow, 133.364255952685584579 * 1e18);
         assertGt(actualUtilizationAfterBorrow,     targetUtilizationAfterBorrow);
 
         // lender removes 1000 DAI from LUP
@@ -742,7 +742,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         uint256 targetUtilizationAfterBorrow      = _pool.getPoolTargetUtilization();
         uint256 actualUtilizationAfterBorrow      = _pool.getPoolActualUtilization();
 
-        assertEq(poolCollateralizationAfterBorrow, 11.757774763124786460 * 1e18);
+        assertEq(poolCollateralizationAfterBorrow, 11.757774763124786457 * 1e18);
         assertGt(actualUtilizationAfterBorrow,     targetUtilizationAfterBorrow);
 
         // Lender withdraws above LUP
@@ -911,7 +911,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // check pool collateralization
         collateralization = _pool.getPoolCollateralization();
-        assertEq(collateralization, 133.364255952685584575 * 1e18);
+        assertEq(collateralization, 133.364255952685584579 * 1e18);
 
         // check pool is still overcollateralized
         targetUtilization = _pool.getPoolTargetUtilization();
@@ -1058,7 +1058,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
         _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18);
         assertEq(_pool.lup(),                       _p8002);
-        assertEq(_pool.getPoolCollateralization(), 134.714209997512152015 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 134.714209997512151990 * 1e18);
 
         skip(5000);
         _pool.updateInterestRate();
