@@ -9,7 +9,6 @@ import { IPoolState } from "../interfaces/IPoolState.sol";
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
 
-
 /**
  * @notice Pool State Management related functionality
 */
@@ -24,12 +23,6 @@ abstract contract PoolState is IPoolState, Buckets {
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
         encumbrance_ = debt_ != 0 ? Maths.wwdivr(debt_, lup) : 0;
-    }
-
-    // TODO: REMOVE || round up to whole units
-    function getNFTEncumberedCollateral(uint256 debt_) public view returns (uint256 encumbrance_) {
-        // Calculate encumbrance as RAY to maintain precision
-        encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
     }
 
     function getMinimumPoolPrice() public view override returns (uint256 minPrice_) {
@@ -53,7 +46,7 @@ abstract contract PoolState is IPoolState, Buckets {
     // TODO: add to interface
     function getNFTPoolCollateralization() public view returns (uint256 poolCollateralization_) {
         if (lup != 0 && totalDebt != 0) {
-            return Maths.wdiv(Maths.wad(totalCollateral), getEncumberedCollateral(totalDebt));
+            return Maths.wrdivw(Maths.wad(totalCollateral), getEncumberedCollateral(totalDebt));
         }
         return Maths.ONE_WAD;
     }
