@@ -319,7 +319,7 @@ contract ERC20Pool is IPool, Buckets, Clone, Interest, LenderManager {
         if (totalDebt == 0) {
             return 0;
         }
-        return Maths.wdiv(totalDebt, totalQuoteToken + totalDebt);
+        return Maths.wdiv(Maths.wmul(lup, totalDebt), Maths.wmul(lup, totalDebt) + pwauSum);
     }
 
     function getPoolTargetUtilization() public view override returns (uint256 poolTargetUtilization_) {

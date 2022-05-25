@@ -93,7 +93,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
             _pool.getBorrowerCollateralization(collateralDeposited, borrowerDebt),
             collateralization
         );
-        assertEq(_pool.getPoolActualUtilization(), 0.523809523809523810 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(), 0.989989627127204404 * 1e18);
 
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100
         _borrower2.borrow(_pool, 1_000 * 1e18, 100 * 1e18);

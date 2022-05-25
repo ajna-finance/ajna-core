@@ -108,7 +108,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.lup(),                                      priceMid);
         assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 3.749211741013566066 * 1e18);
         assertEq(_pool.getPoolCollateralization(),                 26.672273242419188877 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(),                 0.500005417065983738 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(),                 0.544955222606167855 * 1e18);
         assertEq(_quote.balanceOf(address(_borrower)),             25_000 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),                 15_000 * 1e18);
 
@@ -259,7 +259,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.lup(),                                      priceMid);
         assertEq(_pool.getEncumberedCollateral(_pool.totalDebt()), 4.249102307120473073 * 1e18);
         assertEq(_pool.getPoolCollateralization(),                 47.068765481322519067 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(),                 0.566671737036032801 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(),                 0.617614850129482880 * 1e18);
 
         assertEq(_quote.balanceOf(address(_borrower)), 25_000 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),     13_000 * 1e18);
@@ -299,7 +299,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(),          28_000.325027480414872539 * 1e18);
         assertEq(_pool.totalDebt(),                2_000.026002198433189803 * 1e18);
         assertEq(_pool.getPoolCollateralization(), 500.757928087008591313 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(), 0.066666753339647284 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(), 0.083325666465765651 * 1e18);
 
         // first borrower repaid; tie out pending debt second borrower debt to reasonable percentage
         uint256 poolPendingDebt = _pool.totalDebt() + _pool.getPendingPoolInterest();

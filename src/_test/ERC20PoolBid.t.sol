@@ -82,7 +82,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(),                 5_000 * 1e18);
         assertEq(_pool.totalCollateral(),                 100 * 1e18);
         assertEq(_pool.getPoolCollateralization(),        75.272300554947038956 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(),        0.444444444444444444 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(),        0.571318056302942289 * 1e18);
 
         // check 4_000.927678580567537368 bucket balance before purchase bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(_p4000);
@@ -157,7 +157,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_pool)),        5_000 * 1e18);
         assertEq(_pool.totalCollateral(),                 100 * 1e18);
         assertEq(_pool.getPoolCollateralization(),        150.544601109894077798 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(),        0.285714285714285714 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(),        0.375823789632159460 * 1e18);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p3010);

@@ -960,6 +960,8 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), priceLow);
         assertEq(_pool.lup(), priceLow);
 
+        assertEq(_pool.pwauSum(), 1_506_651.503145580824544 * 1e18);
+
         // removal should revert if pool remains undercollateralized
         vm.expectRevert("P:RQT:POOL_UNDER_COLLAT");
         _lender.removeQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceLow);
@@ -971,7 +973,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // check pool utilization after borrowing
         targetUtilization = _pool.getPoolTargetUtilization();
         actualUtilization = _pool.getPoolActualUtilization();
-        assertEq(actualUtilization, Maths.wdiv(borrowAmount, (10_000 * 1e18)));
+        assertEq(actualUtilization, Maths.wdiv(Maths.wmul(priceLow, borrowAmount), Maths.wmul(priceLow, borrowAmount) + _pool.pwauSum()));
 
         // since pool is undercollateralized actualUtilization should be < targetUtilization
         assertLt(actualUtilization, targetUtilization);
@@ -1066,7 +1068,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100.332368143282009890
         _borrower2.borrow(_pool, 1_000 * 1e18, 100 * 1e18);
         assertEq(_pool.lup(),                      _p100);
-        assertEq(_pool.getPoolCollateralization(), 1.558987827039498473 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 1.558987827039497608 * 1e18);
 
         skip(5000);
         _pool.updateInterestRate();
@@ -1076,14 +1078,14 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             _pool.lpBalance(address(_lender), _p8002), _p8002
         );
         assertEq(col, 0);
-        assertEq(quoteLPValue, 1_000.015855021676099840 * 1e18);
+        assertEq(quoteLPValue, 1_000.015855021676701380 * 1e18);
 
         // check pool state following borrows
         uint256 poolCollateralizationAfterBorrow = _pool.getPoolCollateralization();
         uint256 targetUtilizationAfterBorrow     = _pool.getPoolTargetUtilization();
         uint256 actualUtilizationAfterBorrow     = _pool.getPoolActualUtilization();
 
-        assertEq(poolCollateralizationAfterBorrow, 1.558975468293558516 * 1e18);
+        assertEq(poolCollateralizationAfterBorrow, 1.558975468293556713 * 1e18);
         assertGt(actualUtilizationAfterBorrow,     targetUtilizationAfterBorrow);
 
         // should revert if not enough funds in pool
@@ -1098,7 +1100,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
             _pool.lpBalance(address(_lender), _p8002), _p8002
         );
         assertEq(col, 0);
-        assertEq(quoteLPValue, 1_000.031710294744013558 * 1e18);
+        assertEq(quoteLPValue, 1_000.031710294745818206 * 1e18);
 
         // check that utilization decreased following repayment
         uint256 poolCollateralizationAfterRepay = _pool.getPoolCollateralization();
@@ -1112,9 +1114,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // lender should be able to remove lent quote tokens + interest
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_lender), 1_000.031710294744013558 * 1e18);
+        emit Transfer(address(_pool), address(_lender), 1_000.031710294745818206 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_lender), _p8002, 1_000.031710294744013558 * 1e18, _p10016);
+        emit RemoveQuoteToken(address(_lender), _p8002, 1_000.031710294745818206 * 1e18, _p10016);
         _lender.removeQuoteToken(_pool, address(_lender), 1_001 * 1e18, _p8002);
 
         assertEq(_pool.hpb(), _p10016);
