@@ -4,7 +4,7 @@ pragma solidity 0.8.11;
 
 import { Clone } from "@clones/Clone.sol";
 
-import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
+import { console }     from "@std/console.sol";
 
 import { ERC20 }         from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -53,7 +53,7 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     }
 
     // TODO: convert to modifier and add check at start of each method
-    function onlySubset(uint256 tokenId_) internal {
+    function onlySubset(uint256 tokenId_) internal view {
         if (_tokenIdsAllowed.length() != 0) {
 
             bool isAllowed = _tokenIdsAllowed.contains(tokenId_);
@@ -190,17 +190,17 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
         // TODO: finish implementing
     }
 
-    // TODO: finish implementing
-    // TODO: add support for find and remove -> require struct?
+    // TODO: finish implementing -> update totalCollateral and add borrower.totalCollateralDeposited key in WAD terms
     function removeCollateral(uint256 tokenId_) external {
         accumulatePoolInterest();
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
         accumulateNFTBorrowerInterest(borrower);
 
-        // TODO: finish updating this -> how to deal with rounding?
-        uint256 encumberedBorrowerCollateral = Maths.rayToWad(getNFTEncumberedCollateral(borrower.debt));
-        require(borrower.collateralDeposited - encumberedBorrowerCollateral >= amount_, "P:RC:AMT_GT_AVAIL_COLLAT");
+        uint256 encumberedBorrowerCollateral = getNFTEncumberedCollateral(borrower.debt);
+
+        // Require overcollateralization to be at a minimum of one WAD to account for indivisible NFTs
+        require(Maths.wad(borrower.collateralDeposited.length()) - encumberedBorrowerCollateral >= Maths.ONE_WAD, "P:RC:AMT_GT_AVAIL_COLLAT");
 
         // pool level accounting
         _collateralTokenIdsAdded.remove(tokenId_);
@@ -227,7 +227,22 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
         // borrow amount from buckets with limit price
         borrowFromBucket(amount_, limitPrice_, inflatorSnapshot);
 
-        require(borrower.collateralDeposited > Maths.rayToWad(getNFTEncumberedCollateral(borrower.debt + amount_)), "P:B:INSUF_COLLAT");
+        // collateral amounts need to be recorded as WADs to enable like-unit comparisons with quote token precision
+        require(Maths.wad(borrower.collateralDeposited.length()) > getNFTEncumberedCollateral(borrower.debt + amount_), "P:B:INSUF_COLLAT");
+
+        // pool level accounting
+        totalQuoteToken -= amount_;
+        totalDebt       += amount_;
+
+        // borrower accounting
+        borrower.debt   += amount_;
+
+        // TODO: check this condition -> should collateral be stored as a WAD...?
+        require(getNFTPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
+
+        // move borrowed amount from pool to sender
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
+        emit Borrow(msg.sender, lup, amount_);
     }
 
     function repay(uint256 amount_) external {}
@@ -261,7 +276,7 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     }
 
     // TODO: round up to whole units
-    function getNFTEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
+    function getNFTEncumberedCollateral(uint256 debt_) public view returns (uint256 encumbrance_) {
         // Calculate encumbrance as RAY to maintain precision
         encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
     }
@@ -269,6 +284,13 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     function getPoolCollateralization() public view override returns (uint256 poolCollateralization_) {
         if (lup != 0 && totalDebt != 0) {
             return Maths.wdiv(totalCollateral, getEncumberedCollateral(totalDebt));
+        }
+        return Maths.ONE_WAD;
+    }
+
+    function getNFTPoolCollateralization() public view returns (uint256 poolCollateralization_) {
+        if (lup != 0 && totalDebt != 0) {
+            return Maths.wdiv(Maths.wad(totalCollateral), getEncumberedCollateral(totalDebt));
         }
         return Maths.ONE_WAD;
     }

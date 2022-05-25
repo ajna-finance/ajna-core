@@ -45,10 +45,10 @@ contract UserWithNFTCollateral {
     function approveAndDepositTokenAsCollateral(
         IERC721 token_,
         ERC721Pool pool_,
-        uint256 amount_
+        uint256 tokenId_
     ) public {
-        token_.approve(address(pool_), amount_);
-        pool_.addCollateral(amount_);
+        token_.approve(address(pool_), tokenId_);
+        pool_.addCollateral(tokenId_);
     }
 
     function approveToken(IERC721 token_, address spender_, uint256 _tokenId) public {
@@ -123,4 +123,40 @@ contract UserWithQuoteToken {
         pool.updateInterestRate();
     }
 
+}
+
+contract UserWithQuoteTokenInNFTPool {
+    function addQuoteToken(ERC721Pool pool, address recipient, uint256 amount, uint256 price) public {
+        pool.addQuoteToken(recipient, amount, price);
+    }
+
+    function removeQuoteToken(ERC721Pool pool, address recipient, uint256 amount, uint256 price) public {
+        pool.removeQuoteToken(recipient, amount, price);
+    }
+
+    function borrow(ERC721Pool pool, uint256 amount, uint256 stopPrice) public {
+        pool.borrow(amount, stopPrice);
+    }
+
+    function claimCollateral(ERC721Pool pool, address recipient, uint256 amount, uint256 price) public {
+        pool.claimCollateral(recipient, amount, price);
+    }
+
+    function liquidate(ERC721Pool pool, address borrower) public {
+        pool.liquidate(borrower);
+    }
+
+    function approveToken(IERC20 token, address spender, uint256 amount) public {
+        token.approve(spender, amount);
+    }
+
+    // Implementing this method allows contracts to receive ERC721 tokens
+    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+    function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    function updateInterestRate(ERC721Pool pool) public {
+        pool.updateInterestRate();
+    }
 }
