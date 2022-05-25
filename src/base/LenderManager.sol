@@ -4,7 +4,6 @@ pragma solidity 0.8.11;
 import { Buckets } from "./Buckets.sol";
 
 import { ILenderManager } from "../interfaces/ILenderManager.sol";
-import { IPool }          from "../interfaces/IPool.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";

@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.11;
 
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-
 /**
  * @title Ajna Pool
  * @dev   Used to manage lender and borrower positions.
@@ -55,6 +53,16 @@ interface IPool {
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
 
     /**
+     *  @notice Emitted when lender moves quote token from a bucket price to another.
+     *  @param  lender_ Recipient that moved quote tokens.
+     *  @param  from_   Price bucket from which quote tokens were moved.
+     *  @param  to_     Price bucket where quote tokens were moved.
+     *  @param  amount_ Amount of quote tokens moved.
+     *  @param  lup_    LUP calculated after removal.
+     */
+    event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
+
+    /**
      *  @notice Emitted when collateral is exchanged for quote tokens.
      *  @param  bidder_     `msg.sender`.
      *  @param  price_      Price at which collateral was exchanged for quote tokens.
@@ -87,42 +95,6 @@ interface IPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
-    /**
-     *  @notice Emitted when pool interest rate is updated.
-     *  @param  oldRate_ Old pool interest rate.
-     *  @param  newRate_ New pool interest rate.
-     */
-    event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
-
-    /***************/
-    /*** Structs ***/
-    /***************/
-
-    /**
-     *  @notice Struct holding borrower related info per price bucket.
-     *  @param  debt                Borrower debt, WAD units.
-     *  @param  collateralDeposited Collateral deposited by borrower, WAD units.
-     *  @param  inflatorSnapshot    Current borrower inflator snapshot, RAY units.
-     */
-    struct BorrowerInfo {
-        uint256 debt;
-        uint256 collateralDeposited;
-        uint256 inflatorSnapshot;
-    }
-
-
-     /**
-     *  @notice Struct holding borrower related info per price bucket, for borrowers using NFTs as collateral.
-     *  @param  debt                Borrower debt, WAD units.
-     *  @param  collateralDeposited Collateral deposited by borrower, WAD units.
-     *  @param  inflatorSnapshot    Current borrower inflator snapshot, RAY units.
-     */
-    struct NFTBorrowerInfo {
-        uint256   debt;
-        EnumerableSet.UintSet collateralDeposited;
-        uint256   inflatorSnapshot;
-    }
-
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -132,24 +104,6 @@ interface IPool {
      *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
      */
     function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
-
-    /**
-     *  @notice Returns the `previousRateUpdate` state variable.
-     *  @return previousRateUpdate_ The timestamp of the last rate update.
-     */
-    function previousRateUpdate() external view returns (uint256 previousRateUpdate_);
-
-    /**
-     *  @notice Returns the `totalCollateral` state variable.
-     *  @return totalCollateral_ THe total amount of collateral in the system, in WAD units.
-     */
-    function totalCollateral() external view returns (uint256 totalCollateral_);
-
-    /**
-     *  @notice Returns the `totalQuoteToken` state variable.
-     *  @return totalQuoteToken_ The total amount of quote token in the system, in WAD units.
-     */
-    function totalQuoteToken() external view returns (uint256 totalQuoteToken_);
 
     /*****************************/
     /*** Inititalize Functions ***/
@@ -212,6 +166,15 @@ interface IPool {
     function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external;
 
     /**
+     *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
+     *  @param  recipient_ The recipient moving quote tokens.
+     *  @param  amount_    The amount of quote token to be moved by a lender.
+     *  @param  fromPrice_ The bucket from which the quote tokens will be removed.
+     *  @param  toPrice_   The bucket to which the quote tokens will be added.
+     */
+    function moveQuoteToken(address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_) external;
+
+    /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
      *  @param  recipient_ The recipient removing quote tokens.
      *  @param  maxAmount_ The maximum amount of quote token to be removed by a lender.
@@ -235,108 +198,5 @@ interface IPool {
      *  @param  borrower_ The address of the borrower being liquidated.
      */
     function liquidate(address borrower_) external;
-
-    /**
-     *  @notice Called to update the pool interest rate when actual > target utilization.
-     */
-    function updateInterestRate() external;
-
-    /*******************************/
-    /*** Borrower View Functions ***/
-    /*******************************/
-
-    /**
-     *  @notice Mapping of borrower addresses to {BorrowerInfo} structs.
-     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
-     *  @param  borrower_           Address of the borrower.
-     *  @return debt                Amount of debt that the borrower has, in quote token.
-     *  @return collateralDeposited Amount of collateral that the borrower has deposited, in collateral token.
-     *  @return inflatorSnapshot    Snapshot of inflator value used to track interest on loans.
-     */
-    // function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateralDeposited, uint256 inflatorSnapshot);
-
-    /**
-     *  @notice Mapping of borrower addresses to {BorrowerInfo} structs.
-     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
-     *  @param  borrower_           Address of the borrower.
-     *  @return debt                Amount of debt that the borrower has, in quote token.
-     *  @return collateralDeposited Array of tokenIds that a borrower has deposited.
-     *  @return inflatorSnapshot    Snapshot of inflator value used to track interest on loans.
-     */
-    // function NFTborrowers(address borrower_) external view returns (uint256 debt, uint256[] memory collateralDeposited, uint256 inflatorSnapshot);
-
-    /**
-     *  @notice Returns the collateralization based on given collateral deposited and debt.
-     *  @dev    Supports passage of collateralDeposited and debt to enable calculation of potential borrower collateralization states, not just current.
-     *  @param  collateralDeposited_       Collateral amount to calculate a collateralization ratio for, in RAY units.
-     *  @param  debt_                      Debt position to calculate encumbered quotient, in RAY units.
-     *  @return borrowerCollateralization_ The current collateralization of the borrowers given totalCollateral and totalDebt
-     */
-    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) external view returns (uint256 borrowerCollateralization_);
-
-    /**
-     *  @notice Returns a tuple of information about a given borrower.
-     *  @param  borrower_                 Address of the borrower.
-     *  @return debt_                     Amount of debt that the borrower has, in quote token.
-     *  @return pendingDebt_              Amount of unaccrued debt that the borrower has, in quote token.
-     *  @return collateralDeposited_      Amount of collateral that tne borrower has deposited, in collateral token.
-     *  @return collateralEncumbered_     Amount of collateral that the borrower has encumbered, in collateral token.
-     *  @return collateralization_        Collateral ratio of the borrower's pool position.
-     *  @return borrowerInflatorSnapshot_ Snapshot of the borrower's inflator value.
-     *  @return inflatorSnapshot_         Snapshot of the pool's inflator value.
-     */
-    // function getBorrowerInfo(address borrower_) external view returns (
-    //     uint256 debt_,
-    //     uint256 pendingDebt_,
-    //     uint256 collateralDeposited_,
-    //     uint256 collateralEncumbered_,
-    //     uint256 collateralization_,
-    //     uint256 borrowerInflatorSnapshot_,
-    //     uint256 inflatorSnapshot_
-    // );
-
-    /***************************/
-    /*** Pool View Functions ***/
-    /***************************/
-
-    /**
-     *  @notice Estimate the price for which a loan can be taken.
-     *  @param  amount_  Amount of debt to draw.
-     *  @return price_   Price of the loan.
-     */
-    function estimatePriceForLoan(uint256 amount_) external view returns (uint256 price_);
-
-    /**
-     *  @notice Returns the total encumbered collateral resulting from a given amount of debt.
-     *  @dev    Used for both pool and borrower level debt.
-     *  @param  debt_        Amount of debt for corresponding collateral encumbrance.
-     *  @return encumbrance_ The current encumbrance of a given debt balance, in WAD units.
-     */
-    function getEncumberedCollateral(uint256 debt_) external view returns (uint256 encumbrance_);
-
-    /**
-     *  @notice Returns the current minimum pool price.
-     *  @return minPrice_ The current minimum pool price.
-     */
-    function getMinimumPoolPrice() external view returns (uint256 minPrice_);
-
-    /**
-     *  @notice Gets the current utilization of the pool
-     *  @dev    Will return 0 unless the pool has been borrowed from.
-     *  @return poolActualUtilization_ The current pool actual utilization, in WAD units.
-     */
-    function getPoolActualUtilization() external view returns (uint256 poolActualUtilization_);
-
-    /**
-     *  @notice Calculate the current collateralization ratio of the pool, based on `totalDebt` and `totalCollateral`.
-     *  @return poolCollateralization_ Current pool collateralization ratio.
-     */
-    function getPoolCollateralization() external view returns (uint256 poolCollateralization_);
-
-    /**
-     *  @notice Gets the current target utilization of the pool
-     *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
-     */
-    function getPoolTargetUtilization() external view returns (uint256 poolTargetUtilization_);
 
 }

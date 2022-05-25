@@ -12,9 +12,8 @@ import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { Buckets }       from "./base/Buckets.sol";
-import { Interest }      from "./base/Interest.sol";
-import { LenderManager } from "./base/LenderManager.sol";
+import { BorrowerManager } from "./base/BorrowerManager.sol";
+import { LenderManager }   from "./base/LenderManager.sol";
 
 import { IPool } from "./interfaces/IPool.sol";
 
@@ -22,7 +21,7 @@ import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
 
-contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
+contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
     using SafeERC20 for ERC20;
 
@@ -37,14 +36,6 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     EnumerableSet.UintSet internal _tokenIdsAllowed;
 
     uint256 public override quoteTokenScale;
-
-    uint256 public override previousRateUpdate;
-    uint256 public override totalCollateral;    // [WAD]
-    uint256 public override totalQuoteToken;    // [WAD]
-
-    // TODO: rename
-    // borrowers book: borrower address -> NFTBorrowerInfo
-    mapping(address => NFTBorrowerInfo) internal NFTborrowers;
 
     /// @notice Modifier to protect a clone's initialize method from repeated updates
     modifier onlyOnce() {
@@ -156,6 +147,12 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
     }
 
+    function moveQuoteToken(
+        address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_
+    ) external override {
+        // TODO: finish implementing
+    }
+
     // TODO: create seperate NFT specific events
     function addCollateral(uint256 tokenId_) external  override {
         // check if collateral is valid
@@ -181,13 +178,21 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     // TODO: move check to onlySubsetMultiple()
     // TODO: update to incrementally add if contains, otherwise skip?
     function addCollateralMultiple(uint256[] memory tokenIds_) external {
+        // check if all incoming tokenIds are part of the pool subset
         for (uint i; i < tokenIds_.length;) {
             onlySubset(tokenIds_[i]);
             unchecked {
                 ++i;
             }
         }
-        // TODO: finish implementing
+
+        // add tokenIds to the pool
+        // for (uint i; i < tokenIds_.length;) {
+        //     addCollateral(tokenIds_[i]);
+        //     unchecked {
+        //         ++i;
+        //     }
+        // }
     }
 
     // TODO: finish implementing -> update totalCollateral and add borrower.totalCollateralDeposited key in WAD terms
@@ -251,7 +256,18 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
 
     function liquidate(address borrower_) external {}
 
-    /*****************************/
+    // Implementing this method allows contracts to receive ERC721 tokens
+    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+   /*****************************/
     /*** Pool State Management ***/
     /*****************************/
 
@@ -263,134 +279,6 @@ contract ERC721Pool is IPool, Buckets, Clone, Interest, LenderManager {
     // WARNING: This is an extremely gas intensive operation and should only be done in view accessors
     function getTokenIdsAllowed() public view returns(uint256[] memory) {
         return _tokenIdsAllowed.values();
-    }
-
-    // TODO: Add a test for this
-    function getMinimumPoolPrice() public view override returns (uint256 minPrice_) {
-        minPrice_ = totalDebt != 0 ? Maths.wdiv(totalDebt, totalCollateral) : 0;
-    }
-
-    function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
-        // Calculate encumbrance as RAY to maintain precision
-        encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
-    }
-
-    // TODO: round up to whole units
-    function getNFTEncumberedCollateral(uint256 debt_) public view returns (uint256 encumbrance_) {
-        // Calculate encumbrance as RAY to maintain precision
-        encumbrance_ = debt_ != 0 ? Maths.wdiv(debt_, lup) : 0;
-    }
-
-    function getPoolCollateralization() public view override returns (uint256 poolCollateralization_) {
-        if (lup != 0 && totalDebt != 0) {
-            return Maths.wdiv(totalCollateral, getEncumberedCollateral(totalDebt));
-        }
-        return Maths.ONE_WAD;
-    }
-
-    function getNFTPoolCollateralization() public view returns (uint256 poolCollateralization_) {
-        if (lup != 0 && totalDebt != 0) {
-            return Maths.wdiv(Maths.wad(totalCollateral), getEncumberedCollateral(totalDebt));
-        }
-        return Maths.ONE_WAD;
-    }
-
-    function getPoolActualUtilization() public view override returns (uint256 poolActualUtilization_) {
-        if (totalDebt == 0) {
-            return 0;
-        }
-        return Maths.wdiv(totalDebt, totalQuoteToken + totalDebt);
-    }
-
-    function getPoolTargetUtilization() public view override returns (uint256 poolTargetUtilization_) {
-        return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
-    }
-
-    function updateInterestRate() external override {
-        // RAY
-        uint256 actualUtilization = getPoolActualUtilization();
-        if (
-            actualUtilization != 0 &&
-            previousRateUpdate < block.timestamp &&
-            getPoolCollateralization() > Maths.ONE_WAD
-        ) {
-            uint256 oldRate = previousRate;
-            accumulatePoolInterest();
-
-            previousRate = Maths.wmul(
-                previousRate,
-                (
-                    Maths.rayToWad(actualUtilization) + Maths.ONE_WAD
-                        - Maths.rayToWad(getPoolTargetUtilization())
-                )
-            );
-            previousRateUpdate = block.timestamp;
-            emit UpdateInterestRate(oldRate, previousRate);
-        }
-    }
-
-
-    /*****************************/
-    /*** Borrower Management ***/
-    /*****************************/
-
-    // TODO: fix this
-    // TODO: rename and add in parallel with ERC20 getBorrowerInfo
-    // TODO: fix encumberance and collateralization checks for ERC721
-    function getBorrowerInfo(address borrower_)
-        public view returns (
-            uint256 debt_,
-            uint256 pendingDebt_,
-            uint256[] memory collateralDeposited_,
-            uint256 collateralEncumbered_,
-            uint256 collateralization_,
-            uint256 borrowerInflatorSnapshot_,
-            uint256 inflatorSnapshot_
-        )
-    {
-        NFTBorrowerInfo storage borrower = NFTborrowers[borrower_];
-        uint256 borrowerPendingDebt = borrower.debt;
-        uint256 collateralEncumbered;
-        uint256 collateralization = Maths.ONE_WAD;
-
-        if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
-            borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
-            collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization     = Maths.wdiv(borrower.collateralDeposited.length(), collateralEncumbered);
-        }
-
-        return (
-            borrower.debt,
-            borrowerPendingDebt,
-            borrower.collateralDeposited.values(),
-            collateralEncumbered,
-            collateralization,
-            borrower.inflatorSnapshot,
-            inflatorSnapshot
-        );
-    }
-
-    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256 borrowerCollateralization_) {
-        if (lup != 0 && debt_ != 0) {
-            return Maths.wdiv(collateralDeposited_, getEncumberedCollateral(debt_));
-        }
-        return Maths.ONE_WAD;
-    }
-
-    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256 price_) {
-        // convert amount from WAD to collateral pool precision - RAD
-        return estimatePrice(amount_, lup == 0 ? hpb : lup);
-    }
-
-    // Implementing this method allows contracts to receive ERC721 tokens
-    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
-    function onERC721Received(
-        address,
-        address,
-        uint256,
-        bytes memory
-    ) external pure returns (bytes4) {
-        return this.onERC721Received.selector;
     }
 
 }

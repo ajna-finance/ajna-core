@@ -88,7 +88,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         uint256 borrower1CollateralEncumbered = collateralEncumbered;
         assertEq(_pool.getEncumberedCollateral(borrowerDebt), borrower1CollateralEncumbered);
         assertEq(_pool.getBorrowerCollateralization(collateralDeposited, borrowerDebt), collateralization);
-        assertEq(_pool.getPoolCollateralization(), 165.648478682707543214 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 165.648478682707543148 * 1e18);
         assertEq(
             _pool.getBorrowerCollateralization(collateralDeposited, borrowerDebt),
             collateralization
@@ -133,7 +133,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerDebt,         11_000 * 1e18);
         assertEq(borrowerPendingDebt,  11_000 * 1e18);
         assertEq(collateralDeposited,  2 * 1e18);
-        assertEq(collateralEncumbered, 109.635606171392167204 * 1e18);
+        assertEq(collateralEncumbered, 109.635606171392167204250999673 * 1e27);
         assertEq(collateralization,    0.018242248753324002 * 1e18);
         assertEq(borrowerInflator,     1 * 1e27);
 
@@ -272,7 +272,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerDebt,         12_000 * 1e18);
         assertEq(borrowerPendingDebt,  12_000 * 1e18);
         assertEq(collateralDeposited,  2 * 1e18);
-        assertEq(collateralEncumbered, 119.602479459700546041 * 1e18);
+        assertEq(collateralEncumbered, 119.602479459700546041001090553 * 1e27);
         assertEq(collateralization,    0.016722061357213668 * 1e18);
         assertEq(borrowerInflator,     1 * 1e27);
 
@@ -397,7 +397,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerDebt,         12_000 * 1e18);
         assertEq(borrowerPendingDebt,  14_061.711532337016451987 * 1e18);
         assertEq(collateralDeposited,  2 * 1e18);
-        assertEq(collateralEncumbered, 140.151297059547691734 * 1e18);
+        assertEq(collateralEncumbered, 140.151297059547691733983191885 * 1e27);
         assertEq(collateralization,    0.014270292476495862 * 1e18);
         assertEq(borrowerInflator,     1 * 1e27);
 
