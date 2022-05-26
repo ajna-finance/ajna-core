@@ -73,7 +73,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pwauSum(),         9_036_753.031683275440972000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 75.272300554947038956 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 75.272300554947038946 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.571318056302942289 * 1e18);
 
         // check bidder and pool balances after borrowing and before purchaseBid
@@ -121,7 +121,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pwauSum(),         3_014_968.987287512325282000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 25.124741560729269374 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 25.124741560729269377 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.571428571428571429 * 1e18);
 
         // check bidder and pool balances
@@ -183,7 +183,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pwauSum(),         10_001_108.094203638503045000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 150.544601109894077798 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 150.544601109894077892 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.375823789632159460 * 1e18);
 
         // check bidder and pool balances
@@ -227,7 +227,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pwauSum(),         8_000_886.475362910802436000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 100.011080942036385043 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 100.011080942036385030 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.333333333333333333 * 1e18);
 
         // check bidder and pool balances
@@ -286,7 +286,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pwauSum(),         1_000_110.809420363850304500 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 150.544601109894077798 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 150.544601109894077892 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.857572517071109020 * 1e18);
 
         // should revert if trying to bid more than available liquidity (1000 vs 500)
@@ -329,7 +329,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pwauSum(),         2000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 150.544601109894077798 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 150.544601109894077892 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.999667982785362184 * 1e18);
 
         // should revert when leave pool undercollateralized

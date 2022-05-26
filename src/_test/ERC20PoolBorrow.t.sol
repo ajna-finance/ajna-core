@@ -212,7 +212,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pwauSum(),         200_375_041.251180507993985917 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 16.691996039676193854 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 16.691996039676193853 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.428488988084744935 * 1e18);
 
         assertEq(_pool.getPendingPoolInterest(),               0);
