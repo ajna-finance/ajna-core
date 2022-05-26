@@ -2,8 +2,8 @@
 pragma solidity 0.8.11;
 
 /**
- * @title Ajna Pool Factory
- * @dev   Used to deploy both funigible and non fungible pools.
+ *  @title Ajna Pool Factory
+ *  @dev   Used to deploy both funigible and non fungible pools.
  */
 interface IPoolFactory {
 

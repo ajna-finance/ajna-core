@@ -194,7 +194,7 @@ abstract contract Buckets {
 
                 if (newLup != 0 && toBucket.price > Maths.max(fromBucket.price, newLup)) newLup = reallocateUp(toBucket,  amount_, inflator_);
                 else if (newLup != 0 && fromBucket.price >= Maths.max(toBucket.price, newLup)) newLup = reallocateDown(fromBucket, amount_, inflator_);
-                pwauSum =  pwauSum + Maths.wmul(amount_, toBucket.price) - Maths.wmul(fromOnDeposit, fromBucket.price);
+                pwauSum = pwauSum + Maths.wmul(amount_, toBucket.price) - Maths.wmul(fromOnDeposit, fromBucket.price);
             }
         }
 

@@ -11,14 +11,14 @@ import { Maths }      from "../libraries/Maths.sol";
 
 
 /**
- * @notice Pool State Management related functionality
-*/
+ *  @notice Pool State Management related functionality
+ */
 abstract contract PoolState is IPoolState, Buckets {
 
     uint256 public override totalCollateral;    // [WAD]
     uint256 public override totalQuoteToken;    // [WAD]
 
-    /// @dev WAD The total global debt, in quote tokens, across all buckets in the pool
+    /** @dev WAD The total global debt, in quote tokens, across all buckets in the pool */
     uint256 public totalDebt;
 
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256 encumbrance_) {
@@ -31,20 +31,14 @@ abstract contract PoolState is IPoolState, Buckets {
     }
 
     function getPoolActualUtilization() public view override returns (uint256 poolActualUtilization_) {
-        if (totalDebt == 0) {
-            return 0;
-        }
-        return Maths.wdiv(Maths.wmul(lup, totalDebt), Maths.wmul(lup, totalDebt) + pwauSum);
+        poolActualUtilization_ = (totalDebt != 0) ? Maths.wdiv(Maths.wmul(lup, totalDebt), Maths.wmul(lup, totalDebt) + pwauSum) : 0;
     }
 
     function getPoolCollateralization() public view override returns (uint256 poolCollateralization_) {
-        if (lup != 0 && totalDebt != 0) {
-            return Maths.wrdivw(totalCollateral, getEncumberedCollateral(totalDebt));
-        }
-        return Maths.ONE_WAD;
+        poolCollateralization_ = (lup != 0 && totalDebt != 0) ? Maths.wrdivw(totalCollateral, getEncumberedCollateral(totalDebt)) : Maths.ONE_WAD;
     }
 
     function getPoolTargetUtilization() public view override returns (uint256 poolTargetUtilization_) {
-        return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
+        poolTargetUtilization_ = Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
     }
 }
