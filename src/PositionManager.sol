@@ -46,7 +46,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         positions[tokenId_].pool = params_.pool;
 
         emit Mint(params_.recipient, params_.pool, tokenId_);
-        return tokenId_;
     }
 
     /// TODO: (X) prices can be memorialized at a time
@@ -115,19 +114,19 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     /** @dev Used for tracking nonce input to permit function */
-    function _getAndIncrementNonce(uint256 tokenId_) internal override returns (uint256 nonce_) {
-        nonce_ = uint256(positions[tokenId_].nonce++);
+    function _getAndIncrementNonce(uint256 tokenId_) internal override returns (uint256) {
+        return uint256(positions[tokenId_].nonce++);
     }
 
     /**********************/
     /*** View Functions ***/
     /**********************/
 
-    function getLPTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256 lpTokens_) {
-        lpTokens_ = positions[tokenId_].lpTokens[price_];
+    function getLPTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256) {
+        return positions[tokenId_].lpTokens[price_];
     }
 
-    function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256 quoteTokens_) {
+    function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256) {
         Position storage position = positions[tokenId_];
 
         (uint256 collateral, uint256 quote) = ILenderManager(position.pool).getLPTokenExchangeValue(
@@ -135,7 +134,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             price_
         );
 
-        quoteTokens_ = quote + (collateral * price_);
+        return quote + (collateral * price_);
     }
 
 }

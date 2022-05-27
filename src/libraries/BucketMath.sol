@@ -48,16 +48,16 @@ library BucketMath {
      *          V2: index = (log(FLOAT_STEP) * price) /  MAX_PRICE
      *          V3 (final): index =  log_2(price) / log_2(FLOAT_STEP)
      */
-    function priceToIndex(uint256 price_) public pure returns (int256 index_) {
+    function priceToIndex(uint256 price_) public pure returns (int256) {
         require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
 
-        index_ = PRBMathSD59x18.div(
+        int index = PRBMathSD59x18.div(
             PRBMathSD59x18.log2(int256(price_)),
             PRBMathSD59x18.log2(FLOAT_STEP_INT)
         );
-        int256 ceilIndex = PRBMathSD59x18.ceil(index_);
-        if (index_ < 0) {
-            if (ceilIndex - index_ > 0.5 * 1e18) {
+        int256 ceilIndex = PRBMathSD59x18.ceil(index);
+        if (index < 0) {
+            if (ceilIndex - index > 0.5 * 1e18) {
                 return PRBMathSD59x18.toInt(ceilIndex) - 1;
             }
             return PRBMathSD59x18.toInt(ceilIndex);
@@ -74,10 +74,10 @@ library BucketMath {
      *          V2: price = MAX_PRICE * (FLOAT_STEP ** (abs(int256(index - MAX_PRICE_INDEX))));
      *          V3 (final): x^y = 2^(y*log_2(x))
      */
-    function indexToPrice(int256 index_) public pure returns (uint256 price_) {
+    function indexToPrice(int256 index_) public pure returns (uint256) {
         require(index_ >= MIN_PRICE_INDEX && index_ <= MAX_PRICE_INDEX, "BM:ITP:OOB");
 
-        price_ = uint256(
+        return uint256(
             PRBMathSD59x18.exp2(
                 PRBMathSD59x18.mul(
                     PRBMathSD59x18.fromInt(index_),
@@ -92,18 +92,18 @@ library BucketMath {
      *  @dev    Price needs to be cast to int, since indices can be negative
      *  @return isValid_ Boolean indicating if the given price is valid
      */
-    function isValidPrice(uint256 price_) public pure returns (bool isValid_) {
+    function isValidPrice(uint256 price_) public pure returns (bool) {
         int256 index = priceToIndex(price_);
         uint256 price = indexToPrice(index);
-        isValid_ = price_ == price;
+        return price_ == price;
     }
 
     /**
      *  @notice Determine if a given index is within the constant range
      *  @return isValid_ Boolean indicating if the given index is valid
     */
-    function isValidIndex(int256 index_) public pure returns (bool isValid_) {
-        isValid_ = index_ >= MIN_PRICE_INDEX && index_ <= MAX_PRICE_INDEX;
+    function isValidIndex(int256 index_) public pure returns (bool) {
+        return index_ >= MIN_PRICE_INDEX && index_ <= MAX_PRICE_INDEX;
     }
 
     /**

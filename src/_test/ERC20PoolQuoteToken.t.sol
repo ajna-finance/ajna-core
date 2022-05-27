@@ -68,7 +68,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         // test 10000 DAI deposit at price of 1 MKR = 4000 DAI
         vm.expectEmit(true, true, false, true);
@@ -83,7 +83,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         40_009_276.785805675373680000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   40_009_276.785805675373680000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);
@@ -127,7 +127,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 30_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         80_013_709.162620229385860000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   80_013_709.162620229385860000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   30_000 * 1e18);
@@ -163,7 +163,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 60_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         170_340_469.828556676121210000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   170_340_469.828556676121210000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   60_000 * 1e18);
@@ -205,7 +205,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 100_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         370_646_245.224762735012530000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   370_646_245.224762735012530000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   100_000 * 1e18);
@@ -241,7 +241,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 3_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         9_012_041.319619176795822000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   9_012_041.319619176795822000 * 1e18);
 
         // Borrower draws 2400 debt, utilizing all three
         _borrower.addCollateral(_pool, 10 * 1e18);
@@ -254,7 +254,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_400 * 1e18);
         assertEq(_pool.totalQuoteToken(), 600 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pwauSum(),         1_200_132.971304436620365400 * 1e18);
+        assertEq(_pool.pdAccumulator(),   1_200_132.971304436620365400 * 1e18);
 
         (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = _pool.bucketAt(_p4000);
         assertEq(deposit,       0);
@@ -288,7 +288,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_402.302473610465593061 * 1e18);
         assertEq(_pool.totalQuoteToken(), 2_600 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pwauSum(),         6_817_261.014035236782613209 * 1e18);
+        assertEq(_pool.pdAccumulator(),   6_817_261.014035236782613209 * 1e18);
 
         assertGt(_pool.getPoolCollateralization(), collateralizationBeforeAdd);
         assertLt(_pool.getPoolTargetUtilization(), targetUtilizationBeforeAdd);
@@ -325,7 +325,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_406.914049681454425699 * 1e18);
         assertEq(_pool.totalQuoteToken(), 5_600 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pwauSum(),         17_430_001.123340971637319850 * 1e18);
+        assertEq(_pool.pdAccumulator(),   17_430_001.123340971637319850 * 1e18);
 
         assertGt(_pool.getPoolCollateralization(), collateralizationBeforeAdd);
         assertLt(_pool.getPoolTargetUtilization(), targetUtilizationBeforeAdd);
@@ -367,7 +367,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 3_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         8_409_650.485087153473102000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   8_409_650.485087153473102000 * 1e18);
 
         // Borrower draws debt utilizing all buckets with liquidity
         _borrower.addCollateral(_pool, 10 * 1e18);
@@ -379,7 +379,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_100 * 1e18);
         assertEq(_pool.totalQuoteToken(), 900 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pwauSum(),         2_501_961.959549500275849300 * 1e18);
+        assertEq(_pool.pdAccumulator(),   2_501_961.959549500275849300 * 1e18);
 
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2779);
         assertEq(deposit, 900 * 1e18);
@@ -394,7 +394,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_100 * 1e18);
         assertEq(_pool.totalQuoteToken(), 1_400 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pwauSum(),         3_903_088.456474548739948200 * 1e18);
+        assertEq(_pool.pdAccumulator(),   3_903_088.456474548739948200 * 1e18);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p2821);
         assertEq(deposit, 0);
@@ -430,7 +430,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 4_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         11_315_823.174350100798832000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   11_315_823.174350100798832000 * 1e18);
 
         // Borrower draws 2000 debt fully utilizing the LUP
         _borrower.addCollateral(_pool, 10 * 1e18);
@@ -442,7 +442,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 2_000 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pwauSum(),         5_629_692.752254375388825000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   5_629_692.752254375388825000 * 1e18);
 
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2850);
         assertEq(deposit, 0);
@@ -469,7 +469,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 3_400 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pwauSum(),         9_600_058.134266353247365400 * 1e18);
+        assertEq(_pool.pdAccumulator(),   9_600_058.134266353247365400 * 1e18);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p2850);
         assertEq(deposit, 0);
@@ -502,7 +502,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         40_009_276.785805675373680000* 1e18);
+        assertEq(_pool.pdAccumulator(),   40_009_276.785805675373680000* 1e18);
 
         (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = _pool.bucketAt(_p4000);
         assertEq(deposit,       10_000 * 1e18);
@@ -524,7 +524,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         // check 4000 bucket balance
         (, , , deposit, debt, , lpOutstanding, ) = _pool.bucketAt(_p4000);
@@ -551,7 +551,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         40_009_276.785805675373680000* 1e18);
+        assertEq(_pool.pdAccumulator(),   40_009_276.785805675373680000* 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);
@@ -591,7 +591,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       5_000.028538894209302482 * 1e18);
         assertEq(_pool.totalQuoteToken(), 1_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         4_000_927.678580567537368000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   4_000_927.678580567537368000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   1_000 * 1e18);
@@ -623,7 +623,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 20_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         80_018_553.571611350747360000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   80_018_553.571611350747360000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_lender)),  190_000 * 1e18);
@@ -639,7 +639,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       10_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         40_009_276.785805675373680000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   40_009_276.785805675373680000 * 1e18);
 
         // borrower repays entire loan
         _quote.mint(address(_borrower), 1 * 1e18);
@@ -652,7 +652,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 20_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         80_018_553.571611350747360000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   80_018_553.571611350747360000 * 1e18);
 
         skip(8200);
 
@@ -671,7 +671,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         // check pool balances
         assertEq(_quote.balanceOf(address(_pool)),   0);
@@ -700,7 +700,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 6_800 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         23_840_186.982646726923724200 * 1e18);
+        assertEq(_pool.pdAccumulator(),   23_840_186.982646726923724200 * 1e18);
 
         // borrower takes a loan of 3000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
@@ -712,7 +712,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       3_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 3_800 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         11_837_403.946905024311620200 * 1e18);
+        assertEq(_pool.pdAccumulator(),   11_837_403.946905024311620200 * 1e18);
 
         uint256 poolCollateralizationAfterBorrow = _pool.getPoolCollateralization();
         uint256 targetUtilizationAfterBorrow     = _pool.getPoolTargetUtilization();
@@ -741,7 +741,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       3_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 2_800 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         8_430_497.662154068361966000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   8_430_497.662154068361966000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   2_800 * 1e18);
@@ -796,7 +796,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 9_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         30_068_135.168928991959174000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   30_068_135.168928991959174000 * 1e18);
 
         // borrower takes a loan of 4000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
@@ -809,7 +809,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       4_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 5_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         15_054_460.110989407789225000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   15_054_460.110989407789225000 * 1e18);
 
         uint256 bucketPendingDebt = 0;
         (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = _pool.bucketAt(priceMed);
@@ -849,7 +849,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       4_003.860309036160360017 * 1e18);
         assertEq(_pool.totalQuoteToken(), 1_997.104768222879729987 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         6_013_066.814135617899598994 * 1e18);
+        assertEq(_pool.pdAccumulator(),   6_013_066.814135617899598994 * 1e18);
 
         // confirm entire bid was removed
         (, , , deposit, debt, , lpOutstanding, ) = _pool.bucketAt(priceMed);
@@ -882,7 +882,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 4_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         11_315_823.174350100798832000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   11_315_823.174350100798832000 * 1e18);
 
         // check initial utilization after depositing but not borrowing
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
@@ -899,7 +899,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_400 * 1e18);
         assertEq(_pool.totalQuoteToken(), 1_600 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pwauSum(),         4_500_946.374994395888966200 * 1e18);
+        assertEq(_pool.pdAccumulator(),   4_500_946.374994395888966200 * 1e18);
 
         uint256 poolCollateralizationAfterBorrow  = _pool.getPoolCollateralization();
         uint256 targetUtilizationAfterBorrow      = _pool.getPoolTargetUtilization();
@@ -933,7 +933,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_400 * 1e18);
         assertEq(_pool.totalQuoteToken(), 600 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pwauSum(),         1_684_696.085462655983506800 * 1e18);
+        assertEq(_pool.pdAccumulator(),   1_684_696.085462655983506800 * 1e18);
 
         // check that utilization increased following the removal of deposit
         uint256 poolCollateralizationAfterRemove = _pool.getPoolCollateralization();
@@ -978,7 +978,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 5_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         13_012_484.557300632197040000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   13_012_484.557300632197040000 * 1e18);
 
         // borrower takes a loan which partially utilizes the middle bucket
         _borrower.addCollateral(_pool, 100 * 1e18);
@@ -992,7 +992,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       1_400.000095129380400679 * 1e18);
         assertEq(_pool.totalQuoteToken(), 3_600 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         7_807_200.069840912036534000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   7_807_200.069840912036534000 * 1e18);
 
         (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding,) = _pool.bucketAt(priceHigh);
         assertEq(deposit,       0);
@@ -1024,7 +1024,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       1_400.000228310522011229 * 1e18);
         assertEq(_pool.totalQuoteToken(), 3_100 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         6_301_754.058741971257611500 * 1e18);
+        assertEq(_pool.pdAccumulator(),   6_301_754.058741971257611500 * 1e18);
 
         (, , , deposit, debt, , lpOutstanding,) = _pool.bucketAt(priceHigh);
         assertEq(deposit,       0);
@@ -1056,7 +1056,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       1_400.000361491676291219 * 1e18);
         assertEq(_pool.totalQuoteToken(), 2_599.999923896492059618 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         5_200_576.056762010169614341 * 1e18);
+        assertEq(_pool.pdAccumulator(),   5_200_576.056762010169614341 * 1e18);
 
         (, , , deposit, debt, , lpOutstanding,) = _pool.bucketAt(priceHigh);
         assertEq(deposit,       0);
@@ -1094,7 +1094,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 15_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         45_060_206.598095883979110000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   45_060_206.598095883979110000 * 1e18);
 
         // check initial utilization after depositing but not borrowing
         uint256 collateralization = _pool.getPoolCollateralization();
@@ -1114,7 +1114,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       3_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 12_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         33_057_423.562354181367006000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   33_057_423.562354181367006000 * 1e18);
 
         // lender removes 1000 DAI under the lup - from bucket 3000
         vm.expectEmit(true, true, false, true);
@@ -1129,7 +1129,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       3_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 11_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         30_046_531.540156299809161000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   30_046_531.540156299809161000 * 1e18);
 
         // check pool collateralization
         collateralization = _pool.getPoolCollateralization();
@@ -1178,7 +1178,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         5_526_610.152862263924920000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   5_526_610.152862263924920000 * 1e18);
 
         // check initial utilization after depositing but not borrowing
         uint256 targetUtilization = _pool.getPoolTargetUtilization();
@@ -1197,7 +1197,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       borrowAmount);
         assertEq(_pool.totalQuoteToken(), 6_000 * 1e18);
         assertEq(_pool.totalCollateral(), 5.1 * 1e18);
-        assertEq(_pool.pwauSum(),         1_506_651.503145580824544 * 1e18);
+        assertEq(_pool.pdAccumulator(),   1_506_651.503145580824544 * 1e18);
 
         // removal should revert if pool remains undercollateralized
         vm.expectRevert("P:RQT:POOL_UNDER_COLLAT");
@@ -1210,7 +1210,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // check pool utilization after borrowing
         targetUtilization = _pool.getPoolTargetUtilization();
         actualUtilization = _pool.getPoolActualUtilization();
-        assertEq(actualUtilization, Maths.wdiv(Maths.wmul(priceLow, borrowAmount), Maths.wmul(priceLow, borrowAmount) + _pool.pwauSum()));
+        assertEq(actualUtilization, Maths.wdiv(Maths.wmul(priceLow, borrowAmount), Maths.wmul(priceLow, borrowAmount) + _pool.pdAccumulator()));
 
         // since pool is undercollateralized actualUtilization should be < targetUtilization
         assertLt(actualUtilization, targetUtilization);
@@ -1244,7 +1244,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 20_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         20_099_793.248583415501880000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   20_099_793.248583415501880000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_lender)),  190_000 * 1e18);
@@ -1267,7 +1267,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         10_049_896.624291707750940000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   10_049_896.624291707750940000 * 1e18);
 
         assertEq(_pool.lpBalance(address(_lender), priceLow),  0);
         assertEq(_pool.lpBalance(address(_lender1), priceLow), 10_000 * 1e27);
@@ -1283,7 +1283,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         // check balances
         assertEq(_quote.balanceOf(address(_lender)),  200_000 * 1e18);
@@ -1315,7 +1315,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 13_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         117_288_634.327801680306772000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   117_288_634.327801680306772000 * 1e18);
 
         // borrowers deposit collateral
         _borrower.addCollateral(_pool, 2 * 1e18);
@@ -1331,7 +1331,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       12_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 1_000 * 1e18);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         100_332.368143282009890000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   100_332.368143282009890000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 134.714209997512151990 * 1e18);
 
@@ -1348,7 +1348,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       13_000.284586055788614085 * 1e18);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         assertEq(_pool.getPoolCollateralization(), 1.558976515535795584 * 1e18);
 
@@ -1385,7 +1385,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       1_000.768675660288077071 * 1e18);
         assertEq(_pool.totalQuoteToken(), 12_000 * 1e18);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         107_271_580.039642907181124641 * 1e18);
+        assertEq(_pool.pdAccumulator(),   107_271_580.039642907181124641 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 2_021.779228553641576224 * 1e18);
 
@@ -1418,7 +1418,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       1_000.768675660288077071 * 1e18);
         assertEq(_pool.totalQuoteToken(), 10_999.939046765536327706 * 1e18);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         99_268_267.885325696167205095 * 1e18);
+        assertEq(_pool.pdAccumulator(),   99_268_267.885325696167205095 * 1e18);
     }
 
     /**
@@ -1437,7 +1437,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 4_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         16_003_710.714322270149472000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   16_003_710.714322270149472000 * 1e18);
 
         // remove max 5000 DAI at price of 1 MKR = 4_000.927678580567537368 DAI
         vm.expectEmit(true, true, false, true);
@@ -1452,7 +1452,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 0);
@@ -1469,7 +1469,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 2_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         8_001_855.357161135074736000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   8_001_855.357161135074736000 * 1e18);
 
         // remove uint256.max at price of 1 MKR = 4_000.927678580567537368 DAI
         vm.expectEmit(true, true, false, true);
@@ -1484,7 +1484,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 0);
@@ -1534,7 +1534,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         10_049_896.624291707750940000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   10_049_896.624291707750940000 * 1e18);
 
         (, uint256 up, uint256 down, , , , , ) = _pool.bucketAt(_p1004);
         assertEq(up,   _p1004);
@@ -1549,7 +1549,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         (, up, down, , , , , ) = _pool.bucketAt(_p1004);
         assertEq(up,   0);
@@ -1569,7 +1569,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 50_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         150_298_948.393042738130440000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   150_298_948.393042738130440000 * 1e18);
 
         (, up, down, , , , , ) = _pool.bucketAt(_p3010);
         assertEq(up,   _p3514);
@@ -1593,7 +1593,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 40_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         120_190_028.171063922551990000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   120_190_028.171063922551990000 * 1e18);
 
         (, up, down, , , , , ) = _pool.bucketAt(_p3010);
         assertEq(up,   0);
@@ -1614,7 +1614,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 30_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         100_187_811.982656645545900000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   100_187_811.982656645545900000 * 1e18);
 
         (, up, down, , , , , ) = _pool.bucketAt(_p2000);
         assertEq(up,   0);
@@ -1632,7 +1632,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 20_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         60_178_535.196850970172220000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   60_178_535.196850970172220000 * 1e18);
 
         (, up, down, , , , , ) = _pool.bucketAt(_p4000);
         assertEq(up,   0);
@@ -1653,7 +1653,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         25_035_190.242946951682950000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   25_035_190.242946951682950000 * 1e18);
 
         (, up, down, , , , , ) = _pool.bucketAt(_p3514);
         assertEq(up,   0);
@@ -1670,7 +1670,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         (, up, down, , , , , ) = _pool.bucketAt(_p2503);
         assertEq(up,   0);
@@ -1689,7 +1689,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 50_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         150_298_948.393042738130440000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   150_298_948.393042738130440000 * 1e18);
 
         (, up, down, , , , , ) = _pool.bucketAt(_p3010);
         assertEq(up,   _p3514);

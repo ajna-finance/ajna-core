@@ -70,7 +70,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 21_000 * 1e18);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         110_188_801.284803367782520000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   110_188_801.284803367782520000 * 1e18);
 
         // first borrower takes a loan of 11_000 DAI, pushing lup to 9_000
         _borrower.borrow(_pool, 11_000 * 1e18, 9_000 * 1e18);
@@ -127,7 +127,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       12_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 9_000 * 1e18);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         902_991.313289538089010000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   902_991.313289538089010000 * 1e18);
 
         assertEq(_pool.lastInflatorSnapshotUpdate(), 0);
 
@@ -181,7 +181,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       1000.013001099216594901 * 1e18);
         assertEq(_pool.totalQuoteToken(), 9_000 * 1e18);
         assertEq(_pool.totalCollateral(), 200.790937395069026649 * 1e18);
-        assertEq(_pool.pwauSum(),         902_991.313289538089010000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   902_991.313289538089010000 * 1e18);
 
         assertEq(_pool.inflatorSnapshot(),           1.000013001099216594901568631 * 1e27);
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
@@ -260,7 +260,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 13_000 * 1e18);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         117_288_634.327801680306772000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   117_288_634.327801680306772000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
@@ -277,7 +277,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       13_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         // check borrower 1 is undercollateralized and collateral not enough to cover debt
         (
@@ -316,7 +316,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       1_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 200.455302902616749046 * 1e18);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         assertEq(_pool.getPoolCollateralization(), 20.112155247098450521 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 1 * 1e18);
@@ -396,7 +396,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 13_000 * 1e18);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         117_288_634.327801680306772000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   117_288_634.327801680306772000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
@@ -415,7 +415,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       15_061.711532337016451987 * 1e18);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 202 * 1e18);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         assertEq(_pool.getPoolCollateralization(), 1.345606594670868806 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 1 * 1e18);
@@ -455,7 +455,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       1_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 200.189909584313202058 * 1e18);
-        assertEq(_pool.pwauSum(),         0);
+        assertEq(_pool.pdAccumulator(),   0);
 
         assertEq(_pool.getPoolCollateralization(), 20.085527706983651821 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 1 * 1e18);

@@ -51,14 +51,14 @@ abstract contract Interest is IInterest, PoolState {
 
     /**
      *  @notice Calculate the pending inflator based upon previous rate and last update
-     *  @return inflator_ The new pending inflator value as a RAY
+     *  @return The new pending inflator value as a RAY
      */
-    function getPendingInflator() public view returns (uint256 inflator_) {
+    function getPendingInflator() public view returns (uint256) {
         // calculate annualized interest rate
         uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
         // secondsSinceLastUpdate is unscaled
         uint256 secondsSinceLastUpdate = block.timestamp - lastInflatorSnapshotUpdate;
-        inflator_ = Maths.rmul(inflatorSnapshot, Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate));
+        return Maths.rmul(inflatorSnapshot, Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate));
     }
 
     /**
@@ -68,9 +68,9 @@ abstract contract Interest is IInterest, PoolState {
      *  @param  currentInflator_ RAY - The current debt inflator value
      *  @return interest_        WAD - The additional debt pending accumulation
      */
-    function getPendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256 interest_) {
+    function getPendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
         // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-        interest_ = Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
+        return Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
     }
 
     /**
@@ -78,9 +78,9 @@ abstract contract Interest is IInterest, PoolState {
      *  @param  price_    The price of the bucket to query.
      *  @return interest_ The current amount of unaccrued interest againt the queried bucket.
      */
-    function getPendingBucketInterest(uint256 price_) external view returns (uint256 interest_) {
+    function getPendingBucketInterest(uint256 price_) external view returns (uint256) {
         (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(price_);
-        interest_ = debt != 0 ? getPendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
+        return debt != 0 ? getPendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
     }
 
     /**
@@ -88,8 +88,8 @@ abstract contract Interest is IInterest, PoolState {
      *  @notice to discover pending pool debt
      *  @return interest_ - Unaccumulated pool interest, WAD
      */
-    function getPendingPoolInterest() external view returns (uint256 interest_) {
-        interest_ = totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
+    function getPendingPoolInterest() external view returns (uint256) {
+        return totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
     }
 
     function updateInterestRate() external override {

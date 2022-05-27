@@ -57,7 +57,7 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 9_000 * 1e18);
-        assertEq(_pool.pwauSum(),         24_050_428.089622859610921000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   24_050_428.089622859610921000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
@@ -71,7 +71,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       4_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 5_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         9_036_753.031683275440972000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   9_036_753.031683275440972000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 75.272300554947038946 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.571318056302942289 * 1e18);
@@ -119,7 +119,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       4_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 3_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         3_014_968.987287512325282000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   3_014_968.987287512325282000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 25.124741560729269377 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.571428571428571429 * 1e18);
@@ -164,7 +164,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 7_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         17_012_927.794982087598258000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   17_012_927.794982087598258000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
@@ -181,7 +181,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 5_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         10_001_108.094203638503045000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   10_001_108.094203638503045000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 150.544601109894077892 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.375823789632159460 * 1e18);
@@ -225,7 +225,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 4_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         8_000_886.475362910802436000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   8_000_886.475362910802436000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 100.011080942036385030 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.333333333333333333 * 1e18);
@@ -266,7 +266,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 2_500 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         8_011_930.510198812945517500 * 1e18);
+        assertEq(_pool.pdAccumulator(),   8_011_930.510198812945517500 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
@@ -284,7 +284,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 500 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         1_000_110.809420363850304500 * 1e18);
+        assertEq(_pool.pdAccumulator(),   1_000_110.809420363850304500 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 150.544601109894077892 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.857572517071109020 * 1e18);
@@ -309,7 +309,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 4_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         7_013_819.700778449095213000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   7_013_819.700778449095213000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
@@ -327,7 +327,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       2_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 2_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         2000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   2000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 150.544601109894077892 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.999667982785362184 * 1e18);

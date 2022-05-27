@@ -70,7 +70,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 50_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
-        assertEq(_pool.pwauSum(),         150_298_948.393042738130440000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   150_298_948.393042738130440000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
@@ -111,7 +111,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       21_000 * 1e18);
         assertEq(_pool.totalQuoteToken(), 29_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         72_135_434.631135162709645000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   72_135_434.631135162709645000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 14.337581058085150275 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.467100960483219645 * 1e18);
@@ -156,7 +156,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       30_000.273023083548492932 * 1e18);
         assertEq(_pool.totalQuoteToken(), 20_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         45_037_406.431354228689040000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   45_037_406.431354228689040000 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 10.036215403377052297 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.667289106899938774 * 1e18);
@@ -210,7 +210,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.totalDebt(),       30_000.273023083548492932 * 1e18);
         assertEq(_pool.totalQuoteToken(), 60_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pwauSum(),         200_375_041.251180507993985917 * 1e18);
+        assertEq(_pool.pdAccumulator(),   200_375_041.251180507993985917 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), 16.691996039676193853 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0.428488988084744935 * 1e18);

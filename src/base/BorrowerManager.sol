@@ -44,12 +44,15 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
 
     }
 
-    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256 borrowerCollateralization_) {
-        borrowerCollateralization_ = (lup != 0 && debt_ != 0) ? Maths.wrdivw(collateralDeposited_, getEncumberedCollateral(debt_)) :  Maths.ONE_WAD;
+    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256) {
+        if (lup != 0 && debt_ != 0) {
+            return Maths.wrdivw(collateralDeposited_, getEncumberedCollateral(debt_));
+        }
+        return Maths.ONE_WAD;
     }
 
-    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256 price_) {
-        price_ = estimatePrice(amount_, lup == 0 ? hpb : lup);
+    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256) {
+        return estimatePrice(amount_, lup == 0 ? hpb : lup);
     }
 
 }
