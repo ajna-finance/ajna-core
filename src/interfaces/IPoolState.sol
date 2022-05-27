@@ -2,8 +2,8 @@
 pragma solidity 0.8.11;
 
 /**
- * @title Ajna Pool State
- * @dev   Used for TODO: 
+ *  @title Ajna Pool State
+ *  @dev   Used for TODO: 
  */
 interface IPoolState {
 

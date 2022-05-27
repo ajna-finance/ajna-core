@@ -2,8 +2,8 @@
 pragma solidity 0.8.11;
 
 /**
- * @title Ajna Pool
- * @dev   Used to manage lender and borrower positions of ERC-20 tokens.
+ *  @title Ajna Pool
+ *  @dev   Used to manage lender and borrower positions of ERC-20 tokens.
  */
 interface ILenderManager {
 

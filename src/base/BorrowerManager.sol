@@ -9,8 +9,8 @@ import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
 
 /**
- * @notice Lender Management related functionality
-*/
+ *  @notice Lender Management related functionality
+ */
 abstract contract BorrowerManager is IBorrowerManager, Interest {
 
     // borrowers book: borrower address -> BorrowerInfo
@@ -28,35 +28,30 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
         )
     {
         BorrowerInfo memory borrower = borrowers[borrower_];
-        uint256 borrowerPendingDebt = borrower.debt;
-        uint256 collateralEncumbered;
-        uint256 collateralization = Maths.ONE_WAD;
 
-        if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
-            borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
-            collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization     = Maths.wrdivw(borrower.collateralDeposited, collateralEncumbered);
+        debt_                     = borrower.debt;
+        pendingDebt_              = borrower.debt;
+        collateralDeposited_      = borrower.collateralDeposited;
+        collateralization_        = Maths.ONE_WAD;
+        borrowerInflatorSnapshot_ = borrower.inflatorSnapshot;
+        inflatorSnapshot_         = inflatorSnapshot;
+
+        if (debt_ != 0 && borrowerInflatorSnapshot_ != 0) {
+            pendingDebt_          += getPendingInterest(debt_, getPendingInflator(), borrowerInflatorSnapshot_);
+            collateralEncumbered_ = getEncumberedCollateral(pendingDebt_);
+            collateralization_    = Maths.wrdivw(collateralDeposited_, collateralEncumbered_);
         }
 
-        return (
-            borrower.debt,
-            borrowerPendingDebt,
-            borrower.collateralDeposited,
-            collateralEncumbered,
-            collateralization,
-            borrower.inflatorSnapshot,
-            inflatorSnapshot
-        );
     }
 
-    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256 borrowerCollateralization_) {
+    function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256) {
         if (lup != 0 && debt_ != 0) {
             return Maths.wrdivw(collateralDeposited_, getEncumberedCollateral(debt_));
         }
         return Maths.ONE_WAD;
     }
 
-    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256 price_) {
+    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256) {
         return estimatePrice(amount_, lup == 0 ? hpb : lup);
     }
 

@@ -387,8 +387,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(_pool.lpBalance(address(_lender), _p9020), 0);
 
         (uint256 col, uint256 quoteVal) = _pool.getLPTokenExchangeValue(
-            _pool.lpBalance(address(_lender), 10_016.501589292607751220 * 1e18),
-            10_016.501589292607751220 * 1e18
+            _pool.lpBalance(address(_lender), _p10016), _p10016
         );
         assertEq(col,      1.198023071531052613 * 1e18);
         assertEq(quoteVal, 0);

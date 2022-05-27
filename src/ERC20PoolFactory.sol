@@ -28,9 +28,9 @@ contract ERC20PoolFactory is IPoolFactory {
 
         ERC20Pool pool = ERC20Pool(address(implementation).clone(data));
         pool.initialize();
+        pool_ = address(pool);
 
-        deployedPools[collateral_][quote_] = address(pool);
-        emit PoolCreated(address(pool));
-        return address(pool);
+        deployedPools[collateral_][quote_] = pool_;
+        emit PoolCreated(pool_);
     }
 }

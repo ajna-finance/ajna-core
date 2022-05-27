@@ -9,28 +9,19 @@ import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
 
 /**
- * @notice Lender Management related functionality
-*/
+ *  @notice Lender Management related functionality
+ */
 abstract contract LenderManager is ILenderManager, Buckets {
 
     /**
-     *  @dev    lender address -> price bucket [WAD] -> lender lp [RAY]
+     *  @dev lender address -> price bucket [WAD] -> lender lp [RAY]
      */
     mapping(address => mapping(uint256 => uint256)) public lpBalance;
 
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
         require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
 
-        (
-            ,
-            ,
-            ,
-            uint256 onDeposit,
-            uint256 debt,
-            ,
-            uint256 lpOutstanding,
-            uint256 bucketCollateral
-        ) = bucketAt(price_);
+        ( , , , uint256 onDeposit, uint256 debt, , uint256 lpOutstanding, uint256 bucketCollateral) = bucketAt(price_);
 
         // calculate lpTokens share of all outstanding lpTokens for the bucket
         uint256 lenderShare = Maths.rdiv(lpTokens_, lpOutstanding);

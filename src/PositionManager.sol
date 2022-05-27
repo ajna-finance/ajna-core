@@ -31,13 +31,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
         require(_exists(tokenId_));
 
-        // get position information for the given token
-        Position storage position = positions[tokenId_];
-
         // TODO: access the prices at which a tokenId has added liquidity
         uint256[] memory prices;
 
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, position.pool, prices);
+        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, positions[tokenId_].pool, prices);
 
         return constructTokenURI(params);
     }
@@ -46,11 +43,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         _safeMint(params_.recipient, (tokenId_ = _nextId++));
 
         // create a new position associated with the newly minted tokenId
-        Position storage position = positions[tokenId_];
-        position.pool = params_.pool;
+        positions[tokenId_].pool = params_.pool;
 
         emit Mint(params_.recipient, params_.pool, tokenId_);
-        return tokenId_;
     }
 
     /// TODO: (X) prices can be memorialized at a time
@@ -90,8 +85,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
-        Position storage position = positions[params_.tokenId];
-
         IPool pool = IPool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
@@ -106,7 +99,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         }
 
         // update position with newly removed lp shares
-        position.lpTokens[params_.price] -= params_.lpTokens;
+        positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
 
         // TODO: check if price updates
         emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteTokenToRemove);
@@ -117,8 +110,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
      * @dev    This call also executes upon Mint
     */
     function _afterTokenTransfer(address, address to_, uint256 tokenId_) internal virtual override(ERC721) {
-        Position storage position = positions[tokenId_];
-        position.owner = to_;
+        positions[tokenId_].owner = to_;
     }
 
     /** @dev Used for tracking nonce input to permit function */
@@ -130,11 +122,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /*** View Functions ***/
     /**********************/
 
-    function getLPTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256 lpTokens_) {
-        lpTokens_ = positions[tokenId_].lpTokens[price_];
+    function getLPTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256) {
+        return positions[tokenId_].lpTokens[price_];
     }
 
-    function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256 quoteTokens_) {
+    function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256) {
         Position storage position = positions[tokenId_];
 
         (uint256 collateral, uint256 quote) = ILenderManager(position.pool).getLPTokenExchangeValue(
@@ -142,7 +134,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             price_
         );
 
-        quoteTokens_ = quote + (collateral * price_);
+        return quote + (collateral * price_);
     }
 
 }

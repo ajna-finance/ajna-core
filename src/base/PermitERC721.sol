@@ -7,23 +7,18 @@ import { Address }  from "@openzeppelin/contracts/utils/Address.sol";
 
 interface IPermit {
     function permit(
-        address spender_,
-        uint256 tokenId_,
-        uint256 deadline_,
-        uint8 v_,
-        bytes32 r_,
-        bytes32 s_
+        address spender_, uint256 tokenId_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
     ) external payable;
 }
 
 /**
- * https://soliditydeveloper.com/erc721-permit
- * @notice Functionality to enable EIP-4494 permit calls as part of interactions with Position NFTs
- * @dev spender https://eips.ethereum.org/EIPS/eip-4494
-*/
+ *  @notice https://soliditydeveloper.com/erc721-permit
+ *  @notice Functionality to enable EIP-4494 permit calls as part of interactions with Position NFTs
+ *  @dev    spender https://eips.ethereum.org/EIPS/eip-4494
+ */
 abstract contract PermitERC721 is ERC721, IPermit {
 
-    /// @dev Gets the current nonce for a token ID and then increments it, returning the original value
+    /** @dev Gets the current nonce for a token ID and then increments it, returning the original value */
     function _getAndIncrementNonce(uint256 tokenId_) internal virtual returns (uint256);
 
     /** @dev The hash of the name used in the permit signature verification */
@@ -45,9 +40,9 @@ abstract contract PermitERC721 is ERC721, IPermit {
     }
 
     /**
-     * @notice Calculate the EIP-712 compliant DOMAIN_SEPERATOR for ledgible signature encoding
-     * @return The bytes32 domain separator of Position NFTs
-    */
+     *  @notice Calculate the EIP-712 compliant DOMAIN_SEPERATOR for ledgible signature encoding
+     *  @return The bytes32 domain separator of Position NFTs
+     */
     function DOMAIN_SEPARATOR() public view returns (bytes32) {
         return
             keccak256(
@@ -63,14 +58,14 @@ abstract contract PermitERC721 is ERC721, IPermit {
     }
 
     /**
-     * @notice Called by a NFT owner to enable a third party spender to interact with their NFT
-     * @param spender_ The address of the third party who will execute the transaction involving an owners NFT
-     * @param tokenId_ The id of the NFT being interacted with
-     * @param deadline_ The unix timestamp by which the permit must be called
-     * @param v_ Component of secp256k1 signature
-     * @param r_ Component of secp256k1 signature
-     * @param s_ Component of secp256k1 signature
-    */
+     *  @notice Called by a NFT owner to enable a third party spender to interact with their NFT
+     *  @param spender_  The address of the third party who will execute the transaction involving an owners NFT
+     *  @param tokenId_  The id of the NFT being interacted with
+     *  @param deadline_ The unix timestamp by which the permit must be called
+     *  @param v_        Component of secp256k1 signature
+     *  @param r_        Component of secp256k1 signature
+     *  @param s_        Component of secp256k1 signature
+     */
     function permit(
         address spender_, uint256 tokenId_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
     ) external payable {
@@ -110,16 +105,16 @@ abstract contract PermitERC721 is ERC721, IPermit {
     }
 
     /**
-     * @notice Called by an NFT owner to enable their NFT to be transferred by a spender address without making a seperate approve call
-     * @param from_ The address of the current owner of the NFT
-     * @param to_ The address of the new owner of the NFT
-     * @param spender_ The address of the third party who will execute the transaction involving an owners NFT
-     * @param tokenId_ The id of the NFT being interacted with
-     * @param deadline_ The unix timestamp by which the permit must be called
-     * @param v_ Component of secp256k1 signature
-     * @param r_ Component of secp256k1 signature
-     * @param s_ Component of secp256k1 signature
-    */
+     *  @notice Called by an NFT owner to enable their NFT to be transferred by a spender address without making a seperate approve call
+     *  @param  from_     The address of the current owner of the NFT
+     *  @param  to_       The address of the new owner of the NFT
+     *  @param  spender_  The address of the third party who will execute the transaction involving an owners NFT
+     *  @param  tokenId_  The id of the NFT being interacted with
+     *  @param  deadline_ The unix timestamp by which the permit must be called
+     *  @param  v_        Component of secp256k1 signature
+     *  @param  r_        Component of secp256k1 signature
+     *  @param  s_        Component of secp256k1 signature
+     */
     function safeTransferFromWithPermit(
         address from_, address to_, address spender_, uint256 tokenId_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_
     ) external {
@@ -128,9 +123,9 @@ abstract contract PermitERC721 is ERC721, IPermit {
     }
 
     /**
-     * @dev Gets the current chain ID
-     * @return chainId_ The current chain ID
-    */
+     *  @dev Gets the current chain ID
+     *  @return chainId_ The current chain ID
+     */
     function getChainId() internal view returns (uint256 chainId_) {
         assembly {
             chainId_ := chainid()

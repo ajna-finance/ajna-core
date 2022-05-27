@@ -2,8 +2,8 @@
 pragma solidity 0.8.11;
 
 /**
- * @title Ajna Pool Interest Manager
- * @dev   Used for TODO: 
+ *  @title Ajna Pool Interest Manager
+ *  @dev   Used for TODO: 
  */
 interface IInterest {
 
@@ -28,9 +28,9 @@ interface IInterest {
      */
     function previousRateUpdate() external view returns (uint256 previousRateUpdate_);
 
-    /*******************************/
+    /**********************************************/
     /*** Interest Management External Functions ***/
-    /*******************************/
+    /**********************************************/
 
     /**
      *  @notice Called to update the pool interest rate when actual > target utilization.
