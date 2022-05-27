@@ -51,16 +51,14 @@ library BucketMath {
     function priceToIndex(uint256 price_) public pure returns (int256) {
         require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
 
-        int index = PRBMathSD59x18.div(
+        int256 index = PRBMathSD59x18.div(
             PRBMathSD59x18.log2(int256(price_)),
             PRBMathSD59x18.log2(FLOAT_STEP_INT)
         );
+
         int256 ceilIndex = PRBMathSD59x18.ceil(index);
-        if (index < 0) {
-            if (ceilIndex - index > 0.5 * 1e18) {
-                return PRBMathSD59x18.toInt(ceilIndex) - 1;
-            }
-            return PRBMathSD59x18.toInt(ceilIndex);
+        if (index < 0 && ceilIndex - index > 0.5 * 1e18) {
+            return PRBMathSD59x18.toInt(ceilIndex) - 1;
         }
         return PRBMathSD59x18.toInt(ceilIndex);
     }
