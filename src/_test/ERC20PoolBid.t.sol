@@ -68,13 +68,13 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.totalDebt(),       4_000 * 1e18);
+        assertEq(_pool.totalDebt(),       4_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 5_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pdAccumulator(),   9_036_753.031683275440972000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 75.272300554947038946 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(), 0.571318056302942289 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 75.272282460648370521 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(), 0.571318115176428157 * 1e18);
 
         // check bidder and pool balances after borrowing and before purchaseBid
         assertEq(_collateral.balanceOf(address(_bidder)), 100 * 1e18);
@@ -90,7 +90,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         // check 3_010.892022197881557845 bucket balance before purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p3010);
         assertEq(deposit,          2_000 * 1e18);
-        assertEq(debt,             1_000 * 1e18);
+        assertEq(debt,             1_000.000961538461538462 * 1e18);
         assertEq(bucketCollateral, 0);
 
         // should revert if invalid price
@@ -116,13 +116,13 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         assertEq(_pool.lup(), _p1004);
 
-        assertEq(_pool.totalDebt(),       4_000 * 1e18);
+        assertEq(_pool.totalDebt(),       4_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 3_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pdAccumulator(),   3_014_968.987287512325282000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 25.124741560729269377 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(), 0.571428571428571429 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 25.124735521129384490 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(), 0.571428630298265069 * 1e18);
 
         // check bidder and pool balances
         assertEq(_collateral.balanceOf(address(_bidder)), 99.500115932935445693 * 1e18);
@@ -139,7 +139,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         // check 3_010.892022197881557845 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p3010);
         assertEq(deposit,          0);
-        assertEq(debt,             3_000 * 1e18);
+        assertEq(debt,             3_000.000961538461538462 * 1e18);
         assertEq(bucketCollateral, 0);
 
         // check 1_004.989662429170775094 bucket balance after purchase bid
@@ -178,13 +178,13 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.totalDebt(),       2_000 * 1e18);
+        assertEq(_pool.totalDebt(),       2_000.001923076923076924 * 1e18);
         assertEq(_pool.totalQuoteToken(), 5_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pdAccumulator(),   10_001_108.094203638503045000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 150.544601109894077892 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(), 0.375823789632159460 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 150.544456355609120576 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(), 0.375824015190028699 * 1e18);
 
         // check bidder and pool balances
         assertEq(_collateral.balanceOf(address(_bidder)), 100 * 1e18);
@@ -195,13 +195,13 @@ contract ERC20PoolBidTest is DSTestPlus {
         // check 4_000.927678580567537368 bucket balance before purchase Bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _pool.bucketAt(_p4000);
         assertEq(deposit,          0);
-        assertEq(debt,             1_000 * 1e18);
+        assertEq(debt,             1_000.000961538461538462 * 1e18);
         assertEq(bucketCollateral, 0);
 
         // check 3_010.892022197881557845 bucket balance before purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p3010);
         assertEq(deposit,          0);
-        assertEq(debt,             1_000 * 1e18);
+        assertEq(debt,             1_000.000961538461538462 * 1e18);
         assertEq(bucketCollateral, 0);
 
         // check 2_000.221618840727700609 bucket balance before purchase bid
@@ -212,46 +212,46 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         // purchase 1000 bid - entire amount in 4000 bucket
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_bidder), address(_pool), 0.249942033532277153 * 1e18);
+        emit Transfer(address(_bidder), address(_pool), 0.249942273861155550 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_bidder), 1_000 * 1e18);
+        emit Transfer(address(_pool), address(_bidder), 1_000.000961538461538462 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Purchase(address(_bidder), _p4000, 1_000 * 1e18, 0.249942033532277153 * 1e18);
-        _bidder.purchaseBid(_pool, 1_000 * 1e18, _p4000);
+        emit Purchase(address(_bidder), _p4000, 1_000.000961538461538462 * 1e18, 0.249942273861155550 * 1e18);
+        _bidder.purchaseBid(_pool, 1_000.000961538461538462 * 1e18, _p4000);
 
         assertEq(_pool.hpb(), _p3010); // hbp should be pushed downwards
         assertEq(_pool.lup(), _p2000); // lup should be pushed downwards
 
-        assertEq(_pool.totalDebt(),       2_000 * 1e18);
-        assertEq(_pool.totalQuoteToken(), 4_000 * 1e18);
+        assertEq(_pool.totalDebt(),       2_000.001923076923076924 * 1e18);
+        assertEq(_pool.totalQuoteToken(), 3_999.999038461538461538 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pdAccumulator(),   8_000_886.475362910802436000 * 1e18);
+        assertEq(_pool.pdAccumulator(),   8_000_884.552072892686350749 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 100.011080942036385030 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(), 0.333333333333333333 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 100.010984777627945004 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(), 0.333333600427307624 * 1e18);
 
         // check bidder and pool balances
-        assertEq(_collateral.balanceOf(address(_bidder)), 99.750057966467722847 * 1e18);
-        assertEq(_quote.balanceOf(address(_bidder)),      1_000 * 1e18);
-        assertEq(_collateral.balanceOf(address(_pool)),   100.249942033532277153 * 1e18);
-        assertEq(_quote.balanceOf(address(_pool)),        4_000 * 1e18);
+        assertEq(_collateral.balanceOf(address(_bidder)), 99.750057726138844450 * 1e18);
+        assertEq(_quote.balanceOf(address(_bidder)),      1_000.000961538461538462 * 1e18);
+        assertEq(_collateral.balanceOf(address(_pool)),   100.249942273861155550 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)),        3_999.999038461538461538 * 1e18);
 
         // check 4_000.927678580567537368 bucket balance after purchase Bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p4000);
         assertEq(deposit,          0);
         assertEq(debt,             0);
-        assertEq(bucketCollateral, 0.249942033532277153 * 1e18);
+        assertEq(bucketCollateral, 0.249942273861155550 * 1e18);
 
         // check 3_010.892022197881557845 bucket balance
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p3010);
         assertEq(deposit,          0);
-        assertEq(debt,             1_000 * 1e18);
+        assertEq(debt,             1_000.000961538461538462 * 1e18);
         assertEq(bucketCollateral, 0);
 
         // check 2_000.221618840727700609 bucket balance
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(_p2000);
-        assertEq(deposit,          4_000 * 1e18);
-        assertEq(debt,             1_000 * 1e18);
+        assertEq(deposit,          3_999.999038461538461538 * 1e18);
+        assertEq(debt,             1_000.000961538461538462 * 1e18);
         assertEq(bucketCollateral, 0);
     }
 
@@ -281,13 +281,13 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.totalDebt(),       2_000 * 1e18);
+        assertEq(_pool.totalDebt(),       2_000.001923076923076924 * 1e18);
         assertEq(_pool.totalQuoteToken(), 500 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pdAccumulator(),   1_000_110.809420363850304500 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 150.544601109894077892 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(), 0.857572517071109020 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 150.544456355609120576 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(), 0.857572634515142018 * 1e18);
 
         // should revert if trying to bid more than available liquidity (1000 vs 500)
         vm.expectRevert("B:RD:NO_REALLOC_LOCATION");
@@ -324,13 +324,13 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.totalDebt(),       2_000 * 1e18);
+        assertEq(_pool.totalDebt(),       2_000.001923076923076924 * 1e18);
         assertEq(_pool.totalQuoteToken(), 2_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pdAccumulator(),   2000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), 150.544601109894077892 * 1e18);
-        assertEq(_pool.getPoolActualUtilization(), 0.999667982785362184 * 1e18);
+        assertEq(_pool.getPoolCollateralization(), 150.544456355609120576 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(), 0.999667983104503203 * 1e18);
 
         // should revert when leave pool undercollateralized
         vm.expectRevert("P:PB:POOL_UNDER_COLLAT");

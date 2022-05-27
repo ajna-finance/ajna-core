@@ -64,14 +64,14 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
 
         skip(8200);
 
-        assertEq(_pool.getPoolActualUtilization(), 0.833333333333333333 * 1e18);
-        assertEq(_pool.getPoolTargetUtilization(), 0.099859436886217129 * 1e18);
+        assertEq(_pool.getPoolActualUtilization(), 0.833333338675213504 * 1e18);
+        assertEq(_pool.getPoolTargetUtilization(), 0.099859440726964702 * 1e18);
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.086673629908233477 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.086673629983287610 * 1e18);
         _lender.updateInterestRate(_pool);
 
-        assertEq(_pool.previousRate(),               0.086673629908233477 * 1e18);
+        assertEq(_pool.previousRate(),               0.086673629983287610 * 1e18);
         assertEq(_pool.previousRateUpdate(),         8200);
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
     }
@@ -89,15 +89,15 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
 
         // borrower draws debt with a low collateralization ratio
         _borrower.addCollateral(_pool, 0.049988406706455432 * 1e18);
-        _borrower.borrow(_pool, 200 * 1e18, 0);
+        _borrower.borrow(_pool, 200 * 1e18 - 0.000961538461538462 * 1e18, 0); // borrow 200 minus fee
         skip(14);
 
         assertLt(_pool.getPoolActualUtilization(), _pool.getPoolTargetUtilization());
 
         vm.expectEmit(true, true, false, true);
-        emit UpdateInterestRate(0.05 * 1e18, 0.009999998890157270 * 1e18);
+        emit UpdateInterestRate(0.05 * 1e18, 0.009999989274781901 * 1e18);
         _lender.updateInterestRate(_pool);
-        assertEq(_pool.previousRate(), 0.009999998890157270 * 1e18);
+        assertEq(_pool.previousRate(), 0.009999989274781901 * 1e18);
     }
 
     /**
@@ -111,7 +111,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
 
         // borrower utilizes the entire pool
         _borrower.addCollateral(_pool, 0.000284548895761533 * 1e18);
-        _borrower.borrow(_pool, 1 * 1e18, 0);
+        _borrower.borrow(_pool, 1 * 1e18 - 0.000961538461538462 * 1e18, 0); // borrow 1 minus fee
         uint256 lastRate = _pool.previousRate();
         skip(3600 * 24);
 

@@ -241,10 +241,11 @@ abstract contract Buckets {
     /**
      *  @notice Called by a borrower to borrow from a given bucket
      *  @param  amount_   The amount of quote tokens to borrow from the bucket, WAD
+     *  @param  fee_      The amount of quote tokens to pay as origination fee, WAD
      *  @param  limit_    The lowest price desired to borrow at, WAD
      *  @param  inflator_ The current pool inflator rate, RAY
      */
-    function borrowFromBucket(uint256 amount_, uint256 limit_, uint256 inflator_) internal {
+    function borrowFromBucket(uint256 amount_, uint256 fee_, uint256 limit_, uint256 inflator_) internal {
         // if first loan then borrow at HPB price, otherwise at LUP
         uint256 price = lup == 0 ? hpb : lup;
         Bucket storage curLup = _buckets[price];
@@ -266,7 +267,7 @@ abstract contract Buckets {
                 // take all remaining amount for loan from this bucket and exit
                 curLup.onDeposit -= amount_;
                 pdRemove         += Maths.wmul(amount_, curLup.price);
-                curLup.debt      += amount_;
+                curLup.debt      += amount_ + fee_;
                 break;
             }
 

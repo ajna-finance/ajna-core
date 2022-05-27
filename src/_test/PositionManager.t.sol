@@ -337,7 +337,7 @@ contract PositionManagerTest is DSTestPlus {
         testBorrower.borrow(_pool, 2_500 * 1e18, testBucketPrice);
         assertEq(_pool.lup(),       testBucketPrice);
         assertEq(_pool.hpb(),       testBucketPrice);
-        assertEq(_pool.totalDebt(), 2_500 * 1e18);
+        assertEq(_pool.totalDebt(), 2_500.000961538461538462 * 1e18);
 
         UserWithCollateral testBidder = new UserWithCollateral();
         mintAndApproveCollateralTokens(testBidder, 50000 * 1e18);

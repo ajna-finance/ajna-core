@@ -13,12 +13,14 @@ import { Maths } from "../libraries/Maths.sol";
  */
 abstract contract Interest is IInterest, PoolState {
 
-    uint256 public constant SECONDS_PER_YEAR = 3600 * 24 * 365;
+    uint256 public constant SECONDS_PER_YEAR   = 3600 * 24 * 365;
+    uint256 public constant WAD_WEEKS_PER_YEAR = 52 * 10**18;
 
     uint256 public inflatorSnapshot; // RAY
     uint256 public lastInflatorSnapshotUpdate;
     uint256 public previousRate; // WAD
     uint256 public override previousRateUpdate;
+    uint256 public minFee; // WAD
 
     /**
      *  @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.

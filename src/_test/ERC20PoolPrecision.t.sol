@@ -109,7 +109,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), BUCKET_PRICE);
 
-        assertEq(_pool.totalDebt(),       10_000 * _quotePoolPrecision);
+        assertEq(_pool.totalDebt(),       10_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 0);
         assertEq(_pool.totalCollateral(), 100 * _collateralPoolPrecision);
         assertEq(_pool.pdAccumulator(),   0);
@@ -131,7 +131,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), BUCKET_PRICE);
 
-        assertEq(_pool.totalDebt(),       5_000 * _quotePoolPrecision);
+        assertEq(_pool.totalDebt(),       5_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 5_000 * _quotePoolPrecision);
         assertEq(_pool.totalCollateral(), 100 * _collateralPoolPrecision);
         assertEq(_pool.pdAccumulator(),   10_001_108.094203638503045000 * 1e18);
@@ -153,7 +153,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), BUCKET_PRICE);
 
-        assertEq(_pool.totalDebt(),       5_000 * _quotePoolPrecision);
+        assertEq(_pool.totalDebt(),       5_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 4_000 * _quotePoolPrecision);
         assertEq(_pool.totalCollateral(), 100 * _collateralPoolPrecision);
         assertEq(_pool.pdAccumulator(),   8_000_886.475362910802436000 * 1e18);
@@ -169,13 +169,13 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         // claim collateral
         assertClaimCollateral();
         vm.expectEmit(true, true, false, true);
-        emit ClaimCollateral(address(_lender), BUCKET_PRICE, 0.499944601428501671 * 10**18, 999.9999999999999987866 * 10**27);
+        emit ClaimCollateral(address(_lender), BUCKET_PRICE, 0.499944601428501671 * 10**18, 999.999903846163090501641306327 * 10**27);
         _lender.claimCollateral(_pool, address(_lender), 0.499944601428501671 * 1e18, BUCKET_PRICE);
 
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), BUCKET_PRICE);
 
-        assertEq(_pool.totalDebt(),       5_000 * _quotePoolPrecision);
+        assertEq(_pool.totalDebt(),       5_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 4_000 * _quotePoolPrecision);
         assertEq(_pool.totalCollateral(), 100 * _collateralPoolPrecision);
         assertEq(_pool.pdAccumulator(),   8_000_886.475362910802436000 * 1e18);
@@ -197,7 +197,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), BUCKET_PRICE);
 
-        assertEq(_pool.totalDebt(),       5_000 * _quotePoolPrecision);
+        assertEq(_pool.totalDebt(),       5_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 4_000 * _quotePoolPrecision);
         assertEq(_pool.totalCollateral(), 99.500055398571498329 * 1e18);
         assertEq(_pool.pdAccumulator(),   8_000_886.475362910802436000 * 1e18);
