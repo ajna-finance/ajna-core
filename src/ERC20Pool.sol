@@ -45,6 +45,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         lastInflatorSnapshotUpdate = block.timestamp;
         previousRate               = Maths.wdiv(5, 100);
         previousRateUpdate         = block.timestamp;
+        minFee                     = Maths.wdiv(5, 10_000);
 
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
@@ -189,17 +190,18 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
-        // borrow amount from buckets with limit price
-        borrowFromBucket(amount_, limitPrice_, inflatorSnapshot);
+        // borrow amount from buckets with limit price and apply the origination fee
+        uint256 fee = Maths.max(Maths.wdiv(previousRate, WAD_WEEKS_PER_YEAR), minFee);
+        borrowFromBucket(amount_, fee, limitPrice_, inflatorSnapshot);
 
-        require(borrower.collateralDeposited > Maths.rayToWad(getEncumberedCollateral(borrower.debt + amount_)), "P:B:INSUF_COLLAT");
+        require(borrower.collateralDeposited > Maths.rayToWad(getEncumberedCollateral(borrower.debt + amount_ + fee)), "P:B:INSUF_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount_;
-        totalDebt       += amount_;
+        totalDebt       += amount_ + fee;
 
         // borrower accounting
-        borrower.debt   += amount_;
+        borrower.debt   += amount_ + fee;
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
 
