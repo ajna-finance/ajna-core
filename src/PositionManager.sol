@@ -40,12 +40,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /*** Lender Functions ***/
     /************************/
 
-<<<<<<< HEAD
-        // TODO: access the prices at which a tokenId has added liquidity
-        uint256[] memory prices;
-
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, positions[tokenId_].pool, prices);
-=======
     // TODO: Update burn check to ensure all position prices have removed liquidity
     function burn(BurnParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
         require(positions[params_.tokenId].lpTokens[params_.price] == 0, "PM:B:LIQ_NOT_REMOVED");
@@ -54,13 +48,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
-        Position storage position = positions[params_.tokenId];
-
         IPool pool = IPool(params_.pool);
->>>>>>> 85b1b35 (formatting: add section labels, order functions)
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool.getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         pool.removeQuoteToken(params_.recipient, quoteTokenToRemove, params_.price);
 
@@ -71,7 +62,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         }
 
         // update position with newly removed lp shares
-        position.lpTokens[params_.price] -= params_.lpTokens;
+        positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
 
         // TODO: check if price updates
         emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteTokenToRemove);
@@ -83,17 +74,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         // TODO: figure out how to test this case
         require(lpTokensAdded != 0, "PM:IL:NO_LP_TOKENS");
 
-<<<<<<< HEAD
-        // create a new position associated with the newly minted tokenId
-        positions[tokenId_].pool = params_.pool;
-
-        emit Mint(params_.recipient, params_.pool, tokenId_);
-=======
         // update position with newly added lp shares
         positions[params_.tokenId].lpTokens[params_.price] += lpTokensAdded;
 
         emit IncreaseLiquidity(params_.recipient, params_.price, params_.amount);
->>>>>>> 85b1b35 (formatting: add section labels, order functions)
     }
 
     /// TODO: (X) prices can be memorialized at a time
@@ -117,44 +101,19 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         _safeMint(params_.recipient, (tokenId_ = _nextId++));
 
         // create a new position associated with the newly minted tokenId
-        Position storage position = positions[tokenId_];
-        position.pool = params_.pool;
+        positions[tokenId_].pool = params_.pool;
 
         emit Mint(params_.recipient, params_.pool, tokenId_);
-        return tokenId_;
     }
 
-<<<<<<< HEAD
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
-        IPool pool = IPool(params_.pool);
-
-        // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
-
-        pool.removeQuoteToken(params_.recipient, quoteTokenToRemove, params_.price);
-
-        // enable lenders to remove quote token from a bucket that no debt is added to
-        if (collateralToRemove != 0) {
-            // claim any unencumbered collateral accrued to the price bucket
-            pool.claimCollateral(params_.recipient, Maths.rayToWad(collateralToRemove), params_.price);
-        }
-
-        // update position with newly removed lp shares
-        positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
-
-        // TODO: check if price updates
-        emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteTokenToRemove);
-    }
-=======
     /**************************/
     /*** Internal Functions ***/
     /**************************/
->>>>>>> 85b1b35 (formatting: add section labels, order functions)
 
     /**
-     *  @notice Override ERC721 afterTokenTransfer hook to ensure that transferred NFT's are properly tracked within the PositionManager data struct
-     *  @dev    This call also executes upon Mint
-     */
+     * @notice Override ERC721 afterTokenTransfer hook to ensure that transferred NFT's are properly tracked within the PositionManager data struct
+     * @dev    This call also executes upon Mint
+    */
     function _afterTokenTransfer(address, address to_, uint256 tokenId_) internal virtual override(ERC721) {
         positions[tokenId_].owner = to_;
     }
@@ -186,13 +145,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
         require(_exists(tokenId_));
 
-        // get position information for the given token
-        Position storage position = positions[tokenId_];
-
         // TODO: access the prices at which a tokenId has added liquidity
         uint256[] memory prices;
 
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, position.pool, prices);
+        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, positions[tokenId_].pool, prices);
 
         return constructTokenURI(params);
     }

@@ -108,41 +108,11 @@ interface IPool {
     function collateralScale() external view returns (uint256 collateralScale_);
 
     /**
-<<<<<<< HEAD
-=======
-     *  @notice Returns the `previousRateUpdate` state variable.
-     *  @return previousRateUpdate_ The timestamp of the last rate update.
-     */
-    function previousRateUpdate() external view returns (uint256 previousRateUpdate_);
-
-    /**
->>>>>>> 85b1b35 (formatting: add section labels, order functions)
      *  @notice Returns the `quoteTokenScale` state variable.
      *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
      */
     function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
 
-<<<<<<< HEAD
-=======
-    /**
-     *  @notice Returns the `totalCollateral` state variable.
-     *  @return totalCollateral_ THe total amount of collateral in the system, in WAD units.
-     */
-    function totalCollateral() external view returns (uint256 totalCollateral_);
-
-    /**
-     *  @notice Returns the `totalQuoteToken` state variable.
-     *  @return totalQuoteToken_ The total amount of quote token in the system, in WAD units.
-     */
-    function totalQuoteToken() external view returns (uint256 totalQuoteToken_);
-
-    /**
-     *  @notice Returns the `totalDebt` state variable.
-     *  @return totalDebt_ The total amount of debt in the system, in WAD units.
-     */
-    function totalDebt() external view returns (uint256 totalDebt_);
-
->>>>>>> 85b1b35 (formatting: add section labels, order functions)
     /*****************************/
     /*** Inititalize Functions ***/
     /*****************************/
