@@ -5,6 +5,7 @@ library Maths {
 
     uint256 public constant WAD = 10**18;
     uint256 public constant ONE_WAD = 1 * WAD;
+    uint256 public constant TEN_WAD = 10 * WAD;
 
     uint256 public constant RAY = 10**27;
     uint256 public constant ONE_RAY = 1 * RAY;

@@ -28,6 +28,12 @@ interface IPoolState {
     /***************************/
 
     /**
+     *  @notice Gets the current average debt amount of the pool
+     *  @return averageDebtAmount_ The current pool average debt amount, in WAD units.
+     */
+    function getPoolAverageDebtAmount() external view returns (uint256 averageDebtAmount_);
+
+    /**
      *  @notice Returns the total encumbered collateral resulting from a given amount of debt.
      *  @dev    Used for both pool and borrower level debt.
      *  @param  debt_        Amount of debt for corresponding collateral encumbrance.

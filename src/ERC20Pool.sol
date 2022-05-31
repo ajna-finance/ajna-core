@@ -72,6 +72,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
+        require(amount_ > Maths.wdiv(getPoolAverageDebtAmount(), Maths.TEN_WAD), "P:AQT:AMT_LT_AVG_DEBT");
+
         // deposit quote token amount and get awarded LP tokens
         lpTokens_ = addQuoteTokenToBucket(price_, amount_, totalDebt, inflatorSnapshot);
 
@@ -187,6 +189,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
+        require(amount_ > Maths.wdiv(getPoolAverageDebtAmount(), Maths.TEN_WAD), "P:B:AMT_LT_AVG_DEBT");
+
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
@@ -199,6 +203,9 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         // pool level accounting
         totalQuoteToken -= amount_;
         totalDebt       += amount_ + fee;
+
+        // loans accounting, one loan per borrower
+        if (borrower.debt == 0) totalLoans += 1;
 
         // borrower accounting
         borrower.debt   += amount_ + fee;
@@ -222,6 +229,10 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulateBorrowerInterest(borrower);
 
         uint256 amount = Maths.min(maxAmount_, borrower.debt);
+        uint256 remainingDebt = borrower.debt - amount;
+        require(remainingDebt == 0 || remainingDebt > Maths.wdiv(getPoolAverageDebtAmount(), Maths.TEN_WAD), "P:R:AMT_LT_AVG_DEBT");
+
+        // repay amount to buckets
         repayBucket(amount, inflatorSnapshot, amount >= totalDebt);
 
         // pool level accounting
@@ -230,6 +241,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // borrower accounting
         borrower.debt   -= amount;
+        // loans accounting, one loan per borrower
+        if (borrower.debt == 0) totalLoans -= 1;
 
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);

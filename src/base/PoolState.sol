@@ -20,6 +20,9 @@ abstract contract PoolState is IPoolState, Buckets {
     /** @dev WAD The total global debt, in quote tokens, across all buckets in the pool */
     uint256 public totalDebt;
 
+    /** @dev The total of loans taken from pool */
+    uint256 public totalLoans;
+
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256) {
         // Calculate encumbrance as RAY to maintain precision
         return debt_ != 0 ? Maths.wwdivr(debt_, lup) : 0;
@@ -36,6 +39,11 @@ abstract contract PoolState is IPoolState, Buckets {
         }
         return 0;
     }
+
+    function getPoolAverageDebtAmount() public view override returns (uint256) {
+        return totalDebt != 0 ? Maths.wdiv(totalDebt, Maths.wad(totalLoans)) : 0;
+    }
+
 
     function getPoolCollateralization() public view override returns (uint256) {
         if (lup != 0 && totalDebt != 0) {
