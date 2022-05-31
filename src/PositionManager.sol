@@ -17,71 +17,34 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
+    /***********************/
+    /*** State Variables ***/
+    /***********************/
+
     /** @dev Mapping of tokenIds to Position struct */
     mapping(uint256 => Position) public positions;
 
     /** @dev The ID of the next token that will be minted. Skips 0 */
     uint176 private _nextId = 1;
 
+    /*****************/
+    /*** Modifiers ***/
+    /*****************/
+
     modifier isAuthorizedForToken(uint256 tokenId_) {
         require(_isApprovedOrOwner(msg.sender, tokenId_), "PM:NO_AUTH");
         _;
     }
 
-    function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
-        require(_exists(tokenId_));
-
-        // TODO: access the prices at which a tokenId has added liquidity
-        uint256[] memory prices;
-
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, positions[tokenId_].pool, prices);
-
-        return constructTokenURI(params);
-    }
-
-    function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
-        _safeMint(params_.recipient, (tokenId_ = _nextId++));
-
-        // create a new position associated with the newly minted tokenId
-        positions[tokenId_].pool = params_.pool;
-
-        emit Mint(params_.recipient, params_.pool, tokenId_);
-    }
-
-    /// TODO: (X) prices can be memorialized at a time
-    function memorializePositions(MemorializePositionsParams calldata params_) external override {
-        Position storage position = positions[params_.tokenId];
-        for (uint256 i = 0; i < params_.prices.length; ) {
-            position.lpTokens[params_.prices[i]] = ILenderManager(params_.pool).lpBalance(
-                params_.owner,
-                params_.prices[i]
-            );
-            // increment call counter in gas efficient way by skipping safemath checks
-            unchecked {
-                ++i;
-            }
-        }
-
-        emit MemorializePosition(params_.owner, params_.tokenId);
-    }
+    /************************/
+    /*** Lender Functions ***/
+    /************************/
 
     // TODO: Update burn check to ensure all position prices have removed liquidity
     function burn(BurnParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
         require(positions[params_.tokenId].lpTokens[params_.price] == 0, "PM:B:LIQ_NOT_REMOVED");
         emit Burn(msg.sender, params_.price);
         delete positions[params_.tokenId];
-    }
-
-    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
-        // Call out to pool contract to add quote tokens
-        uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(params_.recipient, params_.amount, params_.price);
-        // TODO: figure out how to test this case
-        require(lpTokensAdded != 0, "PM:IL:NO_LP_TOKENS");
-
-        // update position with newly added lp shares
-        positions[params_.tokenId].lpTokens[params_.price] += lpTokensAdded;
-
-        emit IncreaseLiquidity(params_.recipient, params_.price, params_.amount);
     }
 
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
@@ -104,6 +67,48 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         // TODO: check if price updates
         emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteTokenToRemove);
     }
+
+    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
+        // Call out to pool contract to add quote tokens
+        uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(params_.recipient, params_.amount, params_.price);
+        // TODO: figure out how to test this case
+        require(lpTokensAdded != 0, "PM:IL:NO_LP_TOKENS");
+
+        // update position with newly added lp shares
+        positions[params_.tokenId].lpTokens[params_.price] += lpTokensAdded;
+
+        emit IncreaseLiquidity(params_.recipient, params_.price, params_.amount);
+    }
+
+    /// TODO: (X) prices can be memorialized at a time
+    function memorializePositions(MemorializePositionsParams calldata params_) external override {
+        Position storage position = positions[params_.tokenId];
+        for (uint256 i = 0; i < params_.prices.length; ) {
+            position.lpTokens[params_.prices[i]] = ILenderManager(params_.pool).lpBalance(
+                params_.owner,
+                params_.prices[i]
+            );
+            // increment call counter in gas efficient way by skipping safemath checks
+            unchecked {
+                ++i;
+            }
+        }
+
+        emit MemorializePosition(params_.owner, params_.tokenId);
+    }
+
+    function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
+        _safeMint(params_.recipient, (tokenId_ = _nextId++));
+
+        // create a new position associated with the newly minted tokenId
+        positions[tokenId_].pool = params_.pool;
+
+        emit Mint(params_.recipient, params_.pool, tokenId_);
+    }
+
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
 
     /**
      * @notice Override ERC721 afterTokenTransfer hook to ensure that transferred NFT's are properly tracked within the PositionManager data struct
@@ -135,6 +140,17 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         );
 
         return quote + (collateral * price_);
+    }
+
+    function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
+        require(_exists(tokenId_));
+
+        // TODO: access the prices at which a tokenId has added liquidity
+        uint256[] memory prices;
+
+        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, positions[tokenId_].pool, prices);
+
+        return constructTokenURI(params);
     }
 
 }
