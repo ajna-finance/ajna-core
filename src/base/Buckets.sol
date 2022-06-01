@@ -18,6 +18,8 @@ abstract contract Buckets is IBuckets {
      *  @dev price [WAD] -> bucket
      */
     mapping(uint256 => Buckets.Bucket) internal _buckets;
+    mapping(uint256 => uint256) internal _lpOutstanding;
+    mapping(uint256 => uint256) internal _collateral;
 
     BitMaps.BitMap internal _bitmap;
 
@@ -49,9 +51,9 @@ abstract contract Buckets is IBuckets {
         lpTokens_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(bucket));
 
         // bucket accounting
-        bucket.lpOutstanding += lpTokens_;
-        bucket.onDeposit     += amount_;
-        pdAccumulator        += Maths.wmul(amount_, price_);
+        _lpOutstanding[price_]  += lpTokens_;
+        bucket.onDeposit        += amount_;
+        pdAccumulator           += Maths.wmul(amount_, price_);
 
         // debt reallocation
         bool reallocate = totalDebt_ != 0 && price_ > lup;
@@ -112,21 +114,20 @@ abstract contract Buckets is IBuckets {
     function claimCollateralFromBucket(
         uint256 price_, uint256 amount_, uint256 lpBalance_
     ) internal returns (uint256 lpRedemption_) {
+        require(amount_ <= _collateral[price_], "B:CC:AMT_GT_COLLAT");
+
         Bucket storage bucket = _buckets[price_];
-
-        require(amount_ <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
-
         lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, bucket.price), getExchangeRate(bucket));
 
         require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
 
         // bucket accounting
-        bucket.collateral    -= amount_;
-        bucket.lpOutstanding -= lpRedemption_;
+        _collateral[price_]    -= amount_;
+        _lpOutstanding[price_] -= lpRedemption_;
 
         // bucket management
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
-        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
+        bool noClaim = _lpOutstanding[price_] == 0 && _collateral[price_] == 0;
         if (isEmpty && noClaim) deactivateBucket(bucket); // cleanup if bucket no longer used
     }
 
@@ -157,8 +158,8 @@ abstract contract Buckets is IBuckets {
             requiredCollateral_ += bucketRequiredCollateral;
 
             // bucket accounting
-            bucket.debt       -= bucketDebtToPurchase;
-            bucket.collateral += bucketRequiredCollateral;
+            bucket.debt              -= bucketDebtToPurchase;
+           _collateral[bucket.price] += bucketRequiredCollateral;
 
             // forgive the debt when borrower has no remaining collateral but still has debt
             if (debt_ != 0 && collateral_ == 0) {
@@ -206,8 +207,8 @@ abstract contract Buckets is IBuckets {
         lpAward_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(toBucket));
 
         // move LP tokens
-        fromBucket.lpOutstanding -= lpRedemption_;
-        toBucket.lpOutstanding   += lpAward_;
+        _lpOutstanding[fromPrice_] -= lpRedemption_;
+        _lpOutstanding[toPrice_]   += lpAward_;
 
         bool moveUp = fromPrice_ < toPrice_;
         bool atLup  = newLup != 0 && fromPrice_ == newLup;
@@ -248,7 +249,7 @@ abstract contract Buckets is IBuckets {
         }
 
         bool isEmpty = fromBucket.onDeposit == 0 && fromBucket.debt == 0;
-        bool noClaim = fromBucket.lpOutstanding == 0 && fromBucket.collateral == 0;
+        bool noClaim = _lpOutstanding[fromBucket.price] == 0 && _collateral[fromBucket.price] == 0;
 
         // HPB and LUP management
         if (newLup != lup) lup = newLup;
@@ -281,8 +282,8 @@ abstract contract Buckets is IBuckets {
 
         amount_          -= purchaseFromDeposit;
         // bucket accounting
-        bucket.onDeposit -= purchaseFromDeposit;
-        bucket.collateral += collateral_;
+        bucket.onDeposit     -= purchaseFromDeposit;
+        _collateral[price_] += collateral_;
 
         // debt reallocation
         uint256 newLup = reallocateDown(bucket, amount_, inflator_);
@@ -319,15 +320,15 @@ abstract contract Buckets is IBuckets {
 
         // bucket accounting
         uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit); // Remove from deposit first
-        bucket.onDeposit     -= removeFromDeposit;
-        bucket.lpOutstanding -= lpTokens_;
+        bucket.onDeposit        -= removeFromDeposit;
+        _lpOutstanding[price_] -= lpTokens_;
 
         // debt reallocation
         uint256 newLup = reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
         pdAccumulator  -= Maths.wmul(removeFromDeposit, price_);
 
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
-        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
+        bool noClaim = _lpOutstanding[price_] == 0 && _collateral[price_] == 0;
 
         // HPB and LUP management
         uint256 newHpb = (isEmpty && price_ == hpb) ? getHpb() : hpb;
@@ -417,6 +418,8 @@ abstract contract Buckets is IBuckets {
             _buckets[bucket_.up].down = 0;                            // make upper bucket the lowest bucket
         }
         delete _buckets[bucket_.price];
+        delete _lpOutstanding[bucket_.price];
+        delete _collateral[bucket_.price];
     }
 
     /**
@@ -595,8 +598,8 @@ abstract contract Buckets is IBuckets {
         onDeposit_        = bucket.onDeposit;
         debt_             = bucket.debt;
         bucketInflator_   = bucket.inflatorSnapshot;
-        lpOutstanding_    = bucket.lpOutstanding;
-        bucketCollateral_ = bucket.collateral;
+        lpOutstanding_    = _lpOutstanding[price_];
+        bucketCollateral_ = _collateral[price_];
     }
 
     function estimatePrice(uint256 amount_, uint256 hpb_) public view override returns (uint256 price_) {
@@ -662,8 +665,9 @@ abstract contract Buckets is IBuckets {
      *  @return RAY The current rate at which quote tokens can be exchanged for LP tokens
      */
     function getExchangeRate(Bucket storage bucket_) internal view returns (uint256) {
-        uint256 size = bucket_.onDeposit + bucket_.debt + Maths.wmul(bucket_.collateral, bucket_.price);
-        return (size != 0 && bucket_.lpOutstanding != 0) ? Maths.wrdivr(size, bucket_.lpOutstanding) : Maths.ONE_RAY;
+        uint256 size = bucket_.onDeposit + bucket_.debt + Maths.wmul(_collateral[bucket_.price], bucket_.price);
+        uint256 lpOutstanding = _lpOutstanding[bucket_.price];
+        return (size != 0 && lpOutstanding != 0) ? Maths.wrdivr(size, lpOutstanding) : Maths.ONE_RAY;
     }
 
 }

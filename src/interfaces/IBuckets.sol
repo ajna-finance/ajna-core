@@ -47,8 +47,6 @@ interface IBuckets {
         uint256 onDeposit;
         uint256 debt;
         uint256 inflatorSnapshot;
-        uint256 lpOutstanding;
-        uint256 collateral;
     }
 
     /**********************/
