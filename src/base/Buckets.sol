@@ -79,7 +79,6 @@ abstract contract Buckets is IBuckets {
             require(curLup.price >= limit_, "B:B:PRICE_LT_LIMIT");
 
             accumulateBucketInterest(curLup, inflator_);
-            curLup.inflatorSnapshot = inflator_;
 
             if (amount_ > curLup.onDeposit) {
                 // take all on deposit from this bucket
