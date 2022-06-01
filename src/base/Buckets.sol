@@ -48,7 +48,7 @@ abstract contract Buckets is IBuckets {
         Bucket storage bucket = _buckets[price_];
         accumulateBucketInterest(bucket, inflator_);
 
-        lpTokens_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(price_, bucket));
+        lpTokens_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(price_, bucket.onDeposit + bucket.debt));
 
         // bucket accounting
         _lpOutstanding[price_]  += lpTokens_;
@@ -118,7 +118,7 @@ abstract contract Buckets is IBuckets {
         require(amount_ <= _collateral[price_], "B:CC:AMT_GT_COLLAT");
 
         Bucket storage bucket = _buckets[price_];
-        lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, price_), getExchangeRate(price_, bucket));
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, price_), getExchangeRate(price_, bucket.onDeposit + bucket.debt));
 
         require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
 
@@ -162,7 +162,7 @@ abstract contract Buckets is IBuckets {
 
             // bucket accounting
             bucket.debt              -= bucketDebtToPurchase;
-           _collateral[curPrice] += bucketRequiredCollateral;
+            _collateral[curPrice]    += bucketRequiredCollateral;
 
             // forgive the debt when borrower has no remaining collateral but still has debt
             if (debt_ != 0 && collateral_ == 0) {
@@ -199,7 +199,7 @@ abstract contract Buckets is IBuckets {
         Bucket storage fromBucket = _buckets[fromPrice_];
         accumulateBucketInterest(fromBucket, inflator_);
 
-        uint256 exchangeRate = getExchangeRate(fromPrice_, fromBucket);
+        uint256 exchangeRate = getExchangeRate(fromPrice_, fromBucket.onDeposit + fromBucket.debt);
         lpRedemption_ = Maths.rdiv(Maths.wadToRay(amount_), exchangeRate);
 
         require(lpRedemption_ <= lpBalance_, "B:MQT:AMT_GT_CLAIM");
@@ -207,7 +207,7 @@ abstract contract Buckets is IBuckets {
         Bucket storage toBucket = _buckets[toPrice_];
         accumulateBucketInterest(toBucket, inflator_);
 
-        lpAward_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(toPrice_, toBucket));
+        lpAward_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(toPrice_, toBucket.onDeposit + toBucket.debt));
 
         // move LP tokens
         _lpOutstanding[fromPrice_] -= lpRedemption_;
@@ -314,8 +314,8 @@ abstract contract Buckets is IBuckets {
         Bucket storage bucket = _buckets[price_];
         accumulateBucketInterest(bucket, inflator_);
 
-        uint256 exchangeRate = getExchangeRate(price_, bucket);                // RAY
-        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
+        uint256 exchangeRate = getExchangeRate(price_, bucket.onDeposit + bucket.debt); // RAY
+        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);                    // RAY
 
         amount_   = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
         lpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
@@ -482,9 +482,10 @@ abstract contract Buckets is IBuckets {
             uint256 pdRemove;
             uint256 reallocation = amount_ - bucket_.onDeposit;
             if (bucket_.down != 0) {
-                Bucket storage toBucket = _buckets[bucket_.down];
+                uint256 toPrice = bucket_.down;
 
                 while (true) {
+                    Bucket storage toBucket = _buckets[toPrice];
                     accumulateBucketInterest(toBucket, inflator_);
 
                     if (reallocation < toBucket.onDeposit) {
@@ -492,15 +493,15 @@ abstract contract Buckets is IBuckets {
                         bucket_.debt       -= reallocation;
                         toBucket.debt      += reallocation;
                         toBucket.onDeposit -= reallocation;
-                        pdRemove           += Maths.wmul(reallocation, toBucket.price);
-                        lup_ = toBucket.price;
+                        pdRemove           += Maths.wmul(reallocation, toPrice);
+                        lup_ = toPrice;
                         break;
                     } else {
                         if (toBucket.onDeposit != 0) {
                             reallocation       -= toBucket.onDeposit;
                             bucket_.debt       -= toBucket.onDeposit;
                             toBucket.debt      += toBucket.onDeposit;
-                            pdRemove           += Maths.wmul(toBucket.onDeposit, toBucket.price);
+                            pdRemove           += Maths.wmul(toBucket.onDeposit, toPrice);
                             toBucket.onDeposit -= toBucket.onDeposit;
                         }
                     }
@@ -508,11 +509,11 @@ abstract contract Buckets is IBuckets {
                     if (toBucket.down == 0) {
                         // last bucket, nowhere to go, guard against reallocation failures
                         require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
-                        lup_ = toBucket.price;
+                        lup_ = toPrice;
                         break;
                     }
 
-                    toBucket = _buckets[toBucket.down];
+                    toPrice = toBucket.down;
                 }
             } else {
                 require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
@@ -534,15 +535,16 @@ abstract contract Buckets is IBuckets {
     function reallocateUp(
         Bucket storage bucket_, uint256 amount_, uint256 inflator_
     ) private returns (uint256 lup_) {
-        Bucket storage curLup = _buckets[lup];
 
+        uint256 curPrice = lup;
         uint256 curLupDebt;
         uint256 pdAdd;
         uint256 pdRemove;
 
         while (true) {
-            if (curLup.price == bucket_.price) break; // reached deposit bucket; nowhere to go
+            if (curPrice == bucket_.price) break; // reached deposit bucket; nowhere to go
 
+            Bucket storage curLup = _buckets[curPrice];
             accumulateBucketInterest(curLup, inflator_);
 
             curLupDebt = curLup.debt;
@@ -553,10 +555,10 @@ abstract contract Buckets is IBuckets {
                 pdRemove          += Maths.wmul(curLupDebt, bucket_.price);
                 curLup.debt       = 0;
                 curLup.onDeposit  += curLupDebt;
-                pdAdd             += Maths.wmul(curLupDebt, curLup.price);
+                pdAdd             += Maths.wmul(curLupDebt, curPrice);
                 amount_           -= curLupDebt;
 
-                if (curLup.price == curLup.up) break; // reached top-of-book; nowhere to go
+                if (curPrice == curLup.up) break; // reached top-of-book; nowhere to go
 
             } else {
                 bucket_.debt      += amount_;
@@ -564,14 +566,14 @@ abstract contract Buckets is IBuckets {
                 pdRemove          += Maths.wmul(amount_, bucket_.price);
                 curLup.debt       -= amount_;
                 curLup.onDeposit  += amount_;
-                pdAdd             += Maths.wmul(amount_, curLup.price);
+                pdAdd             += Maths.wmul(amount_, curPrice);
                 break;
             }
 
-            curLup = _buckets[curLup.up];
+            curPrice = curLup.up;
         }
 
-        lup_ = curLup.price;
+        lup_ = curPrice;
         pdAccumulator = pdAccumulator + pdAdd - pdRemove;
     }
 
@@ -668,8 +670,8 @@ abstract contract Buckets is IBuckets {
      *  @dev    Performs calculations in RAY terms and rounds up to determine size to minimize precision loss
      *  @return RAY The current rate at which quote tokens can be exchanged for LP tokens
      */
-    function getExchangeRate(uint256 price_, Bucket storage bucket_) internal view returns (uint256) {
-        uint256 size = bucket_.onDeposit + bucket_.debt + Maths.wmul(_collateral[price_], price_);
+    function getExchangeRate(uint256 price_, uint256 amount_) internal view returns (uint256) {
+        uint256 size = amount_ + Maths.wmul(_collateral[price_], price_);
         uint256 lpOutstanding = _lpOutstanding[price_];
         return (size != 0 && lpOutstanding != 0) ? Maths.wrdivr(size, lpOutstanding) : Maths.ONE_RAY;
     }
