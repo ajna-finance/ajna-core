@@ -41,7 +41,6 @@ interface IBuckets {
      *  @param collateral       Current collateral tokens deposited in the bucket, RAY
      */
     struct Bucket {
-        uint256 price;
         uint256 up;
         uint256 down;
         uint256 onDeposit;

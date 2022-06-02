@@ -58,7 +58,7 @@ abstract contract Buckets is IBuckets {
 
         // debt reallocation
         bool reallocate = params_.totalDebt != 0 && params_.price > lup;
-        uint256 newLup = reallocate ? reallocateUp(bucket, params_.amount, params_.inflator) : lup;
+        uint256 newLup = reallocate ? reallocateUp(params_.price, bucket, params_.amount, params_.inflator) : lup;
 
         // HPB and LUP management
         if (lup != newLup) lup = newLup;
@@ -224,42 +224,11 @@ abstract contract Buckets is IBuckets {
         _lpOutstanding[params_.fromPrice] -= lpRedemption_;
         _lpOutstanding[params_.toPrice]   += lpAward_;
 
-        bool moveUp = params_.fromPrice < params_.toPrice;
         bool atLup  = newLup != 0 && params_.fromPrice == newLup;
-
         if (atLup) {
-            uint256 debtToMove    = (params_.amount > fromBucket.onDeposit) ? params_.amount - fromBucket.onDeposit : 0;
-            uint256 depositToMove = params_.amount - debtToMove;
-
-            // move debt
-            if (moveUp) {
-                fromBucket.debt -= debtToMove;
-                toBucket.debt   += debtToMove;
-            }
-
-            // move deposit
-            uint256 toOnDeposit  = moveUp ? depositToMove : params_.amount;
-            fromBucket.onDeposit -= depositToMove;
-            toBucket.onDeposit   += toOnDeposit;
-
-            newLup = moveUp ? reallocateUp(toBucket, depositToMove, params_.inflator) : reallocateDown(fromBucket, debtToMove, params_.inflator);
-            pdAccumulator = pdAccumulator + Maths.wmul(toOnDeposit, params_.toPrice) - Maths.wmul(depositToMove, params_.fromPrice);
+            newLup = moveAtLup(params_, fromBucket, toBucket);
         } else {
-            bool aboveLup = newLup !=0 && newLup < Maths.min(params_.fromPrice, params_.toPrice);
-            if (aboveLup) {
-                // move debt
-                fromBucket.debt -= params_.amount;
-                toBucket.debt   += params_.amount;
-            } else {
-                // move deposit
-                uint256 fromOnDeposit = moveUp ? params_.amount : Maths.min(params_.amount, fromBucket.onDeposit);
-                fromBucket.onDeposit -= fromOnDeposit;
-                toBucket.onDeposit   += params_.amount;
-
-                if (newLup != 0 && params_.toPrice > Maths.max(params_.fromPrice, newLup)) newLup = reallocateUp(toBucket,  params_.amount, params_.inflator);
-                else if (newLup != 0 && params_.fromPrice >= Maths.max(params_.toPrice, newLup)) newLup = reallocateDown(fromBucket, params_.amount, params_.inflator);
-                pdAccumulator = pdAccumulator + Maths.wmul(params_.amount, params_.toPrice) - Maths.wmul(fromOnDeposit, params_.fromPrice);
-            }
+            newLup = moveAtPrice(params_, fromBucket, toBucket);
         }
 
         bool isEmpty = fromBucket.onDeposit == 0 && fromBucket.debt == 0;
@@ -272,6 +241,55 @@ abstract contract Buckets is IBuckets {
 
         // bucket management
         if (isEmpty && noClaim) deactivateBucket(params_.fromPrice, fromBucket.up, fromBucket.down); // cleanup if bucket no longer used
+    }
+
+    function moveAtLup(MoveQuoteTokenParams memory params_, Bucket storage fromBucket, Bucket storage toBucket) private returns (uint256 newLup_) {
+        bool moveUp = params_.fromPrice < params_.toPrice;
+        uint256 debtToMove    = (params_.amount > fromBucket.onDeposit) ? params_.amount - fromBucket.onDeposit : 0;
+        uint256 depositToMove = params_.amount - debtToMove;
+
+        // move debt
+        if (moveUp) {
+            fromBucket.debt -= debtToMove;
+            toBucket.debt   += debtToMove;
+        }
+
+        // move deposit
+        uint256 toOnDeposit  = moveUp ? depositToMove : params_.amount;
+        fromBucket.onDeposit -= depositToMove;
+        toBucket.onDeposit   += toOnDeposit;
+
+        if (moveUp) {
+            newLup_ = reallocateUp(params_.toPrice, toBucket, depositToMove, params_.inflator);
+        } else {
+            newLup_ = reallocateDown(params_.fromPrice, fromBucket, debtToMove, params_.inflator);
+        }
+
+        pdAccumulator = pdAccumulator + Maths.wmul(toOnDeposit, params_.toPrice) - Maths.wmul(depositToMove, params_.fromPrice);        
+    }
+
+    function moveAtPrice(MoveQuoteTokenParams memory params_, Bucket storage fromBucket, Bucket storage toBucket) private returns (uint256 newLup_) {
+        newLup_ = lup;
+        bool moveUp = params_.fromPrice < params_.toPrice;
+        bool aboveLup = newLup_ !=0 && newLup_ < Maths.min(params_.fromPrice, params_.toPrice);
+        if (aboveLup) {
+            // move debt
+            fromBucket.debt -= params_.amount;
+            toBucket.debt   += params_.amount;
+        } else {
+            // move deposit
+            uint256 fromOnDeposit = moveUp ? params_.amount : Maths.min(params_.amount, fromBucket.onDeposit);
+            fromBucket.onDeposit -= fromOnDeposit;
+            toBucket.onDeposit   += params_.amount;
+
+            if (newLup_ != 0 && params_.toPrice > Maths.max(params_.fromPrice, newLup_)) {
+                newLup_ = reallocateUp(params_.toPrice, toBucket,  params_.amount, params_.inflator);
+            } else if (newLup_ != 0 && params_.fromPrice >= Maths.max(params_.toPrice, newLup_)) {
+                newLup_ = reallocateDown(params_.fromPrice, fromBucket, params_.amount, params_.inflator);
+            }
+
+            pdAccumulator = pdAccumulator + Maths.wmul(params_.amount, params_.toPrice) - Maths.wmul(fromOnDeposit, params_.fromPrice);
+        }
     }
 
     /**
@@ -301,7 +319,7 @@ abstract contract Buckets is IBuckets {
         _collateral[params_.price] += params_.collateral;
 
         // debt reallocation
-        uint256 newLup = reallocateDown(bucket, params_.amount, params_.inflator);
+        uint256 newLup = reallocateDown(params_.price, bucket, params_.amount, params_.inflator);
         uint256 newHpb = (bucket.onDeposit == 0 && bucket.debt == 0) ? getHpb() : hpb;
 
         // HPB and LUP management
@@ -340,7 +358,7 @@ abstract contract Buckets is IBuckets {
         _lpOutstanding[params_.price] -= lpTokens_;
 
         // debt reallocation
-        uint256 newLup = reallocateDown(bucket, amount_ - removeFromDeposit, params_.inflator);
+        uint256 newLup = reallocateDown(params_.price, bucket, amount_ - removeFromDeposit, params_.inflator);
         pdAccumulator  -= Maths.wmul(removeFromDeposit, params_.price);
 
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
@@ -417,7 +435,7 @@ abstract contract Buckets is IBuckets {
         bool isHighestBucket = price_ == up_;
         bool isLowestBucket = down_ == 0;
         if (isHighestBucket && !isLowestBucket) {                     // if highest bucket
-            _buckets[down_].up = _buckets[down_].price; // make lower bucket the highest bucket
+            _buckets[down_].up = down_; // make lower bucket the highest bucket
         } else if (!isHighestBucket && !isLowestBucket) {             // if middle bucket
             _buckets[up_].down = down_;                 // update down pointer of upper bucket
             _buckets[down_].up = up_;                   // update up pointer of lower bucket
@@ -438,7 +456,6 @@ abstract contract Buckets is IBuckets {
     function initializeBucket(uint256 hpb_, uint256 price_) private returns (uint256) {
         Bucket storage bucket = _buckets[price_];
 
-        bucket.price            = price_;
         bucket.inflatorSnapshot = Maths.ONE_RAY;
 
         if (price_ > hpb_) {
@@ -471,15 +488,16 @@ abstract contract Buckets is IBuckets {
      *  @notice Moves assets in a bucket to a bucket's down pointers
      *  @dev    Occurs when quote tokens are being removed
      *  @dev    Should continue until all of the desired quote tokens have been removed
+     *  @param  price_    The prive of given bucket whose assets are being reallocated
      *  @param  bucket_   The given bucket whose assets are being reallocated
      *  @param  amount_   The amount of quote tokens requiring reallocation, WAD
      *  @param  inflator_ The current pool inflator rate, RAY
      *  @return lup_      The price to which assets were reallocated
      */
     function reallocateDown(
-        Bucket storage bucket_, uint256 amount_, uint256 inflator_
+        uint256 price_, Bucket storage bucket_, uint256 amount_, uint256 inflator_
     ) private returns (uint256 lup_) {
-        lup_ = bucket_.price;
+        lup_ = price_;
         // debt reallocation
         if (amount_ > bucket_.onDeposit) {
             uint256 pdRemove;
@@ -540,13 +558,14 @@ abstract contract Buckets is IBuckets {
      *  @notice Moves assets in a bucket to a bucket's up pointers
      *  @dev    Should continue until all desired quote tokens are added
      *  @dev    Occcurs when quote tokens are being added
+     *  @param  price_    The price bucket whose assets are being reallocated
      *  @param  bucket_   The given bucket whose assets are being reallocated
      *  @param  amount_   The amount of quote tokens requiring reallocation, WAD
      *  @param  inflator_ The current pool inflator rate, RAY
      *  @return lup_      The price to which assets were reallocated
      */
     function reallocateUp(
-        Bucket storage bucket_, uint256 amount_, uint256 inflator_
+        uint256 price_, Bucket storage bucket_, uint256 amount_, uint256 inflator_
     ) private returns (uint256 lup_) {
 
         uint256 curPrice = lup;
@@ -554,7 +573,7 @@ abstract contract Buckets is IBuckets {
         uint256 pdRemove;
 
         while (true) {
-            if (curPrice == bucket_.price) break; // reached deposit bucket; nowhere to go
+            if (curPrice == price_) break; // reached deposit bucket; nowhere to go
 
             Bucket storage curLup = _buckets[curPrice];
             uint256 curLupDebt = curLup.debt;
@@ -569,7 +588,7 @@ abstract contract Buckets is IBuckets {
             if (amount_ > curLupDebt) {
                 bucket_.debt      += curLupDebt;
                 bucket_.onDeposit -= curLupDebt;
-                pdRemove          += Maths.wmul(curLupDebt, bucket_.price);
+                pdRemove          += Maths.wmul(curLupDebt, price_);
                 curLup.debt       = 0;
                 curLup.onDeposit  += curLupDebt;
                 pdAdd             += Maths.wmul(curLupDebt, curPrice);
@@ -580,7 +599,7 @@ abstract contract Buckets is IBuckets {
             } else {
                 bucket_.debt      += amount_;
                 bucket_.onDeposit -= amount_;
-                pdRemove          += Maths.wmul(amount_, bucket_.price);
+                pdRemove          += Maths.wmul(amount_, price_);
                 curLup.debt       = curLupDebt - amount_;
                 curLup.onDeposit  += amount_;
                 pdAdd             += Maths.wmul(amount_, curPrice);
@@ -615,7 +634,7 @@ abstract contract Buckets is IBuckets {
     {
         Bucket memory bucket = _buckets[price_];
 
-        bucketPrice_      = bucket.price;
+        bucketPrice_      = price_;
         up_               = bucket.up;
         down_             = bucket.down;
         onDeposit_        = bucket.onDeposit;
@@ -626,20 +645,21 @@ abstract contract Buckets is IBuckets {
     }
 
     function estimatePrice(uint256 amount_, uint256 hpb_) public view override returns (uint256 price_) {
-        Bucket memory curLup = _buckets[hpb_];
+        uint256 curPrice = hpb_;
 
         while (true) {
+            Bucket memory curLup = _buckets[curPrice];
             if (amount_ > curLup.onDeposit) {
                 amount_ -= curLup.onDeposit;
             } else if (amount_ <= curLup.onDeposit) {
-                price_ = curLup.price;
+                price_ = curPrice;
                 break;
             }
 
             if (curLup.down == 0) {
                 break;
             } else {
-                curLup = _buckets[curLup.down];
+                curPrice = curLup.down;
             }
         }
     }
