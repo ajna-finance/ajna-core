@@ -290,14 +290,20 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     // TODO: Remove from IPool ... different Interface req
     function purchaseBid(uint256 amount_, uint256 price_) external {}
 
-    // TODO: finish implementing
     /// @dev Can be called for multiple unit of collateral at a time
+    /// @dev Does not increase pool or bucket debt
     function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] memory tokenIds_) external {
         require(BucketMath.isValidPrice(price_), "P:PB:INVALID_PRICE");
 
-        // check if incoming tokens are part of the pool subset
         for (uint i; i < tokenIds_.length;) {
+            // check if incoming tokens are part of the pool subset
             onlySubset(tokenIds_[i]);
+
+            // check user owns all tokenIds_
+            if (collateral().ownerOf(tokenIds_[i]) != msg.sender) {
+                revert("P:PB:INVALID_T_ID");
+            }
+
             unchecked {
                 ++i;
             }
@@ -305,7 +311,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // convert amount from WAD to pool precision - RAD
         uint256 collateralRequired = Maths.divRoundingUp(amount_, price_);
-        require(collateral().balanceOf(msg.sender) >= collateralRequired, "P:PB:INSUF_COLLAT");
+        require(tokenIds_.length >= collateralRequired, "P:PB:INSUF_COLLAT");
 
         accumulatePoolInterest();
 
