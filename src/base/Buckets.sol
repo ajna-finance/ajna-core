@@ -118,7 +118,7 @@ abstract contract Buckets is IBuckets {
     function claimCollateralFromBucket(ClaimCollateralParams memory params_) internal returns (uint256 lpRedemption_) {
         require(params_.amount <= _collateral[params_.price], "B:CC:AMT_GT_COLLAT");
 
-        Bucket storage bucket = _buckets[params_.price];
+        Bucket memory bucket = _buckets[params_.price];
         lpRedemption_ = Maths.wrdivr(Maths.wmul(params_.amount, params_.price), getExchangeRate(params_.price, bucket.onDeposit + bucket.debt));
 
         require(lpRedemption_ <= params_.lpBalance, "B:CC:INSUF_LP_BAL");
