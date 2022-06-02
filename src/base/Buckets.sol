@@ -581,7 +581,6 @@ abstract contract Buckets is IBuckets {
     ) private returns (uint256 lup_) {
 
         uint256 curPrice = lup;
-        uint256 curLupDebt;
         uint256 pdAdd;
         uint256 pdRemove;
 
@@ -589,15 +588,14 @@ abstract contract Buckets is IBuckets {
             if (curPrice == bucket_.price) break; // reached deposit bucket; nowhere to go
 
             Bucket storage curLup = _buckets[curPrice];
-            if (curLup.debt != 0) {
+            uint256 curLupDebt = curLup.debt;
+            if (curLupDebt != 0) {
                 // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-                curLup.debt += Maths.radToWadTruncate(
-                    curLup.debt * (Maths.rdiv(inflator_, curLup.inflatorSnapshot) - Maths.ONE_RAY)
+                curLupDebt += Maths.radToWadTruncate(
+                    curLupDebt * (Maths.rdiv(inflator_, curLup.inflatorSnapshot) - Maths.ONE_RAY)
                 );
             }
             curLup.inflatorSnapshot = inflator_;
-
-            curLupDebt = curLup.debt;
 
             if (amount_ > curLupDebt) {
                 bucket_.debt      += curLupDebt;
@@ -614,7 +612,7 @@ abstract contract Buckets is IBuckets {
                 bucket_.debt      += amount_;
                 bucket_.onDeposit -= amount_;
                 pdRemove          += Maths.wmul(amount_, bucket_.price);
-                curLup.debt       -= amount_;
+                curLup.debt       = curLupDebt - amount_;
                 curLup.onDeposit  += amount_;
                 pdAdd             += Maths.wmul(amount_, curPrice);
                 break;
