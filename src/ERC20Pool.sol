@@ -285,6 +285,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
 
+        totalBorrowers -= 1;
+
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
 
