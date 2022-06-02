@@ -14,7 +14,8 @@ import { Buckets }         from "./base/Buckets.sol";
 import { Interest }        from "./base/Interest.sol";
 import { LenderManager }   from "./base/LenderManager.sol";
 
-import { IPool } from "./interfaces/IPool.sol";
+import { IBuckets } from "./interfaces/IBuckets.sol";
+import { IPool }    from "./interfaces/IPool.sol";
 
 import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
@@ -88,20 +89,22 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
-        accumulateBorrowerInterest(borrower);
+        uint256 borrowerDebt = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
 
         // borrow amount from buckets with limit price and apply the origination fee
         uint256 fee = Maths.max(Maths.wdiv(previousRate, WAD_WEEKS_PER_YEAR), minFee);
-        borrowFromBucket(amount_, fee, limitPrice_, inflatorSnapshot);
+        IBuckets.BorrowParams memory params = IBuckets.BorrowParams(amount_, fee, limitPrice_, inflatorSnapshot);
+        borrowFromBucket(params);
 
-        require(borrower.collateralDeposited > Maths.rayToWad(getEncumberedCollateral(borrower.debt + amount_ + fee)), "P:B:INSUF_COLLAT");
+        require(borrower.collateralDeposited > Maths.rayToWad(getEncumberedCollateral(borrowerDebt + amount_ + fee)), "P:B:INSUF_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount_;
         totalDebt       += amount_ + fee;
 
         // borrower accounting
-        borrower.debt   += amount_ + fee;
+        borrower.debt             = borrowerDebt + amount_ + fee;
+        borrower.inflatorSnapshot = inflatorSnapshot;
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
 
@@ -114,16 +117,18 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
-        accumulateBorrowerInterest(borrower);
+        uint256 borrowerDebt = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
 
-        uint256 encumberedBorrowerCollateral = Maths.rayToWad(getEncumberedCollateral(borrower.debt));
+        uint256 encumberedBorrowerCollateral = Maths.rayToWad(getEncumberedCollateral(borrowerDebt));
         require(borrower.collateralDeposited - encumberedBorrowerCollateral >= amount_, "P:RC:AMT_GT_AVAIL_COLLAT");
 
         // pool level accounting
         totalCollateral              -= amount_;
 
         // borrower accounting
+        borrower.debt                = borrowerDebt;
         borrower.collateralDeposited -= amount_;
+        borrower.inflatorSnapshot    = inflatorSnapshot;
 
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
@@ -139,17 +144,18 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(borrower.debt != 0, "P:R:NO_DEBT");
 
         accumulatePoolInterest();
-        accumulateBorrowerInterest(borrower);
+        uint256 borrowerDebt = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
 
-        uint256 amount = Maths.min(maxAmount_, borrower.debt);
-        repayBucket(amount, inflatorSnapshot, amount >= totalDebt);
+        uint256 amount = Maths.min(maxAmount_, borrowerDebt);
+        repayBucket(IBuckets.RepayParams(amount, inflatorSnapshot, amount >= totalDebt));
 
         // pool level accounting
         totalQuoteToken += amount;
         totalDebt       -= Maths.min(totalDebt, amount);
 
         // borrower accounting
-        borrower.debt   -= amount;
+        borrower.debt             = borrowerDebt - amount;
+        borrower.inflatorSnapshot = inflatorSnapshot;
 
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
@@ -168,7 +174,10 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
 
         // deposit quote token amount and get awarded LP tokens
-        lpTokens_ = addQuoteTokenToBucket(price_, amount_, totalDebt, inflatorSnapshot);
+        IBuckets.AddQuoteTokenParams memory params = IBuckets.AddQuoteTokenParams(
+            price_, amount_, totalDebt, inflatorSnapshot
+        );
+        lpTokens_ = addQuoteTokenToBucket(params);
 
         // pool level accounting
         totalQuoteToken               += amount_;
@@ -188,7 +197,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
 
         // claim collateral and get amount of LP tokens burned for claim
-        uint256 claimedLpTokens = claimCollateralFromBucket(price_, amount_, maxClaim);
+        uint256 claimedLpTokens = claimCollateralFromBucket(IBuckets.ClaimCollateralParams(price_, amount_, maxClaim));
 
         // lender accounting
         lpBalance[recipient_][price_] -= claimedLpTokens;
@@ -206,9 +215,10 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
-        (uint256 fromLpTokens, uint256 toLpTokens) = moveQuoteTokenFromBucket(
+        IBuckets.MoveQuoteTokenParams memory params = IBuckets.MoveQuoteTokenParams(
             fromPrice_, toPrice_, amount_, lpBalance[recipient_][fromPrice_], inflatorSnapshot
         );
+        (uint256 fromLpTokens, uint256 toLpTokens) = moveQuoteTokenFromBucket(params);
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");
 
@@ -225,9 +235,10 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
 
         // remove quote token amount and get LP tokens burned
-        (uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
+        IBuckets.RemoveQuoteTokenParams memory params = IBuckets.RemoveQuoteTokenParams(
             price_, maxAmount_, lpBalance[recipient_][price_], inflatorSnapshot
         );
+        (uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(params);
 
         // pool level accounting
         totalQuoteToken -= amount;
@@ -251,29 +262,28 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[borrower_];
-        accumulateBorrowerInterest(borrower);
-
-        uint256 debt                = borrower.debt;
+        uint256 borrowerDebt        = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
         uint256 collateralDeposited = borrower.collateralDeposited;
 
-        require(debt != 0, "P:L:NO_DEBT");
+        require(borrowerDebt != 0, "P:L:NO_DEBT");
         require(
-            getBorrowerCollateralization(collateralDeposited, debt) <= Maths.ONE_WAD,
+            getBorrowerCollateralization(collateralDeposited, borrowerDebt) <= Maths.ONE_WAD,
             "P:L:BORROWER_OK"
         );
 
         // liquidate borrower and get collateral required to liquidate
-        uint256 requiredCollateral = liquidateAtBucket(debt, collateralDeposited, inflatorSnapshot);
+        uint256 requiredCollateral = liquidateAtBucket(IBuckets.LiquidateParams(borrowerDebt, collateralDeposited, inflatorSnapshot));
 
         // pool level accounting
-        totalDebt       -= borrower.debt;
+        totalDebt       -= borrowerDebt;
         totalCollateral -= requiredCollateral;
 
         // borrower accounting
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
+        borrower.inflatorSnapshot    = inflatorSnapshot;
 
-        emit Liquidate(borrower_, debt, requiredCollateral);
+        emit Liquidate(borrower_, borrowerDebt, requiredCollateral);
     }
 
     function purchaseBid(uint256 amount_, uint256 price_) external override {
@@ -285,7 +295,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
-        purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
+        purchaseBidFromBucket(IBuckets.PurchaseBidParams(price_, amount_, collateralRequired, inflatorSnapshot));
 
         // pool level accounting
         totalQuoteToken -= amount_;

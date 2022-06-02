@@ -49,6 +49,114 @@ interface IBuckets {
         uint256 inflatorSnapshot;
     }
 
+    /**
+     *  @notice struct holding add quote token params
+     *  @param  price     The price bucket to which quote tokens should be added.
+     *  @param  amount    The amount of quote tokens to be added.
+     *  @param  totalDebt The amount of total debt.
+     *  @param  inflator  The current pool inflator rate.
+     */
+    struct AddQuoteTokenParams {
+        uint256 price;
+        uint256 amount;
+        uint256 totalDebt;
+        uint256 inflator;
+    }
+
+    /**
+     *  @notice struct holding borrow quote token params
+     *  @param  amount   The amount of quote tokens to borrow from the bucket, WAD
+     *  @param  fee      The amount of quote tokens to pay as origination fee, WAD
+     *  @param  limit    The lowest price desired to borrow at, WAD
+     *  @param  inflator The current pool inflator rate, RAY
+     */
+    struct BorrowParams {
+        uint256 amount;
+        uint256 fee;
+        uint256 limit;
+        uint256 inflator;
+    }
+
+    /**
+     *  @notice struct holding claim collateral params
+     *  @param  price     The price bucket from which collateral should be claimed
+     *  @param  amount    The amount of collateral tokens to be claimed, WAD
+     *  @param  lpBalance The claimers current LP balance, RAY
+     */
+    struct ClaimCollateralParams {
+        uint256 price;
+        uint256 amount;
+        uint256 lpBalance;
+    }
+
+    /**
+     *  @notice struct holding liquidate params
+     *  @param  debt       The amount of debt to cover, WAD
+     *  @param  collateral The amount of collateral deposited, WAD
+     *  @param  inflator   The current pool inflator rate, RAY
+     */
+    struct LiquidateParams {
+        uint256 debt;
+        uint256 collateral;
+        uint256 inflator;
+    }
+
+    /**
+     *  @notice struct holding move quote token between buckets params
+     *  @param  fromPrice The price bucket from where quote tokens should be moved
+     *  @param  toPrice   The price bucket where quote tokens should be moved
+     *  @param  amount    The amount of quote tokens to be moved, WAD
+     *  @param  lpBalance The LP balance for current lender, RAY
+     *  @param  inflator  The current pool inflator rate, RAY
+     */
+    struct MoveQuoteTokenParams {
+        uint256 fromPrice;
+        uint256 toPrice;
+        uint256 amount;
+        uint256 lpBalance;
+        uint256 inflator;
+    }
+
+    /**
+     *  @notice struct holding purchase bid params
+     *  @param  price      The price bucket at which the exchange will occur, WAD
+     *  @param  amount     The amount of quote tokens to receive, WAD
+     *  @param  collateral The amount of collateral to exchange, WAD
+     *  @param  inflator   The current pool inflator rate, RAY
+     */
+    struct PurchaseBidParams {
+        uint256 price;
+        uint256 amount;
+        uint256 collateral;
+        uint256 inflator;
+    }
+
+    /**
+     *  @notice struct holding remove quote token params
+     *  @param  price     The price bucket from which quote tokens should be removed
+     *  @param  maxAmount The maximum amount of quote tokens to be removed, WAD
+     *  @param  lpBalance The LP balance for current lender, RAY
+     *  @param  inflator  The current pool inflator rate, RAY
+     */
+    struct RemoveQuoteTokenParams {
+        uint256 price;
+        uint256 maxAmount;
+        uint256 lpBalance;
+        uint256 inflator;
+    }
+
+    /**
+     *  @notice struct holding repay params
+     *  @param  amount_    The amount of quote tokens to repay to the bucket, WAD
+     *  @param  inflator_  The current pool inflator rate, RAY
+     *  @param  reconcile_ True if all debt in pool is repaid
+     */
+    struct RepayParams {
+        uint256 amount;
+        uint256 inflator;
+        bool reconcile;
+    }
+
     /**********************/
     /*** View Functions ***/
     /**********************/
