@@ -17,12 +17,6 @@ interface IPoolFactory {
      */
     event PoolCreated(address pool_);
 
-    /**************/
-    /*** Errors ***/
-    /**************/
-
-    error ERC20Only();
-
     /**************************/
     /*** External Functions ***/
     /**************************/

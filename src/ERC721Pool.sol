@@ -180,7 +180,6 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         totalCollateral = _collateralTokenIdsAdded.length();
 
         // borrower accounting
-        // NFTborrowers[msg.sender].collateralDeposited.push(tokenId_);
         NFTborrowers[msg.sender].collateralDeposited.add(tokenId_);
 
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
@@ -192,6 +191,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     // TODO: finish implementing
     // TODO: move check to onlySubsetMultiple()
     // TODO: update to incrementally add if contains, otherwise skip?
+    // TODO: integrate multicall here
     function addCollateralMultiple(uint256[] memory tokenIds_) external {
         // check if all incoming tokenIds are part of the pool subset
         for (uint i; i < tokenIds_.length;) {
@@ -210,7 +210,6 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         // }
     }
 
-    // TODO: finish implementing -> update totalCollateral and add borrower.totalCollateralDeposited key in WAD terms
     function removeCollateral(uint256 tokenId_) external {
         accumulatePoolInterest();
 
@@ -234,8 +233,27 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit RemoveCollateral(msg.sender, tokenId_);
     }
 
-    function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external {
-        // TODO: finish implementing
+    // TODO: update this to remove one NFT vs a given tokenId...? findTokenId to claim
+    // TODO: update to NFT specific claim event
+    function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) external {
+        require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
+
+        uint256 maxClaim = lpBalance[recipient_][price_];
+        require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
+
+        // claim collateral and get amount of LP tokens burned for claim
+        uint256 claimedLpTokens = claimNFTCollateralFromBucket(price_, tokenId_, maxClaim);
+
+        // lender accounting
+        lpBalance[recipient_][price_] -= claimedLpTokens;
+
+        // move claimed collateral from pool to claimer
+        collateral().safeTransferFrom(address(this), recipient_, tokenId_);
+        emit ClaimCollateral(recipient_, price_, tokenId_, claimedLpTokens);
+    }
+
+    function claimCollateralMultiple(address recipient_, uint256[] memory tokenIds_, uint256 price_) external {
+
     }
 
     function borrow(uint256 amount_, uint256 limitPrice_) external {
@@ -269,7 +287,47 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
     function repay(uint256 amount_) external {}
 
+    // TODO: Remove from IPool ... different Interface req
     function purchaseBid(uint256 amount_, uint256 price_) external {}
+
+    // TODO: finish implementing
+    /// @dev Can be called for multiple unit of collateral at a time
+    function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] memory tokenIds_) external {
+        require(BucketMath.isValidPrice(price_), "P:PB:INVALID_PRICE");
+
+        // check if incoming tokens are part of the pool subset
+        for (uint i; i < tokenIds_.length;) {
+            onlySubset(tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // convert amount from WAD to pool precision - RAD
+        uint256 collateralRequired = Maths.divRoundingUp(amount_, price_);
+        require(collateral().balanceOf(msg.sender) >= collateralRequired, "P:PB:INSUF_COLLAT");
+
+        accumulatePoolInterest();
+
+        purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
+
+        // pool level accounting
+        totalQuoteToken -= amount_;
+
+        require(getNFTPoolCollateralization() >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
+
+        // move required collateral from sender to pool
+        for (uint i; i < tokenIds_.length;) {
+            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // move quote token amount from pool to sender
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
+        emit Purchase(msg.sender, price_, amount_, Maths.wad(collateralRequired));
+    }
 
     function liquidate(address borrower_) external {}
 
