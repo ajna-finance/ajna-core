@@ -45,8 +45,6 @@ abstract contract Buckets is IBuckets {
         uint256 debt    = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, params_.inflator);
         uint256 deposit = bucket.onDeposit;
 
-        bucket.inflatorSnapshot = params_.inflator;
-
         lpTokens_ = Maths.rdiv(Maths.wadToRay(params_.amount), getExchangeRate(params_.price, deposit + debt));
 
         // bucket accounting
@@ -62,8 +60,9 @@ abstract contract Buckets is IBuckets {
             newLup = lup;
         }
 
-        bucket.debt      = debt;
-        bucket.onDeposit = deposit;
+        bucket.debt             = debt;
+        bucket.onDeposit        = deposit;
+        bucket.inflatorSnapshot = params_.inflator;
 
         // HPB and LUP management
         if (lup != newLup) lup = newLup;
@@ -344,8 +343,6 @@ abstract contract Buckets is IBuckets {
 
         uint256 debt    = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, params_.inflator);
         uint256 deposit = bucket.onDeposit;
-
-        bucket.inflatorSnapshot = params_.inflator;
 
         uint256 exchangeRate = getExchangeRate(params_.price, deposit + debt); // RAY
         uint256 claimable    = Maths.rmul(params_.lpBalance, exchangeRate);    // RAY
