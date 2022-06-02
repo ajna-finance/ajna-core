@@ -524,30 +524,34 @@ abstract contract Buckets is IBuckets {
 
                 while (true) {
                     Bucket storage toBucket = _buckets[toPrice];
-                    if (toBucket.debt != 0) {
+                    uint256 toDebt    = toBucket.debt;
+                    uint256 toDeposit = toBucket.onDeposit;
+
+                    if (toDebt != 0) {
                         // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-                        toBucket.debt += Maths.radToWadTruncate(
-                            toBucket.debt * (Maths.rdiv(inflator_, toBucket.inflatorSnapshot) - Maths.ONE_RAY)
+                        toDebt += Maths.radToWadTruncate(
+                            toDebt * (Maths.rdiv(inflator_, toBucket.inflatorSnapshot) - Maths.ONE_RAY)
                         );
                     }
                     toBucket.inflatorSnapshot = inflator_;
 
-                    if (reallocation < toBucket.onDeposit) {
+                    if (reallocation < toDeposit) {
                         // reallocate all and exit
                         bucket_.debt       -= reallocation;
-                        toBucket.debt      += reallocation;
+                        toBucket.debt      = toDebt + reallocation;
                         toBucket.onDeposit -= reallocation;
                         pdRemove           += Maths.wmul(reallocation, toPrice);
                         lup_ = toPrice;
                         break;
                     } else {
-                        if (toBucket.onDeposit != 0) {
-                            reallocation       -= toBucket.onDeposit;
-                            bucket_.debt       -= toBucket.onDeposit;
-                            toBucket.debt      += toBucket.onDeposit;
-                            pdRemove           += Maths.wmul(toBucket.onDeposit, toPrice);
-                            toBucket.onDeposit -= toBucket.onDeposit;
+                        if (toDeposit != 0) {
+                            reallocation       -= toDeposit;
+                            bucket_.debt       -= toDeposit;
+                            toDebt             += toDeposit;
+                            pdRemove           += Maths.wmul(toDeposit, toPrice);
+                            toBucket.onDeposit -= toDeposit;
                         }
+                        toBucket.debt = toDebt;
                     }
 
                     if (toBucket.down == 0) {
