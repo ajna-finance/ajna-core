@@ -45,7 +45,7 @@ def main():
         )
 
     pool.addCollateral(100 * 1e18, {"from": borrowers[0]})
-    pool.addCollateral(100 * 1e18, {"from": borrowers[1]})
+    # pool.addCollateral(100 * 1e18, {"from": borrowers[1]})
 
     # pool.borrow(10_000 * 1e18, 1 * 1e18, {"from": borrowers[0]})
     # pool.borrow(10_000 * 1e18, 1 * 1e18, {"from": borrowers[1]})
