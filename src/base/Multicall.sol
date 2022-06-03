@@ -2,16 +2,16 @@
 pragma solidity 0.8.11;
 
 /**
- * @notice Functionality to enable contracts to implement multicall method for method call aggregation into single transactions
- * @dev Implementing multicall internally enables gas savings compared to making a call to externally deployed contracts
-*/
+ *  @notice Functionality to enable contracts to implement multicall method for method call aggregation into single transactions
+ *  @dev    Implementing multicall internally enables gas savings compared to making a call to externally deployed contracts
+ */
 abstract contract Multicall {
 
     /**
-     * @notice Make a series of contract calls in a single transaction
-     * @param data_ Externally aggregated function calls serialized into a byte array
-     * @return results_ Array of the results from each aggregated call
-    */
+     *  @notice Make a series of contract calls in a single transaction
+     *  @param data_ Externally aggregated function calls serialized into a byte array
+     *  @return results_ Array of the results from each aggregated call
+     */
     function multicall(bytes[] calldata data_) public returns (bytes[] memory results_) {
         results_ = new bytes[](data_.length);
         for (uint256 i = 0; i < data_.length; ) {
@@ -32,12 +32,12 @@ abstract contract Multicall {
     }
 
     /**
-     * @notice Processes and bubbles up the relevent revert from a failing call
-     * @dev Supports Panic, Error, and Custom Errors
-     * @dev Retrieved from discussion here: https://ethereum.stackexchange.com/a/123588
-     * @dev Based upon Superfluid code: https://github.com/superfluid-finance/protocol-monorepo/blob/dev/packages/ethereum-contracts/contracts/libs/CallUtils.sol
-     * @param result_ The failing call result to process and bubble up revert from
-    */
+     *  @notice Processes and bubbles up the relevent revert from a failing call
+     *  @dev    Supports Panic, Error, and Custom Errors
+     *  @dev    Retrieved from discussion here: https://ethereum.stackexchange.com/a/123588
+     *  @dev    Based upon Superfluid code: https://github.com/superfluid-finance/protocol-monorepo/blob/dev/packages/ethereum-contracts/contracts/libs/CallUtils.sol
+     *  @param  result_ The failing call result to process and bubble up revert from
+     */
     function handleRevert(bytes memory result_) internal pure {
         uint256 len = result_.length;
 

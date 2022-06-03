@@ -4,8 +4,8 @@ pragma solidity 0.8.11;
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /**
- * @title Ajna Pool
- * @dev   Used to manage lender and borrower positions of ERC-20 tokens.
+ *  @title Ajna Pool
+ *  @dev   Used to manage lender and borrower positions of ERC-20 tokens.
  */
 interface IBorrowerManager {
 
