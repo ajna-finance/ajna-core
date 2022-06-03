@@ -268,18 +268,19 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
         accumulateNFTBorrowerInterest(borrower);
 
-        // borrow amount from buckets with limit price
-        borrowFromBucket(amount_, limitPrice_, inflatorSnapshot);
+        // borrow amount from buckets with limit price and apply the origination fee
+        uint256 fee = Maths.max(Maths.wdiv(previousRate, WAD_WEEKS_PER_YEAR), minFee);
+        borrowFromBucket(amount_, fee, limitPrice_, inflatorSnapshot);
 
         // collateral amounts need to be recorded as WADs to enable like-unit comparisons with quote token precision
-        require(Maths.ray(borrower.collateralDeposited.length()) > getEncumberedCollateral(borrower.debt + amount_), "P:B:INSUF_COLLAT");
+        require(Maths.ray(borrower.collateralDeposited.length()) > getEncumberedCollateral(borrower.debt + amount_ + fee), "P:B:INSUF_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount_;
-        totalDebt       += amount_;
+        totalDebt       += amount_ + fee;
 
         // borrower accounting
-        borrower.debt   += amount_;
+        borrower.debt   += amount_ + fee;
 
         // TODO: check this condition -> should collateral be stored as a WAD...?
         require(getNFTPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
