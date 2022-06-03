@@ -233,7 +233,6 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit RemoveCollateral(msg.sender, tokenId_);
     }
 
-    // TODO: update this to remove one NFT vs a given tokenId...? findTokenId to claim
     // TODO: update to NFT specific claim event
     function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) external {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
@@ -244,6 +243,10 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         // claim collateral and get amount of LP tokens burned for claim
         uint256 claimedLpTokens = claimNFTCollateralFromBucket(price_, tokenId_, maxClaim);
 
+        // pool level accounting
+        _collateralTokenIdsAdded.remove(tokenId_);
+        totalCollateral -= 1;
+
         // lender accounting
         lpBalance[recipient_][price_] -= claimedLpTokens;
 
@@ -252,6 +255,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit ClaimCollateral(recipient_, price_, tokenId_, claimedLpTokens);
     }
 
+    // TODO: finish implementing or combine with claimCollateral - would require updates to Buckets.sol
     function claimCollateralMultiple(address recipient_, uint256[] memory tokenIds_, uint256 price_) external {
 
     }
@@ -315,10 +319,11 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
-        purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
+        purchaseBidFromBucket(price_, amount_, Maths.wad(collateralRequired), inflatorSnapshot);
 
         // pool level accounting
         totalQuoteToken -= amount_;
+        totalCollateral += tokenIds_.length;
 
         require(getNFTPoolCollateralization() >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
 

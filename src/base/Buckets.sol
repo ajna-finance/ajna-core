@@ -263,7 +263,6 @@ abstract contract Buckets {
         Bucket storage bucket = _buckets[price_];
         NFTBucket storage nftBucket = _nftBuckets[price_];
 
-        console.log(bucket.collateral);
         // TODO: check if this is right approach...?
         // check available collateral given removal of the NFT
         require(Maths.ONE_WAD <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
