@@ -87,7 +87,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
-        BorrowerInfo storage borrower = borrowers[msg.sender];
+        BorrowerInfo memory borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
         // borrow amount from buckets with limit price and apply the origination fee
@@ -102,6 +102,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // borrower accounting
         borrower.debt   += amount_ + fee;
+        borrowers[msg.sender] = borrower;
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
 
@@ -113,7 +114,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     function removeCollateral(uint256 amount_) external override {
         accumulatePoolInterest();
 
-        BorrowerInfo storage borrower = borrowers[msg.sender];
+        BorrowerInfo memory borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
         uint256 encumberedBorrowerCollateral = Maths.rayToWad(getEncumberedCollateral(borrower.debt));
@@ -124,6 +125,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // borrower accounting
         borrower.collateralDeposited -= amount_;
+        borrowers[msg.sender] = borrower;
 
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
@@ -135,7 +137,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         require(availableAmount >= maxAmount_, "P:R:INSUF_BAL");
 
-        BorrowerInfo storage borrower = borrowers[msg.sender];
+        BorrowerInfo memory borrower = borrowers[msg.sender];
         require(borrower.debt != 0, "P:R:NO_DEBT");
 
         accumulatePoolInterest();
@@ -150,6 +152,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // borrower accounting
         borrower.debt   -= amount;
+        borrowers[msg.sender] = borrower;
 
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
@@ -250,7 +253,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     function liquidate(address borrower_) external override {
         accumulatePoolInterest();
 
-        BorrowerInfo storage borrower = borrowers[borrower_];
+        BorrowerInfo memory borrower = borrowers[borrower_];
         accumulateBorrowerInterest(borrower);
 
         uint256 debt                = borrower.debt;
@@ -272,6 +275,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         // borrower accounting
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
+        borrowers[borrower_] = borrower;
 
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
