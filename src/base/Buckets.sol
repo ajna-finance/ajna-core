@@ -546,32 +546,28 @@ abstract contract Buckets is IBuckets {
                 uint256 toPrice = bucket_.down;
 
                 while (true) {
-                    Bucket memory toBucket    = _buckets[toPrice];
-                    toBucket.debt             = accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
+                    Bucket storage toBucket   = _buckets[toPrice];
+                    uint256 toDebt            = accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
+                    uint256 toDeposit         = toBucket.onDeposit;
                     toBucket.inflatorSnapshot = inflator_;
 
-                    if (reallocation < toBucket.onDeposit) {
-                        // bucket accounting
-                        bucket_.debt      -= reallocation;
-                        toBucket.debt      += reallocation;
+                    if (reallocation < toDeposit) {
+                        // reallocate all and exit
+                        bucket_.debt       -= reallocation;
+                        toBucket.debt      = toDebt + reallocation;
                         toBucket.onDeposit -= reallocation;
                         pdRemove           += Maths.wmul(reallocation, toPrice);
                         lup_ = toPrice;
-                        // save bucket to storage
-                        _buckets[toPrice] = toBucket;
-
                         break;
                     } else {
-                        // bucket accounting
-                        if (toBucket.onDeposit != 0) {
-                            reallocation       -= toBucket.onDeposit;
-                            bucket_.debt      -= toBucket.onDeposit;
-                            toBucket.debt      += toBucket.onDeposit;
-                            pdRemove           += Maths.wmul(toBucket.onDeposit, toPrice);
-                            toBucket.onDeposit = 0;
+                        if (toDeposit != 0) {
+                            reallocation       -= toDeposit;
+                            bucket_.debt      -= toDeposit;
+                            toDebt             += toDeposit;
+                            pdRemove           += Maths.wmul(toDeposit, toPrice);
+                            toBucket.onDeposit -= toDeposit;
                         }
-                        // save bucket to storage
-                        _buckets[toPrice] = toBucket;
+                        toBucket.debt = toDebt;
                     }
 
                     if (toBucket.down == 0) {
@@ -630,18 +626,17 @@ abstract contract Buckets is IBuckets {
                     }
 
                     if (reallocation < toBucket.onDeposit) {
-                        // bucket accounting
+                        // reallocate all and exit
                         fromBucket_.debt  -= reallocation;
                         toBucket.debt      += reallocation;
                         toBucket.onDeposit -= reallocation;
                         pdRemove           += Maths.wmul(reallocation, toPrice);
                         lup_ = toPrice;
-                        // save bucket to storage
+
                         if (!isToBucket) _buckets[toPrice] = toBucket;
 
                         break;
                     } else {
-                        // bucket accounting
                         if (toBucket.onDeposit != 0) {
                             reallocation       -= toBucket.onDeposit;
                             fromBucket_.debt  -= toBucket.onDeposit;
@@ -649,7 +644,7 @@ abstract contract Buckets is IBuckets {
                             pdRemove           += Maths.wmul(toBucket.onDeposit, toPrice);
                             toBucket.onDeposit = 0;
                         }
-                        // save bucket to storage
+
                         if (!isToBucket) _buckets[toPrice] = toBucket;
                     }
 
@@ -690,34 +685,29 @@ abstract contract Buckets is IBuckets {
         while (true) {
             if (curPrice == bucket_.price) break; // reached deposit bucket; nowhere to go
 
-            Bucket memory curLup    = _buckets[curPrice];
-            curLup.debt             = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
+            Bucket storage curLup = _buckets[curPrice];
+            uint256 curLupDebt    = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
+
             curLup.inflatorSnapshot = inflator_;
 
-            if (amount_ > curLup.debt) {
-                // buckets accounting
-                bucket_.debt      += curLup.debt;
-                bucket_.onDeposit -= curLup.debt;
-                pdRemove           += Maths.wmul(curLup.debt, bucket_.price);
-                curLup.onDeposit   += curLup.debt;
-                pdAdd              += Maths.wmul(curLup.debt, curPrice);
-                amount_           -= curLup.debt;
-                curLup.debt        = 0;
-                // save bucket to storage
-                _buckets[curPrice] = curLup;
+            if (amount_ > curLupDebt) {
+                bucket_.debt      += curLupDebt;
+                bucket_.onDeposit -= curLupDebt;
+                pdRemove          += Maths.wmul(curLupDebt, bucket_.price);
+                curLup.debt       = 0;
+                curLup.onDeposit  += curLupDebt;
+                pdAdd             += Maths.wmul(curLupDebt, curPrice);
+                amount_           -= curLupDebt;
 
                 if (curPrice == curLup.up) break; // reached top-of-book; nowhere to go
 
             } else {
-                // buckets accounting
                 bucket_.debt      += amount_;
                 bucket_.onDeposit -= amount_;
                 pdRemove          += Maths.wmul(amount_, bucket_.price);
-                curLup.debt       -= amount_;
+                curLup.debt       = curLupDebt - amount_;
                 curLup.onDeposit  += amount_;
                 pdAdd             += Maths.wmul(amount_, curPrice);
-                // save bucket to storage
-                _buckets[curPrice] = curLup;
                 break;
             }
 
@@ -763,7 +753,6 @@ abstract contract Buckets is IBuckets {
             }
 
             if (amount_ > curLup.debt) {
-                // buckets accounting
                 toBucket_.debt      += curLup.debt;
                 toBucket_.onDeposit -= curLup.debt;
                 pdRemove             += Maths.wmul(curLup.debt, toBucket_.price);
@@ -771,20 +760,19 @@ abstract contract Buckets is IBuckets {
                 pdAdd                += Maths.wmul(curLup.debt, curPrice);
                 amount_             -= curLup.debt;
                 curLup.debt          = 0;
-                // save bucket to storage
+
                 if (!isFromBucket) _buckets[curPrice] = curLup;
 
                 if (curPrice == curLup.up) break; // reached top-of-book; nowhere to go
 
             } else {
-                // buckets accounting
                 toBucket_.debt      += amount_;
                 toBucket_.onDeposit -= amount_;
                 pdRemove             += Maths.wmul(amount_, toBucket_.price);
                 curLup.debt          -= amount_;
                 curLup.onDeposit     += amount_;
                 pdAdd                += Maths.wmul(amount_, curPrice);
-                // save bucket to storage
+
                 if (!isFromBucket) _buckets[curPrice] = curLup;
 
                 break;
