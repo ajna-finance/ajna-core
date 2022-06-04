@@ -53,19 +53,6 @@ abstract contract Interest is IInterest, PoolState {
     /**************************/
 
     /**
-     *  @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
-     *  @dev    Only adds debt if a borrower has already initiated a debt position
-     *  @param  debt_     Borrower debt before accumulating interest
-     *  @param  inflator_ Borrower inflator snapshot before accumulating interest
-     */
-    function accumulateBorrowerInterest(uint256 debt_, uint256 inflator_) internal view returns (uint256) {
-        if (debt_ != 0 && inflator_ != 0) {
-            debt_ += getPendingInterest(debt_, inflatorSnapshot, inflator_);
-        }
-        return debt_;
-    }
-
-    /**
      *  @notice Update the global borrower inflator
      *  @dev    Requires time to have passed between update calls
      */

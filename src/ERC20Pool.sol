@@ -90,13 +90,15 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(amount_ > getPoolMinDebtAmount(), "P:B:AMT_LT_AVG_DEBT");
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
-        uint256 borrowerDebt          = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
+        if (borrower.debt != 0) {
+            borrower.debt += getPendingInterest(borrower.debt, inflatorSnapshot, borrower.inflatorSnapshot);
+        }
 
         // borrow amount from buckets with limit price and apply the origination fee
         uint256 fee = Maths.max(Maths.wdiv(previousRate, WAD_WEEKS_PER_YEAR), minFee);
         borrowFromBucket(amount_, fee, limitPrice_, inflatorSnapshot);
 
-        require(borrower.collateralDeposited > Maths.rayToWad(getEncumberedCollateral(borrowerDebt + amount_ + fee)), "P:B:INSUF_COLLAT");
+        require(borrower.collateralDeposited > Maths.rayToWad(getEncumberedCollateral(borrower.debt + amount_ + fee)), "P:B:INSUF_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount_;
@@ -107,7 +109,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
 
         // borrower accounting
-        borrower.debt             = borrowerDebt + amount_ + fee;
+        borrower.debt             += amount_ + fee;
         borrower.inflatorSnapshot = inflatorSnapshot;
 
         // move borrowed amount from pool to sender
@@ -119,16 +121,17 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[msg.sender];
-        uint256 borrowerDebt          = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
+        if (borrower.debt != 0) {
+            borrower.debt += getPendingInterest(borrower.debt, inflatorSnapshot, borrower.inflatorSnapshot);
+        }
 
-        uint256 encumberedBorrowerCollateral = Maths.rayToWad(getEncumberedCollateral(borrowerDebt));
+        uint256 encumberedBorrowerCollateral = Maths.rayToWad(getEncumberedCollateral(borrower.debt));
         require(borrower.collateralDeposited - encumberedBorrowerCollateral >= amount_, "P:RC:AMT_GT_AVAIL_COLLAT");
 
         // pool level accounting
         totalCollateral              -= amount_;
 
         // borrower accounting
-        borrower.debt                = borrowerDebt;
         borrower.collateralDeposited -= amount_;
         borrower.inflatorSnapshot    = inflatorSnapshot;
 
@@ -146,7 +149,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(borrower.debt != 0, "P:R:NO_DEBT");
 
         accumulatePoolInterest();
-        uint256 borrowerDebt = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
+        uint256 borrowerDebt = borrower.debt + getPendingInterest(borrower.debt, inflatorSnapshot, borrower.inflatorSnapshot);
 
         uint256 amount        = Maths.min(maxAmount_, borrowerDebt);
         uint256 remainingDebt = borrowerDebt - amount;
@@ -268,10 +271,11 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
 
         BorrowerInfo storage borrower = borrowers[borrower_];
-        uint256 borrowerDebt          = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
+        require(borrower.debt != 0, "P:L:NO_DEBT");
+
+        uint256 borrowerDebt          = borrower.debt + getPendingInterest(borrower.debt, inflatorSnapshot, borrower.inflatorSnapshot);
         uint256 collateralDeposited   = borrower.collateralDeposited;
 
-        require(borrowerDebt != 0, "P:L:NO_DEBT");
         require(
             getBorrowerCollateralization(collateralDeposited, borrowerDebt) <= Maths.ONE_WAD,
             "P:L:BORROWER_OK"
