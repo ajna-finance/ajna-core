@@ -43,10 +43,8 @@ abstract contract Buckets is IBuckets {
         // initialize bucket if required and get new HPB
         uint256 newHpb = !BitMaps.get(_bitmap, price_) ? initializeBucket(hpb, price_) : hpb;
 
-        Bucket memory bucket = _buckets[price_];
-        if (bucket.debt != 0 ) {
-            bucket.debt += Maths.radToWadTruncate(bucket.debt * (Maths.rdiv(inflator_, bucket.inflatorSnapshot) - Maths.ONE_RAY));
-        }
+        Bucket memory bucket    = _buckets[price_];
+        bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
         lpTokens_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(bucket));
@@ -83,11 +81,8 @@ abstract contract Buckets is IBuckets {
         while (true) {
             require(curPrice >= limit_, "B:B:PRICE_LT_LIMIT");
 
-            Bucket storage curLup = _buckets[curPrice];
-            uint256 curDebt;
-            if (curLup.debt != 0 ) {
-                curDebt = curLup.debt + Maths.radToWadTruncate(curLup.debt * (Maths.rdiv(inflator_, curLup.inflatorSnapshot) - Maths.ONE_RAY));
-            }
+            Bucket storage curLup   = _buckets[curPrice];
+            uint256 curDebt         = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
             curLup.inflatorSnapshot = inflator_;
 
             if (amount_ > curLup.onDeposit) {
@@ -158,10 +153,7 @@ abstract contract Buckets is IBuckets {
 
         while (true) {
             Bucket storage bucket   = _buckets[curPrice];
-            uint256 curDebt;
-            if (bucket.debt != 0 ) {
-                curDebt = bucket.debt + Maths.radToWadTruncate(bucket.debt * (Maths.rdiv(inflator_, bucket.inflatorSnapshot) - Maths.ONE_RAY));
-            }
+            uint256 curDebt         = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
             bucket.inflatorSnapshot = inflator_;
 
             uint256 bucketDebtToPurchase     = Maths.min(debt_, curDebt);
@@ -212,10 +204,8 @@ abstract contract Buckets is IBuckets {
         uint256 newHpb = !BitMaps.get(_bitmap, toPrice_) ? initializeBucket(hpb, toPrice_) : hpb;
         uint256 newLup = lup;
 
-        Bucket memory fromBucket = _buckets[fromPrice_];
-        if (fromBucket.debt != 0 ) {
-            fromBucket.debt += Maths.radToWadTruncate(fromBucket.debt * (Maths.rdiv(inflator_, fromBucket.inflatorSnapshot) - Maths.ONE_RAY));
-        }
+        Bucket memory fromBucket    = _buckets[fromPrice_];
+        fromBucket.debt             = accumulateBucketInterest(fromBucket.debt, fromBucket.inflatorSnapshot, inflator_);
         fromBucket.inflatorSnapshot = inflator_;
 
         uint256 exchangeRate = getExchangeRate(fromBucket);
@@ -223,10 +213,8 @@ abstract contract Buckets is IBuckets {
 
         require(lpRedemption_ <= lpBalance_, "B:MQT:AMT_GT_CLAIM");
 
-        Bucket memory toBucket = _buckets[toPrice_];
-        if (toBucket.debt != 0 ) {
-            toBucket.debt += Maths.radToWadTruncate(toBucket.debt * (Maths.rdiv(inflator_, toBucket.inflatorSnapshot) - Maths.ONE_RAY));
-        }
+        Bucket memory toBucket    = _buckets[toPrice_];
+        toBucket.debt             = accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
         toBucket.inflatorSnapshot = inflator_;
 
         lpAward_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(toBucket));
@@ -269,10 +257,7 @@ abstract contract Buckets is IBuckets {
         uint256 price_, uint256 amount_, uint256 collateral_, uint256 inflator_
     ) internal {
         Bucket memory bucket    = _buckets[price_];
-        if (bucket.debt != 0 ) {
-            bucket.debt += Maths.radToWadTruncate(bucket.debt * (Maths.rdiv(inflator_, bucket.inflatorSnapshot) - Maths.ONE_RAY));
-        }
-
+        bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
         uint256 available = bucket.onDeposit + bucket.debt;
@@ -314,9 +299,7 @@ abstract contract Buckets is IBuckets {
         uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 inflator_
     ) internal returns (uint256 amount_, uint256 lpTokens_) {
         Bucket memory bucket    = _buckets[price_];
-        if (bucket.debt != 0 ) {
-            bucket.debt += Maths.radToWadTruncate(bucket.debt * (Maths.rdiv(inflator_, bucket.inflatorSnapshot) - Maths.ONE_RAY));
-        }
+        bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
         uint256 exchangeRate = getExchangeRate(bucket);                // RAY
@@ -361,10 +344,8 @@ abstract contract Buckets is IBuckets {
 
         while (true) {
             Bucket storage curLup = _buckets[curPrice];
-            uint256 curDebt;
-            if (curLup.debt != 0) {
-                curDebt = curLup.debt + Maths.radToWadTruncate(curLup.debt * (Maths.rdiv(inflator_, curLup.inflatorSnapshot) - Maths.ONE_RAY));
-
+            uint256 curDebt = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
+            if (curDebt != 0) {
                 curLup.inflatorSnapshot = inflator_;
 
                 if (amount_ > curDebt) {
@@ -398,6 +379,22 @@ abstract contract Buckets is IBuckets {
     /*********************************/
     /*** Private Utility Functions ***/
     /*********************************/
+
+    /**
+     *  @notice Update bucket.debt with interest accumulated since last state change
+     *  @param debt_         Current ucket debt bucket being updated
+     *  @param inflator_     RAY - The current bucket inflator value
+     *  @param poolInflator_ RAY - The current pool inflator value
+     */
+    function accumulateBucketInterest(uint256 debt_, uint256 inflator_, uint256 poolInflator_) private pure returns (uint256){
+        if (debt_ != 0) {
+            // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
+            debt_ += Maths.radToWadTruncate(
+                debt_ * (Maths.rdiv(poolInflator_, inflator_) - Maths.ONE_RAY)
+            );
+        }
+        return debt_;
+    }
 
     /**
      *  @notice Removes state for an unused bucket and update surrounding price pointers
@@ -550,10 +547,7 @@ abstract contract Buckets is IBuckets {
 
                 while (true) {
                     Bucket storage toBucket   = _buckets[toPrice];
-                    uint256 toDebt;
-                    if (toBucket.debt != 0 ) {
-                        toDebt = toBucket.debt + Maths.radToWadTruncate(toBucket.debt * (Maths.rdiv(inflator_, toBucket.inflatorSnapshot) - Maths.ONE_RAY));
-                    }
+                    uint256 toDebt            = accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
                     uint256 toDeposit         = toBucket.onDeposit;
                     toBucket.inflatorSnapshot = inflator_;
 
@@ -625,10 +619,9 @@ abstract contract Buckets is IBuckets {
                     if (isToBucket) { // use from bucket loaded in memory
                         toBucket  = toBucket_;
                     } else {
-                        toBucket = _buckets[toPrice]; // load to bucket from storage
-                        if (toBucket.debt != 0 ) {
-                            toBucket.debt += Maths.radToWadTruncate(toBucket.debt * (Maths.rdiv(inflator_, toBucket.inflatorSnapshot) - Maths.ONE_RAY));
-                        }
+                        toBucket      = _buckets[toPrice]; // load to bucket from storage
+                        toBucket.debt = accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
+
                         toBucket.inflatorSnapshot = inflator_;
                     }
 
@@ -693,10 +686,7 @@ abstract contract Buckets is IBuckets {
             if (curPrice == bucket_.price) break; // reached deposit bucket; nowhere to go
 
             Bucket storage curLup = _buckets[curPrice];
-            uint256 curLupDebt;
-            if (curLup.debt != 0 ) {
-                curLupDebt = curLup.debt + Maths.radToWadTruncate(curLup.debt * (Maths.rdiv(inflator_, curLup.inflatorSnapshot) - Maths.ONE_RAY));
-            }
+            uint256 curLupDebt    = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
 
             curLup.inflatorSnapshot = inflator_;
 
@@ -753,12 +743,12 @@ abstract contract Buckets is IBuckets {
             if (curPrice == toBucket_.price) break; // reached deposit bucket; nowhere to go
             isFromBucket = curPrice == fromBucket_.price;
 
-            if (isFromBucket) curLup = fromBucket_; // use from bucket loaded in memory
-            else {
-                curLup = _buckets[curPrice];
-                if (curLup.debt != 0 ) {
-                    curLup.debt += Maths.radToWadTruncate(curLup.debt * (Maths.rdiv(inflator_, curLup.inflatorSnapshot) - Maths.ONE_RAY));
-                }
+            if (isFromBucket) { // use from bucket loaded in memory
+                curLup     = fromBucket_;
+            } else {
+                curLup      = _buckets[curPrice];
+                curLup.debt = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
+
                 curLup.inflatorSnapshot = inflator_;
             }
 
