@@ -87,6 +87,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
+        require(amount_ > getPoolMinDebtAmount(), "P:B:AMT_LT_AVG_DEBT");
+
         BorrowerInfo storage borrower = borrowers[msg.sender];
         uint256 borrowerDebt          = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
 
@@ -99,6 +101,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         // pool level accounting
         totalQuoteToken -= amount_;
         totalDebt       += amount_ + fee;
+
+        if (borrower.debt == 0) totalBorrowers += 1;
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
 
@@ -144,7 +148,12 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
         uint256 borrowerDebt = accumulateBorrowerInterest(borrower.debt, borrower.inflatorSnapshot);
 
-        uint256 amount = Maths.min(maxAmount_, borrowerDebt);
+        uint256 amount        = Maths.min(maxAmount_, borrowerDebt);
+        uint256 remainingDebt = borrowerDebt - amount;
+
+        require(remainingDebt == 0 || remainingDebt > getPoolMinDebtAmount(), "P:R:AMT_LT_AVG_DEBT");
+
+        // repay amount to buckets
         repayBucket(amount, inflatorSnapshot, amount >= totalDebt);
 
         // pool level accounting
@@ -152,8 +161,10 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         totalDebt       -= Maths.min(totalDebt, amount);
 
         // borrower accounting
-        borrower.debt             = borrowerDebt - amount;
+        borrower.debt             = remainingDebt;
         borrower.inflatorSnapshot = inflatorSnapshot;
+
+        if (remainingDebt == 0) totalBorrowers -= 1;
 
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
@@ -170,6 +181,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(BucketMath.isValidPrice(price_), "P:AQT:INVALID_PRICE");
 
         accumulatePoolInterest();
+
+        require(amount_ > getPoolMinDebtAmount(), "P:AQT:AMT_LT_AVG_DEBT");
 
         // deposit quote token amount and get awarded LP tokens
         lpTokens_ = addQuoteTokenToBucket(price_, amount_, totalDebt, inflatorSnapshot);
@@ -275,6 +288,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
         borrower.inflatorSnapshot    = inflatorSnapshot;
+
+        totalBorrowers -= 1;
 
         emit Liquidate(borrower_, borrowerDebt, requiredCollateral);
     }

@@ -307,7 +307,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p10016);
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p9020);
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p8002);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p100);
+        _lender.addQuoteToken(_pool, address(_lender), 1_300 * 1e18, _p100);
 
         // borrowers deposit collateral
         _borrower.addCollateral(_pool, 2 * 1e18);
@@ -316,8 +316,8 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
         _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18);
 
-        // 2nd borrower takes a loan of 1_000 DAI, pushing lup to 100.332368143282009890
-        _borrower2.borrow(_pool, 1_000 * 1e18, 100 * 1e18);
+        // 2nd borrower takes a loan of 1_300 DAI, pushing lup to 100.332368143282009890
+        _borrower2.borrow(_pool, 1_300 * 1e18, 100 * 1e18);
 
         // liquidate borrower
         _lender.liquidate(_pool, address(_borrower));
