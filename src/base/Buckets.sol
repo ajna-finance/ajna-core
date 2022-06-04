@@ -157,10 +157,7 @@ abstract contract Buckets is IBuckets {
             bucket.inflatorSnapshot = inflator_;
 
             uint256 bucketDebtToPurchase     = Maths.min(debt_, curDebt);
-            uint256 debtByPrice              = Maths.wdiv(debt_, bucket.price);
-            uint256 bucketRequiredCollateral = Maths.min(
-                Maths.min(debtByPrice, collateral_), debtByPrice
-            );
+            uint256 bucketRequiredCollateral = Maths.min(Maths.wdiv(debt_, bucket.price), collateral_);
 
             debt_               -= bucketDebtToPurchase;
             collateral_         -= bucketRequiredCollateral;
