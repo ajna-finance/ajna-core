@@ -17,7 +17,11 @@ contract ERC20PoolTest is DSTestPlus {
     ERC20Pool          internal _pool;
     QuoteToken         internal _quote;
     UserWithCollateral internal _borrower;
+    UserWithCollateral internal _borrower1;
+    UserWithCollateral internal _borrower2;
     UserWithQuoteToken internal _lender;
+    UserWithQuoteToken internal _lender1;
+    UserWithQuoteToken internal _lender2;
 
     function setUp() external {
         _collateral  = new CollateralToken();
@@ -25,15 +29,29 @@ contract ERC20PoolTest is DSTestPlus {
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
         _pool        = ERC20Pool(_poolAddress);
 
-        _lender     = new UserWithQuoteToken();
-        _borrower   = new UserWithCollateral();
+        _lender      = new UserWithQuoteToken();
+        _lender1     = new UserWithQuoteToken();
+        _lender2     = new UserWithQuoteToken();
+        _borrower    = new UserWithCollateral();
+        _borrower1   = new UserWithCollateral();
+        _borrower2   = new UserWithCollateral();
 
         _quote.mint(address(_lender), 200_000 * 1e18);
+        _quote.mint(address(_lender1), 200_000 * 1e18);
+        _quote.mint(address(_lender2), 200_000 * 1e18);
         _collateral.mint(address(_borrower), 200_000 * 1e18);
+        _collateral.mint(address(_borrower1), 200_000 * 1e18);
+        _collateral.mint(address(_borrower2), 200_000 * 1e18);
 
         _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
+        _lender1.approveToken(_quote, address(_pool), 200_000 * 1e18);
+        _lender2.approveToken(_quote, address(_pool), 200_000 * 1e18);
         _borrower.approveToken(_collateral, address(_pool), 200_000 * 1e18);
         _borrower.approveToken(_quote, address(_pool), 200_000 * 1e18);
+        _borrower1.approveToken(_collateral, address(_pool), 200_000 * 1e18);
+        _borrower1.approveToken(_quote, address(_pool), 200_000 * 1e18);
+        _borrower2.approveToken(_collateral, address(_pool), 200_000 * 1e18);
+        _borrower2.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
     /**
@@ -132,5 +150,75 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(_pool.totalDebt(), borrowerDebt);
 
     }
+
+   function testManipulationMitigations() external {
+        _lender.addQuoteToken(_pool, address(_lender), 100_000 * 1e18, _p4000);
+        _lender1.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p3010);
+
+        assertEq(_pool.getPoolMinDebtAmount(), 0);
+        assertEq(_pool.totalBorrowers(),       0);
+
+        _borrower.addCollateral(_pool, 200 * 1e18);
+        _borrower1.addCollateral(_pool, 200 * 1e18);
+        _borrower2.addCollateral(_pool, 200 * 1e18);
+
+        _borrower.borrow(_pool, 100 * 1e18, 3000 * 1e18);
+
+        assertEq(_pool.getPoolMinDebtAmount(), 0.100000961538461538 * 1e18);
+        assertEq(_pool.totalBorrowers(),       1);
+
+        // should fail if trying to borrow amount < 10% of pool average debt amount
+        vm.expectRevert("P:B:AMT_LT_AVG_DEBT");
+        _borrower.borrow(_pool, 0.1 * 1e18, 3000 * 1e18);
+
+        // borrowers accumulator should be incremented only if new borrower
+        _borrower.borrow(_pool, 100 * 1e18, 3000 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 0.200001923076923077 * 1e18);
+        assertEq(_pool.totalBorrowers(),       1);
+
+        _borrower1.borrow(_pool, 100 * 1e18, 3000 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 0.300002884615384615 * 1e18);
+        assertEq(_pool.totalBorrowers(),       2);
+
+        _borrower2.borrow(_pool, 200 * 1e18, 3000 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 0.500003846153846154 * 1e18);
+        assertEq(_pool.totalBorrowers(),       3);
+
+        // repay should fail if remaining debt < 10% of pool average debt amount
+        _quote.mint(address(_borrower2), 200 * 1e18);
+        vm.expectRevert("P:R:AMT_LT_AVG_DEBT");
+         _borrower2.repay(_pool, 199.9 * 1e18);
+
+        _borrower2.repay(_pool, 100 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 0.400003846153846154 * 1e18);
+        assertEq(_pool.totalBorrowers(),       3);
+        _borrower2.repay(_pool, 200 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 0.300002884615384615 * 1e18);
+        assertEq(_pool.totalBorrowers(),       2);
+
+        // deposit should fail if amount < 10% of pool average debt amount
+        vm.expectRevert("P:AQT:AMT_LT_AVG_DEBT");
+        _lender2.addQuoteToken(_pool, address(_lender), 0.1 * 1e18, _p2850);
+
+        _lender2.addQuoteToken(_pool, address(_lender), 151 * 1e18, _p2850);
+
+        // repay all borrowers
+        _quote.mint(address(_borrower), 200 * 1e18);
+        _quote.mint(address(_borrower1), 200 * 1e18);
+
+        _borrower.repay(_pool, 100 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 0.200002884615384615 * 1e18);
+        assertEq(_pool.totalBorrowers(),       2);
+        _borrower.repay(_pool, 200 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 0.100000961538461538 * 1e18);
+        assertEq(_pool.totalBorrowers(),       1);
+
+        _borrower1.repay(_pool, 20 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 0.080000961538461538 * 1e18);
+        assertEq(_pool.totalBorrowers(),       1);
+        _borrower1.repay(_pool, 100 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 0);
+        assertEq(_pool.totalBorrowers(),       0);
+   }
 
 }

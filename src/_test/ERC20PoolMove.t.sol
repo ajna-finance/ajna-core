@@ -238,7 +238,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   62_674_484.767587889162425000 * 1e18);
 
         // lender moves 100 DAI up
-        assertMoveQuoteToken(address(_lender), _p502, _p3514, 100 * 1e18, _p2503);
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), _p502, _p3514, 100 * 1e18, _p2503);
+        _lender.moveQuoteToken(_pool, address(_lender), 100 * 1e18, _p502, _p3514);
 
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
@@ -419,8 +421,10 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   62_674_484.767587889162425000 * 1e18);
 
         // lender moves 100 DAI down
-        assertMoveQuoteToken(address(_lender), _p3514, _p502, 100 * 1e18, _p2503);
-        
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), _p3514, _p502, 100 * 1e18, _p2503);
+        _lender.moveQuoteToken(_pool, address(_lender), 100 * 1e18, _p3514, _p502);
+    
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
         assertEq(debt,    0);
         assertEq(deposit, 50_100 * 1e18);
@@ -729,7 +733,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   35_135_775.500346242311180000 * 1e18);
 
         // lender moves 500 DAI down
-        assertMoveQuoteToken(address(_lender), _p3514, _p2503, 500 * 1e18, _p2503);
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), _p3514, _p2503, 500 * 1e18, _p2503);
+        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, _p3514, _p2503);
 
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
@@ -787,7 +793,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   35_135_775.500346242311180000 * 1e18);
 
         // lender moves 500 DAI up
-        assertMoveQuoteToken(address(_lender), _p2503, _p3514, 500 * 1e18, _p2503);
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), _p2503, _p3514, 500 * 1e18, _p2503);
+        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, _p2503, _p3514);
 
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
@@ -845,7 +853,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   35_135_775.500346242311180000 * 1e18);
 
         // lender moves 500 DAI down
-        assertMoveQuoteToken(address(_lender), _p3514, _p3010, 500 * 1e18, _p2503);
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), _p3514, _p3010, 500 * 1e18, _p2503);
+        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, _p3514, _p3010);
 
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
@@ -903,7 +913,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   35_135_775.500346242311180000 * 1e18);
 
         // lender moves 500 DAI up
-        assertMoveQuoteToken(address(_lender), _p3010, _p3514, 500 * 1e18, _p2503);
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), _p3010, _p3514, 500 * 1e18, _p2503);
+        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, _p3010, _p3514);
 
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
@@ -1075,7 +1087,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   72_688_560.864766669835605000 * 1e18);
 
         // lender moves 1_100 DAI up
-        assertMoveQuoteToken(address(_lender), _p2503, _p3514, 1_100 * 1e18, _p3010);
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), _p2503, _p3514, 1_100 * 1e18, _p3010);
+        _lender.moveQuoteToken(_pool, address(_lender), 1_100 * 1e18, _p2503, _p3514);
 
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p3010);
