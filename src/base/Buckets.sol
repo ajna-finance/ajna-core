@@ -83,14 +83,15 @@ abstract contract Buckets is IBuckets {
 
             Bucket storage curLup   = _buckets[curPrice];
             uint256 curDebt         = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
+            uint256 deposit         = curLup.onDeposit;
             curLup.inflatorSnapshot = inflator_;
 
-            if (amount_ > curLup.onDeposit) {
+            if (amount_ > deposit) {
                 // take all on deposit from this bucket
-                curLup.debt      = curDebt + curLup.onDeposit;
-                amount_         -= curLup.onDeposit;
-                pdRemove         += Maths.wmul(curLup.onDeposit, curPrice);
-                curLup.onDeposit -= curLup.onDeposit;
+                curLup.debt      = curDebt + deposit;
+                amount_         -= deposit;
+                pdRemove         += Maths.wmul(deposit, curPrice);
+                curLup.onDeposit = 0;
             } else {
                 // take all remaining amount for loan from this bucket and exit
                 curLup.onDeposit -= amount_;
