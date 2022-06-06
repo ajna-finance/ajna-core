@@ -36,11 +36,11 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         _collateral.mint(address(_borrower), 100 * 1e18);
         _collateral.mint(address(_borrower2), 100 * 1e18);
-        _quote.mint(address(_lender), 200_000 * 1e18);
+        _quote.mint(address(_lender), 300_000 * 1e18);
 
         _borrower.approveToken(_collateral, address(_pool), 100 * 1e18);
         _borrower2.approveToken(_collateral, address(_pool), 100 * 1e18);
-        _lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
+        _lender.approveToken(_quote, address(_pool), 300_000 * 1e18);
     }
 
     /**
@@ -300,9 +300,16 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(actualUtilizationAfterAddCollateral, actualUtilizationAfterBorrow);
         assertLt(targetUtilizationAfterAddCollateral, targetUtilizationAfterBorrow);
 
+        assertEq(_pool.getPoolMinDebtAmount(), 100.000000961538461538 * 1e18);
+        assertEq(_pool.totalBorrowers(),       1);
+
+        // should revert when taking a loan below pool min debt amount
+        vm.expectRevert("P:B:AMT_LT_AVG_DEBT");
+        _borrower2.borrow(_pool, 100 * 1e18, 1_000 * 1e18);
+
         // should revert when taking a loan of 5_000 DAI that will drive pool undercollateralized
         vm.expectRevert("P:B:POOL_UNDER_COLLAT");
-        _borrower2.borrow(_pool, 5_000 * 1e18, 1_000 * 1e18);
+        _borrower2.borrow(_pool, 11_000 * 1e18, 1_000 * 1e18);
     }
 
     /**
@@ -362,7 +369,13 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assert(_pool.getHup() < _pool.lup());
 
         // add additional quote token to the maxed out priceMed bucket
-        _lender.addQuoteToken(_pool, address(_lender), 1000 * 1e18, priceMed);
+        assertEq(_pool.getPoolMinDebtAmount(), 100.000001923076923077 * 1e18);
+
+        // should revert when deposit lower than pool min debt amount
+        vm.expectRevert("P:AQT:AMT_LT_AVG_DEBT");
+        _lender.addQuoteToken(_pool, address(_lender), 100 * 1e18, priceMed);
+
+        _lender.addQuoteToken(_pool, address(_lender), 50_100 * 1e18, priceMed);
 
         // check hup moves up as additional quote tokens become available
         assertEq(_pool.getHup(), priceMed);

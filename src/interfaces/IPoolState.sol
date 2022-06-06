@@ -55,6 +55,12 @@ interface IPoolState {
     function getPoolCollateralization() external view returns (uint256 poolCollateralization_);
 
     /**
+     *  @notice Gets the accepted minimum debt amount in the pool
+     *  @return poolMinDebtAmount_ The accepted minimum debt amount, in WAD units.
+     */
+    function getPoolMinDebtAmount() external view returns (uint256 poolMinDebtAmount_);
+
+    /**
      *  @notice Gets the current target utilization of the pool
      *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
      */

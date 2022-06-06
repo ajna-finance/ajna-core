@@ -88,6 +88,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
+        require(amount_ > getPoolMinDebtAmount(), "P:B:AMT_LT_AVG_DEBT");
+
         BorrowerInfo storage borrower = borrowers[msg.sender];
         accumulateBorrowerInterest(borrower);
 
@@ -100,6 +102,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         // pool level accounting
         totalQuoteToken -= amount_;
         totalDebt       += amount_ + fee;
+
+        if (borrower.debt == 0) totalBorrowers += 1;
 
         // borrower accounting
         borrower.debt   += amount_ + fee;
@@ -143,6 +147,10 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulateBorrowerInterest(borrower);
 
         uint256 amount = Maths.min(maxAmount_, borrower.debt);
+        uint256 remainingDebt = borrower.debt - amount;
+        require(remainingDebt == 0 || remainingDebt > getPoolMinDebtAmount(), "P:R:AMT_LT_AVG_DEBT");
+
+        // repay amount to buckets
         repayBucket(amount, inflatorSnapshot, amount >= totalDebt);
 
         // pool level accounting
@@ -151,6 +159,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // borrower accounting
         borrower.debt   -= amount;
+
+        if (borrower.debt == 0) totalBorrowers -= 1;
 
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
@@ -167,6 +177,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(BucketMath.isValidPrice(price_), "P:AQT:INVALID_PRICE");
 
         accumulatePoolInterest();
+
+        require(amount_ > getPoolMinDebtAmount(), "P:AQT:AMT_LT_AVG_DEBT");
 
         // deposit quote token amount and get awarded LP tokens
         lpTokens_ = addQuoteTokenToBucket(price_, amount_, totalDebt, inflatorSnapshot);
@@ -273,6 +285,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         // borrower accounting
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
+
+        totalBorrowers -= 1;
 
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
