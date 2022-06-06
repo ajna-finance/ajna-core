@@ -37,6 +37,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     /// @dev Set of tokenIds that are currently being used as collateral
     EnumerableSet.UintSet internal _collateralTokenIdsAdded;
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
+    /// @dev Defaults to length 0 if the whole collection is to be used
     EnumerableSet.UintSet internal _tokenIdsAllowed;
 
     uint256 public override quoteTokenScale;
@@ -121,7 +122,6 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         // borrower accounting
         NFTborrowers[msg.sender].collateralDeposited.add(tokenId_);
 
-        // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), tokenId_);
         emit AddCollateral(msg.sender, tokenId_);
@@ -129,7 +129,6 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
     // TODO: finish implementing
     // TODO: move check to onlySubsetMultiple()
-    // TODO: update to incrementally add if contains, otherwise skip?
     // TODO: integrate multicall here
     function addCollateralMultiple(uint256[] memory tokenIds_) external {
         // check if all incoming tokenIds are part of the pool subset
@@ -202,6 +201,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit RemoveCollateral(msg.sender, tokenId_);
     }
 
+    // TODO: finish implementing
     function repay(uint256 amount_) external {}
 
     /*********************************/
@@ -230,6 +230,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     }
 
     // TODO: update to NFT specific claim event
+    // TODO: check subset?
     function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) external {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
@@ -318,7 +319,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
             // check if incoming tokens are part of the pool subset
             onlySubset(tokenIds_[i]);
 
-            // check user owns all tokenIds_
+            // check user owns all tokenIds_ to prevent spoofing collateralRequired check
             if (collateral().ownerOf(tokenIds_[i]) != msg.sender) {
                 revert("P:PB:INVALID_T_ID");
             }
@@ -328,7 +329,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
             }
         }
 
-        // convert amount from WAD to pool precision - RAD
+        // calculate in whole NFTs the amount of collateral required to cover desired quote at desired price
         uint256 collateralRequired = Maths.divRoundingUp(amount_, price_);
         require(tokenIds_.length >= collateralRequired, "P:PB:INSUF_COLLAT");
 

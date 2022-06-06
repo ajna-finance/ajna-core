@@ -20,14 +20,14 @@ contract ERC20PoolFactory is IPoolFactory, PoolDeployer {
     }
 
     /** @inheritdoc IPoolFactory*/
-    function deployPool(address collateral_, address quote_) external canDeploy(collateral_, quote_) override returns (address pool_) {
+    function deployPool(address collateral_, address quote_) external canDeploy(NON_SUBSET_HASH, collateral_, quote_) override returns (address pool_) {
         bytes memory data = abi.encodePacked(collateral_, quote_);
 
         ERC20Pool pool = ERC20Pool(address(implementation).clone(data));
         pool.initialize();
         pool_ = address(pool);
 
-        deployedPools[collateral_][quote_] = pool_;
+        deployedPools[NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
     }
 }
