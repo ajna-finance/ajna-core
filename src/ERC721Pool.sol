@@ -58,15 +58,9 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         _;
     }
 
-    // TODO: convert to modifier and add check at start of each method
     function onlySubset(uint256 tokenId_) internal view {
         if (_tokenIdsAllowed.length() != 0) {
-
-            bool isAllowed = _tokenIdsAllowed.contains(tokenId_);
-
-            if (isAllowed == false) {
-                revert("P:ONLY_SUBSET");
-            }
+            require(_tokenIdsAllowed.contains(tokenId_), "P:ONLY_SUBSET");
         }
     }
 
@@ -325,9 +319,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
             onlySubset(tokenIds_[i]);
 
             // check user owns all tokenIds_ to prevent spoofing collateralRequired check
-            if (collateral().ownerOf(tokenIds_[i]) != msg.sender) {
-                revert("P:PB:INVALID_T_ID");
-            }
+            require(collateral().ownerOf(tokenIds_[i]) == msg.sender, "P:PB:INVALID_T_ID");
 
             unchecked {
                 ++i;
