@@ -4,8 +4,6 @@ pragma solidity 0.8.11;
 import { ERC721Pool }        from "../../ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../ERC721PoolFactory.sol";
 
-import { IPool } from "../../interfaces/IPool.sol";
-
 import { DSTestPlus }                                         from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, QuoteToken }                     from "../utils/Tokens.sol";
 import { UserWithNFTCollateral, UserWithQuoteTokenInNFTPool } from "../utils/Users.sol";
@@ -130,7 +128,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         // check pool balances
         assertEq(_NFTSubsetPool.totalQuoteToken(),          24_000 * 1e18);
         assertEq(_NFTSubsetPool.totalDebt(),                6_000.000961538461538462 * 1e18);
-        assertEq(_NFTSubsetPool.getNFTPoolCollateralization(), 2.000463518703181412 * 1e18);
+        assertEq(_NFTSubsetPool.getPoolCollateralization(), 2.000463518703181412 * 1e18);
         assertEq(
             _NFTSubsetPool.getEncumberedCollateral(_NFTSubsetPool.totalDebt()),
             _NFTSubsetPool.getEncumberedCollateral(borrowerDebt)
@@ -169,9 +167,9 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         assertEq(_NFTSubsetPool.lup(), _p4000);
         assertEq(_NFTSubsetPool.totalDebt(),       10_000.079929684723703272 * 1e18);
         assertEq(_NFTSubsetPool.totalQuoteToken(), 20_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalCollateral(), 3);
+        assertEq(_NFTSubsetPool.totalCollateral(), 3 * 1e18);
         assertEq(_NFTSubsetPool.pdAccumulator(),   55_144_110.464925767261400000 * 1e18);
-        assertEq(_NFTSubsetPool.getNFTPoolCollateralization(), 1.200268709864213944 * 1e18);
+        assertEq(_NFTSubsetPool.getPoolCollateralization(), 1.200268709864213944 * 1e18);
         assertEq(_NFTSubsetPool.getPoolActualUtilization(), 0.420473335425101563 * 1e18);
         assertEq(_NFTSubsetPool.getPendingPoolInterest(),               0);
         assertEq(_NFTSubsetPool.getPendingBucketInterest(_p4000), 0);

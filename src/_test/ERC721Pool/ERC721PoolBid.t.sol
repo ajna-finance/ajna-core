@@ -96,9 +96,9 @@ contract ERC721PoolBidTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),   3);
         assertEq(_quote.balanceOf(address(_NFTSubsetPool)),        8_000 * 1e18);
         assertEq(_NFTSubsetPool.totalQuoteToken(),                 8_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalCollateral(),                 3);
+        assertEq(_NFTSubsetPool.totalCollateral(),                 3 * 1e18);
         assertEq(_NFTSubsetPool.totalDebt(), 5_000.000961538461538462 * 1e18);
-        assertEq(_NFTSubsetPool.getNFTPoolCollateralization(),        2.400556145502927926 * 1e18);
+        assertEq(_NFTSubsetPool.getPoolCollateralization(),        2.400556145502927926 * 1e18);
         assertEq(_NFTSubsetPool.getPoolActualUtilization(),        0.407908729305961901 * 1e18);
 
         _tokenIds = new uint256[](1);
@@ -158,14 +158,14 @@ contract ERC721PoolBidTest is DSTestPlus {
 
         // check bidder and pool balances
         assertEq(_NFTSubsetPool.lup(), _p4000);
-        assertEq(_NFTSubsetPool.getNFTPoolCollateralization(), 3.200741527337237234 * 1e18);
+        assertEq(_NFTSubsetPool.getPoolCollateralization(), 3.200741527337237234 * 1e18);
         assertEq(_NFTSubsetPool.getPoolActualUtilization(),        0.605499524670794045 * 1e18);
         assertEq(_collateral.balanceOf(address(_bidder)), 4);
         assertEq(_quote.balanceOf(address(_bidder)),     4_000 * 1e18);
         assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),   4);
         assertEq(_quote.balanceOf(address(_NFTSubsetPool)),        4_000 * 1e18);
         assertEq(_NFTSubsetPool.totalQuoteToken(),                 4_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalCollateral(),                 4);
+        assertEq(_NFTSubsetPool.totalCollateral(),                 4 * 1e18);
         assertEq(_NFTSubsetPool.totalDebt(), 5_000.000961538461538462 * 1e18);
     }
 

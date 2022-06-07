@@ -53,8 +53,6 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
 
     }
 
-    // TODO: finish implementing
-    // TODO: fix encumberance and collateralization checks for ERC721
     function getNFTBorrowerInfo(address borrower_)
         public view returns (
             uint256 debt_,
@@ -74,7 +72,7 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
         if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
             borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
             collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization     = Maths.wdiv(borrower.collateralDeposited.length(), collateralEncumbered);
+            collateralization     = Maths.wrdivw(Maths.wad(borrower.collateralDeposited.length()), collateralEncumbered);
         }
 
         return (

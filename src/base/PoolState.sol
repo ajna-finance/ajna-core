@@ -51,14 +51,6 @@ abstract contract PoolState is IPoolState, Buckets {
         return Maths.ONE_WAD;
     }
 
-    // TODO: add to interface
-    function getNFTPoolCollateralization() public view returns (uint256 poolCollateralization_) {
-        if (lup != 0 && totalDebt != 0) {
-            return Maths.wrdivw(Maths.wad(totalCollateral), getEncumberedCollateral(totalDebt));
-        }
-        return Maths.ONE_WAD;
-    }
-
     function getPoolTargetUtilization() public view override returns (uint256) {
         return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
     }

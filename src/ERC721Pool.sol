@@ -52,6 +52,12 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         _;
     }
 
+    /// @notice Modifier to check a given tokenId has been deposited into the pool
+    modifier tokenInPool(uint256 tokenId_) {
+        require(collateral().ownerOf(tokenId_) == address(this), "P:T_NOT_IN_P");
+        _;
+    }
+
     // TODO: convert to modifier and add check at start of each method
     function onlySubset(uint256 tokenId_) internal view {
         if (_tokenIdsAllowed.length() != 0) {
@@ -117,7 +123,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // pool level accounting
         _collateralTokenIdsAdded.add(tokenId_);
-        totalCollateral = _collateralTokenIdsAdded.length();
+        totalCollateral = Maths.wad(_collateralTokenIdsAdded.length());
 
         // borrower accounting
         NFTborrowers[msg.sender].collateralDeposited.add(tokenId_);
@@ -170,15 +176,15 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         // borrower accounting
         borrower.debt   += amount_ + fee;
 
-        // TODO: check this condition -> should collateral be stored as a WAD...?
-        require(getNFTPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
+        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
 
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, lup, amount_);
     }
 
-    function removeCollateral(uint256 tokenId_) external {
+    // TODO: add removeCollateralMultiple method?
+    function removeCollateral(uint256 tokenId_) tokenInPool(tokenId_) external {
         accumulatePoolInterest();
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
@@ -191,7 +197,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // pool level accounting
         _collateralTokenIdsAdded.remove(tokenId_);
-        totalCollateral = _collateralTokenIdsAdded.length();
+        totalCollateral = Maths.wad(_collateralTokenIdsAdded.length());
 
         // borrower accounting
         borrower.collateralDeposited.remove(tokenId_);
@@ -230,8 +236,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     }
 
     // TODO: update to NFT specific claim event
-    // TODO: check subset?
-    function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) external {
+    function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) tokenInPool(tokenId_) external {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
         uint256 maxClaim = lpBalance[recipient_][price_];
@@ -242,7 +247,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // pool level accounting
         _collateralTokenIdsAdded.remove(tokenId_);
-        totalCollateral -= 1;
+        totalCollateral -= Maths.ONE_WAD;
 
         // lender accounting
         lpBalance[recipient_][price_] -= claimedLpTokens;
@@ -339,9 +344,9 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // pool level accounting
         totalQuoteToken -= amount_;
-        totalCollateral += tokenIds_.length;
+        totalCollateral += Maths.wad(tokenIds_.length);
 
-        require(getNFTPoolCollateralization() >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
+        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
 
         // move required collateral from sender to pool
         for (uint i; i < tokenIds_.length;) {
