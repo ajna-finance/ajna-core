@@ -17,6 +17,10 @@ from .ajna_protocol_runner import AjnaProtocolRunner
 
 
 class AjnaProtocol:
+
+    # keccak256("NON_SUBSET_HASH")
+    ERC20_POOL_HASH = "ab835e09eb0e6c29f0c283ee3c270414bb498606c3d68718b89dbbe96435a088"
+
     def __init__(self) -> None:
         self._accounts = Accounts()
         self._tokens = {}
@@ -65,7 +69,9 @@ class AjnaProtocol:
             )
 
         pool_address = self.ajna_factory.deployedPools(
-            collateral_address, quote_token_address
+            self.ERC20_POOL_HASH,
+            collateral_address,
+            quote_token_address
         )
 
         pool_contract = ERC20Pool.at(pool_address)
@@ -137,7 +143,9 @@ class AjnaProtocol:
         """
 
         pool_address = self.ajna_factory.deployedPools(
-            collateral_address, quote_token_address
+            self.ERC20_POOL_HASH,
+            collateral_address,
+            quote_token_address
         )
 
         is_deployed = (
