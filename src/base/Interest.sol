@@ -53,6 +53,22 @@ abstract contract Interest is IInterest, PoolState {
     /**************************/
 
     /**
+     *  @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
+     *  @dev    Only adds debt if a borrower has already initiated a debt position
+     *  @param  borrower_ Pointer to the struct which is accumulating interest on their debt
+     */
+    function accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_) internal {
+        if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
+            borrower_.debt += getPendingInterest(
+                borrower_.debt,
+                inflatorSnapshot,
+                borrower_.inflatorSnapshot
+            );
+        }
+        borrower_.inflatorSnapshot = inflatorSnapshot;
+    }
+
+    /**
      *  @notice Update the global borrower inflator
      *  @dev    Requires time to have passed between update calls
      */
