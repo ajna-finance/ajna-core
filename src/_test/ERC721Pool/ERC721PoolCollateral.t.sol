@@ -30,7 +30,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _quote       = new QuoteToken();
 
         _lender     = new UserWithQuoteTokenInNFTPool();
-        _bidder   = new UserWithNFTCollateral();
+        _bidder     = new UserWithNFTCollateral();
         _borrower   = new UserWithNFTCollateral();
 
         _quote.mint(address(_lender), 200_000 * 1e18);
@@ -40,12 +40,13 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _NFTCollectionPoolAddress = new ERC721PoolFactory().deployNFTCollectionPool(address(_collateral), address(_quote));
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
-        _tokenIds = new uint256[](4);
+        _tokenIds = new uint256[](5);
 
         _tokenIds[0] = 1;
         _tokenIds[1] = 5;
-        _tokenIds[2] = 50;
-        _tokenIds[3] = 61;
+        _tokenIds[2] = 10;
+        _tokenIds[3] = 50;
+        _tokenIds[4] = 61;
 
         _NFTSubsetPoolAddress = new ERC721PoolFactory().deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIds);
         _NFTSubsetPool        = ERC721Pool(_NFTSubsetPoolAddress);
@@ -59,6 +60,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
 
         _borrower.approveToken(_collateral, _NFTSubsetPoolAddress, 1);
         _borrower.approveToken(_collateral, _NFTSubsetPoolAddress, 5);
+        _borrower.approveToken(_collateral, _NFTSubsetPoolAddress, 10);
         _borrower.approveToken(_collateral, _NFTSubsetPoolAddress, 50);
 
         _bidder.approveToken(_collateral, _NFTSubsetPoolAddress, 61);
@@ -66,42 +68,88 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         // _collateral.setApprovalForAll(_NFTSubsetPoolAddress, true);
     }
 
-    function testAddCollateralNFTSubset() external {
-
+    /**
+     *  @notice With 1 lender and 1 borrower test adding collateral, repay and removeCollateral in an NFT subset type pool
+     *          Borrower reverts from attempting to add collateral outside of the approved subset
+     *          Borrower reverts from attempting to withdraw collateral when no collateral is available
+     */
+    function testAddRemoveCollateralNFTSubset() external {
         // should revert if attempt to add collateral from a tokenId outside of allowed subset
         vm.prank((address(_borrower)));
         vm.expectRevert("P:ONLY_SUBSET");
         _NFTSubsetPool.addCollateral(2);
 
-        assertEq(_NFTSubsetPool.getCollateralDeposited().length, 0);
-
-        // should allow adding collateral from approved subset
+        // should revert if attempting to remove collateral that is not in the pool
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(1);
-        assertEq(_NFTSubsetPool.getCollateralDeposited().length, 1);
-    }
-
-    function testRemoveCollateralNFTSubset() external {
-        // should revert if trying to remove collateral when none are available
-        vm.expectRevert("P:RC:AMT_GT_AVAIL_COLLAT");
-        _borrower.removeCollateral(_NFTSubsetPool, 1);
+        vm.expectRevert("P:T_NOT_IN_P");
+        _NFTSubsetPool.removeCollateral(10);
 
         // add initial quote tokens to pool
         _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p4000);
+
+        uint256 poolEncumbered    = _NFTSubsetPool.getEncumberedCollateral(_NFTSubsetPool.totalDebt());
+        uint256 collateralization = _NFTSubsetPool.getPoolCollateralization();
+        uint256 targetUtilization = _NFTSubsetPool.getPoolTargetUtilization();
+        uint256 actualUtilization = _NFTSubsetPool.getPoolActualUtilization();
+        assertEq(poolEncumbered,    0);
+        assertEq(collateralization, Maths.ONE_WAD);
+        assertEq(_NFTSubsetPool.getCollateralDeposited().length, 0);
+
+        // check collateral balances
+        assertEq(_collateral.balanceOf(address(_borrower)), 60);
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),     0);
 
         // add iniitial collateral to pool
         vm.prank((address(_borrower)));
         _NFTSubsetPool.addCollateral(1);
         vm.prank((address(_borrower)));
         _NFTSubsetPool.addCollateral(5);
+
         vm.prank((address(_borrower)));
+        // vm.expectEmit(true, true, false, true);
+        // emit Transfer(address(_borrower), address(_NFTSubsetPool), 50);
+        vm.expectEmit(true, true, false, true);
+        emit AddCollateral(address(_borrower), 50);
         _NFTSubsetPool.addCollateral(50);
+
+        // check collateral balances
+        assertEq(_collateral.balanceOf(address(_borrower)), 57);
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),     3);
         assertEq(_NFTSubsetPool.getCollateralDeposited().length, 3);
-  
+
+        // check borrower state before borrowing
+        (,, uint256[] memory collateralDeposited, uint256 borrowerEncumbered, uint256 borrowerCollateralization,,) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower));
+        assertEq(collateralDeposited.length,                 3);
+        assertEq(collateralDeposited[0], 1);
+        assertEq(collateralDeposited[1], 5);
+        assertEq(collateralDeposited[2], 50);
+        assertEq(borrowerEncumbered,        0);
+        assertEq(borrowerCollateralization, Maths.ONE_WAD);
+        assertEq(_NFTSubsetPool.getNFTPoolCollateralization(), borrowerCollateralization);
+
         // borrow from pool
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p4000, 5_000 * 1e18);
         _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503);
+
+        // check borrower state after borrowing
+        (,, collateralDeposited, borrowerEncumbered, borrowerCollateralization,,) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower));
+        assertEq(collateralDeposited.length,                 3);
+        assertEq(collateralDeposited[0], 1);
+        assertEq(collateralDeposited[1], 5);
+        assertEq(collateralDeposited[2], 50);
+        assertEq(borrowerEncumbered,        0);
+        assertEq(borrowerCollateralization, Maths.ONE_WAD);
+        assertEq(_NFTSubsetPool.getNFTPoolCollateralization(), borrowerCollateralization);
+
+        // TODO: fix this broken here
+        // check pool state after borrowing
+        poolEncumbered    = _NFTSubsetPool.getEncumberedCollateral(_NFTSubsetPool.totalDebt());
+        targetUtilization = _NFTSubsetPool.getPoolTargetUtilization();
+        actualUtilization = _NFTSubsetPool.getPoolActualUtilization();
+        assertEq(poolEncumbered,    borrowerEncumbered);
+        // assertGt(actualUtilization, targetUtilization);
+
 
         // remove collateral
         vm.prank((address(_borrower)));
@@ -137,11 +185,11 @@ contract ERC721PoolCollateralTest is DSTestPlus {
 
         // should fail if invalid price
         vm.expectRevert("P:CC:INVALID_PRICE");
-        _lender.claimCollateral(_NFTSubsetPool, address(_lender), 10_000 * 1e18, 4_000 * 1e18);
+        _lender.claimCollateral(_NFTSubsetPool, address(_lender), 1, 4_000 * 1e18);
 
         // should revert if no lp tokens in bucket
         vm.expectRevert("P:CC:NO_CLAIM_TO_BUCKET");
-        _lender.claimCollateral(_NFTSubsetPool, address(_lender), 1 * 1e18, _p2503);
+        _lender.claimCollateral(_NFTSubsetPool, address(_lender), 1, _p2503);
 
         // should revert if attempting to claim more collateral than is available
         vm.prank((address(_lender)));
@@ -185,7 +233,6 @@ contract ERC721PoolCollateralTest is DSTestPlus {
 
         // check balances
         assertEq(_collateral.balanceOf(address(_lender)),     1);
-        // TODO: check lp balance here
         assertEq(_NFTSubsetPool.lpBalance(address(_lender), _p4000), 5_999.703861466857367095480566984 * 1e27);
         assertEq(_collateral.balanceOf(address(_bidder)),     4);
         assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),       3);

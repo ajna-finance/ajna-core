@@ -30,7 +30,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         _quote       = new QuoteToken();
 
         _lender     = new UserWithQuoteTokenInNFTPool();
-        _borrower2   = new UserWithNFTCollateral();
+        _borrower2  = new UserWithNFTCollateral();
         _borrower   = new UserWithNFTCollateral();
 
         _quote.mint(address(_lender), 200_000 * 1e18);

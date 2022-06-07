@@ -294,7 +294,6 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     function purchaseBid(uint256 amount_, uint256 price_) external override {
         require(BucketMath.isValidPrice(price_), "P:PB:INVALID_PRICE");
 
-        // convert amount from WAD to pool precision - RAD
         uint256 collateralRequired = Maths.wdiv(amount_, price_);
         require(collateral().balanceOf(msg.sender) * collateralScale >= collateralRequired, "P:PB:INSUF_COLLAT");
 

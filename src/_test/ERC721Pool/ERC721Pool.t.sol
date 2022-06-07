@@ -62,6 +62,9 @@ contract ERC721PoolTest is DSTestPlus {
         // _collateral.setApprovalForAll(_NFTSubsetPoolAddress, true);
     }
 
+    /**
+     *  @notice Check NFT Collection pool type initial pool state and initialization
+     */
     function testEmptyBucketNFTCollectionPool() external {
         (
             ,
@@ -90,8 +93,15 @@ contract ERC721PoolTest is DSTestPlus {
 
         // check length of tokenIdsAllowed is 0 to avoid subset check
         assertEq(_NFTCollectionPool.getTokenIdsAllowed().length, 0);
+
+        // Attempt to call initialize() to reset global variables and check for revert
+        vm.expectRevert("P:INITIALIZED");
+        _NFTCollectionPool.initialize();
     }
 
+    /**
+     *  @notice Check NFT Subset pool type initial pool state and initialization
+     */
     function testEmptyBucketNFTSubsetPool() external {
         (
             ,
@@ -124,6 +134,12 @@ contract ERC721PoolTest is DSTestPlus {
         assertEq(_tokenIds[2], _NFTSubsetPool.getTokenIdsAllowed()[2]);
         assertEq(50, _NFTSubsetPool.getTokenIdsAllowed()[2]);
         assert(2 != _NFTSubsetPool.getTokenIdsAllowed()[1]);
+
+        // Attempt to reinitialize pool to reset global variables and check for revert
+        vm.expectRevert("P:INITIALIZED");
+        _NFTSubsetPool.initialize();        
+        vm.expectRevert("P:INITIALIZED");
+        _NFTSubsetPool.initializeSubset(_tokenIds);
     }
 
 }
