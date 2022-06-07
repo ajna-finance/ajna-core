@@ -130,8 +130,8 @@ contract ERC721PoolTest is DSTestPlus {
         assertEq(_tokenIds[0], _NFTSubsetPool.getTokenIdsAllowed()[0]);
         assertEq(_tokenIds[1], _NFTSubsetPool.getTokenIdsAllowed()[1]);
         assertEq(_tokenIds[2], _NFTSubsetPool.getTokenIdsAllowed()[2]);
-        assertEq(50, _NFTSubsetPool.getTokenIdsAllowed()[2]);
-        assert(2 != _NFTSubsetPool.getTokenIdsAllowed()[1]);
+        assertEq(50,           _NFTSubsetPool.getTokenIdsAllowed()[2]);
+        assertTrue(2 != _NFTSubsetPool.getTokenIdsAllowed()[1]);
 
         // Attempt to reinitialize pool to reset global variables and check for revert
         vm.expectRevert("P:INITIALIZED");

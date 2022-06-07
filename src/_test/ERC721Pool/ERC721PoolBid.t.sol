@@ -90,16 +90,16 @@ contract ERC721PoolBidTest is DSTestPlus {
         _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503);
 
         // check initial pool state after borrow and before bid
-        assertEq(_NFTSubsetPool.lup(), _p4000);
-        assertEq(_collateral.balanceOf(address(_bidder)), 5);
-        assertEq(_quote.balanceOf(address(_bidder)),     0);
-        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),   3);
-        assertEq(_quote.balanceOf(address(_NFTSubsetPool)),        8_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalQuoteToken(),                 8_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalCollateral(),                 3 * 1e18);
-        assertEq(_NFTSubsetPool.totalDebt(), 5_000.000961538461538462 * 1e18);
-        assertEq(_NFTSubsetPool.getPoolCollateralization(),        2.400556145502927926 * 1e18);
-        assertEq(_NFTSubsetPool.getPoolActualUtilization(),        0.407908729305961901 * 1e18);
+        assertEq(_NFTSubsetPool.lup(),                          _p4000);
+        assertEq(_collateral.balanceOf(address(_bidder)),        5);
+        assertEq(_quote.balanceOf(address(_bidder)),             0);
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), 3);
+        assertEq(_quote.balanceOf(address(_NFTSubsetPool)),      8_000 * 1e18);
+        assertEq(_NFTSubsetPool.totalQuoteToken(),               8_000 * 1e18);
+        assertEq(_NFTSubsetPool.totalCollateral(),               3 * 1e18);
+        assertEq(_NFTSubsetPool.totalDebt(),                     5_000.000961538461538462 * 1e18);
+        assertEq(_NFTSubsetPool.getPoolCollateralization(),      2.400556145502927926 * 1e18);
+        assertEq(_NFTSubsetPool.getPoolActualUtilization(),      0.407908729305961901 * 1e18);
 
         _tokenIds = new uint256[](1);
         _tokenIds[0] = 61;
@@ -132,8 +132,8 @@ contract ERC721PoolBidTest is DSTestPlus {
 
         // check 4_000.927678580567537368 bucket balance before purchase bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _NFTSubsetPool.bucketAt(_p4000);
-        assertEq(deposit, 5_000 * 1e18);
-        assertEq(debt,    5_000.000961538461538462 * 1e18);
+        assertEq(deposit,          5_000 * 1e18);
+        assertEq(debt,             5_000.000961538461538462 * 1e18);
         assertEq(bucketCollateral, 0);
 
         // purchase 4000 bid from p4000 bucket
@@ -157,16 +157,16 @@ contract ERC721PoolBidTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
 
         // check bidder and pool balances
-        assertEq(_NFTSubsetPool.lup(), _p4000);
-        assertEq(_NFTSubsetPool.getPoolCollateralization(), 3.200741527337237234 * 1e18);
-        assertEq(_NFTSubsetPool.getPoolActualUtilization(),        0.605499524670794045 * 1e18);
-        assertEq(_collateral.balanceOf(address(_bidder)), 4);
-        assertEq(_quote.balanceOf(address(_bidder)),     4_000 * 1e18);
-        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),   4);
-        assertEq(_quote.balanceOf(address(_NFTSubsetPool)),        4_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalQuoteToken(),                 4_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalCollateral(),                 4 * 1e18);
-        assertEq(_NFTSubsetPool.totalDebt(), 5_000.000961538461538462 * 1e18);
+        assertEq(_NFTSubsetPool.lup(),                          _p4000);
+        assertEq(_NFTSubsetPool.getPoolCollateralization(),      3.200741527337237234 * 1e18);
+        assertEq(_NFTSubsetPool.getPoolActualUtilization(),      0.605499524670794045 * 1e18);
+        assertEq(_collateral.balanceOf(address(_bidder)),        4);
+        assertEq(_quote.balanceOf(address(_bidder)),             4_000 * 1e18);
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), 4);
+        assertEq(_quote.balanceOf(address(_NFTSubsetPool)),      4_000 * 1e18);
+        assertEq(_NFTSubsetPool.totalQuoteToken(),               4_000 * 1e18);
+        assertEq(_NFTSubsetPool.totalCollateral(),               4 * 1e18);
+        assertEq(_NFTSubsetPool.totalDebt(),                     5_000.000961538461538462 * 1e18);
     }
 
 }

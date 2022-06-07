@@ -78,10 +78,10 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p2503);
 
         // check iniital pool balance
-        assertEq(_NFTSubsetPool.totalQuoteToken(),                      30_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalDebt(),                            0);
-        assertEq(_NFTSubsetPool.hpb(),                                  _p4000);
-        assertEq(_NFTSubsetPool.getPendingPoolInterest(),               0);
+        assertEq(_NFTSubsetPool.totalQuoteToken(),                30_000 * 1e18);
+        assertEq(_NFTSubsetPool.totalDebt(),                      0);
+        assertEq(_NFTSubsetPool.hpb(),                            _p4000);
+        assertEq(_NFTSubsetPool.getPendingPoolInterest(),         0);
         assertEq(_NFTSubsetPool.getPendingBucketInterest(_p4000), 0);
 
         // add iniitial collateral to pool
@@ -114,16 +114,16 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         // check bucket balances
         (, , , uint256 deposit, uint256 debt, , , ) = _NFTSubsetPool.bucketAt(_p4000);
         assertEq(deposit, 4_000 * 1e18);
-        assertEq(debt, 6_000.000961538461538462 * 1e18);
+        assertEq(debt,    6_000.000961538461538462 * 1e18);
 
         // check borrower balance
         (uint256 borrowerDebt,, uint256[] memory collateralDeposited, uint256 collateralEncumbered,,,) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower));
-        assertEq(borrowerDebt,        6_000.000961538461538462 * 1e18);
+        assertEq(borrowerDebt,               6_000.000961538461538462 * 1e18);
         assertEq(collateralDeposited.length, _NFTSubsetPool.getCollateralDeposited().length);
-        assertEq(collateralDeposited[0], 1);
-        assertEq(collateralDeposited[1], 5);
-        assertEq(collateralDeposited[2], 50);
-        assertEq(collateralEncumbered, 1.499652441522541316374014587 * 1e27);
+        assertEq(collateralDeposited[0],     1);
+        assertEq(collateralDeposited[1],     5);
+        assertEq(collateralDeposited[2],     50);
+        assertEq(collateralEncumbered,       1.499652441522541316374014587 * 1e27);
 
         // check pool balances
         assertEq(_NFTSubsetPool.totalQuoteToken(),          24_000 * 1e18);
@@ -133,10 +133,10 @@ contract ERC721PoolBorrowTest is DSTestPlus {
             _NFTSubsetPool.getEncumberedCollateral(_NFTSubsetPool.totalDebt()),
             _NFTSubsetPool.getEncumberedCollateral(borrowerDebt)
         );
-        assertEq(_quote.balanceOf(address(_borrower)), borrowAmount);
-        assertEq(_quote.balanceOf(_NFTSubsetPoolAddress),     24_000 * 1e18);
-        assertEq(_NFTSubsetPool.hpb(),                          _p4000);
-        assertEq(_NFTSubsetPool.lup(),                          _p4000);
+        assertEq(_quote.balanceOf(address(_borrower)),    borrowAmount);
+        assertEq(_quote.balanceOf(_NFTSubsetPoolAddress), 24_000 * 1e18);
+        assertEq(_NFTSubsetPool.hpb(),                    _p4000);
+        assertEq(_NFTSubsetPool.lup(),                    _p4000);
 
         skip(8200);
 
@@ -163,21 +163,21 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         _borrower.borrow(_NFTSubsetPool, 4_000 * 1e18, _p3010);
 
         // check pool state
-        assertEq(_NFTSubsetPool.hpb(), _p4000);
-        assertEq(_NFTSubsetPool.lup(), _p4000);
-        assertEq(_NFTSubsetPool.totalDebt(),       10_000.079929684723703272 * 1e18);
-        assertEq(_NFTSubsetPool.totalQuoteToken(), 20_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalCollateral(), 3 * 1e18);
-        assertEq(_NFTSubsetPool.pdAccumulator(),   55_144_110.464925767261400000 * 1e18);
-        assertEq(_NFTSubsetPool.getPoolCollateralization(), 1.200268709864213944 * 1e18);
-        assertEq(_NFTSubsetPool.getPoolActualUtilization(), 0.420473335425101563 * 1e18);
-        assertEq(_NFTSubsetPool.getPendingPoolInterest(),               0);
+        assertEq(_NFTSubsetPool.hpb(),                            _p4000);
+        assertEq(_NFTSubsetPool.lup(),                            _p4000);
+        assertEq(_NFTSubsetPool.totalDebt(),                      10_000.079929684723703272 * 1e18);
+        assertEq(_NFTSubsetPool.totalQuoteToken(),                20_000 * 1e18);
+        assertEq(_NFTSubsetPool.totalCollateral(),                3 * 1e18);
+        assertEq(_NFTSubsetPool.pdAccumulator(),                  55_144_110.464925767261400000 * 1e18);
+        assertEq(_NFTSubsetPool.getPoolCollateralization(),       1.200268709864213944 * 1e18);
+        assertEq(_NFTSubsetPool.getPoolActualUtilization(),       0.420473335425101563 * 1e18);
+        assertEq(_NFTSubsetPool.getPendingPoolInterest(),         0);
         assertEq(_NFTSubsetPool.getPendingBucketInterest(_p4000), 0);
 
         // check bucket state
         (, , , deposit, debt, , , ) = _NFTSubsetPool.bucketAt(_p4000);
         assertEq(deposit, 0);
-        assertEq(debt, 10_000.079929684723703272 * 1e18);
+        assertEq(debt,    10_000.079929684723703272 * 1e18);
     }
 
     /**
