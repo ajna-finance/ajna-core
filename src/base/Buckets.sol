@@ -8,6 +8,8 @@ import { IBuckets } from "../interfaces/IBuckets.sol";
 import "../libraries/Maths.sol";
 
 abstract contract Buckets is IBuckets {
+    uint256 public constant SECONDS_PER_DAY = 3600 * 24;
+    uint256 public constant PENALTY_BPS = 0.001 * 10**18;
 
     /***********************/
     /*** State Variables ***/
@@ -18,6 +20,8 @@ abstract contract Buckets is IBuckets {
      *  @dev price [WAD] -> bucket
      */
     mapping(uint256 => Buckets.Bucket) internal _buckets;
+
+    mapping(uint256 => uint256) internal _bip;
 
     BitMaps.BitMap internal _bitmap;
 
@@ -182,13 +186,14 @@ abstract contract Buckets is IBuckets {
      *  @param  toPrice_      The price bucket where quote tokens should be moved
      *  @param  amount_       The amount of quote tokens to be moved, WAD
      *  @param  lpBalance_    The LP balance for current lender, RAY
+     *  @param  lpTimer_      The timestamp of the last lender deposit in bucket
      *  @param  inflator_     The current pool inflator rate, RAY
      *  @return lpRedemption_ The amount of lpTokens moved from bucket
      *  @return lpAward_      The amount of lpTokens moved to bucket
      */
     function moveQuoteTokenFromBucket(
-        uint256 fromPrice_, uint256 toPrice_, uint256 amount_, uint256 lpBalance_, uint256 inflator_
-    ) internal returns (uint256 lpRedemption_, uint256 lpAward_) {
+        uint256 fromPrice_, uint256 toPrice_, uint256 amount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
+    ) internal returns (uint256 lpRedemption_, uint256 lpAward_, uint256 movedAmount_) {
         uint256 newHpb = !BitMaps.get(_bitmap, toPrice_) ? initializeBucket(hpb, toPrice_) : hpb;
         uint256 newLup = lup;
 
@@ -203,48 +208,24 @@ abstract contract Buckets is IBuckets {
         Bucket storage toBucket = _buckets[toPrice_];
         accumulateBucketInterest(toBucket, inflator_);
 
+        // apply bid penalty if deposit happened less than 24h ago
+        if (fromBucket.price > toBucket.price && block.timestamp - lpTimer_ < SECONDS_PER_DAY) {
+            uint256 penalty        = Maths.wmul(PENALTY_BPS, fromBucket.price - toBucket.price);
+            amount_               -= penalty;
+            _bip[fromBucket.price] += penalty;
+        }
+
         lpAward_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(toBucket));
 
         // move LP tokens
         fromBucket.lpOutstanding -= lpRedemption_;
         toBucket.lpOutstanding   += lpAward_;
 
-        bool moveUp = fromPrice_ < toPrice_;
         bool atLup  = newLup != 0 && fromPrice_ == newLup;
-
         if (atLup) {
-            uint256 debtToMove    = (amount_ > fromBucket.onDeposit) ? amount_ - fromBucket.onDeposit : 0;
-            uint256 depositToMove = amount_ - debtToMove;
-
-            // move debt
-            if (moveUp) {
-                fromBucket.debt -= debtToMove;
-                toBucket.debt   += debtToMove;
-            }
-
-            // move deposit
-            uint256 toOnDeposit  = moveUp ? depositToMove : amount_;
-            fromBucket.onDeposit -= depositToMove;
-            toBucket.onDeposit   += toOnDeposit;
-
-            newLup = moveUp ? reallocateUp(toBucket, depositToMove, inflator_) : reallocateDown(fromBucket, debtToMove, inflator_);
-            pdAccumulator = pdAccumulator + Maths.wmul(toOnDeposit, toBucket.price) - Maths.wmul(depositToMove, fromBucket.price);
+            newLup = moveQuoteTokenAtLup(fromBucket, toBucket, amount_, inflator_);
         } else {
-            bool aboveLup = newLup !=0 && newLup < Maths.min(fromPrice_, toPrice_);
-            if (aboveLup) {
-                // move debt
-                fromBucket.debt -= amount_;
-                toBucket.debt   += amount_;
-            } else {
-                // move deposit
-                uint256 fromOnDeposit = moveUp ? amount_ : Maths.min(amount_, fromBucket.onDeposit);
-                fromBucket.onDeposit -= fromOnDeposit;
-                toBucket.onDeposit   += amount_;
-
-                if (newLup != 0 && toBucket.price > Maths.max(fromBucket.price, newLup)) newLup = reallocateUp(toBucket,  amount_, inflator_);
-                else if (newLup != 0 && fromBucket.price >= Maths.max(toBucket.price, newLup)) newLup = reallocateDown(fromBucket, amount_, inflator_);
-                pdAccumulator = pdAccumulator + Maths.wmul(amount_, toBucket.price) - Maths.wmul(fromOnDeposit, fromBucket.price);
-            }
+            newLup = moveQuoteTokenAtPrice(fromBucket, toBucket, amount_, inflator_, newLup);
         }
 
         bool isEmpty = fromBucket.onDeposit == 0 && fromBucket.debt == 0;
@@ -257,6 +238,8 @@ abstract contract Buckets is IBuckets {
 
         // bucket management
         if (isEmpty && noClaim) deactivateBucket(fromBucket); // cleanup if bucket no longer used
+
+        movedAmount_ = amount_;
     }
 
     /**
@@ -300,22 +283,22 @@ abstract contract Buckets is IBuckets {
      *  @param  price_     The price bucket from which quote tokens should be removed
      *  @param  maxAmount_ The maximum amount of quote tokens to be removed, WAD
      *  @param  lpBalance_ The LP balance for current lender, RAY
+     *  @param  lpTimer_   The timestamp of the last lender deposit in bucket
      *  @param  inflator_  The current pool inflator rate, RAY
      *  @return amount_    The actual amount being removed
      *  @return lpTokens_  The amount of lpTokens removed equivalent to the quote tokens removed
      */
     function removeQuoteTokenFromBucket(
-        uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 inflator_
+        uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
     ) internal returns (uint256 amount_, uint256 lpTokens_) {
         Bucket storage bucket = _buckets[price_];
         accumulateBucketInterest(bucket, inflator_);
 
-        uint256 exchangeRate = getExchangeRate(bucket);                // RAY
+        uint256 exchangeRate = getExchangeRate(bucket);                 // RAY
         uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
-
-        amount_   = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
-        lpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
-        amount_   = Maths.rayToWad(amount_);
+        amount_             = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
+        lpTokens_           = Maths.rdiv(amount_, exchangeRate);                // RAY
+        amount_             = Maths.rayToWad(amount_);
 
         // bucket accounting
         uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit); // Remove from deposit first
@@ -325,6 +308,13 @@ abstract contract Buckets is IBuckets {
         // debt reallocation
         uint256 newLup = reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
         pdAccumulator  -= Maths.wmul(removeFromDeposit, price_);
+
+        // apply bid penalty if deposit happened less than 24h ago
+        if (block.timestamp - lpTimer_ < SECONDS_PER_DAY) {
+            uint256 penalty = Maths.wmul(PENALTY_BPS, amount_);
+            amount_        -= penalty;
+            _bip[price_]   += penalty;
+        }
 
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
         bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
@@ -458,6 +448,70 @@ abstract contract Buckets is IBuckets {
     }
 
     /**
+     *  @notice Utility function to move quote tokens from LUP.
+     *  @dev    Avoid Solidity's stack too deep in moveQuoteToken function
+     *  @param  fromBucket_ The given bucket whose assets are being moved
+     *  @param  toBucket_   The given bucket where assets are being moved
+     *  @param  amount_     The amount of quote tokens being moved
+     *  @param  inflator_   The current pool inflator rate, RAY
+     *  @return newLup_     The new LUP
+     */
+    function moveQuoteTokenAtLup(
+        Bucket storage fromBucket_, Bucket storage toBucket_, uint256 amount_, uint256 inflator_
+    ) private returns (uint256 newLup_) {
+        bool moveUp           = fromBucket_.price < toBucket_.price;
+        uint256 debtToMove    = (amount_ > fromBucket_.onDeposit) ? amount_ - fromBucket_.onDeposit : 0;
+        uint256 depositToMove = amount_ - debtToMove;
+
+        // move debt
+        if (moveUp) {
+            fromBucket_.debt -= debtToMove;
+            toBucket_.debt   += debtToMove;
+        }
+
+        // move deposit
+        uint256 toOnDeposit  = moveUp ? depositToMove : amount_;
+        fromBucket_.onDeposit -= depositToMove;
+        toBucket_.onDeposit   += toOnDeposit;
+
+        newLup_ = moveUp ? reallocateUp(toBucket_, depositToMove, inflator_) : reallocateDown(fromBucket_, debtToMove, inflator_);
+        pdAccumulator = pdAccumulator + Maths.wmul(toOnDeposit, toBucket_.price) - Maths.wmul(depositToMove, fromBucket_.price);
+    }
+
+    /**
+     *  @notice Utility function to move quote tokens at a specific price (other than LUP)
+     *  @dev    Avoid Solidity's stack too deep in moveQuoteToken function
+     *  @param  fromBucket_ The given bucket whose assets are being moved
+     *  @param  toBucket_   The given bucket where assets are being moved
+     *  @param  amount_     The amount of quote tokens being moved
+     *  @param  inflator_   The current pool inflator rate, RAY
+     *  @param  lup_        The current LUP
+     *  @return newLup_     The new LUP
+     */
+    function moveQuoteTokenAtPrice(
+        Bucket storage fromBucket_, Bucket storage toBucket_, uint256 amount_, uint256 inflator_, uint256 lup_
+    ) private returns (uint256 newLup_) {
+        newLup_      = lup_;
+        bool moveUp   = fromBucket_.price < toBucket_.price;
+        bool aboveLup = newLup_ !=0 && newLup_ < Maths.min(fromBucket_.price, toBucket_.price);
+
+        if (aboveLup) {
+            // move debt
+            fromBucket_.debt -= amount_;
+            toBucket_.debt   += amount_;
+        } else {
+            // move deposit
+            uint256 fromOnDeposit = moveUp ? amount_ : Maths.min(amount_, fromBucket_.onDeposit);
+            fromBucket_.onDeposit -= fromOnDeposit;
+            toBucket_.onDeposit   += amount_;
+
+            if (newLup_ != 0 && toBucket_.price > Maths.max(fromBucket_.price, newLup_)) newLup_ = reallocateUp(toBucket_,  amount_, inflator_);
+            else if (newLup_ != 0 && fromBucket_.price >= Maths.max(toBucket_.price, newLup_)) newLup_ = reallocateDown(fromBucket_, amount_, inflator_);
+            pdAccumulator = pdAccumulator + Maths.wmul(amount_, toBucket_.price) - Maths.wmul(fromOnDeposit, fromBucket_.price);
+        }
+    }
+
+    /**
      *  @notice Moves assets in a bucket to a bucket's down pointers
      *  @dev    Occurs when quote tokens are being removed
      *  @dev    Should continue until all of the desired quote tokens have been removed
@@ -571,6 +625,10 @@ abstract contract Buckets is IBuckets {
     /*****************************/
     /*** Public View Functions ***/
     /*****************************/
+
+    function bipAt(uint256 price_) public view override returns (uint256) {
+        return _bip[price_];
+    }
 
     function bucketAt(uint256 price_)
         public

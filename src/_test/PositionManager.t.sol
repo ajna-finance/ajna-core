@@ -287,6 +287,9 @@ contract PositionManagerTest is DSTestPlus {
         // add liquidity that can later be decreased
         increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintPrice);
 
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
+
         // find number of lp tokens received
         uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintPrice); // RAY
         assertEq(originalLPTokens, 10_000 * 1e27);
@@ -422,6 +425,9 @@ contract PositionManagerTest is DSTestPlus {
 
         // add liquidity that can later be decreased
         increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintPrice);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         // construct BurnParams
         IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, testAddress, mintPrice);

@@ -79,6 +79,9 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_pool)),   20_000 * _quotePrecision);
         assertEq(_quote.balanceOf(address(_lender)), 180_000 * _quotePrecision);
 
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
+
         // remove 10_000 quote token with 6 decimal precision
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_lender), 10_000 * _quotePrecision);

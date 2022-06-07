@@ -17,6 +17,10 @@ abstract contract LenderManager is ILenderManager, Buckets {
      *  @dev lender address -> price bucket [WAD] -> lender lp [RAY]
      */
     mapping(address => mapping(uint256 => uint256)) public lpBalance;
+    /**
+     *  @dev lender address -> price bucket [WAD] -> timer
+     */
+    mapping(address => mapping(uint256 => uint256)) public lpTimer;
 
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
         require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");

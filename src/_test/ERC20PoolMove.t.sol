@@ -71,6 +71,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   170_466_756.126702504695020000 * 1e18);
 
+        // skip > 24h to avoid deposit penalty
+        skip(3600 * 24 + 1);
+
         // lender moves 10_000 DAI down
         assertMoveQuoteToken(address(_lender), _p3514, _p2503, 10_000 * 1e18, 0);
 
@@ -125,6 +128,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(), 60_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   170_466_756.126702504695020000 * 1e18);
+
+        // skip > 24h to avoid deposit penalty
+        skip(3600 * 24 + 1);
 
         // lender moves 10_000 DAI up
         assertMoveQuoteToken(address(_lender), _p2503, _p3514, 10_000 * 1e18, 0);

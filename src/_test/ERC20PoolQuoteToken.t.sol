@@ -494,7 +494,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
     function testRemoveQuoteTokenNoLoan() external {
         // lender deposit 10000 DAI at price 4000
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
-        skip(8200);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), 0);
@@ -543,7 +545,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
     function testRemoveQuoteTokenUnpaidLoan() external {
         // lender deposit 10000 DAI at price 4_000.927678580567537368
         _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
-        skip(3600);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), 0);
@@ -629,6 +633,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)),  190_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender1)), 190_000 * 1e18);
 
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
+
         // borrower takes a loan of 10_000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
         _borrower.borrow(_pool, 10_000 * 1e18, 4_000 * 1e18);
@@ -701,6 +708,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(), 6_800 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   23_840_186.982646726923724200 * 1e18);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         // borrower takes a loan of 3000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
@@ -889,6 +899,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.getPoolActualUtilization(), 0);
         assertEq(_pool.getPoolTargetUtilization(), Maths.ONE_WAD);
 
+        // skip > 24h to avoid deposit penalty
+        skip(3600 * 24 + 1);
+
         // Borrower draws 2400 debt partially utilizing the LUP
         _borrower.addCollateral(_pool, 10 * 1e18);
         _borrower.borrow(_pool, 2_400 * 1e18, 0);
@@ -970,7 +983,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHigh);
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceMed);
         _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, priceLow);
-        skip(60);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), 0);
@@ -1103,6 +1118,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(collateralization, Maths.ONE_WAD);
         assertEq(actualUtilization, 0);
         assertEq(targetUtilization, Maths.ONE_WAD);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         // borrower takes a loan of 3000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
@@ -1259,7 +1277,8 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         (, , , , , , lpOutstanding, ) = _pool.bucketAt(priceLow);
         assertEq(lpOutstanding, 20_000 * 1e27);
 
-        skip(8200);
+        // skip > 24h to avoid deposit penalty
+        skip(3600 * 24 + 1);
 
         _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLow);
 
@@ -1318,6 +1337,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(), 13_300 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   117_318_734.038244664909739000 * 1e18);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         // borrowers deposit collateral
         _borrower.addCollateral(_pool, 2 * 1e18);
@@ -1442,6 +1464,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   16_003_710.714322270149472000 * 1e18);
 
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
+
         // remove max 5000 DAI at price of 1 MKR = 4_000.927678580567537368 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_lender), 4_000 * 1e18);
@@ -1473,6 +1498,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(), 2_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   8_001_855.357161135074736000 * 1e18);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         // remove uint256.max at price of 1 MKR = 4_000.927678580567537368 DAI
         vm.expectEmit(true, true, false, true);
@@ -1513,6 +1541,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 100 * 1e18, priceMed);
         assertEq(_pool.hpb(), priceHigh);
 
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
+
         // lender removes from middle bucket
         _lender.removeQuoteToken(_pool, address(_lender), 100 * 1e18, priceMed);
         assertEq(_pool.hpb(), priceHigh);
@@ -1542,6 +1573,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         (, uint256 up, uint256 down, , , , , ) = _pool.bucketAt(_p1004);
         assertEq(up,   _p1004);
         assertEq(down, 0);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         // remove tokens from 1_004.989662429170775094, bucket should be deactivated
         _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p1004);
@@ -1586,6 +1620,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         (, up, down, , , , , ) = _pool.bucketAt(_p2000);
         assertEq(up,   _p2503);
         assertEq(down, 0);
+
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
 
         // remove tokens and deactivate middle bucket 3_010.892022197881557845
         _lender.removeQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p3010);

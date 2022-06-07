@@ -55,9 +55,9 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         inflatorSnapshot           = Maths.ONE_RAY;
         lastInflatorSnapshotUpdate = block.timestamp;
-        previousRate               = Maths.wdiv(5, 100);
+        previousRate               = 0.05 * 10**18;
         previousRateUpdate         = block.timestamp;
-        minFee                     = Maths.wdiv(5, 10_000);
+        minFee                     = 0.0005 * 10**18;
 
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
@@ -187,6 +187,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // lender accounting
         lpBalance[recipient_][price_] += lpTokens_;
+        lpTimer[recipient_][price_]   = block.timestamp;
 
         // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
@@ -218,8 +219,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
-        (uint256 fromLpTokens, uint256 toLpTokens) = moveQuoteTokenFromBucket(
-            fromPrice_, toPrice_, amount_, lpBalance[recipient_][fromPrice_], inflatorSnapshot
+        (uint256 fromLpTokens, uint256 toLpTokens, uint256 movedAmount) = moveQuoteTokenFromBucket(
+            fromPrice_, toPrice_, amount_, lpBalance[recipient_][fromPrice_], lpTimer[recipient_][fromPrice_], inflatorSnapshot
         );
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");
@@ -228,7 +229,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         lpBalance[recipient_][fromPrice_] -= fromLpTokens;
         lpBalance[recipient_][toPrice_]   += toLpTokens;
 
-        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, amount_, lup);
+        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
 
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
@@ -238,7 +239,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // remove quote token amount and get LP tokens burned
         (uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
-            price_, maxAmount_, lpBalance[recipient_][price_], inflatorSnapshot
+            price_, maxAmount_, lpBalance[recipient_][price_], lpTimer[recipient_][price_], inflatorSnapshot
         );
 
         // pool level accounting
