@@ -24,7 +24,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     /***********************/
 
     /// @dev Counter used by onlyOnce modifier
-    uint8 private _poolInitializations = 0;
+    uint256 private _poolInitializations = 0;
 
     /// @notice The precision of the collateral ERC-20 token based on decimals.
     /// @dev Only used by ERC20 type pools.

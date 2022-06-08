@@ -27,18 +27,52 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
     using EnumerableSet for EnumerableSet.UintSet;
 
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  tokenId_  Token ID of the collateral locked in the pool.
+     */
+    event AddNFTCollateral(address indexed borrower_, uint256 indexed tokenId_);
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
+     */
+    event AddNFTCollateralMultiple(address indexed borrower_, uint256[] tokenIds_);
+
+    /**
+     *  @notice Emitted when lender claims unencumbered collateral.
+     *  @param  claimer_ Recipient that claimed collateral.
+     *  @param  price_   Price at which unencumbered collateral was claimed.
+     *  @param  tokenId_ Token ID of the collateral to be claimed from the pool.
+     *  @param  lps_     The amount of LP tokens burned in the claim.
+     */
+    event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256 tokenId_, uint256 lps_);
+
+    /**
+     *  @notice Emitted when borrower removes collateral from the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  tokenId_  Token ID of the collateral to removed from the pool.
+     */
+    event RemoveNFTCollateral(address indexed borrower_, uint256 indexed tokenId_);
+
     /***********************/
     /*** State Variables ***/
     /***********************/
-
-    /// @dev Counter used by onlyOnce modifier
-    uint8 private _poolInitializations = 0;
 
     /// @dev Set of tokenIds that are currently being used as collateral
     EnumerableSet.UintSet internal _collateralTokenIdsAdded;
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
     EnumerableSet.UintSet internal _tokenIdsAllowed;
+
+    /// @dev Counter used by onlyOnce modifier
+    uint256 private _poolInitializations = 0;
 
     uint256 public override quoteTokenScale;
 
@@ -61,6 +95,17 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     function onlySubset(uint256 tokenId_) internal view {
         if (_tokenIdsAllowed.length() != 0) {
             require(_tokenIdsAllowed.contains(tokenId_), "P:ONLY_SUBSET");
+        }
+    }
+
+    function onlySubsetMultiple(uint256[] memory tokenIds_) internal view {
+        if (_tokenIdsAllowed.length() != 0) {
+            for (uint i; i < tokenIds_.length;) {
+                require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
+                unchecked {
+                    ++i;
+                }
+            }
         }
     }
 
@@ -108,8 +153,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    // TODO: create seperate NFT specific events
-    function addCollateral(uint256 tokenId_) external  override {
+    function addCollateral(uint256 tokenId_) public override {
         // check if collateral is valid
         onlySubset(tokenId_);
 
@@ -124,28 +168,39 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), tokenId_);
-        emit AddCollateral(msg.sender, tokenId_);
+        emit AddNFTCollateral(msg.sender, tokenId_);
     }
 
-    // TODO: finish implementing
-    // TODO: move check to onlySubsetMultiple()
-    // TODO: integrate multicall here
     function addCollateralMultiple(uint256[] memory tokenIds_) external {
         // check if all incoming tokenIds are part of the pool subset
+        onlySubsetMultiple(tokenIds_);
+
+        accumulatePoolInterest();
+
+        uint256 collateralToAdd;
+
+        // add tokenIds to the pool
         for (uint i; i < tokenIds_.length;) {
-            onlySubset(tokenIds_[i]);
+
+            // pool level accounting
+            _collateralTokenIdsAdded.add(tokenIds_[i]);
+            collateralToAdd += 1;
+
+            // borrower accounting
+            NFTborrowers[msg.sender].collateralDeposited.add(tokenIds_[i]);
+
+            // move collateral from sender to pool
+            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+
             unchecked {
                 ++i;
             }
         }
 
-        // add tokenIds to the pool
-        // for (uint i; i < tokenIds_.length;) {
-        //     addCollateral(tokenIds_[i]);
-        //     unchecked {
-        //         ++i;
-        //     }
-        // }
+        // update totalCollateral count with the newly added collateral
+        totalCollateral += Maths.wad(collateralToAdd);
+
+        emit AddNFTCollateralMultiple(msg.sender, tokenIds_);
     }
 
     function borrow(uint256 amount_, uint256 limitPrice_) external {
@@ -177,7 +232,6 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit Borrow(msg.sender, lup, amount_);
     }
 
-    // TODO: add removeCollateralMultiple method?
     function removeCollateral(uint256 tokenId_) tokenInPool(tokenId_) external {
         accumulatePoolInterest();
 
@@ -198,8 +252,12 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // move collateral from pool to sender
         collateral().safeTransferFrom(address(this), msg.sender, tokenId_);
-        emit RemoveCollateral(msg.sender, tokenId_);
+        emit RemoveNFTCollateral(msg.sender, tokenId_);
     }
+
+    // TODO: finish implementing
+    function removeCollateralMultiple(uint256[] memory tokenIds_) external {}
+
 
     // TODO: finish implementing
     function repay(uint256 amount_) external {}
@@ -229,7 +287,6 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit AddQuoteToken(recipient_, price_, amount_, lup);
     }
 
-    // TODO: update to NFT specific claim event
     function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) tokenInPool(tokenId_) external {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
@@ -248,7 +305,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // move claimed collateral from pool to claimer
         collateral().safeTransferFrom(address(this), recipient_, tokenId_);
-        emit ClaimCollateral(recipient_, price_, tokenId_, claimedLpTokens);
+        emit ClaimNFTCollateral(recipient_, price_, tokenId_, claimedLpTokens);
     }
 
     // TODO: finish implementing or combine with claimCollateral - would require updates to Buckets.sol
@@ -304,6 +361,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     /*** Pool External Functions ***/
     /*******************************/
 
+    // TODO: finish implementing
     function liquidate(address borrower_) external {}
 
     // TODO: Remove from IPool ... different Interface req

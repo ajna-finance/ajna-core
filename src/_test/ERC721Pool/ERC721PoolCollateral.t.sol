@@ -107,7 +107,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         // vm.expectEmit(true, true, false, true);
         // emit Transfer(address(_borrower), address(_NFTSubsetPool), 50);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateral(address(_borrower), 50);
+        emit AddNFTCollateral(address(_borrower), 50);
         _NFTSubsetPool.addCollateral(50);
 
         // check collateral balances
@@ -150,7 +150,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         // remove collateral
         vm.prank((address(_borrower)));
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateral(address(_borrower), 1);
+        emit RemoveNFTCollateral(address(_borrower), 1);
         _NFTSubsetPool.removeCollateral(1);
         assertEq(_NFTSubsetPool.getCollateralDeposited().length, 2);
         assertEq(actualUtilization,                              _NFTSubsetPool.getPoolActualUtilization());
@@ -239,6 +239,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
 
         // claim collateral from p4000 bucket
         vm.prank((address(_lender)));
+        vm.expectEmit(true, true, false, true);
+        emit ClaimNFTCollateral(address(_lender), _p4000, 1, 4000.296138533142632904519433016 * 1e27);
         _NFTSubsetPool.claimCollateral(address(_lender), 1, _p4000);
 
         // check balances
