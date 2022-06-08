@@ -16,7 +16,7 @@ abstract contract PoolDeployer {
         _;
     }
 
-    function getNFTSubsetHash(uint256[] memory tokenIds_) public returns (bytes32) {
+    function getNFTSubsetHash(uint256[] memory tokenIds_) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(tokenIds_));
     }
 }

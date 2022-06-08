@@ -52,14 +52,21 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
      *  @param  tokenId_ Token ID of the collateral to be claimed from the pool.
      *  @param  lps_     The amount of LP tokens burned in the claim.
      */
-    event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256 tokenId_, uint256 lps_);
+    event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256 indexed tokenId_, uint256 lps_);
 
     /**
      *  @notice Emitted when borrower removes collateral from the pool.
      *  @param  borrower_ `msg.sender`.
-     *  @param  tokenId_  Token ID of the collateral to removed from the pool.
+     *  @param  tokenId_  Token ID of the collateral removed from the pool.
      */
     event RemoveNFTCollateral(address indexed borrower_, uint256 indexed tokenId_);
+
+    /**
+     *  @notice Emitted when borrower removes multiple collateral from the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  tokenIds_ Array of tokenIds removed from the pool.
+     */
+    event RemoveNFTCollateralMultiple(address indexed borrower_, uint256[] tokenIds_);
 
     /***********************/
     /*** State Variables ***/
@@ -177,14 +184,14 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
-        uint256 collateralToAdd;
+        uint256 collateralToAddCount;
 
         // add tokenIds to the pool
         for (uint i; i < tokenIds_.length;) {
 
             // pool level accounting
             _collateralTokenIdsAdded.add(tokenIds_[i]);
-            collateralToAdd += 1;
+            collateralToAddCount += 1;
 
             // borrower accounting
             NFTborrowers[msg.sender].collateralDeposited.add(tokenIds_[i]);
@@ -198,7 +205,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         }
 
         // update totalCollateral count with the newly added collateral
-        totalCollateral += Maths.wad(collateralToAdd);
+        totalCollateral += Maths.wad(collateralToAddCount);
 
         emit AddNFTCollateralMultiple(msg.sender, tokenIds_);
     }
@@ -255,13 +262,41 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit RemoveNFTCollateral(msg.sender, tokenId_);
     }
 
-    // TODO: finish implementing
     function removeCollateralMultiple(uint256[] memory tokenIds_) external {
-        // accumulatePoolInterest();
+        accumulatePoolInterest();
 
-        // NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
-        // accumulateNFTBorrowerInterest(borrower);
+        NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
+        accumulateNFTBorrowerInterest(borrower);
 
+        uint256 encumberedBorrowerCollateral = getEncumberedCollateral(borrower.debt);
+
+        // Require overcollateralization to be at a minimum of one WAD to account for indivisible NFTs
+        require(Maths.ray(borrower.collateralDeposited.length()) - encumberedBorrowerCollateral >= Maths.ONE_RAY, "P:RC:AMT_GT_AVAIL_COLLAT");
+
+        uint256 collateralToRemoveCount;
+
+        // remove tokenIds from the pool
+        for (uint i; i < tokenIds_.length;) {
+
+            // pool level accounting
+            _collateralTokenIdsAdded.remove(tokenIds_[i]);
+            collateralToRemoveCount -= 1;
+
+            // borrower accounting
+            borrower.collateralDeposited.remove(tokenIds_[i]);
+
+            // move collateral from pool to sender
+            collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // update totalCollateral count with the newly added collateral
+        totalCollateral += Maths.wad(collateralToRemoveCount);
+
+        emit RemoveNFTCollateralMultiple(msg.sender, tokenIds_);
     }
 
 
