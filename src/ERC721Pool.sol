@@ -294,7 +294,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         }
 
         // update totalCollateral count with the newly added collateral
-        totalCollateral += Maths.wad(collateralToRemoveCount);
+        totalCollateral -= Maths.wad(collateralToRemoveCount);
 
         emit RemoveNFTCollateralMultiple(msg.sender, tokenIds_);
     }
