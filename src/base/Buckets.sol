@@ -8,6 +8,8 @@ import { IBuckets } from "../interfaces/IBuckets.sol";
 import "../libraries/Maths.sol";
 
 abstract contract Buckets is IBuckets {
+    uint256 public constant SECONDS_PER_DAY = 3600 * 24;
+    uint256 public constant PENALTY_BPS = 0.001 * 10**18;
 
     /***********************/
     /*** State Variables ***/
@@ -18,6 +20,8 @@ abstract contract Buckets is IBuckets {
      *  @dev price [WAD] -> bucket
      */
     mapping(uint256 => Buckets.Bucket) internal _buckets;
+
+    mapping(uint256 => uint256) internal _bip;
 
     BitMaps.BitMap internal _bitmap;
 
@@ -190,15 +194,17 @@ abstract contract Buckets is IBuckets {
      *  @notice Called by a lender to remove quote tokens from a bucket
      *  @param  fromPrice_    The price bucket from where quote tokens should be moved
      *  @param  toPrice_      The price bucket where quote tokens should be moved
-     *  @param  amount_       The amount of quote tokens to be moved, WAD
+     *  @param  maxAmount_    The max amount of quote tokens to be moved, WAD
      *  @param  lpBalance_    The LP balance for current lender, RAY
+     *  @param  lpTimer_      The timestamp of the last lender deposit in bucket
      *  @param  inflator_     The current pool inflator rate, RAY
      *  @return lpRedemption_ The amount of lpTokens moved from bucket
      *  @return lpAward_      The amount of lpTokens moved to bucket
+     *  @return amount_       The amount of quote tokens moved to bucket
      */
     function moveQuoteTokenFromBucket(
-        uint256 fromPrice_, uint256 toPrice_, uint256 amount_, uint256 lpBalance_, uint256 inflator_
-    ) internal returns (uint256 lpRedemption_, uint256 lpAward_) {
+        uint256 fromPrice_, uint256 toPrice_, uint256 maxAmount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
+    ) internal returns (uint256 lpRedemption_, uint256 lpAward_, uint256 amount_) {
         uint256 newHpb = !BitMaps.get(_bitmap, toPrice_) ? initializeBucket(hpb, toPrice_) : hpb;
         uint256 newLup = lup;
 
@@ -206,14 +212,23 @@ abstract contract Buckets is IBuckets {
         fromBucket.debt             = accumulateBucketInterest(fromBucket.debt, fromBucket.inflatorSnapshot, inflator_);
         fromBucket.inflatorSnapshot = inflator_;
 
-        uint256 exchangeRate = getExchangeRate(fromBucket);
-        lpRedemption_ = Maths.rdiv(Maths.wadToRay(amount_), exchangeRate);
+        uint256 exchangeRate = getExchangeRate(fromBucket);                 // RAY
+        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);       // RAY
 
-        require(lpRedemption_ <= lpBalance_, "B:MQT:AMT_GT_CLAIM");
+        amount_       = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
+        lpRedemption_ = Maths.rdiv(amount_, exchangeRate);                // RAY
+        amount_       = Maths.rayToWad(amount_);
 
         Bucket memory toBucket    = _buckets[toPrice_];
         toBucket.debt             = accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
         toBucket.inflatorSnapshot = inflator_;
+
+        // apply bid penalty if deposit happened less than 24h ago
+        if (fromBucket.price > toBucket.price && block.timestamp - lpTimer_ < SECONDS_PER_DAY) {
+            uint256 penalty        = Maths.wmul(PENALTY_BPS, fromBucket.price - toBucket.price);
+            amount_                -= penalty;
+            _bip[fromBucket.price] += penalty;
+        }
 
         lpAward_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(toBucket));
 
@@ -222,7 +237,6 @@ abstract contract Buckets is IBuckets {
         toBucket.lpOutstanding   += lpAward_;
 
         bool atLup  = newLup != 0 && fromBucket.price == newLup;
-
         if (atLup) {
             newLup = moveQuoteTokenAtLup(fromBucket, toBucket, amount_, inflator_);
         } else {
@@ -289,12 +303,13 @@ abstract contract Buckets is IBuckets {
      *  @param  price_     The price bucket from which quote tokens should be removed
      *  @param  maxAmount_ The maximum amount of quote tokens to be removed, WAD
      *  @param  lpBalance_ The LP balance for current lender, RAY
+     *  @param  lpTimer_   The timestamp of the last lender deposit in bucket
      *  @param  inflator_  The current pool inflator rate, RAY
      *  @return amount_    The actual amount being removed
      *  @return lpTokens_  The amount of lpTokens removed equivalent to the quote tokens removed
      */
     function removeQuoteTokenFromBucket(
-        uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 inflator_
+        uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
     ) internal returns (uint256 amount_, uint256 lpTokens_) {
         Bucket memory bucket    = _buckets[price_];
         bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
@@ -302,10 +317,9 @@ abstract contract Buckets is IBuckets {
 
         uint256 exchangeRate = getExchangeRate(bucket);                // RAY
         uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
-
-        amount_   = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
-        lpTokens_ = Maths.rdiv(amount_, exchangeRate);                // RAY
-        amount_   = Maths.rayToWad(amount_);
+        amount_             = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
+        lpTokens_           = Maths.rdiv(amount_, exchangeRate);                // RAY
+        amount_             = Maths.rayToWad(amount_);
 
         // bucket accounting
         uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit); // Remove from deposit first
@@ -314,16 +328,23 @@ abstract contract Buckets is IBuckets {
 
         // debt reallocation
         uint256 newLup = reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
-        pdAccumulator  -= Maths.wmul(removeFromDeposit, price_);
+        pdAccumulator  -= Maths.wmul(removeFromDeposit, bucket.price);
+
+        // apply bid penalty if deposit happened less than 24h ago
+        if (block.timestamp - lpTimer_ < SECONDS_PER_DAY) {
+            uint256 penalty = Maths.wmul(PENALTY_BPS, amount_);
+            amount_        -= penalty;
+            _bip[bucket.price]   += penalty;
+        }
 
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
         bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
 
-        _buckets[price_] = bucket;
+        _buckets[bucket.price] = bucket;
 
         // HPB and LUP management
-        uint256 newHpb = (isEmpty && price_ == hpb) ? getHpb() : hpb;
-        if (price_ >= lup && newLup < lup) lup = newLup; // move lup down only if removal happened at or above lup
+        uint256 newHpb = (isEmpty && bucket.price == hpb) ? getHpb() : hpb;
+        if (bucket.price >= lup && newLup < lup) lup = newLup; // move lup down only if removal happened at or above lup
         if (newHpb != hpb) hpb = newHpb;
 
         // bucket management
@@ -452,7 +473,8 @@ abstract contract Buckets is IBuckets {
     }
 
     /**
-     *  @notice Utility function to move quote tokens from LUP
+     *  @notice Utility function to move quote tokens from LUP.
+     *  @dev    Avoid Solidity's stack too deep in moveQuoteToken function
      *  @param  fromBucket_ The given bucket whose assets are being moved
      *  @param  toBucket_   The given bucket where assets are being moved
      *  @param  amount_     The amount of quote tokens being moved
@@ -488,6 +510,7 @@ abstract contract Buckets is IBuckets {
 
     /**
      *  @notice Utility function to move quote tokens at a specific price (other than LUP)
+     *  @dev    Avoid Solidity's stack too deep in moveQuoteToken function
      *  @param  fromBucket_ The given bucket whose assets are being moved
      *  @param  toBucket_   The given bucket where assets are being moved
      *  @param  amount_     The amount of quote tokens being moved
@@ -498,7 +521,7 @@ abstract contract Buckets is IBuckets {
     function moveQuoteTokenAtPrice(
         Bucket memory fromBucket_, Bucket memory toBucket_, uint256 amount_, uint256 inflator_, uint256 lup_
     ) private returns (uint256 newLup_) {
-        newLup_      = lup_;
+        newLup_       = lup_;
         bool moveUp   = fromBucket_.price < toBucket_.price;
         bool aboveLup = newLup_ !=0 && newLup_ < Maths.min(fromBucket_.price, toBucket_.price);
 
@@ -787,6 +810,10 @@ abstract contract Buckets is IBuckets {
     /*****************************/
     /*** Public View Functions ***/
     /*****************************/
+
+    function bipAt(uint256 price_) public view override returns (uint256) {
+        return _bip[price_];
+    }
 
     function bucketAt(uint256 price_)
         public

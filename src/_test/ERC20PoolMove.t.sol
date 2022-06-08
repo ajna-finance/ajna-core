@@ -71,6 +71,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   170_466_756.126702504695020000 * 1e18);
 
+        // skip > 24h to avoid deposit penalty
+        skip(3600 * 24 + 1);
+
         // lender moves 10_000 DAI down
         assertMoveQuoteToken(address(_lender), _p3514, _p2503, 10_000 * 1e18, 0);
 
@@ -125,6 +128,9 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(), 60_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   170_466_756.126702504695020000 * 1e18);
+
+        // skip > 24h to avoid deposit penalty
+        skip(3600 * 24 + 1);
 
         // lender moves 10_000 DAI up
         assertMoveQuoteToken(address(_lender), _p2503, _p3514, 10_000 * 1e18, 0);
@@ -1147,10 +1153,6 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         // should revert if moving to an invalid price bucket
         vm.expectRevert("P:MQT:INVALID_TO_PRICE");
         _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, _p3010, 3_000 * 1e18);
-
-        // should revert if trying to move more than entitled
-        vm.expectRevert("B:MQT:AMT_GT_CLAIM");
-        _lender.moveQuoteToken(_pool, address(_lender), 10_001 * 1e18, _p3010, _p3514);
 
         assertMoveQuoteToken(address(_lender), _p3010, _p3514, 2_000 * 1e18, 0);
 

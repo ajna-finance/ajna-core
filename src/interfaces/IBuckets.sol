@@ -56,6 +56,13 @@ interface IBuckets {
     /**********************/
 
     /**
+     *  @notice Get the BIP credit for a given price.
+     *  @param  price_     The price of the bucket to retrieve BIP credit for.
+     *  @return bipCredit_ BIP credit of the bucket.
+     */
+    function bipAt(uint256 price_) external view returns (uint256 bipCredit_);
+
+    /**
      *  @notice Get a bucket struct for a given price.
      *  @param  price_            The price of the bucket to retrieve.
      *  @return bucketPrice_      The price of the bucket.

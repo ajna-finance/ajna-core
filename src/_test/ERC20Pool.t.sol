@@ -151,6 +151,10 @@ contract ERC20PoolTest is DSTestPlus {
 
     }
 
+    /**********************************************************/
+    /*** Manipulation mitigation tests - fees and penalties ***/
+    /**********************************************************/
+
    function testManipulationMitigations() external {
         _lender.addQuoteToken(_pool, address(_lender), 100_000 * 1e18, _p4000);
         _lender1.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p3010);
@@ -219,6 +223,314 @@ contract ERC20PoolTest is DSTestPlus {
         _borrower1.repay(_pool, 100 * 1e18);
         assertEq(_pool.getPoolMinDebtAmount(), 0);
         assertEq(_pool.totalBorrowers(),       0);
+   }
+
+   function testRemoveQuoteTokenPenalty() external {
+        uint256 priceHigh = _p2000;
+        uint256 priceMed  = _p1004;
+        uint256 priceLow  = _p502;
+
+        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceLow);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   6_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 194_000 * 1e18);
+
+        // check bucket
+        (, , , uint256 deposit, , , uint256 lpOutstanding, ) = _pool.bucketAt(priceHigh);
+        uint256 bipCredit = _pool.bipAt(priceHigh);
+        assertEq(deposit,       2_000 * 1e18);
+        assertEq(lpOutstanding, 2_000 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceHigh), 2_000 * 1e27);
+
+        // test remove all amount with penalty from one bucket
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_lender), 1_998 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), priceHigh, 1_998 * 1e18, 0);
+        _lender.removeQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   4_002 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 195_998 * 1e18);
+
+        // check bucket
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceHigh);
+        bipCredit = _pool.bipAt(priceHigh);
+        assertEq(deposit,       0);
+        assertEq(lpOutstanding, 0);
+        assertEq(bipCredit,     2 * 1e18);
+
+        assertEq(_pool.lpBalance(address(_lender), priceHigh), 0);
+
+        // test remove entire amount in 2 steps with penalty 
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_lender), 499.5 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), priceMed, 499.5 * 1e18, 0);
+        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18, priceMed);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   3_502.5 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 196_497.5 * 1e18);
+
+        // check bucket
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
+        bipCredit = _pool.bipAt(priceMed);
+        assertEq(deposit,       2_500 * 1e18);
+        assertEq(lpOutstanding, 2_500 * 1e27);
+        assertEq(bipCredit,     0.5 * 1e18);
+
+        assertEq(_pool.lpBalance(address(_lender), priceMed), 2_500 * 1e27);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_lender), 2_497.5 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), priceMed, 2_497.5 * 1e18, 0);
+        _lender.removeQuoteToken(_pool, address(_lender), 2_500 * 1e18, priceMed);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   1_005 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 198_995 * 1e18);
+
+        // check bucket
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
+        bipCredit = _pool.bipAt(priceMed);
+        assertEq(deposit,       0 * 1e18);
+        assertEq(lpOutstanding, 0 * 1e27);
+        assertEq(bipCredit,     3 * 1e18);
+
+        assertEq(_pool.lpBalance(address(_lender), priceMed), 0);
+
+        // skip > 24h no penalty should occur
+        skip(3600 * 24 + 1);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_lender), 500 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), priceLow, 500 * 1e18, 0);
+        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18, priceLow);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   505 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 199_495 * 1e18);
+
+        // check bucket
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
+        bipCredit = _pool.bipAt(priceLow);
+        assertEq(deposit,       500 * 1e18);
+        assertEq(lpOutstanding, 500 * 1e27);
+        assertEq(bipCredit,     0 * 1e18);
+
+        assertEq(_pool.lpBalance(address(_lender), priceLow), 500 * 1e27);
+
+        // deposit at a different bucket should not impose penalty on current bucket
+        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_lender), 100 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), priceLow, 100 * 1e18, 0);
+        _lender.removeQuoteToken(_pool, address(_lender), 100 * 1e18, priceLow);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   2_405 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 197_595 * 1e18);
+
+        // check bucket
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
+        bipCredit = _pool.bipAt(priceLow);
+        assertEq(deposit,       400 * 1e18);
+        assertEq(lpOutstanding, 400 * 1e27);
+        assertEq(bipCredit,     0 * 1e18);
+
+        assertEq(_pool.lpBalance(address(_lender), priceLow), 400 * 1e27);
+
+        // deposit in current bucket should reactivate penalty
+        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceLow);
+
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_lender), 2_397.6 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), priceLow, 2_397.6 * 1e18, 0);
+        _lender.removeQuoteToken(_pool, address(_lender), 2_400 * 1e18, priceLow);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   2_007.4 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 197_992.6 * 1e18);
+
+        // check bucket
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
+        bipCredit = _pool.bipAt(priceLow);
+        assertEq(deposit,       0 * 1e18);
+        assertEq(lpOutstanding, 0 * 1e27);
+        assertEq(bipCredit,     2.4 * 1e18);
+
+        assertEq(_pool.lpBalance(address(_lender), priceLow), 0 * 1e27);
+    }
+
+   function testMoveQuoteTokenPenalty() external {
+        uint256 priceHigh = _p2000;
+        uint256 priceMed  = _p1004;
+        uint256 priceLow  = _p502;
+
+        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceLow);
+
+        _lender1.addQuoteToken(_pool, address(_lender1), 500 * 1e18, priceHigh);
+        _lender1.addQuoteToken(_pool, address(_lender1), 1_000 * 1e18, priceMed);
+        _lender1.addQuoteToken(_pool, address(_lender1), 1_500 * 1e18, priceLow);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),    9_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)),  194_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender1)), 197_000 * 1e18);
+
+        // check bucket
+        (, , , uint256 deposit, , , uint256 lpOutstanding, ) = _pool.bucketAt(priceLow);
+        uint256 bipCredit = _pool.bipAt(priceLow);
+        assertEq(deposit,       2_500 * 1e18);
+        assertEq(lpOutstanding, 2_500 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceLow), 1_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceLow), 1_500 * 1e27);
+
+        // there should be no penalty if moving to a higher bucket
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), priceLow, priceMed, 500 * 1e18, 0);
+        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, priceLow, priceMed);
+
+        // check buckets
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
+        bipCredit = _pool.bipAt(priceLow);
+        assertEq(deposit,       2_000 * 1e18);
+        assertEq(lpOutstanding, 2_000 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceLow),  500 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceLow), 1_500 * 1e27);
+
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
+        bipCredit = _pool.bipAt(priceMed);
+        assertEq(deposit,       4_500 * 1e18);
+        assertEq(lpOutstanding, 4_500 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceMed),  3_500 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_000 * 1e27);
+
+        // apply penalty if moving to a lower bucket
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), priceHigh, priceLow, 998.502212369222621532 * 1e18, 0);
+        _lender.moveQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHigh, priceLow);
+
+        // check buckets
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
+        bipCredit = _pool.bipAt(priceLow);
+        assertEq(deposit,       2_998.502212369222621532 * 1e18);
+        assertEq(lpOutstanding, 2_998.502212369222621532000000000 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceLow),  1_498.502212369222621532000000000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceLow), 1_500 * 1e27);
+
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceHigh);
+        bipCredit = _pool.bipAt(priceHigh);
+        assertEq(deposit,       1_501.497787630777378468 * 1e18);
+        assertEq(lpOutstanding, 1_500 * 1e27);
+        assertEq(bipCredit,     1.497787630777378468 * 1e18);
+
+        assertEq(_pool.lpBalance(address(_lender), priceHigh),  1_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceHigh), 500 * 1e27);
+
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
+        bipCredit = _pool.bipAt(priceMed);
+        assertEq(deposit,       4_500 * 1e18);
+        assertEq(lpOutstanding, 4_500 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceMed),  3_500 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_000 * 1e27);
+
+        // skip > 24h no penalty should occur
+        skip(3600 * 24 + 1);
+
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender1), priceHigh, priceMed, 500.499262543592459489 * 1e18, 0);
+        _lender1.moveQuoteToken(_pool, address(_lender1), 510 * 1e18, priceHigh, priceMed);
+
+        // check buckets
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
+        bipCredit = _pool.bipAt(priceMed);
+        assertEq(deposit,       5_000.499262543592459489 * 1e18);
+        assertEq(lpOutstanding, 5_000.499262543592459489000000000 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceMed),  3_500 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_500.499262543592459489000000000 * 1e27);
+
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceHigh);
+        bipCredit = _pool.bipAt(priceHigh);
+        assertEq(deposit,       1_000.998525087184918979 * 1e18);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(bipCredit,     1.497787630777378468 * 1e18);
+
+        assertEq(_pool.lpBalance(address(_lender), priceHigh),  1_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceHigh), 0);
+
+        // lender deposit in priceHigh bucket, check penalty applies only if moving from priceHigh bucket
+        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
+
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), priceHigh, priceMed, 1_999.004768043588443074 * 1e18, 0);
+        _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh, priceMed);
+
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceHigh);
+        bipCredit = _pool.bipAt(priceHigh);
+        assertEq(deposit,       1_001.993757043596475905 * 1e18);
+        assertEq(lpOutstanding, 1_000 * 1e27);
+        assertEq(bipCredit,     2.493019587188935394 * 1e18);
+
+        assertEq(_pool.lpBalance(address(_lender), priceHigh),  1_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceHigh), 0 * 1e27);
+
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
+        bipCredit = _pool.bipAt(priceMed);
+        assertEq(deposit,       6_999.504030587180902563 * 1e18);
+        assertEq(lpOutstanding, 6_999.504030587180902563000000000 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceMed),  5_499.004768043588443074000000000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_500.499262543592459489000000000 * 1e27);
+
+        // penalty should not apply if moving from priceMed bucket to priceLow
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(address(_lender), priceMed, priceLow, 2_000 * 1e18, 0);
+        _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceMed, priceLow);
+
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
+        bipCredit = _pool.bipAt(priceMed);
+        assertEq(deposit,       4_999.504030587180902563 * 1e18);
+        assertEq(lpOutstanding, 4_999.504030587180902563000000000 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceMed),  3_499.004768043588443074000000000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_500.499262543592459489000000000 * 1e27);
+
+        (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
+        bipCredit = _pool.bipAt(priceLow);
+        assertEq(deposit,       4_998.502212369222621532 * 1e18);
+        assertEq(lpOutstanding, 4_998.502212369222621532000000000 * 1e27);
+        assertEq(bipCredit,     0);
+
+        assertEq(_pool.lpBalance(address(_lender), priceLow),  3_498.502212369222621532000000000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceLow), 1_500 * 1e27);
    }
 
 }
