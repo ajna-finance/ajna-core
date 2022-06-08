@@ -140,7 +140,7 @@ contract ERC721PoolBidTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(_NFTSubsetPoolAddress, address(_bidder), 4_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Purchase(address(_bidder), _p4000, 4_000 * 1e18, Maths.ONE_WAD);
+        emit PurchaseWithNFTs(address(_bidder), _p4000, 4_000 * 1e18, _tokenIds);
         vm.prank((address(_bidder)));
         _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 4_000 * 1e18, _p4000, _tokenIds);
 

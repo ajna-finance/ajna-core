@@ -55,6 +55,15 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256 indexed tokenId_, uint256 lps_);
 
     /**
+     *  @notice Emitted when NFT collateral is exchanged for quote tokens.
+     *  @param  bidder_     `msg.sender`.
+     *  @param  price_      Price at which collateral was exchanged for quote tokens.
+     *  @param  amount_     Amount of quote tokens purchased.
+     *  @param  tokenIds_   Array of tokenIds used as collateral for hte exchange.
+     */
+    event PurchaseWithNFTs(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256[] tokenIds_);
+
+    /**
      *  @notice Emitted when borrower removes collateral from the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  tokenId_  Token ID of the collateral removed from the pool.
@@ -96,6 +105,18 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     /// @notice Modifier to check a given tokenId has been deposited into the pool
     modifier tokenInPool(uint256 tokenId_) {
         require(collateral().ownerOf(tokenId_) == address(this), "P:T_NOT_IN_P");
+        _;
+    }
+
+    /// @notice Modifier to check if all tokens in an array have been deposited into the pool
+    modifier tokensInPool(uint256[] memory tokenIds_) {
+        for (uint i; i < tokenIds_.length;) {
+            require(collateral().ownerOf(tokenIds_[i]) == address(this), "P:T_NOT_IN_P");
+
+            unchecked {
+                ++i;
+            }
+        }
         _;
     }
 
@@ -262,7 +283,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit RemoveNFTCollateral(msg.sender, tokenId_);
     }
 
-    function removeCollateralMultiple(uint256[] memory tokenIds_) external {
+    function removeCollateralMultiple(uint256[] memory tokenIds_) tokensInPool(tokenIds_) external {
         accumulatePoolInterest();
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
@@ -280,7 +301,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
             // pool level accounting
             _collateralTokenIdsAdded.remove(tokenIds_[i]);
-            collateralToRemoveCount -= 1;
+            collateralToRemoveCount += 1;
 
             // borrower accounting
             borrower.collateralDeposited.remove(tokenIds_[i]);
@@ -408,8 +429,10 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     // TODO: Remove from IPool ... different Interface req
     function purchaseBid(uint256 amount_, uint256 price_) external {}
 
+    // TODO: Add test case for transferrance of tokens based upon collateralRequired
     /// @dev Can be called for multiple unit of collateral at a time
     /// @dev Does not increase pool or bucket debt
+    /// @dev Tokens will be used for purchase based upon their order in the array, FIFO
     function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] memory tokenIds_) external {
         require(BucketMath.isValidPrice(price_), "P:PB:INVALID_PRICE");
 
@@ -440,7 +463,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
 
         // move required collateral from sender to pool
-        for (uint i; i < tokenIds_.length;) {
+        for (uint i; i < collateralRequired;) {
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
             unchecked {
                 ++i;
@@ -449,7 +472,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
-        emit Purchase(msg.sender, price_, amount_, Maths.wad(collateralRequired));
+        emit PurchaseWithNFTs(msg.sender, price_, amount_, tokenIds_);
     }
 
    /*****************************/
