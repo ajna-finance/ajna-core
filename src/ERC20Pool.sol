@@ -196,8 +196,9 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         totalQuoteToken               += amount_;
 
         // lender accounting
-        lpBalance[recipient_][price_] += lpTokens_;
-        lpTimer[recipient_][price_]   = block.timestamp;
+        LenderInfo storage lender = lenders[recipient_][price_];
+        lender.balance += lpTokens_;
+        lender.timer   = block.timestamp;
 
         // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
@@ -207,14 +208,15 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external override {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
-        uint256 maxClaim = lpBalance[recipient_][price_];
+        LenderInfo storage lender = lenders[recipient_][price_];
+        uint256 maxClaim = lender.balance;
         require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
 
         // claim collateral and get amount of LP tokens burned for claim
         uint256 claimedLpTokens = claimCollateralFromBucket(price_, amount_, maxClaim);
 
         // lender accounting
-        lpBalance[recipient_][price_] -= claimedLpTokens;
+        lender.balance -= claimedLpTokens;
 
         // move claimed collateral from pool to claimer
         collateral().safeTransfer(recipient_, amount_ / collateralScale);
@@ -229,15 +231,18 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
+        LenderInfo storage lender = lenders[recipient_][fromPrice_];
+        uint256 balance = lender.balance;
+        uint256 timer   = lender.timer;
         (uint256 fromLpTokens, uint256 toLpTokens, uint256 movedAmount) = moveQuoteTokenFromBucket(
-            fromPrice_, toPrice_, maxAmount_, lpBalance[recipient_][fromPrice_], lpTimer[recipient_][fromPrice_], inflatorSnapshot
+            fromPrice_, toPrice_, maxAmount_, balance, timer, inflatorSnapshot
         );
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");
 
         // lender accounting
-        lpBalance[recipient_][fromPrice_] -= fromLpTokens;
-        lpBalance[recipient_][toPrice_]   += toLpTokens;
+        lender.balance                        -= fromLpTokens;
+        lenders[recipient_][toPrice_].balance += toLpTokens;
 
         emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
@@ -248,8 +253,9 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
 
         // remove quote token amount and get LP tokens burned
+        LenderInfo storage lender = lenders[recipient_][price_];
         (uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
-            price_, maxAmount_, lpBalance[recipient_][price_], lpTimer[recipient_][price_], inflatorSnapshot
+            price_, maxAmount_, lender.balance, lender.timer, inflatorSnapshot
         );
 
         // pool level accounting
@@ -258,7 +264,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:RQT:POOL_UNDER_COLLAT");
 
         // lender accounting
-        lpBalance[recipient_][price_] -= lpTokens;
+        lender.balance -= lpTokens;
 
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(recipient_, amount / quoteTokenScale);

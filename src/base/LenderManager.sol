@@ -14,13 +14,13 @@ import { Maths }      from "../libraries/Maths.sol";
 abstract contract LenderManager is ILenderManager, Buckets {
 
     /**
-     *  @dev lender address -> price bucket [WAD] -> lender lp [RAY]
+     *  @dev lender address -> price bucket [WAD] -> LenderInfo
      */
-    mapping(address => mapping(uint256 => uint256)) public lpBalance;
-    /**
-     *  @dev lender address -> price bucket [WAD] -> timer
-     */
-    mapping(address => mapping(uint256 => uint256)) public lpTimer;
+    mapping(address => mapping(uint256 => LenderInfo)) public lenders;
+
+    function lpBalance(address lp_, uint256 price_) external view returns (uint256) {
+        return lenders[lp_][price_].balance;
+    }
 
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
         require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");

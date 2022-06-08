@@ -7,6 +7,24 @@ pragma solidity 0.8.11;
  */
 interface ILenderManager {
 
+    /***************/
+    /*** Structs ***/
+    /***************/
+
+    /**
+     *  @notice Struct holding lender related info per price bucket.
+     *  @param  balance Lender LP tokens, RAY units.
+     *  @param  timer   Timestamp of last deposit in current bucket.
+     */
+    struct LenderInfo {
+        uint256 balance;
+        uint256 timer;
+    }
+
+    /*****************************/
+    /*** Lender View Functions ***/
+    /*****************************/
+
     /**
      *  @notice Nested mapping of lender's LP token balance at different price buckets.
      *  @param  lp_          Address of the LP.
