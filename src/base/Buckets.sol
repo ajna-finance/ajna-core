@@ -214,7 +214,7 @@ abstract contract Buckets is IBuckets {
         // apply bid penalty if deposit happened less than 24h ago
         if (fromBucket.price > toBucket.price && block.timestamp - lpTimer_ < SECONDS_PER_DAY) {
             uint256 penalty        = Maths.wmul(PENALTY_BPS, fromBucket.price - toBucket.price);
-            amount_               -= penalty;
+            amount_                -= penalty;
             _bip[fromBucket.price] += penalty;
         }
 
@@ -295,7 +295,7 @@ abstract contract Buckets is IBuckets {
         Bucket storage bucket = _buckets[price_];
         accumulateBucketInterest(bucket, inflator_);
 
-        uint256 exchangeRate = getExchangeRate(bucket);                 // RAY
+        uint256 exchangeRate = getExchangeRate(bucket);                // RAY
         uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
         amount_             = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
         lpTokens_           = Maths.rdiv(amount_, exchangeRate);                // RAY
@@ -492,7 +492,7 @@ abstract contract Buckets is IBuckets {
     function moveQuoteTokenAtPrice(
         Bucket storage fromBucket_, Bucket storage toBucket_, uint256 amount_, uint256 inflator_, uint256 lup_
     ) private returns (uint256 newLup_) {
-        newLup_      = lup_;
+        newLup_       = lup_;
         bool moveUp   = fromBucket_.price < toBucket_.price;
         bool aboveLup = newLup_ !=0 && newLup_ < Maths.min(fromBucket_.price, toBucket_.price);
 
