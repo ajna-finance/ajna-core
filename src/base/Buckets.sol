@@ -184,26 +184,29 @@ abstract contract Buckets is IBuckets {
      *  @notice Called by a lender to remove quote tokens from a bucket
      *  @param  fromPrice_    The price bucket from where quote tokens should be moved
      *  @param  toPrice_      The price bucket where quote tokens should be moved
-     *  @param  amount_       The amount of quote tokens to be moved, WAD
+     *  @param  maxAmount_    The max amount of quote tokens to be moved, WAD
      *  @param  lpBalance_    The LP balance for current lender, RAY
      *  @param  lpTimer_      The timestamp of the last lender deposit in bucket
      *  @param  inflator_     The current pool inflator rate, RAY
      *  @return lpRedemption_ The amount of lpTokens moved from bucket
      *  @return lpAward_      The amount of lpTokens moved to bucket
+     *  @return amount_       The amount of quote tokens moved to bucket
      */
     function moveQuoteTokenFromBucket(
-        uint256 fromPrice_, uint256 toPrice_, uint256 amount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
-    ) internal returns (uint256 lpRedemption_, uint256 lpAward_, uint256 movedAmount_) {
+        uint256 fromPrice_, uint256 toPrice_, uint256 maxAmount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
+    ) internal returns (uint256 lpRedemption_, uint256 lpAward_, uint256 amount_) {
         uint256 newHpb = !BitMaps.get(_bitmap, toPrice_) ? initializeBucket(hpb, toPrice_) : hpb;
         uint256 newLup = lup;
 
         Bucket storage fromBucket = _buckets[fromPrice_];
         accumulateBucketInterest(fromBucket, inflator_);
 
-        uint256 exchangeRate = getExchangeRate(fromBucket);
-        lpRedemption_ = Maths.rdiv(Maths.wadToRay(amount_), exchangeRate);
+        uint256 exchangeRate = getExchangeRate(fromBucket);                 // RAY
+        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);       // RAY
 
-        require(lpRedemption_ <= lpBalance_, "B:MQT:AMT_GT_CLAIM");
+        amount_       = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
+        lpRedemption_ = Maths.rdiv(amount_, exchangeRate);                // RAY
+        amount_       = Maths.rayToWad(amount_);
 
         Bucket storage toBucket = _buckets[toPrice_];
         accumulateBucketInterest(toBucket, inflator_);
@@ -221,7 +224,7 @@ abstract contract Buckets is IBuckets {
         fromBucket.lpOutstanding -= lpRedemption_;
         toBucket.lpOutstanding   += lpAward_;
 
-        bool atLup  = newLup != 0 && fromPrice_ == newLup;
+        bool atLup  = newLup != 0 && fromBucket.price == newLup;
         if (atLup) {
             newLup = moveQuoteTokenAtLup(fromBucket, toBucket, amount_, inflator_);
         } else {
@@ -238,8 +241,6 @@ abstract contract Buckets is IBuckets {
 
         // bucket management
         if (isEmpty && noClaim) deactivateBucket(fromBucket); // cleanup if bucket no longer used
-
-        movedAmount_ = amount_;
     }
 
     /**

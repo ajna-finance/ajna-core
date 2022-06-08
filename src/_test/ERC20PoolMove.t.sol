@@ -1136,10 +1136,6 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         vm.expectRevert("P:MQT:INVALID_TO_PRICE");
         _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, _p3010, 3_000 * 1e18);
 
-        // should revert if trying to move more than entitled
-        vm.expectRevert("B:MQT:AMT_GT_CLAIM");
-        _lender.moveQuoteToken(_pool, address(_lender), 10_001 * 1e18, _p3010, _p3514);
-
         assertMoveQuoteToken(address(_lender), _p3010, _p3514, 2_000 * 1e18, 0);
 
         assertEq(_pool.hpb(), _p3514);

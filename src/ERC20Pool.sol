@@ -212,7 +212,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     }
 
     function moveQuoteToken(
-        address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_
+        address recipient_, uint256 maxAmount_, uint256 fromPrice_, uint256 toPrice_
     ) external override {
         require(BucketMath.isValidPrice(toPrice_), "P:MQT:INVALID_TO_PRICE");
         require(fromPrice_ != toPrice_, "P:MQT:SAME_PRICE");
@@ -220,7 +220,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulatePoolInterest();
 
         (uint256 fromLpTokens, uint256 toLpTokens, uint256 movedAmount) = moveQuoteTokenFromBucket(
-            fromPrice_, toPrice_, amount_, lpBalance[recipient_][fromPrice_], lpTimer[recipient_][fromPrice_], inflatorSnapshot
+            fromPrice_, toPrice_, maxAmount_, lpBalance[recipient_][fromPrice_], lpTimer[recipient_][fromPrice_], inflatorSnapshot
         );
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");

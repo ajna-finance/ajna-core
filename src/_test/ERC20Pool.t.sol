@@ -462,27 +462,27 @@ contract ERC20PoolTest is DSTestPlus {
         skip(3600 * 24 + 1);
 
         vm.expectEmit(true, true, true, true);
-        emit MoveQuoteToken(address(_lender1), priceHigh, priceMed, 500 * 1e18, 0);
-        _lender1.moveQuoteToken(_pool, address(_lender1), 500 * 1e18, priceHigh, priceMed);
+        emit MoveQuoteToken(address(_lender1), priceHigh, priceMed, 500.499262543592459489 * 1e18, 0);
+        _lender1.moveQuoteToken(_pool, address(_lender1), 510 * 1e18, priceHigh, priceMed);
 
         // check buckets
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
         bipCredit = _pool.bipAt(priceMed);
-        assertEq(deposit,       5_000 * 1e18);
-        assertEq(lpOutstanding, 5_000 * 1e27);
+        assertEq(deposit,       5_000.499262543592459489 * 1e18);
+        assertEq(lpOutstanding, 5_000.499262543592459489000000000 * 1e27);
         assertEq(bipCredit,     0);
 
         assertEq(_pool.lpBalance(address(_lender), priceMed),  3_500 * 1e27);
-        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_500 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_500.499262543592459489000000000 * 1e27);
 
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceHigh);
         bipCredit = _pool.bipAt(priceHigh);
-        assertEq(deposit,       1_001.497787630777378468 * 1e18);
-        assertEq(lpOutstanding, 1_000.498764514711922023590135240 * 1e27);
+        assertEq(deposit,       1_000.998525087184918979 * 1e18);
+        assertEq(lpOutstanding, 1_000 * 1e27);
         assertEq(bipCredit,     1.497787630777378468 * 1e18);
 
         assertEq(_pool.lpBalance(address(_lender), priceHigh),  1_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_lender1), priceHigh), 0.498764514711922023590135240 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceHigh), 0);
 
         // lender deposit in priceHigh bucket, check penalty applies only if moving from priceHigh bucket
         _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
@@ -493,21 +493,21 @@ contract ERC20PoolTest is DSTestPlus {
 
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceHigh);
         bipCredit = _pool.bipAt(priceHigh);
-        assertEq(deposit,       1_002.493019587188935394 * 1e18);
-        assertEq(lpOutstanding, 1_000.498764514711922023590135240 * 1e27);
+        assertEq(deposit,       1_001.993757043596475905 * 1e18);
+        assertEq(lpOutstanding, 1_000 * 1e27);
         assertEq(bipCredit,     2.493019587188935394 * 1e18);
 
         assertEq(_pool.lpBalance(address(_lender), priceHigh),  1_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_lender1), priceHigh), 0.498764514711922023590135240 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceHigh), 0 * 1e27);
 
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
         bipCredit = _pool.bipAt(priceMed);
-        assertEq(deposit,       6_999.004768043588443074 * 1e18);
-        assertEq(lpOutstanding, 6_999.004768043588443074000000000 * 1e27);
+        assertEq(deposit,       6_999.504030587180902563 * 1e18);
+        assertEq(lpOutstanding, 6_999.504030587180902563000000000 * 1e27);
         assertEq(bipCredit,     0);
 
         assertEq(_pool.lpBalance(address(_lender), priceMed),  5_499.004768043588443074000000000 * 1e27);
-        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_500 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_500.499262543592459489000000000 * 1e27);
 
         // penalty should not apply if moving from priceMed bucket to priceLow
         vm.expectEmit(true, true, true, true);
@@ -516,12 +516,12 @@ contract ERC20PoolTest is DSTestPlus {
 
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
         bipCredit = _pool.bipAt(priceMed);
-        assertEq(deposit,       4_999.004768043588443074 * 1e18);
-        assertEq(lpOutstanding, 4_999.004768043588443074000000000 * 1e27);
+        assertEq(deposit,       4_999.504030587180902563 * 1e18);
+        assertEq(lpOutstanding, 4_999.504030587180902563000000000 * 1e27);
         assertEq(bipCredit,     0);
 
         assertEq(_pool.lpBalance(address(_lender), priceMed),  3_499.004768043588443074000000000 * 1e27);
-        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_500 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceMed), 1_500.499262543592459489000000000 * 1e27);
 
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
         bipCredit = _pool.bipAt(priceLow);

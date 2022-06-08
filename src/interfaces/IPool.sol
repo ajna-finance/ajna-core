@@ -176,11 +176,11 @@ interface IPool {
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
      *  @param  recipient_ The recipient moving quote tokens.
-     *  @param  amount_    The amount of quote token to be moved by a lender.
+     *  @param  maxAmount_ The maximum amount of quote token to be moved by a lender.
      *  @param  fromPrice_ The bucket from which the quote tokens will be removed.
      *  @param  toPrice_   The bucket to which the quote tokens will be added.
      */
-    function moveQuoteToken(address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_) external;
+    function moveQuoteToken(address recipient_, uint256 maxAmount_, uint256 fromPrice_, uint256 toPrice_) external;
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
