@@ -58,7 +58,7 @@ abstract contract Interest is IInterest, PoolState {
      *  @dev    Only used by Borrowers using fungible tokens as collateral     
      *  @param  borrower_ Pointer to the struct which is accumulating interest on their debt
      */
-    function accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo storage borrower_) internal {
+    function accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_) internal {
         if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
             borrower_.debt += getPendingInterest(
                 borrower_.debt,

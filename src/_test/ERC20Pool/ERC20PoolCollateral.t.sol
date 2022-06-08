@@ -240,6 +240,9 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         _lender.claimCollateral(_pool, address(_lender), 1 * 1e18, priceHigh);
 
+        // skip > 24h to avoid deposit removal penalty
+        skip(3600 * 24 + 1);
+
         // borrower takes a loan of 4000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
         _borrower.borrow(_pool, 4_000 * 1e18, 3_000 * 1e18);

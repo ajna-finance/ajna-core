@@ -256,7 +256,13 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     }
 
     // TODO: finish implementing
-    function removeCollateralMultiple(uint256[] memory tokenIds_) external {}
+    function removeCollateralMultiple(uint256[] memory tokenIds_) external {
+        // accumulatePoolInterest();
+
+        // NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
+        // accumulateNFTBorrowerInterest(borrower);
+
+    }
 
 
     // TODO: finish implementing
@@ -314,15 +320,15 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     }
 
     function moveQuoteToken(
-        address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_
+        address recipient_, uint256 maxAmount_, uint256 fromPrice_, uint256 toPrice_
     ) external override {
         require(BucketMath.isValidPrice(toPrice_), "P:MQT:INVALID_TO_PRICE");
         require(fromPrice_ != toPrice_, "P:MQT:SAME_PRICE");
 
         accumulatePoolInterest();
 
-        (uint256 fromLpTokens, uint256 toLpTokens) = moveQuoteTokenFromBucket(
-            fromPrice_, toPrice_, amount_, lpBalance[recipient_][fromPrice_], inflatorSnapshot
+        (uint256 fromLpTokens, uint256 toLpTokens, uint256 movedAmount) = moveQuoteTokenFromBucket(
+            fromPrice_, toPrice_, maxAmount_, lpBalance[recipient_][fromPrice_], lpTimer[recipient_][fromPrice_], inflatorSnapshot
         );
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");
@@ -331,7 +337,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         lpBalance[recipient_][fromPrice_] -= fromLpTokens;
         lpBalance[recipient_][toPrice_]   += toLpTokens;
 
-        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, amount_, lup);
+        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
 
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
@@ -341,7 +347,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // remove quote token amount and get LP tokens burned
         (uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
-            price_, maxAmount_, lpBalance[recipient_][price_], inflatorSnapshot
+            price_, maxAmount_, lpBalance[recipient_][price_], lpTimer[recipient_][price_], inflatorSnapshot
         );
 
         // pool level accounting
