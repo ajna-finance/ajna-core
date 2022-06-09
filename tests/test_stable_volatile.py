@@ -47,7 +47,7 @@ def lenders(ajna_protocol, pool_client, weth_dai_pool):
 @pytest.fixture
 def borrowers(ajna_protocol, pool_client, weth_dai_pool):
     weth_client = pool_client.get_collateral_token()
-    amount = 14_000 * 10**18
+    amount = 13_000 * 10**18
     dai_client = pool_client.get_quote_token()
     borrowers = []
     for _ in range(100):
@@ -235,21 +235,26 @@ def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, ):
     index_offset = ((lender_index % 6) - 2) * 2
     price = bucket_math.indexToPrice(lup_index + index_offset)
     quantity = int(MIN_PARTICIPATION * ((lender_index % 4) + 1) ** 2) * 10**18
-    if dai.balanceOf(lender) > quantity:
-        print(f" lender {lender_index} adding {quantity / 10**18:.1f} liquidity at {price / 10**18:.1f}")
-        try:
-            tx = pool.addQuoteToken(lender, quantity, price, {"from": lender})
-            gas_validator.validate(tx)
-            return price
-        except VirtualMachineError as ex:
-            (_, _, _, _, _, bucket_inflator, _, _) = pool.bucketAt(price)
-            print(f" ERROR adding liquidity at {price / 10**18:.1f}\n{ex}")
-            hpb_index = bucket_math.priceToIndex(pool.hpb())
-            print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, hpb_index))
-            assert False
-    else:
-        print(f" lender {lender_index} had insufficient balance to add {quantity / 10**18:.1f}")
-    return None
+
+    if quantity < pool.getPoolMinDebtAmount():
+        print(f" WARN lender {lender_index} cannot add {quantity / 10**18:.1f} liquidity because min debt amount is "
+              f"{pool.getPoolMinDebtAmount() / 10**18:.1f}")
+        return None
+    if dai.balanceOf(lender) < quantity:
+        print(f" lender {lender_index} had insufficient balance to add {quantity / 10 ** 18:.1f}")
+        return None
+
+    print(f" lender {lender_index} adding {quantity / 10**18:.1f} liquidity at {price / 10**18:.1f}")
+    try:
+        tx = pool.addQuoteToken(lender, quantity, price, {"from": lender})
+        gas_validator.validate(tx)
+        return price
+    except VirtualMachineError as ex:
+        (_, _, _, _, _, bucket_inflator, _, _) = pool.bucketAt(price)
+        print(f" ERROR adding liquidity at {price / 10**18:.1f}\n{ex}")
+        hpb_index = bucket_math.priceToIndex(pool.hpb())
+        print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, hpb_index))
+        assert False
 
 
 def remove_quote_token(lender, lender_index, price, pool):
@@ -299,7 +304,7 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
     # end_time = start_time + SECONDS_PER_YEAR  # TODO: one year test
-    end_time = start_time + SECONDS_PER_YEAR / 52
+    end_time = start_time + SECONDS_PER_YEAR / 121
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay', 'updateInterestRate']):
         while chain.time() < end_time:
