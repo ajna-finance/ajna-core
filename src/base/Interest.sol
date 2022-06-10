@@ -40,16 +40,7 @@ abstract contract Interest is IInterest, PoolState {
         if (actualUtilization != 0 && previousRateUpdate < block.timestamp && getPoolCollateralization() > Maths.ONE_WAD) {
             uint256 oldRate = previousRate;
 
-            uint256 elapsed       = block.timestamp - lastInflatorSnapshotUpdate;
-            bool shouldAccumulate = elapsed != 0;
-
-            if (shouldAccumulate) {
-                (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot, elapsed);
-
-                totalDebt                  = curDebt;
-                inflatorSnapshot           = curInflator;
-                lastInflatorSnapshotUpdate = block.timestamp;
-            }
+            (totalDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
             previousRate = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - getPoolTargetUtilization()));
             previousRateUpdate = block.timestamp;
@@ -79,10 +70,18 @@ abstract contract Interest is IInterest, PoolState {
      *  @notice Update the global borrower inflator
      *  @dev    Requires time to have passed between update calls
      */
-    function _accumulatePoolInterest(uint256 totalDebt_, uint256 inflator_, uint256 elapsed_
-    ) internal view returns (uint256 updatedDebt_, uint256 newInflator_) {
-        newInflator_ = _pendingInflator(previousRate, inflator_, elapsed_);    // RAY
-        updatedDebt_ = totalDebt_ + _pendingInterest(totalDebt_, newInflator_, inflator_); // WAD
+    function _accumulatePoolInterest(uint256 totalDebt_, uint256 inflator_) internal returns (uint256 curDebt_, uint256 curInflator_) {
+        uint256 elapsed  = block.timestamp - lastInflatorSnapshotUpdate;
+        if (elapsed != 0) {
+            curInflator_ = _pendingInflator(previousRate, inflator_, elapsed);                // RAY
+            curDebt_     = totalDebt_ + _pendingInterest(totalDebt_, curInflator_, inflator_); // WAD
+
+            inflatorSnapshot           = curInflator_;
+            lastInflatorSnapshotUpdate = block.timestamp;
+        } else {
+            curInflator_ = inflator_;
+            curDebt_     = totalDebt_;
+        }
     }
 
     /**
