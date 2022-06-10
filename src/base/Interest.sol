@@ -36,13 +36,15 @@ abstract contract Interest is IInterest, PoolState {
 
     function updateInterestRate() external override {
         // RAY
-        uint256 actualUtilization = getPoolActualUtilization();
-        if (actualUtilization != 0 && previousRateUpdate < block.timestamp && getPoolCollateralization() > Maths.ONE_WAD) {
+        uint256 curDebt = totalDebt;
+        uint256 actualUtilization = _poolActualUtilization(curDebt);
+        if (actualUtilization != 0 && previousRateUpdate < block.timestamp && _poolCollateralization(curDebt) > Maths.ONE_WAD) {
             uint256 oldRate = previousRate;
 
-            (totalDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+            (curDebt, ) = _accumulatePoolInterest(curDebt, inflatorSnapshot);
+            totalDebt   = curDebt;
 
-            previousRate = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - getPoolTargetUtilization()));
+            previousRate       = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - _poolTargetUtilization(curDebt)));
             previousRateUpdate = block.timestamp;
 
             emit UpdateInterestRate(oldRate, previousRate);
@@ -85,6 +87,20 @@ abstract contract Interest is IInterest, PoolState {
     }
 
     /**
+     *  @notice Calculate the pending inflator
+     *  @param  previousRate_    WAD - The current interest rate value.
+     *  @param  inflator_        RAY - The current inflator value
+     *  @param  elapsed_         Seconds since last inflator update
+     *  @return pendingInflator_ WAD - The pending inflator value
+     */
+    function _pendingInflator(uint256 previousRate_, uint256 inflator_, uint256 elapsed_) internal pure returns (uint256) {
+        // Calculate annualized interest rate
+        uint256 spr = Maths.wadToRay(previousRate_) / SECONDS_PER_YEAR;
+        // secondsSinceLastUpdate is unscaled
+        return Maths.rmul(inflator_, Maths.rpow(Maths.ONE_RAY + spr, elapsed_));
+    }
+
+    /**
      *  @notice Calculate the amount of unaccrued interest for a specified amount of debt
      *  @param  debt_            WAD - A debt amount (pool, bucket, or borrower)
      *  @param  pendingInflator_ RAY - The next debt inflator value
@@ -107,13 +123,6 @@ abstract contract Interest is IInterest, PoolState {
 
     function getPendingInflator() public view returns (uint256) {
         return _pendingInflator(previousRate, inflatorSnapshot, block.timestamp - lastInflatorSnapshotUpdate);
-    }
-
-    function _pendingInflator(uint256 previousRate_, uint256 inflator_, uint256 elapsed_) internal pure returns (uint256) {
-        // Calculate annualized interest rate
-        uint256 spr = Maths.wadToRay(previousRate_) / SECONDS_PER_YEAR;
-        // secondsSinceLastUpdate is unscaled
-        return Maths.rmul(inflator_, Maths.rpow(Maths.ONE_RAY + spr, elapsed_));
     }
 
     function getPendingPoolInterest() external view returns (uint256) {

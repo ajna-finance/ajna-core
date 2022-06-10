@@ -16,6 +16,10 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public override borrowers;
 
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
+
     function getBorrowerInfo(address borrower_)
         public view override returns (
             uint256 debt_,
