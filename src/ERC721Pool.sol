@@ -55,11 +55,20 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256 indexed tokenId_, uint256 lps_);
 
     /**
+     *  @notice Emitted when lender claims multiple unencumbered NFT collateral.
+     *  @param  claimer_  Recipient that claimed collateral.
+     *  @param  price_    Price at which unencumbered collateral was claimed.
+     *  @param  tokenIds_ Array of unencumbered tokenIds claimed as collateral.
+     *  @param  lps_      The amount of LP tokens burned in the claim.
+     */
+    event ClaimNFTCollateralMultiple(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_, uint256 lps_);
+
+    /**
      *  @notice Emitted when NFT collateral is exchanged for quote tokens.
      *  @param  bidder_     `msg.sender`.
      *  @param  price_      Price at which collateral was exchanged for quote tokens.
      *  @param  amount_     Amount of quote tokens purchased.
-     *  @param  tokenIds_   Array of tokenIds used as collateral for hte exchange.
+     *  @param  tokenIds_   Array of tokenIds used as collateral for the exchange.
      */
     event PurchaseWithNFTs(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256[] tokenIds_);
 
@@ -268,7 +277,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         uint256 encumberedBorrowerCollateral = getEncumberedCollateral(borrower.debt);
 
-        // Require overcollateralization to be at a minimum of one WAD to account for indivisible NFTs
+        // Require overcollateralization to be at a minimum of one RAY to account for indivisible NFTs
         require(Maths.ray(borrower.collateralDeposited.length()) - encumberedBorrowerCollateral >= Maths.ONE_RAY, "P:RC:AMT_GT_AVAIL_COLLAT");
 
         // pool level accounting
@@ -290,9 +299,15 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulateNFTBorrowerInterest(borrower);
 
         uint256 encumberedBorrowerCollateral = getEncumberedCollateral(borrower.debt);
+        uint256 unencumberedCollateral = Maths.ray(borrower.collateralDeposited.length()) - encumberedBorrowerCollateral;
 
-        // Require overcollateralization to be at a minimum of one WAD to account for indivisible NFTs
-        require(Maths.ray(borrower.collateralDeposited.length()) - encumberedBorrowerCollateral >= Maths.ONE_RAY, "P:RC:AMT_GT_AVAIL_COLLAT");
+        // Require overcollateralization to be at a minimum of one RAY to account for indivisible NFTs
+        if (Maths.ray(tokenIds_.length) > unencumberedCollateral) {
+            revert ("P:RC:AMT_GT_AVAIL_COLLAT");
+        }
+        else if (unencumberedCollateral - Maths.ray(tokenIds_.length) < Maths.ONE_RAY) {
+            revert ("P:RC:AMT_GT_AVAIL_COLLAT");
+        }
 
         uint256 collateralToRemoveCount;
 
@@ -314,7 +329,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
             }
         }
 
-        // update totalCollateral count with the newly added collateral
+        // update totalCollateral count with the newly removed collateral
         totalCollateral -= Maths.wad(collateralToRemoveCount);
 
         emit RemoveNFTCollateralMultiple(msg.sender, tokenIds_);
@@ -371,8 +386,37 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
     }
 
     // TODO: finish implementing or combine with claimCollateral - would require updates to Buckets.sol
-    function claimCollateralMultiple(address recipient_, uint256[] memory tokenIds_, uint256 price_) external {
+    function claimCollateralMultiple(address recipient_, uint256[] memory tokenIds_, uint256 price_) tokensInPool(tokenIds_) external {
+        // require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
+        // uint256 maxClaim = lpBalance[recipient_][price_];
+        // require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
+
+        // // claim collateral and get amount of LP tokens burned for claim
+        // uint256 claimedLpTokens = claimNFTCollateralFromBucket(price_, tokenId_, maxClaim);
+
+        // uint256 collateralClaimedCount;
+
+        // // claim tokenIds from the pool
+        // for (uint i; i < tokenIds_.length;) {
+
+        //     // pool level accounting
+        //     _collateralTokenIdsAdded.remove(tokenIds_[i]);
+        //     collateralClaimedCount += 1;
+
+        //     // move claimed collateral from pool to claimer
+        //     collateral().safeTransferFrom(address(this), recipient_, tokenIds_[i]);
+
+        // }
+
+        // // TODO: check for reentrancy here -> check effects
+        // // lender accounting
+        // lpBalance[recipient_][price_] -= claimedLpTokens;
+
+        // // update totalCollateral count with the newly claimed collateral
+        // totalCollateral -= Maths.wad(collateralClaimedCount);
+
+        // emit ClaimNFTCollateralMultiple(recipient_, price_, tokenIds_, claimedLpTokens);
     }
 
     function moveQuoteToken(
