@@ -39,7 +39,14 @@ abstract contract Interest is IInterest, PoolState {
         uint256 actualUtilization = getPoolActualUtilization();
         if (actualUtilization != 0 && previousRateUpdate < block.timestamp && getPoolCollateralization() > Maths.ONE_WAD) {
             uint256 oldRate = previousRate;
-            accumulatePoolInterest();
+            uint256 curUpdateTime = lastInflatorSnapshotUpdate;
+            uint256 curInflator   = inflatorSnapshot;
+            uint256 curDebt       = totalDebt;
+
+            (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
+            totalDebt         = poolDebt;
+            if (curInflator   != inflator)        inflatorSnapshot           = inflator;
+            if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
             previousRate = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - getPoolTargetUtilization()));
             previousRateUpdate = block.timestamp;
@@ -56,29 +63,23 @@ abstract contract Interest is IInterest, PoolState {
      *  @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
      *  @dev    Only adds debt if a borrower has already initiated a debt position
      *  @param  borrower_ Pointer to the struct which is accumulating interest on their debt
+     *  @param  inflator_ Pool inflator
      */
-    function accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_) internal {
+    function _accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_, uint256 inflator_) pure internal {
         if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
-            borrower_.debt += getPendingInterest(
-                borrower_.debt,
-                inflatorSnapshot,
-                borrower_.inflatorSnapshot
-            );
+            borrower_.debt += _pendingInterest(borrower_.debt, inflator_, borrower_.inflatorSnapshot);
         }
-        borrower_.inflatorSnapshot = inflatorSnapshot;
+        borrower_.inflatorSnapshot = inflator_;
     }
 
     /**
      *  @notice Update the global borrower inflator
      *  @dev    Requires time to have passed between update calls
      */
-    function accumulatePoolInterest() internal {
-        if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
-            uint256 pendingInflator    = getPendingInflator();                                              // RAY
-            totalDebt                  += getPendingInterest(totalDebt, pendingInflator, inflatorSnapshot); // WAD
-            inflatorSnapshot           = pendingInflator;                                                   // RAY
-            lastInflatorSnapshotUpdate = block.timestamp;
-        }
+    function _accumulatePoolInterest(uint256 totalDebt_, uint256 inflator_, uint256 lastUpdate_
+    ) internal view returns (uint256 updatedDebt_, uint256 newInflator_) {
+        newInflator_ = _pendingInflator(previousRate, inflator_, lastUpdate_);    // RAY
+        updatedDebt_ = totalDebt_ + _pendingInterest(totalDebt_, newInflator_, inflator_); // WAD
     }
 
     /**
@@ -88,7 +89,7 @@ abstract contract Interest is IInterest, PoolState {
      *  @param  currentInflator_ RAY - The current debt inflator value
      *  @return interest_        WAD - The additional debt pending accumulation
      */
-    function getPendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
+    function _pendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
         // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
         return Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
     }
@@ -99,19 +100,26 @@ abstract contract Interest is IInterest, PoolState {
 
     function getPendingBucketInterest(uint256 price_) external view returns (uint256 interest_) {
         (, , , , uint256 debt, uint256 bucketInflator, , ) = bucketAt(price_);
-        return debt != 0 ? getPendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
+        return debt != 0 ? _pendingInterest(debt, getPendingInflator(), bucketInflator) : 0;
     }
 
     function getPendingInflator() public view returns (uint256) {
-        // Calculate annualized interest rate
-        uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
-        // secondsSinceLastUpdate is unscaled
-        uint256 secondsSinceLastUpdate = block.timestamp - lastInflatorSnapshotUpdate;
-        return Maths.rmul(inflatorSnapshot, Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate));
+        return _pendingInflator(previousRate, inflatorSnapshot, lastInflatorSnapshotUpdate);
+    }
+
+    function _pendingInflator(uint256 previousRate_, uint256 inflator_, uint256 lastUpdate_) internal view returns (uint256) {
+        uint256 secondsSinceLastUpdate = block.timestamp - lastUpdate_;
+        if (secondsSinceLastUpdate != 0) {
+            // Calculate annualized interest rate
+            uint256 spr = Maths.wadToRay(previousRate_) / SECONDS_PER_YEAR;
+            // secondsSinceLastUpdate is unscaled
+            return Maths.rmul(inflator_, Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate));
+        }
+        return inflator_;
     }
 
     function getPendingPoolInterest() external view returns (uint256) {
-        return totalDebt != 0 ? getPendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
+        return totalDebt != 0 ? _pendingInterest(totalDebt, getPendingInflator(), inflatorSnapshot) : 0;
     }
 
 }

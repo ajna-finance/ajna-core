@@ -68,13 +68,20 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     /***********************************/
 
     function addCollateral(uint256 amount_) external override {
-        accumulatePoolInterest();
+        uint256 curUpdateTime = lastInflatorSnapshotUpdate;
+        uint256 curInflator   = inflatorSnapshot;
+        uint256 curDebt       = totalDebt;
 
-        // pool level accounting
-        totalCollateral                           += amount_;
+        (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
 
         // borrower accounting
         borrowers[msg.sender].collateralDeposited += amount_;
+
+        // pool level accounting
+        totalCollateral   += amount_;
+        if (curDebt       != poolDebt)        totalDebt                  = poolDebt;
+        if (curInflator   != inflator)        inflatorSnapshot           = inflator;
+        if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
         // move collateral from sender to pool
@@ -85,32 +92,33 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     function borrow(uint256 amount_, uint256 limitPrice_) external override {
         require(amount_ <= totalQuoteToken, "P:B:INSUF_LIQ");
 
-        accumulatePoolInterest();
+        uint256 curUpdateTime = lastInflatorSnapshotUpdate;
+        uint256 curInflator   = inflatorSnapshot;
+        uint256 curDebt       = totalDebt;
 
-        require(amount_ > getPoolMinDebtAmount(), "P:B:AMT_LT_AVG_DEBT");
+        (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
+        require(amount_ > _poolMinDebtAmount(poolDebt, totalBorrowers), "P:B:AMT_LT_AVG_DEBT");
 
         BorrowerInfo memory borrower = borrowers[msg.sender];
-        accumulateBorrowerInterest(borrower);
+        _accumulateBorrowerInterest(borrower, inflator);
 
         // borrow amount from buckets with limit price and apply the origination fee
         uint256 fee = Maths.max(Maths.wdiv(previousRate, WAD_WEEKS_PER_YEAR), minFee);
-        borrowFromBucket(amount_, fee, limitPrice_, inflatorSnapshot);
-
+        borrowFromBucket(amount_, fee, limitPrice_, inflator);
         require(borrower.collateralDeposited > Maths.rayToWad(getEncumberedCollateral(borrower.debt + amount_ + fee)), "P:B:INSUF_COLLAT");
 
         // pool level accounting
-        totalQuoteToken -= amount_;
-        totalDebt       += amount_ + fee;
-
-        if (borrower.debt == 0) totalBorrowers += 1;
-
-        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
+        poolDebt += amount_ + fee;
+        require(_poolCollateralization(poolDebt) >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
+        totalQuoteToken   -= amount_;
+        totalDebt         = poolDebt;
+        if (curInflator   != inflator)        inflatorSnapshot           = inflator;
+        if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
         // borrower accounting
-        borrower.debt += amount_ + fee;
-
-        // save borrower to storage
-        borrowers[msg.sender] = borrower;
+        if (borrower.debt == 0) totalBorrowers += 1;
+        borrower.debt         += amount_ + fee;
+        borrowers[msg.sender] = borrower; // save borrower to storage
 
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
@@ -118,22 +126,28 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     }
 
     function removeCollateral(uint256 amount_) external override {
-        accumulatePoolInterest();
+
+        uint256 curUpdateTime = lastInflatorSnapshotUpdate;
+        uint256 curInflator   = inflatorSnapshot;
+        uint256 curDebt       = totalDebt;
+
+        (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
 
         BorrowerInfo memory borrower = borrowers[msg.sender];
-        accumulateBorrowerInterest(borrower);
+        _accumulateBorrowerInterest(borrower, inflator);
 
         uint256 encumberedBorrowerCollateral = Maths.rayToWad(getEncumberedCollateral(borrower.debt));
         require(borrower.collateralDeposited - encumberedBorrowerCollateral >= amount_, "P:RC:AMT_GT_AVAIL_COLLAT");
 
         // pool level accounting
-        totalCollateral              -= amount_;
+        totalCollateral   -= amount_;
+        totalDebt         = poolDebt;
+        if (curInflator   != inflator)        inflatorSnapshot           = inflator;
+        if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
         // borrower accounting
-        borrower.collateralDeposited -= amount_;
-
-        // save borrower to storage
-        borrowers[msg.sender] = borrower;
+        borrower.collateralDeposited -= amount_;        
+        borrowers[msg.sender]        = borrower; // save borrower to storage
 
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
@@ -142,34 +156,36 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
     function repay(uint256 maxAmount_) external override {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) * quoteTokenScale;
-
         require(availableAmount >= maxAmount_, "P:R:INSUF_BAL");
 
         BorrowerInfo memory borrower = borrowers[msg.sender];
         require(borrower.debt != 0, "P:R:NO_DEBT");
 
-        accumulatePoolInterest();
-        accumulateBorrowerInterest(borrower);
+        uint256 curUpdateTime = lastInflatorSnapshotUpdate;
+        uint256 curInflator   = inflatorSnapshot;
+        uint256 curDebt       = totalDebt;
+
+        (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
+
+        _accumulateBorrowerInterest(borrower, inflator);
 
         uint256 amount        = Maths.min(maxAmount_, borrower.debt);
         uint256 remainingDebt = borrower.debt - amount;
-
-        require(remainingDebt == 0 || remainingDebt > getPoolMinDebtAmount(), "P:R:AMT_LT_AVG_DEBT");
+        require(remainingDebt == 0 || remainingDebt > _poolMinDebtAmount(poolDebt, totalBorrowers),"P:R:AMT_LT_AVG_DEBT");
 
         // repay amount to buckets
-        repayBucket(amount, inflatorSnapshot, amount >= totalDebt);
+        repayBucket(amount, inflator, amount >= poolDebt);
 
         // pool level accounting
-        totalQuoteToken += amount;
-        totalDebt       -= Maths.min(totalDebt, amount);
+        totalQuoteToken   += amount;
+        totalDebt         = poolDebt - Maths.min(poolDebt, amount);
+        if (curInflator   != inflator)        inflatorSnapshot           = inflator;
+        if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
         // borrower accounting
-        borrower.debt -= amount;
-
-        // save borrower to storage
-        borrowers[msg.sender] = borrower;
-
         if (remainingDebt == 0) totalBorrowers -= 1;
+        borrower.debt         -= amount;
+        borrowers[msg.sender] = borrower; // save borrower to storage
 
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
@@ -185,15 +201,21 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     ) external override returns (uint256 lpTokens_) {
         require(BucketMath.isValidPrice(price_), "P:AQT:INVALID_PRICE");
 
-        accumulatePoolInterest();
+        uint256 curUpdateTime = lastInflatorSnapshotUpdate;
+        uint256 curInflator   = inflatorSnapshot;
+        uint256 curDebt       = totalDebt;
 
-        require(amount_ > getPoolMinDebtAmount(), "P:AQT:AMT_LT_AVG_DEBT");
+        (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
+        require(amount_ > _poolMinDebtAmount(poolDebt, totalBorrowers), "P:AQT:AMT_LT_AVG_DEBT");
 
         // deposit quote token amount and get awarded LP tokens
-        lpTokens_ = addQuoteTokenToBucket(price_, amount_, totalDebt, inflatorSnapshot);
+        lpTokens_ = addQuoteTokenToBucket(price_, amount_, poolDebt, inflator);
 
         // pool level accounting
-        totalQuoteToken               += amount_;
+        totalQuoteToken   += amount_;
+        totalDebt         = poolDebt;
+        if (curInflator   != inflator)        inflatorSnapshot           = inflator;
+        if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
         // lender accounting
         lpBalance[recipient_][price_] += lpTokens_;
@@ -227,13 +249,16 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         require(BucketMath.isValidPrice(toPrice_), "P:MQT:INVALID_TO_PRICE");
         require(fromPrice_ != toPrice_, "P:MQT:SAME_PRICE");
 
-        accumulatePoolInterest();
-
+        (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot, lastInflatorSnapshotUpdate);
         (uint256 fromLpTokens, uint256 toLpTokens, uint256 movedAmount) = moveQuoteTokenFromBucket(
-            fromPrice_, toPrice_, maxAmount_, lpBalance[recipient_][fromPrice_], lpTimer[recipient_][fromPrice_], inflatorSnapshot
+            fromPrice_, toPrice_, maxAmount_, lpBalance[recipient_][fromPrice_], lpTimer[recipient_][fromPrice_], inflator
         );
 
-        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");
+        require(_poolCollateralization(poolDebt) >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");
+        // pool level accounting
+        totalDebt                  = poolDebt;
+        inflatorSnapshot           = inflator;
+        lastInflatorSnapshotUpdate = block.timestamp;
 
         // lender accounting
         lpBalance[recipient_][fromPrice_] -= fromLpTokens;
@@ -245,17 +270,23 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
-        accumulatePoolInterest();
+        uint256 curUpdateTime = lastInflatorSnapshotUpdate;
+        uint256 curInflator   = inflatorSnapshot;
+        uint256 curDebt       = totalDebt;
+
+        (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
 
         // remove quote token amount and get LP tokens burned
         (uint256 amount, uint256 lpTokens) = removeQuoteTokenFromBucket(
-            price_, maxAmount_, lpBalance[recipient_][price_], lpTimer[recipient_][price_], inflatorSnapshot
+            price_, maxAmount_, lpBalance[recipient_][price_], lpTimer[recipient_][price_], inflator
         );
 
         // pool level accounting
-        totalQuoteToken -= amount;
-
-        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:RQT:POOL_UNDER_COLLAT");
+        require(_poolCollateralization(poolDebt) >= Maths.ONE_WAD, "P:RQT:POOL_UNDER_COLLAT");
+        totalQuoteToken   -= amount;
+        totalDebt         = poolDebt;
+        if (curInflator   != inflator)        inflatorSnapshot           = inflator;
+        if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
         // lender accounting
         lpBalance[recipient_][price_] -= lpTokens;
@@ -271,35 +302,37 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
     // TODO: replace local variables with references to borrower.<> (CHECK GAS SAVINGS)
     function liquidate(address borrower_) external override {
-        accumulatePoolInterest();
-
         BorrowerInfo memory borrower = borrowers[borrower_];
         require(borrower.debt != 0, "P:L:NO_DEBT");
 
-        accumulateBorrowerInterest(borrower);
+        uint256 curUpdateTime = lastInflatorSnapshotUpdate;
+        uint256 curInflator   = inflatorSnapshot;
+        uint256 curDebt       = totalDebt;
+
+        (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
+
+        _accumulateBorrowerInterest(borrower, inflator);
 
         uint256 debt = borrower.debt;
-
         require(
             getBorrowerCollateralization(borrower.collateralDeposited, debt) <= Maths.ONE_WAD,
             "P:L:BORROWER_OK"
         );
 
         // liquidate borrower and get collateral required to liquidate
-        uint256 requiredCollateral = liquidateAtBucket(debt, borrower.collateralDeposited, inflatorSnapshot);
+        uint256 requiredCollateral = liquidateAtBucket(debt, borrower.collateralDeposited, inflator);
 
         // pool level accounting
-        totalDebt       -= debt;
-        totalCollateral -= requiredCollateral;
+        totalCollateral   -= requiredCollateral;
+        totalDebt         = poolDebt - debt;
+        if (curInflator   != inflator)        inflatorSnapshot           = inflator;
+        if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
         // borrower accounting
+        totalBorrowers               -= 1;
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
-
-        // save borrower to storage
-        borrowers[borrower_] = borrower;
-
-        totalBorrowers -= 1;
+        borrowers[borrower_]         = borrower; // save borrower to storage
 
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
@@ -311,18 +344,23 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         uint256 collateralRequired = Maths.wdiv(amount_, price_);
         require(collateral().balanceOf(msg.sender) * collateralScale >= collateralRequired, "P:PB:INSUF_COLLAT");
 
-        accumulatePoolInterest();
+        uint256 curUpdateTime = lastInflatorSnapshotUpdate;
+        uint256 curInflator   = inflatorSnapshot;
+        uint256 curDebt       = totalDebt;
 
-        purchaseBidFromBucket(price_, amount_, collateralRequired, inflatorSnapshot);
+        (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
+
+        purchaseBidFromBucket(price_, amount_, collateralRequired, inflator);
 
         // pool level accounting
-        totalQuoteToken -= amount_;
-
-        require(getPoolCollateralization() >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
+        require(_poolCollateralization(poolDebt) >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
+        totalQuoteToken   -= amount_;
+        totalDebt         = poolDebt;
+        if (curInflator   != inflator)        inflatorSnapshot           = inflator;
+        if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
         // move required collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), collateralRequired / collateralScale);
-
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Purchase(msg.sender, price_, amount_, collateralRequired);

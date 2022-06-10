@@ -24,7 +24,11 @@ abstract contract PoolState is IPoolState, Buckets {
     uint256 public totalBorrowers;
 
     function getPoolMinDebtAmount() public view override returns (uint256) {
-        return totalDebt != 0 ? Maths.wdiv(totalDebt, Maths.wad(Maths.max(1000, totalBorrowers * 10))) : 0;
+        return _poolMinDebtAmount(totalDebt, totalBorrowers);
+    }
+
+    function _poolMinDebtAmount(uint256 totalDebt_, uint256 totalBorrowers_) internal view returns (uint256) {
+        return totalDebt != 0 ? Maths.wdiv(totalDebt_, Maths.wad(Maths.max(1000, totalBorrowers_ * 10))) : 0;
     }
 
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256) {
@@ -45,8 +49,12 @@ abstract contract PoolState is IPoolState, Buckets {
     }
 
     function getPoolCollateralization() public view override returns (uint256) {
-        if (lup != 0 && totalDebt != 0) {
-            return Maths.wrdivw(totalCollateral, getEncumberedCollateral(totalDebt));
+        return _poolCollateralization(totalDebt);
+    }
+
+    function _poolCollateralization(uint256 totalDebt_) internal view returns (uint256) {
+        if (lup != 0 && totalDebt_ != 0) {
+            return Maths.wrdivw(totalCollateral, getEncumberedCollateral(totalDebt_));
         }
         return Maths.ONE_WAD;
     }
