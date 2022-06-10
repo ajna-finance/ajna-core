@@ -39,14 +39,17 @@ abstract contract Interest is IInterest, PoolState {
         uint256 actualUtilization = getPoolActualUtilization();
         if (actualUtilization != 0 && previousRateUpdate < block.timestamp && getPoolCollateralization() > Maths.ONE_WAD) {
             uint256 oldRate = previousRate;
-            uint256 curUpdateTime = lastInflatorSnapshotUpdate;
-            uint256 curInflator   = inflatorSnapshot;
-            uint256 curDebt       = totalDebt;
 
-            (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
-            if (curDebt != poolDebt)              totalDebt                  = poolDebt;
-            if (curInflator   != inflator)        inflatorSnapshot           = inflator;
-            if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
+            uint256 elapsed       = block.timestamp - lastInflatorSnapshotUpdate;
+            bool shouldAccumulate = elapsed != 0;
+
+            if (shouldAccumulate) {
+                (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot, elapsed);
+
+                totalDebt                  = curDebt;
+                inflatorSnapshot           = curInflator;
+                lastInflatorSnapshotUpdate = block.timestamp;
+            }
 
             previousRate = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - getPoolTargetUtilization()));
             previousRateUpdate = block.timestamp;
@@ -76,15 +79,10 @@ abstract contract Interest is IInterest, PoolState {
      *  @notice Update the global borrower inflator
      *  @dev    Requires time to have passed between update calls
      */
-    function _accumulatePoolInterest(uint256 totalDebt_, uint256 inflator_, uint256 lastUpdate_
+    function _accumulatePoolInterest(uint256 totalDebt_, uint256 inflator_, uint256 elapsed_
     ) internal view returns (uint256 updatedDebt_, uint256 newInflator_) {
-        if (block.timestamp - lastUpdate_ != 0) {
-            newInflator_ = _pendingInflator(previousRate, inflator_, lastUpdate_);    // RAY
-            updatedDebt_ = totalDebt_ + _pendingInterest(totalDebt_, newInflator_, inflator_); // WAD
-        } else {
-            newInflator_ = inflator_;
-            updatedDebt_  = totalDebt_;
-        }
+        newInflator_ = _pendingInflator(previousRate, inflator_, elapsed_);    // RAY
+        updatedDebt_ = totalDebt_ + _pendingInterest(totalDebt_, newInflator_, inflator_); // WAD
     }
 
     /**
@@ -109,15 +107,14 @@ abstract contract Interest is IInterest, PoolState {
     }
 
     function getPendingInflator() public view returns (uint256) {
-        return _pendingInflator(previousRate, inflatorSnapshot, lastInflatorSnapshotUpdate);
+        return _pendingInflator(previousRate, inflatorSnapshot, block.timestamp - lastInflatorSnapshotUpdate);
     }
 
-    function _pendingInflator(uint256 previousRate_, uint256 inflator_, uint256 lastUpdate_) internal view returns (uint256) {
-        uint256 secondsSinceLastUpdate = block.timestamp - lastUpdate_;
+    function _pendingInflator(uint256 previousRate_, uint256 inflator_, uint256 elapsed_) internal pure returns (uint256) {
         // Calculate annualized interest rate
         uint256 spr = Maths.wadToRay(previousRate_) / SECONDS_PER_YEAR;
         // secondsSinceLastUpdate is unscaled
-        return Maths.rmul(inflator_, Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate));
+        return Maths.rmul(inflator_, Maths.rpow(Maths.ONE_RAY + spr, elapsed_));
     }
 
     function getPendingPoolInterest() external view returns (uint256) {
