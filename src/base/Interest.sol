@@ -44,7 +44,7 @@ abstract contract Interest is IInterest, PoolState {
             uint256 curDebt       = totalDebt;
 
             (uint256 poolDebt, uint256 inflator) = _accumulatePoolInterest(curDebt, curInflator, curUpdateTime);
-            totalDebt         = poolDebt;
+            if (curDebt != poolDebt)              totalDebt                  = poolDebt;
             if (curInflator   != inflator)        inflatorSnapshot           = inflator;
             if (curUpdateTime != block.timestamp) lastInflatorSnapshotUpdate = block.timestamp;
 
@@ -78,8 +78,13 @@ abstract contract Interest is IInterest, PoolState {
      */
     function _accumulatePoolInterest(uint256 totalDebt_, uint256 inflator_, uint256 lastUpdate_
     ) internal view returns (uint256 updatedDebt_, uint256 newInflator_) {
-        newInflator_ = _pendingInflator(previousRate, inflator_, lastUpdate_);    // RAY
-        updatedDebt_ = totalDebt_ + _pendingInterest(totalDebt_, newInflator_, inflator_); // WAD
+        if (block.timestamp - lastUpdate_ != 0) {
+            newInflator_ = _pendingInflator(previousRate, inflator_, lastUpdate_);    // RAY
+            updatedDebt_ = totalDebt_ + _pendingInterest(totalDebt_, newInflator_, inflator_); // WAD
+        } else {
+            newInflator_ = inflator_;
+            updatedDebt_  = totalDebt_;
+        }
     }
 
     /**
@@ -109,13 +114,10 @@ abstract contract Interest is IInterest, PoolState {
 
     function _pendingInflator(uint256 previousRate_, uint256 inflator_, uint256 lastUpdate_) internal view returns (uint256) {
         uint256 secondsSinceLastUpdate = block.timestamp - lastUpdate_;
-        if (secondsSinceLastUpdate != 0) {
-            // Calculate annualized interest rate
-            uint256 spr = Maths.wadToRay(previousRate_) / SECONDS_PER_YEAR;
-            // secondsSinceLastUpdate is unscaled
-            return Maths.rmul(inflator_, Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate));
-        }
-        return inflator_;
+        // Calculate annualized interest rate
+        uint256 spr = Maths.wadToRay(previousRate_) / SECONDS_PER_YEAR;
+        // secondsSinceLastUpdate is unscaled
+        return Maths.rmul(inflator_, Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate));
     }
 
     function getPendingPoolInterest() external view returns (uint256) {
