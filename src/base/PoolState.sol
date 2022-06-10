@@ -43,7 +43,7 @@ abstract contract PoolState is IPoolState, Buckets {
     }
 
     function _poolMinDebtAmount(uint256 totalDebt_, uint256 totalBorrowers_) internal view returns (uint256) {
-        return totalDebt != 0 ? Maths.wdiv(totalDebt_, Maths.wad(Maths.max(1000, totalBorrowers_ * 10))) : 0;
+        return totalDebt_ != 0 ? Maths.wdiv(totalDebt_, Maths.wad(Maths.max(1000, totalBorrowers_ * 10))) : 0;
     }
 
     function _poolTargetUtilization(uint256 totalDebt_) internal view returns (uint256) {
