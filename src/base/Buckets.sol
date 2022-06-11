@@ -51,7 +51,7 @@ abstract contract Buckets is IBuckets {
         bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
-        lpTokens_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(bucket));
+        lpTokens_ = Maths.rdiv(Maths.wadToRay(amount_), _exchangeRate(bucket));
 
         // bucket accounting
         bucket.lpOutstanding += lpTokens_;
@@ -126,7 +126,7 @@ abstract contract Buckets is IBuckets {
 
         require(amount_ <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
 
-        lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, bucket.price), getExchangeRate(bucket));
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, bucket.price), _exchangeRate(bucket));
 
         require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
 
@@ -186,7 +186,7 @@ abstract contract Buckets is IBuckets {
         }
 
         // HPB and LUP management
-        uint256 newHpb = getHpb();
+        uint256 newHpb = _hpb();
         if (hpb != newHpb) hpb = newHpb;
     }
 
@@ -212,7 +212,7 @@ abstract contract Buckets is IBuckets {
         fromBucket.debt             = accumulateBucketInterest(fromBucket.debt, fromBucket.inflatorSnapshot, inflator_);
         fromBucket.inflatorSnapshot = inflator_;
 
-        uint256 exchangeRate = getExchangeRate(fromBucket);                 // RAY
+        uint256 exchangeRate = _exchangeRate(fromBucket);                 // RAY
         uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);       // RAY
 
         amount_       = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
@@ -230,7 +230,7 @@ abstract contract Buckets is IBuckets {
             _bip[fromBucket.price] += penalty;
         }
 
-        lpAward_ = Maths.rdiv(Maths.wadToRay(amount_), getExchangeRate(toBucket));
+        lpAward_ = Maths.rdiv(Maths.wadToRay(amount_), _exchangeRate(toBucket));
 
         // move LP tokens
         fromBucket.lpOutstanding -= lpRedemption_;
@@ -251,7 +251,7 @@ abstract contract Buckets is IBuckets {
 
         // HPB and LUP management
         if (newLup != lup) lup = newLup;
-        newHpb = (isEmpty && fromBucket.price == newHpb) ? getHpb() : newHpb;
+        newHpb = (isEmpty && fromBucket.price == newHpb) ? _hpb() : newHpb;
         if (newHpb != hpb) hpb = newHpb;
 
         // bucket management
@@ -289,7 +289,7 @@ abstract contract Buckets is IBuckets {
 
         _buckets[price_] = bucket;
 
-        uint256 newHpb = (bucket.onDeposit == 0 && bucket.debt == 0) ? getHpb() : hpb;
+        uint256 newHpb = (bucket.onDeposit == 0 && bucket.debt == 0) ? _hpb() : hpb;
 
         // HPB and LUP management
         if (lup != newLup) lup = newLup;
@@ -315,7 +315,7 @@ abstract contract Buckets is IBuckets {
         bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
-        uint256 exchangeRate = getExchangeRate(bucket);                // RAY
+        uint256 exchangeRate = _exchangeRate(bucket);                // RAY
         uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
         amount_             = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
         lpTokens_           = Maths.rdiv(amount_, exchangeRate);                // RAY
@@ -343,7 +343,7 @@ abstract contract Buckets is IBuckets {
         _buckets[bucket.price] = bucket;
 
         // HPB and LUP management
-        uint256 newHpb = (isEmpty && bucket.price == hpb) ? getHpb() : hpb;
+        uint256 newHpb = (isEmpty && bucket.price == hpb) ? _hpb() : hpb;
         if (bucket.price >= lup && newLup < lup) lup = newLup; // move lup down only if removal happened at or above lup
         if (newHpb != hpb) hpb = newHpb;
 
@@ -862,17 +862,7 @@ abstract contract Buckets is IBuckets {
     }
 
     function getHpb() public view override returns (uint256 newHpb_) {
-        newHpb_ = hpb;
-        while (true) {
-            (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = bucketAt(newHpb_);
-            if (onDeposit != 0 || debt != 0) {
-                break;
-            } else if (down == 0) {
-                newHpb_ = 0;
-                break;
-            }
-            newHpb_ = down;
-        }
+        return _hpb();
     }
 
     function getHup() public view override returns (uint256 hup_) {
@@ -904,9 +894,23 @@ abstract contract Buckets is IBuckets {
      *  @dev    Performs calculations in RAY terms and rounds up to determine size to minimize precision loss
      *  @return RAY The current rate at which quote tokens can be exchanged for LP tokens
      */
-    function getExchangeRate(Bucket memory bucket_) internal pure returns (uint256) {
+    function _exchangeRate(Bucket memory bucket_) internal pure returns (uint256) {
         uint256 size = bucket_.onDeposit + bucket_.debt + Maths.wmul(bucket_.collateral, bucket_.price);
         return (size != 0 && bucket_.lpOutstanding != 0) ? Maths.wrdivr(size, bucket_.lpOutstanding) : Maths.ONE_RAY;
+    }
+
+    function _hpb() internal view returns (uint256 newHpb_) {
+        newHpb_ = hpb;
+        while (true) {
+            (, , uint256 down, uint256 onDeposit, uint256 debt, , , ) = bucketAt(newHpb_);
+            if (onDeposit != 0 || debt != 0) {
+                break;
+            } else if (down == 0) {
+                newHpb_ = 0;
+                break;
+            }
+            newHpb_ = down;
+        }
     }
 
 }
