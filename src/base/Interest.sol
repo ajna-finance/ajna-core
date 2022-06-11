@@ -75,7 +75,7 @@ abstract contract Interest is IInterest, PoolState {
     function _accumulatePoolInterest(uint256 totalDebt_, uint256 inflator_) internal returns (uint256 curDebt_, uint256 curInflator_) {
         uint256 elapsed  = block.timestamp - lastInflatorSnapshotUpdate;
         if (elapsed != 0) {
-            curInflator_ = _pendingInflator(previousRate, inflator_, elapsed);                 // RAY
+            curInflator_ = _pendingInflator(previousRate, inflator_, elapsed);                // RAY
             curDebt_     = totalDebt_ + _pendingInterest(totalDebt_, curInflator_, inflator_); // WAD
 
             inflatorSnapshot           = curInflator_;
