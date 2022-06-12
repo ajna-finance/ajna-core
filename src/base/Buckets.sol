@@ -40,11 +40,10 @@ abstract contract Buckets is IBuckets {
      *  @param  totalDebt_  The amount of total debt.
      *  @param  inflator_   The current pool inflator rate.
      *  @return lpTokens_   The amount of lpTokens received by the lender for the added quote tokens.
-     *  @return lup_        The current LUP.
      */
     function addQuoteTokenToBucket(
         uint256 price_, uint256 amount_, uint256 totalDebt_, uint256 inflator_
-    ) internal returns (uint256 lpTokens_, uint256 lup_) {
+    ) internal returns (uint256 lpTokens_) {
         // initialize bucket if required and get new HPB
         uint256 newHpb = !BitMaps.get(_bitmap, price_) ? initializeBucket(hpb, price_) : hpb;
 
@@ -60,14 +59,13 @@ abstract contract Buckets is IBuckets {
         pdAccumulator        += Maths.wmul(amount_, price_);
 
         // debt reallocation
-        lup_ = lup;
-        bool reallocate = totalDebt_ != 0 && price_ > lup_;
-        lup_ = reallocate ? reallocateUp(bucket, amount_, inflator_) : lup_;
+        bool reallocate = totalDebt_ != 0 && price_ > lup;
+        uint256 newLup = reallocate ? reallocateUp(bucket, amount_, inflator_) : lup;
 
         _buckets[price_] = bucket;
 
         // HPB and LUP management
-        if (lup != lup_) lup = lup_;
+        if (lup != newLup) lup = newLup;
         if (hpb != newHpb) hpb = newHpb;
     }
 
@@ -77,13 +75,10 @@ abstract contract Buckets is IBuckets {
      *  @param  fee_      The amount of quote tokens to pay as origination fee, WAD
      *  @param  limit_    The lowest price desired to borrow at, WAD
      *  @param  inflator_ The current pool inflator rate, RAY
-     *  @return lup_      The current LUP.
      */
-    function borrowFromBucket(uint256 amount_, uint256 fee_, uint256 limit_, uint256 inflator_
-    ) internal returns (uint256 lup_) {
+    function borrowFromBucket(uint256 amount_, uint256 fee_, uint256 limit_, uint256 inflator_) internal {
         // if first loan then borrow at HPB price, otherwise at LUP
-        lup_ = lup;
-        uint256 price = lup_ == 0 ? hpb : lup_;
+        uint256 price = lup == 0 ? hpb : lup;
         uint256 curPrice = price;
         uint256 pdRemove;
 
@@ -113,8 +108,7 @@ abstract contract Buckets is IBuckets {
         }
 
         // HPB and LUP management
-        lup_ = (price > curPrice|| price == 0) ? curPrice : price;
-        lup = lup_;
+        lup = (price > curPrice|| price == 0) ? curPrice : price;
         pdAccumulator -= pdRemove;
     }
 
@@ -207,13 +201,12 @@ abstract contract Buckets is IBuckets {
      *  @return lpRedemption_ The amount of lpTokens moved from bucket
      *  @return lpAward_      The amount of lpTokens moved to bucket
      *  @return amount_       The amount of quote tokens moved to bucket
-     *  @return lup_          The current LUP.
      */
     function moveQuoteTokenFromBucket(
         uint256 fromPrice_, uint256 toPrice_, uint256 maxAmount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
-    ) internal returns (uint256 lpRedemption_, uint256 lpAward_, uint256 amount_, uint256 lup_) {
-        uint256 newHpb   = !BitMaps.get(_bitmap, toPrice_) ? initializeBucket(hpb, toPrice_) : hpb;
-        lup_ = lup;
+    ) internal returns (uint256 lpRedemption_, uint256 lpAward_, uint256 amount_) {
+        uint256 newHpb = !BitMaps.get(_bitmap, toPrice_) ? initializeBucket(hpb, toPrice_) : hpb;
+        uint256 newLup = lup;
 
         Bucket memory fromBucket    = _buckets[fromPrice_];
         fromBucket.debt             = accumulateBucketInterest(fromBucket.debt, fromBucket.inflatorSnapshot, inflator_);
@@ -243,11 +236,11 @@ abstract contract Buckets is IBuckets {
         fromBucket.lpOutstanding -= lpRedemption_;
         toBucket.lpOutstanding   += lpAward_;
 
-        bool atLup  = lup_ != 0 && fromBucket.price == lup_;
+        bool atLup  = newLup != 0 && fromBucket.price == newLup;
         if (atLup) {
-            lup_ = moveQuoteTokenAtLup(fromBucket, toBucket, amount_, inflator_);
+            newLup = moveQuoteTokenAtLup(fromBucket, toBucket, amount_, inflator_);
         } else {
-            lup_ = moveQuoteTokenAtPrice(fromBucket, toBucket, amount_, inflator_, lup_);
+            newLup = moveQuoteTokenAtPrice(fromBucket, toBucket, amount_, inflator_, newLup);
         }
 
         bool isEmpty = fromBucket.onDeposit == 0 && fromBucket.debt == 0;
@@ -257,7 +250,7 @@ abstract contract Buckets is IBuckets {
         _buckets[toBucket.price]   = toBucket;
 
         // HPB and LUP management
-        if (lup_ != lup) lup = lup_;
+        if (newLup != lup) lup = newLup;
         newHpb = (isEmpty && fromBucket.price == newHpb) ? getHpb() : newHpb;
         if (newHpb != hpb) hpb = newHpb;
 
@@ -271,11 +264,10 @@ abstract contract Buckets is IBuckets {
      *  @param  amount_     The amount of quote tokens to receive, WAD
      *  @param  collateral_ The amount of collateral to exchange, WAD
      *  @param  inflator_   The current pool inflator rate, RAY
-     *  @return lup_        The current LUP.
      */
     function purchaseBidFromBucket(
         uint256 price_, uint256 amount_, uint256 collateral_, uint256 inflator_
-    ) internal returns (uint256 lup_){
+    ) internal {
         Bucket memory bucket    = _buckets[price_];
         bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
@@ -293,14 +285,14 @@ abstract contract Buckets is IBuckets {
         bucket.collateral += collateral_;
 
         // debt reallocation
-        lup_ = reallocateDown(bucket, amount_, inflator_);
+        uint256 newLup = reallocateDown(bucket, amount_, inflator_);
 
         _buckets[price_] = bucket;
 
         uint256 newHpb = (bucket.onDeposit == 0 && bucket.debt == 0) ? getHpb() : hpb;
 
         // HPB and LUP management
-        if (lup != lup_)  lup = lup_;
+        if (lup != newLup) lup = newLup;
         if (hpb != newHpb) hpb = newHpb;
 
         pdAccumulator -= Maths.wmul(purchaseFromDeposit, bucket.price);
@@ -315,11 +307,10 @@ abstract contract Buckets is IBuckets {
      *  @param  inflator_  The current pool inflator rate, RAY
      *  @return amount_    The actual amount being removed
      *  @return lpTokens_  The amount of lpTokens removed equivalent to the quote tokens removed
-     *  @return lup_       The current LUP.
      */
     function removeQuoteTokenFromBucket(
         uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
-    ) internal returns (uint256 amount_, uint256 lpTokens_, uint256 lup_) {
+    ) internal returns (uint256 amount_, uint256 lpTokens_) {
         Bucket memory bucket    = _buckets[price_];
         bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
@@ -352,10 +343,8 @@ abstract contract Buckets is IBuckets {
         _buckets[bucket.price] = bucket;
 
         // HPB and LUP management
-        lup_ = lup;
-        if (bucket.price >= lup_ && newLup < lup_) lup_ = newLup; // move lup down only if removal happened at or above lup
-        if (lup_ != lup) lup = lup_;
         uint256 newHpb = (isEmpty && bucket.price == hpb) ? getHpb() : hpb;
+        if (bucket.price >= lup && newLup < lup) lup = newLup; // move lup down only if removal happened at or above lup
         if (newHpb != hpb) hpb = newHpb;
 
         // bucket management
@@ -364,14 +353,12 @@ abstract contract Buckets is IBuckets {
 
     /**
      *  @notice Called by a borrower to repay quote tokens as part of reducing their position
-     *  @param  amount_     The amount of quote tokens to repay to the bucket, WAD
-     *  @param  inflator_   The current pool inflator rate, RAY
-     *  @param  reconcile_  True if all debt in pool is repaid
-     *  @return lup_        The current LUP.
+     *  @param  amount_       The amount of quote tokens to repay to the bucket, WAD
+     *  @param  inflator_     The current pool inflator rate, RAY
+     *  @param  reconcile_    True if all debt in pool is repaid
      */
-    function repayBucket(uint256 amount_, uint256 inflator_, bool reconcile_) internal returns (uint256 lup_){
-        lup_ = lup;
-        uint256 curPrice = lup_;
+    function repayBucket(uint256 amount_, uint256 inflator_, bool reconcile_) internal {
+        uint256 curPrice = lup;
         uint256 pdAdd;
 
         while (true) {
@@ -402,9 +389,8 @@ abstract contract Buckets is IBuckets {
         }
 
         // HPB and LUP management
-        if (reconcile_) lup_ = 0;                   // reset LUP if no debt in pool
-        else if (lup_ != curPrice) lup_ = curPrice; // update LUP to current price
-        if (lup_ != lup) lup = lup_;
+        if (reconcile_) lup = 0;                 // reset LUP if no debt in pool
+        else if (lup != curPrice) lup = curPrice; // update LUP to current price
 
         pdAccumulator += pdAdd;
     }

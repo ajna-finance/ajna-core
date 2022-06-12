@@ -37,15 +37,14 @@ abstract contract Interest is IInterest, PoolState {
     function updateInterestRate() external override {
         // RAY
         uint256 curDebt = totalDebt;
-        uint256 curLup  = lup;
-        uint256 actualUtilization = _poolActualUtilization(curDebt, curLup);
-        if (actualUtilization != 0 && previousRateUpdate < block.timestamp && _poolCollateralization(curDebt, curLup) > Maths.ONE_WAD) {
+        uint256 actualUtilization = _poolActualUtilization(curDebt);
+        if (actualUtilization != 0 && previousRateUpdate < block.timestamp && _poolCollateralization(curDebt) > Maths.ONE_WAD) {
             uint256 oldRate = previousRate;
 
             (curDebt, ) = _accumulatePoolInterest(curDebt, inflatorSnapshot);
             totalDebt   = curDebt;
 
-            previousRate       = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - _poolTargetUtilization(curDebt, curLup)));
+            previousRate       = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - _poolTargetUtilization(curDebt)));
             previousRateUpdate = block.timestamp;
 
             emit UpdateInterestRate(oldRate, previousRate);

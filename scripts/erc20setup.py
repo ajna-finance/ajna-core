@@ -36,7 +36,7 @@ def main():
         dai_client.approve_max(pool, borrower)
         borrowers.append(borrower)
 
-    for i in range(0, 50):
+    for i in range(0, 5):
         pool.addQuoteToken(
             lenders[0],
             1 * 1e18,
