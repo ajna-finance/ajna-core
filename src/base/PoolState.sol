@@ -27,22 +27,22 @@ abstract contract PoolState is IPoolState, Buckets {
     /*** Internal Functions ***/
     /**************************/
 
-    function _encumberedCollateral(uint256 debt_) internal view returns (uint256) {
+    function _encumberedCollateral(uint256 debt_, uint256 lup_) internal pure returns (uint256) {
         // Calculate encumbrance as RAY to maintain precision
-        return debt_ != 0 ? Maths.wwdivr(debt_, lup) : 0;
+        return debt_ != 0 ? Maths.wwdivr(debt_, lup_) : 0;
     }
 
-    function _poolActualUtilization(uint256 totalDebt_) internal view returns (uint256) {
+    function _poolActualUtilization(uint256 totalDebt_, uint256 lup_) internal view returns (uint256) {
         if (totalDebt_ != 0) {
-            uint256 lupMulDebt = Maths.wmul(lup, totalDebt_);
+            uint256 lupMulDebt = Maths.wmul(lup_, totalDebt_);
             return Maths.wdiv(lupMulDebt, lupMulDebt + pdAccumulator);
         }
         return 0;
     }
 
-    function _poolCollateralization(uint256 totalDebt_) internal view returns (uint256) {
+    function _poolCollateralization(uint256 totalDebt_, uint256 lup_) internal view returns (uint256) {
         if (totalDebt_ != 0) {
-            return Maths.wrdivw(totalCollateral, Maths.wwdivr(totalDebt_, lup));
+            return Maths.wrdivw(totalCollateral, Maths.wwdivr(totalDebt_, lup_));
         }
         return Maths.ONE_WAD;
     }
@@ -51,8 +51,8 @@ abstract contract PoolState is IPoolState, Buckets {
         return totalDebt_ != 0 ? Maths.wdiv(totalDebt_, Maths.wad(Maths.max(1000, totalBorrowers_ * 10))) : 0;
     }
 
-    function _poolTargetUtilization(uint256 totalDebt_) internal view returns (uint256) {
-        return Maths.wdiv(Maths.ONE_WAD, _poolCollateralization(totalDebt_));
+    function _poolTargetUtilization(uint256 totalDebt_, uint256 lup_) internal view returns (uint256) {
+        return Maths.wdiv(Maths.ONE_WAD, _poolCollateralization(totalDebt_, lup_));
     }
 
     /**********************/
@@ -61,7 +61,7 @@ abstract contract PoolState is IPoolState, Buckets {
 
     function getEncumberedCollateral(uint256 debt_) public view override returns (uint256) {
         // Calculate encumbrance as RAY to maintain precision
-        return _encumberedCollateral(debt_);
+        return _encumberedCollateral(debt_, lup);
     }
 
     function getMinimumPoolPrice() public view override returns (uint256) {
@@ -69,11 +69,11 @@ abstract contract PoolState is IPoolState, Buckets {
     }
 
     function getPoolActualUtilization() public view override returns (uint256) {
-        return _poolActualUtilization(totalDebt);
+        return _poolActualUtilization(totalDebt, lup);
     }
 
     function getPoolCollateralization() public view override returns (uint256) {
-        return _poolCollateralization(totalDebt);
+        return _poolCollateralization(totalDebt, lup);
     }
 
     function getPoolMinDebtAmount() public view override returns (uint256) {
