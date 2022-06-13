@@ -17,8 +17,6 @@ contract ERC721PoolFactory is PoolDeployer {
 
     ERC721Pool public implementation;
 
-    event PoolCreated(address pool_);
-
     constructor() {
         implementation = new ERC721Pool();
     }
