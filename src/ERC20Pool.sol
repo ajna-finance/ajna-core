@@ -69,7 +69,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
     function addCollateral(uint256 amount_) external override {
         // pool level accounting
-        (totalDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        (totalDebt, )   = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
         totalCollateral += amount_;
 
         // borrower accounting

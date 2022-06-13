@@ -78,7 +78,7 @@ abstract contract Interest is IInterest, PoolState {
             curInflator_ = _pendingInflator(previousRate, inflator_, elapsed);                 // RAY
             curDebt_     = totalDebt_ + _pendingInterest(totalDebt_, curInflator_, inflator_); // WAD
 
-            inflatorSnapshot           = curInflator_;
+            inflatorSnapshot           = curInflator_; // RAY
             lastInflatorSnapshotUpdate = block.timestamp;
         } else {
             curInflator_ = inflator_;
