@@ -52,15 +52,6 @@ interface IInterest {
      */
     function interestRateUpdate() external view returns (uint256 interestRateUpdate_);
 
-    /**************************/
-    /*** External Functions ***/
-    /**************************/
-
-    /**
-     *  @notice Called to update the pool interest rate when actual > target utilization.
-     */
-    function updateInterestRate() external;
-
     /**********************/
     /*** View Functions ***/
     /**********************/

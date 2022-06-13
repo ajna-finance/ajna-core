@@ -76,8 +76,4 @@ contract UserWithQuoteToken {
         return this.onERC721Received.selector;
     }
 
-    function updateInterestRate(ERC20Pool pool_) public {
-        pool_.updateInterestRate();
-    }
-
 }

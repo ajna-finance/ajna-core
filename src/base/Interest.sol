@@ -17,8 +17,12 @@ abstract contract Interest is IInterest, PoolState {
     /*** Constants ***/
     /*****************/
 
-    uint256 public constant SECONDS_PER_YEAR   = 3600 * 24 * 365;
-    uint256 public constant WAD_WEEKS_PER_YEAR = 52 * 10**18;
+    uint256 public constant SECONDS_PER_YEAR    = 3600 * 24 * 365;
+    uint256 public constant SECONDS_PER_HALFDAY = 43200;
+    uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
+
+    uint256 public constant RATE_INCREASE_COEFFICIENT = 1.1 * 10**18;
+    uint256 public constant RATE_DECREASE_COEFFICIENT = 0.9 * 10**18;
 
     /***********************/
     /*** State Variables ***/
@@ -34,14 +38,19 @@ abstract contract Interest is IInterest, PoolState {
     /*** External Functions ***/
     /**************************/
 
-    function updateInterestRate() external override {
+    function updateInterestRate() internal {
         // RAY
-        uint256 actualUtilization = getPoolActualUtilization();
-        if (actualUtilization != 0 && interestRateUpdate < block.timestamp && getPoolCollateralization() > Maths.ONE_WAD) {
-            uint256 oldRate = interestRate;
-            accumulatePoolInterest();
+        uint256 poolCollateralization =  getPoolCollateralization();
+        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.ONE_WAD) {
+            uint256 oldRate           = interestRate;
+            uint256 actualUtilization = getPoolActualUtilization();
+            uint256 targetUtilization = Maths.wdiv(Maths.ONE_WAD, poolCollateralization);
 
-            interestRate = Maths.wmul(interestRate, (actualUtilization + Maths.ONE_WAD - getPoolTargetUtilization()));
+            if (actualUtilization * 2 > targetUtilization + Maths.ONE_WAD) {
+                interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
+            } else if (targetUtilization >  (actualUtilization + Maths.ONE_WAD) / 2) {
+                interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
+            }
             interestRateUpdate = block.timestamp;
 
             emit UpdateInterestRate(oldRate, interestRate);

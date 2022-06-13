@@ -76,6 +76,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         // borrower accounting
         borrowers[msg.sender].collateralDeposited += amount_;
 
+        updateInterestRate();
+
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
@@ -112,6 +114,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         // save borrower to storage
         borrowers[msg.sender] = borrower;
 
+        updateInterestRate();
+
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, lup, amount_);
@@ -134,6 +138,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // save borrower to storage
         borrowers[msg.sender] = borrower;
+
+        updateInterestRate();
 
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
@@ -171,6 +177,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         if (remainingDebt == 0) totalBorrowers -= 1;
 
+        updateInterestRate();
+
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, lup, amount);
@@ -199,6 +207,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         lpBalance[recipient_][price_] += lpTokens_;
         lpTimer[recipient_][price_]   = block.timestamp;
 
+        updateInterestRate();
+
         // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
         emit AddQuoteToken(recipient_, price_, amount_, lup);
@@ -215,6 +225,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // lender accounting
         lpBalance[recipient_][price_] -= claimedLpTokens;
+
+        updateInterestRate();
 
         // move claimed collateral from pool to claimer
         collateral().safeTransfer(recipient_, amount_ / collateralScale);
@@ -239,6 +251,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         lpBalance[recipient_][fromPrice_] -= fromLpTokens;
         lpBalance[recipient_][toPrice_]   += toLpTokens;
 
+        updateInterestRate();
+
         emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
 
@@ -259,6 +273,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // lender accounting
         lpBalance[recipient_][price_] -= lpTokens;
+
+        updateInterestRate();
 
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(recipient_, amount / quoteTokenScale);
@@ -301,6 +317,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         totalBorrowers -= 1;
 
+        updateInterestRate();
+
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
 
@@ -319,6 +337,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         totalQuoteToken -= amount_;
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
+
+        updateInterestRate();
 
         // move required collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), collateralRequired / collateralScale);
