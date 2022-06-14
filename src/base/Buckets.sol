@@ -4,7 +4,7 @@ pragma solidity 0.8.11;
 import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { console }     from "@std/console.sol";
+import { console } from "@std/console.sol";
 
 import { IBuckets } from "../interfaces/IBuckets.sol";
 
@@ -157,6 +157,77 @@ abstract contract Buckets is IBuckets {
         // bucket accounting
         bucket.collateral    -= amount_;
         bucket.lpOutstanding -= lpRedemption_;
+
+        // bucket management
+        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
+        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
+        if (isEmpty && noClaim) {
+            deactivateBucket(bucket); // cleanup if bucket no longer used
+        } else {
+            _buckets[price_] = bucket; // save bucket to storage
+        }
+    }
+
+    /**
+     *  @notice Called by a lender to claim accumulated NFT collateral
+     *  @param  price_        The price bucket from which collateral should be claimed
+     *  @param  tokenId_      The tokenId of the collateral to claim
+     *  @param  lpBalance_    The claimers current LP balance, RAY
+     *  @return lpRedemption_ The amount of LP tokens that will be redeemed
+     */
+    function claimNFTCollateralFromBucket(uint256 price_, uint256 tokenId_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
+        NFTBucket storage nftBucket = _nftBuckets[price_];
+        require(nftBucket.collateralDeposited.contains(tokenId_), "B:CC:T_NOT_IN_B");
+
+        Bucket memory bucket = _buckets[price_];
+
+        // check available collateral given removal of the NFT
+        require(Maths.ONE_WAD <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
+
+        // nft collateral is accounted for in WAD units
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.ONE_WAD, bucket.price), getExchangeRate(bucket));
+
+        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
+
+        // update bucket accounting
+        bucket.collateral -= Maths.ONE_WAD;
+        bucket.lpOutstanding -= lpRedemption_;
+        nftBucket.collateralDeposited.remove(tokenId_);
+
+        // bucket management
+        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
+        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
+        if (isEmpty && noClaim) {
+            deactivateBucket(bucket); // cleanup if bucket no longer used
+        } else {
+            _buckets[price_] = bucket; // save bucket to storage
+        }
+    }
+
+    function claimMultipleNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
+        Bucket memory bucket = _buckets[price_];
+        NFTBucket storage nftBucket = _nftBuckets[price_];
+
+        // check available collateral given removal of the NFT
+        require(Maths.wad(tokenIds_.length) <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
+
+        // nft collateral is accounted for in WAD units
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.wad(tokenIds_.length), bucket.price), getExchangeRate(bucket));
+
+        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
+
+        // update bucket accounting
+        bucket.collateral -= Maths.wad(tokenIds_.length);
+        bucket.lpOutstanding -= lpRedemption_;
+
+        // update collateralDeposited
+        for (uint i; i < tokenIds_.length;) {
+            require(nftBucket.collateralDeposited.contains(tokenIds_[i]), "B:CC:T_NOT_IN_B");
+            nftBucket.collateralDeposited.remove(tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
 
         // bucket management
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
@@ -369,73 +440,6 @@ abstract contract Buckets is IBuckets {
         if (hpb != newHpb) hpb = newHpb;
 
         pdAccumulator -= Maths.wmul(purchaseFromDeposit, bucket.price);
-    }
-
-    /**
-     *  @notice Called by a lender to claim accumulated NFT collateral
-     *  @param  price_        The price bucket from which collateral should be claimed
-     *  @param  tokenId_      The tokenId of the collateral to claim
-     *  @param  lpBalance_    The claimers current LP balance, RAY
-     *  @return lpRedemption_ The amount of LP tokens that will be redeemed
-     */
-    function claimNFTCollateralFromBucket(uint256 price_, uint256 tokenId_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
-        NFTBucket storage nftBucket = _nftBuckets[price_];
-        require(nftBucket.collateralDeposited.contains(tokenId_), "B:CC:T_NOT_IN_B");
-
-        Bucket memory bucket = _buckets[price_];
-
-        // check available collateral given removal of the NFT
-        require(Maths.ONE_WAD <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
-
-        // nft collateral is accounted for in WAD units
-        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.ONE_WAD, bucket.price), getExchangeRate(bucket));
-
-        // update bucket accounting
-        bucket.collateral -= Maths.ONE_WAD;
-        bucket.lpOutstanding -= lpRedemption_;
-        nftBucket.collateralDeposited.remove(tokenId_);
-
-        // bucket management
-        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
-        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
-        if (isEmpty && noClaim) {
-            deactivateBucket(bucket); // cleanup if bucket no longer used
-        } else {
-            _buckets[price_] = bucket; // save bucket to storage
-        }
-    }
-
-    function claimMultipleNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
-        Bucket memory bucket = _buckets[price_];
-        NFTBucket storage nftBucket = _nftBuckets[price_];
-
-        // check available collateral given removal of the NFT
-        require(Maths.wad(tokenIds_.length) <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
-
-        // nft collateral is accounted for in WAD units
-        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.wad(tokenIds_.length), bucket.price), getExchangeRate(bucket));
-
-        // update bucket accounting
-        bucket.collateral -= Maths.wad(tokenIds_.length);
-        bucket.lpOutstanding -= lpRedemption_;
-
-        // update collateralDeposited
-        for (uint i; i < tokenIds_.length;) {
-            require(nftBucket.collateralDeposited.contains(tokenIds_[i]), "B:CC:T_NOT_IN_B");
-            nftBucket.collateralDeposited.remove(tokenIds_[i]);
-            unchecked {
-                ++i;
-            }
-        }
-
-        // bucket management
-        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
-        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
-        if (isEmpty && noClaim) {
-            deactivateBucket(bucket); // cleanup if bucket no longer used
-        } else {
-            _buckets[price_] = bucket; // save bucket to storage
-        }
     }
 
     /**

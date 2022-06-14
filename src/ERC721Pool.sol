@@ -119,7 +119,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
     }
 
     /// @notice Modifier to check if all tokens in an array have been deposited into the pool
-    modifier tokensInPool(uint256[] memory tokenIds_) {
+    modifier tokensInPool(uint256[] calldata tokenIds_) {
         for (uint i; i < tokenIds_.length;) {
             require(collateral().ownerOf(tokenIds_[i]) == address(this), "P:T_NOT_IN_P");
 
@@ -130,13 +130,14 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
         _;
     }
 
-    function onlySubset(uint256 tokenId_) internal view {
+    modifier onlySubset(uint256 tokenId_) {
         if (_tokenIdsAllowed.length() != 0) {
             require(_tokenIdsAllowed.contains(tokenId_), "P:ONLY_SUBSET");
         }
+        _;
     }
 
-    function onlySubsetMultiple(uint256[] memory tokenIds_) internal view {
+    modifier onlySubsetMultiple(uint256[] calldata tokenIds_) {
         if (_tokenIdsAllowed.length() != 0) {
             for (uint i; i < tokenIds_.length;) {
                 require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
@@ -145,6 +146,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
                 }
             }
         }
+        _;
     }
 
     /*****************************/
@@ -191,10 +193,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function addCollateral(uint256 tokenId_) public override {
-        // check if collateral is valid
-        onlySubset(tokenId_);
-
+    function addCollateral(uint256 tokenId_) public override onlySubset(tokenId_) {
         accumulatePoolInterest();
 
         // pool level accounting
@@ -209,10 +208,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
         emit AddNFTCollateral(msg.sender, tokenId_);
     }
 
-    function addCollateralMultiple(uint256[] memory tokenIds_) nonReentrant external {
-        // check if all incoming tokenIds are part of the pool subset
-        onlySubsetMultiple(tokenIds_);
-
+    function addCollateralMultiple(uint256[] calldata tokenIds_) nonReentrant external onlySubsetMultiple(tokenIds_) {
         accumulatePoolInterest();
 
         uint256 collateralToAddCount;
@@ -270,7 +266,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
         emit Borrow(msg.sender, lup, amount_);
     }
 
-    function removeCollateral(uint256 tokenId_) tokenInPool(tokenId_) external {
+    function removeCollateral(uint256 tokenId_) external tokenInPool(tokenId_) {
         accumulatePoolInterest();
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
@@ -293,7 +289,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
         emit RemoveNFTCollateral(msg.sender, tokenId_);
     }
 
-    function removeCollateralMultiple(uint256[] memory tokenIds_) nonReentrant tokensInPool(tokenIds_) external {
+    function removeCollateralMultiple(uint256[] calldata tokenIds_) external nonReentrant tokensInPool(tokenIds_) {
         accumulatePoolInterest();
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
@@ -365,7 +361,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
         emit AddQuoteToken(recipient_, price_, amount_, lup);
     }
 
-    function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) tokenInPool(tokenId_) external {
+    function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) external tokenInPool(tokenId_) {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
         uint256 maxClaim = lpBalance[recipient_][price_];
@@ -386,7 +382,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
         emit ClaimNFTCollateral(recipient_, price_, tokenId_, claimedLpTokens);
     }
 
-    function claimCollateralMultiple(address recipient_, uint256[] memory tokenIds_, uint256 price_) nonReentrant tokensInPool(tokenIds_) external {
+    function claimCollateralMultiple(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external nonReentrant tokensInPool(tokenIds_) {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
         uint256 maxClaim = lpBalance[recipient_][price_];
@@ -410,7 +406,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
             }
         }
 
-        // Relys on nonRentrant modifier to guard against reentrancy attacks on lpBalance
+        // Relies on nonRentrant modifier to guard against reentrancy attacks on lpBalance
         // lender accounting
         lpBalance[recipient_][price_] -= claimedLpTokens;
 
@@ -474,24 +470,11 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
     // TODO: Remove from IPool ... different Interface req
     function purchaseBid(uint256 amount_, uint256 price_) external {}
 
-    // TODO: Add test case for transferrance of tokens based upon collateralRequired
     /// @dev Can be called for multiple unit of collateral at a time
     /// @dev Does not increase pool or bucket debt
     /// @dev Tokens will be used for purchase based upon their order in the array, FIFO
-    function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] memory tokenIds_) external {
+    function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] calldata tokenIds_) external onlySubsetMultiple(tokenIds_) {
         require(BucketMath.isValidPrice(price_), "P:PB:INVALID_PRICE");
-
-        for (uint i; i < tokenIds_.length;) {
-            // check if incoming tokens are part of the pool subset
-            onlySubset(tokenIds_[i]);
-
-            // check user owns all tokenIds_ to prevent spoofing collateralRequired check
-            require(collateral().ownerOf(tokenIds_[i]) == msg.sender, "P:PB:INVALID_T_ID");
-
-            unchecked {
-                ++i;
-            }
-        }
 
         // calculate in whole NFTs the amount of collateral required to cover desired quote at desired price
         uint256 collateralRequired = Maths.divRoundingUp(amount_, price_);
@@ -499,17 +482,21 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
 
         accumulatePoolInterest();
 
-        purchaseBidFromBucketNFTCollateral(price_, amount_, tokenIds_, inflatorSnapshot);
+        // slice incoming tokens to only use as many as are required
+        uint256[] memory usedTokens = new uint256[](collateralRequired);
+        usedTokens = tokenIds_[:collateralRequired];
+
+        purchaseBidFromBucketNFTCollateral(price_, amount_, usedTokens, inflatorSnapshot);
 
         // pool level accounting
         totalQuoteToken -= amount_;
-        totalCollateral += Maths.wad(tokenIds_.length);
+        totalCollateral += Maths.wad(usedTokens.length);
 
         require(getPoolCollateralization() >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
 
         // move required collateral from sender to pool
         for (uint i; i < collateralRequired;) {
-            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+            collateral().safeTransferFrom(msg.sender, address(this), usedTokens[i]);
             unchecked {
                 ++i;
             }
@@ -517,10 +504,10 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
 
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
-        emit PurchaseWithNFTs(msg.sender, price_, amount_, tokenIds_);
+        emit PurchaseWithNFTs(msg.sender, price_, amount_, usedTokens);
     }
 
-   /*****************************/
+    /*****************************/
     /*** Pool State Management ***/
     /*****************************/
 
@@ -534,7 +521,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
         return _tokenIdsAllowed.values();
     }
 
-    /// @dev Quote tokens are always non-fungible
+    /// @dev Collateral tokens are always non-fungible
     /// @dev Pure function used to facilitate accessing token via clone state
     function collateral() public pure returns (ERC721) {
         return ERC721(_getArgAddress(0));

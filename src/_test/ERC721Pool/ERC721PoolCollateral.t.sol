@@ -38,13 +38,14 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _NFTCollectionPoolAddress = new ERC721PoolFactory().deployNFTCollectionPool(address(_collateral), address(_quote));
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
-        _tokenIds = new uint256[](5);
+        _tokenIds = new uint256[](6);
 
         _tokenIds[0] = 1;
         _tokenIds[1] = 5;
         _tokenIds[2] = 10;
         _tokenIds[3] = 50;
         _tokenIds[4] = 61;
+        _tokenIds[5] = 63;
 
         _NFTSubsetPoolAddress = new ERC721PoolFactory().deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIds);
         _NFTSubsetPool        = ERC721Pool(_NFTSubsetPoolAddress);
@@ -62,6 +63,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _borrower.approveToken(_collateral, _NFTSubsetPoolAddress, 50);
 
         _bidder.approveToken(_collateral, _NFTSubsetPoolAddress, 61);
+        _bidder.approveToken(_collateral, _NFTSubsetPoolAddress, 63);
 
         // _collateral.setApprovalForAll(_NFTSubsetPoolAddress, true);
     }
@@ -216,7 +218,6 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(_NFTSubsetPool.totalCollateral(),               Maths.wad(3));
         assertEq(_collateral.ownerOf(1),                         _NFTSubsetPoolAddress);
 
-        // TODO: fix... broken here
         // remove some of the collateral from the pool
         vm.prank((address(_borrower)));
         vm.expectEmit(true, true, false, true);
@@ -343,16 +344,19 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _lender.claimCollateral(_NFTSubsetPool, address(_lender), 1, _p2503);
 
         // TODO: expand pool subset and check this
-        // // should revert if attempting to claim more collateral than is available
+        // should revert if attempting to claim more collateral than is available
         // vm.prank((address(_lender)));
         // vm.expectRevert("B:CC:AMT_GT_COLLAT");
         // _NFTSubsetPool.claimCollateral(address(_lender), 1, _p4000);
 
-        // bidder purchases some of the top bucket
-        _tokenIds = new uint256[](1);
+        // bidder purchases some of the top bucket using only as many collateral as necessary
+        _tokenIds = new uint256[](2);
         _tokenIds[0] = 61;
+        _tokenIds[1] = 63;
+        uint256[] memory expectedEmittedIds = new uint256[](1);
+        expectedEmittedIds[0] = 61;
         vm.expectEmit(true, true, false, true);
-        emit PurchaseWithNFTs(address(_bidder), _p4000, 4_000 * 1e18, _tokenIds);
+        emit PurchaseWithNFTs(address(_bidder), _p4000, 4_000 * 1e18, expectedEmittedIds);
         vm.prank((address(_bidder)));
         _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 4_000 * 1e18, _p4000, _tokenIds);
 
