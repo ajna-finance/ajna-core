@@ -17,9 +17,6 @@ contract PermitTest is DSTestPlus {
 
     bytes32 internal constant PERMIT_NFT_TYPEHASH = 0x49ecf333e5b8c95c40fdafc95c1ad136e8914a8fb55e9dc8bb01eaa83a2df9ad;
 
-    // nonce for generating random addresses
-    uint16 internal _nonce;
-
     address          internal _ajnaTokenPoolAddress;
     address          internal _poolAddress;
     AjnaToken        internal _ajnaToken = new AjnaToken(10_000 * 1e18);
@@ -40,12 +37,6 @@ contract PermitTest is DSTestPlus {
         _pool                 = ERC20Pool(_poolAddress);
         _ajnaTokenPoolAddress = _factory.deployPool(address(_collateral), address(_ajnaToken));
         _ajnaTokenPool        = ERC20Pool(_ajnaTokenPoolAddress);
-    }
-
-    function generateAddress() private returns (address addr) {
-        // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
-        _nonce++;
     }
 
     function mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) private {

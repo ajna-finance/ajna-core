@@ -4,14 +4,10 @@ pragma solidity 0.8.11;
 
 import { Clone } from "@clones/Clone.sol";
 
-import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
-
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { BorrowerManager } from "./base/BorrowerManager.sol";
-import { Buckets }         from "./base/Buckets.sol";
-import { Interest }        from "./base/Interest.sol";
 import { LenderManager }   from "./base/LenderManager.sol";
 
 import { IPool } from "./interfaces/IPool.sol";
@@ -28,9 +24,12 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     /***********************/
 
     /// @dev Counter used by onlyOnce modifier
-    uint8 private _poolInitializations = 0;
+    uint256 private _poolInitializations = 0;
 
-    uint256 public override collateralScale;
+    /// @notice The precision of the collateral ERC-20 token based on decimals.
+    /// @dev Only used by ERC20 type pools.
+    uint256 public collateralScale;
+
     uint256 public override quoteTokenScale;
 
     /*****************/
@@ -307,7 +306,6 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     function purchaseBid(uint256 amount_, uint256 price_) external override {
         require(BucketMath.isValidPrice(price_), "P:PB:INVALID_PRICE");
 
-        // convert amount from WAD to pool precision - RAD
         uint256 collateralRequired = Maths.wdiv(amount_, price_);
         require(collateral().balanceOf(msg.sender) * collateralScale >= collateralRequired, "P:PB:INSUF_COLLAT");
 

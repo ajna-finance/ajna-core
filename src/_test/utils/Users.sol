@@ -2,8 +2,10 @@
 pragma solidity 0.8.11;
 
 import { ERC20Pool } from "../../ERC20Pool.sol";
+import { ERC721Pool }        from "../../ERC721Pool.sol";
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { IERC721 }    from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 contract UserWithCollateral {
 
@@ -36,6 +38,58 @@ contract UserWithCollateral {
         pool_.removeCollateral(amount_);
     }
 
+}
+
+contract UserWithNFTCollateral {
+
+    function approveAndDepositTokenAsCollateral(
+        IERC721 token_,
+        ERC721Pool pool_,
+        uint256 tokenId_
+    ) public {
+        token_.approve(address(pool_), tokenId_);
+        pool_.addCollateral(tokenId_);
+    }
+
+    function approveToken(IERC721 token_, address spender_, uint256 _tokenId) public {
+        token_.approve(spender_, _tokenId);
+    }
+
+    function addCollateral(ERC721Pool pool_, uint256 amount_) public {
+        pool_.addCollateral(amount_);
+    }
+
+    function borrow(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
+        pool_.borrow(amount_, price_);
+    }
+
+    // TODO: REMOVE
+    function purchaseBid(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
+        pool_.purchaseBid(amount_, price_);
+    }
+
+    function purchaseBidNFTCollateral(ERC721Pool pool_, uint256 amount_, uint256 price_, uint256[] memory tokenIds_) public {
+        pool_.purchaseBidNFTCollateral(amount_, price_, tokenIds_);
+    }
+
+    function repay(ERC721Pool pool_, uint256 amount_) public {
+        pool_.repay(amount_);
+    }
+
+    function removeCollateral(ERC721Pool pool_, uint256 amount_) public {
+        pool_.removeCollateral(amount_);
+    }
+
+    // Implementing this method allows contracts to receive ERC721 tokens
+    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes memory
+    ) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
 }
 
 contract UserWithQuoteToken {
@@ -80,4 +134,40 @@ contract UserWithQuoteToken {
         pool_.updateInterestRate();
     }
 
+}
+
+contract UserWithQuoteTokenInNFTPool {
+    function addQuoteToken(ERC721Pool pool, address recipient, uint256 amount, uint256 price) public {
+        pool.addQuoteToken(recipient, amount, price);
+    }
+
+    function removeQuoteToken(ERC721Pool pool, address recipient, uint256 amount, uint256 price) public {
+        pool.removeQuoteToken(recipient, amount, price);
+    }
+
+    function borrow(ERC721Pool pool, uint256 amount, uint256 stopPrice) public {
+        pool.borrow(amount, stopPrice);
+    }
+
+    function claimCollateral(ERC721Pool pool, address recipient, uint256 amount, uint256 price) public {
+        pool.claimCollateral(recipient, amount, price);
+    }
+
+    function liquidate(ERC721Pool pool, address borrower) public {
+        pool.liquidate(borrower);
+    }
+
+    function approveToken(IERC20 token, address spender, uint256 amount) public {
+        token.approve(spender, amount);
+    }
+
+    // Implementing this method allows contracts to receive ERC721 tokens
+    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+    function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
+    function updateInterestRate(ERC721Pool pool) public {
+        pool.updateInterestRate();
+    }
 }

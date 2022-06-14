@@ -7,16 +7,6 @@ pragma solidity 0.8.11;
  */
 interface IPoolFactory {
 
-    /**************/
-    /*** Events ***/
-    /**************/
-
-    /**
-     *  @notice Emitted when a new pool is created.
-     *  @param  pool_ The address of the new pool.
-     */
-    event PoolCreated(address pool_);
-
     /**************************/
     /*** External Functions ***/
     /**************************/

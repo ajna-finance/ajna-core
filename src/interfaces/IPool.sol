@@ -2,8 +2,8 @@
 pragma solidity 0.8.11;
 
 /**
- *  @title Ajna Pool
- *  @dev   Used to manage lender and borrower positions of ERC-20 tokens.
+ * @title Ajna Pool
+ * @dev   Used to manage lender and borrower positions.
  */
 interface IPool {
 
@@ -39,8 +39,8 @@ interface IPool {
      *  @notice Emitted when lender claims unencumbered collateral.
      *  @param  claimer_ Recipient that claimed collateral.
      *  @param  price_   Price at which unencumbered collateral was claimed.
-     *  @param  amount_  TODO
-     *  @param  lps_     TODO
+     *  @param  amount_  The amount of Quote tokens transferred to the claimer.
+     *  @param  lps_     The amount of LP tokens burned in the claim.
      */
     event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
 
@@ -98,14 +98,6 @@ interface IPool {
     /***********************/
     /*** State Variables ***/
     /***********************/
-
-    // TODO: Investigate `collateral()` and `quoteToken()` functions.
-
-    /**
-     *  @notice Returns the `collateralScale` state variable.
-     *  @return collateralScale_ The precision of the collateral ERC-20 token based on decimals.
-     */
-    function collateralScale() external view returns (uint256 collateralScale_);
 
     /**
      *  @notice Returns the `quoteTokenScale` state variable.

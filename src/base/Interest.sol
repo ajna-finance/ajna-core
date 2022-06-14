@@ -55,6 +55,7 @@ abstract contract Interest is IInterest, PoolState {
     /**
      *  @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
      *  @dev    Only adds debt if a borrower has already initiated a debt position
+     *  @dev    Only used by Borrowers using fungible tokens as collateral     
      *  @param  borrower_ Pointer to the struct which is accumulating interest on their debt
      */
     function accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_) internal {
@@ -69,9 +70,26 @@ abstract contract Interest is IInterest, PoolState {
     }
 
     /**
-     *  @notice Update the global borrower inflator
-     *  @dev    Requires time to have passed between update calls
-     */
+     * @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
+     * @param borrower_ Pointer to the struct which is accumulating interest on their debt
+     * @dev Only used by Borrowers using NFTs as collateral
+     * @dev Only adds debt if a borrower has already initiated a debt position
+    */
+    function accumulateNFTBorrowerInterest(IBorrowerManager.NFTBorrowerInfo storage borrower_) internal {
+        if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
+            borrower_.debt += getPendingInterest(
+                borrower_.debt,
+                inflatorSnapshot,
+                borrower_.inflatorSnapshot
+            );
+        }
+        borrower_.inflatorSnapshot = inflatorSnapshot;
+    }
+
+    /**
+     * @notice Update the global borrower inflator
+     * @dev Requires time to have passed between update calls
+    */
     function accumulatePoolInterest() internal {
         if (block.timestamp - lastInflatorSnapshotUpdate != 0) {
             uint256 pendingInflator    = getPendingInflator();                                              // RAY

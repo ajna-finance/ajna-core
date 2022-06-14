@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.11;
 
-import { ERC20Pool }        from "../ERC20Pool.sol";
-import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
+import { ERC20Pool }        from "../../ERC20Pool.sol";
+import { ERC20PoolFactory } from "../../ERC20PoolFactory.sol";
 
-import { IPool } from "../interfaces/IPool.sol";
+import { IPool } from "../../interfaces/IPool.sol";
 
-import "../base/Buckets.sol";
+import "../..//base/Buckets.sol";
 
-import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
+import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
 contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
