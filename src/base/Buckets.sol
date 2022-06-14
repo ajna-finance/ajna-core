@@ -286,7 +286,7 @@ abstract contract Buckets is IBuckets {
     }
 
     /**
-     *  @notice Called by a lender to remove quote tokens from a bucket
+     *  @notice Called by a lender to move quote tokens from a bucket
      *  @param  fromPrice_    The price bucket from where quote tokens should be moved
      *  @param  toPrice_      The price bucket where quote tokens should be moved
      *  @param  maxAmount_    The max amount of quote tokens to be moved, WAD

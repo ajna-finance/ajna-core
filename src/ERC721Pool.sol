@@ -347,6 +347,8 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
 
         accumulatePoolInterest();
 
+        require(amount_ > getPoolMinDebtAmount(), "P:AQT:AMT_LT_AVG_DEBT");
+
         // deposit quote token amount and get awarded LP tokens
         lpTokens_ = addQuoteTokenToBucket(price_, amount_, totalDebt, inflatorSnapshot);
 
@@ -355,6 +357,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyG
 
         // lender accounting
         lpBalance[recipient_][price_] += lpTokens_;
+        lpTimer[recipient_][price_]   = block.timestamp;
 
         // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);

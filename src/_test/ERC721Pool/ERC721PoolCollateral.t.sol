@@ -308,7 +308,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
 
     /**
      *  @notice With 1 lender, 1 borrower and 1 bidder test adding quote token, adding collateral, and borrowing.
-     *          PurchaseBid is made then collateral is claimed and quote token is removed.
+     *          PurchaseBid is made then collateral is claimed.
      *          Lender1 reverts:
      *              attempts to claim from invalidPrice.
      *              attempts to claim more than LP balance allows.
@@ -411,10 +411,20 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(debt,             5_000.651054657058420273 * 1e18);
         assertEq(bucketCollateral, 0);
         assertEq(collateralDeposited.length, 0);
-
     }
 
-    // TODO: use multiple lenders, borrowers, and bidders
+    /**
+     *  @notice With 1 lender, 1 borrower and 1 bidder test adding quote token, adding collateral, and borrowing.
+     *          PurchaseBid is made then collateral is claimed and quote token is removed.
+     *          Borrower reverts:
+     *              attempts to add collateral with tokens outside subset.
+     *          Lender1 reverts:
+     *              attempts to claim from invalidPrice.
+     *              attempts to claim from bucket with no claimable collateral.
+     *              attempts to claim more than available collateral.
+     *          Bidder reverts:
+     *              attempts to purchase more quote than is in bucket with no reallocation available.
+     */
     function testClaimMultipleCollateralNFTSubset() external {
         // add initial quote tokens to pool
         _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p4000);
@@ -476,52 +486,79 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         vm.expectRevert("B:CC:AMT_GT_COLLAT");
         _NFTSubsetPool.claimCollateralMultiple(address(_lender), tokenIdsToClaim, _p4000);
 
-        // TODO: purchase bid w/ additional nfts
-        // TODO: increase complexity of purchase bid checks
-        // bidder purchases some of the top bucket
-        _tokenIds = new uint256[](1);
+        // should revert if there are no other buckets to reallocate to
+        _tokenIds = new uint256[](2);
         _tokenIds[0] = 61;
-        vm.expectEmit(true, true, false, true);
-        emit PurchaseWithNFTs(address(_bidder), _p4000, 4_000 * 1e18, _tokenIds);
+        _tokenIds[1] = 63;
+        vm.expectRevert("B:RD:NO_REALLOC_LOCATION");
         vm.prank((address(_bidder)));
-        _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 4_000 * 1e18, _p4000, _tokenIds);
+        _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 8_000 * 1e18, _p4000, _tokenIds);
+
+        // bidder purchases some of the top bucket, overpaying with two collateral in order to meet whole unit requirements
+        _tokenIds = new uint256[](2);
+        _tokenIds[0] = 61;
+        _tokenIds[1] = 63;
+        vm.expectEmit(true, true, false, true);
+        emit PurchaseWithNFTs(address(_bidder), _p4000, 4_500 * 1e18, _tokenIds);
+        vm.prank((address(_bidder)));
+        _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 4_500 * 1e18, _p4000, _tokenIds);
 
         // check balances after purchase bid
         assertEq(_collateral.balanceOf(address(_lender)),            0);
+        assertEq(_collateral.ownerOf(61),                            _NFTSubsetPoolAddress);
+        assertEq(_collateral.ownerOf(63),                            _NFTSubsetPoolAddress);
         assertEq(_NFTSubsetPool.lpBalance(address(_lender), _p4000), 10_000 * 1e27);
-        assertEq(_collateral.balanceOf(address(_bidder)),            4);
-        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),     4);
+        assertEq(_collateral.balanceOf(address(_bidder)),            3);
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),     5);
         assertEq(_quote.balanceOf(address(_lender)),                 190_000 * 1e18);
-        assertEq(_quote.balanceOf(address(_NFTSubsetPool)),          1_000 * 1e18);
-        assertEq(_NFTSubsetPool.totalCollateral(),                   4 * 1e18);
+        assertEq(_quote.balanceOf(address(_NFTSubsetPool)),          500 * 1e18);
+        assertEq(_NFTSubsetPool.totalCollateral(),                   5 * 1e18);
 
         // check bucket state after purchase bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral, uint256[] memory collateralDeposited) = _NFTSubsetPool.nftBucketAt(_p4000);
-        assertEq(deposit,          1_000 * 1e18);
+        assertEq(deposit,          500 * 1e18);
         assertEq(debt,             5_000.651054657058420273 * 1e18);
-        assertEq(bucketCollateral, Maths.ONE_WAD);
+        assertEq(bucketCollateral, Maths.wad(2));
         assertEq(collateralDeposited[0], _tokenIds[0]);
-        assertEq(collateralDeposited.length, 1);
+        assertEq(collateralDeposited[1], _tokenIds[1]);
+        assertEq(collateralDeposited.length, 2);
 
+        // check lender state before claim collateral
+        assertEq(_NFTSubsetPool.lpBalance(address(_lender), _p4000), 10_000 * 1e27);
 
-        // TODO: figure out best way to get collateral deposited into the bucket...?
-        // TODO: validate and expand checks here
         // claim collateral from p4000 bucket
-        tokenIdsToClaim = new uint256[](1);
+        tokenIdsToClaim = new uint256[](2);
         tokenIdsToClaim[0] = 61;
-        // tokenIdsToClaim[1] = 5;
+        tokenIdsToClaim[1] = 63;
         vm.prank((address(_lender)));
         vm.expectEmit(true, true, false, true);
-        emit ClaimNFTCollateralMultiple(address(_lender), _p4000, tokenIdsToClaim, 4000.296138533142632904519433016 * 1e27);
+        emit ClaimNFTCollateralMultiple(address(_lender), _p4000, tokenIdsToClaim, 5926.200005472641167758374989600 * 1e27);
         _NFTSubsetPool.claimCollateralMultiple(address(_lender), tokenIdsToClaim, _p4000);
+
+        // check balances after purchase bid
+        assertEq(_collateral.balanceOf(address(_lender)),            2);
+        assertEq(_collateral.ownerOf(61),                            address(_lender));
+        assertEq(_collateral.ownerOf(63),                            address(_lender));
+        assertEq(_NFTSubsetPool.lpBalance(address(_lender), _p4000), 4073.799994527358832241625010400 * 1e27);
+        assertEq(_collateral.balanceOf(address(_bidder)),            3);
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)),     3);
+        assertEq(_quote.balanceOf(address(_lender)),                 190_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_NFTSubsetPool)),          500 * 1e18);
+        assertEq(_NFTSubsetPool.totalCollateral(),                   3 * 1e18);
 
         // check bucket state after claim collateral
         (, , , deposit, debt, , , bucketCollateral, collateralDeposited) = _NFTSubsetPool.nftBucketAt(_p4000);
-        assertEq(deposit,          1_000 * 1e18);
+        assertEq(deposit,          500 * 1e18);
         assertEq(debt,             5_000.651054657058420273 * 1e18);
         assertEq(bucketCollateral, 0);
         assertEq(collateralDeposited.length, 0);
 
+        // lender removes some quote tokens
+        uint256 lpTokensToRemove = 1 * 1e18;
+        vm.prank((address(_lender)));
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), _p4000, .999 * 1e18, _p4000);
+        _NFTSubsetPool.removeQuoteToken(address(_lender), lpTokensToRemove, _p4000);
     }
 
     // TODO: implement
