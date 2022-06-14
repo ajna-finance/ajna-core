@@ -6,11 +6,12 @@ import { Clone } from "@clones/Clone.sol";
 
 import { console } from "@std/console.sol";
 
-import { ERC20 }         from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ERC20 }           from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ERC721 }          from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { BitMaps }         from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+import { EnumerableSet }   from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import { BorrowerManager } from "./base/BorrowerManager.sol";
 import { LenderManager }   from "./base/LenderManager.sol";
@@ -21,7 +22,7 @@ import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
 
-contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
+contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager, ReentrancyGuard {
 
     using SafeERC20 for ERC20;
 
@@ -208,7 +209,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit AddNFTCollateral(msg.sender, tokenId_);
     }
 
-    function addCollateralMultiple(uint256[] memory tokenIds_) external {
+    function addCollateralMultiple(uint256[] memory tokenIds_) nonReentrant external {
         // check if all incoming tokenIds are part of the pool subset
         onlySubsetMultiple(tokenIds_);
 
@@ -292,7 +293,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit RemoveNFTCollateral(msg.sender, tokenId_);
     }
 
-    function removeCollateralMultiple(uint256[] memory tokenIds_) tokensInPool(tokenIds_) external {
+    function removeCollateralMultiple(uint256[] memory tokenIds_) nonReentrant tokensInPool(tokenIds_) external {
         accumulatePoolInterest();
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
@@ -385,38 +386,38 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
         emit ClaimNFTCollateral(recipient_, price_, tokenId_, claimedLpTokens);
     }
 
-    // TODO: finish implementing or combine with claimCollateral - would require updates to Buckets.sol
-    function claimCollateralMultiple(address recipient_, uint256[] memory tokenIds_, uint256 price_) tokensInPool(tokenIds_) external {
-        // require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
+    function claimCollateralMultiple(address recipient_, uint256[] memory tokenIds_, uint256 price_) nonReentrant tokensInPool(tokenIds_) external {
+        require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
-        // uint256 maxClaim = lpBalance[recipient_][price_];
-        // require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
+        uint256 maxClaim = lpBalance[recipient_][price_];
+        require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
 
-        // // claim collateral and get amount of LP tokens burned for claim
-        // uint256 claimedLpTokens = claimNFTCollateralFromBucket(price_, tokenId_, maxClaim);
+        // claim collateral and get amount of LP tokens burned for claim
+        uint256 claimedLpTokens = claimMultipleNFTCollateralFromBucket(price_, tokenIds_, maxClaim);
 
-        // uint256 collateralClaimedCount;
+        uint256 collateralClaimedCount;
 
-        // // claim tokenIds from the pool
-        // for (uint i; i < tokenIds_.length;) {
+        // claim tokenIds from the pool
+        for (uint i; i < tokenIds_.length;) {
+            // pool level accounting
+            _collateralTokenIdsAdded.remove(tokenIds_[i]);
+            collateralClaimedCount += 1;
 
-        //     // pool level accounting
-        //     _collateralTokenIdsAdded.remove(tokenIds_[i]);
-        //     collateralClaimedCount += 1;
+            // move claimed collateral from pool to claimer
+            collateral().safeTransferFrom(address(this), recipient_, tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
 
-        //     // move claimed collateral from pool to claimer
-        //     collateral().safeTransferFrom(address(this), recipient_, tokenIds_[i]);
+        // Relys on nonRentrant modifier to guard against reentrancy attacks on lpBalance
+        // lender accounting
+        lpBalance[recipient_][price_] -= claimedLpTokens;
 
-        // }
+        // update totalCollateral count with the newly claimed collateral
+        totalCollateral -= Maths.wad(collateralClaimedCount);
 
-        // // TODO: check for reentrancy here -> check effects
-        // // lender accounting
-        // lpBalance[recipient_][price_] -= claimedLpTokens;
-
-        // // update totalCollateral count with the newly claimed collateral
-        // totalCollateral -= Maths.wad(collateralClaimedCount);
-
-        // emit ClaimNFTCollateralMultiple(recipient_, price_, tokenIds_, claimedLpTokens);
+        emit ClaimNFTCollateralMultiple(recipient_, price_, tokenIds_, claimedLpTokens);
     }
 
     function moveQuoteToken(
@@ -498,7 +499,7 @@ contract ERC721Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         accumulatePoolInterest();
 
-        purchaseBidFromBucket(price_, amount_, Maths.wad(collateralRequired), inflatorSnapshot);
+        purchaseBidFromBucketNFTCollateral(price_, amount_, tokenIds_, inflatorSnapshot);
 
         // pool level accounting
         totalQuoteToken -= amount_;
