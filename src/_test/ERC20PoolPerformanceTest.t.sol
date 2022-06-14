@@ -24,7 +24,7 @@ contract ERC20PoolPerformanceTest is DSTestPlus {
     function setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
-        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ERC20Pool(_poolAddress);  
 
         for (uint256 i; i < MAX_USERS; ++i) {

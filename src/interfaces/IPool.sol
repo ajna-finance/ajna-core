@@ -119,8 +119,9 @@ interface IPool {
 
     /**
      *  @notice Initializes a new pool, setting initial state variables.
+     *  @param  interestRate_ Default interest rate of the pool.
      */
-    function initialize() external;
+    function initialize(uint256 interestRate_) external;
 
     /***********************************/
     /*** Borrower External Functions ***/

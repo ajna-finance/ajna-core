@@ -49,13 +49,13 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     /*** Inititalize Functions ***/
     /*****************************/
 
-    function initialize() external override onlyOnce {
+    function initialize(uint256 rate_) external override onlyOnce {
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
         inflatorSnapshot           = Maths.ONE_RAY;
         lastInflatorSnapshotUpdate = block.timestamp;
-        interestRate               = 0.05 * 10**18;
+        interestRate               = rate_;
         interestRateUpdate         = block.timestamp;
         minFee                     = 0.0005 * 10**18;
 

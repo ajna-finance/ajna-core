@@ -35,29 +35,6 @@ abstract contract Interest is IInterest, PoolState {
     uint256 public override interestRateUpdate;          // [SEC]
 
     /**************************/
-    /*** External Functions ***/
-    /**************************/
-
-    function updateInterestRate() internal {
-        // RAY
-        uint256 poolCollateralization =  getPoolCollateralization();
-        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.ONE_WAD) {
-            uint256 oldRate           = interestRate;
-            uint256 actualUtilization = getPoolActualUtilization();
-            uint256 targetUtilization = Maths.wdiv(Maths.ONE_WAD, poolCollateralization);
-
-            if (actualUtilization * 2 > targetUtilization + Maths.ONE_WAD) {
-                interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
-            } else if (targetUtilization >  (actualUtilization + Maths.ONE_WAD) / 2) {
-                interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
-            }
-            interestRateUpdate = block.timestamp;
-
-            emit UpdateInterestRate(oldRate, interestRate);
-        }
-    }
-
-    /**************************/
     /*** Internal Functions ***/
     /**************************/
 
@@ -100,6 +77,28 @@ abstract contract Interest is IInterest, PoolState {
     function getPendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
         // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
         return Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
+    }
+
+    /**
+     *  @notice Update interest rate based on current pool state.
+     */
+    function updateInterestRate() internal {
+        // RAY
+        uint256 poolCollateralization =  getPoolCollateralization();
+        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.ONE_WAD) {
+            uint256 oldRate           = interestRate;
+            uint256 actualUtilization = getPoolActualUtilization();
+            uint256 targetUtilization = Maths.wdiv(Maths.ONE_WAD, poolCollateralization);
+
+            if (actualUtilization * 2 > targetUtilization + Maths.ONE_WAD) {
+                interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
+            } else if (targetUtilization >  (actualUtilization + Maths.ONE_WAD) / 2) {
+                interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
+            }
+            interestRateUpdate = block.timestamp;
+
+            emit UpdateInterestRate(oldRate, interestRate);
+        }
     }
 
     /**********************/

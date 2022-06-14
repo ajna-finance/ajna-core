@@ -9,6 +9,9 @@ import { IPoolFactory } from "./interfaces/IPoolFactory.sol";
 
 contract ERC20PoolFactory is IPoolFactory {
 
+    uint256 public constant MIN_RATE = 0.01 * 10**18;
+    uint256 public constant MAX_RATE = 0.1 * 10**18;
+
     using ClonesWithImmutableArgs for address;
 
     mapping(address => mapping(address => address)) public deployedPools;
@@ -20,14 +23,15 @@ contract ERC20PoolFactory is IPoolFactory {
     }
 
     /** @inheritdoc IPoolFactory*/
-    function deployPool(address collateral_, address quote_) external override returns (address pool_) {
-        require(collateral_ != address(0) && quote_ != address(0), "PF:DP:ZERO_ADDR");
-        require(deployedPools[collateral_][quote_] == address(0),  "PF:DP:POOL_EXISTS");
+    function deployPool(address collateral_, address quote_, uint256 interestRate_) external override returns (address pool_) {
+        require(collateral_ != address(0) && quote_ != address(0),      "PF:DP:ZERO_ADDR");
+        require(deployedPools[collateral_][quote_] == address(0),       "PF:DP:POOL_EXISTS");
+        require(MIN_RATE <= interestRate_ && interestRate_ <= MAX_RATE, "PF:DP:INVALID_RATE");
 
         bytes memory data = abi.encodePacked(collateral_, quote_);
 
         ERC20Pool pool = ERC20Pool(address(implementation).clone(data));
-        pool.initialize();
+        pool.initialize(interestRate_);
         pool_ = address(pool);
 
         deployedPools[collateral_][quote_] = pool_;

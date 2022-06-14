@@ -24,7 +24,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
     function setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
-        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ERC20Pool(_poolAddress);  
 
         _borrower = new UserWithCollateral();
@@ -47,7 +47,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         uint256 priceLow   = _p2503;
 
         assertEq(_pool.interestRate(),       0.05 * 1e18);
-        assertEq(_pool.interestRateUpdate(), updateTime);
+        assertEq(_pool.interestRateUpdate(), 0);
 
         // raise pool utilization
         // lender deposits 60_000 DAI in 3 buckets
@@ -153,7 +153,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
     function setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
-        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ERC20Pool(_poolAddress);
 
         _borrower  = new UserWithCollateral();

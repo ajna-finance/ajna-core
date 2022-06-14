@@ -35,7 +35,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
     }
 
     function init() internal {
-        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ERC20Pool(_poolAddress);  
 
         _borrower = new UserWithCollateral();
