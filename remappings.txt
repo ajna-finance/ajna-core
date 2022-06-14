@@ -3,5 +3,4 @@
 @clones=lib/clones-with-immutable-args/src/
 @openzeppelin/contracts=lib/openzeppelin-contracts/contracts
 @prb-math=lib/prb-math/
-@hardhat=lib/hardhat/packages
 @base64-sol=lib/base64/

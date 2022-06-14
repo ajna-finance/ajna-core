@@ -4,8 +4,6 @@ pragma solidity 0.8.14;
 
 import { Clone } from "@clones/Clone.sol";
 
-import { console } from "@hardhat/hardhat-core/console.sol"; // TESTING ONLY
-
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
