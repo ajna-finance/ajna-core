@@ -43,14 +43,14 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         uint256 priceHigh  = _p4000;
         uint256 priceMed   = _p3514;
         uint256 priceLow   = _p2503;
-        uint256 updateTime = _pool.previousRateUpdate();
+        uint256 updateTime = _pool.interestRateUpdate();
 
-        assertEq(_pool.previousRate(), 0.05 * 1e18);
+        assertEq(_pool.interestRate(), 0.05 * 1e18);
 
         // should silently not update when actual utilization is 0
         _pool.updateInterestRate();
-        assertEq(_pool.previousRate(),       0.05 * 1e18);
-        assertEq(_pool.previousRateUpdate(), updateTime);
+        assertEq(_pool.interestRate(),       0.05 * 1e18);
+        assertEq(_pool.interestRateUpdate(), updateTime);
 
         // raise pool utilization
         // lender deposits 10_000 DAI in 3 buckets each
@@ -71,8 +71,8 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         emit UpdateInterestRate(0.05 * 1e18, 0.086673629983287610 * 1e18);
         _lender.updateInterestRate(_pool);
 
-        assertEq(_pool.previousRate(),               0.086673629983287610 * 1e18);
-        assertEq(_pool.previousRateUpdate(),         8200);
+        assertEq(_pool.interestRate(),               0.086673629983287610 * 1e18);
+        assertEq(_pool.interestRateUpdate(),         8200);
         assertEq(_pool.lastInflatorSnapshotUpdate(), 8200);
     }
 
@@ -83,7 +83,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
     function testUpdateInterestRateUnderutilized() external {
         uint256 priceHigh = _p4000;
 
-        assertEq(_pool.previousRate(), 0.05 * 1e18);
+        assertEq(_pool.interestRate(), 0.05 * 1e18);
         _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHigh);
         skip(14);
 
@@ -97,7 +97,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.009999989274781901 * 1e18);
         _lender.updateInterestRate(_pool);
-        assertEq(_pool.previousRate(), 0.009999989274781901 * 1e18);
+        assertEq(_pool.interestRate(), 0.009999989274781901 * 1e18);
     }
 
     /**
@@ -112,7 +112,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         // borrower utilizes the entire pool
         _borrower.addCollateral(_pool, 0.000284548895761533 * 1e18);
         _borrower.borrow(_pool, 1 * 1e18 - 0.000961538461538462 * 1e18, 0); // borrow 1 minus fee
-        uint256 lastRate = _pool.previousRate();
+        uint256 lastRate = _pool.interestRate();
         skip(3600 * 24);
 
         // debt accumulates, and the borrower becomes undercollateralized
@@ -122,7 +122,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
 
         // rate should not change while pool is undercollateralized
         _lender.updateInterestRate(_pool);
-        assertEq(_pool.previousRate(), lastRate);
+        assertEq(_pool.interestRate(), lastRate);
     }
 
 }

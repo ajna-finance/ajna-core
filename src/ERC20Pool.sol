@@ -55,8 +55,8 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         inflatorSnapshot           = Maths.ONE_RAY;
         lastInflatorSnapshotUpdate = block.timestamp;
-        previousRate               = 0.05 * 10**18;
-        previousRateUpdate         = block.timestamp;
+        interestRate               = 0.05 * 10**18;
+        interestRateUpdate         = block.timestamp;
         minFee                     = 0.0005 * 10**18;
 
         // increment initializations count to ensure these values can't be updated
@@ -93,7 +93,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         accumulateBorrowerInterest(borrower);
 
         // borrow amount from buckets with limit price and apply the origination fee
-        uint256 fee = Maths.max(Maths.wdiv(previousRate, WAD_WEEKS_PER_YEAR), minFee);
+        uint256 fee = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
         borrowFromBucket(amount_, fee, limitPrice_, inflatorSnapshot);
 
         require(borrower.collateralDeposited > Maths.rayToWad(getEncumberedCollateral(borrower.debt + amount_ + fee)), "P:B:INSUF_COLLAT");

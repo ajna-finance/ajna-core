@@ -94,7 +94,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
 
     function calculateInflator() internal view returns (uint256 calculatedInflator) {
         uint256 secondsSinceLastUpdate = block.timestamp - _pool.lastInflatorSnapshotUpdate();
-        uint256 spr                    = _pool.previousRate() / (3600 * 24 * 365);
+        uint256 spr                    = _pool.interestRate() / (3600 * 24 * 365);
         calculatedInflator            = PRBMathUD60x18.mul(
             _pool.inflatorSnapshot(),
             PRBMathUD60x18.pow(

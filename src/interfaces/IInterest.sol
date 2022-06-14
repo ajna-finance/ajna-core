@@ -41,16 +41,16 @@ interface IInterest {
     function minFee() external view returns (uint256 minFee_);
 
     /**
-     *  @notice Returns the `previousRate` state variable.
-     *  @return previousRate_ TODO
+     *  @notice Returns the `interestRate` state variable.
+     *  @return interestRate_ TODO
      */
-    function previousRate() external view returns (uint256 previousRate_);
+    function interestRate() external view returns (uint256 interestRate_);
 
     /**
-     *  @notice Returns the `previousRateUpdate` state variable.
-     *  @return previousRateUpdate_ The timestamp of the last rate update.
+     *  @notice Returns the `interestRateUpdate` state variable.
+     *  @return interestRateUpdate_ The timestamp of the last rate update.
      */
-    function previousRateUpdate() external view returns (uint256 previousRateUpdate_);
+    function interestRateUpdate() external view returns (uint256 interestRateUpdate_);
 
     /**************************/
     /*** External Functions ***/

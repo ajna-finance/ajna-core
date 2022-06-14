@@ -27,8 +27,8 @@ abstract contract Interest is IInterest, PoolState {
     uint256 public override inflatorSnapshot;            // [RAY]
     uint256 public override lastInflatorSnapshotUpdate;  // [SEC]
     uint256 public override minFee;                      // [WAD]
-    uint256 public override previousRate;                // [WAD]
-    uint256 public override previousRateUpdate;          // [SEC]
+    uint256 public override interestRate;                // [WAD]
+    uint256 public override interestRateUpdate;          // [SEC]
 
     /**************************/
     /*** External Functions ***/
@@ -37,14 +37,14 @@ abstract contract Interest is IInterest, PoolState {
     function updateInterestRate() external override {
         // RAY
         uint256 actualUtilization = getPoolActualUtilization();
-        if (actualUtilization != 0 && previousRateUpdate < block.timestamp && getPoolCollateralization() > Maths.ONE_WAD) {
-            uint256 oldRate = previousRate;
+        if (actualUtilization != 0 && interestRateUpdate < block.timestamp && getPoolCollateralization() > Maths.ONE_WAD) {
+            uint256 oldRate = interestRate;
             accumulatePoolInterest();
 
-            previousRate = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - getPoolTargetUtilization()));
-            previousRateUpdate = block.timestamp;
+            interestRate = Maths.wmul(interestRate, (actualUtilization + Maths.ONE_WAD - getPoolTargetUtilization()));
+            interestRateUpdate = block.timestamp;
 
-            emit UpdateInterestRate(oldRate, previousRate);
+            emit UpdateInterestRate(oldRate, interestRate);
         }
     }
 
@@ -57,7 +57,7 @@ abstract contract Interest is IInterest, PoolState {
      *  @dev    Only adds debt if a borrower has already initiated a debt position
      *  @param  borrower_ Pointer to the struct which is accumulating interest on their debt
      */
-    function accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_) internal {
+    function accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_) internal view {
         if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
             borrower_.debt += getPendingInterest(
                 borrower_.debt,
@@ -104,7 +104,7 @@ abstract contract Interest is IInterest, PoolState {
 
     function getPendingInflator() public view returns (uint256) {
         // Calculate annualized interest rate
-        uint256 spr = Maths.wadToRay(previousRate) / SECONDS_PER_YEAR;
+        uint256 spr = Maths.wadToRay(interestRate) / SECONDS_PER_YEAR;
         // secondsSinceLastUpdate is unscaled
         uint256 secondsSinceLastUpdate = block.timestamp - lastInflatorSnapshotUpdate;
         return Maths.rmul(inflatorSnapshot, Maths.rpow(Maths.ONE_RAY + spr, secondsSinceLastUpdate));

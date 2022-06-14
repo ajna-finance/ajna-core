@@ -198,7 +198,7 @@ def update_interest_rate(lenders, pool) -> int:
         interest_rate = tx.events['UpdateInterestRate'][0][0]['newRate_'] / 10**18
         print(f" updated interest rate to {interest_rate:.3%}")
     else:
-        interest_rate = pool.previousRate() / 10**18
+        interest_rate = pool.interestRate() / 10**18
         print(f" interest rate was not updated, and remains at {interest_rate:.3%}")
     return interest_rate
 
