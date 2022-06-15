@@ -280,13 +280,13 @@ interface INFTPool is IPool {
      *  @notice Called by borrowers to add multiple NFTs to the pool.
      *  @param  tokenIds_ NFT token ids to be deposited as collateral in the pool.
      */
-    function addCollateralMultiple(uint256[] memory tokenIds_) external;
+    function addCollateralMultiple(uint256[] calldata tokenIds_) external;
 
     /**
      *  @notice Called by borrowers to remove multiple NFTs from the pool.
      *  @param  tokenIds_ NFT token ids to be removed as collateral from the pool.
      */
-    function removeCollateralMultiple(uint256[] memory tokenIds_) external;
+    function removeCollateralMultiple(uint256[] calldata tokenIds_) external;
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -298,7 +298,7 @@ interface INFTPool is IPool {
      *  @param  tokenIds_  NFT token ids to be claimed from the pool.
      *  @param  price_     The bucket from which unencumbered collateral will be claimed.
      */
-    function claimCollateralMultiple(address recipient_, uint256[] memory tokenIds_, uint256 price_) external;
+    function claimCollateralMultiple(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external;
 
     /*******************************/
     /*** Pool External Functions ***/
@@ -310,5 +310,5 @@ interface INFTPool is IPool {
      *  @param  price_    The purchasing price of quote token.
      *  @param  tokenIds_ NFT token ids to be purchased from the pool.
      */
-    function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] memory tokenIds_) external;
+    function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] calldata tokenIds_) external;
 }

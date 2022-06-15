@@ -6,12 +6,11 @@ import { Clone } from "@clones/Clone.sol";
 
 import { console } from "@std/console.sol";
 
-import { ERC20 }           from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ERC721 }          from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { BitMaps }         from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
-import { EnumerableSet }   from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { ERC20 }         from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { BorrowerManager } from "./base/BorrowerManager.sol";
 import { LenderManager }   from "./base/LenderManager.sol";
@@ -22,7 +21,7 @@ import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
 
-contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager, ReentrancyGuard {
+contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
 
     using SafeERC20 for ERC20;
 
@@ -102,20 +101,18 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager, Reentran
         emit AddNFTCollateral(msg.sender, tokenId_);
     }
 
-    function addCollateralMultiple(uint256[] calldata tokenIds_) external override nonReentrant {
+    function addCollateralMultiple(uint256[] calldata tokenIds_) external override {
         // check if all incoming tokenIds are part of the pool subset
         _onlySubsetMultiple(tokenIds_);
 
         _accumulatePoolInterest(totalDebt, inflatorSnapshot);
-
-        uint256 collateralToAddCount;
 
         // add tokenIds to the pool
         for (uint i; i < tokenIds_.length;) {
 
             // pool level accounting
             _collateralTokenIdsAdded.add(tokenIds_[i]);
-            collateralToAddCount += 1;
+            totalCollateral += Maths.ONE_WAD;
 
             // borrower accounting
             NFTborrowers[msg.sender].collateralDeposited.add(tokenIds_[i]);
@@ -127,10 +124,6 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager, Reentran
                 ++i;
             }
         }
-
-        // update totalCollateral count with the newly added collateral
-        totalCollateral += Maths.wad(collateralToAddCount);
-
         emit AddNFTCollateralMultiple(msg.sender, tokenIds_);
     }
 
@@ -188,7 +181,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager, Reentran
         emit RemoveNFTCollateral(msg.sender, tokenId_);
     }
 
-    function removeCollateralMultiple(uint256[] calldata tokenIds_) external nonReentrant override {
+    function removeCollateralMultiple(uint256[] calldata tokenIds_) external override {
         _tokensInPool(tokenIds_);
 
         ( , uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
@@ -205,14 +198,12 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager, Reentran
             "P:RC:AMT_GT_AVAIL_COLLAT"
         );
 
-        uint256 collateralToRemoveCount;
-
         // remove tokenIds from the pool
         for (uint i; i < tokenIds_.length;) {
 
             // pool level accounting
             _collateralTokenIdsAdded.remove(tokenIds_[i]);
-            collateralToRemoveCount += 1;
+            totalCollateral -= Maths.ONE_WAD;
 
             // borrower accounting
             borrower.collateralDeposited.remove(tokenIds_[i]);
@@ -224,10 +215,6 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager, Reentran
                 ++i;
             }
         }
-
-        // update totalCollateral count with the newly removed collateral
-        totalCollateral -= Maths.wad(collateralToRemoveCount);
-
         emit RemoveNFTCollateralMultiple(msg.sender, tokenIds_);
     }
 
@@ -286,7 +273,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager, Reentran
         emit ClaimNFTCollateral(recipient_, price_, tokenId_, claimedLpTokens);
     }
 
-    function claimCollateralMultiple(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external override nonReentrant {
+    function claimCollateralMultiple(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external override {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
         _tokensInPool(tokenIds_);
@@ -297,13 +284,14 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager, Reentran
         // claim collateral and get amount of LP tokens burned for claim
         uint256 claimedLpTokens = _claimMultipleNFTCollateralFromBucket(price_, tokenIds_, maxClaim);
 
-        uint256 collateralClaimedCount;
+        // lender accounting
+        lpBalance[recipient_][price_] -= claimedLpTokens;
 
         // claim tokenIds from the pool
         for (uint i; i < tokenIds_.length;) {
             // pool level accounting
             _collateralTokenIdsAdded.remove(tokenIds_[i]);
-            collateralClaimedCount += 1;
+            totalCollateral -= Maths.ONE_WAD;
 
             // move claimed collateral from pool to claimer
             collateral().safeTransferFrom(address(this), recipient_, tokenIds_[i]);
@@ -311,14 +299,6 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager, Reentran
                 ++i;
             }
         }
-
-        // Relies on nonRentrant modifier to guard against reentrancy attacks on lpBalance
-        // lender accounting
-        lpBalance[recipient_][price_] -= claimedLpTokens;
-
-        // update totalCollateral count with the newly claimed collateral
-        totalCollateral -= Maths.wad(collateralClaimedCount);
-
         emit ClaimNFTCollateralMultiple(recipient_, price_, tokenIds_, claimedLpTokens);
     }
 
