@@ -42,21 +42,12 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
 
     uint256 public override quoteTokenScale;
 
-    /*****************/
-    /*** Modifiers ***/
-    /*****************/
-
-    /// @notice Modifier to protect a clone's initialize method from repeated updates
-    modifier onlyOnce() {
-        require(_poolInitializations == 0, "P:INITIALIZED");
-        _;
-    }
-
     /*****************************/
     /*** Inititalize Functions ***/
     /*****************************/
 
-    function initialize() external override onlyOnce {
+    function initialize() external override {
+        _onlyOnce();
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
         inflatorSnapshot           = Maths.ONE_RAY;
@@ -68,7 +59,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         _poolInitializations += 1;
     }
 
-    function initializeSubset(uint256[] memory tokenIds_) external override onlyOnce {
+    function initializeSubset(uint256[] memory tokenIds_) external override {
+        _onlyOnce();
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
         inflatorSnapshot           = Maths.ONE_RAY;
@@ -426,6 +418,11 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
+
+    /** @notice Used to protect a clone's initialize method from repeated updates */
+    function _onlyOnce() internal view {
+        require(_poolInitializations == 0, "P:INITIALIZED");
+    }
 
     function _onlySubset(uint256 tokenId_) internal view {
         if (_tokenIdsAllowed.length() != 0) {
