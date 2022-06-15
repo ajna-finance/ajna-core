@@ -369,7 +369,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
 
-        assertEq(_pool.interestRate(),    0.05 * 1e18);
+        assertEq(_pool.interestRate(),    0.055 * 1e18);
         assertEq(_pool.totalDebt(),       31_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 69_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
@@ -381,11 +381,11 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.interestRate(),    0.05 * 1e18);
-        assertEq(_pool.totalDebt(),       31_042.495815665858306783 * 1e18);
+        assertEq(_pool.interestRate(),    0.0605 * 1e18);
+        assertEq(_pool.totalDebt(),       31_046.748503619202675657 * 1e18);
         assertEq(_pool.totalQuoteToken(), 69_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pdAccumulator(),   84_722_782.041238886789161588 * 1e18);
+        assertEq(_pool.pdAccumulator(),   84_722_712.437979408740805635 * 1e18);
         
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p502);
         assertEq(debt,    0);
@@ -395,15 +395,15 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt,    0);
-        assertEq(deposit, 20_001.371764560066493326 * 1e18);
+        assertEq(deposit, 20_001.508948170084560540 * 1e18);
 
         assertEq(_pool.lpBalance(address(_lender), _p2503), 20_000 * 1e27);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
-        assertEq(debt,    15_013.708017035263937818 * 1e18);
+        assertEq(debt,    15_015.079851816372705038 * 1e18);
         assertEq(deposit, 0);
 
-        assertEq(_pool.lpBalance(address(_lender), _p3514), 14_993.155374107201879618363063127 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender), _p3514), 14_992.471427068233626633655682115 * 1e27);
     }
 
     /**
@@ -699,7 +699,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
 
-        assertEq(_pool.interestRate(),    0.05 * 1e18);
+        assertEq(_pool.interestRate(),    0.055 * 1e18);
         assertEq(_pool.totalDebt(),       31_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 69_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
@@ -711,21 +711,21 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p9020);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.interestRate(),    0.055 * 1e18);
-        assertEq(_pool.totalDebt(),       31_042.495815665858306783 * 1e18);
+        assertEq(_pool.interestRate(),    0.0605 * 1e18);
+        assertEq(_pool.totalDebt(),       31_046.748503619202675657 * 1e18);
         assertEq(_pool.totalQuoteToken(), 69_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pdAccumulator(),   74_717_356.860082157111486588 * 1e18);
+        assertEq(_pool.pdAccumulator(),   74_717_287.256822679063130635 * 1e18);
         
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt,    0);
-        assertEq(deposit, 15_001.371764560066493326 * 1e18);
+        assertEq(deposit, 15_001.508948170084560540 * 1e18);
 
-        assertEq(_pool.lpBalance(address(_lender), _p2503), 15_000.342917619904722948937446873 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender), _p2503), 15_000.377208583111078852384874382 * 1e27);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p3010);
-        assertEq(debt,    16_028.787798630594368963 * 1e18);
-        assertEq(deposit, 3_998.628235439933506674 * 1e18);
+        assertEq(debt,    16_031.668651802829970617 * 1e18);
+        assertEq(deposit, 3_998.491051829915439460 * 1e18);
 
         assertEq(_pool.lpBalance(address(_lender), _p3010), 20_000 * 1e27);
 
@@ -1135,6 +1135,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), 0);
 
+        assertEq(_pool.interestRate(),    0.05 * 1e18);
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 100_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
@@ -1148,6 +1149,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
 
+        assertEq(_pool.interestRate(),    0.055 * 1e18);
         assertEq(_pool.totalDebt(),       31_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 69_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
@@ -1161,23 +1163,24 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.totalDebt(),       31_042.495815665858306783 * 1e18);
+        assertEq(_pool.interestRate(),    0.0605 * 1e18);
+        assertEq(_pool.totalDebt(),       31_046.748503619202675657 * 1e18);
         assertEq(_pool.totalQuoteToken(), 69_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
-        assertEq(_pool.pdAccumulator(),   72_738_602.168259730192241588 * 1e18);
+        assertEq(_pool.pdAccumulator(),   72_738_532.565000252143885635 * 1e18);
         
         (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt,    0);
-        assertEq(deposit, 18_901.371764560066493326 * 1e18);
+        assertEq(deposit, 18_901.508948170084560540 * 1e18);
 
-        assertEq(_pool.lpBalance(address(_lender), _p2503),  8_900.075441876379039048766238312 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender), _p2503),  8_900.082985888284437347524672364 * 1e27);
         assertEq(_pool.lpBalance(address(_lender2), _p2503), 10_000 * 1e27);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p3514);
-        assertEq(debt,    11_113.708017035263937818 * 1e18);
+        assertEq(debt,    11_115.079851816372705038 * 1e18);
         assertEq(deposit, 0);
 
-        assertEq(_pool.lpBalance(address(_lender), _p3514),  6_098.494182303584413516039873888 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender), _p3514),  6_098.343713955011397859404250065 * 1e27);
         assertEq(_pool.lpBalance(address(_lender2), _p3514), 5_000 * 1e27);
     }
 
@@ -1229,6 +1232,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p2793);
         assertEq(_pool.lup(), 0);
 
+        assertEq(_pool.interestRate(),    0.05 * 1e18);
         assertEq(_pool.totalDebt(),       0);
         assertEq(_pool.totalQuoteToken(), 10_000 * 1e18);
         assertEq(_pool.totalCollateral(), 0);
@@ -1242,6 +1246,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p2793);
         assertEq(_pool.lup(), _p2779);
 
+        assertEq(_pool.interestRate(),    0.055 * 1e18);
         assertEq(_pool.totalDebt(),       2_000.000961538461538462 * 1e18);
         assertEq(_pool.totalQuoteToken(), 8_000 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
@@ -1257,7 +1262,8 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p2821);
         assertEq(_pool.lup(), _p2779);
 
-        assertEq(_pool.totalDebt(),       2_002.742566263592887108 * 1e18);
+        assertEq(_pool.interestRate(),    0.0605 * 1e18);
+        assertEq(_pool.totalDebt(),       2_003.016933351721831044 * 1e18);
         assertEq(_pool.totalQuoteToken(), 8_000 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
         assertEq(_pool.pdAccumulator(),   21_963_223.154124141758234000 * 1e18);
@@ -1271,7 +1277,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(deposit, 0);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p2779);
-        assertEq(debt,    1.371764560066493326 * 1e18);
+        assertEq(debt,    1.508948170084560540 * 1e18);
         assertEq(deposit, 7_000 * 1e18);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
@@ -1280,7 +1286,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
 
         assertEq(_pool.lpBalance(address(_lender), _p2821), 1_000 * 1e27);
         assertEq(_pool.lpBalance(address(_lender), _p2793), 1_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_lender), _p2779), 7_000.171441172892672865623183188 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender), _p2779), 7_000.188582951023213114533391440 * 1e27);
         assertEq(_pool.lpBalance(address(_lender), _p2503), 1_000 * 1e27);
 
         // lender moves 1000 DAI to unutilized bucket between HUP and LUP
@@ -1289,10 +1295,10 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p2821);
         assertEq(_pool.lup(), _p2793);
 
-        assertEq(_pool.totalDebt(),       2_002.742566263592887108 * 1e18);
+        assertEq(_pool.totalDebt(),       2_003.016933351721831044 * 1e18);
         assertEq(_pool.totalQuoteToken(), 8_000 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
-        assertEq(_pool.pdAccumulator(),   21_977_103.875550823712006007 * 1e18);
+        assertEq(_pool.pdAccumulator(),   21_977_101.968727636273798541 * 1e18);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p2821);
         assertEq(debt,    1_000 * 1e18);
@@ -1303,12 +1309,12 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(deposit, 0);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p2793);
-        assertEq(debt,    2.742566263592887107 * 1e18);
-        assertEq(deposit, 998.628235439933506674 * 1e18);
+        assertEq(debt,    3.016933351721831043 * 1e18);
+        assertEq(deposit, 998.491051829915439460 * 1e18);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p2779);
         assertEq(debt,    0);
-        assertEq(deposit, 6_001.371764560066493326 * 1e18);
+        assertEq(deposit, 6_001.508948170084560540 * 1e18);
 
         (, , , deposit, debt, , , ) = _pool.bucketAt(_p2503);
         assertEq(debt,    0);
@@ -1317,7 +1323,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.lpBalance(address(_lender), _p2821), 1_000 * 1e27);
         assertEq(_pool.lpBalance(address(_lender), _p2807), 1_000 * 1e27);
         assertEq(_pool.lpBalance(address(_lender), _p2793), 1_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_lender), _p2779), 6_000.342882345785345731246366376 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender), _p2779), 6_000.377165902046426229066782880 * 1e27);
         assertEq(_pool.lpBalance(address(_lender), _p2503), 1_000 * 1e27);
     }
 }

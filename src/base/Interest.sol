@@ -87,12 +87,15 @@ abstract contract Interest is IInterest, PoolState {
         uint256 poolCollateralization =  getPoolCollateralization();
         if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.ONE_WAD) {
             uint256 oldRate           = interestRate;
-            uint256 actualUtilization = getPoolActualUtilization();
-            uint256 targetUtilization = Maths.wdiv(Maths.ONE_WAD, poolCollateralization);
+            int256 actualUtilization = int256(getPoolActualUtilization());
+            int256 targetUtilization = int256(Maths.wdiv(Maths.ONE_WAD, poolCollateralization));
 
-            if (actualUtilization * 2 > targetUtilization + Maths.ONE_WAD) {
+            int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
+            int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+
+            if (decreaseFactor < increaseFactor - 10**18) {
                 interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
-            } else if (targetUtilization >  (actualUtilization + Maths.ONE_WAD) / 2) {
+            } else if (decreaseFactor > 10**18 - increaseFactor) {
                 interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
             }
             interestRateUpdate = block.timestamp;

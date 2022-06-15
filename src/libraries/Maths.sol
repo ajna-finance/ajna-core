@@ -71,6 +71,18 @@ library Maths {
         }
     }
 
+    function wpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
+        z = n % 2 != 0 ? x : WAD;
+
+        for (n /= 2; n != 0; n /= 2) {
+            x = wmul(x, x);
+
+            if (n % 2 != 0) {
+                z = wmul(z, x);
+            }
+        }
+    }
+
     function rad(uint256 x) internal pure returns (uint256) {
         return x * RAD;
     }
