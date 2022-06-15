@@ -13,9 +13,6 @@
 [submodule "lib/prb-math"]
 	path = lib/prb-math
 	url = https://github.com/paulrberg/prb-math
-[submodule "lib/hardhat"]
-	path = lib/hardhat
-	url = https://github.com/NomicFoundation/hardhat
 [submodule "lib/base64"]
 	path = lib/base64
 	url = https://github.com/Brechtpd/base64

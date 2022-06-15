@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.11;
+pragma solidity 0.8.14;
 
 /**
  *  @notice Functionality to enable contracts to implement multicall method for method call aggregation into single transactions

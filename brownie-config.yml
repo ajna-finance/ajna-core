@@ -14,7 +14,7 @@ autofetch_sources: True
 # path remapping to support imports from GitHub/NPM
 compiler:
   solc:
-    version: 0.8.11
+    version: 0.8.14
     remappings:
       - "@ds-math=lib/ds-math/src/"
       - "@openzeppelin/contracts=lib/openzeppelin-contracts/contracts"
@@ -22,6 +22,5 @@ compiler:
       - "@solmate=lib/solmate/src/"
       - "@prb-math=lib/prb-math/"
       - "@clones=lib/clones-with-immutable-args/src/"
-      - "@hardhat=lib/hardhat/packages"
       - "@base64-sol=lib/base64/"
 
