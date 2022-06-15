@@ -29,10 +29,10 @@ abstract contract Buckets is IBuckets {
     mapping(uint256 => Buckets.Bucket) internal _buckets;
 
     /**
-     *  @notice Mapping of NFT buckets for a given pool
-     *  @dev price [WAD] -> nftBucket
+     *  @notice Mapping of price to Set of NFT Token Ids that have been deposited into the bucket
+     *  @dev price [WAD] -> collateralDeposited
      */
-    mapping(uint256 => Buckets.NFTBucket) internal _nftBuckets;
+    mapping(uint256 => EnumerableSet.UintSet) internal _collateralDeposited;
 
     BitMaps.BitMap internal _bitmap;
 
@@ -43,19 +43,6 @@ abstract contract Buckets is IBuckets {
     /**********************************/
     /*** Internal Utility Functions ***/
     /**********************************/
-
-    /**
-     *  @notice Called by a lender to add quote tokens to a bucket
-     *  @dev    Bucket.collateral is used to keep track of the total collateral in the bucket
-     *  @dev    All NFT collateral is accounted for in WAD terms
-     *  @param  bucket               The base bucket information
-     *  @param  collateralDeposited  Set of NFT Token Ids that have been deposited into the bucket
-     */
-    struct NFTBucket {
-        Bucket bucket;
-        uint256 price;
-        EnumerableSet.UintSet collateralDeposited;
-    }
 
     /**
      *  @notice Called by a lender to add quote tokens to a bucket
@@ -176,8 +163,8 @@ abstract contract Buckets is IBuckets {
      *  @return lpRedemption_ The amount of LP tokens that will be redeemed
      */
     function _claimNFTCollateralFromBucket(uint256 price_, uint256 tokenId_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
-        NFTBucket storage nftBucket = _nftBuckets[price_];
-        require(nftBucket.collateralDeposited.contains(tokenId_), "B:CC:T_NOT_IN_B");
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
+        require(collateralDeposited.contains(tokenId_), "B:CC:T_NOT_IN_B");
 
         Bucket memory bucket = _buckets[price_];
 
@@ -192,7 +179,7 @@ abstract contract Buckets is IBuckets {
         // update bucket accounting
         bucket.collateral -= Maths.ONE_WAD;
         bucket.lpOutstanding -= lpRedemption_;
-        nftBucket.collateralDeposited.remove(tokenId_);
+        collateralDeposited.remove(tokenId_);
 
         // bucket management
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
@@ -206,7 +193,7 @@ abstract contract Buckets is IBuckets {
 
     function _claimMultipleNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
         Bucket memory bucket = _buckets[price_];
-        NFTBucket storage nftBucket = _nftBuckets[price_];
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
 
         // check available collateral given removal of the NFT
         require(Maths.wad(tokenIds_.length) <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
@@ -222,8 +209,8 @@ abstract contract Buckets is IBuckets {
 
         // update collateralDeposited
         for (uint i; i < tokenIds_.length;) {
-            require(nftBucket.collateralDeposited.contains(tokenIds_[i]), "B:CC:T_NOT_IN_B");
-            nftBucket.collateralDeposited.remove(tokenIds_[i]);
+            require(collateralDeposited.contains(tokenIds_[i]), "B:CC:T_NOT_IN_B");
+            collateralDeposited.remove(tokenIds_[i]);
             unchecked {
                 ++i;
             }
@@ -406,7 +393,6 @@ abstract contract Buckets is IBuckets {
         Bucket memory bucket    = _buckets[price_];
         bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
-        NFTBucket storage nftBucket = _nftBuckets[price_];
 
         uint256 available = bucket.onDeposit + bucket.debt;
 
@@ -420,9 +406,11 @@ abstract contract Buckets is IBuckets {
         bucket.onDeposit -= purchaseFromDeposit;
         bucket.collateral += Maths.wad(tokenIds_.length);
 
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
+
         // update collateralDeposited
         for (uint i; i < tokenIds_.length;) {
-            nftBucket.collateralDeposited.add(tokenIds_[i]);
+            collateralDeposited.add(tokenIds_[i]);
             unchecked {
                 ++i;
             }
@@ -1002,7 +990,7 @@ abstract contract Buckets is IBuckets {
         )
     {
         Bucket memory bucket = _buckets[price_];
-        NFTBucket storage nftBucket = _nftBuckets[price_];
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
 
         bucketPrice_         = bucket.price;
         up_                  = bucket.up;
@@ -1012,7 +1000,7 @@ abstract contract Buckets is IBuckets {
         bucketInflator_      = bucket.inflatorSnapshot;
         lpOutstanding_       = bucket.lpOutstanding;
         bucketCollateral_    = bucket.collateral;
-        collateralDeposited_ = nftBucket.collateralDeposited.values();
+        collateralDeposited_ = collateralDeposited.values();
     }
 
     function estimatePrice(uint256 amount_, uint256 hpb_) public view override returns (uint256 price_) {
