@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.11;
+pragma solidity 0.8.14;
+
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /**
  *  @title Ajna Pool
@@ -36,6 +38,18 @@ interface IBorrowerManager {
         uint256 debt;
         uint256 collateralDeposited;
         uint256 inflatorSnapshot;
+    }
+
+     /**
+     *  @notice Struct holding borrower related info per price bucket, for borrowers using NFTs as collateral.
+     *  @param  debt                Borrower debt, WAD units.
+     *  @param  collateralDeposited OZ Enumberable Set tracking the tokenIds of collateral that have been deposited
+     *  @param  inflatorSnapshot    Current borrower inflator snapshot, RAY units.
+     */
+    struct NFTBorrowerInfo {
+        uint256   debt;
+        EnumerableSet.UintSet collateralDeposited;
+        uint256   inflatorSnapshot;
     }
 
     /***********************************/

@@ -1,21 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.11;
+pragma solidity 0.8.14;
 
 /**
  *  @title Ajna Pool Factory
  *  @dev   Used to deploy both funigible and non fungible pools.
  */
 interface IPoolFactory {
-
-    /**************/
-    /*** Events ***/
-    /**************/
-
-    /**
-     *  @notice Emitted when a new pool is created.
-     *  @param  pool_ The address of the new pool.
-     */
-    event PoolCreated(address pool_);
 
     /**************************/
     /*** External Functions ***/

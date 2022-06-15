@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.11;
+pragma solidity 0.8.14;
 
 import { ERC20Pool }        from "../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../ERC20PoolFactory.sol";
@@ -13,9 +13,6 @@ import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 contract MulticallTest is DSTestPlus {
 
-    // nonce for generating random addresses
-    uint16 internal _nonce = 0;
-
     address          internal _poolAddress;
     CollateralToken  internal _collateral;
     ERC20Pool        internal _pool;
@@ -28,13 +25,6 @@ contract MulticallTest is DSTestPlus {
         _poolAddress     = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
         _pool            = ERC20Pool(_poolAddress);
         _positionManager = new PositionManager();
-    }
-
-    // TODO: move this to _test/utils/...
-    function generateAddress() private returns (address addr) {
-        // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
-        _nonce++;
     }
 
     function mintAndApproveQuoteTokens(address operator, uint256 mintAmount) private {

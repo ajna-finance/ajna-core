@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.11;
+pragma solidity 0.8.14;
 
 library Maths {
 
@@ -101,6 +101,25 @@ library Maths {
 
     function radToRay(uint256 x) internal pure returns (uint256) {
         return (x + 10**18 / 2) / 10**18;
+    }
+
+    /**
+     * @notice Round up a fraction to the nearest integer
+     * @dev Doesn't check over or underflows
+     */
+    function divRoundingUp(uint256 x, uint256 y) internal pure returns (uint256 z) {
+        assembly {
+            z := add(div(x, y), gt(mod(x, y), 0))
+        }
+    }
+
+    /**
+     * @notice Round up a fraction to the nearest integer
+     * @dev Based upon OZ Math.ceilDiv()
+     */
+    function divRoundingUpSafe(uint256 a, uint256 b) internal pure returns (uint256) {
+        // (a + b - 1) / b can overflow on addition, so we distribute.
+        return a / b + (a % b == 0 ? 0 : 1);
     }
 
 }

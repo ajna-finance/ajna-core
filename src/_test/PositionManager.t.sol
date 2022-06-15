@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity 0.8.11;
+pragma solidity 0.8.14;
 
 import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
 import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
@@ -17,9 +17,6 @@ contract PositionManagerTest is DSTestPlus {
 
     // UserWithQuoteToken internal alice;
     address internal _alice = 0x02B9219F667d91fBe64F8f77F691dE3D1000F223;
-
-    // nonce for generating random addresses
-    uint16 internal _nonce;
 
     CollateralToken  internal _collateral;
     ERC20Pool        internal _pool;
@@ -100,12 +97,6 @@ contract PositionManagerTest is DSTestPlus {
         // decrease liquidity and check change in balances
         vm.prank(recipient_);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
-    }
-
-    function generateAddress() private returns (address addr) {
-        // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
-        _nonce++;
     }
 
     // -------------------- Tests --------------------
