@@ -172,7 +172,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
     }
 
     function removeCollateral(uint256 tokenId_) external override {
-        require(collateral().ownerOf(tokenId_) == address(this), "P:T_NOT_IN_P");
+        _tokenInPool(tokenId_);
 
         ( , uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
@@ -270,7 +270,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
     }
 
     function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) external override {
-        require(collateral().ownerOf(tokenId_) == address(this), "P:T_NOT_IN_P");
+        _tokenInPool(tokenId_);
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
         uint256 maxClaim = lpBalance[recipient_][price_];
@@ -444,10 +444,15 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         }
     }
 
+    /// @notice Check if token have been deposited into the pool
+    function _tokenInPool(uint256 tokenId_) internal view {
+        require(collateral().ownerOf(tokenId_) == address(this), "P:T_NOT_IN_P");
+    }
+
     /// @notice Check if all tokens in an array have been deposited into the pool
     function _tokensInPool(uint256[] memory tokenIds_) internal view {
         for (uint i; i < tokenIds_.length;) {
-            require(collateral().ownerOf(tokenIds_[i]) == address(this), "P:T_NOT_IN_P");
+            _tokenInPool(tokenIds_[i]);
 
             unchecked {
                 ++i;
