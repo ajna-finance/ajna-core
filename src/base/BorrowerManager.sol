@@ -25,6 +25,10 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
     // borrowers book: borrower address -> NFTBorrowerInfo
     mapping(address => NFTBorrowerInfo) internal NFTborrowers;
 
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
+
     function getBorrowerInfo(address borrower_)
         public view override returns (
             uint256 debt_,
@@ -46,7 +50,7 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
         inflatorSnapshot_         = inflatorSnapshot;
 
         if (debt_ != 0 && borrowerInflatorSnapshot_ != 0) {
-            pendingDebt_          += getPendingInterest(debt_, getPendingInflator(), borrowerInflatorSnapshot_);
+            pendingDebt_          += _pendingInterest(debt_, getPendingInflator(), borrowerInflatorSnapshot_);
             collateralEncumbered_ = getEncumberedCollateral(pendingDebt_);
             collateralization_    = Maths.wrdivw(collateralDeposited_, collateralEncumbered_);
         }
@@ -65,25 +69,19 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
         )
     {
         NFTBorrowerInfo storage borrower = NFTborrowers[borrower_];
-        uint256 borrowerPendingDebt = borrower.debt;
-        uint256 collateralEncumbered;
-        uint256 collateralization = Maths.ONE_WAD;
 
-        if (borrower.debt > 0 && borrower.inflatorSnapshot != 0) {
-            borrowerPendingDebt  += getPendingInterest(borrower.debt, getPendingInflator(), borrower.inflatorSnapshot);
-            collateralEncumbered  = getEncumberedCollateral(borrowerPendingDebt);
-            collateralization     = Maths.wrdivw(Maths.wad(borrower.collateralDeposited.length()), collateralEncumbered);
+        debt_                     = borrower.debt;
+        pendingDebt_              = debt_;
+        collateralDeposited_      = borrower.collateralDeposited.values();
+        collateralization_        = Maths.ONE_WAD;
+        borrowerInflatorSnapshot_ = borrower.inflatorSnapshot;
+        inflatorSnapshot_         = inflatorSnapshot;
+
+        if (debt_ > 0 && borrowerInflatorSnapshot_ != 0) {
+            pendingDebt_          += _pendingInterest(debt_, getPendingInflator(), borrowerInflatorSnapshot_);
+            collateralEncumbered_ = getEncumberedCollateral(pendingDebt_);
+            collateralization_    = Maths.wrdivw(Maths.wad(borrower.collateralDeposited.length()), collateralEncumbered_);
         }
-
-        return (
-            borrower.debt,
-            borrowerPendingDebt,
-            borrower.collateralDeposited.values(),
-            collateralEncumbered,
-            collateralization,
-            borrower.inflatorSnapshot,
-            inflatorSnapshot
-        );
     }
 
     function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256) {
