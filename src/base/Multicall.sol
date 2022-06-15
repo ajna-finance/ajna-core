@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.11;
+pragma solidity 0.8.14;
 
 /**
  *  @notice Functionality to enable contracts to implement multicall method for method call aggregation into single transactions
@@ -19,7 +19,7 @@ abstract contract Multicall {
 
             // Process any failing calls and revert the transaction accordingly
             if (!success) {
-                handleRevert(result);
+                _handleRevert(result);
             }
 
             results_[i] = result;
@@ -38,7 +38,7 @@ abstract contract Multicall {
      *  @dev    Based upon Superfluid code: https://github.com/superfluid-finance/protocol-monorepo/blob/dev/packages/ethereum-contracts/contracts/libs/CallUtils.sol
      *  @param  result_ The failing call result to process and bubble up revert from
      */
-    function handleRevert(bytes memory result_) internal pure {
+    function _handleRevert(bytes memory result_) internal pure {
         uint256 len = result_.length;
 
         if (len < 4) {
