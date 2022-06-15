@@ -111,7 +111,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     }
 
     function removeCollateral(uint256 amount_) external override {
-        (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        ( , uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         BorrowerInfo memory borrower = borrowers[msg.sender];
         _accumulateBorrowerInterest(borrower, curInflator);
@@ -121,7 +121,6 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // pool level accounting
         totalCollateral -= amount_;
-        totalDebt       = curDebt;
 
         // borrower accounting
         borrower.collateralDeposited -= amount_;        
@@ -220,9 +219,6 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
         );
         require(_poolCollateralization(curDebt) >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");
 
-        // pool level accounting
-        totalDebt = curDebt;
-
         // lender accounting
         lpBalance[recipient_][fromPrice_] -= fromLpTokens;
         lpBalance[recipient_][toPrice_]   += toLpTokens;
@@ -243,7 +239,6 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
 
         // pool level accounting
         totalQuoteToken -= amount;
-        totalDebt       = curDebt;
 
         // lender accounting
         lpBalance[recipient_][price_] -= lpTokens;

@@ -329,7 +329,7 @@ abstract contract Buckets is IBuckets {
      *  @param  lpBalance_    The claimers current LP balance, RAY
      *  @return lpRedemption_ The amount of LP tokens that will be redeemed
      */
-    function claimNFTCollateralFromBucket(uint256 price_, uint256 tokenId_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
+    function _claimNFTCollateralFromBucket(uint256 price_, uint256 tokenId_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
         Bucket storage bucket = _buckets[price_];
         NFTBucket storage nftBucket = _nftBuckets[price_];
 
