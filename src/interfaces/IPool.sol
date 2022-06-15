@@ -324,6 +324,8 @@ interface INFTPool is IPool {
 
     /**
      *  @notice Exchanges NFT collateral for quote token.
+     *  @dev Can be called for multiple units of collateral at a time.
+     *  @dev Tokens will be used for purchase based upon their order in the array, FIFO.
      *  @param  amount_   WAD The amount of quote token to purchase.
      *  @param  price_    The purchasing price of quote token.
      *  @param  tokenIds_ NFT token ids to be purchased from the pool.

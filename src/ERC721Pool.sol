@@ -234,8 +234,6 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
         require(amount_ > _poolMinDebtAmount(curDebt, totalBorrowers), "P:AQT:AMT_LT_AVG_DEBT");
 
-        require(amount_ > getPoolMinDebtAmount(), "P:AQT:AMT_LT_AVG_DEBT");
-
         // deposit quote token amount and get awarded LP tokens
         lpTokens_ = _addQuoteTokenToBucket(price_, amount_, curDebt, curInflator);
 
@@ -351,9 +349,6 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
     // TODO: finish implementing
     function liquidate(address borrower_) external override {}
 
-    /// @dev Can be called for multiple unit of collateral at a time
-    /// @dev Does not increase pool or bucket debt
-    /// @dev Tokens will be used for purchase based upon their order in the array, FIFO
     function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] calldata tokenIds_) external override {
         require(BucketMath.isValidPrice(price_), "P:PB:INVALID_PRICE");
 
@@ -415,12 +410,12 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         }
     }
 
-    /// @notice Check if token have been deposited into the pool
+    /** @notice Check if a token has been deposited into the pool */
     function _tokenInPool(uint256 tokenId_) internal view {
         require(collateral().ownerOf(tokenId_) == address(this), "P:T_NOT_IN_P");
     }
 
-    /// @notice Check if all tokens in an array have been deposited into the pool
+    /** @notice Check if all tokens in an array have been deposited into the pool */
     function _tokensInPool(uint256[] memory tokenIds_) internal view {
         for (uint i; i < tokenIds_.length;) {
             _tokenInPool(tokenIds_[i]);
@@ -448,20 +443,23 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
     /*** Helper Functions ***/
     /************************/
 
-    /// @dev Collateral tokens are always non-fungible
-    /// @dev Pure function used to facilitate accessing token via clone state
+    /** @dev Collateral tokens are always non-fungible
+     *  @dev Pure function used to facilitate accessing token via clone state
+     */
     function collateral() public pure returns (ERC721) {
         return ERC721(_getArgAddress(0));
     }
 
-    /// @dev Quote tokens are always fungible
-    /// @dev Pure function used to facilitate accessing token via clone state
+    /** @dev Quote tokens are always fungible
+     *  @dev Pure function used to facilitate accessing token via clone state
+     */
     function quoteToken() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0x14));
     }
 
-    // Implementing this method allows contracts to receive ERC721 tokens
-    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+    /** @notice Implementing this method allows contracts to receive ERC721 tokens
+     *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+     */    
     function onERC721Received(
         address,
         address,
