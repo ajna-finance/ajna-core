@@ -193,7 +193,6 @@ abstract contract Buckets is IBuckets {
 
     function _claimMultipleNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
         Bucket memory bucket = _buckets[price_];
-        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
 
         // check available collateral given removal of the NFT
         require(Maths.wad(tokenIds_.length) <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
@@ -208,6 +207,7 @@ abstract contract Buckets is IBuckets {
         bucket.lpOutstanding -= lpRedemption_;
 
         // update collateralDeposited
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
         for (uint i; i < tokenIds_.length;) {
             require(collateralDeposited.contains(tokenIds_[i]), "B:CC:T_NOT_IN_B");
             collateralDeposited.remove(tokenIds_[i]);
@@ -406,9 +406,8 @@ abstract contract Buckets is IBuckets {
         bucket.onDeposit -= purchaseFromDeposit;
         bucket.collateral += Maths.wad(tokenIds_.length);
 
-        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
-
         // update collateralDeposited
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
         for (uint i; i < tokenIds_.length;) {
             collateralDeposited.add(tokenIds_[i]);
             unchecked {

@@ -165,9 +165,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
         _accumulateNFTBorrowerInterest(borrower, curInflator);
 
-        uint256 encumberedBorrowerCollateral = _encumberedCollateral(borrower.debt);
         // Require overcollateralization to be at a minimum of one RAY to account for indivisible NFTs
-        require(Maths.ray(borrower.collateralDeposited.length()) - encumberedBorrowerCollateral >= Maths.ONE_RAY, "P:RC:AMT_GT_AVAIL_COLLAT");
+        require(Maths.ray(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt) >= Maths.ONE_RAY, "P:RC:AMT_GT_AVAIL_COLLAT");
 
         // pool level accounting
         _collateralTokenIdsAdded.remove(tokenId_);
@@ -189,8 +188,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
         _accumulateNFTBorrowerInterest(borrower, curInflator);
 
-        uint256 encumberedBorrowerCollateral = _encumberedCollateral(borrower.debt);
-        uint256 unencumberedCollateral = Maths.ray(borrower.collateralDeposited.length()) - encumberedBorrowerCollateral;
+        uint256 unencumberedCollateral = Maths.ray(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt);
 
         // Require overcollateralization to be at a minimum of one RAY to account for indivisible NFTs
         require(
