@@ -41,8 +41,7 @@ abstract contract Interest is IInterest, PoolState {
         if (actualUtilization != 0 && previousRateUpdate < block.timestamp && _poolCollateralization(curDebt) > Maths.ONE_WAD) {
             uint256 oldRate = previousRate;
 
-            (curDebt, ) = _accumulatePoolInterest(curDebt, inflatorSnapshot);
-            totalDebt   = curDebt;
+            (curDebt, ) =  _accumulatePoolInterest(curDebt, inflatorSnapshot);
 
             previousRate       = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - _poolTargetUtilization(curDebt)));
             previousRateUpdate = block.timestamp;
@@ -78,6 +77,7 @@ abstract contract Interest is IInterest, PoolState {
             curInflator_ = _pendingInflator(previousRate, inflator_, elapsed);                 // RAY
             curDebt_     = totalDebt_ + _pendingInterest(totalDebt_, curInflator_, inflator_); // WAD
 
+            totalDebt                  = curDebt_;
             inflatorSnapshot           = curInflator_; // RAY
             lastInflatorSnapshotUpdate = block.timestamp;
         } else {
