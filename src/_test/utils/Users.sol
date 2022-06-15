@@ -63,11 +63,6 @@ contract UserWithNFTCollateral {
         pool_.borrow(amount_, price_);
     }
 
-    // TODO: REMOVE
-    function purchaseBid(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
-        pool_.purchaseBid(amount_, price_);
-    }
-
     function purchaseBidNFTCollateral(ERC721Pool pool_, uint256 amount_, uint256 price_, uint256[] memory tokenIds_) public {
         pool_.purchaseBidNFTCollateral(amount_, price_, tokenIds_);
     }

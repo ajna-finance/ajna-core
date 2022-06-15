@@ -10,12 +10,12 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { BorrowerManager } from "./base/BorrowerManager.sol";
 import { LenderManager }   from "./base/LenderManager.sol";
 
-import { IPool } from "./interfaces/IPool.sol";
+import { IFungiblePool } from "./interfaces/IPool.sol";
 
 import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
-contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
+contract ERC20Pool is IFungiblePool, BorrowerManager, Clone, LenderManager {
 
     using SafeERC20 for ERC20;
 
@@ -26,10 +26,7 @@ contract ERC20Pool is IPool, BorrowerManager, Clone, LenderManager {
     /// @dev Counter used by onlyOnce modifier
     uint256 private _poolInitializations = 0;
 
-    /// @notice The precision of the collateral ERC-20 token based on decimals.
-    /// @dev Only used by ERC20 type pools.
-    uint256 public collateralScale;
-
+    uint256 public override collateralScale;
     uint256 public override quoteTokenScale;
 
     /*****************/

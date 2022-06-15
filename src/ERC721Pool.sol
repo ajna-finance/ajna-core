@@ -351,9 +351,6 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
     // TODO: finish implementing
     function liquidate(address borrower_) external override {}
 
-    // TODO: Remove from IPool ... different Interface req
-    function purchaseBid(uint256 amount_, uint256 price_) external override {}
-
     /// @dev Can be called for multiple unit of collateral at a time
     /// @dev Does not increase pool or bucket debt
     /// @dev Tokens will be used for purchase based upon their order in the array, FIFO

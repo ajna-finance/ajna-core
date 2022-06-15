@@ -187,17 +187,35 @@ interface IPool {
     /*******************************/
 
     /**
+     *  @notice Liquidates a given borrower's position.
+     *  @param  borrower_ The address of the borrower being liquidated.
+     */
+    function liquidate(address borrower_) external;
+
+}
+
+interface IFungiblePool is IPool {
+
+    /***********************/
+    /*** State Variables ***/
+    /***********************/
+
+    /**
+     *  @notice Returns the `collateralScale` state variable.
+     *  @return collateralScale_ The precision of the collateral ERC-20 token based on decimals.
+     */
+    function collateralScale() external view returns (uint256 collateralScale_);
+
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    /**
      *  @notice Exchanges collateral for quote token.
      *  @param  amount_ WAD The amount of quote token to purchase.
      *  @param  price_  The purchasing price of quote token.
      */
     function purchaseBid(uint256 amount_, uint256 price_) external;
-
-    /**
-     *  @notice Liquidates a given borrower's position.
-     *  @param  borrower_ The address of the borrower being liquidated.
-     */
-    function liquidate(address borrower_) external;
 
 }
 
