@@ -4,6 +4,9 @@ pragma solidity 0.8.14;
 
 abstract contract PoolDeployer {
 
+    uint256 public constant MIN_RATE = 0.01 * 10**18;
+    uint256 public constant MAX_RATE = 0.1 * 10**18;
+
     /**************/
     /*** Events ***/
     /**************/
@@ -25,9 +28,10 @@ abstract contract PoolDeployer {
     /*** Modifiers ***/
     /*****************/
 
-    modifier canDeploy(bytes32 subsetHash_, address collateral_, address quote_) {
-        require(collateral_ != address(0) && quote_ != address(0), "PF:DP:ZERO_ADDR");
+    modifier canDeploy(bytes32 subsetHash_, address collateral_, address quote_, uint256 interestRate_) {
+        require(collateral_ != address(0) && quote_ != address(0),               "PF:DP:ZERO_ADDR");
         require(deployedPools[subsetHash_][collateral_][quote_] == address(0),  "PF:DP:POOL_EXISTS");
+        require(MIN_RATE <= interestRate_ && interestRate_ <= MAX_RATE,          "PF:DP:INVALID_RATE");
         _;
     }
 

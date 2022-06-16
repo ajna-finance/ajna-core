@@ -30,11 +30,12 @@ contract PoolFactoryTest is DSTestPlus {
      *  @notice Tests pool deployment.
      */
     function testDeployPool() external {
-        address poolAddress = _factory.deployPool(address(_collateral), address(_quote));
+        address poolAddress = _factory.deployPool(address(_collateral), address(_quote), 0.1 * 10**18);
         ERC20Pool pool = ERC20Pool(poolAddress);
 
-        assertEq(address(_collateral), address(pool.collateral()));
-        assertEq(address(_quote),      address(pool.quoteToken()));
+        assertEq(address(pool.collateral()), address(_collateral));
+        assertEq(address(pool.quoteToken()), address(_quote));
+        assertEq(pool.interestRate(),        0.1 * 10**18);
     }
 
     /**
@@ -42,19 +43,30 @@ contract PoolFactoryTest is DSTestPlus {
      */
     function testDeployPoolEther() external {
         vm.expectRevert("PF:DP:ZERO_ADDR");
-        _factory.deployPool(address(_collateral), address(0));
+        _factory.deployPool(address(_collateral), address(0), 0.05 * 10**18);
 
         vm.expectRevert("PF:DP:ZERO_ADDR");
-        _factory.deployPool(address(0), address(_collateral));
+        _factory.deployPool(address(0), address(_collateral), 0.05 * 10**18);
     }
 
     /**
      *  @notice Tests revert if actor attempts to deploy the same pair.
      */
     function testDeployPoolTwice() external {
-        _factory.deployPool(address(_collateral), address(_quote));
+        _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         vm.expectRevert("PF:DP:POOL_EXISTS");
-        _factory.deployPool(address(_collateral), address(_quote));
+        _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+    }
+
+    /**
+     *  @notice Tests revert if interest rate not between 1% and 10%.
+     */
+    function testDeployPoolInvalidRate() external {
+        vm.expectRevert("PF:DP:INVALID_RATE");
+        _factory.deployPool(address(_collateral), address(_quote), 0.11 * 10**18);
+
+        vm.expectRevert("PF:DP:INVALID_RATE");
+        _factory.deployPool(address(_collateral), address(_quote), 0.009 * 10**18);
     }
 
 }

@@ -33,9 +33,9 @@ contract PermitTest is DSTestPlus {
         _factory         = new ERC20PoolFactory();
         _positionManager = new PositionManager();
 
-        _poolAddress          = _factory.deployPool(address(_collateral), address(_quote));
+        _poolAddress          = _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool                 = ERC20Pool(_poolAddress);
-        _ajnaTokenPoolAddress = _factory.deployPool(address(_collateral), address(_ajnaToken));
+        _ajnaTokenPoolAddress = _factory.deployPool(address(_collateral), address(_ajnaToken), 0.05 * 10**18);
         _ajnaTokenPool        = ERC20Pool(_ajnaTokenPoolAddress);
     }
 

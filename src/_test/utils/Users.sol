@@ -125,10 +125,6 @@ contract UserWithQuoteToken {
         return this.onERC721Received.selector;
     }
 
-    function updateInterestRate(ERC20Pool pool_) public {
-        pool_.updateInterestRate();
-    }
-
 }
 
 contract UserWithQuoteTokenInNFTPool {
@@ -164,9 +160,5 @@ contract UserWithQuoteTokenInNFTPool {
     // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
     function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
         return this.onERC721Received.selector;
-    }
-
-    function updateInterestRate(ERC721Pool pool_) public {
-        pool_.updateInterestRate();
     }
 }

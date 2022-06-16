@@ -37,7 +37,10 @@ contract DSTestPlus is Test {
     uint256 internal _p146      = 146.575625611106531706 * 1e18;
     uint256 internal _p145      = 145.846393642892072537 * 1e18;
     uint256 internal _p100      = 100.332368143282009890 * 1e18;
+    uint256 internal _p14_63    = 14.633264579158672146 * 1e18;
     uint256 internal _p13_57    = 13.578453165083418466 * 1e18;
+    uint256 internal _p13_31    = 13.310245063610237646 * 1e18;
+    uint256 internal _p12_66    = 12.662674231425615571 * 1e18;
     uint256 internal _p5_26     = 5.263790124045347667 * 1e18;
     uint256 internal _p1_64     = 1.646668492116543299 * 1e18;
     uint256 internal _p1_31     = 1.315628874808846999 * 1e18;

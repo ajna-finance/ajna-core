@@ -30,7 +30,7 @@ contract PositionManagerTest is DSTestPlus {
         _factory         = new ERC20PoolFactory();
         _positionManager = new PositionManager();
 
-        address poolAddress = _factory.deployPool(address(_collateral), address(_quote));
+        address poolAddress = _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool = ERC20Pool(poolAddress);
 
         // TODO: move logic to internal methods

@@ -46,27 +46,29 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
     /*** Inititalize Functions ***/
     /*****************************/
 
-    function initialize() external override {
+    function initialize(uint256 rate_) external override {
         _onlyOnce();
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
         inflatorSnapshot           = Maths.ONE_RAY;
         lastInflatorSnapshotUpdate = block.timestamp;
-        previousRate               = Maths.wdiv(5, 100);
-        previousRateUpdate         = block.timestamp;
+        interestRate               = rate_;
+        interestRateUpdate         = block.timestamp;
+        minFee                     = 0.0005 * 10**18;
 
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
     }
 
-    function initializeSubset(uint256[] memory tokenIds_) external override {
+    function initializeSubset(uint256[] memory tokenIds_, uint256 rate_) external override {
         _onlyOnce();
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
         inflatorSnapshot           = Maths.ONE_RAY;
         lastInflatorSnapshotUpdate = block.timestamp;
-        previousRate               = Maths.wdiv(5, 100);
-        previousRateUpdate         = block.timestamp;
+        interestRate               = rate_;
+        interestRateUpdate         = block.timestamp;
+        minFee                     = 0.0005 * 10**18;
 
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
@@ -89,7 +91,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         _onlySubset(tokenId_);
 
         // pool level accounting
-        _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        (uint256 curDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
         _collateralTokenIdsAdded.add(tokenId_);
         totalCollateral = Maths.wad(_collateralTokenIdsAdded.length());
 
@@ -99,13 +101,15 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), tokenId_);
         emit AddNFTCollateral(msg.sender, tokenId_);
+
+        _updateInterestRate(curDebt);
     }
 
     function addCollateralMultiple(uint256[] calldata tokenIds_) external override {
         // check if all incoming tokenIds are part of the pool subset
         _onlySubsetMultiple(tokenIds_);
 
-        _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        (uint256 curDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         // add tokenIds to the pool
         for (uint i; i < tokenIds_.length;) {
@@ -125,6 +129,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
             }
         }
         emit AddNFTCollateralMultiple(msg.sender, tokenIds_);
+
+        _updateInterestRate(curDebt);
     }
 
     function borrow(uint256 amount_, uint256 limitPrice_) external override {
@@ -137,7 +143,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         _accumulateNFTBorrowerInterest(borrower, curInflator);
 
         // borrow amount from buckets with limit price and apply the origination fee
-        uint256 fee = Maths.max(Maths.wdiv(previousRate, WAD_WEEKS_PER_YEAR), minFee);
+        uint256 fee = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
         _borrowFromBucket(amount_, fee, limitPrice_, curInflator);
         // collateral amounts need to be recorded as WADs to enable like-unit comparisons with quote token precision
         require(Maths.ray(borrower.collateralDeposited.length()) > _encumberedCollateral(borrower.debt + amount_ + fee), "P:B:INSUF_COLLAT");
@@ -155,12 +161,14 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, lup, amount_);
+
+        _updateInterestRate(curDebt);
     }
 
     function removeCollateral(uint256 tokenId_) external override {
         _tokenInPool(tokenId_);
 
-        ( , uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
         _accumulateNFTBorrowerInterest(borrower, curInflator);
@@ -178,12 +186,14 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         // move collateral from pool to sender
         collateral().safeTransferFrom(address(this), msg.sender, tokenId_);
         emit RemoveNFTCollateral(msg.sender, tokenId_);
+
+        _updateInterestRate(curDebt);
     }
 
     function removeCollateralMultiple(uint256[] calldata tokenIds_) external override {
         _tokensInPool(tokenIds_);
 
-        ( , uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
         _accumulateNFTBorrowerInterest(borrower, curInflator);
@@ -214,6 +224,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
             }
         }
         emit RemoveNFTCollateralMultiple(msg.sender, tokenIds_);
+
+        _updateInterestRate(curDebt);
     }
 
 
@@ -245,6 +257,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
         emit AddQuoteToken(recipient_, price_, amount_, lup);
+
+        _updateInterestRate(curDebt);
     }
 
     function claimCollateral(address recipient_, uint256 tokenId_, uint256 price_) external override {
@@ -267,6 +281,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         // move claimed collateral from pool to claimer
         collateral().safeTransferFrom(address(this), recipient_, tokenId_);
         emit ClaimNFTCollateral(recipient_, price_, tokenId_, claimedLpTokens);
+
+        _updateInterestRate(totalDebt);
     }
 
     function claimCollateralMultiple(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external override {
@@ -296,6 +312,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
             }
         }
         emit ClaimNFTCollateralMultiple(recipient_, price_, tokenIds_, claimedLpTokens);
+
+        _updateInterestRate(totalDebt);
     }
 
     function moveQuoteToken(
@@ -316,6 +334,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         lpBalance[recipient_][toPrice_]   += toLpTokens;
 
         emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
+
+        _updateInterestRate(curDebt);
     }
 
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
@@ -338,6 +358,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(recipient_, amount / quoteTokenScale);
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
+
+        _updateInterestRate(curDebt);
     }
 
     /*******************************/
@@ -380,6 +402,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit PurchaseWithNFTs(msg.sender, price_, amount_, usedTokens);
+
+        _updateInterestRate(curDebt);
     }
 
     /**************************/

@@ -111,8 +111,9 @@ interface IPool {
 
     /**
      *  @notice Initializes a new pool, setting initial state variables.
+     *  @param  interestRate_ Default interest rate of the pool.
      */
-    function initialize() external;
+    function initialize(uint256 interestRate_) external;
 
     /***********************************/
     /*** Borrower External Functions ***/
@@ -288,7 +289,7 @@ interface INFTPool is IPool {
      *  @notice Called by deployNFTSubsetPool()
      *  @dev Used to initialize pools that only support a subset of tokenIds
      */
-    function initializeSubset(uint256[] memory tokenIds_) external;
+    function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_) external;
 
     /***********************************/
     /*** Borrower External Functions ***/

@@ -142,7 +142,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
     user_index = start_from
     end_time = chain.time() + duration
     # Update the interest rate
-    interest_rate = update_interest_rate(lenders, pool)
+    interest_rate = pool.interestRate() / 10**18
     chain.sleep(14)
 
     while chain.time() < end_time:
@@ -189,18 +189,6 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
         chain.sleep(274)
         user_index = (user_index + 1) % 100  # increment with wraparound
     return user_index
-
-    
-def update_interest_rate(lenders, pool) -> int:
-    # Update the interest rate
-    tx = pool.updateInterestRate({"from": lenders[random.randrange(0, len(lenders))]})
-    if 'UpdateInterestRate' in tx.events:
-        interest_rate = tx.events['UpdateInterestRate'][0][0]['newRate_'] / 10**18
-        print(f" updated interest rate to {interest_rate:.3%}")
-    else:
-        interest_rate = pool.previousRate() / 10**18
-        print(f" interest rate was not updated, and remains at {interest_rate:.3%}")
-    return interest_rate
 
 
 def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:  # WAD
@@ -306,7 +294,7 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
     # end_time = start_time + SECONDS_PER_YEAR  # TODO: one year test
     end_time = start_time + SECONDS_PER_YEAR / 121
     actor_id = 0
-    with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay', 'updateInterestRate']):
+    with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay']):
         while chain.time() < end_time:
             utilization = pool1.getPoolActualUtilization() / 10**18
             target = pool1.getPoolTargetUtilization() / 10**18

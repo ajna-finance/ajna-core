@@ -44,7 +44,7 @@ class AjnaProtocol:
         return self.protocol_runner
 
     def deploy_erc20_pool(
-        self, collateral_address, quote_token_address
+        self, collateral_address, quote_token_address, interest_rate=0.05 * 1e18
     ) -> AjnaPoolClient:
         """
         Deploys ERC20 contract pool for given `collateral` and `quote` token addresses contract
@@ -53,6 +53,7 @@ class AjnaProtocol:
         Args:
             collateral_address: address of ERC20 token contract
             quote_token_address: address of ERC20 token contract
+            interest_rate: default interest rate of pool
 
         Returns:
             AjnaPoolClient
@@ -61,6 +62,7 @@ class AjnaProtocol:
         deploy_tx = self.ajna_factory.deployPool(
             collateral_address,
             quote_token_address,
+            interest_rate,
             {"from": self.deployer},
         )
         if bool(deploy_tx.revert_msg):
