@@ -51,8 +51,12 @@ contract UserWithNFTCollateral {
         pool_.addCollateral(tokenId_);
     }
 
-    function approveToken(IERC721 token_, address spender_, uint256 _tokenId) public {
-        token_.approve(spender_, _tokenId);
+    function approveToken(IERC721 token_, address spender_, uint256 tokenId_) public {
+        token_.approve(spender_, tokenId_);
+    }
+
+    function approveQuoteToken(IERC20 token_, address spender_, uint256 amount_) public {
+        token_.approve(spender_, amount_);
     }
 
     function addCollateral(ERC721Pool pool_, uint256 amount_) public {

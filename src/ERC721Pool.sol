@@ -216,9 +216,37 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         emit RemoveNFTCollateralMultiple(msg.sender, tokenIds_);
     }
 
+    function repay(uint256 maxAmount_) external override {
+        uint256 availableAmount = quoteToken().balanceOf(msg.sender) * quoteTokenScale;
+        require(availableAmount >= maxAmount_, "P:R:INSUF_BAL");
 
-    // TODO: finish implementing
-    function repay(uint256 amount_) external override {}
+        NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
+        require(borrower.debt != 0, "P:R:NO_DEBT");
+
+        // accumulate interest
+        (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        _accumulateNFTBorrowerInterest(borrower, curInflator);
+
+        // calculate repayment amount and resulting debt levels
+        uint256 amount        = Maths.min(maxAmount_, borrower.debt);
+        uint256 remainingDebt = borrower.debt - amount;
+        require(remainingDebt == 0 || remainingDebt > _poolMinDebtAmount(curDebt, totalBorrowers),"P:R:AMT_LT_AVG_DEBT");
+
+        // repay amount to buckets
+        _repayBucket(amount, curInflator, amount >= curDebt);
+
+        // pool level accounting
+        totalQuoteToken += amount;
+        totalDebt       = curDebt - Maths.min(curDebt, amount);
+
+        // borrower accounting
+        if (remainingDebt == 0) totalBorrowers -= 1;
+        borrower.debt         -= amount;
+
+        // move amount to repay from sender to pool
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
+        emit Repay(msg.sender, lup, amount);
+    }
 
     /*********************************/
     /*** Lender External Functions ***/

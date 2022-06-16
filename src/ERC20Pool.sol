@@ -135,8 +135,11 @@ contract ERC20Pool is IFungiblePool, BorrowerManager, Clone, LenderManager {
         BorrowerInfo memory borrower = borrowers[msg.sender];
         require(borrower.debt != 0, "P:R:NO_DEBT");
 
+        // accumulate interest
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
         _accumulateBorrowerInterest(borrower, curInflator);
+
+        // calculate repayment amount and resulting debt levels
         uint256 amount        = Maths.min(maxAmount_, borrower.debt);
         uint256 remainingDebt = borrower.debt - amount;
         require(remainingDebt == 0 || remainingDebt > _poolMinDebtAmount(curDebt, totalBorrowers),"P:R:AMT_LT_AVG_DEBT");
