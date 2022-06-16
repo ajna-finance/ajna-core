@@ -92,11 +92,11 @@ contract ERC721Pool is INFTPool, BasePool {
         // borrower accounting
         NFTborrowers[msg.sender].collateralDeposited.add(tokenId_);
 
+        _updateInterestRate(curDebt);
+
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), tokenId_);
         emit AddNFTCollateral(msg.sender, tokenId_);
-
-        _updateInterestRate(curDebt);
     }
 
     function addCollateralMultiple(uint256[] calldata tokenIds_) external override {
@@ -104,6 +104,8 @@ contract ERC721Pool is INFTPool, BasePool {
         _onlySubsetMultiple(tokenIds_);
 
         (uint256 curDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+
+        _updateInterestRate(curDebt);
 
         // add tokenIds to the pool
         for (uint i; i < tokenIds_.length;) {
@@ -123,8 +125,6 @@ contract ERC721Pool is INFTPool, BasePool {
             }
         }
         emit AddNFTCollateralMultiple(msg.sender, tokenIds_);
-
-        _updateInterestRate(curDebt);
     }
 
     function borrow(uint256 amount_, uint256 limitPrice_) external override {
@@ -152,11 +152,11 @@ contract ERC721Pool is INFTPool, BasePool {
         if (borrower.debt == 0) totalBorrowers += 1;
         borrower.debt         += amount_ + fee;
 
+        _updateInterestRate(curDebt);
+
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, lup, amount_);
-
-        _updateInterestRate(curDebt);
     }
 
     function removeCollateral(uint256 tokenId_) external override {
@@ -177,11 +177,11 @@ contract ERC721Pool is INFTPool, BasePool {
         // borrower accounting
         borrower.collateralDeposited.remove(tokenId_);
 
+        _updateInterestRate(curDebt);
+
         // move collateral from pool to sender
         collateral().safeTransferFrom(address(this), msg.sender, tokenId_);
         emit RemoveNFTCollateral(msg.sender, tokenId_);
-
-        _updateInterestRate(curDebt);
     }
 
     function removeCollateralMultiple(uint256[] calldata tokenIds_) external override {
@@ -199,6 +199,8 @@ contract ERC721Pool is INFTPool, BasePool {
             Maths.ray(tokenIds_.length) <= unencumberedCollateral || unencumberedCollateral >= Maths.ray(tokenIds_.length) + Maths.ONE_RAY,
             "P:RC:AMT_GT_AVAIL_COLLAT"
         );
+
+        _updateInterestRate(curDebt);
 
         // remove tokenIds from the pool
         for (uint i; i < tokenIds_.length;) {
@@ -218,8 +220,6 @@ contract ERC721Pool is INFTPool, BasePool {
             }
         }
         emit RemoveNFTCollateralMultiple(msg.sender, tokenIds_);
-
-        _updateInterestRate(curDebt);
     }
 
 
@@ -247,11 +247,11 @@ contract ERC721Pool is INFTPool, BasePool {
         // lender accounting
         lpBalance[recipient_][price_] -= claimedLpTokens;
 
+        _updateInterestRate(totalDebt);
+
         // move claimed collateral from pool to claimer
         collateral().safeTransferFrom(address(this), recipient_, tokenId_);
         emit ClaimNFTCollateral(recipient_, price_, tokenId_, claimedLpTokens);
-
-        _updateInterestRate(totalDebt);
     }
 
     function claimCollateralMultiple(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external override {
@@ -268,6 +268,8 @@ contract ERC721Pool is INFTPool, BasePool {
         // lender accounting
         lpBalance[recipient_][price_] -= claimedLpTokens;
 
+        _updateInterestRate(totalDebt);
+
         // claim tokenIds from the pool
         for (uint i; i < tokenIds_.length;) {
             // pool level accounting
@@ -281,8 +283,6 @@ contract ERC721Pool is INFTPool, BasePool {
             }
         }
         emit ClaimNFTCollateralMultiple(recipient_, price_, tokenIds_, claimedLpTokens);
-
-        _updateInterestRate(totalDebt);
     }
 
     /*******************************/
@@ -322,11 +322,11 @@ contract ERC721Pool is INFTPool, BasePool {
             }
         }
 
+        _updateInterestRate(curDebt);
+
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit PurchaseWithNFTs(msg.sender, price_, amount_, usedTokens);
-
-        _updateInterestRate(curDebt);
     }
 
     /**************************/

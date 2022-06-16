@@ -51,11 +51,11 @@ abstract contract BasePool is IPool, BorrowerManager, Clone, LenderManager {
         lpBalance[recipient_][price_] += lpTokens_;
         lpTimer[recipient_][price_]   = block.timestamp;
 
+        _updateInterestRate(curDebt);
+
         // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
         emit AddQuoteToken(recipient_, price_, amount_, lup);
-
-        _updateInterestRate(curDebt);
     }
 
     function moveQuoteToken(
@@ -76,9 +76,9 @@ abstract contract BasePool is IPool, BorrowerManager, Clone, LenderManager {
         lpBalance[recipient_][fromPrice_] -= fromLpTokens;
         lpBalance[recipient_][toPrice_]   += toLpTokens;
 
-        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
-
         _updateInterestRate(curDebt);
+
+        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
 
     function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
@@ -98,11 +98,11 @@ abstract contract BasePool is IPool, BorrowerManager, Clone, LenderManager {
         // lender accounting
         lpBalance[recipient_][price_] -= lpTokens;
 
+        _updateInterestRate(curDebt);
+
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(recipient_, amount / quoteTokenScale);
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
-
-        _updateInterestRate(curDebt);
     }
 
     /************************/

@@ -112,7 +112,6 @@ abstract contract Interest is IInterest, PoolState {
     }
 
     function _updateInterestRate(uint256 curDebt_) internal {
-        // RAY
         uint256 poolCollateralization = _poolCollateralization(curDebt_);
         if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.ONE_WAD) {
             uint256 oldRate          = interestRate;

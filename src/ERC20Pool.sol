@@ -66,12 +66,12 @@ contract ERC20Pool is IFungiblePool, BasePool {
         // borrower accounting
         borrowers[msg.sender].collateralDeposited += amount_;
 
+        _updateInterestRate(curDebt);
+
         // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit AddCollateral(msg.sender, amount_);
-
-        _updateInterestRate(curDebt);
     }
 
     function borrow(uint256 amount_, uint256 limitPrice_) external override {
@@ -99,11 +99,11 @@ contract ERC20Pool is IFungiblePool, BasePool {
         borrower.debt         += amount_ + fee;
         borrowers[msg.sender] = borrower; // save borrower to storage
 
+        _updateInterestRate(curDebt);
+
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, lup, amount_);
-
-        _updateInterestRate(curDebt);
     }
 
     function removeCollateral(uint256 amount_) external override {
@@ -122,11 +122,11 @@ contract ERC20Pool is IFungiblePool, BasePool {
         borrower.collateralDeposited -= amount_;        
         borrowers[msg.sender]        = borrower; // save borrower to storage
 
+        _updateInterestRate(curDebt);
+
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
         emit RemoveCollateral(msg.sender, amount_);
-
-        _updateInterestRate(curDebt);
     }
 
     function repay(uint256 maxAmount_) external override {
@@ -155,11 +155,11 @@ contract ERC20Pool is IFungiblePool, BasePool {
         borrower.debt         -= amount;
         borrowers[msg.sender] = borrower; // save borrower to storage
 
+        _updateInterestRate(curDebt);
+
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, lup, amount);
-
-        _updateInterestRate(curDebt);
     }
 
     /*********************************/
@@ -178,11 +178,11 @@ contract ERC20Pool is IFungiblePool, BasePool {
         // lender accounting
         lpBalance[recipient_][price_] -= claimedLpTokens;
 
+        _updateInterestRate(totalDebt);
+
         // move claimed collateral from pool to claimer
         collateral().safeTransfer(recipient_, amount_ / collateralScale);
         emit ClaimCollateral(recipient_, price_, amount_, claimedLpTokens);
-
-        _updateInterestRate(totalDebt);
     }
 
     /*******************************/
@@ -217,9 +217,9 @@ contract ERC20Pool is IFungiblePool, BasePool {
         borrower.collateralDeposited -= requiredCollateral;
         borrowers[borrower_]         = borrower; // save borrower to storage
 
-        emit Liquidate(borrower_, debt, requiredCollateral);
-
         _updateInterestRate(curDebt);
+
+        emit Liquidate(borrower_, debt, requiredCollateral);
     }
 
     function purchaseBid(uint256 amount_, uint256 price_) external override {
@@ -237,13 +237,13 @@ contract ERC20Pool is IFungiblePool, BasePool {
         // pool level accounting
         totalQuoteToken -= amount_;
 
+        _updateInterestRate(curDebt);
+
         // move required collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), collateralRequired / collateralScale);
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Purchase(msg.sender, price_, amount_, collateralRequired);
-
-        _updateInterestRate(curDebt);
     }
 
     /************************/
