@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
-
 import { ERC20Pool }        from "../../ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../ERC20PoolFactory.sol";
 
