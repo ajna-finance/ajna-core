@@ -63,11 +63,6 @@ contract UserWithNFTCollateral {
         pool_.borrow(amount_, price_);
     }
 
-    // TODO: REMOVE
-    function purchaseBid(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
-        pool_.purchaseBid(amount_, price_);
-    }
-
     function purchaseBidNFTCollateral(ERC721Pool pool_, uint256 amount_, uint256 price_, uint256[] memory tokenIds_) public {
         pool_.purchaseBidNFTCollateral(amount_, price_, tokenIds_);
     }
@@ -137,28 +132,32 @@ contract UserWithQuoteToken {
 }
 
 contract UserWithQuoteTokenInNFTPool {
-    function addQuoteToken(ERC721Pool pool, address recipient, uint256 amount, uint256 price) public {
-        pool.addQuoteToken(recipient, amount, price);
+    function addQuoteToken(ERC721Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {
+        pool_.addQuoteToken(recipient_, amount_, price_);
     }
 
-    function removeQuoteToken(ERC721Pool pool, address recipient, uint256 amount, uint256 price) public {
-        pool.removeQuoteToken(recipient, amount, price);
+    function removeQuoteToken(ERC721Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {
+        pool_.removeQuoteToken(recipient_, amount_, price_);
     }
 
-    function borrow(ERC721Pool pool, uint256 amount, uint256 stopPrice) public {
-        pool.borrow(amount, stopPrice);
+    function borrow(ERC721Pool pool_, uint256 amount_, uint256 stopPrice) public {
+        pool_.borrow(amount_, stopPrice);
     }
 
-    function claimCollateral(ERC721Pool pool, address recipient, uint256 amount, uint256 price) public {
-        pool.claimCollateral(recipient, amount, price);
+    function claimCollateral(ERC721Pool pool_, address recipient_, uint256 tokenId_, uint256 price_) public {
+        pool_.claimCollateral(recipient_, tokenId_, price_);
     }
 
-    function liquidate(ERC721Pool pool, address borrower) public {
-        pool.liquidate(borrower);
+    function claimCollateralMultiple(ERC721Pool pool_, address recipient_, uint256[] memory tokenIds_, uint256 price_) public {
+        pool_.claimCollateralMultiple(recipient_, tokenIds_, price_);
     }
 
-    function approveToken(IERC20 token, address spender, uint256 amount) public {
-        token.approve(spender, amount);
+    function liquidate(ERC721Pool pool_, address borrower) public {
+        pool_.liquidate(borrower);
+    }
+
+    function approveToken(IERC20 token, address spender, uint256 amount_) public {
+        token.approve(spender, amount_);
     }
 
     // Implementing this method allows contracts to receive ERC721 tokens
@@ -167,7 +166,7 @@ contract UserWithQuoteTokenInNFTPool {
         return this.onERC721Received.selector;
     }
 
-    function updateInterestRate(ERC721Pool pool) public {
-        pool.updateInterestRate();
+    function updateInterestRate(ERC721Pool pool_) public {
+        pool_.updateInterestRate();
     }
 }

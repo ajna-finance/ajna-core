@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { console }     from "@std/console.sol";
+import { console } from "@std/console.sol";
 
 import { IBuckets } from "../interfaces/IBuckets.sol";
 
@@ -29,10 +29,10 @@ abstract contract Buckets is IBuckets {
     mapping(uint256 => Buckets.Bucket) internal _buckets;
 
     /**
-     *  @notice Mapping of NFT buckets for a given pool
-     *  @dev price [WAD] -> nftBucket
+     *  @notice Mapping of price to Set of NFT Token Ids that have been deposited into the bucket
+     *  @dev price [WAD] -> collateralDeposited
      */
-    mapping(uint256 => Buckets.NFTBucket) internal _nftBuckets;
+    mapping(uint256 => EnumerableSet.UintSet) internal _collateralDeposited;
 
     BitMaps.BitMap internal _bitmap;
 
@@ -43,19 +43,6 @@ abstract contract Buckets is IBuckets {
     /**********************************/
     /*** Internal Utility Functions ***/
     /**********************************/
-
-    /**
-     *  @notice Called by a lender to add quote tokens to a bucket
-     *  @dev    Bucket.collateral is used to keep track of the total collateral in the bucket
-     *  @dev    All NFT collateral is accounted for in WAD terms
-     *  @param  bucket               The base bucket information
-     *  @param  collateralDeposited  Set of NFT Token Ids that have been deposited into the bucket
-     */
-    struct NFTBucket {
-        Bucket bucket;
-        uint256 price;
-        EnumerableSet.UintSet collateralDeposited;
-    }
 
     /**
      *  @notice Called by a lender to add quote tokens to a bucket
@@ -169,6 +156,77 @@ abstract contract Buckets is IBuckets {
     }
 
     /**
+     *  @notice Called by a lender to claim accumulated NFT collateral
+     *  @param  price_        The price bucket from which collateral should be claimed
+     *  @param  tokenId_      The tokenId of the collateral to claim
+     *  @param  lpBalance_    The claimers current LP balance, RAY
+     *  @return lpRedemption_ The amount of LP tokens that will be redeemed
+     */
+    function _claimNFTCollateralFromBucket(uint256 price_, uint256 tokenId_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
+        require(collateralDeposited.contains(tokenId_), "B:CC:T_NOT_IN_B");
+
+        Bucket memory bucket = _buckets[price_];
+
+        // check available collateral given removal of the NFT
+        require(Maths.ONE_WAD <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
+
+        // nft collateral is accounted for in WAD units
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.ONE_WAD, bucket.price), getExchangeRate(bucket));
+
+        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
+
+        // update bucket accounting
+        bucket.collateral -= Maths.ONE_WAD;
+        bucket.lpOutstanding -= lpRedemption_;
+        collateralDeposited.remove(tokenId_);
+
+        // bucket management
+        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
+        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
+        if (isEmpty && noClaim) {
+            deactivateBucket(bucket); // cleanup if bucket no longer used
+        } else {
+            _buckets[price_] = bucket; // save bucket to storage
+        }
+    }
+
+    function _claimMultipleNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
+        Bucket memory bucket = _buckets[price_];
+
+        // check available collateral given removal of the NFT
+        require(Maths.wad(tokenIds_.length) <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
+
+        // nft collateral is accounted for in WAD units
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.wad(tokenIds_.length), bucket.price), getExchangeRate(bucket));
+
+        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
+
+        // update bucket accounting
+        bucket.collateral -= Maths.wad(tokenIds_.length);
+        bucket.lpOutstanding -= lpRedemption_;
+
+        // update collateralDeposited
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
+        for (uint i; i < tokenIds_.length;) {
+            require(collateralDeposited.contains(tokenIds_[i]), "B:CC:T_NOT_IN_B");
+            collateralDeposited.remove(tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // bucket management
+        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
+        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
+        if (isEmpty && noClaim) {
+            deactivateBucket(bucket); // cleanup if bucket no longer used
+        } else {
+            _buckets[price_] = bucket; // save bucket to storage
+        }
+    }
+
+    /**
      *  @notice Liquidate a given position's collateral
      *  @param  debt_               The amount of debt to cover, WAD
      *  @param  collateral_         The amount of collateral deposited, WAD
@@ -215,7 +273,7 @@ abstract contract Buckets is IBuckets {
     }
 
     /**
-     *  @notice Called by a lender to remove quote tokens from a bucket
+     *  @notice Called by a lender to move quote tokens from a bucket
      *  @param  fromPrice_    The price bucket from where quote tokens should be moved
      *  @param  toPrice_      The price bucket where quote tokens should be moved
      *  @param  maxAmount_    The max amount of quote tokens to be moved, WAD
@@ -323,32 +381,52 @@ abstract contract Buckets is IBuckets {
     }
 
     /**
-     *  @notice Called by a lender to claim accumulated NFT collateral
-     *  @param  price_        The price bucket from which collateral should be claimed
-     *  @param  tokenId_      The tokenId of the collateral to claim
-     *  @param  lpBalance_    The claimers current LP balance, RAY
-     *  @return lpRedemption_ The amount of LP tokens that will be redeemed
+     *  @notice Puchase a given amount of quote tokens for given NFT collateral tokenIds
+     *  @param  price_      The price bucket at which the exchange will occur, WAD
+     *  @param  amount_     The amount of quote tokens to receive, WAD
+     *  @param  tokenIds_   Array of tokenIds used to purchase quote tokens
+     *  @param  inflator_   The current pool inflator rate, RAY
      */
-    function _claimNFTCollateralFromBucket(uint256 price_, uint256 tokenId_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
-        Bucket storage bucket = _buckets[price_];
-        NFTBucket storage nftBucket = _nftBuckets[price_];
+    function _purchaseBidFromBucketNFTCollateral(
+        uint256 price_, uint256 amount_, uint256[] memory tokenIds_, uint256 inflator_
+    ) internal {
+        Bucket memory bucket    = _buckets[price_];
+        bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
+        bucket.inflatorSnapshot = inflator_;
 
-        // TODO: check if this is right approach...?
-        // check available collateral given removal of the NFT
-        require(Maths.ONE_WAD <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
+        uint256 available = bucket.onDeposit + bucket.debt;
 
-        // nft collateral is account for in WAD units
-        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.ONE_WAD, bucket.price), getExchangeRate(bucket));
+        require(amount_ <= available, "B:PB:INSUF_BUCKET_LIQ");
 
-        // update bucket accounting
-        bucket.collateral -= Maths.ONE_WAD;
-        bucket.lpOutstanding -= lpRedemption_;
-        nftBucket.collateralDeposited.remove(tokenId_);
+        // Exchange collateral for quote token on deposit
+        uint256 purchaseFromDeposit = Maths.min(amount_, bucket.onDeposit);
 
-        // bucket management
-        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
-        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
-        if (isEmpty && noClaim) deactivateBucket(bucket); // cleanup if bucket no longer used
+        amount_          -= purchaseFromDeposit;
+        // bucket accounting
+        bucket.onDeposit -= purchaseFromDeposit;
+        bucket.collateral += Maths.wad(tokenIds_.length);
+
+        // update collateralDeposited
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
+        for (uint i; i < tokenIds_.length;) {
+            collateralDeposited.add(tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // debt reallocation
+        uint256 newLup = reallocateDown(bucket, amount_, inflator_);
+
+        _buckets[price_] = bucket;
+
+        uint256 newHpb = (bucket.onDeposit == 0 && bucket.debt == 0) ? getHpb() : hpb;
+
+        // HPB and LUP management
+        if (lup != newLup) lup = newLup;
+        if (hpb != newHpb) hpb = newHpb;
+
+        pdAccumulator -= Maths.wmul(purchaseFromDeposit, bucket.price);
     }
 
     /**
@@ -893,6 +971,35 @@ abstract contract Buckets is IBuckets {
         bucketInflator_   = bucket.inflatorSnapshot;
         lpOutstanding_    = bucket.lpOutstanding;
         bucketCollateral_ = bucket.collateral;
+    }
+
+    function nftBucketAt(uint256 price_)
+        public
+        view
+        returns (
+            uint256 bucketPrice_,
+            uint256 up_,
+            uint256 down_,
+            uint256 onDeposit_,
+            uint256 debt_,
+            uint256 bucketInflator_,
+            uint256 lpOutstanding_,
+            uint256 bucketCollateral_,
+            uint256[] memory collateralDeposited_
+        )
+    {
+        Bucket memory bucket = _buckets[price_];
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
+
+        bucketPrice_         = bucket.price;
+        up_                  = bucket.up;
+        down_                = bucket.down;
+        onDeposit_           = bucket.onDeposit;
+        debt_                = bucket.debt;
+        bucketInflator_      = bucket.inflatorSnapshot;
+        lpOutstanding_       = bucket.lpOutstanding;
+        bucketCollateral_    = bucket.collateral;
+        collateralDeposited_ = collateralDeposited.values();
     }
 
     function estimatePrice(uint256 amount_, uint256 hpb_) public view override returns (uint256 price_) {

@@ -17,18 +17,21 @@ contract ERC721PoolFactory is PoolDeployer {
 
     ERC721Pool public implementation;
 
+    /// @dev Default bytes32 hash used by ERC721 Non-NFTSubset pool types
+    bytes32 public constant ERC721_NON_SUBSET_HASH = keccak256("ERC721_NON_SUBSET_HASH");
+
     constructor() {
         implementation = new ERC721Pool();
     }
 
-    function deployNFTCollectionPool(address collateral_, address quote_) external canDeploy(NON_SUBSET_HASH, collateral_, quote_) returns (address pool_) {
+    function deployNFTCollectionPool(address collateral_, address quote_) external canDeploy(ERC721_NON_SUBSET_HASH, collateral_, quote_) returns (address pool_) {
         bytes memory data = abi.encodePacked(collateral_, quote_);
 
         ERC721Pool pool = ERC721Pool(address(implementation).clone(data));
         pool.initialize();
         pool_ = address(pool);
 
-        deployedPools[NON_SUBSET_HASH][collateral_][quote_] = pool_;
+        deployedPools[ERC721_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
     }
 

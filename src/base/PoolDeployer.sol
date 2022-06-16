@@ -21,9 +21,6 @@ abstract contract PoolDeployer {
     /// @dev SubsetHash => CollateralAddress => QuoteAddress => Pool Address
     mapping(bytes32 => mapping(address => mapping(address => address))) public deployedPools;
 
-    /// @dev Default bytes32 hash used by Non NFTSubset pool types
-    bytes32 public constant NON_SUBSET_HASH = keccak256("NON_SUBSET_HASH");
-
     /*****************/
     /*** Modifiers ***/
     /*****************/

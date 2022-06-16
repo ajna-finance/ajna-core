@@ -101,20 +101,18 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         emit AddNFTCollateral(msg.sender, tokenId_);
     }
 
-    function addCollateralMultiple(uint256[] memory tokenIds_) external override {
+    function addCollateralMultiple(uint256[] calldata tokenIds_) external override {
         // check if all incoming tokenIds are part of the pool subset
         _onlySubsetMultiple(tokenIds_);
 
         _accumulatePoolInterest(totalDebt, inflatorSnapshot);
-
-        uint256 collateralToAddCount;
 
         // add tokenIds to the pool
         for (uint i; i < tokenIds_.length;) {
 
             // pool level accounting
             _collateralTokenIdsAdded.add(tokenIds_[i]);
-            collateralToAddCount += 1;
+            totalCollateral += Maths.ONE_WAD;
 
             // borrower accounting
             NFTborrowers[msg.sender].collateralDeposited.add(tokenIds_[i]);
@@ -126,10 +124,6 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
                 ++i;
             }
         }
-
-        // update totalCollateral count with the newly added collateral
-        totalCollateral += Maths.wad(collateralToAddCount);
-
         emit AddNFTCollateralMultiple(msg.sender, tokenIds_);
     }
 
@@ -171,9 +165,8 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
         _accumulateNFTBorrowerInterest(borrower, curInflator);
 
-        uint256 encumberedBorrowerCollateral = _encumberedCollateral(borrower.debt);
         // Require overcollateralization to be at a minimum of one RAY to account for indivisible NFTs
-        require(Maths.ray(borrower.collateralDeposited.length()) - encumberedBorrowerCollateral >= Maths.ONE_RAY, "P:RC:AMT_GT_AVAIL_COLLAT");
+        require(Maths.ray(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt) >= Maths.ONE_RAY, "P:RC:AMT_GT_AVAIL_COLLAT");
 
         // pool level accounting
         _collateralTokenIdsAdded.remove(tokenId_);
@@ -187,7 +180,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         emit RemoveNFTCollateral(msg.sender, tokenId_);
     }
 
-    function removeCollateralMultiple(uint256[] memory tokenIds_) external override {
+    function removeCollateralMultiple(uint256[] calldata tokenIds_) external override {
         _tokensInPool(tokenIds_);
 
         ( , uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
@@ -195,8 +188,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
         _accumulateNFTBorrowerInterest(borrower, curInflator);
 
-        uint256 encumberedBorrowerCollateral = _encumberedCollateral(borrower.debt);
-        uint256 unencumberedCollateral = Maths.ray(borrower.collateralDeposited.length()) - encumberedBorrowerCollateral;
+        uint256 unencumberedCollateral = Maths.ray(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt);
 
         // Require overcollateralization to be at a minimum of one RAY to account for indivisible NFTs
         require(
@@ -204,14 +196,12 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
             "P:RC:AMT_GT_AVAIL_COLLAT"
         );
 
-        uint256 collateralToRemoveCount;
-
         // remove tokenIds from the pool
         for (uint i; i < tokenIds_.length;) {
 
             // pool level accounting
             _collateralTokenIdsAdded.remove(tokenIds_[i]);
-            collateralToRemoveCount += 1;
+            totalCollateral -= Maths.ONE_WAD;
 
             // borrower accounting
             borrower.collateralDeposited.remove(tokenIds_[i]);
@@ -223,10 +213,6 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
                 ++i;
             }
         }
-
-        // update totalCollateral count with the newly removed collateral
-        totalCollateral -= Maths.wad(collateralToRemoveCount);
-
         emit RemoveNFTCollateralMultiple(msg.sender, tokenIds_);
     }
 
@@ -283,39 +269,33 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         emit ClaimNFTCollateral(recipient_, price_, tokenId_, claimedLpTokens);
     }
 
-    // TODO: finish implementing or combine with claimCollateral - would require updates to Buckets.sol
-    function claimCollateralMultiple(address recipient_, uint256[] memory tokenIds_, uint256 price_) external override {
-        // _tokensInPool(tokenIds_);
-        // require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
+    function claimCollateralMultiple(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external override {
+        require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
-        // uint256 maxClaim = lpBalance[recipient_][price_];
-        // require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
+        _tokensInPool(tokenIds_);
 
-        // // claim collateral and get amount of LP tokens burned for claim
-        // uint256 claimedLpTokens = claimNFTCollateralFromBucket(price_, tokenId_, maxClaim);
+        uint256 maxClaim = lpBalance[recipient_][price_];
+        require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
 
-        // uint256 collateralClaimedCount;
+        // claim collateral and get amount of LP tokens burned for claim
+        uint256 claimedLpTokens = _claimMultipleNFTCollateralFromBucket(price_, tokenIds_, maxClaim);
 
-        // // claim tokenIds from the pool
-        // for (uint i; i < tokenIds_.length;) {
+        // lender accounting
+        lpBalance[recipient_][price_] -= claimedLpTokens;
 
-        //     // pool level accounting
-        //     _collateralTokenIdsAdded.remove(tokenIds_[i]);
-        //     collateralClaimedCount += 1;
+        // claim tokenIds from the pool
+        for (uint i; i < tokenIds_.length;) {
+            // pool level accounting
+            _collateralTokenIdsAdded.remove(tokenIds_[i]);
+            totalCollateral -= Maths.ONE_WAD;
 
-        //     // move claimed collateral from pool to claimer
-        //     collateral().safeTransferFrom(address(this), recipient_, tokenIds_[i]);
-
-        // }
-
-        // // TODO: check for reentrancy here -> check effects
-        // // lender accounting
-        // lpBalance[recipient_][price_] -= claimedLpTokens;
-
-        // // update totalCollateral count with the newly claimed collateral
-        // totalCollateral -= Maths.wad(collateralClaimedCount);
-
-        // emit ClaimNFTCollateralMultiple(recipient_, price_, tokenIds_, claimedLpTokens);
+            // move claimed collateral from pool to claimer
+            collateral().safeTransferFrom(address(this), recipient_, tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
+        emit ClaimNFTCollateralMultiple(recipient_, price_, tokenIds_, claimedLpTokens);
     }
 
     function moveQuoteToken(
@@ -367,44 +347,31 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
     // TODO: finish implementing
     function liquidate(address borrower_) external override {}
 
-    // TODO: Remove from IPool ... different Interface req
-    function purchaseBid(uint256 amount_, uint256 price_) external override {}
-
-    // TODO: Add test case for transferrance of tokens based upon collateralRequired
-    /// @dev Can be called for multiple unit of collateral at a time
-    /// @dev Does not increase pool or bucket debt
-    /// @dev Tokens will be used for purchase based upon their order in the array, FIFO
-    function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] memory tokenIds_) external override {
+    function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] calldata tokenIds_) external override {
         require(BucketMath.isValidPrice(price_), "P:PB:INVALID_PRICE");
 
-        for (uint i; i < tokenIds_.length;) {
-            // check if incoming tokens are part of the pool subset
-            _onlySubset(tokenIds_[i]);
-
-            // check user owns all tokenIds_ to prevent spoofing collateralRequired check
-            require(collateral().ownerOf(tokenIds_[i]) == msg.sender, "P:PB:INVALID_T_ID");
-
-            unchecked {
-                ++i;
-            }
-        }
+        _onlySubsetMultiple(tokenIds_);
 
         // calculate in whole NFTs the amount of collateral required to cover desired quote at desired price
         uint256 collateralRequired = Maths.divRoundingUp(amount_, price_);
         require(tokenIds_.length >= collateralRequired, "P:PB:INSUF_COLLAT");
 
+        // slice incoming tokens to only use as many as are required
+        uint256[] memory usedTokens = new uint256[](collateralRequired);
+        usedTokens = tokenIds_[:collateralRequired];
+
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
-        _purchaseBidFromBucket(price_, amount_, Maths.wad(collateralRequired), curInflator);
+        _purchaseBidFromBucketNFTCollateral(price_, amount_, usedTokens, curInflator);
         require(_poolCollateralization(curDebt) >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount_;
-        totalCollateral += Maths.wad(tokenIds_.length);
+        totalCollateral += Maths.wad(usedTokens.length);
 
         // move required collateral from sender to pool
         for (uint i; i < collateralRequired;) {
-            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+            collateral().safeTransferFrom(msg.sender, address(this), usedTokens[i]);
             unchecked {
                 ++i;
             }
@@ -412,7 +379,7 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
 
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
-        emit PurchaseWithNFTs(msg.sender, price_, amount_, tokenIds_);
+        emit PurchaseWithNFTs(msg.sender, price_, amount_, usedTokens);
     }
 
     /**************************/
@@ -441,12 +408,12 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         }
     }
 
-    /// @notice Check if token have been deposited into the pool
+    /** @notice Check if a token has been deposited into the pool */
     function _tokenInPool(uint256 tokenId_) internal view {
         require(collateral().ownerOf(tokenId_) == address(this), "P:T_NOT_IN_P");
     }
 
-    /// @notice Check if all tokens in an array have been deposited into the pool
+    /** @notice Check if all tokens in an array have been deposited into the pool */
     function _tokensInPool(uint256[] memory tokenIds_) internal view {
         for (uint i; i < tokenIds_.length;) {
             _tokenInPool(tokenIds_[i]);
@@ -474,20 +441,23 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
     /*** Helper Functions ***/
     /************************/
 
-    /// @dev Quote tokens are always non-fungible
-    /// @dev Pure function used to facilitate accessing token via clone state
+    /** @dev Collateral tokens are always non-fungible
+     *  @dev Pure function used to facilitate accessing token via clone state
+     */
     function collateral() public pure returns (ERC721) {
         return ERC721(_getArgAddress(0));
     }
 
-    /// @dev Quote tokens are always fungible
-    /// @dev Pure function used to facilitate accessing token via clone state
+    /** @dev Quote tokens are always fungible
+     *  @dev Pure function used to facilitate accessing token via clone state
+     */
     function quoteToken() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0x14));
     }
 
-    // Implementing this method allows contracts to receive ERC721 tokens
-    // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+    /** @notice Implementing this method allows contracts to receive ERC721 tokens
+     *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+     */    
     function onERC721Received(
         address,
         address,

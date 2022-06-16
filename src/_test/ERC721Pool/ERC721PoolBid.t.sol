@@ -115,12 +115,6 @@ contract ERC721PoolBidTest is DSTestPlus {
         vm.expectRevert("P:ONLY_SUBSET");
         _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 5_100 * 1e18, _p8002, _invalidTokenIds);
 
-        // should revert if trying to purchase using unowned collateral
-        _invalidTokenIds = new uint256[](1);
-        _invalidTokenIds[0] = 1;
-        vm.expectRevert("P:PB:INVALID_T_ID");
-        _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 5_100 * 1e18, _p8002, _invalidTokenIds);
-
         // should revert if bidder doesn't have enough collateral
         vm.expectRevert("P:PB:INSUF_COLLAT");
         _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 2_000_000 * 1e18, _p4000, _tokenIds);

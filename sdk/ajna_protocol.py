@@ -18,8 +18,8 @@ from .ajna_protocol_runner import AjnaProtocolRunner
 
 class AjnaProtocol:
 
-    # keccak256("NON_SUBSET_HASH")
-    ERC20_POOL_HASH = "ab835e09eb0e6c29f0c283ee3c270414bb498606c3d68718b89dbbe96435a088"
+    # keccak256("ERC20_NON_SUBSET_HASH")
+    ERC20_POOL_HASH = "2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2"
 
     def __init__(self) -> None:
         self._accounts = Accounts()
