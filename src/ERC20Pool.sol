@@ -24,23 +24,13 @@ contract ERC20Pool is IFungiblePool, BasePool {
 
     uint256 public override collateralScale;
 
-    /*****************/
-    /*** Modifiers ***/
-    /*****************/
-
-    /**
-     *  @notice Modifier to protect a clone's initialize method from repeated updates.
-     */
-    modifier onlyOnce() {
-        require(_poolInitializations == 0, "P:INITIALIZED");
-        _;
-    }
 
     /*****************************/
     /*** Inititalize Functions ***/
     /*****************************/
 
-    function initialize(uint256 rate_) external override onlyOnce {
+    function initialize(uint256 rate_) external override {
+        require(_poolInitializations == 0, "P:INITIALIZED");
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
@@ -152,7 +142,7 @@ contract ERC20Pool is IFungiblePool, BasePool {
 
         // borrower accounting
         if (remainingDebt == 0) totalBorrowers -= 1;
-        borrower.debt         -= amount;
+        borrower.debt         = remainingDebt;
         borrowers[msg.sender] = borrower; // save borrower to storage
 
         _updateInterestRate(curDebt);
