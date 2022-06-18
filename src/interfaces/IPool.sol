@@ -12,13 +12,6 @@ interface IPool {
     /**************/
 
     /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  amount_   Amount of collateral locked in the pool.
-     */
-    event AddCollateral(address indexed borrower_, uint256 amount_);
-
-    /**
      *  @notice Emitted when lender adds quote token to the pool.
      *  @param  lender_ Recipient that added quote tokens.
      *  @param  price_  Price at which quote tokens were added.
@@ -34,15 +27,6 @@ interface IPool {
      *  @param  amount_   Amount of quote tokens borrowed from the pool.
      */
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
-
-    /**
-     *  @notice Emitted when lender claims unencumbered collateral.
-     *  @param  claimer_ Recipient that claimed collateral.
-     *  @param  price_   Price at which unencumbered collateral was claimed.
-     *  @param  amount_  The amount of Quote tokens transferred to the claimer.
-     *  @param  lps_     The amount of LP tokens burned in the claim.
-     */
-    event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
 
     /**
      *  @notice Emitted when a borrower is liquidated.
@@ -61,22 +45,6 @@ interface IPool {
      *  @param  lup_    LUP calculated after removal.
      */
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
-
-    /**
-     *  @notice Emitted when collateral is exchanged for quote tokens.
-     *  @param  bidder_     `msg.sender`.
-     *  @param  price_      Price at which collateral was exchanged for quote tokens.
-     *  @param  amount_     Amount of quote tokens purchased.
-     *  @param  collateral_ Amount of collateral exchanged for quote tokens.
-     */
-    event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
-
-    /**
-     *  @notice Emitted when borrower removes collateral from the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  amount_   Amount of collateral removed from the pool.
-     */
-    event RemoveCollateral(address indexed borrower_, uint256 amount_);
 
     /**
      *  @notice Emitted when lender removes quote token from the pool.
@@ -111,8 +79,9 @@ interface IPool {
 
     /**
      *  @notice Initializes a new pool, setting initial state variables.
+     *  @param  interestRate_ Default interest rate of the pool.
      */
-    function initialize() external;
+    function initialize(uint256 interestRate_) external;
 
     /***********************************/
     /*** Borrower External Functions ***/
@@ -195,6 +164,42 @@ interface IPool {
 }
 
 interface IFungiblePool is IPool {
+
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  amount_   Amount of collateral locked in the pool.
+     */
+    event AddCollateral(address indexed borrower_, uint256 amount_);
+
+    /**
+     *  @notice Emitted when lender claims unencumbered collateral.
+     *  @param  claimer_ Recipient that claimed collateral.
+     *  @param  price_   Price at which unencumbered collateral was claimed.
+     *  @param  amount_  The amount of Quote tokens transferred to the claimer.
+     *  @param  lps_     The amount of LP tokens burned in the claim.
+     */
+    event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
+
+    /**
+     *  @notice Emitted when collateral is exchanged for quote tokens.
+     *  @param  bidder_     `msg.sender`.
+     *  @param  price_      Price at which collateral was exchanged for quote tokens.
+     *  @param  amount_     Amount of quote tokens purchased.
+     *  @param  collateral_ Amount of collateral exchanged for quote tokens.
+     */
+    event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
+
+    /**
+     *  @notice Emitted when borrower removes collateral from the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  amount_   Amount of collateral removed from the pool.
+     */
+    event RemoveCollateral(address indexed borrower_, uint256 amount_);
 
     /***********************/
     /*** State Variables ***/
@@ -288,7 +293,7 @@ interface INFTPool is IPool {
      *  @notice Called by deployNFTSubsetPool()
      *  @dev Used to initialize pools that only support a subset of tokenIds
      */
-    function initializeSubset(uint256[] memory tokenIds_) external;
+    function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_) external;
 
     /***********************************/
     /*** Borrower External Functions ***/

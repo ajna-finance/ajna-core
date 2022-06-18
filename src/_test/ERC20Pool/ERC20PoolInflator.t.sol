@@ -22,7 +22,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
     function setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
-        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote));
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ERC20Pool(_poolAddress);  
 
         _borrower   = new UserWithCollateral();
@@ -94,7 +94,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
 
     function calculateInflator() internal view returns (uint256 calculatedInflator) {
         uint256 secondsSinceLastUpdate = block.timestamp - _pool.lastInflatorSnapshotUpdate();
-        uint256 spr                    = _pool.previousRate() / (3600 * 24 * 365);
+        uint256 spr                    = _pool.interestRate() / (3600 * 24 * 365);
         calculatedInflator            = PRBMathUD60x18.mul(
             _pool.inflatorSnapshot(),
             PRBMathUD60x18.pow(

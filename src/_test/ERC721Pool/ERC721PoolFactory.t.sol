@@ -29,7 +29,7 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         _factory = new ERC721PoolFactory();
 
         // deploy NFT collection pool
-        _NFTCollectionPoolAddress = _factory.deployNFTCollectionPool(address(_collateral), address(_quote));
+        _NFTCollectionPoolAddress = _factory.deployNFTCollectionPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
         // deploy NFT subset one pool
@@ -39,7 +39,7 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         _tokenIdsSubsetOne[2] = 50;
         _tokenIdsSubsetOne[3] = 61;
 
-        _NFTSubsetOnePoolAddress = _factory.deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIdsSubsetOne);
+        _NFTSubsetOnePoolAddress = _factory.deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIdsSubsetOne, 0.05 * 10**18);
         _NFTSubsetOnePool        = ERC721Pool(_NFTSubsetOnePoolAddress);
 
         // deploy NFT subset two pool
@@ -52,7 +52,7 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         _tokenIdsSubsetTwo[5] = 61;
         _tokenIdsSubsetTwo[6] = 180;
 
-        _NFTSubsetTwoPoolAddress = _factory.deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIdsSubsetTwo);
+        _NFTSubsetTwoPoolAddress = _factory.deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIdsSubsetTwo, 0.05 * 10**18);
         _NFTSubsetTwoPool        = ERC721Pool(_NFTSubsetTwoPoolAddress);
     }
 
@@ -85,10 +85,10 @@ contract ERC721PoolFactoryTest is DSTestPlus {
      */
     function testDeployPoolEther() external {
         vm.expectRevert("PF:DP:ZERO_ADDR");
-        _factory.deployNFTCollectionPool(address(_collateral), address(0));
+        _factory.deployNFTCollectionPool(address(_collateral), address(0), 0.05 * 10**18);
 
         vm.expectRevert("PF:DP:ZERO_ADDR");
-        _factory.deployNFTCollectionPool(address(0), address(_collateral));
+        _factory.deployNFTCollectionPool(address(0), address(_collateral), 0.05 * 10**18);
     }
 
     /**
@@ -100,9 +100,25 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         tokenIdsTestSubset[1] = 2;
         tokenIdsTestSubset[2] = 3;
 
-        _factory.deployNFTSubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset);
+        _factory.deployNFTSubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
         vm.expectRevert("PF:DP:POOL_EXISTS");
-        _factory.deployNFTSubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset);
+        _factory.deployNFTSubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
+    }
+
+    /**
+     *  @notice Tests revert if interest rate not between 1% and 10%.
+     */
+    function testDeployPoolInvalidRate() external {
+        uint256[] memory tokenIdsTestSubset = new uint256[](3);
+        tokenIdsTestSubset[0] = 1;
+        tokenIdsTestSubset[1] = 2;
+        tokenIdsTestSubset[2] = 3;
+
+        vm.expectRevert("PF:DP:INVALID_RATE");
+        _factory.deployNFTSubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.11 * 10**18);
+
+        vm.expectRevert("PF:DP:INVALID_RATE");
+        _factory.deployNFTSubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.009 * 10**18);
     }
 
 }

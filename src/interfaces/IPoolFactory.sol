@@ -14,9 +14,10 @@ interface IPoolFactory {
     /**
      *  @notice Deploys a cloned pool for the given collateral and quote token.
      *  @dev    Pool must not already exist, and must use WETH instead of ETH.
-     *  @param  collateral_ Address of ERC20 collateral token.
-     *  @param  quote_      Address of ERC20 quote token.
-     *  @return pool_       Address of the newly created pool.
+     *  @param  collateral_   Address of ERC20 collateral token.
+     *  @param  quote_        Address of ERC20 quote token.
+     *  @param  interestRate_ Initial interest rate of the pool.
+     *  @return pool_         Address of the newly created pool.
      */
-    function deployPool(address collateral_, address quote_) external returns (address pool_);
+    function deployPool(address collateral_, address quote_, uint256 interestRate_) external returns (address pool_);
 }

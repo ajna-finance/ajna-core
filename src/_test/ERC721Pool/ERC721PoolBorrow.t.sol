@@ -35,7 +35,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         _collateral.mint(address(_borrower), 60);
         _collateral.mint(address(_borrower2), 5);
 
-        _NFTCollectionPoolAddress = new ERC721PoolFactory().deployNFTCollectionPool(address(_collateral), address(_quote));
+        _NFTCollectionPoolAddress = new ERC721PoolFactory().deployNFTCollectionPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
         _tokenIds = new uint256[](4);
@@ -45,7 +45,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         _tokenIds[2] = 50;
         _tokenIds[3] = 61;
 
-        _NFTSubsetPoolAddress = new ERC721PoolFactory().deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIds);
+        _NFTSubsetPoolAddress = new ERC721PoolFactory().deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIds, 0.05 * 10**18);
         _NFTSubsetPool        = ERC721Pool(_NFTSubsetPoolAddress);
 
         // run token approvals for NFT Collection Pool

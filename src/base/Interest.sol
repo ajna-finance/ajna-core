@@ -17,8 +17,12 @@ abstract contract Interest is IInterest, PoolState {
     /*** Constants ***/
     /*****************/
 
-    uint256 public constant SECONDS_PER_YEAR   = 3600 * 24 * 365;
-    uint256 public constant WAD_WEEKS_PER_YEAR = 52 * 10**18;
+    uint256 public constant SECONDS_PER_YEAR    = 3600 * 24 * 365;
+    uint256 public constant SECONDS_PER_HALFDAY = 43200;
+    uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
+
+    uint256 public constant RATE_INCREASE_COEFFICIENT = 1.1 * 10**18;
+    uint256 public constant RATE_DECREASE_COEFFICIENT = 0.9 * 10**18;
 
     /***********************/
     /*** State Variables ***/
@@ -27,28 +31,8 @@ abstract contract Interest is IInterest, PoolState {
     uint256 public override inflatorSnapshot;            // [RAY]
     uint256 public override lastInflatorSnapshotUpdate;  // [SEC]
     uint256 public override minFee;                      // [WAD]
-    uint256 public override previousRate;                // [WAD]
-    uint256 public override previousRateUpdate;          // [SEC]
-
-    /**************************/
-    /*** External Functions ***/
-    /**************************/
-
-    function updateInterestRate() external override {
-        // RAY
-        uint256 curDebt = totalDebt;
-        uint256 actualUtilization = _poolActualUtilization(curDebt);
-        if (actualUtilization != 0 && previousRateUpdate < block.timestamp && _poolCollateralization(curDebt) > Maths.ONE_WAD) {
-            uint256 oldRate = previousRate;
-
-            (curDebt, ) =  _accumulatePoolInterest(curDebt, inflatorSnapshot);
-
-            previousRate       = Maths.wmul(previousRate, (actualUtilization + Maths.ONE_WAD - _poolTargetUtilization(curDebt)));
-            previousRateUpdate = block.timestamp;
-
-            emit UpdateInterestRate(oldRate, previousRate);
-        }
-    }
+    uint256 public override interestRate;                // [WAD]
+    uint256 public override interestRateUpdate;          // [SEC]
 
     /**************************/
     /*** Internal Functions ***/
@@ -89,7 +73,7 @@ abstract contract Interest is IInterest, PoolState {
     function _accumulatePoolInterest(uint256 totalDebt_, uint256 inflator_) internal returns (uint256 curDebt_, uint256 curInflator_) {
         uint256 elapsed  = block.timestamp - lastInflatorSnapshotUpdate;
         if (elapsed != 0) {
-            curInflator_ = _pendingInflator(previousRate, inflator_, elapsed);                 // RAY
+            curInflator_ = _pendingInflator(interestRate, inflator_, elapsed);                 // RAY
             curDebt_     = totalDebt_ + _pendingInterest(totalDebt_, curInflator_, inflator_); // WAD
 
             totalDebt                  = curDebt_;
@@ -103,14 +87,14 @@ abstract contract Interest is IInterest, PoolState {
 
     /**
      *  @notice Calculate the pending inflator
-     *  @param  previousRate_    WAD - The current interest rate value.
+     *  @param  interestRate_    WAD - The current interest rate value.
      *  @param  inflator_        RAY - The current inflator value
      *  @param  elapsed_         Seconds since last inflator update
      *  @return pendingInflator_ WAD - The pending inflator value
      */
-    function _pendingInflator(uint256 previousRate_, uint256 inflator_, uint256 elapsed_) internal pure returns (uint256) {
+    function _pendingInflator(uint256 interestRate_, uint256 inflator_, uint256 elapsed_) internal pure returns (uint256) {
         // Calculate annualized interest rate
-        uint256 spr = Maths.wadToRay(previousRate_) / SECONDS_PER_YEAR;
+        uint256 spr = Maths.wadToRay(interestRate_) / SECONDS_PER_YEAR;
         // secondsSinceLastUpdate is unscaled
         return Maths.rmul(inflator_, Maths.rpow(Maths.ONE_RAY + spr, elapsed_));
     }
@@ -127,6 +111,27 @@ abstract contract Interest is IInterest, PoolState {
         return Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
     }
 
+    function _updateInterestRate(uint256 curDebt_) internal {
+        uint256 poolCollateralization = _poolCollateralization(curDebt_);
+        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.ONE_WAD) {
+            uint256 oldRate          = interestRate;
+            int256 actualUtilization = int256(_poolActualUtilization(curDebt_));
+            int256 targetUtilization = int256(Maths.wdiv(Maths.ONE_WAD, poolCollateralization));
+
+            int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
+            int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+
+            if (decreaseFactor < increaseFactor - 10**18) {
+                interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
+            } else if (decreaseFactor > 10**18 - increaseFactor) {
+                interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
+            }
+            interestRateUpdate = block.timestamp;
+
+            emit UpdateInterestRate(oldRate, interestRate);
+        }
+    }
+
     /**********************/
     /*** View Functions ***/
     /**********************/
@@ -137,7 +142,7 @@ abstract contract Interest is IInterest, PoolState {
     }
 
     function getPendingInflator() public view returns (uint256) {
-        return _pendingInflator(previousRate, inflatorSnapshot, block.timestamp - lastInflatorSnapshotUpdate);
+        return _pendingInflator(interestRate, inflatorSnapshot, block.timestamp - lastInflatorSnapshotUpdate);
     }
 
     function getPendingPoolInterest() external view returns (uint256) {
