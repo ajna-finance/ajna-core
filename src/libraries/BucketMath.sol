@@ -34,7 +34,7 @@ library BucketMath {
     /**
         @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
      */
-    int256 public constant FLOAT_STEP_INT = 1_005 * 10**15;
+    int256 public constant FLOAT_STEP_INT = 1.005 * 10**18;
 
     function abs(int256 x) private pure returns (uint256) {
         return x >= 0 ? uint256(x) : uint256(-x);
