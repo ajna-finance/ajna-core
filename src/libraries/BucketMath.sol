@@ -25,16 +25,16 @@ library BucketMath {
     /**
         @dev constant price indices defining the min and max of the potential price range
      */
-    int256 public constant MAX_PRICE_INDEX = 4156;
-    int256 public constant MIN_PRICE_INDEX = -3232;
+    int256 public constant MAX_PRICE_INDEX = 4_156;
+    int256 public constant MIN_PRICE_INDEX = -3_232;
 
-    uint256 public constant MIN_PRICE = 99836282890;
-    uint256 public constant MAX_PRICE = 1004968987.606512354182109771 * 10**18;
+    uint256 public constant MIN_PRICE = 99_836_282_890;
+    uint256 public constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
 
     /**
         @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
      */
-    int256 public constant FLOAT_STEP_INT = 1005000000000000000;
+    int256 public constant FLOAT_STEP_INT = 1.005 * 10**18;
 
     function abs(int256 x) private pure returns (uint256) {
         return x >= 0 ? uint256(x) : uint256(-x);

@@ -11,7 +11,7 @@ import { IBuckets } from "../interfaces/IBuckets.sol";
 import "../libraries/Maths.sol";
 
 abstract contract Buckets is IBuckets {
-    uint256 public constant SECONDS_PER_DAY = 3600 * 24;
+    uint256 public constant SECONDS_PER_DAY = 3_600 * 24;
     uint256 public constant PENALTY_BPS = 0.001 * 10**18;
 
     /***********************/
