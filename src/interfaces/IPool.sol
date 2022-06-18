@@ -88,12 +88,6 @@ interface IPool {
     /***********************************/
 
     /**
-     *  @notice Called by borrowers to add collateral to the pool.
-     *  @param  amount_ The amount of collateral in deposit tokens to be added to the pool.
-     */
-    function addCollateral(uint256 amount_) external;
-
-    /**
      *  @notice Called by a borrower to open or expand a position.
      *  @dev    Can only be called if quote tokens have already been added to the pool.
      *  @param  amount_     The amount of quote token to borrow.
@@ -211,6 +205,16 @@ interface IFungiblePool is IPool {
      */
     function collateralScale() external view returns (uint256 collateralScale_);
 
+    /***********************************/
+    /*** Borrower External Functions ***/
+    /***********************************/
+
+    /**
+     *  @notice Called by borrowers to add collateral to the pool.
+     *  @param  amount_ The amount of collateral in deposit tokens to be added to the pool.
+     */
+    function addCollateral(uint256 amount_) external;
+
     /*******************************/
     /*** Pool External Functions ***/
     /*******************************/
@@ -233,16 +237,9 @@ interface INFTPool is IPool {
     /**
      *  @notice Emitted when borrower locks collateral in the pool.
      *  @param  borrower_ `msg.sender`.
-     *  @param  tokenId_  Token ID of the collateral locked in the pool.
-     */
-    event AddNFTCollateral(address indexed borrower_, uint256 indexed tokenId_);
-
-    /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower_ `msg.sender`.
      *  @param  tokenIds_ Array of tokenIds to be added to the pool.
      */
-    event AddNFTCollateralMultiple(address indexed borrower_, uint256[] tokenIds_);
+    event AddNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
 
     /**
      *  @notice Emitted when lender claims unencumbered collateral.
@@ -303,7 +300,7 @@ interface INFTPool is IPool {
      *  @notice Called by borrowers to add multiple NFTs to the pool.
      *  @param  tokenIds_ NFT token ids to be deposited as collateral in the pool.
      */
-    function addCollateralMultiple(uint256[] calldata tokenIds_) external;
+    function addCollateral(uint256[] calldata tokenIds_) external;
 
     /**
      *  @notice Called by borrowers to remove multiple NFTs from the pool.

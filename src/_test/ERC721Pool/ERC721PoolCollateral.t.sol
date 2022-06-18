@@ -80,8 +80,10 @@ contract ERC721PoolCollateralTest is DSTestPlus {
     function testAddRemoveCollateralNFTSubset() external {
         // should revert if attempt to add collateral from a tokenId outside of allowed subset
         vm.prank((address(_borrower)));
+        uint[] memory tokens = new uint[](1);
+        tokens[0] = 2;
         vm.expectRevert("P:ONLY_SUBSET");
-        _NFTSubsetPool.addCollateral(2);
+        _NFTSubsetPool.addCollateral(tokens);
 
         // should revert if attempting to remove collateral that is not in the pool
         vm.prank((address(_borrower)));
@@ -105,16 +107,22 @@ contract ERC721PoolCollateralTest is DSTestPlus {
 
         // add iniitial collateral to pool
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(1);
+        tokens = new uint[](1);
+        tokens[0] = 1;
+        _NFTSubsetPool.addCollateral(tokens);
+        tokens = new uint[](1);
+        tokens[0] = 5;
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(5);
+        _NFTSubsetPool.addCollateral(tokens);
 
         vm.prank((address(_borrower)));
         // vm.expectEmit(true, true, false, true);
         // emit Transfer(address(_borrower), address(_NFTSubsetPool), 50);
         vm.expectEmit(true, true, false, true);
-        emit AddNFTCollateral(address(_borrower), 50);
-        _NFTSubsetPool.addCollateral(50);
+        tokens = new uint[](1);
+        tokens[0] = 50;
+        emit AddNFTCollateral(address(_borrower), tokens);
+        _NFTSubsetPool.addCollateral(tokens);
 
         // check collateral balances
         assertEq(_collateral.balanceOf(address(_borrower)),      57);
@@ -186,7 +194,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         invalidTokenIds[2] = 3;
         vm.prank((address(_borrower)));
         vm.expectRevert("P:ONLY_SUBSET");
-        _NFTSubsetPool.addCollateralMultiple(invalidTokenIds);
+        _NFTSubsetPool.addCollateral(invalidTokenIds);
 
         // should revert if attempting to remove collateral that is not in the pool
         uint256[] memory tokenIdsToRemove = new uint256[](2);
@@ -212,8 +220,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _tokenIds[2] = 10;
         vm.prank((address(_borrower)));
         vm.expectEmit(true, true, false, true);
-        emit AddNFTCollateralMultiple(address(_borrower), _tokenIds);
-        _NFTSubsetPool.addCollateralMultiple(_tokenIds);
+        emit AddNFTCollateral(address(_borrower), _tokenIds);
+        _NFTSubsetPool.addCollateral(_tokenIds);
 
         // check pool and borrower state after adding collateral
         assertEq(_collateral.balanceOf(address(_borrower)),      57);
@@ -245,8 +253,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         tokenIdsReadd[1] = 5;
         vm.prank((address(_borrower)));
         vm.expectEmit(true, true, false, true);
-        emit AddNFTCollateralMultiple(address(_borrower), tokenIdsReadd);
-        _NFTSubsetPool.addCollateralMultiple(tokenIdsReadd);
+        emit AddNFTCollateral(address(_borrower), tokenIdsReadd);
+        _NFTSubsetPool.addCollateral(tokenIdsReadd);
 
         // check pool and borrower state after readding collateral
         assertEq(_collateral.balanceOf(address(_borrower)),      57);
@@ -327,11 +335,17 @@ contract ERC721PoolCollateralTest is DSTestPlus {
 
         // add iniitial collateral to pool
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(1);
+        uint256[] memory tokens = new uint256[](1);
+        tokens[0] = 1;
+        _NFTSubsetPool.addCollateral(tokens);
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(5);
+        tokens = new uint256[](1);
+        tokens[0] = 5;
+        _NFTSubsetPool.addCollateral(tokens);
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(50);
+        tokens = new uint256[](1);
+        tokens[0] = 50;
+        _NFTSubsetPool.addCollateral(tokens);
         assertEq(_NFTSubsetPool.getCollateralDeposited().length, 3);
   
         // borrow from pool
@@ -442,7 +456,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         invalidTokenIds[2] = 3;
         vm.prank((address(_borrower)));
         vm.expectRevert("P:ONLY_SUBSET");
-        _NFTSubsetPool.addCollateralMultiple(invalidTokenIds);
+        _NFTSubsetPool.addCollateral(invalidTokenIds);
 
         // check pool and borrower state before adding collateral
         assertEq(_collateral.balanceOf(address(_borrower)),      60);
@@ -457,8 +471,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _tokenIds[2] = 10;
         vm.prank((address(_borrower)));
         vm.expectEmit(true, true, false, true);
-        emit AddNFTCollateralMultiple(address(_borrower), _tokenIds);
-        _NFTSubsetPool.addCollateralMultiple(_tokenIds);
+        emit AddNFTCollateral(address(_borrower), _tokenIds);
+        _NFTSubsetPool.addCollateral(_tokenIds);
 
         // check pool and borrower state after adding collateral
         assertEq(_collateral.balanceOf(address(_borrower)),      57);

@@ -41,7 +41,8 @@ contract ERC721Pool is INFTPool, BasePool {
     /*****************************/
 
     function initialize(uint256 rate_) external override {
-        _onlyOnce();
+        require(_poolInitializations == 0, "P:INITIALIZED");
+
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
         inflatorSnapshot           = Maths.ONE_RAY;
@@ -55,17 +56,7 @@ contract ERC721Pool is INFTPool, BasePool {
     }
 
     function initializeSubset(uint256[] memory tokenIds_, uint256 rate_) external override {
-        _onlyOnce();
-        quoteTokenScale = 10**(18 - quoteToken().decimals());
-
-        inflatorSnapshot           = Maths.ONE_RAY;
-        lastInflatorSnapshotUpdate = block.timestamp;
-        interestRate               = rate_;
-        interestRateUpdate         = block.timestamp;
-        minFee                     = 0.0005 * 10**18;
-
-        // increment initializations count to ensure these values can't be updated
-        _poolInitializations += 1;
+        this.initialize(rate_);
 
         // add subset of tokenIds allowed in the pool
         for (uint256 id; id < tokenIds_.length;) {
@@ -80,28 +71,7 @@ contract ERC721Pool is INFTPool, BasePool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function addCollateral(uint256 tokenId_) public override {
-        // check if collateral is valid
-        _onlySubset(tokenId_);
-
-        // pool level accounting
-        (uint256 curDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
-        _collateralTokenIdsAdded.add(tokenId_);
-        totalCollateral = Maths.wad(_collateralTokenIdsAdded.length());
-
-        // borrower accounting
-        NFTborrowers[msg.sender].collateralDeposited.add(tokenId_);
-
-        _updateInterestRate(curDebt);
-
-        // move collateral from sender to pool
-        collateral().safeTransferFrom(msg.sender, address(this), tokenId_);
-        emit AddNFTCollateral(msg.sender, tokenId_);
-    }
-
-    function addCollateralMultiple(uint256[] calldata tokenIds_) external override {
-        // check if all incoming tokenIds are part of the pool subset
-        _onlySubsetMultiple(tokenIds_);
+    function addCollateral(uint256[] calldata tokenIds_) external override {
 
         (uint256 curDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
@@ -109,6 +79,7 @@ contract ERC721Pool is INFTPool, BasePool {
 
         // add tokenIds to the pool
         for (uint i; i < tokenIds_.length;) {
+            require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
 
             // pool level accounting
             _collateralTokenIdsAdded.add(tokenIds_[i]);
@@ -124,7 +95,7 @@ contract ERC721Pool is INFTPool, BasePool {
                 ++i;
             }
         }
-        emit AddNFTCollateralMultiple(msg.sender, tokenIds_);
+        emit AddNFTCollateral(msg.sender, tokenIds_);
     }
 
     function borrow(uint256 amount_, uint256 limitPrice_) external override {

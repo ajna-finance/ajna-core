@@ -48,15 +48,19 @@ contract UserWithNFTCollateral {
         uint256 tokenId_
     ) public {
         token_.approve(address(pool_), tokenId_);
-        pool_.addCollateral(tokenId_);
+        uint[] memory tokens = new uint[](1);
+        tokens[0] = tokenId_;
+        pool_.addCollateral(tokens);
     }
 
     function approveToken(IERC721 token_, address spender_, uint256 _tokenId) public {
         token_.approve(spender_, _tokenId);
     }
 
-    function addCollateral(ERC721Pool pool_, uint256 amount_) public {
-        pool_.addCollateral(amount_);
+    function addCollateral(ERC721Pool pool_, uint256 tokenId_) public {
+        uint[] memory tokens = new uint[](1);
+        tokens[0] = tokenId_;
+        pool_.addCollateral(tokens);
     }
 
     function borrow(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
