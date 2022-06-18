@@ -17,8 +17,8 @@ abstract contract Interest is IInterest, PoolState {
     /*** Constants ***/
     /*****************/
 
-    uint256 public constant SECONDS_PER_YEAR    = 3600 * 24 * 365;
-    uint256 public constant SECONDS_PER_HALFDAY = 43200;
+    uint256 public constant SECONDS_PER_YEAR    = 3_600 * 24 * 365;
+    uint256 public constant SECONDS_PER_HALFDAY = 43_200;
     uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
 
     uint256 public constant RATE_INCREASE_COEFFICIENT = 1.1 * 10**18;
