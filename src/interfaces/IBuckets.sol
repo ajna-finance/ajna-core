@@ -89,21 +89,6 @@ interface IBuckets {
         );
 
     /**
-     *  @notice Estimate the price at which a loan can be taken
-     *  @param  amount_ The amount of quote tokens desired to borrow, WAD
-     *  @param  hpb_    The current highest price bucket of the pool, WAD
-     *  @return price_  The estimated price at which the loan can be taken, WAD
-     */
-    function estimatePrice(uint256 amount_, uint256 hpb_) external view returns (uint256 price_);
-
-    /**
-     *  @notice Returns whether a bucket price has been initialized or not.
-     *  @param  price_         The price of the bucket.
-     *  @return isInitialized_ Boolean indicating if the bucket has been initialized at this price.
-     */
-    function isBucketInitialized(uint256 price_) external view returns (bool isInitialized_);
-
-    /**
      *  @notice Returns the current Highest Price Bucket (HPB).
      *  @dev    Starting at the current HPB, iterate through down pointers until a new HPB found.
      *  @dev    HPB should have at on deposit or debt different than 0.

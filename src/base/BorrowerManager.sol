@@ -91,8 +91,8 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
         return Maths.ONE_WAD;
     }
 
-    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256) {
-        return estimatePrice(amount_, lup == 0 ? hpb : lup);
+    function estimatePrice(uint256 amount_) public view override returns (uint256) {
+        return _estimatePrice(amount_, lup == 0 ? hpb : lup);
     }
 
 }

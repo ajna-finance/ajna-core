@@ -1002,25 +1002,6 @@ abstract contract Buckets is IBuckets {
         collateralDeposited_ = collateralDeposited.values();
     }
 
-    function estimatePrice(uint256 amount_, uint256 hpb_) public view override returns (uint256 price_) {
-        Bucket memory curLup = _buckets[hpb_];
-
-        while (true) {
-            if (amount_ > curLup.onDeposit) {
-                amount_ -= curLup.onDeposit;
-            } else if (amount_ <= curLup.onDeposit) {
-                price_ = curLup.price;
-                break;
-            }
-
-            if (curLup.down == 0) {
-                break;
-            } else {
-                curLup = _buckets[curLup.down];
-            }
-        }
-    }
-
     function getHpb() public view override returns (uint256 newHpb_) {
         newHpb_ = hpb;
         while (true) {
@@ -1051,8 +1032,27 @@ abstract contract Buckets is IBuckets {
         }
     }
 
-    function isBucketInitialized(uint256 price_) public view override returns (bool) {
-        return BitMaps.get(_bitmap, price_);
+    /*******************************/
+    /*** Internal View Functions ***/
+    /*******************************/
+
+    function _estimatePrice(uint256 amount_, uint256 hpb_) internal view returns (uint256 price_) {
+        Bucket memory curLup = _buckets[hpb_];
+
+        while (true) {
+            if (amount_ > curLup.onDeposit) {
+                amount_ -= curLup.onDeposit;
+            } else if (amount_ <= curLup.onDeposit) {
+                price_ = curLup.price;
+                break;
+            }
+
+            if (curLup.down == 0) {
+                break;
+            } else {
+                curLup = _buckets[curLup.down];
+            }
+        }
     }
 
     /*******************************/

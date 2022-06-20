@@ -61,7 +61,7 @@ interface IBorrowerManager {
      *  @param  amount_  Amount of debt to draw.
      *  @return price_   Price of the loan.
      */
-    function estimatePriceForLoan(uint256 amount_) external view returns (uint256 price_);
+    function estimatePrice(uint256 amount_) external view returns (uint256 price_);
 
     /**
      *  @notice Returns the collateralization based on given collateral deposited and debt.
