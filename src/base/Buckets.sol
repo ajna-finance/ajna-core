@@ -155,42 +155,6 @@ abstract contract Buckets is IBuckets {
         }
     }
 
-    /**
-     *  @notice Called by a lender to claim accumulated NFT collateral
-     *  @param  price_        The price bucket from which collateral should be claimed
-     *  @param  tokenId_      The tokenId of the collateral to claim
-     *  @param  lpBalance_    The claimers current LP balance, RAY
-     *  @return lpRedemption_ The amount of LP tokens that will be redeemed
-     */
-    function _claimNFTCollateralFromBucket(uint256 price_, uint256 tokenId_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
-        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
-        require(collateralDeposited.contains(tokenId_), "B:CC:T_NOT_IN_B");
-
-        Bucket memory bucket = _buckets[price_];
-
-        // check available collateral given removal of the NFT
-        require(Maths.WAD <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
-
-        // nft collateral is accounted for in WAD units
-        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.WAD, bucket.price), getExchangeRate(bucket));
-
-        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
-
-        // update bucket accounting
-        bucket.collateral -= Maths.WAD;
-        bucket.lpOutstanding -= lpRedemption_;
-        collateralDeposited.remove(tokenId_);
-
-        // bucket management
-        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
-        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
-        if (isEmpty && noClaim) {
-            deactivateBucket(bucket); // cleanup if bucket no longer used
-        } else {
-            _buckets[price_] = bucket; // save bucket to storage
-        }
-    }
-
     function _claimNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
         Bucket memory bucket = _buckets[price_];
 
