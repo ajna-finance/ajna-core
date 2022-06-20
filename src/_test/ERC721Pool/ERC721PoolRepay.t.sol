@@ -291,6 +291,18 @@ contract ERC721PoolRepayTest is DSTestPlus {
         assertEq(collateralEncumbered, 0);
         assertEq(collateralization,    Maths.ONE_WAD);
 
+        // TODO: borrower2 pending debt should == pool pending debt, but it doesn't...
+        // check borrower 2 after borrower 1 fully repays
+        (   borrowerDebt,
+            borrowerPendingDebt,
+            ,
+            collateralEncumbered,
+            collateralization, , ) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower2));
+        assertEq(borrowerDebt,         5_000.000961538461538462 * 1e18);
+        assertEq(borrowerPendingDebt,  5_000.130973400772668081 * 1e18);
+        assertEq(collateralEncumbered, 0.998499611608398763357484888 * 1e27);
+        assertEq(collateralization,    2.003005285879249142 * 1e18);
+
         // check pending debt across all buckets
         uint256 bucketPendingDebt = 0;
         (, , , , debt, , , , ) = _NFTSubsetPool.nftBucketAt(priceHigh);
@@ -309,8 +321,11 @@ contract ERC721PoolRepayTest is DSTestPlus {
         uint256 poolPendingDebt = _NFTSubsetPool.totalDebt() + _NFTSubsetPool.getPendingPoolInterest();
         (, borrowerPendingDebt, , , , , ) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower2));
 
+        // TODO: remove this, was for testing
+        // assertEq(_NFTSubsetPool.getPendingPoolInterest(), 0);
+
         // TODO: both are off by one
-        // assertEq(borrowerPendingDebt, poolPendingDebt);
+        assertEq(borrowerPendingDebt, poolPendingDebt);
         // assertEq(borrowerPendingDebt, bucketPendingDebt);
         assertLt(wadPercentDifference(bucketPendingDebt, borrowerPendingDebt), 0.000000000000000001 * 1e18);
         assertLt(wadPercentDifference(bucketPendingDebt, poolPendingDebt),     0.000000000000000001 * 1e18);
@@ -324,20 +339,26 @@ contract ERC721PoolRepayTest is DSTestPlus {
 
         // check pool state after borrower 2 full repayment of all remaining debt
         assertEq(_NFTSubsetPool.hpb(), priceHigh);
+
+        // TODO: fix lup not tying out
         assertEq(_NFTSubsetPool.lup(), 0);
 
         // TODO: determine why totalDebt doesn't tie out here
+        // TODO: total debt not being 0 is the root of the other issues
         assertEq(_NFTSubsetPool.totalDebt(),       0);
+
         assertEq(_NFTSubsetPool.totalQuoteToken(), 30_000.313952381611781646 * 1e18);
         assertEq(_NFTSubsetPool.totalCollateral(), 5 * 1e18);
         assertEq(_NFTSubsetPool.pdAccumulator(),   120_196_119.463731601951263150 * 1e18);
 
-        // TODO: figure out why pool collateralization is also fucked up...
-        assertEq(_NFTSubsetPool.getPoolCollateralization(), 5.007513214698122855 * 1e18);
+        // TODO: figure out why pool collateralization is also fucked up... returning a RAY as opposed to a WAD...
+        assertEq(_NFTSubsetPool.getPoolCollateralization(), Maths.ONE_WAD);
+
         assertEq(_NFTSubsetPool.getPoolActualUtilization(), 0);
         assertEq(_NFTSubsetPool.getPendingPoolInterest(),   0);
 
-        assertEq(_NFTSubsetPool.getEncumberedCollateral(_NFTSubsetPool.totalDebt()), 0.998499611608398763357684582 * 1e27);
+        // TODO: fix encumberance check as well...
+        assertEq(_NFTSubsetPool.getEncumberedCollateral(_NFTSubsetPool.totalDebt()), 0);
 
         // check balances after borrower 2 full repayment
         assertEq(_quote.balanceOf(address(_borrower)),      9_999.817021019160886435 * 1e18);
@@ -345,8 +366,36 @@ contract ERC721PoolRepayTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_NFTSubsetPool)), 30_000.313952381611781646 * 1e18);
 
         // check buckets
+        (, , , deposit, debt, , , , ) = _NFTSubsetPool.nftBucketAt(priceHigh);
+        assertEq(deposit, 10_000.221021585170426533 * 1e18);
+        assertEq(debt,    1);
 
-        // check borrowers
+        assertEq(_NFTSubsetPool.getPendingBucketInterest(priceHigh), 0);
+
+        (, , , deposit, debt, , , , ) = _NFTSubsetPool.nftBucketAt(priceMid);
+        assertEq(deposit, 10_000.092930796441355113 * 1e18);
+        assertEq(debt,    0);
+
+        assertEq(_NFTSubsetPool.getPendingBucketInterest(priceMid), 0);
+
+        (, , , deposit, debt, , , , ) = _NFTSubsetPool.nftBucketAt(priceLow);
+        assertEq(deposit, 10_000 * 1e18);
+        assertEq(debt,    0);
+
+        assertEq(_NFTSubsetPool.getPendingBucketInterest(priceLow), 0);
+
+        // check borrower 2 after full repayment
+        (   borrowerDebt,
+            borrowerPendingDebt,
+            ,
+            collateralEncumbered,
+            collateralization, , ) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower2));
+        assertEq(borrowerDebt,         0);
+        assertEq(borrowerPendingDebt,  0);
+        assertEq(collateralEncumbered, 0);
+        assertEq(collateralization,    Maths.ONE_WAD);
+
+        // remove remaining collateral
 
     }
 }

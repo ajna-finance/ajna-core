@@ -532,7 +532,7 @@ abstract contract Buckets is IBuckets {
 
     /**
      *  @notice Update bucket.debt with interest accumulated since last state change
-     *  @param debt_         Current ucket debt bucket being updated
+     *  @param debt_         WAD - Current bucket debt being updated
      *  @param inflator_     RAY - The current bucket inflator value
      *  @param poolInflator_ RAY - The current pool inflator value
      */
