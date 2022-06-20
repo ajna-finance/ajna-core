@@ -135,6 +135,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(_NFTSubsetPool.getPoolCollateralization(), borrowerCollateralization);
 
         // borrow from pool
+        skip(46800);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p4000, 5_000 * 1e18);
         _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503);
@@ -164,6 +165,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _NFTSubsetPool.removeCollateral(tokens);
 
         // remove collateral
+        skip(46800);
         vm.prank((address(_borrower)));
         tokens = new uint[](1);
         tokens[0] = 1;
@@ -171,7 +173,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         emit RemoveNFTCollateral(address(_borrower), tokens);
         _NFTSubsetPool.removeCollateral(tokens);
         assertEq(_NFTSubsetPool.getCollateralDeposited().length, 2);
-        assertEq(actualUtilization,                              _NFTSubsetPool.getPoolActualUtilization());
+        assertLt(actualUtilization,                              _NFTSubsetPool.getPoolActualUtilization());
         assertLt(targetUtilization,                              _NFTSubsetPool.getPoolTargetUtilization());
 
         // should fail to remove collateral that would result in undercollateralization of the pool
