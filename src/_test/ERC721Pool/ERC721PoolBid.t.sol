@@ -148,7 +148,7 @@ contract ERC721PoolBidTest is DSTestPlus {
         (, , , deposit, debt, , , bucketCollateral) = _NFTSubsetPool.bucketAt(_p4000);
         assertEq(deposit,          1_000 * 1e18);
         assertEq(debt,             5_000.000961538461538462 * 1e18);
-        assertEq(bucketCollateral, Maths.ONE_WAD);
+        assertEq(bucketCollateral, Maths.WAD);
 
         // check  3_010.892022197881557845 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _NFTSubsetPool.bucketAt(_p3010);

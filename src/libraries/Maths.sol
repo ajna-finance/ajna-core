@@ -4,20 +4,15 @@ pragma solidity 0.8.14;
 library Maths {
 
     uint256 public constant WAD = 10**18;
-    uint256 public constant ONE_WAD = 1 * WAD;
-
     uint256 public constant RAY = 10**27;
-    uint256 public constant ONE_RAY = 1 * RAY;
-
     uint256 public constant RAD = 10**45;
-    uint256 public constant ONE_RAD = 1 * RAD;
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * y + WAD / 2) / WAD;
+        return (x * y + 10**18 / 2) / 10**18;
     }
 
     function wdiv(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * WAD + y / 2) / y;
+        return (x * 10**18 + y / 2) / y;
     }
 
     function max(uint256 x, uint256 y) internal pure returns (uint256) {
@@ -29,19 +24,19 @@ library Maths {
     }
 
     function wad(uint256 x) internal pure returns (uint256) {
-        return x * WAD;
+        return x * 10**18;
     }
 
     function ray(uint256 x) internal pure returns (uint256) {
-        return x * RAY;
+        return x * 10**27;
     }
 
     function rmul(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * y + RAY / 2) / RAY;
+        return (x * y + 10**27 / 2) / 10**27;
     }
 
     function rdiv(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * RAY + y / 2) / y;
+        return (x * 10**27 + y / 2) / y;
     }
 
     /** @notice Divides a WAD by a RAY and returns a RAY */
@@ -60,7 +55,7 @@ library Maths {
     }
 
     function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
-        z = n % 2 != 0 ? x : RAY;
+        z = n % 2 != 0 ? x : 10**27;
 
         for (n /= 2; n != 0; n /= 2) {
             x = rmul(x, x);
@@ -72,7 +67,7 @@ library Maths {
     }
 
     function rad(uint256 x) internal pure returns (uint256) {
-        return x * RAD;
+        return x * 10**45;
     }
 
     function wadToRay(uint256 x) internal pure returns (uint256) {
@@ -80,7 +75,7 @@ library Maths {
     }
 
     function wadToRad(uint256 x) internal pure returns (uint256) {
-        return x * RAY;
+        return x * 10**27;
     }
 
     function rayToWad(uint256 x) internal pure returns (uint256) {

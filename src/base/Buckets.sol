@@ -169,15 +169,15 @@ abstract contract Buckets is IBuckets {
         Bucket memory bucket = _buckets[price_];
 
         // check available collateral given removal of the NFT
-        require(Maths.ONE_WAD <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
+        require(Maths.WAD <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
 
         // nft collateral is accounted for in WAD units
-        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.ONE_WAD, bucket.price), getExchangeRate(bucket));
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.WAD, bucket.price), getExchangeRate(bucket));
 
         require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
 
         // update bucket accounting
-        bucket.collateral -= Maths.ONE_WAD;
+        bucket.collateral -= Maths.WAD;
         bucket.lpOutstanding -= lpRedemption_;
         collateralDeposited.remove(tokenId_);
 
@@ -540,7 +540,7 @@ abstract contract Buckets is IBuckets {
         if (debt_ != 0) {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
             debt_ += Maths.radToWadTruncate(
-                debt_ * (Maths.rdiv(poolInflator_, inflator_) - Maths.ONE_RAY)
+                debt_ * (Maths.rdiv(poolInflator_, inflator_) - Maths.RAY)
             );
         }
         return debt_;
@@ -575,7 +575,7 @@ abstract contract Buckets is IBuckets {
         Bucket storage bucket = _buckets[price_];
 
         bucket.price            = price_;
-        bucket.inflatorSnapshot = Maths.ONE_RAY;
+        bucket.inflatorSnapshot = Maths.RAY;
 
         if (price_ > hpb_) {
             bucket.down = hpb_;
@@ -1066,7 +1066,7 @@ abstract contract Buckets is IBuckets {
      */
     function getExchangeRate(Bucket memory bucket_) private pure returns (uint256) {
         uint256 size = bucket_.onDeposit + bucket_.debt + Maths.wmul(bucket_.collateral, bucket_.price);
-        return (size != 0 && bucket_.lpOutstanding != 0) ? Maths.wrdivr(size, bucket_.lpOutstanding) : Maths.ONE_RAY;
+        return (size != 0 && bucket_.lpOutstanding != 0) ? Maths.wrdivr(size, bucket_.lpOutstanding) : Maths.RAY;
     }
 
 }

@@ -45,7 +45,7 @@ contract ERC721Pool is INFTPool, BasePool {
 
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
-        inflatorSnapshot           = Maths.ONE_RAY;
+        inflatorSnapshot           = 10**27;
         lastInflatorSnapshotUpdate = block.timestamp;
         interestRate               = rate_;
         interestRateUpdate         = block.timestamp;
@@ -83,7 +83,7 @@ contract ERC721Pool is INFTPool, BasePool {
 
             // pool level accounting
             _collateralTokenIdsAdded.add(tokenIds_[i]);
-            totalCollateral += Maths.ONE_WAD;
+            totalCollateral += Maths.WAD;
 
             // borrower accounting
             NFTborrowers[msg.sender].collateralDeposited.add(tokenIds_[i]);
@@ -113,7 +113,7 @@ contract ERC721Pool is INFTPool, BasePool {
         // collateral amounts need to be recorded as WADs to enable like-unit comparisons with quote token precision
         require(Maths.ray(borrower.collateralDeposited.length()) > _encumberedCollateral(borrower.debt + amount_ + fee), "P:B:INSUF_COLLAT");
         curDebt += amount_ + fee;
-        require(_poolCollateralization(curDebt) >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
+        require(_poolCollateralization(curDebt) >= Maths.WAD, "P:B:POOL_UNDER_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount_;
@@ -141,7 +141,7 @@ contract ERC721Pool is INFTPool, BasePool {
 
         // Require overcollateralization to be at a minimum of one RAY to account for indivisible NFTs
         require(
-            Maths.ray(tokenIds_.length) <= unencumberedCollateral || unencumberedCollateral >= Maths.ray(tokenIds_.length) + Maths.ONE_RAY,
+            Maths.ray(tokenIds_.length) <= unencumberedCollateral || unencumberedCollateral >= Maths.ray(tokenIds_.length) + Maths.RAY,
             "P:RC:AMT_GT_AVAIL_COLLAT"
         );
 
@@ -153,7 +153,7 @@ contract ERC721Pool is INFTPool, BasePool {
 
             // pool level accounting
             _collateralTokenIdsAdded.remove(tokenIds_[i]);
-            totalCollateral -= Maths.ONE_WAD;
+            totalCollateral -= Maths.WAD;
 
             // borrower accounting
             borrower.collateralDeposited.remove(tokenIds_[i]);
@@ -196,7 +196,7 @@ contract ERC721Pool is INFTPool, BasePool {
 
             // pool level accounting
             _collateralTokenIdsAdded.remove(tokenIds_[i]);
-            totalCollateral -= Maths.ONE_WAD;
+            totalCollateral -= Maths.WAD;
 
             // move claimed collateral from pool to claimer
             collateral().safeTransferFrom(address(this), recipient_, tokenIds_[i]);
@@ -237,7 +237,7 @@ contract ERC721Pool is INFTPool, BasePool {
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         _purchaseBidFromBucketNFTCollateral(price_, amount_, usedTokens, curInflator);
-        require(_poolCollateralization(curDebt) >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
+        require(_poolCollateralization(curDebt) >= Maths.WAD, "P:PB:POOL_UNDER_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount_;

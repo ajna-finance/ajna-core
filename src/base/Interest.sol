@@ -96,7 +96,7 @@ abstract contract Interest is IInterest, PoolState {
         // Calculate annualized interest rate
         uint256 spr = Maths.wadToRay(interestRate_) / SECONDS_PER_YEAR;
         // secondsSinceLastUpdate is unscaled
-        return Maths.rmul(inflator_, Maths.rpow(Maths.ONE_RAY + spr, elapsed_));
+        return Maths.rmul(inflator_, Maths.rpow(Maths.RAY + spr, elapsed_));
     }
 
     /**
@@ -108,15 +108,15 @@ abstract contract Interest is IInterest, PoolState {
      */
     function _pendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
         // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-        return Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
+        return Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.RAY));
     }
 
     function _updateInterestRate(uint256 curDebt_) internal {
         uint256 poolCollateralization = _poolCollateralization(curDebt_);
-        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.ONE_WAD) {
+        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.WAD) {
             uint256 oldRate          = interestRate;
             int256 actualUtilization = int256(_poolActualUtilization(curDebt_));
-            int256 targetUtilization = int256(Maths.wdiv(Maths.ONE_WAD, poolCollateralization));
+            int256 targetUtilization = int256(Maths.wdiv(Maths.WAD, poolCollateralization));
 
             int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
             int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;

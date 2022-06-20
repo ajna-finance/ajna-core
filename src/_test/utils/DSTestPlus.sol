@@ -91,7 +91,7 @@ contract DSTestPlus is Test {
     }
 
     function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
-        difference_ = lhs < rhs ? Maths.ONE_WAD - Maths.wdiv(lhs, rhs) : Maths.ONE_WAD - Maths.wdiv(rhs, lhs);
+        difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
     }
 
 }

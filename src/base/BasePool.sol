@@ -70,7 +70,7 @@ abstract contract BasePool is IPool, BorrowerManager, Clone, LenderManager {
         (uint256 fromLpTokens, uint256 toLpTokens, uint256 movedAmount) = _moveQuoteTokenFromBucket(
             fromPrice_, toPrice_, maxAmount_, lpBalance[recipient_][fromPrice_], lpTimer[recipient_][fromPrice_], curInflator
         );
-        require(_poolCollateralization(curDebt) >= Maths.ONE_WAD, "P:MQT:POOL_UNDER_COLLAT");
+        require(_poolCollateralization(curDebt) >= Maths.WAD, "P:MQT:POOL_UNDER_COLLAT");
 
         // lender accounting
         lpBalance[recipient_][fromPrice_] -= fromLpTokens;
@@ -90,7 +90,7 @@ abstract contract BasePool is IPool, BorrowerManager, Clone, LenderManager {
         (uint256 amount, uint256 lpTokens) = _removeQuoteTokenFromBucket(
             price_, maxAmount_, lpBalance[recipient_][price_], lpTimer[recipient_][price_], curInflator
         );
-        require(_poolCollateralization(curDebt) >= Maths.ONE_WAD, "P:RQT:POOL_UNDER_COLLAT");
+        require(_poolCollateralization(curDebt) >= Maths.WAD, "P:RQT:POOL_UNDER_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount;

@@ -208,7 +208,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerPendingDebt,  0);
         assertEq(collateralDeposited,  0.790937192475694302 * 1e18);
         assertEq(collateralEncumbered, 0);
-        assertEq(collateralization,    Maths.ONE_WAD);
+        assertEq(collateralization,    Maths.WAD);
         assertEq(borrowerInflator,     1.000013001099216594901568631 * 1e27);
         assertEq(_pool.getEncumberedCollateral(borrowerDebt), collateralEncumbered);
         assertEq(_pool.getBorrowerCollateralization(collateralDeposited, borrowerDebt), collateralization);
@@ -266,7 +266,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalBorrowers(),  0);
         assertEq(_pool.pdAccumulator(),   117_318_734.038244664909739000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
@@ -363,7 +363,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerPendingDebt,  0);
         assertEq(collateralDeposited,  0.455302579876161169 * 1e18);
         assertEq(collateralEncumbered, 0);
-        assertEq(collateralization,    Maths.ONE_WAD);
+        assertEq(collateralization,    Maths.WAD);
         assertEq(borrowerInflator,     1 * 1e27);
 
         // check borrower collateralization after liquidation
@@ -405,7 +405,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.totalBorrowers(),  0);
         assertEq(_pool.pdAccumulator(),   136_701_357.140089103528322500 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_000
@@ -505,7 +505,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(borrowerPendingDebt,  0);
         assertEq(collateralDeposited,  0);
         assertEq(collateralEncumbered, 0);
-        assertEq(collateralization,    Maths.ONE_WAD);
+        assertEq(collateralization,    Maths.WAD);
         assertEq(borrowerInflator,     1.171809294361418037665607534 * 1e27);
     }
 
