@@ -6,7 +6,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 import { console } from "@std/console.sol";
 
-import { IBucketsManager } from "../interfaces/IBucketsManager.sol";
+import { IBucketsManager } from "./interfaces/IBucketsManager.sol";
 
 import "../libraries/Maths.sol";
 

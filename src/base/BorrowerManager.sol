@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { InterestManager } from "./InterestManager.sol";
 
-import { IBorrowerManager } from "../interfaces/IBorrowerManager.sol";
+import { IBorrowerManager } from "./interfaces/IBorrowerManager.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 

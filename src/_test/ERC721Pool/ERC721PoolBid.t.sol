@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
-import { IPool } from "../../interfaces/IPool.sol";
+import { IPool } from "../../base/interfaces/IPool.sol";
 
 import { DSTestPlus }                                         from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, QuoteToken }                     from "../utils/Tokens.sol";

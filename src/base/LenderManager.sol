@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { BucketsManager } from "./BucketsManager.sol";
 
-import { ILenderManager } from "../interfaces/ILenderManager.sol";
+import { ILenderManager } from "./interfaces/ILenderManager.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";

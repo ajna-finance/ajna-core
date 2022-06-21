@@ -7,7 +7,7 @@ import { ERC20Pool } from "./ERC20Pool.sol";
 
 import { PoolDeployer } from "../base/PoolDeployer.sol";
 
-import { IPoolFactory } from "../interfaces/IPoolFactory.sol";
+import { IPoolFactory } from "../base/interfaces/IPoolFactory.sol";
 
 contract ERC20PoolFactory is IPoolFactory, PoolDeployer {
 

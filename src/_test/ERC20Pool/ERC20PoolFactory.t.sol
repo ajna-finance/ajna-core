@@ -8,7 +8,7 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { PoolDeployer } from "../../base/PoolDeployer.sol";
 
-import { IPoolFactory } from "../../interfaces/IPoolFactory.sol";
+import { IPoolFactory } from "../../base/interfaces/IPoolFactory.sol";
 
 import { DSTestPlus } from "../utils/DSTestPlus.sol";
 

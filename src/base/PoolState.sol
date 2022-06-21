@@ -3,8 +3,8 @@ pragma solidity 0.8.14;
 
 import { BucketsManager } from "./BucketsManager.sol";
 
-import { IPool }      from "../interfaces/IPool.sol";
-import { IPoolState } from "../interfaces/IPoolState.sol";
+import { IPool }      from "./interfaces/IPool.sol";
+import { IPoolState } from "./interfaces/IPoolState.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";

@@ -6,7 +6,7 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { BucketsManager } from "../../base/BucketsManager.sol";
 
-import { IPool } from "../../interfaces/IPool.sol";
+import { IPool } from "../../base/interfaces/IPool.sol";
 
 import { Maths }   from "../../libraries/Maths.sol";
 

@@ -7,11 +7,11 @@ import { ILenderManager }   from "./interfaces/ILenderManager.sol";
 import { IPool }            from "./interfaces/IPool.sol";
 import { IPositionManager } from "./interfaces/IPositionManager.sol";
 
-import { Multicall }   from "./base/Multicall.sol";
-import { PermitERC20 } from "./base/PermitERC20.sol";
-import { PositionNFT } from "./base/PositionNFT.sol";
+import { Multicall }   from "./Multicall.sol";
+import { PermitERC20 } from "./PermitERC20.sol";
+import { PositionNFT } from "./PositionNFT.sol";
 
-import { Maths } from "./libraries/Maths.sol";
+import { Maths } from "../libraries/Maths.sol";
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20 {
 

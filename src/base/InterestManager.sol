@@ -3,8 +3,8 @@ pragma solidity 0.8.14;
 
 import { PoolState } from "./PoolState.sol";
 
-import { IBorrowerManager } from "../interfaces/IBorrowerManager.sol";
-import { IInterestManager } from "../interfaces/IInterestManager.sol";
+import { IBorrowerManager } from "./interfaces/IBorrowerManager.sol";
+import { IInterestManager } from "./interfaces/IInterestManager.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 

@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import { ERC20Pool  }      from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory} from "../../erc20/ERC20PoolFactory.sol";
 
-import { IPool } from "../../interfaces/IPool.sol";
+import { IPool } from "../../base/interfaces/IPool.sol";
 
 import { BucketsManager }    from "../../base/BucketsManager.sol";
 
