@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC721Pool }        from "../../ERC721Pool.sol";
-import { ERC721PoolFactory } from "../../ERC721PoolFactory.sol";
+import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
+import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
 import { DSTestPlus }                                         from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, QuoteToken }                     from "../utils/Tokens.sol";
@@ -35,7 +35,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         _collateral.mint(address(_borrower), 60);
         _collateral.mint(address(_borrower2), 5);
 
-        _NFTCollectionPoolAddress = new ERC721PoolFactory().deployNFTCollectionPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        _NFTCollectionPoolAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
         _tokenIds = new uint256[](4);
@@ -45,7 +45,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         _tokenIds[2] = 50;
         _tokenIds[3] = 61;
 
-        _NFTSubsetPoolAddress = new ERC721PoolFactory().deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIds, 0.05 * 10**18);
+        _NFTSubsetPoolAddress = new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), _tokenIds, 0.05 * 10**18);
         _NFTSubsetPool        = ERC721Pool(_NFTSubsetPoolAddress);
 
         // run token approvals for NFT Collection Pool
@@ -123,7 +123,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         assertEq(debt,    6_000.000961538461538462 * 1e18);
 
         // check borrower balance
-        (uint256 borrowerDebt,, uint256[] memory collateralDeposited, uint256 collateralEncumbered,,,) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower));
+        (uint256 borrowerDebt,, uint256[] memory collateralDeposited, uint256 collateralEncumbered,,,) = _NFTSubsetPool.getBorrowerInfo(address(_borrower));
         assertEq(borrowerDebt,               6_000.000961538461538462 * 1e18);
         assertEq(collateralDeposited.length, _NFTSubsetPool.getCollateralDeposited().length);
         assertEq(collateralDeposited[0],     1);
@@ -149,7 +149,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         // TODO: execute other fx to accumulatePoolInterest
         // TODO: check pending debt post skip
         // TODO: check borrower debt has increased following the passage of time
-        // (uint256 borrowerDebtAfterTime,,,,,,) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower));
+        // (uint256 borrowerDebtAfterTime,,,,,,) = _NFTSubsetPool.getBorrowerInfo(address(_borrower));
         // assertGt(borrowerDebtAfterTime, borrowerDebt);
 
         // Attempt, but fail to borrow from pool if it would result in undercollateralization

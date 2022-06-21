@@ -3,8 +3,8 @@ pragma solidity 0.8.14;
 
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { ERC20Pool }        from "../../ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../ERC20PoolFactory.sol";
+import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
 import { DSTestPlus }                             from "../utils/DSTestPlus.sol";

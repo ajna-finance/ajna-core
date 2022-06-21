@@ -3,15 +3,15 @@ pragma solidity 0.8.14;
 
 import { PoolState } from "./PoolState.sol";
 
-import { IBorrowerManager } from "../interfaces/IBorrowerManager.sol";
-import { IInterest }        from "../interfaces/IInterest.sol";
+import { IBorrowerManager } from "./interfaces/IBorrowerManager.sol";
+import { IInterestManager } from "./interfaces/IInterestManager.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
 /**
  *  @notice Interest related functionality.
  */
-abstract contract Interest is IInterest, PoolState {
+abstract contract InterestManager is IInterestManager, PoolState {
 
     /*****************/
     /*** Constants ***/
@@ -37,34 +37,6 @@ abstract contract Interest is IInterest, PoolState {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
-
-    /**
-     *  @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
-     *  @dev    Only adds debt if a borrower has already initiated a debt position
-     *  @dev    Only used by Borrowers using fungible tokens as collateral     
-     *  @param  borrower_ Pointer to the struct which is accumulating interest on their debt
-     *  @param  inflator_ Pool inflator
-     */
-    function _accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_, uint256 inflator_) pure internal {
-        if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
-            borrower_.debt += _pendingInterest(borrower_.debt, inflator_, borrower_.inflatorSnapshot);
-        }
-        borrower_.inflatorSnapshot = inflator_;
-    }
-
-    /**
-     *  @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
-     *  @param borrower_ Pointer to the struct which is accumulating interest on their debt
-     *  @param  inflator_ Pool inflator
-     *  @dev Only used by Borrowers using NFTs as collateral
-     *  @dev Only adds debt if a borrower has already initiated a debt position
-    */
-    function _accumulateNFTBorrowerInterest(IBorrowerManager.NFTBorrowerInfo storage borrower_, uint256 inflator_) internal {
-        if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
-            borrower_.debt += _pendingInterest(borrower_.debt, inflator_, borrower_.inflatorSnapshot);
-        }
-        borrower_.inflatorSnapshot = inflator_;
-    }
 
     /**
      *  @notice Update the global borrower inflator

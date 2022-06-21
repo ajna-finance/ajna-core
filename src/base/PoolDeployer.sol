@@ -29,9 +29,9 @@ abstract contract PoolDeployer {
     /*****************/
 
     modifier canDeploy(bytes32 subsetHash_, address collateral_, address quote_, uint256 interestRate_) {
-        require(collateral_ != address(0) && quote_ != address(0),               "PF:DP:ZERO_ADDR");
-        require(deployedPools[subsetHash_][collateral_][quote_] == address(0),  "PF:DP:POOL_EXISTS");
-        require(MIN_RATE <= interestRate_ && interestRate_ <= MAX_RATE,          "PF:DP:INVALID_RATE");
+        require(collateral_ != address(0) && quote_ != address(0),             "PF:DP:ZERO_ADDR");
+        require(deployedPools[subsetHash_][collateral_][quote_] == address(0), "PF:DP:POOL_EXISTS");
+        require(MIN_RATE <= interestRate_ && interestRate_ <= MAX_RATE,        "PF:DP:INVALID_RATE");
         _;
     }
 

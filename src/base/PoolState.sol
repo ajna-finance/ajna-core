@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { Buckets } from "./Buckets.sol";
+import { BucketsManager } from "./BucketsManager.sol";
 
-import { IPool }      from "../interfaces/IPool.sol";
-import { IPoolState } from "../interfaces/IPoolState.sol";
+import { IPool }      from "./interfaces/IPool.sol";
+import { IPoolState } from "./interfaces/IPoolState.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
@@ -12,7 +12,7 @@ import { Maths }      from "../libraries/Maths.sol";
 /**
  *  @notice Pool State Management related functionality
  */
-abstract contract PoolState is IPoolState, Buckets {
+abstract contract PoolState is IPoolState, BucketsManager {
 
     uint256 public override totalCollateral;    // [WAD]
     uint256 public override totalQuoteToken;    // [WAD]

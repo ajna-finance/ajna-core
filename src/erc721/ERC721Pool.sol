@@ -9,21 +9,20 @@ import { console } from "@std/console.sol";
 import { ERC20 }         from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { BasePool } from "./base/BasePool.sol";
+import { ERC721BorrowerManager } from "./ERC721BorrowerManager.sol";
+import { ERC721BucketsManager }  from "./ERC721BucketsManager.sol";
+import { IERC721Pool }           from "./interfaces/IERC721Pool.sol";
 
-import { INFTPool } from "./interfaces/IPool.sol";
+import { Pool } from "../base/Pool.sol";
 
-import { BucketMath } from "./libraries/BucketMath.sol";
-import { Maths }      from "./libraries/Maths.sol";
+import { BucketMath } from "../libraries/BucketMath.sol";
+import { Maths }      from "../libraries/Maths.sol";
 
+contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager, Pool {
 
-contract ERC721Pool is INFTPool, BasePool {
-
-    using SafeERC20 for ERC20;
-
+    using SafeERC20     for ERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
     /***********************/
@@ -86,7 +85,7 @@ contract ERC721Pool is INFTPool, BasePool {
             totalCollateral += Maths.WAD;
 
             // borrower accounting
-            NFTborrowers[msg.sender].collateralDeposited.add(tokenIds_[i]);
+            _NFTborrowers[msg.sender].collateralDeposited.add(tokenIds_[i]);
 
             // move collateral from sender to pool
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
@@ -104,8 +103,8 @@ contract ERC721Pool is INFTPool, BasePool {
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
         require(amount_ > _poolMinDebtAmount(curDebt, totalBorrowers), "P:B:AMT_LT_AVG_DEBT");
 
-        NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
-        _accumulateNFTBorrowerInterest(borrower, curInflator);
+        NFTBorrowerInfo storage borrower = _NFTborrowers[msg.sender];
+        _accumulateBorrowerInterest(borrower, curInflator);
 
         // borrow amount from buckets with limit price and apply the origination fee
         uint256 fee = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
@@ -134,8 +133,8 @@ contract ERC721Pool is INFTPool, BasePool {
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
-        NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
-        _accumulateNFTBorrowerInterest(borrower, curInflator);
+        NFTBorrowerInfo storage borrower = _NFTborrowers[msg.sender];
+        _accumulateBorrowerInterest(borrower, curInflator);
 
         uint256 unencumberedCollateral = Maths.ray(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt);
 

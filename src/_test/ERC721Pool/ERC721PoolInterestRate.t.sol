@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC721Pool }        from "../../ERC721Pool.sol";
-import { ERC721PoolFactory } from "../../ERC721PoolFactory.sol";
+import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
+import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
 import { DSTestPlus }                                         from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, QuoteToken }                     from "../utils/Tokens.sol";
@@ -35,7 +35,7 @@ contract ERC721PoolInterestRateTriggerTest is DSTestPlus {
         _collateral.mint(address(_borrower), 60);
         _collateral.mint(address(_borrower2), 5);
 
-        _NFTCollectionPoolAddress = new ERC721PoolFactory().deployNFTCollectionPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        _NFTCollectionPoolAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _NFTCollectionPool        = ERC721Pool(_NFTCollectionPoolAddress);
 
         _tokenIds = new uint256[](5);
@@ -46,7 +46,7 @@ contract ERC721PoolInterestRateTriggerTest is DSTestPlus {
         _tokenIds[3] = 50;
         _tokenIds[4] = 61;
 
-        _NFTSubsetPoolAddress = new ERC721PoolFactory().deployNFTSubsetPool(address(_collateral), address(_quote), _tokenIds, 0.05 * 10**18);
+        _NFTSubsetPoolAddress = new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), _tokenIds, 0.05 * 10**18);
         _NFTSubsetPool        = ERC721Pool(_NFTSubsetPoolAddress);
 
         // run token approvals for NFT Collection Pool

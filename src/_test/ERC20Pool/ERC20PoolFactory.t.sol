@@ -3,12 +3,12 @@ pragma solidity 0.8.14;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-import { ERC20Pool }        from "../../ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../ERC20PoolFactory.sol";
+import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { PoolDeployer } from "../../base/PoolDeployer.sol";
 
-import { IPoolFactory } from "../../interfaces/IPoolFactory.sol";
+import { IPoolFactory } from "../../base/interfaces/IPoolFactory.sol";
 
 import { DSTestPlus } from "../utils/DSTestPlus.sol";
 

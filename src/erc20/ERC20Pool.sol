@@ -7,14 +7,16 @@ import { Clone } from "@clones/Clone.sol";
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { BasePool } from "./base/BasePool.sol";
+import { ERC20BorrowerManager } from "./ERC20BorrowerManager.sol";
+import { ERC20BucketsManager }  from "./ERC20BucketsManager.sol";
+import { IERC20Pool }           from "./interfaces/IERC20Pool.sol";
 
-import { IFungiblePool } from "./interfaces/IPool.sol";
+import { Pool } from "../base/Pool.sol";
 
-import { BucketMath } from "./libraries/BucketMath.sol";
-import { Maths }      from "./libraries/Maths.sol";
+import { BucketMath } from "../libraries/BucketMath.sol";
+import { Maths }      from "../libraries/Maths.sol";
 
-contract ERC20Pool is IFungiblePool, BasePool {
+contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Pool {
 
     using SafeERC20 for ERC20;
 

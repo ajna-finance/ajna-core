@@ -6,12 +6,12 @@ import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
 
 import { ERC721Pool } from "./ERC721Pool.sol";
 
-import { PoolDeployer } from "./base/PoolDeployer.sol";
+import { PoolDeployer } from "../base/PoolDeployer.sol";
 
-import { IPoolFactory } from "./interfaces/IPoolFactory.sol";
+import { IERC721PoolFactory } from "./interfaces/IERC721PoolFactory.sol";
 
 // TODO: add IERC721PoolFactory
-contract ERC721PoolFactory is PoolDeployer {
+contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
     using ClonesWithImmutableArgs for address;
 
@@ -24,7 +24,7 @@ contract ERC721PoolFactory is PoolDeployer {
         implementation = new ERC721Pool();
     }
 
-    function deployNFTCollectionPool(
+    function deployPool(
         address collateral_, address quote_, uint256 interestRate_
     ) external canDeploy(ERC721_NON_SUBSET_HASH, collateral_, quote_, interestRate_) returns (address pool_) {
         bytes memory data = abi.encodePacked(collateral_, quote_);
@@ -37,7 +37,7 @@ contract ERC721PoolFactory is PoolDeployer {
         emit PoolCreated(pool_);
     }
 
-    function deployNFTSubsetPool(
+    function deploySubsetPool(
         address collateral_, address quote_, uint256[] memory tokenIds_, uint256 interestRate_
     ) external canDeploy(getNFTSubsetHash(tokenIds_), collateral_, quote_, interestRate_) returns (address pool_) {
         bytes memory data = abi.encodePacked(collateral_, quote_, tokenIds_);

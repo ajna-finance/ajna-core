@@ -8,7 +8,7 @@ import { ERC721Burnable }   from "@openzeppelin/contracts/token/ERC721/extension
 import { ERC721Enumerable } from "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import { Strings }          from "@openzeppelin/contracts/utils/Strings.sol";
 
-import { IPositionManager } from "../interfaces/IPositionManager.sol";
+import { IPositionManager } from "./interfaces/IPositionManager.sol";
 
 import { PermitERC721 } from "./PermitERC721.sol";
 
