@@ -5,8 +5,6 @@ import { IERC20BorrowerManager } from "./interfaces/IERC20BorrowerManager.sol";
 
 import { InterestManager } from "../base/InterestManager.sol";
 
-import { Maths } from "../libraries/Maths.sol";
-
 /**
  *  @notice Interest related functionality.
  */

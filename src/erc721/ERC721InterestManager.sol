@@ -5,8 +5,6 @@ import { IERC721BorrowerManager } from "./interfaces/IERC721BorrowerManager.sol"
 
 import { InterestManager } from "../base/InterestManager.sol";
 
-import { Maths } from "../libraries/Maths.sol";
-
 /**
  *  @notice Interest related functionality.
  */

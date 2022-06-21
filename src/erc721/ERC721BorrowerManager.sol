@@ -8,8 +8,7 @@ import { BorrowerManager } from "../base/BorrowerManager.sol";
 import { IERC721BorrowerManager } from "./interfaces/IERC721BorrowerManager.sol";
 import { ERC721InterestManager }  from "./ERC721InterestManager.sol";
 
-import { BucketMath } from "../libraries/BucketMath.sol";
-import { Maths }      from "../libraries/Maths.sol";
+import { Maths } from "../libraries/Maths.sol";
 
 /**
  *  @notice Lender Management related functionality
