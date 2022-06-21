@@ -8,6 +8,8 @@ import { IInterest }        from "../interfaces/IInterest.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
+import { console } from "@std/console.sol";
+
 /**
  *  @notice Interest related functionality.
  */
@@ -61,7 +63,7 @@ abstract contract Interest is IInterest, PoolState {
      *  @param  borrower_ Pointer to the struct which is accumulating interest on their debt
      *  @param  inflator_ Pool inflator
      */
-    function _accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_, uint256 inflator_) pure internal {
+    function _accumulateBorrowerInterest(IBorrowerManager.BorrowerInfo memory borrower_, uint256 inflator_) view internal {
         if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
             borrower_.debt += _pendingInterest(borrower_.debt, inflator_, borrower_.inflatorSnapshot);
         }
@@ -122,9 +124,13 @@ abstract contract Interest is IInterest, PoolState {
      *  @param  currentInflator_ RAY - The current debt inflator value
      *  @return interest_        WAD - The additional debt pending accumulation
      */
-    function _pendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal pure returns (uint256) {
+    function _pendingInterest(uint256 debt_, uint256 pendingInflator_, uint256 currentInflator_) internal view returns (uint256) {
         // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-        return Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
+        // console.log("pre trunc", debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
+        // console.log("trunc", Maths.radToWadTruncate(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY)));
+        // console.log("un trunc", Maths.radToWad(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY)));
+
+        return Maths.radToWad(debt_ * (Maths.rdiv(pendingInflator_, currentInflator_) - Maths.ONE_RAY));
     }
 
     /**********************/

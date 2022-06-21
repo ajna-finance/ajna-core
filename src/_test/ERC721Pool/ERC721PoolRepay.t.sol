@@ -249,15 +249,15 @@ contract ERC721PoolRepayTest is DSTestPlus {
             collateralEncumbered,
             collateralization, , ) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower));
         assertEq(borrowerDebt,         2_000.156974741561734219 * 1e18);
-        assertEq(borrowerPendingDebt,  2_000.182978980839113565 * 1e18);
+        assertEq(borrowerPendingDebt,  2_000.182978980839113567 * 1e18);
         assertEq(collateralEncumbered, 0.399425922697329090445156664 * 1e27);
         assertEq(collateralization,    7.510779419975939915 * 1e18);
 
         // borrower attempts to overpay 2500 to cover remaining debt plus accumulated interest
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_borrower), _NFTSubsetPoolAddress, 2_000.182978980839113565 * 1e18);
+        emit Transfer(address(_borrower), _NFTSubsetPoolAddress, 2_000.182978980839113567 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Repay(address(_borrower), priceHigh, 2_000.182978980839113565 * 1e18);
+        emit Repay(address(_borrower), priceHigh, 2_000.182978980839113567 * 1e18);
         _borrower.repay(_NFTSubsetPool, 2_500 * 1e18);
 
         // check pool state after borrower 1 full repayment
@@ -265,7 +265,7 @@ contract ERC721PoolRepayTest is DSTestPlus {
         assertEq(_NFTSubsetPool.lup(), priceHigh);
 
         assertEq(_NFTSubsetPool.totalDebt(),       5000.130973400772668082 * 1e18);
-        assertEq(_NFTSubsetPool.totalQuoteToken(), 25_000.182978980839113565 * 1e18);
+        assertEq(_NFTSubsetPool.totalQuoteToken(), 25_000.182978980839113567 * 1e18);
         assertEq(_NFTSubsetPool.totalCollateral(), 5 * 1e18);
         assertEq(_NFTSubsetPool.pdAccumulator(),   95_157_241.670990893406505095 * 1e18);
 
@@ -332,9 +332,9 @@ contract ERC721PoolRepayTest is DSTestPlus {
 
         // borrower 2 repays entire debt
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_borrower2), _NFTSubsetPoolAddress, 5_000.130973400772668081 * 1e18);
+        emit Transfer(address(_borrower2), _NFTSubsetPoolAddress, 5_000.130973400772668082 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Repay(address(_borrower2), priceHigh, 5_000.130973400772668081 * 1e18);
+        emit Repay(address(_borrower2), 0, 5_000.130973400772668082 * 1e18);
         _borrower2.repay(_NFTSubsetPool, 5010 * 1e18);
 
         // check pool state after borrower 2 full repayment of all remaining debt
@@ -368,7 +368,7 @@ contract ERC721PoolRepayTest is DSTestPlus {
         // check buckets
         (, , , deposit, debt, , , , ) = _NFTSubsetPool.nftBucketAt(priceHigh);
         assertEq(deposit, 10_000.221021585170426533 * 1e18);
-        assertEq(debt,    1);
+        assertEq(debt,    0);
 
         assertEq(_NFTSubsetPool.getPendingBucketInterest(priceHigh), 0);
 

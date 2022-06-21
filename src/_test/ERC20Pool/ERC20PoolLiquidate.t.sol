@@ -177,7 +177,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         emit Liquidate(address(_borrower), 11_000.143973642345139318 * 1e18, 1.209062807524305698 * 1e18);
         _lender.liquidate(_pool, address(_borrower));
 
-        assertEq(_pool.hpb(), priceLow);
+        assertEq(_pool.hpb(), priceLow); // this is broken
         assertEq(_pool.lup(), priceLow);
 
         assertEq(_pool.totalDebt(),       1_200.016562870022509283 * 1e18);
@@ -225,7 +225,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
 
         // check 9_020.461710444470171420 bucket balance after liquidate
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(priceMed);
-        assertEq(debt,             0);
+        assertEq(debt,             0); // this broken
         assertEq(deposit,          0);
         assertEq(bucketCollateral, 0.110860618308738983 * 1e18);
 

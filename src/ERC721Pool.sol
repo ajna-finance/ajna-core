@@ -223,13 +223,22 @@ contract ERC721Pool is INFTPool, BorrowerManager, Clone, LenderManager {
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
         require(borrower.debt != 0, "P:R:NO_DEBT");
 
+        console.log("total debt before accumulation", totalDebt);
+        console.log("borrower debt before accumulation", borrower.debt);
+
         // accumulate interest
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        console.log("inflators", curInflator, inflatorSnapshot, borrower.inflatorSnapshot);
         _accumulateNFTBorrowerInterest(borrower, curInflator);
+        console.log("total debt after accumulation", curDebt);
+        console.log("borrower debt after accumulation", borrower.debt);
 
         // calculate repayment amount and resulting debt levels
         uint256 amount        = Maths.min(maxAmount_, borrower.debt);
+        console.log("amount to repay", amount);
         uint256 remainingDebt = borrower.debt - amount;
+        console.log("total borrowers: ", totalBorrowers);
+        console.log("debt calc", remainingDebt, _poolMinDebtAmount(curDebt, totalBorrowers));
         require(remainingDebt == 0 || remainingDebt > _poolMinDebtAmount(curDebt, totalBorrowers),"P:R:AMT_LT_AVG_DEBT");
 
         // repay amount to buckets

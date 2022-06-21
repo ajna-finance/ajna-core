@@ -239,10 +239,14 @@ abstract contract Buckets is IBuckets {
         uint256 curPrice = hpb;
 
         while (true) {
+            console.log("price", curPrice);
             Bucket storage bucket   = _buckets[curPrice];
+            console.log("inflators", bucket.inflatorSnapshot, inflator_);
+            // TODO: add check to ensure accumulate interest isn't called multiple times unnecessarily
             uint256 curDebt         = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
             bucket.inflatorSnapshot = inflator_;
 
+            console.log("debt | cur debt", debt_, curDebt);
             uint256 bucketDebtToPurchase     = Maths.min(debt_, curDebt);
             uint256 bucketRequiredCollateral = Maths.min(Maths.wdiv(debt_, bucket.price), collateral_);
 
@@ -254,15 +258,21 @@ abstract contract Buckets is IBuckets {
             curDebt           -= bucketDebtToPurchase;
             bucket.collateral += bucketRequiredCollateral;
 
+            // TODO: debt should be set to 0 here, not bucket.debt
             // forgive the debt when borrower has no remaining collateral but still has debt
             if (debt_ != 0 && collateral_ == 0) {
-                bucket.debt = 0;
+                console.log("breaking here?");
+                debt_ = 0;
+                bucket.debt = 0; // bucket.debt -= debt?
                 break;
             }
 
             bucket.debt = curDebt;
 
-            if (debt_ == 0) break; // stop if all debt reconciliated
+            if (debt_ == 0) {
+                console.log("bucket debt should be 0 ...", bucket.debt);
+                break; // stop if all debt reconciliated
+            }
 
             curPrice = bucket.down;
         }
@@ -536,12 +546,22 @@ abstract contract Buckets is IBuckets {
      *  @param inflator_     RAY - The current bucket inflator value
      *  @param poolInflator_ RAY - The current pool inflator value
      */
+    // function accumulateBucketInterest(uint256 debt_, uint256 inflator_, uint256 poolInflator_) private pure returns (uint256){
+    //     if (debt_ != 0) {
+    //         // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
+    //         debt_ += Maths.radToWadTruncate(
+    //         // debt_ += Maths.radToWadTruncate(
+    //             debt_ * (Maths.rdiv(poolInflator_, inflator_) - Maths.ONE_RAY)
+    //         );
+    //     }
+    //     return debt_;
+    // }
+
     function accumulateBucketInterest(uint256 debt_, uint256 inflator_, uint256 poolInflator_) private pure returns (uint256){
         if (debt_ != 0) {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
-            debt_ += Maths.radToWadTruncate(
-                debt_ * (Maths.rdiv(poolInflator_, inflator_) - Maths.ONE_RAY)
-            );
+            debt_ += 
+                Maths.rmul(Maths.wadToRay(debt_), (Maths.rdiv(poolInflator_, inflator_) - Maths.ONE_RAY));
         }
         return debt_;
     }

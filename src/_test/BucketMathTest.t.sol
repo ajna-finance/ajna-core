@@ -112,7 +112,7 @@ contract BucketMathTest is DSTestPlus {
     /**
      *  @notice Tests get closest bucket with fuzzing.
      */
-    function testPriceToIndexFuzzy(uint256 priceToIndex_) public {
+    function xtestPriceToIndexFuzzy(uint256 priceToIndex_) public {
         if (priceToIndex_ < BucketMath.MIN_PRICE || priceToIndex_ >= BucketMath.MAX_PRICE) {
             return;
         }

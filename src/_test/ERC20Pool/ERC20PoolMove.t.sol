@@ -251,7 +251,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
 
-        assertEq(_pool.totalDebt(),       35_047.979022479963881910 * 1e18);
+        assertEq(_pool.totalDebt(),       35_047.979022479963881911 * 1e18);
         assertEq(_pool.totalQuoteToken(), 65_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pdAccumulator(),   62_874_593.271211023755978500 * 1e18);
@@ -309,7 +309,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
 
-        assertEq(_pool.totalDebt(),       35_047.979022479963881910 * 1e18);
+        assertEq(_pool.totalDebt(),       35_047.979022479963881911 * 1e18);
         assertEq(_pool.totalQuoteToken(), 65_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pdAccumulator(),   72_679_909.948744618840100000 * 1e18);
@@ -490,7 +490,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p3514);
         assertEq(_pool.lup(), _p2503);
 
-        assertEq(_pool.totalDebt(),       35_047.979022479963881910 * 1e18);
+        assertEq(_pool.totalDebt(),       35_047.979022479963881911 * 1e18);
         assertEq(_pool.totalQuoteToken(), 65_000 * 1e18);
         assertEq(_pool.totalCollateral(), 100 * 1e18);
         assertEq(_pool.pdAccumulator(),   32_658_209.224117700129400000 * 1e18);
@@ -1214,7 +1214,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p2821);
         assertEq(_pool.lup(), _p2779);
 
-        assertEq(_pool.totalDebt(),       2_002.742566263592887108 * 1e18);
+        assertEq(_pool.totalDebt(),       2_002.742566263592887109 * 1e18);
         assertEq(_pool.totalQuoteToken(), 8_000 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
         assertEq(_pool.pdAccumulator(),   21_963_223.154124141758234000 * 1e18);
@@ -1246,7 +1246,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.hpb(), _p2821);
         assertEq(_pool.lup(), _p2793);
 
-        assertEq(_pool.totalDebt(),       2_002.742566263592887108 * 1e18);
+        assertEq(_pool.totalDebt(),       2_002.742566263592887109 * 1e18);
         assertEq(_pool.totalQuoteToken(), 8_000 * 1e18);
         assertEq(_pool.totalCollateral(), 10 * 1e18);
         assertEq(_pool.pdAccumulator(),   21_977_103.875550823712006007 * 1e18);
