@@ -20,7 +20,7 @@ abstract contract ERC721BorrowerManager is IERC721BorrowerManager, BorrowerManag
     // TODO: rename
     /// @dev Internal visibility is required as it contains a nested struct
     // borrowers book: borrower address -> NFTBorrowerInfo
-    mapping(address => NFTBorrowerInfo) internal NFTborrowers;
+    mapping(address => NFTBorrowerInfo) internal _NFTborrowers;
 
     /**********************/
     /*** View Functions ***/
@@ -37,7 +37,7 @@ abstract contract ERC721BorrowerManager is IERC721BorrowerManager, BorrowerManag
             uint256 inflatorSnapshot_
         )
     {
-        NFTBorrowerInfo storage borrower = NFTborrowers[borrower_];
+        NFTBorrowerInfo storage borrower = _NFTborrowers[borrower_];
 
         debt_                     = borrower.debt;
         pendingDebt_              = debt_;

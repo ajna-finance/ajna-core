@@ -84,7 +84,7 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, Pool {
             totalCollateral += Maths.WAD;
 
             // borrower accounting
-            NFTborrowers[msg.sender].collateralDeposited.add(tokenIds_[i]);
+            _NFTborrowers[msg.sender].collateralDeposited.add(tokenIds_[i]);
 
             // move collateral from sender to pool
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
@@ -102,7 +102,7 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, Pool {
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
         require(amount_ > _poolMinDebtAmount(curDebt, totalBorrowers), "P:B:AMT_LT_AVG_DEBT");
 
-        NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
+        NFTBorrowerInfo storage borrower = _NFTborrowers[msg.sender];
         _accumulateBorrowerInterest(borrower, curInflator);
 
         // borrow amount from buckets with limit price and apply the origination fee
@@ -132,7 +132,7 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, Pool {
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
-        NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
+        NFTBorrowerInfo storage borrower = _NFTborrowers[msg.sender];
         _accumulateBorrowerInterest(borrower, curInflator);
 
         uint256 unencumberedCollateral = Maths.ray(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt);
