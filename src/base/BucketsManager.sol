@@ -41,7 +41,7 @@ abstract contract BucketsManager is IBucketsManager {
      *  @param inflator_     RAY - The current bucket inflator value
      *  @param poolInflator_ RAY - The current pool inflator value
      */
-    function accumulateBucketInterest(uint256 debt_, uint256 inflator_, uint256 poolInflator_) internal pure returns (uint256){
+    function _accumulateBucketInterest(uint256 debt_, uint256 inflator_, uint256 poolInflator_) internal pure returns (uint256){
         if (debt_ != 0) {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
             debt_ += Maths.radToWadTruncate(
@@ -66,7 +66,7 @@ abstract contract BucketsManager is IBucketsManager {
         uint256 newHpb = !BitMaps.get(_bitmap, price_) ? initializeBucket(hpb, price_) : hpb;
 
         Bucket memory bucket    = _buckets[price_];
-        bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
+        bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
         lpTokens_ = Maths.rdiv(Maths.wadToRay(amount_), _exchangeRate(bucket));
@@ -104,7 +104,7 @@ abstract contract BucketsManager is IBucketsManager {
             require(curPrice >= limit_, "B:B:PRICE_LT_LIMIT");
 
             Bucket storage curLup   = _buckets[curPrice];
-            uint256 curDebt         = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
+            uint256 curDebt         = _accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
             uint256 deposit         = curLup.onDeposit;
             curLup.inflatorSnapshot = inflator_;
 
@@ -134,7 +134,7 @@ abstract contract BucketsManager is IBucketsManager {
      *  @notice Removes state for an unused bucket and update surrounding price pointers
      *  @param  bucket_ The price bucket to deactivate.
      */
-    function deactivateBucket(Bucket memory bucket_) internal {
+    function _deactivateBucket(Bucket memory bucket_) internal {
         BitMaps.setTo(_bitmap, bucket_.price, false);
         bool isHighestBucket = bucket_.price == bucket_.up;
         bool isLowestBucket = bucket_.down == 0;
@@ -168,7 +168,7 @@ abstract contract BucketsManager is IBucketsManager {
         uint256 newLup = lup;
 
         Bucket memory fromBucket    = _buckets[fromPrice_];
-        fromBucket.debt             = accumulateBucketInterest(fromBucket.debt, fromBucket.inflatorSnapshot, inflator_);
+        fromBucket.debt             = _accumulateBucketInterest(fromBucket.debt, fromBucket.inflatorSnapshot, inflator_);
         fromBucket.inflatorSnapshot = inflator_;
 
         uint256 exchangeRate = _exchangeRate(fromBucket);                 // RAY
@@ -179,7 +179,7 @@ abstract contract BucketsManager is IBucketsManager {
         amount_       = Maths.rayToWad(amount_);
 
         Bucket memory toBucket    = _buckets[toPrice_];
-        toBucket.debt             = accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
+        toBucket.debt             = _accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
         toBucket.inflatorSnapshot = inflator_;
 
         // apply bid penalty if deposit happened less than 24h ago
@@ -214,7 +214,70 @@ abstract contract BucketsManager is IBucketsManager {
         if (newHpb != hpb) hpb = newHpb;
 
         // bucket management
-        if (isEmpty && noClaim) deactivateBucket(fromBucket); // cleanup if bucket no longer used
+        if (isEmpty && noClaim) _deactivateBucket(fromBucket); // cleanup if bucket no longer used
+    }
+
+    /**
+     *  @notice Moves assets in a bucket to a bucket's down pointers
+     *  @dev    Occurs when quote tokens are being removed
+     *  @dev    Should continue until all of the desired quote tokens have been removed
+     *  @param  bucket_   The given bucket whose assets are being reallocated
+     *  @param  amount_   The amount of quote tokens requiring reallocation, WAD
+     *  @param  inflator_ The current pool inflator rate, RAY
+     *  @return lup_      The price to which assets were reallocated
+     */
+    function _reallocateDown(
+        Bucket memory bucket_, uint256 amount_, uint256 inflator_
+    ) internal returns (uint256 lup_) {
+
+        lup_ = bucket_.price;
+        // debt reallocation
+        if (amount_ > bucket_.onDeposit) {
+            uint256 pdRemove;
+            uint256 reallocation = amount_ - bucket_.onDeposit;
+            if (bucket_.down != 0) {
+                uint256 toPrice = bucket_.down;
+
+                while (true) {
+                    Bucket storage toBucket   = _buckets[toPrice];
+                    uint256 toDebt            = _accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
+                    uint256 toDeposit         = toBucket.onDeposit;
+                    toBucket.inflatorSnapshot = inflator_;
+
+                    if (reallocation < toDeposit) {
+                        // reallocate all and exit
+                        bucket_.debt       -= reallocation;
+                        toBucket.debt      = toDebt + reallocation;
+                        toBucket.onDeposit -= reallocation;
+                        pdRemove           += Maths.wmul(reallocation, toPrice);
+                        lup_ = toPrice;
+                        break;
+                    } else {
+                        if (toDeposit != 0) {
+                            reallocation       -= toDeposit;
+                            bucket_.debt      -= toDeposit;
+                            toDebt             += toDeposit;
+                            pdRemove           += Maths.wmul(toDeposit, toPrice);
+                            toBucket.onDeposit -= toDeposit;
+                        }
+                        toBucket.debt = toDebt;
+                    }
+
+                    if (toBucket.down == 0) {
+                        // last bucket, nowhere to go, guard against reallocation failures
+                        require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
+                        lup_ = toPrice;
+                        break;
+                    }
+
+                    toPrice = toBucket.down;
+                }
+            } else {
+                require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
+            }
+
+            pdAccumulator -= pdRemove;
+        }
     }
 
     /**
@@ -231,7 +294,7 @@ abstract contract BucketsManager is IBucketsManager {
         uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
     ) internal returns (uint256 amount_, uint256 lpTokens_) {
         Bucket memory bucket    = _buckets[price_];
-        bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
+        bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
         uint256 exchangeRate = _exchangeRate(bucket);                  // RAY
@@ -246,7 +309,7 @@ abstract contract BucketsManager is IBucketsManager {
         bucket.lpOutstanding -= lpTokens_;
 
         // debt reallocation
-        uint256 newLup = reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
+        uint256 newLup = _reallocateDown(bucket, amount_ - removeFromDeposit, inflator_);
         pdAccumulator  -= Maths.wmul(removeFromDeposit, bucket.price);
 
         // apply bid penalty if deposit happened less than 24h ago
@@ -267,7 +330,7 @@ abstract contract BucketsManager is IBucketsManager {
         if (newHpb != hpb) hpb = newHpb;
 
         // bucket management
-        if (isEmpty && noClaim) deactivateBucket(bucket); // cleanup if bucket no longer used
+        if (isEmpty && noClaim) _deactivateBucket(bucket); // cleanup if bucket no longer used
     }
 
     /**
@@ -282,7 +345,7 @@ abstract contract BucketsManager is IBucketsManager {
 
         while (true) {
             Bucket storage curLup = _buckets[curPrice];
-            uint256 curDebt = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
+            uint256 curDebt = _accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
             if (curDebt != 0) {
                 curLup.inflatorSnapshot = inflator_;
 
@@ -386,7 +449,7 @@ abstract contract BucketsManager is IBucketsManager {
         if (moveUp) {
             newLup_ = reallocateUpFromBucket(fromBucket_, toBucket_, depositToMove, inflator_);
         } else {
-            newLup_ = reallocateDown(fromBucket_, debtToMove, inflator_);
+            newLup_ = _reallocateDown(fromBucket_, debtToMove, inflator_);
         }
 
         pdAccumulator = pdAccumulator + Maths.wmul(toOnDeposit, toBucket_.price) - Maths.wmul(depositToMove, fromBucket_.price);
@@ -433,69 +496,6 @@ abstract contract BucketsManager is IBucketsManager {
      *  @notice Moves assets in a bucket to a bucket's down pointers
      *  @dev    Occurs when quote tokens are being removed
      *  @dev    Should continue until all of the desired quote tokens have been removed
-     *  @param  bucket_   The given bucket whose assets are being reallocated
-     *  @param  amount_   The amount of quote tokens requiring reallocation, WAD
-     *  @param  inflator_ The current pool inflator rate, RAY
-     *  @return lup_      The price to which assets were reallocated
-     */
-    function reallocateDown(
-        Bucket memory bucket_, uint256 amount_, uint256 inflator_
-    ) internal returns (uint256 lup_) {
-
-        lup_ = bucket_.price;
-        // debt reallocation
-        if (amount_ > bucket_.onDeposit) {
-            uint256 pdRemove;
-            uint256 reallocation = amount_ - bucket_.onDeposit;
-            if (bucket_.down != 0) {
-                uint256 toPrice = bucket_.down;
-
-                while (true) {
-                    Bucket storage toBucket   = _buckets[toPrice];
-                    uint256 toDebt            = accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
-                    uint256 toDeposit         = toBucket.onDeposit;
-                    toBucket.inflatorSnapshot = inflator_;
-
-                    if (reallocation < toDeposit) {
-                        // reallocate all and exit
-                        bucket_.debt       -= reallocation;
-                        toBucket.debt      = toDebt + reallocation;
-                        toBucket.onDeposit -= reallocation;
-                        pdRemove           += Maths.wmul(reallocation, toPrice);
-                        lup_ = toPrice;
-                        break;
-                    } else {
-                        if (toDeposit != 0) {
-                            reallocation       -= toDeposit;
-                            bucket_.debt      -= toDeposit;
-                            toDebt             += toDeposit;
-                            pdRemove           += Maths.wmul(toDeposit, toPrice);
-                            toBucket.onDeposit -= toDeposit;
-                        }
-                        toBucket.debt = toDebt;
-                    }
-
-                    if (toBucket.down == 0) {
-                        // last bucket, nowhere to go, guard against reallocation failures
-                        require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
-                        lup_ = toPrice;
-                        break;
-                    }
-
-                    toPrice = toBucket.down;
-                }
-            } else {
-                require(reallocation == 0, "B:RD:NO_REALLOC_LOCATION");
-            }
-
-            pdAccumulator -= pdRemove;
-        }
-    }
-
-    /**
-     *  @notice Moves assets in a bucket to a bucket's down pointers
-     *  @dev    Occurs when quote tokens are being removed
-     *  @dev    Should continue until all of the desired quote tokens have been removed
      *  @param  fromBucket_ The given bucket whose assets are being reallocated / moved
      *  @param  toBucket_   The given bucket where assets are being reallocated / moved
      *  @param  amount_   The amount of quote tokens requiring reallocation, WAD
@@ -525,7 +525,7 @@ abstract contract BucketsManager is IBucketsManager {
                         toBucket  = toBucket_;
                     } else {
                         toBucket      = _buckets[toPrice]; // load to bucket from storage
-                        toBucket.debt = accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
+                        toBucket.debt = _accumulateBucketInterest(toBucket.debt, toBucket.inflatorSnapshot, inflator_);
 
                         toBucket.inflatorSnapshot = inflator_;
                     }
@@ -591,7 +591,7 @@ abstract contract BucketsManager is IBucketsManager {
             if (curPrice == bucket_.price) break; // reached deposit bucket; nowhere to go
 
             Bucket storage curLup = _buckets[curPrice];
-            uint256 curLupDebt    = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
+            uint256 curLupDebt    = _accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
 
             curLup.inflatorSnapshot = inflator_;
 
@@ -652,7 +652,7 @@ abstract contract BucketsManager is IBucketsManager {
                 curLup     = fromBucket_;
             } else {
                 curLup      = _buckets[curPrice];
-                curLup.debt = accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
+                curLup.debt = _accumulateBucketInterest(curLup.debt, curLup.inflatorSnapshot, inflator_);
 
                 curLup.inflatorSnapshot = inflator_;
             }

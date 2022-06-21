@@ -51,7 +51,7 @@ abstract contract ERC721BucketsManager is BucketsManager {
         bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
         bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
         if (isEmpty && noClaim) {
-            deactivateBucket(bucket); // cleanup if bucket no longer used
+            _deactivateBucket(bucket); // cleanup if bucket no longer used
         } else {
             _buckets[price_] = bucket; // save bucket to storage
         }
@@ -68,7 +68,7 @@ abstract contract ERC721BucketsManager is BucketsManager {
         uint256 price_, uint256 amount_, uint256[] memory tokenIds_, uint256 inflator_
     ) internal {
         Bucket memory bucket    = _buckets[price_];
-        bucket.debt             = accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
+        bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
         uint256 available = bucket.onDeposit + bucket.debt;
@@ -93,7 +93,7 @@ abstract contract ERC721BucketsManager is BucketsManager {
         }
 
         // debt reallocation
-        uint256 newLup = reallocateDown(bucket, amount_, inflator_);
+        uint256 newLup = _reallocateDown(bucket, amount_, inflator_);
 
         _buckets[price_] = bucket;
 
