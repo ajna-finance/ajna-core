@@ -12,6 +12,7 @@ import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
+import { ERC721BorrowerManager } from "./base/ERC721BorrowerManager.sol";
 import { BasePool } from "./base/BasePool.sol";
 
 import { INFTPool } from "./interfaces/IPool.sol";
@@ -20,7 +21,7 @@ import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
 
-contract ERC721Pool is INFTPool, BasePool {
+contract ERC721Pool is INFTPool, ERC721BorrowerManager, BasePool {
 
     using SafeERC20 for ERC20;
 
@@ -105,7 +106,7 @@ contract ERC721Pool is INFTPool, BasePool {
         require(amount_ > _poolMinDebtAmount(curDebt, totalBorrowers), "P:B:AMT_LT_AVG_DEBT");
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
-        _accumulateNFTBorrowerInterest(borrower, curInflator);
+        _accumulateBorrowerInterest(borrower, curInflator);
 
         // borrow amount from buckets with limit price and apply the origination fee
         uint256 fee = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
@@ -135,7 +136,7 @@ contract ERC721Pool is INFTPool, BasePool {
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         NFTBorrowerInfo storage borrower = NFTborrowers[msg.sender];
-        _accumulateNFTBorrowerInterest(borrower, curInflator);
+        _accumulateBorrowerInterest(borrower, curInflator);
 
         uint256 unencumberedCollateral = Maths.ray(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt);
 

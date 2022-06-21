@@ -123,7 +123,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         assertEq(debt,    6_000.000961538461538462 * 1e18);
 
         // check borrower balance
-        (uint256 borrowerDebt,, uint256[] memory collateralDeposited, uint256 collateralEncumbered,,,) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower));
+        (uint256 borrowerDebt,, uint256[] memory collateralDeposited, uint256 collateralEncumbered,,,) = _NFTSubsetPool.getBorrowerInfo(address(_borrower));
         assertEq(borrowerDebt,               6_000.000961538461538462 * 1e18);
         assertEq(collateralDeposited.length, _NFTSubsetPool.getCollateralDeposited().length);
         assertEq(collateralDeposited[0],     1);
@@ -149,7 +149,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         // TODO: execute other fx to accumulatePoolInterest
         // TODO: check pending debt post skip
         // TODO: check borrower debt has increased following the passage of time
-        // (uint256 borrowerDebtAfterTime,,,,,,) = _NFTSubsetPool.getNFTBorrowerInfo(address(_borrower));
+        // (uint256 borrowerDebtAfterTime,,,,,,) = _NFTSubsetPool.getBorrowerInfo(address(_borrower));
         // assertGt(borrowerDebtAfterTime, borrowerDebt);
 
         // Attempt, but fail to borrow from pool if it would result in undercollateralization
