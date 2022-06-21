@@ -5,9 +5,8 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 import { BorrowerManager } from "../base/BorrowerManager.sol";
 
-import { ERC721InterestManager } from "./ERC721InterestManager.sol";
-
-import { INFTBorrowerManager } from "../interfaces/IBorrowerManager.sol";
+import { IERC721BorrowerManager } from "./interfaces/IERC721BorrowerManager.sol";
+import { ERC721InterestManager }  from "./ERC721InterestManager.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
@@ -15,7 +14,7 @@ import { Maths }      from "../libraries/Maths.sol";
 /**
  *  @notice Lender Management related functionality
  */
-abstract contract ERC721BorrowerManager is INFTBorrowerManager, BorrowerManager, ERC721InterestManager {
+abstract contract ERC721BorrowerManager is IERC721BorrowerManager, BorrowerManager, ERC721InterestManager {
 
     using EnumerableSet for EnumerableSet.UintSet;
 

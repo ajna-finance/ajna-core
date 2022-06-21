@@ -3,13 +3,13 @@ pragma solidity 0.8.14;
 
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
-import { Multicall }   from "./base/Multicall.sol";
-import { PermitERC20 } from "./erc20/PermitERC20.sol";
-import { PositionNFT } from "./erc721/PositionNFT.sol";
-
 import { ILenderManager }   from "./interfaces/ILenderManager.sol";
 import { IPool }            from "./interfaces/IPool.sol";
 import { IPositionManager } from "./interfaces/IPositionManager.sol";
+
+import { Multicall }   from "./base/Multicall.sol";
+import { PermitERC20 } from "./base/PermitERC20.sol";
+import { PositionNFT } from "./base/PositionNFT.sol";
 
 import { Maths } from "./libraries/Maths.sol";
 

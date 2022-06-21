@@ -7,10 +7,10 @@ import { Clone } from "@clones/Clone.sol";
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import { IPool } from "../interfaces/IPool.sol";
+
 import { InterestManager } from "./InterestManager.sol";
 import { LenderManager }   from "./LenderManager.sol";
-
-import { IPool } from "../interfaces/IPool.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";

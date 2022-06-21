@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { INFTBorrowerManager } from "../interfaces/IBorrowerManager.sol";
+import { IERC721BorrowerManager } from "./interfaces/IERC721BorrowerManager.sol";
 
 import { InterestManager } from "../base/InterestManager.sol";
 
@@ -23,7 +23,7 @@ abstract contract ERC721InterestManager is InterestManager {
      *  @dev Only used by Borrowers using NFTs as collateral
      *  @dev Only adds debt if a borrower has already initiated a debt position
     */
-    function _accumulateBorrowerInterest(INFTBorrowerManager.NFTBorrowerInfo storage borrower_, uint256 inflator_) internal {
+    function _accumulateBorrowerInterest(IERC721BorrowerManager.NFTBorrowerInfo storage borrower_, uint256 inflator_) internal {
         if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
             borrower_.debt += _pendingInterest(borrower_.debt, inflator_, borrower_.inflatorSnapshot);
         }

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { IERC20BorrowerManager } from "../interfaces/IBorrowerManager.sol";
+import { IERC20BorrowerManager } from "./interfaces/IERC20BorrowerManager.sol";
 
 import { InterestManager } from "../base/InterestManager.sol";
 

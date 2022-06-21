@@ -9,23 +9,19 @@ import { console } from "@std/console.sol";
 import { ERC20 }         from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import { ERC721BorrowerManager } from "./ERC721BorrowerManager.sol";
+import { IERC721Pool }           from "./interfaces/IERC721Pool.sol";
 
 import { Pool } from "../base/Pool.sol";
-
-import { INFTPool } from "../interfaces/IPool.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
 
+contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, Pool {
 
-contract ERC721Pool is INFTPool, ERC721BorrowerManager, Pool {
-
-    using SafeERC20 for ERC20;
-
+    using SafeERC20     for ERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
     /***********************/
