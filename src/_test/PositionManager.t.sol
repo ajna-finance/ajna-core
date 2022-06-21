@@ -7,8 +7,9 @@ import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
-import { ERC20Pool }       from "../ERC20Pool.sol";
-import { ERC20PoolFactory} from "../ERC20PoolFactory.sol";
+import { ERC20Pool }       from "../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
+
 import { PositionManager } from "../PositionManager.sol";
 
 import { IPositionManager } from "../interfaces/IPositionManager.sol";

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { Buckets } from "./Buckets.sol";
+import { BucketsManager } from "./BucketsManager.sol";
 
 import { ILenderManager } from "../interfaces/ILenderManager.sol";
 
@@ -11,7 +11,7 @@ import { Maths }      from "../libraries/Maths.sol";
 /**
  *  @notice Lender Management related functionality
  */
-abstract contract LenderManager is ILenderManager, Buckets {
+abstract contract LenderManager is ILenderManager, BucketsManager {
 
     /**
      *  @dev lender address -> price bucket [WAD] -> lender lp [RAY]

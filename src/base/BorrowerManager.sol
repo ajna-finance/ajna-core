@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { BaseInterest } from "./BaseInterest.sol";
+import { InterestManager } from "./InterestManager.sol";
 
 import { IBorrowerManager } from "../interfaces/IBorrowerManager.sol";
 
@@ -10,7 +10,7 @@ import { Maths } from "../libraries/Maths.sol";
 /**
  *  @notice Borrower Management related functionality
  */
-abstract contract BaseBorrowerManager is IBorrowerManager, BaseInterest {
+abstract contract BorrowerManager is IBorrowerManager, InterestManager {
 
     function getBorrowerCollateralization(uint256 collateralDeposited_, uint256 debt_) public view override returns (uint256) {
         if (lup != 0 && debt_ != 0) {

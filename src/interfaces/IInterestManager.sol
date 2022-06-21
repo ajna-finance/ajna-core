@@ -5,7 +5,7 @@ pragma solidity 0.8.14;
  *  @title Ajna Pool Interest Manager
  *  @dev   Used for TODO:
  */
-interface IInterest {
+interface IInterestManager {
 
     /**************/
     /*** Events ***/

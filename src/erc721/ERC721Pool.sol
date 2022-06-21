@@ -12,16 +12,17 @@ import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { ERC721BorrowerManager } from "./base/ERC721BorrowerManager.sol";
-import { BasePool } from "./base/BasePool.sol";
+import { ERC721BorrowerManager } from "./ERC721BorrowerManager.sol";
 
-import { INFTPool } from "./interfaces/IPool.sol";
+import { Pool } from "../base/Pool.sol";
 
-import { BucketMath } from "./libraries/BucketMath.sol";
-import { Maths }      from "./libraries/Maths.sol";
+import { INFTPool } from "../interfaces/IPool.sol";
+
+import { BucketMath } from "../libraries/BucketMath.sol";
+import { Maths }      from "../libraries/Maths.sol";
 
 
-contract ERC721Pool is INFTPool, ERC721BorrowerManager, BasePool {
+contract ERC721Pool is INFTPool, ERC721BorrowerManager, Pool {
 
     using SafeERC20 for ERC20;
 

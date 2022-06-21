@@ -6,11 +6,11 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 import { console } from "@std/console.sol";
 
-import { IBuckets } from "../interfaces/IBuckets.sol";
+import { IBucketsManager } from "../interfaces/IBucketsManager.sol";
 
 import "../libraries/Maths.sol";
 
-abstract contract Buckets is IBuckets {
+abstract contract BucketsManager is IBucketsManager {
     uint256 public constant SECONDS_PER_DAY = 3_600 * 24;
     uint256 public constant PENALTY_BPS = 0.001 * 10**18;
 
@@ -26,7 +26,7 @@ abstract contract Buckets is IBuckets {
      *  @notice Mapping of buckets for a given pool
      *  @dev price [WAD] -> bucket
      */
-    mapping(uint256 => Buckets.Bucket) internal _buckets;
+    mapping(uint256 => BucketsManager.Bucket) internal _buckets;
 
     /**
      *  @notice Mapping of price to Set of NFT Token Ids that have been deposited into the bucket
