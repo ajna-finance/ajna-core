@@ -55,12 +55,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         pool.removeQuoteToken(params_.recipient, quoteTokenToRemove, params_.price);
 
-        // enable lenders to remove quote token from a bucket that no debt is added to
-        if (collateralToRemove != 0) {
-            // claim any unencumbered collateral accrued to the price bucket
-            pool.claimCollateral(params_.recipient, Maths.rayToWad(collateralToRemove), params_.price);
-        }
-
         // update position with newly removed lp shares
         positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
 

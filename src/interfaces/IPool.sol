@@ -88,24 +88,12 @@ interface IPool {
     /***********************************/
 
     /**
-     *  @notice Called by borrowers to add collateral to the pool.
-     *  @param  amount_ The amount of collateral in deposit tokens to be added to the pool.
-     */
-    function addCollateral(uint256 amount_) external;
-
-    /**
      *  @notice Called by a borrower to open or expand a position.
      *  @dev    Can only be called if quote tokens have already been added to the pool.
      *  @param  amount_     The amount of quote token to borrow.
      *  @param  limitPrice_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
      */
     function borrow(uint256 amount_, uint256 limitPrice_) external;
-
-    /**
-     *  @notice Called by borrowers to remove an amount of collateral.
-     *  @param  amount_ The amount of collateral in deposit tokens to be removed from a position.
-     */
-    function removeCollateral(uint256 amount_) external;
 
     /**
      *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
@@ -125,14 +113,6 @@ interface IPool {
      *  @return lpTokens_  The amount of LP Tokens received for the added quote tokens.
      */
     function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
-
-    /**
-     *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
-     *  @param  recipient_ The recipient claiming collateral.
-     *  @param  amount_    The amount of unencumbered collateral to claim.
-     *  @param  price_     The bucket from which unencumbered collateral will be claimed.
-     */
-    function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external;
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
@@ -211,6 +191,34 @@ interface IFungiblePool is IPool {
      */
     function collateralScale() external view returns (uint256 collateralScale_);
 
+    /***********************************/
+    /*** Borrower External Functions ***/
+    /***********************************/
+
+    /**
+     *  @notice Called by borrowers to add collateral to the pool.
+     *  @param  amount_ The amount of collateral in deposit tokens to be added to the pool.
+     */
+    function addCollateral(uint256 amount_) external;
+
+    /**
+     *  @notice Called by borrowers to remove an amount of collateral.
+     *  @param  amount_ The amount of collateral in deposit tokens to be removed from a position.
+     */
+    function removeCollateral(uint256 amount_) external;
+
+    /*********************************/
+    /*** Lender External Functions ***/
+    /*********************************/
+
+    /**
+     *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
+     *  @param  recipient_ The recipient claiming collateral.
+     *  @param  amount_    The amount of unencumbered collateral to claim.
+     *  @param  price_     The bucket from which unencumbered collateral will be claimed.
+     */
+    function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external;
+
     /*******************************/
     /*** Pool External Functions ***/
     /*******************************/
@@ -233,25 +241,9 @@ interface INFTPool is IPool {
     /**
      *  @notice Emitted when borrower locks collateral in the pool.
      *  @param  borrower_ `msg.sender`.
-     *  @param  tokenId_  Token ID of the collateral locked in the pool.
-     */
-    event AddNFTCollateral(address indexed borrower_, uint256 indexed tokenId_);
-
-    /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower_ `msg.sender`.
      *  @param  tokenIds_ Array of tokenIds to be added to the pool.
      */
-    event AddNFTCollateralMultiple(address indexed borrower_, uint256[] tokenIds_);
-
-    /**
-     *  @notice Emitted when lender claims unencumbered collateral.
-     *  @param  claimer_ Recipient that claimed collateral.
-     *  @param  price_   Price at which unencumbered collateral was claimed.
-     *  @param  tokenId_ Token ID of the collateral to be claimed from the pool.
-     *  @param  lps_     The amount of LP tokens burned in the claim.
-     */
-    event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256 indexed tokenId_, uint256 lps_);
+    event AddNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
 
     /**
      *  @notice Emitted when lender claims multiple unencumbered NFT collateral.
@@ -260,7 +252,7 @@ interface INFTPool is IPool {
      *  @param  tokenIds_ Array of unencumbered tokenIds claimed as collateral.
      *  @param  lps_      The amount of LP tokens burned in the claim.
      */
-    event ClaimNFTCollateralMultiple(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_, uint256 lps_);
+    event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_, uint256 lps_);
 
     /**
      *  @notice Emitted when NFT collateral is exchanged for quote tokens.
@@ -272,18 +264,11 @@ interface INFTPool is IPool {
     event PurchaseWithNFTs(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256[] tokenIds_);
 
     /**
-     *  @notice Emitted when borrower removes collateral from the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  tokenId_  Token ID of the collateral removed from the pool.
-     */
-    event RemoveNFTCollateral(address indexed borrower_, uint256 indexed tokenId_);
-
-    /**
      *  @notice Emitted when borrower removes multiple collateral from the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  tokenIds_ Array of tokenIds removed from the pool.
      */
-    event RemoveNFTCollateralMultiple(address indexed borrower_, uint256[] tokenIds_);
+    event RemoveNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
 
     /*****************************/
     /*** Inititalize Functions ***/
@@ -303,13 +288,13 @@ interface INFTPool is IPool {
      *  @notice Called by borrowers to add multiple NFTs to the pool.
      *  @param  tokenIds_ NFT token ids to be deposited as collateral in the pool.
      */
-    function addCollateralMultiple(uint256[] calldata tokenIds_) external;
+    function addCollateral(uint256[] calldata tokenIds_) external;
 
     /**
      *  @notice Called by borrowers to remove multiple NFTs from the pool.
      *  @param  tokenIds_ NFT token ids to be removed as collateral from the pool.
      */
-    function removeCollateralMultiple(uint256[] calldata tokenIds_) external;
+    function removeCollateral(uint256[] calldata tokenIds_) external;
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -321,7 +306,7 @@ interface INFTPool is IPool {
      *  @param  tokenIds_  NFT token ids to be claimed from the pool.
      *  @param  price_     The bucket from which unencumbered collateral will be claimed.
      */
-    function claimCollateralMultiple(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external;
+    function claimCollateral(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external;
 
     /*******************************/
     /*** Pool External Functions ***/
@@ -335,5 +320,5 @@ interface INFTPool is IPool {
      *  @param  price_    The purchasing price of quote token.
      *  @param  tokenIds_ NFT token ids to be purchased from the pool.
      */
-    function purchaseBidNFTCollateral(uint256 amount_, uint256 price_, uint256[] calldata tokenIds_) external;
+    function purchaseBid(uint256 amount_, uint256 price_, uint256[] calldata tokenIds_) external;
 }

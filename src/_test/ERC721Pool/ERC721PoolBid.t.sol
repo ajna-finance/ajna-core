@@ -77,11 +77,17 @@ contract ERC721PoolBidTest is DSTestPlus {
 
         // add iniitial collateral to pool
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(1);
+        uint[] memory tokens = new uint[](1);
+        tokens[0] = 1;
+        _NFTSubsetPool.addCollateral(tokens);
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(5);
+        tokens = new uint[](1);
+        tokens[0] = 5;
+        _NFTSubsetPool.addCollateral(tokens);
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(50);
+        tokens = new uint[](1);
+        tokens[0] = 50;
+        _NFTSubsetPool.addCollateral(tokens);
         assertEq(_NFTSubsetPool.getCollateralDeposited().length, 3);
 
         // borrow from pool
@@ -106,23 +112,23 @@ contract ERC721PoolBidTest is DSTestPlus {
 
         // should revert if invalid price
         vm.expectRevert("BM:PTI:OOB");
-        _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, _p1, 1_000, _tokenIds);
+        _bidder.purchaseBid(_NFTSubsetPool, _p1, 1_000, _tokenIds);
 
         // should revert if trying to use collateral not in the allowed subset
         uint256[] memory _invalidTokenIds = new uint256[](2);
         _invalidTokenIds[0] = 61;
         _invalidTokenIds[1] = 62;
         vm.expectRevert("P:ONLY_SUBSET");
-        _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 5_100 * 1e18, _p8002, _invalidTokenIds);
+        _bidder.purchaseBid(_NFTSubsetPool, 5_100 * 1e18, _p8002, _invalidTokenIds);
 
         // should revert if bidder doesn't have enough collateral
         vm.expectRevert("P:PB:INSUF_COLLAT");
-        _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 2_000_000 * 1e18, _p4000, _tokenIds);
+        _bidder.purchaseBid(_NFTSubsetPool, 2_000_000 * 1e18, _p4000, _tokenIds);
 
         // should revert if trying to purchase more than on bucket
         vm.expectRevert("B:PB:INSUF_BUCKET_LIQ");
         vm.prank((address(_bidder)));
-        _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 5_100 * 1e18, _p8002, _tokenIds);
+        _bidder.purchaseBid(_NFTSubsetPool, 5_100 * 1e18, _p8002, _tokenIds);
 
         // check 4_000.927678580567537368 bucket balance before purchase bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _NFTSubsetPool.bucketAt(_p4000);
@@ -136,13 +142,13 @@ contract ERC721PoolBidTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit PurchaseWithNFTs(address(_bidder), _p4000, 4_000 * 1e18, _tokenIds);
         vm.prank((address(_bidder)));
-        _bidder.purchaseBidNFTCollateral(_NFTSubsetPool, 4_000 * 1e18, _p4000, _tokenIds);
+        _bidder.purchaseBid(_NFTSubsetPool, 4_000 * 1e18, _p4000, _tokenIds);
 
         // check 4_000.927678580567537368 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _NFTSubsetPool.bucketAt(_p4000);
         assertEq(deposit,          1_000 * 1e18);
         assertEq(debt,             5_000.000961538461538462 * 1e18);
-        assertEq(bucketCollateral, Maths.ONE_WAD);
+        assertEq(bucketCollateral, Maths.WAD);
 
         // check  3_010.892022197881557845 bucket balance after purchase bid
         (, , , deposit, debt, , , bucketCollateral) = _NFTSubsetPool.bucketAt(_p3010);

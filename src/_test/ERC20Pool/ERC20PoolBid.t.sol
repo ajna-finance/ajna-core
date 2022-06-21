@@ -59,7 +59,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalQuoteToken(), 9_000 * 1e18);
         assertEq(_pool.pdAccumulator(),   24_050_428.089622859610921000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // borrower takes a loan of 4000 DAI making bucket 4000 to be fully utilized
@@ -166,7 +166,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   17_012_927.794982087598258000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // borrower takes a loan of 1000 DAI from bucket 4000
@@ -268,7 +268,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   8_011_930.510198812945517500 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // borrower takes a loan of 1000 DAI from bucket 4000
@@ -311,7 +311,7 @@ contract ERC20PoolBidTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   7_013_819.700778449095213000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // borrower takes a loan of 1000 DAI from bucket 4000

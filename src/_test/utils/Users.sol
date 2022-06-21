@@ -48,31 +48,37 @@ contract UserWithNFTCollateral {
         uint256 tokenId_
     ) public {
         token_.approve(address(pool_), tokenId_);
-        pool_.addCollateral(tokenId_);
+        uint[] memory tokens = new uint[](1);
+        tokens[0] = tokenId_;
+        pool_.addCollateral(tokens);
     }
 
     function approveToken(IERC721 token_, address spender_, uint256 _tokenId) public {
         token_.approve(spender_, _tokenId);
     }
 
-    function addCollateral(ERC721Pool pool_, uint256 amount_) public {
-        pool_.addCollateral(amount_);
+    function addCollateral(ERC721Pool pool_, uint256 tokenId_) public {
+        uint[] memory tokens = new uint[](1);
+        tokens[0] = tokenId_;
+        pool_.addCollateral(tokens);
     }
 
     function borrow(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
         pool_.borrow(amount_, price_);
     }
 
-    function purchaseBidNFTCollateral(ERC721Pool pool_, uint256 amount_, uint256 price_, uint256[] memory tokenIds_) public {
-        pool_.purchaseBidNFTCollateral(amount_, price_, tokenIds_);
+    function purchaseBid(ERC721Pool pool_, uint256 amount_, uint256 price_, uint256[] memory tokenIds_) public {
+        pool_.purchaseBid(amount_, price_, tokenIds_);
     }
 
     function repay(ERC721Pool pool_, uint256 amount_) public {
         pool_.repay(amount_);
     }
 
-    function removeCollateral(ERC721Pool pool_, uint256 amount_) public {
-        pool_.removeCollateral(amount_);
+    function removeCollateral(ERC721Pool pool_, uint256 tokenId_) public {
+        uint[] memory tokens = new uint[](1);
+        tokens[0] = tokenId_;
+        pool_.removeCollateral(tokens);
     }
 
     // Implementing this method allows contracts to receive ERC721 tokens
@@ -141,11 +147,13 @@ contract UserWithQuoteTokenInNFTPool {
     }
 
     function claimCollateral(ERC721Pool pool_, address recipient_, uint256 tokenId_, uint256 price_) public {
-        pool_.claimCollateral(recipient_, tokenId_, price_);
+        uint[] memory tokens = new uint[](1);
+        tokens[0] = tokenId_;
+        pool_.claimCollateral(recipient_, tokens, price_);
     }
 
     function claimCollateralMultiple(ERC721Pool pool_, address recipient_, uint256[] memory tokenIds_, uint256 price_) public {
-        pool_.claimCollateralMultiple(recipient_, tokenIds_, price_);
+        pool_.claimCollateral(recipient_, tokenIds_, price_);
     }
 
     function liquidate(ERC721Pool pool_, address borrower) public {

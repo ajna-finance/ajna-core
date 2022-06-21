@@ -155,43 +155,7 @@ abstract contract Buckets is IBuckets {
         }
     }
 
-    /**
-     *  @notice Called by a lender to claim accumulated NFT collateral
-     *  @param  price_        The price bucket from which collateral should be claimed
-     *  @param  tokenId_      The tokenId of the collateral to claim
-     *  @param  lpBalance_    The claimers current LP balance, RAY
-     *  @return lpRedemption_ The amount of LP tokens that will be redeemed
-     */
-    function _claimNFTCollateralFromBucket(uint256 price_, uint256 tokenId_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
-        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
-        require(collateralDeposited.contains(tokenId_), "B:CC:T_NOT_IN_B");
-
-        Bucket memory bucket = _buckets[price_];
-
-        // check available collateral given removal of the NFT
-        require(Maths.ONE_WAD <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
-
-        // nft collateral is accounted for in WAD units
-        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.ONE_WAD, bucket.price), getExchangeRate(bucket));
-
-        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
-
-        // update bucket accounting
-        bucket.collateral -= Maths.ONE_WAD;
-        bucket.lpOutstanding -= lpRedemption_;
-        collateralDeposited.remove(tokenId_);
-
-        // bucket management
-        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
-        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
-        if (isEmpty && noClaim) {
-            deactivateBucket(bucket); // cleanup if bucket no longer used
-        } else {
-            _buckets[price_] = bucket; // save bucket to storage
-        }
-    }
-
-    function _claimMultipleNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
+    function _claimNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
         Bucket memory bucket = _buckets[price_];
 
         // check available collateral given removal of the NFT
@@ -540,7 +504,7 @@ abstract contract Buckets is IBuckets {
         if (debt_ != 0) {
             // To preserve precision, multiply WAD * RAY = RAD, and then scale back down to WAD
             debt_ += Maths.radToWadTruncate(
-                debt_ * (Maths.rdiv(poolInflator_, inflator_) - Maths.ONE_RAY)
+                debt_ * (Maths.rdiv(poolInflator_, inflator_) - Maths.RAY)
             );
         }
         return debt_;
@@ -575,7 +539,7 @@ abstract contract Buckets is IBuckets {
         Bucket storage bucket = _buckets[price_];
 
         bucket.price            = price_;
-        bucket.inflatorSnapshot = Maths.ONE_RAY;
+        bucket.inflatorSnapshot = Maths.RAY;
 
         if (price_ > hpb_) {
             bucket.down = hpb_;
@@ -1002,25 +966,6 @@ abstract contract Buckets is IBuckets {
         collateralDeposited_ = collateralDeposited.values();
     }
 
-    function estimatePrice(uint256 amount_, uint256 hpb_) public view override returns (uint256 price_) {
-        Bucket memory curLup = _buckets[hpb_];
-
-        while (true) {
-            if (amount_ > curLup.onDeposit) {
-                amount_ -= curLup.onDeposit;
-            } else if (amount_ <= curLup.onDeposit) {
-                price_ = curLup.price;
-                break;
-            }
-
-            if (curLup.down == 0) {
-                break;
-            } else {
-                curLup = _buckets[curLup.down];
-            }
-        }
-    }
-
     function getHpb() public view override returns (uint256 newHpb_) {
         newHpb_ = hpb;
         while (true) {
@@ -1051,8 +996,27 @@ abstract contract Buckets is IBuckets {
         }
     }
 
-    function isBucketInitialized(uint256 price_) public view override returns (bool) {
-        return BitMaps.get(_bitmap, price_);
+    /*******************************/
+    /*** Internal View Functions ***/
+    /*******************************/
+
+    function _estimatePrice(uint256 amount_, uint256 hpb_) internal view returns (uint256 price_) {
+        Bucket memory curLup = _buckets[hpb_];
+
+        while (true) {
+            if (amount_ > curLup.onDeposit) {
+                amount_ -= curLup.onDeposit;
+            } else if (amount_ <= curLup.onDeposit) {
+                price_ = curLup.price;
+                break;
+            }
+
+            if (curLup.down == 0) {
+                break;
+            } else {
+                curLup = _buckets[curLup.down];
+            }
+        }
     }
 
     /*******************************/
@@ -1066,7 +1030,7 @@ abstract contract Buckets is IBuckets {
      */
     function getExchangeRate(Bucket memory bucket_) private pure returns (uint256) {
         uint256 size = bucket_.onDeposit + bucket_.debt + Maths.wmul(bucket_.collateral, bucket_.price);
-        return (size != 0 && bucket_.lpOutstanding != 0) ? Maths.wrdivr(size, bucket_.lpOutstanding) : Maths.ONE_RAY;
+        return (size != 0 && bucket_.lpOutstanding != 0) ? Maths.wrdivr(size, bucket_.lpOutstanding) : Maths.RAY;
     }
 
 }

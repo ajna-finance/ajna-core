@@ -45,7 +45,7 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
         debt_                     = borrower.debt;
         pendingDebt_              = borrower.debt;
         collateralDeposited_      = borrower.collateralDeposited;
-        collateralization_        = Maths.ONE_WAD;
+        collateralization_        = Maths.WAD;
         borrowerInflatorSnapshot_ = borrower.inflatorSnapshot;
         inflatorSnapshot_         = inflatorSnapshot;
 
@@ -73,7 +73,7 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
         debt_                     = borrower.debt;
         pendingDebt_              = debt_;
         collateralDeposited_      = borrower.collateralDeposited.values();
-        collateralization_        = Maths.ONE_WAD;
+        collateralization_        = Maths.WAD;
         borrowerInflatorSnapshot_ = borrower.inflatorSnapshot;
         inflatorSnapshot_         = inflatorSnapshot;
 
@@ -88,11 +88,11 @@ abstract contract BorrowerManager is IBorrowerManager, Interest {
         if (lup != 0 && debt_ != 0) {
             return Maths.wrdivw(collateralDeposited_, getEncumberedCollateral(debt_));
         }
-        return Maths.ONE_WAD;
+        return Maths.WAD;
     }
 
-    function estimatePriceForLoan(uint256 amount_) public view override returns (uint256) {
-        return estimatePrice(amount_, lup == 0 ? hpb : lup);
+    function estimatePrice(uint256 amount_) public view override returns (uint256) {
+        return _estimatePrice(amount_, lup == 0 ? hpb : lup);
     }
 
 }

@@ -24,27 +24,17 @@ contract ERC20Pool is IFungiblePool, BasePool {
 
     uint256 public override collateralScale;
 
-    /*****************/
-    /*** Modifiers ***/
-    /*****************/
-
-    /**
-     *  @notice Modifier to protect a clone's initialize method from repeated updates.
-     */
-    modifier onlyOnce() {
-        require(_poolInitializations == 0, "P:INITIALIZED");
-        _;
-    }
 
     /*****************************/
     /*** Inititalize Functions ***/
     /*****************************/
 
-    function initialize(uint256 rate_) external override onlyOnce {
+    function initialize(uint256 rate_) external override {
+        require(_poolInitializations == 0, "P:INITIALIZED");
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
-        inflatorSnapshot           = Maths.ONE_RAY;
+        inflatorSnapshot           = 10**27;
         lastInflatorSnapshotUpdate = block.timestamp;
         interestRate               = rate_;
         interestRateUpdate         = block.timestamp;
@@ -88,7 +78,7 @@ contract ERC20Pool is IFungiblePool, BasePool {
         _borrowFromBucket(amount_, fee, limitPrice_, curInflator);
         require(borrower.collateralDeposited > Maths.rayToWad(_encumberedCollateral(borrower.debt + amount_ + fee)), "P:B:INSUF_COLLAT");
         curDebt += amount_ + fee;
-        require(_poolCollateralization(curDebt) >= Maths.ONE_WAD, "P:B:POOL_UNDER_COLLAT");
+        require(_poolCollateralization(curDebt) >= Maths.WAD, "P:B:POOL_UNDER_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount_;
@@ -152,7 +142,7 @@ contract ERC20Pool is IFungiblePool, BasePool {
 
         // borrower accounting
         if (remainingDebt == 0) totalBorrowers -= 1;
-        borrower.debt         -= amount;
+        borrower.debt         = remainingDebt;
         borrowers[msg.sender] = borrower; // save borrower to storage
 
         _updateInterestRate(curDebt);
@@ -199,7 +189,7 @@ contract ERC20Pool is IFungiblePool, BasePool {
         _accumulateBorrowerInterest(borrower, curInflator);
         uint256 debt = borrower.debt;
         require(
-            getBorrowerCollateralization(borrower.collateralDeposited, debt) <= Maths.ONE_WAD,
+            getBorrowerCollateralization(borrower.collateralDeposited, debt) <= Maths.WAD,
             "P:L:BORROWER_OK"
         );
 
@@ -232,7 +222,7 @@ contract ERC20Pool is IFungiblePool, BasePool {
 
         // purchase bid from bucket
         _purchaseBidFromBucket(price_, amount_, collateralRequired, curInflator);
-        require(_poolCollateralization(curDebt) >= Maths.ONE_WAD, "P:PB:POOL_UNDER_COLLAT");
+        require(_poolCollateralization(curDebt) >= Maths.WAD, "P:PB:POOL_UNDER_COLLAT");
 
         // pool level accounting
         totalQuoteToken -= amount_;

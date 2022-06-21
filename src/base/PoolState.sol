@@ -44,7 +44,7 @@ abstract contract PoolState is IPoolState, Buckets {
         if (totalDebt_ != 0) {
             return Maths.wrdivw(totalCollateral, Maths.wwdivr(totalDebt_, lup));
         }
-        return Maths.ONE_WAD;
+        return Maths.WAD;
     }
 
     function _poolMinDebtAmount(uint256 totalDebt_, uint256 totalBorrowers_) internal pure returns (uint256) {
@@ -52,7 +52,7 @@ abstract contract PoolState is IPoolState, Buckets {
     }
 
     function _poolTargetUtilization(uint256 totalDebt_) internal view returns (uint256) {
-        return Maths.wdiv(Maths.ONE_WAD, _poolCollateralization(totalDebt_));
+        return Maths.wdiv(Maths.WAD, _poolCollateralization(totalDebt_));
     }
 
     /**********************/
@@ -81,6 +81,6 @@ abstract contract PoolState is IPoolState, Buckets {
     }
 
     function getPoolTargetUtilization() public view override returns (uint256) {
-        return Maths.wdiv(Maths.ONE_WAD, getPoolCollateralization());
+        return Maths.wdiv(Maths.WAD, getPoolCollateralization());
     }
 }

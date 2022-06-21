@@ -901,9 +901,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   11_315_823.174350100798832000 * 1e18);
 
         // check initial utilization after depositing but not borrowing
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
-        assertEq(_pool.getPoolTargetUtilization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolTargetUtilization(), Maths.WAD);
 
         // skip > 24h to avoid deposit penalty
         skip(3600 * 24 + 1);
@@ -1123,9 +1123,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         uint256 collateralization = _pool.getPoolCollateralization();
         uint256 targetUtilization = _pool.getPoolTargetUtilization();
         uint256 actualUtilization = _pool.getPoolActualUtilization();
-        assertEq(collateralization, Maths.ONE_WAD);
+        assertEq(collateralization, Maths.WAD);
         assertEq(actualUtilization, 0);
-        assertEq(targetUtilization, Maths.ONE_WAD);
+        assertEq(targetUtilization, Maths.WAD);
 
         // skip > 24h to avoid deposit removal penalty
         skip(3600 * 24 + 1);
@@ -1210,7 +1210,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         uint256 targetUtilization = _pool.getPoolTargetUtilization();
         uint256 actualUtilization = _pool.getPoolActualUtilization();
         assertEq(actualUtilization, 0);
-        assertEq(targetUtilization, Maths.ONE_WAD);
+        assertEq(targetUtilization, Maths.WAD);
 
         // borrower takes a loan of 4000 DAI at priceLow
         uint256 borrowAmount = 4_000 * 1e18;
@@ -1353,7 +1353,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // borrowers deposit collateral
         _borrower.addCollateral(_pool, 2 * 1e18);
         _borrower2.addCollateral(_pool, 200 * 1e18);
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolCollateralization(), Maths.WAD);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
         _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18);

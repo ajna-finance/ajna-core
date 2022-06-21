@@ -86,11 +86,17 @@ contract ERC721PoolBorrowTest is DSTestPlus {
 
         // add iniitial collateral to pool
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(1);
+        uint[] memory tokens = new uint[](1);
+        tokens[0] = 1;
+        _NFTSubsetPool.addCollateral(tokens);
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(5);
+        tokens = new uint[](1);
+        tokens[0] = 5;
+        _NFTSubsetPool.addCollateral(tokens);
         vm.prank((address(_borrower)));
-        _NFTSubsetPool.addCollateral(50);
+        tokens = new uint[](1);
+        tokens[0] = 50;
+        _NFTSubsetPool.addCollateral(tokens);
         assertEq(_NFTSubsetPool.getCollateralDeposited().length, 3);
 
         // should revert if borrower wants to borrow a greater amount than in pool

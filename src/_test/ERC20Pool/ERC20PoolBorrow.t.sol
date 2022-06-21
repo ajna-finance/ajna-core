@@ -72,7 +72,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.totalCollateral(), 0);
         assertEq(_pool.pdAccumulator(),   150_298_948.393042738130440000 * 1e18);
 
-        assertEq(_pool.getPoolCollateralization(), Maths.ONE_WAD);
+        assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         assertEq(_pool.getPendingPoolInterest(),               0);
@@ -97,7 +97,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _borrower.addCollateral(_pool, 90 * 1e18);
 
         // get a 21_000 DAI loan from 3 buckets, loan price should be 3000 DAI
-        assertEq(_pool.estimatePriceForLoan(21_000 * 1e18), priceMed);
+        assertEq(_pool.estimatePrice(21_000 * 1e18), priceMed);
 
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
@@ -264,9 +264,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceLow);
 
         // borrower1 takes a loan of 100_000 DAI
-        assertEq(_pool.estimatePriceForLoan(75_000 * 1e18),  priceHigh);
-        assertEq(_pool.estimatePriceForLoan(125_000 * 1e18), priceMed);
-        assertEq(_pool.estimatePriceForLoan(175_000 * 1e18), priceLow);
+        assertEq(_pool.estimatePrice(75_000 * 1e18),  priceHigh);
+        assertEq(_pool.estimatePrice(125_000 * 1e18), priceMed);
+        assertEq(_pool.estimatePrice(175_000 * 1e18), priceLow);
         _borrower.addCollateral(_pool, 51 * 1e18);
         _borrower.borrow(_pool, 100_000 * 1e18, 1_000 * 1e18);
 
@@ -285,9 +285,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertLt(actualUtilizationAfterBorrow, targetUtilizationAfterBorrow);
 
         // borrower2 adds collateral to attempt a borrow
-        assertEq(_pool.estimatePriceForLoan(25_000 * 1e18),  priceMed);
-        assertEq(_pool.estimatePriceForLoan(75_000 * 1e18),  priceLow);
-        assertEq(_pool.estimatePriceForLoan(175_000 * 1e18), 0);
+        assertEq(_pool.estimatePrice(25_000 * 1e18),  priceMed);
+        assertEq(_pool.estimatePrice(75_000 * 1e18),  priceLow);
+        assertEq(_pool.estimatePrice(175_000 * 1e18), 0);
         _borrower2.addCollateral(_pool, 51 * 1e18);
 
         // check collateralization / utilization after borrower adds collateral
