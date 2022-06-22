@@ -123,7 +123,7 @@ contract MulticallTest is DSTestPlus {
         );
 
         // construct BurnParams
-        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, recipient, mintPrice);
+        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, recipient, mintPrice, address(_pool));
 
         bytes[] memory callsToExecute = new bytes[](2);
 

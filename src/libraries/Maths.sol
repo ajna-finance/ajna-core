@@ -117,4 +117,11 @@ library Maths {
         return a / b + (a % b == 0 ? 0 : 1);
     }
 
+    /**
+     * @notice Round down a fraction to the nearest integer
+     */
+    function wdivRoundingDown(uint256 a, uint256 b) internal pure returns (uint256) {
+        return wdiv(a, b) / 10 ** 18;
+    }
+
 }

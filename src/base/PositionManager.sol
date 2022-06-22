@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import { console } from "@std/console.sol";
+
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
+import { IERC20Pool }       from "../erc20/interfaces/IERC20Pool.sol";
+import { IERC721Pool }      from "../erc721/interfaces/IERC721Pool.sol";
 import { ILenderManager }   from "./interfaces/ILenderManager.sol";
 import { IPool }            from "./interfaces/IPool.sol";
 import { IPositionManager } from "./interfaces/IPositionManager.sol";
+import { IBucketsManager }  from "./interfaces/IBucketsManager.sol";
 
 import { Multicall }   from "./Multicall.sol";
 import { PermitERC20 } from "./PermitERC20.sol";
@@ -24,6 +29,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /** @dev Mapping of tokenIds to Position struct */
     mapping(uint256 => Position) public positions;
 
+    /** @dev Mapping of tokenIds to Pool address */
+    mapping(uint256 => address) public poolKey;
+
     /** @dev The ID of the next token that will be minted. Skips 0 */
     uint176 private _nextId = 1;
 
@@ -31,8 +39,15 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /*** Modifiers ***/
     /*****************/
 
+    // TODO: combine these two modifiers?
     modifier isAuthorizedForToken(uint256 tokenId_) {
         require(_isApprovedOrOwner(msg.sender, tokenId_), "PM:NO_AUTH");
+        _;
+    }
+
+    /// @dev Check that the tokenId is being used for the correct pool
+    modifier tokenInPool(address pool_, uint256 tokenId_) {
+        require(pool_ == poolKey[tokenId_], "PM:W_POOL");
         _;
     }
 
@@ -48,21 +63,56 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
-        IPool pool = IPool(params_.pool);
+        IERC20Pool pool = IERC20Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
         (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         pool.removeQuoteToken(params_.recipient, quoteTokenToRemove, params_.price);
 
+        // enable lenders to remove quote token from a bucket that no debt is added to
+        if (collateralToRemove != 0) {
+            // claim any unencumbered collateral accrued to the price bucket
+            pool.claimCollateral(params_.recipient, collateralToRemove, params_.price);
+        }
+
         // update position with newly removed lp shares
         positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
 
-        // TODO: check if price updates
-        emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteTokenToRemove);
+        emit DecreaseLiquidity(params_.recipient, IBucketsManager(params_.pool).lup(), collateralToRemove, quoteTokenToRemove);
     }
 
-    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
+    function decreaseLiquidityNFT(DecreaseLiquidityNFTParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
+        IERC721Pool pool = IERC721Pool(params_.pool);
+
+        // calculate equivalent underlying assets for given lpTokens
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
+
+        // enable lenders to remove quote token from a bucket that no debt is added to
+        if (collateralToRemove != 0) {
+            // slice incoming tokens to only use as many as are required
+            uint256 indexToUse = Maths.wdivRoundingDown(collateralToRemove, 10**18);
+            uint256[] memory tokensToRemove = new uint256[](indexToUse);
+            tokensToRemove = params_.tokenIdsToRemove[:indexToUse];
+
+            // claim any unencumbered collateral accrued to the price bucket
+            pool.claimCollateral(params_.recipient, tokensToRemove, params_.price);
+
+            // update position with newly removed lp shares
+            positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
+
+            emit DecreaseLiquidityNFT(params_.recipient, IBucketsManager(params_.pool).lup(), tokensToRemove, quoteTokenToRemove);
+        }
+        else {
+            // update position with newly removed lp shares
+            positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
+
+            uint[] memory emptyArray = new uint[](0);
+            emit DecreaseLiquidityNFT(params_.recipient, IBucketsManager(params_.pool).lup(), emptyArray, quoteTokenToRemove);
+        }
+    }
+
+    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) tokenInPool(params_.pool, params_.tokenId) {
         // Call out to pool contract to add quote tokens
         uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(params_.recipient, params_.amount, params_.price);
         // TODO: figure out how to test this case
@@ -96,6 +146,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // create a new position associated with the newly minted tokenId
         positions[tokenId_].pool = params_.pool;
+
+        // record which pool the tokenId was minted in
+        poolKey[tokenId_] = params_.pool;
 
         emit Mint(params_.recipient, params_.pool, tokenId_);
     }
