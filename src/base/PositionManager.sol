@@ -10,7 +10,6 @@ import { IERC721Pool }      from "../erc721/interfaces/IERC721Pool.sol";
 import { ILenderManager }   from "./interfaces/ILenderManager.sol";
 import { IPool }            from "./interfaces/IPool.sol";
 import { IPositionManager } from "./interfaces/IPositionManager.sol";
-import { IBucketsManager }  from "./interfaces/IBucketsManager.sol";
 
 import { Multicall }   from "./Multicall.sol";
 import { PermitERC20 } from "./PermitERC20.sol";
@@ -39,14 +38,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /*** Modifiers ***/
     /*****************/
 
-    // TODO: combine these two modifiers?
-    modifier isAuthorizedForToken(uint256 tokenId_) {
+    modifier mayInteract(address pool_, uint256 tokenId_) {
         require(_isApprovedOrOwner(msg.sender, tokenId_), "PM:NO_AUTH");
-        _;
-    }
-
-    /// @dev Check that the tokenId is being used for the correct pool
-    modifier tokenInPool(address pool_, uint256 tokenId_) {
         require(pool_ == poolKey[tokenId_], "PM:W_POOL");
         _;
     }
@@ -56,13 +49,13 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /************************/
 
     // TODO: Update burn check to ensure all position prices have removed liquidity
-    function burn(BurnParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
+    function burn(BurnParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
         require(positions[params_.tokenId].lpTokens[params_.price] == 0, "PM:B:LIQ_NOT_REMOVED");
         emit Burn(msg.sender, params_.price);
         delete positions[params_.tokenId];
     }
 
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
+    function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
         IERC20Pool pool = IERC20Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
@@ -79,10 +72,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         // update position with newly removed lp shares
         positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
 
-        emit DecreaseLiquidity(params_.recipient, IBucketsManager(params_.pool).lup(), collateralToRemove, quoteTokenToRemove);
+        emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteTokenToRemove);
     }
 
-    function decreaseLiquidityNFT(DecreaseLiquidityNFTParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
+    function decreaseLiquidityNFT(DecreaseLiquidityNFTParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
         IERC721Pool pool = IERC721Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
@@ -91,7 +84,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
             // slice incoming tokens to only use as many as are required
-            uint256 indexToUse = Maths.wdivRoundingDown(collateralToRemove, 10**18);
+            uint256 indexToUse = Maths.wadToIntRoundingDown(collateralToRemove);
             uint256[] memory tokensToRemove = new uint256[](indexToUse);
             tokensToRemove = params_.tokenIdsToRemove[:indexToUse];
 
@@ -101,18 +94,18 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             // update position with newly removed lp shares
             positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
 
-            emit DecreaseLiquidityNFT(params_.recipient, IBucketsManager(params_.pool).lup(), tokensToRemove, quoteTokenToRemove);
+            emit DecreaseLiquidityNFT(params_.recipient, params_.price, tokensToRemove, quoteTokenToRemove);
         }
         else {
             // update position with newly removed lp shares
             positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
 
             uint[] memory emptyArray = new uint[](0);
-            emit DecreaseLiquidityNFT(params_.recipient, IBucketsManager(params_.pool).lup(), emptyArray, quoteTokenToRemove);
+            emit DecreaseLiquidityNFT(params_.recipient, params_.price, emptyArray, quoteTokenToRemove);
         }
     }
 
-    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) tokenInPool(params_.pool, params_.tokenId) {
+    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
         // Call out to pool contract to add quote tokens
         uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(params_.recipient, params_.amount, params_.price);
         // TODO: figure out how to test this case

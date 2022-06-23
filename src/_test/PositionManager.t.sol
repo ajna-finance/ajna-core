@@ -354,7 +354,6 @@ contract PositionManagerTest is DSTestPlus {
         assertTrue(updatedLPTokens < originalLPTokens);
     }
 
-    // TODO: add pool state checks
     /**
      *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity in an NFT Pool.
      *          Lender reverts when attempting to interact with a pool the tokenId wasn't minted in
@@ -389,16 +388,13 @@ contract PositionManagerTest is DSTestPlus {
         vm.prank(mintParams.recipient);
         uint256 tokenId = _positionManager.mint(mintParams);
 
-        // TODO: fix this test case
         // should revert if adding liquidity to the wrong pool
-        // TODO: determine how to bypass no auth check
-        // vm.prank(address(testLender));
-        // _positionManager.approve(address(_pool), tokenId);
-        // vm.expectRevert("PM:W_POOL");
+        vm.expectRevert("PM:W_POOL");
+        vm.prank(address(testLender));
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
             tokenId, address(testLender), address(_pool), 50_000 * 1e18, _p10016
         );
-        // _positionManager.increaseLiquidity(increaseLiquidityParams);
+        _positionManager.increaseLiquidity(increaseLiquidityParams);
 
         // add liquidity that can later be decreased
         vm.prank(address(testLender));
@@ -452,6 +448,12 @@ contract PositionManagerTest is DSTestPlus {
         // check pool state
         assertEq(_NFTCollectionPool.lup(), _p10016);
         assertEq(_NFTCollectionPool.hpb(), _p10016);
+
+        assertEq(_NFTCollectionPool.getCollateralDeposited().length,       3);
+        assertEq(_NFTCollectionPool.getCollateralDeposited()[0],           1);
+        assertEq(_NFTCollectionPool.getCollateralDeposited()[1],           3);
+        assertEq(_NFTCollectionPool.getCollateralDeposited()[2],           5);
+        assertEq(_erc721Collateral.balanceOf(address(_NFTCollectionPool)), 3);
     }
 
     /**
@@ -503,7 +505,6 @@ contract PositionManagerTest is DSTestPlus {
         decreaseLiquidity(tokenId, newOwner, address(_pool), testBucketPrice, lpTokensToAttempt);
     }
 
-    // TODO: fix log returning the new lup and not the price at which the burn occured...
     /**
      *  @notice Tests NFT position can & can't be burned based on liquidity attached to it.
      *          Checks that old owner cannot increase liquidity.
