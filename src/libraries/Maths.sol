@@ -117,7 +117,6 @@ library Maths {
         return a / b + (a % b == 0 ? 0 : 1);
     }
 
-    // TODO: add tests for these functions
     /**
      * @notice Round down a fraction to the nearest integer
      */
