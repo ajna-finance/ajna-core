@@ -45,4 +45,13 @@ contract MathTest is DSTestPlus {
         assertEq(Maths.rdiv(Maths.wadToRay(debt), exchangeRate), Maths.wrdivr(debt, exchangeRate));
     }
 
+    function testWadToIntRoundingDown() external {
+        uint256 testNum1  = 11_000.143012091382543917 * 1e18;
+        uint256 testNum2  = 1_001.6501589292607751220 * 1e18;
+        uint256 testNum3  = 0.6501589292607751220 * 1e18;
+
+        assertEq(Maths.wadToIntRoundingDown(testNum1), 11_000);
+        assertEq(Maths.wadToIntRoundingDown(testNum2), 1_001);
+        assertEq(Maths.wadToIntRoundingDown(testNum3), 0);
+    }
 }

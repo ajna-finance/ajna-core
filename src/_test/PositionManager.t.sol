@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { DSTestPlus }                             from "./utils/DSTestPlus.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
+import { CollateralToken, NFTCollateralToken, QuoteToken } from "./utils/Tokens.sol";
+import { DSTestPlus }                                      from "./utils/DSTestPlus.sol";
+
+import { UserWithCollateral, UserWithNFTCollateral, UserWithQuoteToken, UserWithQuoteTokenInNFTPool } from "./utils/Users.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
-import { ERC20Pool }       from "../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
+import { ERC20Pool }         from "../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory}   from "../erc20/ERC20PoolFactory.sol";
+import { ERC721Pool }        from "../erc721/ERC721Pool.sol";
+import { ERC721PoolFactory } from "../erc721/ERC721PoolFactory.sol";
 
 import { PositionManager } from "../base/PositionManager.sol";
 
@@ -352,6 +355,108 @@ contract PositionManagerTest is DSTestPlus {
     }
 
     /**
+     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity in an NFT Pool.
+     *          Lender reverts when attempting to interact with a pool the tokenId wasn't minted in
+     */
+    function testDecreaseLiquidityWithDebtNFTPool() external {
+        // deploy NFT pool and user contracts
+        NFTCollateralToken _erc721Collateral  = new NFTCollateralToken();
+        ERC721PoolFactory _erc721Factory  = new ERC721PoolFactory();
+        address _NFTCollectionPoolAddress = _erc721Factory.deployPool(address(_erc721Collateral), address(_quote), 0.05 * 10**18);
+        ERC721Pool _NFTCollectionPool     = ERC721Pool(_NFTCollectionPoolAddress);
+
+        UserWithQuoteTokenInNFTPool testLender = new UserWithQuoteTokenInNFTPool();
+        UserWithNFTCollateral testBorrower     = new UserWithNFTCollateral();
+        UserWithNFTCollateral testBidder       = new UserWithNFTCollateral();
+
+        // mint test tokens
+        _quote.mint(address(testBidder), 100_000 * 1e18);
+        _quote.mint(address(testLender), 200_000 * 1e18);
+        _erc721Collateral.mint(address(testBorrower), 60);
+        _erc721Collateral.mint(address(testBidder), 5);
+
+        // run token approvals for NFT Collection Pool
+        testLender.approveToken(_quote, _NFTCollectionPoolAddress, 200_000 * 1e18);
+        testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 63);
+        testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 65);
+        testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 1);
+        testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 3);
+        testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 5);
+
+        // mint position NFT
+        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(address(testLender), _NFTCollectionPoolAddress);
+        vm.prank(mintParams.recipient);
+        uint256 tokenId = _positionManager.mint(mintParams);
+
+        // should revert if adding liquidity to the wrong pool
+        vm.expectRevert("PM:W_POOL");
+        vm.prank(address(testLender));
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
+            tokenId, address(testLender), address(_pool), 50_000 * 1e18, _p10016
+        );
+        _positionManager.increaseLiquidity(increaseLiquidityParams);
+
+        // add liquidity that can later be decreased
+        vm.prank(address(testLender));
+        vm.expectEmit(true, true, true, true);
+        emit IncreaseLiquidity(address(testLender), _p10016, 50_000 * 1e18);
+        increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
+            tokenId, address(testLender), _NFTCollectionPoolAddress, 50_000 * 1e18, _p10016
+        );
+        _positionManager.increaseLiquidity(increaseLiquidityParams);
+
+        // borrower adds initial collateral to the pool to borrow against
+        uint256[] memory collateralToAdd = new uint256[](3);
+        collateralToAdd[0] = 1;
+        collateralToAdd[1] = 3;
+        collateralToAdd[2] = 5;
+        vm.prank((address(testBorrower)));
+        testBorrower.addCollateralMultiple(_NFTCollectionPool, collateralToAdd);
+
+        // borrow against the pool
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(address(testBorrower), _p10016, 30_000 * 1e18);
+        testBorrower.borrow(_NFTCollectionPool, 30_000 * 1e18, _p10016);
+
+        // purchase bid from the pool
+        uint256[] memory tokensToBuy = new uint256[](2);
+        tokensToBuy[0] = 63;
+        tokensToBuy[1] = 65;
+        vm.expectEmit(true, true, false, true);
+        emit PurchaseWithNFTs(address(testBidder), _p10016, 15_000 * 1e18, tokensToBuy);
+        vm.prank((address(testBidder)));
+        testBidder.purchaseBid(_NFTCollectionPool, 15_000 * 1e18, _p10016, tokensToBuy);
+
+        // decrease liquidity via the NFT specific method
+        uint256 lpTokensToRemove = _positionManager.getLPTokens(tokenId, _p10016);
+
+        // TODO: determine how many tokenIds to remove dynamically
+        uint256[] memory tokenIdsToRemove = new uint256[](2);
+        tokenIdsToRemove[0] = 63;
+        tokenIdsToRemove[1] = 65;
+        IPositionManager.DecreaseLiquidityNFTParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityNFTParams(
+            tokenId, address(testLender), _NFTCollectionPoolAddress, _p10016, lpTokensToRemove, tokenIdsToRemove
+        );
+
+        vm.expectEmit(true, true, false, true);
+        emit ClaimNFTCollateral(address(testLender), _p10016, tokenIdsToRemove, 18200899161871735351932834024423);
+        vm.expectEmit(true, true, false, true);
+        emit DecreaseLiquidityNFT(address(testLender), _p10016, tokenIdsToRemove, 35_000.000961538461538462 * 1e18);
+        vm.prank((address(testLender)));
+        _positionManager.decreaseLiquidityNFT(decreaseLiquidityParams);
+
+        // check pool state
+        assertEq(_NFTCollectionPool.lup(), _p10016);
+        assertEq(_NFTCollectionPool.hpb(), _p10016);
+
+        assertEq(_NFTCollectionPool.getCollateralDeposited().length,       3);
+        assertEq(_NFTCollectionPool.getCollateralDeposited()[0],           1);
+        assertEq(_NFTCollectionPool.getCollateralDeposited()[1],           3);
+        assertEq(_NFTCollectionPool.getCollateralDeposited()[2],           5);
+        assertEq(_erc721Collateral.balanceOf(address(_NFTCollectionPool)), 3);
+    }
+
+    /**
      *  @notice Tests minting an NFT, transfering NFT, increasing liquidity.
      *          Checks that old owner cannot increase liquidity.
      *          Old owner reverts: attempts to increase liquidity without permission.
@@ -422,7 +527,7 @@ contract PositionManagerTest is DSTestPlus {
         skip(3600 * 24 + 1);
 
         // construct BurnParams
-        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, testAddress, mintPrice);
+        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, testAddress, mintPrice, address(_pool));
 
         // should revert if liquidity not removed
         vm.expectRevert("PM:B:LIQ_NOT_REMOVED");
