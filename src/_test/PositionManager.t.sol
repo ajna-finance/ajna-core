@@ -8,10 +8,10 @@ import { UserWithCollateral, UserWithNFTCollateral, UserWithQuoteToken, UserWith
 
 import { Maths } from "../libraries/Maths.sol";
 
-import { ERC20Pool }         from "../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory}   from "../erc20/ERC20PoolFactory.sol";
-import { ERC721Pool }        from "../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory } from "../erc721/ERC721PoolFactory.sol";
+import { ERC20Pool }         from "../ERC20Pool.sol";
+import { ERC20PoolFactory}   from "../ERC20PoolFactory.sol";
+import { ERC721Pool }        from "../ERC721Pool.sol";
+import { ERC721PoolFactory } from "../ERC721PoolFactory.sol";
 
 import { PositionManager } from "../PositionManager.sol";
 

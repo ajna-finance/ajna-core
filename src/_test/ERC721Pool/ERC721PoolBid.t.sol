@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
+import { ERC721Pool }        from "../../ERC721Pool.sol";
+import { ERC721PoolFactory } from "../../ERC721PoolFactory.sol";
 
 import { IPool } from "../../base/interfaces/IPool.sol";
 
