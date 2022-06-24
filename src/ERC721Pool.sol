@@ -78,7 +78,9 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager,
 
         // add tokenIds to the pool
         for (uint i; i < tokenIds_.length;) {
-            require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
+            if (_tokenIdsAllowed.length() != 0) {
+                require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
+            }
 
             // pool level accounting
             _collateralTokenIdsAdded.add(tokenIds_[i]);

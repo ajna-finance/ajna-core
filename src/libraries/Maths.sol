@@ -117,4 +117,11 @@ library Maths {
         return a / b + (a % b == 0 ? 0 : 1);
     }
 
+    /**
+     * @notice Convert a WAD to an integer, rounding down
+     */
+    function wadToIntRoundingDown(uint256 a) internal pure returns (uint256) {
+        return wdiv(a, 10 ** 18) / 10 ** 18;
+    }
+
 }
