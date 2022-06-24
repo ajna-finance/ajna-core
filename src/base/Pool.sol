@@ -28,6 +28,54 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
 
     uint256 public override quoteTokenScale;
 
+    /*****************/
+    /*** Modifiers ***/
+    /*****************/
+
+    // TODO: check a signature provided by the caller using a permit like process
+    /**
+     *  @dev Check to see that the person calling this method is the intended recipient
+     */
+    modifier mayInteract(address recipient_) {
+        require(recipient_ == msg.sender, "P:NO_AUTH");
+        _;
+    }
+
+    /**
+     *  @notice Calculate the EIP-712 compliant DOMAIN_SEPERATOR for ledgible signature encoding
+     *  @return The bytes32 domain separator of Position NFTs
+     */
+    function DOMAIN_SEPARATOR() public view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(
+                    // keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
+                    0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f,
+                    // _nameHash,
+                    // _versionHash,
+                    _chainId(),
+                    address(this)
+                )
+            );
+    }
+
+    /**
+     *  @dev Gets the current chain ID
+     *  @return chainId_ The current chain ID
+     */
+    function _chainId() internal view returns (uint256 chainId_) {
+        assembly {
+            chainId_ := chainid()
+        }
+    }
+
+    // TODO: check flow
+    /**
+     *  @dev Check the provided signature to see that the person calling this method is the intended recipient
+     */
+    function permit() internal {
+
+    }
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -81,7 +129,7 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
 
-    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
+    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override mayInteract(recipient_) {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
