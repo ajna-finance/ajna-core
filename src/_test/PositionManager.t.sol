@@ -10,7 +10,7 @@ import { Maths } from "../libraries/Maths.sol";
 import { ERC20Pool }       from "../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
 
-import { PositionManager } from "../base/PositionManager.sol";
+import { PositionManager } from "../PositionManager.sol";
 
 import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
 

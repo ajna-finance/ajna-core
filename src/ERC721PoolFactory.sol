@@ -6,9 +6,9 @@ import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
 
 import { ERC721Pool } from "./ERC721Pool.sol";
 
-import { PoolDeployer } from "../base/PoolDeployer.sol";
+import { PoolDeployer } from "./base/PoolDeployer.sol";
 
-import { IERC721PoolFactory } from "./interfaces/IERC721PoolFactory.sol";
+import { IERC721PoolFactory } from "./base/erc721/interfaces/IERC721PoolFactory.sol";
 
 // TODO: add IERC721PoolFactory
 contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {

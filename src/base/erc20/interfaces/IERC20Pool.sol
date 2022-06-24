@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { IPool } from "../../base/interfaces/IPool.sol";
+import { IPool } from "../../interfaces/IPool.sol";
 
 /**
  * @title Ajna ERC20 Pool

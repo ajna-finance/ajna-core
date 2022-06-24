@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { IPoolFactory } from "../../base/interfaces/IPoolFactory.sol";
+import { IPoolFactory } from "../../interfaces/IPoolFactory.sol";
 
 /**
  *  @title Ajna Pool Factory

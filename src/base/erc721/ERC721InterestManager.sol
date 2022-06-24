@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { IERC721BorrowerManager } from "./interfaces/IERC721BorrowerManager.sol";
 
-import { InterestManager } from "../base/InterestManager.sol";
+import { InterestManager } from "../InterestManager.sol";
 
 /**
  *  @notice Interest related functionality.

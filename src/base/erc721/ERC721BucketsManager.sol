@@ -4,9 +4,9 @@ pragma solidity 0.8.14;
 import { BitMaps }       from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { BucketsManager } from "../base/BucketsManager.sol";
+import { BucketsManager } from "../BucketsManager.sol";
 
-import "../libraries/Maths.sol";
+import "../../libraries/Maths.sol";
 
 abstract contract ERC721BucketsManager is BucketsManager {
 

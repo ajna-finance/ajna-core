@@ -6,9 +6,9 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 import { console } from "@std/console.sol";
 
-import { BucketsManager } from "../base/BucketsManager.sol";
+import { BucketsManager } from "../BucketsManager.sol";
 
-import "../libraries/Maths.sol";
+import "../../libraries/Maths.sol";
 
 abstract contract ERC20BucketsManager is BucketsManager {
 
