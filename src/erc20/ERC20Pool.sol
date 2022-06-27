@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import { Clone } from "@clones/Clone.sol";
+import { console } from "@std/console.sol";
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -44,6 +45,8 @@ contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Poo
 
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
+        console.log("initialize", block.timestamp, inflatorSnapshot, minFee);
+        console.log("initialize rate", rate_);
     }
 
     /***********************************/

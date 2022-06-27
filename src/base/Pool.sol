@@ -2,6 +2,8 @@
 
 pragma solidity 0.8.14;
 
+import { console } from "@std/console.sol";
+
 import { Clone } from "@clones/Clone.sol";
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -84,11 +86,14 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
     function addQuoteToken(
         address recipient_, uint256 amount_, uint256 price_
     ) external override returns (uint256 lpTokens_) {
+        console.log("ERC20Pool:AQT accounts", address(this), msg.sender, recipient_);
+        console.log("ERC20Pool:AQT origin", tx.origin);
         require(BucketMath.isValidPrice(price_), "P:AQT:INVALID_PRICE");
-
+        console.log("ERC20Pool:AQT params", amount_, price_);
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        console.log("working here");
         require(amount_ > _poolMinDebtAmount(curDebt, totalBorrowers), "P:AQT:AMT_LT_AVG_DEBT");
-
+        console.log("working here");
         // deposit quote token amount and get awarded LP tokens
         lpTokens_ = _addQuoteTokenToBucket(price_, amount_, curDebt, curInflator);
 

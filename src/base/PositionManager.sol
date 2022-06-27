@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
+import { console } from "@std/console.sol";
 
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
@@ -62,9 +63,31 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteTokenToRemove);
     }
 
-    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
+    // function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable isAuthorizedForToken(params_.tokenId) {
+    //     // Call out to pool contract to add quote tokens
+    //     uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(params_.recipient, params_.amount, params_.price);
+    //     // TODO: figure out how to test this case
+    //     require(lpTokensAdded != 0, "PM:IL:NO_LP_TOKENS");
+
+    //     // update position with newly added lp shares
+    //     positions[params_.tokenId].lpTokens[params_.price] += lpTokensAdded;
+
+    //     emit IncreaseLiquidity(params_.recipient, params_.price, params_.amount);
+    // }
+
+    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable {
+
+        console.log("PM:IL:address this", address(this));
+        console.log("msg sender", msg.sender);
         // Call out to pool contract to add quote tokens
-        uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(params_.recipient, params_.amount, params_.price);
+        // 0x792d26e79e6bc3f156e9029a2b153ca9959ec6fea8dddb31711c42572133e673
+        // 0x792d26e7 = bytes4(keccak256("addQuoteToken(address,uint256,uint256)"));
+        (bool success, bytes memory returnedData) = params_.pool.delegatecall(abi.encodeWithSelector(0x792d26e7, params_.recipient, params_.amount, params_.price));
+        require(success, string(returnedData));
+
+        console.log("returned data", string(returnedData));
+        uint256 lpTokensAdded = abi.decode(returnedData, (uint256));
+
         // TODO: figure out how to test this case
         require(lpTokensAdded != 0, "PM:IL:NO_LP_TOKENS");
 
