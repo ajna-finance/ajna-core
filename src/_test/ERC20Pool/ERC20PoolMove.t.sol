@@ -1330,7 +1330,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
 
 contract ERC20PoolMoveQuoteTokenByRemoveAddTest is ERC20PoolMoveQuoteTokenTest {
     function assertMoveQuoteToken(address lender_, uint256 fromPrice_, uint256 toPrice_, uint256 amount_, uint256 lup_) public override {
-        _lender.removeQuoteToken(_pool, lender_, amount_, fromPrice_);
+        _lender.removeQuoteToken(_pool, amount_, fromPrice_);
         _lender.addQuoteToken(_pool, amount_, toPrice_);
         assertEq(_pool.lup(), lup_);
     }

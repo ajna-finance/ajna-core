@@ -271,7 +271,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_pool)),            9_500 * 1e18);
         assertEq(_pool.totalCollateral(),                     100 * 1e18);
 
-        _lender1.removeQuoteToken(_pool, address(_lender1), 2_000 * 1e18, priceHigh);
+        _lender1.removeQuoteToken(_pool, 2_000 * 1e18, priceHigh);
 
         // should revert if claiming larger amount of collateral than LP balance allows
         vm.expectRevert("B:CC:INSUF_LP_BAL");

@@ -86,7 +86,7 @@ contract MulticallTest is DSTestPlus {
             memorializeParams
         );
         callsToExecute[1] = abi.encodeWithSignature(
-            "increaseLiquidity((uint256,address,address,uint256,uint256))",
+            "increaseLiquidity((address,uint256,address,address,uint256,uint256))",
             increaseLiquidityParams
         );
 
@@ -132,7 +132,7 @@ contract MulticallTest is DSTestPlus {
 
         // https://ethereum.stackexchange.com/questions/65980/passing-struct-as-an-argument-in-call
         callsToExecute[0] = abi.encodeWithSignature(
-            "increaseLiquidity((uint256,address,address,uint256,uint256))",
+            "increaseLiquidity((address,uint256,address,address,uint256,uint256))",
             increaseLiquidityParams
         );
         callsToExecute[1] = abi.encodeWithSignature("burn((uint256,address,uint256))", burnParams);

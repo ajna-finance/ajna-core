@@ -124,11 +124,10 @@ interface IPool {
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
-     *  @param  recipient_ The recipient removing quote tokens.
      *  @param  maxAmount_ The maximum amount of quote token to be removed by a lender.
      *  @param  price_     The bucket from which quote tokens will be removed.
      */
-    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external;
+    function removeQuoteToken(uint256 maxAmount_, uint256 price_) external;
 
     /*******************************/
     /*** Pool External Functions ***/

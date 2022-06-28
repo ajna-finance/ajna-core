@@ -58,7 +58,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         // calculate equivalent underlying assets for given lpTokens
         (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
-        pool.removeQuoteToken(params_.recipient, quoteTokenToRemove, params_.price);
+        pool.removeQuoteToken(quoteTokenToRemove, params_.price);
 
         // update position with newly removed lp shares
         positions[params_.tokenId].lpTokens[params_.price] -= params_.lpTokens;
@@ -86,7 +86,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         emit IncreaseLiquidity(params_.recipient, params_.price, params_.amount);
     }
 
-    // TODO: add moveLiquidity function
+    // TODO: implement moveLiquidity function
+    function moveLiquidity() external {}
 
     // TODO: need to transfer tokens to PositionManager upon memorializing -> removeQuoteToken and reAdd from positionManager escrow
     // TODO: problem of encumbered quote...

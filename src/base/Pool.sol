@@ -94,14 +94,14 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
 
-    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
+    function removeQuoteToken(uint256 maxAmount_, uint256 price_) external override {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         // remove quote token amount and get LP tokens burned
         (uint256 amount, uint256 lpTokens) = _removeQuoteTokenFromBucket(
-            price_, maxAmount_, lpBalance[recipient_][price_], lpTimer[recipient_][price_], curInflator
+            price_, maxAmount_, lpBalance[msg.sender][price_], lpTimer[msg.sender][price_], curInflator
         );
         require(_poolCollateralization(curDebt) >= Maths.WAD, "P:RQT:POOL_UNDER_COLLAT");
 
@@ -109,13 +109,13 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         totalQuoteToken -= amount;
 
         // lender accounting
-        lpBalance[recipient_][price_] -= lpTokens;
+        lpBalance[msg.sender][price_] -= lpTokens;
 
         _updateInterestRate(curDebt);
 
         // move quote token amount from pool to lender
-        quoteToken().safeTransfer(recipient_, amount / quoteTokenScale);
-        emit RemoveQuoteToken(recipient_, price_, amount, lup);
+        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
+        emit RemoveQuoteToken(msg.sender, price_, amount, lup);
     }
 
     /************************/

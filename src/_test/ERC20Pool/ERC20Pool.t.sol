@@ -252,7 +252,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 1_998 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceHigh, 1_998 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
+        _lender.removeQuoteToken(_pool, 2_000 * 1e18, priceHigh);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   4_002 * 1e18);
@@ -272,7 +272,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 499.5 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceMed, 499.5 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18, priceMed);
+        _lender.removeQuoteToken(_pool, 500 * 1e18, priceMed);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   3_502.5 * 1e18);
@@ -291,7 +291,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 2_497.5 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceMed, 2_497.5 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 2_500 * 1e18, priceMed);
+        _lender.removeQuoteToken(_pool, 2_500 * 1e18, priceMed);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   1_005 * 1e18);
@@ -313,7 +313,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 500 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceLow, 500 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18, priceLow);
+        _lender.removeQuoteToken(_pool, 500 * 1e18, priceLow);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   505 * 1e18);
@@ -335,7 +335,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 100 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceLow, 100 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 100 * 1e18, priceLow);
+        _lender.removeQuoteToken(_pool, 100 * 1e18, priceLow);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   2_405 * 1e18);
@@ -357,7 +357,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 2_397.6 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceLow, 2_397.6 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 2_400 * 1e18, priceLow);
+        _lender.removeQuoteToken(_pool, 2_400 * 1e18, priceLow);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   2_007.4 * 1e18);

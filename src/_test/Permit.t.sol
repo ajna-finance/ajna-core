@@ -122,7 +122,7 @@ contract PermitTest is DSTestPlus {
         _positionManager.increaseLiquidity(increaseLiquidityParamsApproved);
 
         // check that quote tokens have been transferred from the owner
-        assert(_quote.balanceOf(owner) < balanceBeforeAdd);
+        assertLt(_quote.balanceOf(owner), balanceBeforeAdd);
 
         // attempt and fail to add liquidity as unapprovedSpender
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParamsUnapproved = IPositionManager.IncreaseLiquidityParams(
