@@ -75,7 +75,7 @@ contract MulticallTest is DSTestPlus {
         uint256 additionalAmount           = 1000 * 1e18;
         uint256 newPriceToAddQuoteTokensTo = _p5007;
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            address(_quote), tokenId, testAddress, address(_pool), additionalAmount, newPriceToAddQuoteTokensTo
+            tokenId, testAddress, address(_pool), additionalAmount, newPriceToAddQuoteTokensTo
         );
 
         bytes[] memory callsToExecute = new bytes[](2);
@@ -86,7 +86,7 @@ contract MulticallTest is DSTestPlus {
             memorializeParams
         );
         callsToExecute[1] = abi.encodeWithSignature(
-            "increaseLiquidity((address,uint256,address,address,uint256,uint256))",
+            "increaseLiquidity((uint256,address,address,uint256,uint256))",
             increaseLiquidityParams
         );
 
@@ -122,7 +122,7 @@ contract MulticallTest is DSTestPlus {
         mintAndApproveQuoteTokens(recipient, mintAmount);
 
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            address(_quote), tokenId, recipient, address(_pool), mintAmount, mintPrice
+            tokenId, recipient, address(_pool), mintAmount, mintPrice
         );
 
         // construct BurnParams
@@ -132,7 +132,7 @@ contract MulticallTest is DSTestPlus {
 
         // https://ethereum.stackexchange.com/questions/65980/passing-struct-as-an-argument-in-call
         callsToExecute[0] = abi.encodeWithSignature(
-            "increaseLiquidity((address,uint256,address,address,uint256,uint256))",
+            "increaseLiquidity((uint256,address,address,uint256,uint256))",
             increaseLiquidityParams
         );
         callsToExecute[1] = abi.encodeWithSignature("burn((uint256,address,uint256,address))", burnParams);

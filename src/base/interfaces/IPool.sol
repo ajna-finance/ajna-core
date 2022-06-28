@@ -126,8 +126,9 @@ interface IPool {
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
      *  @param  maxAmount_ The maximum amount of quote token to be removed by a lender.
      *  @param  price_     The bucket from which quote tokens will be removed.
+     *  @return amount     The amount of quote tokens actually removed by the lender.
      */
-    function removeQuoteToken(uint256 maxAmount_, uint256 price_) external;
+    function removeQuoteToken(uint256 maxAmount_, uint256 price_) external returns (uint256 amount);
 
     /*******************************/
     /*** Pool External Functions ***/
@@ -139,4 +140,12 @@ interface IPool {
      */
     function liquidate(address borrower_) external;
 
+    /*******************************/
+    /*** Helper Functions ***/
+    /*******************************/
+
+    /**
+     *  @notice Returns the address of the pools quote token
+     */
+    function quoteTokenAddress() external view returns (address);
 }

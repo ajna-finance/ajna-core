@@ -94,7 +94,8 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
 
-    function removeQuoteToken(uint256 maxAmount_, uint256 price_) external override {
+    // TODO: resolve issue with multiple PM positions in a given price bucket
+    function removeQuoteToken(uint256 maxAmount_, uint256 price_) external override returns (uint256) {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
@@ -116,6 +117,7 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, price_, amount, lup);
+        return amount / quoteTokenScale;
     }
 
     /************************/
@@ -127,6 +129,10 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
      */
     function quoteToken() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0x14));
+    }
+
+    function quoteTokenAddress() external view returns (address) {
+        return _getArgAddress(0x14);
     }
 
 }
