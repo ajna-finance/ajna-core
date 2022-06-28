@@ -29,7 +29,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _quote       = new QuoteToken();
 
         _lender     = new UserWithQuoteTokenInNFTPool();
-        _lender2     = new UserWithQuoteTokenInNFTPool();
+        _lender2    = new UserWithQuoteTokenInNFTPool();
         _bidder     = new UserWithNFTCollateral();
         _borrower   = new UserWithNFTCollateral();
 

@@ -63,6 +63,10 @@ contract UserWithNFTCollateral {
         pool_.addCollateral(tokens);
     }
 
+    function addCollateralMultiple(ERC721Pool pool_, uint256[] memory tokenIds_) public {
+        pool_.addCollateral(tokenIds_);
+    }
+
     function borrow(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
         pool_.borrow(amount_, price_);
     }

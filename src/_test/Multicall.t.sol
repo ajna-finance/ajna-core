@@ -126,7 +126,7 @@ contract MulticallTest is DSTestPlus {
         );
 
         // construct BurnParams
-        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, recipient, mintPrice);
+        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, recipient, mintPrice, address(_pool));
 
         bytes[] memory callsToExecute = new bytes[](2);
 
@@ -135,7 +135,7 @@ contract MulticallTest is DSTestPlus {
             "increaseLiquidity((address,uint256,address,address,uint256,uint256))",
             increaseLiquidityParams
         );
-        callsToExecute[1] = abi.encodeWithSignature("burn((uint256,address,uint256))", burnParams);
+        callsToExecute[1] = abi.encodeWithSignature("burn((uint256,address,uint256,address))", burnParams);
 
         // attempt to modify the NFT from an unapproved EOA
         vm.prank(externalCaller);

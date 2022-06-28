@@ -56,6 +56,7 @@ contract DSTestPlus is Test {
     // PositionManager events
     event Burn(address indexed lender_, uint256 indexed price_);
     event DecreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 collateral_, uint256 quote_);
+    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_, uint256[] collateral_, uint256 quote_);
     event IncreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 amount_);
     event MemorializePosition(address indexed lender_, uint256 tokenId_);
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
