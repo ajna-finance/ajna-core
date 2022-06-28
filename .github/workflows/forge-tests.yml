@@ -17,3 +17,6 @@ jobs:
 
       - name: Run tests
         run: make test-with-gas-report
+
+      - name: Run coverage
+        run: make coverage
