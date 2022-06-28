@@ -60,7 +60,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         vm.expectRevert("P:RC:AMT_GT_AVAIL_COLLAT");
         _borrower.removeCollateral(_pool, 10 * 1e18);
         // lender deposits 20_000 DAI in 5 buckets each
-        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, _p5007);
+        _lender.addQuoteToken(_pool, 20_000 * 1e18, _p5007);
 
         // check initial pool state
         uint256 poolEncumbered    = _pool.getEncumberedCollateral(_pool.totalDebt());
@@ -221,11 +221,11 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         _lender.claimCollateral(_pool, address(_lender), 1 * 1e18, priceHigh);
 
         // lender deposit DAI in 3 buckets
-        _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 4_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 5_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 3_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 4_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 5_000 * 1e18, priceLow);
 
-        _lender1.addQuoteToken(_pool, address(_lender1), 3_000 * 1e18, priceHigh);
+        _lender1.addQuoteToken(_pool, 3_000 * 1e18, priceHigh);
 
         // check LP balance for lender
         assertEq(_pool.lpBalance(address(_lender), priceHigh),  3_000 * 1e27);
@@ -307,10 +307,10 @@ contract ERC20PoolCollateralTest is DSTestPlus {
      *          borrow, liquidate and then all collateral is claimed.
      */
     function testLiquidateClaimAllCollateral() public {
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p10016);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p9020);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p8002);
-        _lender.addQuoteToken(_pool, address(_lender), 1_300 * 1e18, _p100);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, _p10016);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, _p9020);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, _p8002);
+        _lender.addQuoteToken(_pool, 1_300 * 1e18, _p100);
 
         // borrowers deposit collateral
         _borrower.addCollateral(_pool, 2 * 1e18);

@@ -72,8 +72,8 @@ contract ERC721PoolBidTest is DSTestPlus {
      */
     function testPurchaseBidNFTSubset() external {
         // add initial quote tokens to pool
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p4000);
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 3_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_NFTSubsetPool, 3_000 * 1e18, _p3010);
 
         // add iniitial collateral to pool
         vm.prank((address(_borrower)));

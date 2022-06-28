@@ -34,6 +34,7 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
     /*** Modifiers ***/
     /*****************/
 
+    // TODO: remove this, no longer needed
     // TODO: check a signature provided by the caller using a permit like process
     /**
      *  @dev Check to see that the person calling this method is the intended recipient
@@ -43,57 +44,16 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         _;
     }
 
-    /**
-     *  @notice Calculate the EIP-712 compliant DOMAIN_SEPERATOR for ledgible signature encoding
-     *  @return The bytes32 domain separator of Position NFTs
-     */
-    function DOMAIN_SEPARATOR() public view returns (bytes32) {
-        return
-            keccak256(
-                abi.encode(
-                    // keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)')
-                    0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f,
-                    // _nameHash,
-                    // _versionHash,
-                    _chainId(),
-                    address(this)
-                )
-            );
-    }
-
-    /**
-     *  @dev Gets the current chain ID
-     *  @return chainId_ The current chain ID
-     */
-    function _chainId() internal view returns (uint256 chainId_) {
-        assembly {
-            chainId_ := chainid()
-        }
-    }
-
-    // TODO: check flow
-    /**
-     *  @dev Check the provided signature to see that the person calling this method is the intended recipient
-     */
-    function permit() internal {
-
-    }
-
     /*********************************/
     /*** Lender External Functions ***/
     /*********************************/
 
     function addQuoteToken(
-        address recipient_, uint256 amount_, uint256 price_
+        uint256 amount_, uint256 price_
     ) external override returns (uint256 lpTokens_) {
-        console.log("ERC20Pool:AQT accounts", address(this), msg.sender, recipient_);
-        console.log("ERC20Pool:AQT origin", tx.origin);
         require(BucketMath.isValidPrice(price_), "P:AQT:INVALID_PRICE");
-        console.log("ERC20Pool:AQT params", amount_, price_);
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
-        console.log("working here");
         require(amount_ > _poolMinDebtAmount(curDebt, totalBorrowers), "P:AQT:AMT_LT_AVG_DEBT");
-        console.log("working here");
         // deposit quote token amount and get awarded LP tokens
         lpTokens_ = _addQuoteTokenToBucket(price_, amount_, curDebt, curInflator);
 
@@ -101,14 +61,14 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         totalQuoteToken += amount_;
 
         // lender accounting
-        lpBalance[recipient_][price_] += lpTokens_;
-        lpTimer[recipient_][price_]   = block.timestamp;
+        lpBalance[msg.sender][price_] += lpTokens_;
+        lpTimer[msg.sender][price_]   = block.timestamp;
 
         _updateInterestRate(curDebt);
 
         // move quote token amount from lender to pool
-        quoteToken().safeTransferFrom(recipient_, address(this), amount_ / quoteTokenScale);
-        emit AddQuoteToken(recipient_, price_, amount_, lup);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
+        emit AddQuoteToken(msg.sender, price_, amount_, lup);
     }
 
     function moveQuoteToken(
@@ -134,7 +94,7 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
 
-    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override mayInteract(recipient_) {
+    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external override {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);

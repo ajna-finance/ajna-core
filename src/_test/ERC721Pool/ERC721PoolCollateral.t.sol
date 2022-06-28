@@ -85,8 +85,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         vm.expectRevert("P:ONLY_SUBSET");
         _NFTSubsetPool.addCollateral(tokens);
 
-        // add initial quote tokens to pool
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p4000);
+        // lender adds initial quote tokens to pool
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p4000);
 
         uint256 poolEncumbered    = _NFTSubsetPool.getEncumberedCollateral(_NFTSubsetPool.totalDebt());
         uint256 collateralization = _NFTSubsetPool.getPoolCollateralization();
@@ -203,7 +203,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _NFTSubsetPool.addCollateral(invalidTokenIds);
 
         // add initial quote tokens to pool
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p2503);
 
         // check pool and borrower state before adding collateral
         assertEq(_collateral.balanceOf(address(_borrower)),      60);
@@ -340,9 +340,9 @@ contract ERC721PoolCollateralTest is DSTestPlus {
      *              attempts to claim more than LP balance allows.
      */
     function testClaimCollateralNFTSubset() external {
-        // add initial quote tokens to pool
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p4000);
-        _lender2.addQuoteToken(_NFTSubsetPool, address(_lender2), 3_000 * 1e18, _p4000);
+        // lenders add initial quote tokens to pool
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p4000);
+        _lender2.addQuoteToken(_NFTSubsetPool, 3_000 * 1e18, _p4000);
 
         // add iniitial collateral to pool
         vm.prank((address(_borrower)));
@@ -465,7 +465,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
      */
     function testClaimMultipleCollateralNFTSubset() external {
         // add initial quote tokens to pool
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p4000);
 
         // should revert if attempt to add collateral from a tokenId outside of allowed subset
         uint256[] memory invalidTokenIds = new uint256[](3);

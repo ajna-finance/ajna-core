@@ -95,8 +95,8 @@ contract UserWithNFTCollateral {
 
 contract UserWithQuoteToken {
 
-    function addQuoteToken(ERC20Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {
-        pool_.addQuoteToken(recipient_, amount_, price_);
+    function addQuoteToken(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
+        pool_.addQuoteToken(amount_, price_);
     }
 
     function removeQuoteToken(ERC20Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {
@@ -134,8 +134,8 @@ contract UserWithQuoteToken {
 }
 
 contract UserWithQuoteTokenInNFTPool {
-    function addQuoteToken(ERC721Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {
-        pool_.addQuoteToken(recipient_, amount_, price_);
+    function addQuoteToken(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
+        pool_.addQuoteToken(amount_, price_);
     }
 
     function removeQuoteToken(ERC721Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {

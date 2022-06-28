@@ -102,6 +102,7 @@ interface IPositionManager {
      *  @param  price     The bucket price where liquidity should be added.
      */
     struct IncreaseLiquidityParams {
+        address quoteToken;
         uint256 tokenId;
         address recipient;
         address pool;

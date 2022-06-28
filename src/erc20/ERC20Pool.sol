@@ -45,8 +45,6 @@ contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Poo
 
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
-        console.log("initialize", block.timestamp, inflatorSnapshot, minFee);
-        console.log("initialize rate", rate_);
     }
 
     /***********************************/

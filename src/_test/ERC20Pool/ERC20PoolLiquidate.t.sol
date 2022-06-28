@@ -52,9 +52,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         uint256 priceMed  = _p9020;
         uint256 priceLow  = _p100;
 
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 10_200 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 10_200 * 1e18, priceLow);
 
         // should revert when no debt
         vm.expectRevert("P:L:NO_DEBT");
@@ -248,10 +248,10 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         uint256 priceLow     = _p100;
 
         // lender deposit in 4 buckets, price spaced
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHighest);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 1_300 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceHighest);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 1_300 * 1e18, priceLow);
 
         // borrowers deposit collateral
         _borrower.addCollateral(_pool, 2 * 1e18);
@@ -387,10 +387,10 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         uint256 priceLow     = _p3010;
 
         // lender deposit in 4 buckets, price spaced
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHighest);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 12_500 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, priceHighest);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 12_500 * 1e18, priceLow);
 
         // borrowers deposit collateral
         _borrower.addCollateral(_pool, 2 * 1e18);

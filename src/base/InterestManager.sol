@@ -44,11 +44,7 @@ abstract contract InterestManager is IInterestManager, PoolState {
      *  @dev    Requires time to have passed between update calls
      */
     function _accumulatePoolInterest(uint256 totalDebt_, uint256 inflator_) internal returns (uint256 curDebt_, uint256 curInflator_) {
-        console.log("IM:API: WHO DIS", address(this));
-        console.log("acc p i", block.timestamp, lastInflatorSnapshotUpdate, inflatorSnapshot);
-        console.log("other vars: ", minFee, interestRate, interestRateUpdate);
         uint256 elapsed  = block.timestamp - lastInflatorSnapshotUpdate;
-        console.log("time var", elapsed, block.timestamp, lastInflatorSnapshotUpdate);
         if (elapsed != 0) {
             curInflator_ = _pendingInflator(interestRate, inflator_, elapsed);                 // RAY
             curDebt_     = totalDebt_ + _pendingInterest(totalDebt_, curInflator_, inflator_); // WAD

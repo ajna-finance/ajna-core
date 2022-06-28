@@ -65,7 +65,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_lender), address(_pool), 20_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(address(_lender), BUCKET_PRICE, 20_000 * _quotePoolPrecision, 0);
-        _lender.addQuoteToken(_pool, address(_lender), 20_000 * 1e18, BUCKET_PRICE);
+        _lender.addQuoteToken(_pool, 20_000 * 1e18, BUCKET_PRICE);
 
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), 0);

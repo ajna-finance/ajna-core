@@ -110,7 +110,7 @@ contract PermitTest is DSTestPlus {
 
         // check can add liquidity as approved spender
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParamsApproved = IPositionManager.IncreaseLiquidityParams(
-            tokenId, owner, address(_pool), (10000 * 1e18) / 4, _p1004
+            address(_quote), tokenId, owner, address(_pool), (10000 * 1e18) / 4, _p1004
         );
 
         uint256 balanceBeforeAdd = _quote.balanceOf(owner);
@@ -126,7 +126,7 @@ contract PermitTest is DSTestPlus {
 
         // attempt and fail to add liquidity as unapprovedSpender
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParamsUnapproved = IPositionManager.IncreaseLiquidityParams(
-            tokenId, owner, address(_pool), (10000 * 1e18) / 4, _p1004
+            address(_quote), tokenId, owner, address(_pool), (10000 * 1e18) / 4, _p1004
         );
 
         vm.prank(unapprovedSpender);
@@ -231,7 +231,7 @@ contract PermitTest is DSTestPlus {
 
         // check can add liquidity as approved contract spender
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParamsApproved = IPositionManager.IncreaseLiquidityParams(
-            tokenId, address(minter), address(_pool), liquidityToAdd, price
+            address(_quote), tokenId, address(minter), address(_pool), liquidityToAdd, price
         );
 
         vm.expectEmit(true, true, true, true);

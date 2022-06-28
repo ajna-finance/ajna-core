@@ -107,12 +107,11 @@ interface IPool {
 
     /**
      *  @notice Called by lenders to add an amount of credit at a specified price bucket.
-     *  @param  recipient_ The recipient adding quote tokens.
      *  @param  amount_    The amount of quote token to be added by a lender.
      *  @param  price_     The bucket to which the quote tokens will be added.
      *  @return lpTokens_  The amount of LP Tokens received for the added quote tokens.
      */
-    function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
+    function addQuoteToken(uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.

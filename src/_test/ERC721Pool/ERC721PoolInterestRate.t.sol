@@ -63,9 +63,9 @@ contract ERC721PoolInterestRateTriggerTest is DSTestPlus {
 
         _borrower2.approveToken(_collateral, _NFTSubsetPoolAddress, 61);
 
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p4000);
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p3010);
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p2503);
 
         skip(864000);
 

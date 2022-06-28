@@ -50,9 +50,12 @@ contract MulticallTest is DSTestPlus {
         uint256 priceOne   = _p4000;
         uint256 priceTwo   = _p3010;
         uint256 priceThree = _p1004;
-        _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceOne);
-        _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceTwo);
-        _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceThree);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, priceOne);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, priceTwo);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, priceThree);
 
         // mint an NFT capable of representing the positions
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(testAddress, address(_pool));
@@ -72,7 +75,7 @@ contract MulticallTest is DSTestPlus {
         uint256 additionalAmount           = 1000 * 1e18;
         uint256 newPriceToAddQuoteTokensTo = _p5007;
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId, testAddress, address(_pool), additionalAmount, newPriceToAddQuoteTokensTo
+            address(_quote), tokenId, testAddress, address(_pool), additionalAmount, newPriceToAddQuoteTokensTo
         );
 
         bytes[] memory callsToExecute = new bytes[](2);
@@ -119,7 +122,7 @@ contract MulticallTest is DSTestPlus {
         mintAndApproveQuoteTokens(recipient, mintAmount);
 
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId, recipient, address(_pool), mintAmount, mintPrice
+            address(_quote), tokenId, recipient, address(_pool), mintAmount, mintPrice
         );
 
         // construct BurnParams
