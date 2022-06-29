@@ -30,20 +30,6 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
 
     uint256 public override quoteTokenScale;
 
-    /*****************/
-    /*** Modifiers ***/
-    /*****************/
-
-    // TODO: remove this, no longer needed
-    // TODO: check a signature provided by the caller using a permit like process
-    /**
-     *  @dev Check to see that the person calling this method is the intended recipient
-     */
-    modifier mayInteract(address recipient_) {
-        require(recipient_ == msg.sender, "P:NO_AUTH");
-        _;
-    }
-
     /*********************************/
     /*** Lender External Functions ***/
     /*********************************/
@@ -100,9 +86,13 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
+        // check if lpTokensToRemove was specified, otherwise use lender's entire balance
+        // lpTokensToRemove = lpTokensToRemove == 0 ? lpBalance[msg.sender][price_] : lpTokensToRemove;
+        uint256 lpTokensToRemove = lpBalance[msg.sender][price_];
+
         // remove quote token amount and get LP tokens burned
         (uint256 amount, uint256 lpTokens) = _removeQuoteTokenFromBucket(
-            price_, maxAmount_, lpBalance[msg.sender][price_], lpTimer[msg.sender][price_], curInflator
+            price_, maxAmount_, lpTokensToRemove, lpTimer[msg.sender][price_], curInflator
         );
         require(_poolCollateralization(curDebt) >= Maths.WAD, "P:RQT:POOL_UNDER_COLLAT");
 
@@ -118,6 +108,25 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, price_, amount, lup);
         return amount / quoteTokenScale;
+    }
+
+    // TODO: move this to interface
+    event TransferLPTokens(address owner_, address newOwner_, uint256 price_, uint256 tokensToTransfer);
+
+    // TODO: convert this to take an array of args and modify once as opposed to rerunning sig check
+    // TODO: since storage layout conflicts precluding use of delegatecall, use signature based access control
+    function transferLPTokens(address owner_, address newOwner_, uint256 price_) external {
+        // require(owner_ == msg.sender, "P:TLT:NOT_OWNER");
+        require(BucketMath.isValidPrice(price_), "P:TLT:INVALID_PRICE");
+
+        // calculate lp tokens to be moved in the given bucket
+        uint256 tokensToTransfer = lpBalance[owner_][price_];
+
+        // move lp tokens to the new owners address
+        lpBalance[owner_][price_] = 0;
+        lpBalance[newOwner_][price_] = tokensToTransfer;
+
+        emit TransferLPTokens(owner_, newOwner_, price_, tokensToTransfer);
     }
 
     /************************/
