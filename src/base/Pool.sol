@@ -80,15 +80,11 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
     }
 
-    // TODO: resolve issue with multiple PM positions in a given price bucket
-    function removeQuoteToken(uint256 maxAmount_, uint256 price_) external override returns (uint256) {
+    // TODO: return lpTokens actually burned for increased precision
+    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokensToRemove) external override returns (uint256) {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
-
-        // check if lpTokensToRemove was specified, otherwise use lender's entire balance
-        // lpTokensToRemove = lpTokensToRemove == 0 ? lpBalance[msg.sender][price_] : lpTokensToRemove;
-        uint256 lpTokensToRemove = lpBalance[msg.sender][price_];
 
         // remove quote token amount and get LP tokens burned
         (uint256 amount, uint256 lpTokens) = _removeQuoteTokenFromBucket(
@@ -109,9 +105,6 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         emit RemoveQuoteToken(msg.sender, price_, amount, lup);
         return amount / quoteTokenScale;
     }
-
-    // TODO: move this to interface
-    event TransferLPTokens(address owner_, address newOwner_, uint256 price_, uint256 tokensToTransfer);
 
     // TODO: convert this to take an array of args and modify once as opposed to rerunning sig check
     // TODO: since storage layout conflicts precluding use of delegatecall, use signature based access control

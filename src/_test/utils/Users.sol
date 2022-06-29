@@ -104,7 +104,9 @@ contract UserWithQuoteToken {
     }
 
     function removeQuoteToken(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
-        pool_.removeQuoteToken(amount_, price_);
+        // remove full lpToken balance
+        uint256 lpTokensToRemove = pool_.lpBalance(address(this), price_);
+        pool_.removeQuoteToken(amount_, price_, lpTokensToRemove);
     }
 
     function moveQuoteToken(
@@ -117,8 +119,8 @@ contract UserWithQuoteToken {
         pool_.borrow(amount_, limitPrice_);
     }
 
-    function claimCollateral(ERC20Pool pool_, address recipient_, uint256 amount_, uint256 price_) public {
-        pool_.claimCollateral(recipient_, amount_, price_);
+    function claimCollateral(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
+        pool_.claimCollateral(amount_, price_);
     }
 
     function liquidate(ERC20Pool pool_, address borrower_) public {
@@ -143,21 +145,23 @@ contract UserWithQuoteTokenInNFTPool {
     }
 
     function removeQuoteToken(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
-        pool_.removeQuoteToken(amount_, price_);
+        // remove full lpToken balance
+        uint256 lpTokensToRemove = pool_.lpBalance(address(this), price_);
+        pool_.removeQuoteToken(amount_, price_, lpTokensToRemove);
     }
 
     function borrow(ERC721Pool pool_, uint256 amount_, uint256 stopPrice) public {
         pool_.borrow(amount_, stopPrice);
     }
 
-    function claimCollateral(ERC721Pool pool_, address recipient_, uint256 tokenId_, uint256 price_) public {
+    function claimCollateral(ERC721Pool pool_, uint256 tokenId_, uint256 price_) public {
         uint[] memory tokens = new uint[](1);
         tokens[0] = tokenId_;
-        pool_.claimCollateral(recipient_, tokens, price_);
+        pool_.claimCollateral(tokens, price_);
     }
 
-    function claimCollateralMultiple(ERC721Pool pool_, address recipient_, uint256[] memory tokenIds_, uint256 price_) public {
-        pool_.claimCollateral(recipient_, tokenIds_, price_);
+    function claimCollateralMultiple(ERC721Pool pool_, uint256[] memory tokenIds_, uint256 price_) public {
+        pool_.claimCollateral(tokenIds_, price_);
     }
 
     function liquidate(ERC721Pool pool_, address borrower) public {

@@ -173,7 +173,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertClaimCollateral();
         vm.expectEmit(true, true, false, true);
         emit ClaimCollateral(address(_lender), BUCKET_PRICE, 0.499944601428501671 * 10**18, 999.999903846163090501641306327 * 10**27);
-        _lender.claimCollateral(_pool, address(_lender), 0.499944601428501671 * 1e18, BUCKET_PRICE);
+        _lender.claimCollateral(_pool, 0.499944601428501671 * 1e18, BUCKET_PRICE);
 
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), BUCKET_PRICE);

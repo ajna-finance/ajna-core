@@ -380,13 +380,13 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
 
         // no update if less than 12 hours passed
         skip(36000);
-        _lender.claimCollateral(_pool, address(_lender), 1 * 1e18, _p3514);
+        _lender.claimCollateral(_pool, 1 * 1e18, _p3514);
 
         // update if more than 12 hours passed
         skip(36000);
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.055 * 1e18, 0.0605 * 1e18);
-        _lender.claimCollateral(_pool, address(_lender), 1 * 1e18, _p3514);
+        _lender.claimCollateral(_pool, 1 * 1e18, _p3514);
         assertEq(_pool.interestRate(),       0.0605 * 1e18);
         assertEq(_pool.interestRateUpdate(), 936000);
     }

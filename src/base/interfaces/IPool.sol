@@ -63,6 +63,16 @@ interface IPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+    /**
+     *  @notice Emitted when a lender transfers their LP tokens to a different address.
+     *  @dev    Used by PositionManager.memorializePositions().
+     *  @param  owner_    The original owner address of the position.
+     *  @param  newOwner_ The new owner address of the position.
+     *  @param  price_    Price bucket at which LP tokens were moved.
+     *  @param  lpTokens_ Amount of LP tokens transferred.
+     */
+    event TransferLPTokens(address owner_, address newOwner_, uint256 price_, uint256 lpTokens_);
+
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -126,10 +136,10 @@ interface IPool {
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
      *  @param  maxAmount_ The maximum amount of quote token to be removed by a lender.
      *  @param  price_     The bucket from which quote tokens will be removed.
+     *  @param  lpTokens_  The amount of LP tokens to be removed by a lender.
      *  @return amount     The amount of quote tokens actually removed by the lender.
      */
-    // function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokensToRemove_) external returns (uint256 amount);
-    function removeQuoteToken(uint256 maxAmount_, uint256 price_) external returns (uint256 amount);
+    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokens_) external returns (uint256 amount);
 
     function transferLPTokens(address owner_, address newOwner_, uint256 price_) external;
 

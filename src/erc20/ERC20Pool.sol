@@ -159,23 +159,23 @@ contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Poo
     /*** Lender External Functions ***/
     /*********************************/
 
-    function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external override {
+    function claimCollateral(uint256 amount_, uint256 price_) external override {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
-        uint256 maxClaim = lpBalance[recipient_][price_];
+        uint256 maxClaim = lpBalance[msg.sender][price_];
         require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
 
         // claim collateral and get amount of LP tokens burned for claim
         uint256 claimedLpTokens = _claimCollateralFromBucket(price_, amount_, maxClaim);
 
         // lender accounting
-        lpBalance[recipient_][price_] -= claimedLpTokens;
+        lpBalance[msg.sender][price_] -= claimedLpTokens;
 
         _updateInterestRate(totalDebt);
 
         // move claimed collateral from pool to claimer
-        collateral().safeTransfer(recipient_, amount_ / collateralScale);
-        emit ClaimCollateral(recipient_, price_, amount_, claimedLpTokens);
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+        emit ClaimCollateral(msg.sender, price_, amount_, claimedLpTokens);
     }
 
     /*******************************/
