@@ -6,7 +6,7 @@ import { Maths }  from "../../libraries/Maths.sol";
 import { Test }   from "@std/Test.sol";
 import { Vm }     from "@std/Vm.sol";
 
-contract DSTestPlus is Test {
+abstract contract DSTestPlus is Test {
 
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
