@@ -404,7 +404,7 @@ contract ERC20PoolTest is DSTestPlus {
         // there should be no penalty if moving to a higher bucket
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), priceLow, priceMed, 500 * 1e18, 0);
-        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, priceLow, priceMed);
+        _lender.moveQuoteToken(_pool, 500 * 1e18, priceLow, priceMed);
 
         // check buckets
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
@@ -428,7 +428,7 @@ contract ERC20PoolTest is DSTestPlus {
         // apply penalty if moving to a lower bucket
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), priceHigh, priceLow, 998.502212369222621532 * 1e18, 0);
-        _lender.moveQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHigh, priceLow);
+        _lender.moveQuoteToken(_pool, 1_000 * 1e18, priceHigh, priceLow);
 
         // check buckets
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
@@ -463,7 +463,7 @@ contract ERC20PoolTest is DSTestPlus {
 
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender1), priceHigh, priceMed, 500.499262543592459489 * 1e18, 0);
-        _lender1.moveQuoteToken(_pool, address(_lender1), 510 * 1e18, priceHigh, priceMed);
+        _lender1.moveQuoteToken(_pool, 510 * 1e18, priceHigh, priceMed);
 
         // check buckets
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
@@ -489,7 +489,7 @@ contract ERC20PoolTest is DSTestPlus {
 
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), priceHigh, priceMed, 1_999.004768043588443074 * 1e18, 0);
-        _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh, priceMed);
+        _lender.moveQuoteToken(_pool, 2_000 * 1e18, priceHigh, priceMed);
 
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceHigh);
         bipCredit = _pool.bipAt(priceHigh);
@@ -512,7 +512,7 @@ contract ERC20PoolTest is DSTestPlus {
         // penalty should not apply if moving from priceMed bucket to priceLow
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), priceMed, priceLow, 2_000 * 1e18, 0);
-        _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceMed, priceLow);
+        _lender.moveQuoteToken(_pool, 2_000 * 1e18, priceMed, priceLow);
 
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
         bipCredit = _pool.bipAt(priceMed);

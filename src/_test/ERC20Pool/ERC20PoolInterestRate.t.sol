@@ -290,7 +290,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
 
         // no update if less than 12 hours passed
         skip(36000);
-        _lender.moveQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p502, _p2503);
+        _lender.moveQuoteToken(_pool, 1_000 * 1e18, _p502, _p2503);
         assertEq(_pool.interestRate(),       0.055 * 1e18);
         assertEq(_pool.interestRateUpdate(), 864000);
 
@@ -298,7 +298,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
         skip(36000);
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.055 * 1e18, 0.0605 * 1e18);
-        _lender.moveQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p502, _p2503);
+        _lender.moveQuoteToken(_pool, 1_000 * 1e18, _p502, _p2503);
         assertEq(_pool.interestRate(),       0.0605 * 1e18);
         assertEq(_pool.interestRateUpdate(), 936000);
     }

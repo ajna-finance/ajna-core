@@ -110,9 +110,9 @@ contract UserWithQuoteToken {
     }
 
     function moveQuoteToken(
-        ERC20Pool pool_, address recipient_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_
+        ERC20Pool pool_, uint256 amount_, uint256 fromPrice_, uint256 toPrice_
     ) public {
-        pool_.moveQuoteToken(recipient_, amount_, fromPrice_, toPrice_);
+        pool_.moveQuoteToken(amount_, fromPrice_, toPrice_);
     }
 
     function borrow(ERC20Pool pool_, uint256 amount_, uint256 limitPrice_) public {

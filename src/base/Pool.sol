@@ -58,7 +58,7 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
     }
 
     function moveQuoteToken(
-        address recipient_, uint256 maxAmount_, uint256 fromPrice_, uint256 toPrice_
+        uint256 maxAmount_, uint256 fromPrice_, uint256 toPrice_
     ) external override {
         require(BucketMath.isValidPrice(toPrice_), "P:MQT:INVALID_TO_PRICE");
         require(fromPrice_ != toPrice_, "P:MQT:SAME_PRICE");
@@ -67,17 +67,17 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
 
         // move quote tokens between buckets and get LP tokens
         (uint256 fromLpTokens, uint256 toLpTokens, uint256 movedAmount) = _moveQuoteTokenFromBucket(
-            fromPrice_, toPrice_, maxAmount_, lpBalance[recipient_][fromPrice_], lpTimer[recipient_][fromPrice_], curInflator
+            fromPrice_, toPrice_, maxAmount_, lpBalance[msg.sender][fromPrice_], lpTimer[msg.sender][fromPrice_], curInflator
         );
         require(_poolCollateralization(curDebt) >= Maths.WAD, "P:MQT:POOL_UNDER_COLLAT");
 
         // lender accounting
-        lpBalance[recipient_][fromPrice_] -= fromLpTokens;
-        lpBalance[recipient_][toPrice_]   += toLpTokens;
+        lpBalance[msg.sender][fromPrice_] -= fromLpTokens;
+        lpBalance[msg.sender][toPrice_]   += toLpTokens;
 
         _updateInterestRate(curDebt);
 
-        emit MoveQuoteToken(recipient_, fromPrice_, toPrice_, movedAmount, lup);
+        emit MoveQuoteToken(msg.sender, fromPrice_, toPrice_, movedAmount, lup);
     }
 
     // TODO: return lpTokens actually burned for increased precision
