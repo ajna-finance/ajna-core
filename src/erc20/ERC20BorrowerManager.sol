@@ -71,22 +71,32 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
 
         LoanInfo memory loan = loans[borrower_];
         
-        // loan doesn't exist
-        require(oldPrev_ =t a= address(0), "B:U:PREV_SHD_B_ZRO");
+        if (loan.thresholdPrice > 0) {
+            // loan exists
 
-        // TODO: call updateLoanQueue when new borrower borrows
-        loan.thresholdPrice = thresholdPrice_;
+        } else if (head != address(0)) {
+            // loan doesn't exist, other loans in queue
+            require(oldPrev_ == address(0), "B:U:PREV_SHD_B_ZRO");
 
-        if (newPrev_ != address(0)) {
-            loan.next = loans[newPrev_].next;
-            loans[newPrev_].next = borrower_;
+            // TODO: call updateLoanQueue when new borrower borrows
+            loan.thresholdPrice = thresholdPrice_;
 
+            if (newPrev_ != address(0)) {
+                loan.next = loans[newPrev_].next;
+                loans[newPrev_].next = borrower_;
+
+            } else {
+                loan.next = head;
+                head = borrower_;
+            }
+            loans[borrower_] = loan;
         } else {
-            loan.next = head;
+            // first loan in queue
+            require(oldPrev_ == address(0) || newPrev_ == address(0), "B:U:PREV_SHD_B_ZRO");
             head = borrower_;
+            loan.thresholdPrice = thresholdPrice_;
+            loans[borrower_] = loan;
         }
-        loans[borrower_] = loan;
-
     }
 
 }
