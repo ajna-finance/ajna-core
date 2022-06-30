@@ -26,13 +26,18 @@ interface IERC20BorrowerManager is IBorrowerManager {
      */
     function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateralDeposited, uint256 inflatorSnapshot);
 
+    function loans(address borrower_) external view returns (uint256 thresholdPrice, address next);
+
+    function size() external view returns (uint256 size_);
+
+    function head() external view returns (address head_);
 
     /***************/
     /*** Structs ***/
     /***************/
 
     /**
-     *  @notice Struct holding borrower related info per price bucket.
+     *  @notice Struct holding borrower related info.
      *  @param  debt                Borrower debt, WAD units.
      *  @param  collateralDeposited Collateral deposited by borrower, WAD units.
      *  @param  inflatorSnapshot    Current borrower inflator snapshot, RAY units.
@@ -41,6 +46,11 @@ interface IERC20BorrowerManager is IBorrowerManager {
         uint256 debt;
         uint256 collateralDeposited;
         uint256 inflatorSnapshot;
+    }
+
+    struct LoanInfo {
+        uint256 thresholdPrice;
+        address next;
     }
 
     /***********************************/
@@ -67,5 +77,11 @@ interface IERC20BorrowerManager is IBorrowerManager {
         uint256 borrowerInflatorSnapshot_,
         uint256 inflatorSnapshot_
     );
+
+    /***********************************/
+    /*** Queue Functions ***/
+    /***********************************/
+
+    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_) external;
 
 }
