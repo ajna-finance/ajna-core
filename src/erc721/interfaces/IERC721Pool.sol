@@ -78,8 +78,9 @@ interface IERC721Pool is IPool {
      *  @notice Called by lenders to claim multiple unencumbered collateral from a price bucket.
      *  @param  tokenIds_  NFT token ids to be claimed from the pool.
      *  @param  price_     The bucket from which unencumbered collateral will be claimed.
+     *  @return lpTokens_  The actual amount of lpTokens claimed.
      */
-    function claimCollateral(uint256[] calldata tokenIds_, uint256 price_) external;
+    function claimCollateral(uint256[] calldata tokenIds_, uint256 price_) external returns (uint256 lpTokens_);
 
     /*******************************/
     /*** Pool External Functions ***/
@@ -94,4 +95,10 @@ interface IERC721Pool is IPool {
      *  @param  tokenIds_ NFT token ids to be purchased from the pool.
      */
     function purchaseBid(uint256 amount_, uint256 price_, uint256[] calldata tokenIds_) external;
+
+    /**
+     *  @notice Returns the address of the pool's collateral token
+     */
+    function collateralTokenAddress() external view returns (address);
+
 }

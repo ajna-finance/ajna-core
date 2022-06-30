@@ -38,8 +38,10 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         uint256 amount_, uint256 price_
     ) external override returns (uint256 lpTokens_) {
         require(BucketMath.isValidPrice(price_), "P:AQT:INVALID_PRICE");
+
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
         require(amount_ > _poolMinDebtAmount(curDebt, totalBorrowers), "P:AQT:AMT_LT_AVG_DEBT");
+
         // deposit quote token amount and get awarded LP tokens
         lpTokens_ = _addQuoteTokenToBucket(price_, amount_, curDebt, curInflator);
 
@@ -81,7 +83,7 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
     }
 
     // TODO: return lpTokens actually burned for increased precision
-    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokensToRemove) external override returns (uint256) {
+    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokensToRemove) external override returns (uint256, uint256) {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
@@ -103,7 +105,7 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, price_, amount, lup);
-        return amount / quoteTokenScale;
+        return (amount / quoteTokenScale, lpTokens);
     }
 
     // TODO: convert this to take an array of args and modify once as opposed to rerunning sig check

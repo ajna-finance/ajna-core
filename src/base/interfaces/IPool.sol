@@ -137,8 +137,9 @@ interface IPool {
      *  @param  price_     The bucket from which quote tokens will be removed.
      *  @param  lpTokens_  The amount of LP tokens to be removed by a lender.
      *  @return amount     The amount of quote tokens actually removed by the lender.
+     *  @return lpTokens     The amount of quote LP tokens actually removed by the lender.
      */
-    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokens_) external returns (uint256 amount);
+    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokens_) external returns (uint256 amount, uint256 lpTokens);
 
     /**
      *  @notice Called by lenders to transfers their LP tokens to a different address.

@@ -22,6 +22,7 @@ abstract contract ERC721BucketsManager is BucketsManager {
     /*** Internal Utility Functions ***/
     /**********************************/
 
+    // TODO: check safety here
     function _claimNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
         Bucket memory bucket = _buckets[price_];
 

@@ -177,14 +177,15 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager,
     /*** Lender External Functions ***/
     /*********************************/
 
-    function claimCollateral(uint256[] calldata tokenIds_, uint256 price_) external override {
+    // TODO: check if all incoming tokenIds can be safely claimed
+    function claimCollateral(uint256[] calldata tokenIds_, uint256 price_) external override returns (uint256 claimedLpTokens) {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
         uint256 maxClaim = lpBalance[msg.sender][price_];
         require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
 
         // claim collateral and get amount of LP tokens burned for claim
-        uint256 claimedLpTokens = _claimNFTCollateralFromBucket(price_, tokenIds_, maxClaim);
+        claimedLpTokens = _claimNFTCollateralFromBucket(price_, tokenIds_, maxClaim);
 
         // lender accounting
         lpBalance[msg.sender][price_] -= claimedLpTokens;
@@ -282,6 +283,10 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager,
      */
     function collateral() public pure returns (ERC721) {
         return ERC721(_getArgAddress(0));
+    }
+
+    function collateralTokenAddress() external view returns (address) {
+        return _getArgAddress(0);
     }
 
     /** @notice Implementing this method allows contracts to receive ERC721 tokens

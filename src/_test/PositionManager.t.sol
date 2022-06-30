@@ -46,7 +46,7 @@ contract PositionManagerTest is DSTestPlus {
     /*************************/
 
     function mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) private {
-        _quote.mint(operator_, mintAmount_ * 1e18);
+        _quote.mint(operator_, mintAmount_);
 
         vm.prank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
@@ -281,6 +281,7 @@ contract PositionManagerTest is DSTestPlus {
         uint256 mintPrice   = _p1004;
 
         mintAndApproveQuoteTokens(testAddress, mintAmount);
+        uint256 testerQuoteBalance = _quote.balanceOf(testAddress);
 
         uint256 tokenId = mintNFT(testAddress, address(_pool));
 
@@ -290,6 +291,9 @@ contract PositionManagerTest is DSTestPlus {
         // check initial pool balance
         uint256 postAddPoolQuote = _pool.totalQuoteToken();
         assertEq(_pool.hpb(), mintPrice);
+
+        assertEq(_quote.balanceOf(testAddress), testerQuoteBalance - mintAmount);
+        assertEq(_pool.totalQuoteToken(), mintAmount);
 
         // skip > 24h to avoid deposit removal penalty
         skip(3600 * 24 + 1);
@@ -308,33 +312,30 @@ contract PositionManagerTest is DSTestPlus {
         // check quote token removed
         assertEq(_pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
         assertGt(postAddPoolQuote, _pool.totalQuoteToken());
+        assertEq(_quote.balanceOf(testAddress), testerQuoteBalance - _pool.totalQuoteToken());
 
         // check lp tokens matches expectations
         uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, mintPrice);
-        assert(updatedLPTokens < originalLPTokens);
-
-        // TODO: check balance of collateral and quote
+        assertLt(updatedLPTokens, originalLPTokens);
     }
 
-    // TODO: check collateral claiming, check quote tokens transferred back to recipient
     /**
      *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity.
      */
     function testDecreaseLiquidityWithDebt() external {
         // generate a new address and set test params
         address testLender      = generateAddress();
-        uint256 testBucketPrice = _p10016;
-        uint256 mintAmount      = 50000 * 1e18;
+        uint256 mintAmount      = 50_000 * 1e18;
 
         mintAndApproveQuoteTokens(testLender, mintAmount);
 
         uint256 tokenId = mintNFT(testLender, address(_pool));
 
         // add liquidity that can later be decreased
-        increaseLiquidity(tokenId, testLender, address(_pool), mintAmount, testBucketPrice);
+        increaseLiquidity(tokenId, testLender, address(_pool), mintAmount, _p10016);
 
         // check position info
-        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, testBucketPrice);
+        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, _p10016);
         uint256 postAddPoolQuote = _pool.totalQuoteToken();
 
         // Borrow against the pool
@@ -342,30 +343,55 @@ contract PositionManagerTest is DSTestPlus {
         uint256 collateralToMint        = 5000 * 1e18;
         mintAndApproveCollateralTokens(testBorrower, collateralToMint);
 
+        // add collateral and borrow against it
         testBorrower.addCollateral(_pool, collateralToMint);
+        testBorrower.borrow(_pool, 2_500 * 1e18, _p10016);
 
-        testBorrower.borrow(_pool, 2_500 * 1e18, testBucketPrice);
-        assertEq(_pool.lup(),       testBucketPrice);
-        assertEq(_pool.hpb(),       testBucketPrice);
+        // check pool state
+        assertEq(_pool.lup(),       _p10016);
+        assertEq(_pool.hpb(),       _p10016);
         assertEq(_pool.totalDebt(), 2_500.000961538461538462 * 1e18);
 
+        // check token balances
+        assertEq(_collateral.balanceOf(address(_pool)), collateralToMint);
+        assertEq(_collateral.balanceOf(testLender),     0);
+        assertEq(_quote.balanceOf(testLender),          0);
+        assertEq(_quote.balanceOf(address(_pool)),      mintAmount - 2_500 * 1e18);
+
+        // bidder purchases quote tokens with newly minted collateral
         UserWithCollateral testBidder = new UserWithCollateral();
-        mintAndApproveCollateralTokens(testBidder, 50000 * 1e18);
+        mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
+        testBidder.purchaseBid(_pool, 1 * 1e18, _p10016);
 
-        testBidder.purchaseBid(_pool, 1 * 1e18, testBucketPrice);
-
-        // identify number of lp tokens to exchange for quote and collateral accrued
+        // lender removes a portion of their provided liquidity
         uint256 lpTokensToRemove = originalLPTokens / 4;
-        (, uint256 quoteTokensRemoved) = decreaseLiquidity(tokenId, testLender, address(_pool), testBucketPrice, lpTokensToRemove);
+        (uint256 collateralTokensToBeRemoved, ) = _pool.getLPTokenExchangeValue(lpTokensToRemove, _p10016);
 
-        // TODO: update this check
-        // TODO: check quote and collateral vs expectations
-        // assertEq(_pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
+            tokenId, testLender, address(_pool), _p10016, lpTokensToRemove
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit ClaimCollateral(address(_positionManager), _p10016, 0.000024958813990230 * 1e18, 0.249999995192305152765920139 * 1e27);
+        vm.expectEmit(true, true, true, true);
+        emit DecreaseLiquidity(testLender, _p10016, 0.000024958813990230 * 1e18, 12_487.250490144230769231 * 1e18);
+        vm.prank(testLender);
+        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
+
+        // check token balances
         assertGt(postAddPoolQuote, _pool.totalQuoteToken());
 
-        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, testBucketPrice);
-
+        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, _p10016);
         assertTrue(updatedLPTokens < originalLPTokens);
+
+        assertEq(_collateral.balanceOf(testLender),                collateralTokensToBeRemoved);
+        assertLt(_collateral.balanceOf(testLender),                collateralToMint);
+        assertEq(_collateral.balanceOf(address(_positionManager)), 0);
+
+        assertEq(_quote.balanceOf(testLender),                12_487.250490144230769231 * 1e18);
+        assertEq(_quote.balanceOf(address(_positionManager)), 0);
+        assertEq(_quote.balanceOf(address(_pool)),            35_011.749509855769230769 * 1e18);
+
     }
 
     /**
@@ -375,9 +401,9 @@ contract PositionManagerTest is DSTestPlus {
     function xtestDecreaseLiquidityWithDebtNFTPool() external {
         // deploy NFT pool and user contracts
         NFTCollateralToken _erc721Collateral  = new NFTCollateralToken();
-        ERC721PoolFactory _erc721Factory  = new ERC721PoolFactory();
-        address _NFTCollectionPoolAddress = _erc721Factory.deployPool(address(_erc721Collateral), address(_quote), 0.05 * 10**18);
-        ERC721Pool _NFTCollectionPool     = ERC721Pool(_NFTCollectionPoolAddress);
+        ERC721PoolFactory _erc721Factory      = new ERC721PoolFactory();
+        address _NFTCollectionPoolAddress     = _erc721Factory.deployPool(address(_erc721Collateral), address(_quote), 0.05 * 10**18);
+        ERC721Pool _NFTCollectionPool         = ERC721Pool(_NFTCollectionPoolAddress);
 
         UserWithQuoteTokenInNFTPool testLender = new UserWithQuoteTokenInNFTPool();
         UserWithNFTCollateral testBorrower     = new UserWithNFTCollateral();
@@ -386,11 +412,13 @@ contract PositionManagerTest is DSTestPlus {
         // mint test tokens
         _quote.mint(address(testBidder), 100_000 * 1e18);
         _quote.mint(address(testLender), 200_000 * 1e18);
+
         _erc721Collateral.mint(address(testBorrower), 60);
         _erc721Collateral.mint(address(testBidder), 5);
 
         // run token approvals for NFT Collection Pool
         testLender.approveToken(_quote, _NFTCollectionPoolAddress, 200_000 * 1e18);
+        testLender.approveToken(_quote, address(_positionManager), 200_000 * 1e18);
         testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 63);
         testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 65);
         testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 1);
@@ -418,6 +446,9 @@ contract PositionManagerTest is DSTestPlus {
             tokenId, address(testLender), _NFTCollectionPoolAddress, 50_000 * 1e18, _p10016
         );
         _positionManager.increaseLiquidity(increaseLiquidityParams);
+
+        assertEq(_quote.balanceOf(address(_positionManager)),          0);
+        assertEq(_quote.balanceOf(address(_NFTCollectionPoolAddress)), 50_000 * 1e18);
 
         // borrower adds initial collateral to the pool to borrow against
         uint256[] memory collateralToAdd = new uint256[](3);
@@ -452,6 +483,7 @@ contract PositionManagerTest is DSTestPlus {
             tokenId, address(testLender), _NFTCollectionPoolAddress, _p10016, lpTokensToRemove, tokenIdsToRemove
         );
 
+        // TODO: broken here
         vm.expectEmit(true, true, false, true);
         emit ClaimNFTCollateral(address(testLender), _p10016, tokenIdsToRemove, 18200899161871735351932834024423);
         vm.expectEmit(true, true, false, true);
@@ -497,13 +529,13 @@ contract PositionManagerTest is DSTestPlus {
         assert(newOwner != originalOwner);
 
         // check new owner can increaseLiquidity
-        uint256 mintAmount = 50000 * 1e18;
+        uint256 mintAmount = 50_000 * 1e18;
         mintAndApproveQuoteTokens(newOwner, mintAmount);
 
         increaseLiquidity(tokenId, newOwner, address(_pool), mintAmount, testBucketPrice);
 
         // check previous owner can no longer modify the NFT
-        uint256 nextMintAmount = 50000 * 1e18;
+        uint256 nextMintAmount = 50_000 * 1e18;
         mintAndApproveQuoteTokens(originalOwner, nextMintAmount);
 
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
@@ -516,9 +548,14 @@ contract PositionManagerTest is DSTestPlus {
         // check new owner can decreaseLiquidity
         uint256 lpTokensToAttempt = _positionManager.getLPTokens(tokenId, testBucketPrice);
 
-        emit log_uint(lpTokensToAttempt);
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
+            tokenId, newOwner, address(_pool), testBucketPrice, lpTokensToAttempt
+        );
 
-        decreaseLiquidity(tokenId, newOwner, address(_pool), testBucketPrice, lpTokensToAttempt);
+        vm.expectEmit(true, true, true, true);
+        emit DecreaseLiquidity(newOwner, testBucketPrice, 0, 49_950 * 1e18);
+        vm.prank(newOwner);
+        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
     }
 
     /**
