@@ -107,20 +107,48 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         return (amount / quoteTokenScale, lpTokens);
     }
 
-    // TODO: convert this to take an array of args and modify once as opposed to rerunning sig check
-    // TODO: since storage layout conflicts precluding use of delegatecall, use signature based access control
-    function transferLPTokens(address owner_, address newOwner_, uint256 price_) external {
-        // require(owner_ == msg.sender, "P:TLT:NOT_OWNER");
-        require(BucketMath.isValidPrice(price_), "P:TLT:INVALID_PRICE");
+    mapping(address => LpTokenOwnership) lpTokenOwnership;
 
-        // calculate lp tokens to be moved in the given bucket
-        uint256 tokensToTransfer = lpBalance[owner_][price_];
+    struct LpTokenOwnership {
+        address owner;
+        address allowedNewOwner;
+    }
 
-        // move lp tokens to the new owners address
-        lpBalance[owner_][price_] = 0;
-        lpBalance[newOwner_][price_] += tokensToTransfer;
+    function setPositionOwner(address owner_, address allowedNewOwner_) external {
+        require(msg.sender == owner_, "P:SPO:NOT_OWNER");
 
-        emit TransferLPTokens(owner_, newOwner_, price_, tokensToTransfer);
+        LpTokenOwnership storage tokenOwnership = lpTokenOwnership[owner_];
+
+        tokenOwnership.owner = owner_;
+        tokenOwnership.allowedNewOwner = allowedNewOwner_;
+
+        lpTokenOwnership[owner_] = tokenOwnership;
+    }
+
+    // TODO: since storage layout conflicts precluding use of delegatecall, use signature based access control or setPositionOwner
+    function transferLPTokens(address owner_, address newOwner_, uint256[] calldata prices_) external {
+        require(lpTokenOwnership[owner_].owner == owner_ && lpTokenOwnership[owner_].allowedNewOwner == newOwner_, "P:TLT:NOT_OWNER");
+
+        uint256 tokensTransferred;
+
+        for (uint256 i = 0; i < prices_.length; ) {
+            require(BucketMath.isValidPrice(prices_[i]), "P:TLT:INVALID_PRICE");
+
+            // calculate lp tokens to be moved in the given bucket
+            uint256 tokensToTransfer = lpBalance[owner_][prices_[i]];
+
+            // move lp tokens to the new owners address
+            lpBalance[owner_][prices_[i]] = 0;
+            lpBalance[newOwner_][prices_[i]] += tokensToTransfer;
+
+            tokensTransferred += tokensToTransfer;
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        emit TransferLPTokens(owner_, newOwner_, prices_, tokensTransferred);
     }
 
     /************************/

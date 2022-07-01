@@ -131,10 +131,12 @@ contract PositionManagerTest is DSTestPlus {
         assert(lpTokens == 0);
     }
 
-    // TODO: expand the memorialize tests
     /**
      *  @notice Tests attachment of a created position to an already existing NFT.
      *          LP tokens are checked to verify ownership of position.
+     *          Reverts:
+     *              Attempts to memorialize when lp tokens aren't allowed to be transfered
+     *              Attempts to set position owner when not owner of the LP tokens
      */
     function testMemorializePositions() external {
         address testAddress = generateAddress();
@@ -154,23 +156,36 @@ contract PositionManagerTest is DSTestPlus {
         vm.prank(testAddress);
         _pool.addQuoteToken(3_000 * 1e18, priceThree);
 
-        uint256[] memory prices = new uint256[](3);
-
-        prices[0] = priceOne;
-        prices[1] = priceTwo;
-        prices[2] = priceThree;
-
         // mint an NFT to later memorialize existing positions into
         uint256 tokenId = mintNFT(testAddress, address(_pool));
 
-        // memorialize quote tokens into minted NFT
+        // construct memorialize params struct
+        uint256[] memory prices = new uint256[](3);
+        prices[0] = priceOne;
+        prices[1] = priceTwo;
+        prices[2] = priceThree;
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId, testAddress, address(_pool), prices
         );
 
+        // should revert if access hasn't been granted to transfer LP tokens
+        vm.expectRevert("P:TLT:NOT_OWNER");
+        vm.prank(testAddress);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // set position ownership should revert if not called by owner
+        vm.expectRevert("P:SPO:NOT_OWNER");
+        _pool.setPositionOwner(testAddress, address(_positionManager));
+
+        // allow position manager to take ownership of the position
+        vm.prank(testAddress);
+        _pool.setPositionOwner(testAddress, address(_positionManager));
+
+        // memorialize quote tokens into minted NFT
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testAddress, address(_positionManager), prices, 9_000 * 1e27);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
-
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 
@@ -241,7 +256,7 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(_pool.totalQuoteToken(), 15_000 * 1e18);
 
-        // memorialize lender 1 quote tokens into minted NFT
+        // construct memorialize lender 1 params struct
         uint256[] memory prices = new uint256[](3);
         prices[0] = priceOne;
         prices[1] = priceTwo;
@@ -250,6 +265,22 @@ contract PositionManagerTest is DSTestPlus {
             tokenId1, testLender1, address(_pool), prices
         );
 
+        // should revert if access hasn't been granted to transfer LP tokens
+        vm.expectRevert("P:TLT:NOT_OWNER");
+        vm.prank(testLender1);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // set position ownership should revert if not called by owner
+        vm.expectRevert("P:SPO:NOT_OWNER");
+        _pool.setPositionOwner(testLender1, address(_positionManager));
+
+        // allow position manager to take ownership of lender 1's position
+        vm.prank(testLender1);
+        _pool.setPositionOwner(testLender1, address(_positionManager));
+
+        // memorialize lender 1 quote tokens into minted NFT
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testLender1, address(_positionManager), prices, 9_000 * 1e27);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender1, tokenId1);
         vm.prank(testLender1);
@@ -271,6 +302,10 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(_pool.totalQuoteToken(), 15_000 * 1e18);
 
+        // allow position manager to take ownership of lender 2's position
+        vm.prank(testLender2);
+        _pool.setPositionOwner(testLender2, address(_positionManager));
+
         // memorialize lender 2 quote tokens into minted NFT
         prices = new uint256[](2);
         prices[0] = priceOne;
@@ -279,6 +314,8 @@ contract PositionManagerTest is DSTestPlus {
             tokenId2, testLender2, address(_pool), prices
         );
 
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testLender2, address(_positionManager), prices, 6_000 * 1e27);
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender2, tokenId2);
         vm.prank(testLender2);
@@ -603,7 +640,6 @@ contract PositionManagerTest is DSTestPlus {
             tokenId, address(testLender), _NFTCollectionPoolAddress, _p10016, lpTokensToRemove, tokenIdsToRemove
         );
 
-        // TODO: broken here
         vm.expectEmit(true, true, false, true);
         emit ClaimNFTCollateral(address(testLender), _p10016, tokenIdsToRemove, 18200899161871735351932834024423);
         vm.expectEmit(true, true, false, true);
@@ -728,8 +764,6 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(burntPositionOwner, 0x0000000000000000000000000000000000000000);
     }
-
-    // TODO: test multiple positions in the same pool
 
     function testGetPositionValueInQuoteTokens() external {}
 

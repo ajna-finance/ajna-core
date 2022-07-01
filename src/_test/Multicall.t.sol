@@ -61,6 +61,10 @@ contract MulticallTest is DSTestPlus {
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(testAddress, address(_pool));
         uint256 tokenId = _positionManager.mint(mintParams);
 
+        // allow position manager to take ownership of lenders position
+        vm.prank(testAddress);
+        _pool.setPositionOwner(testAddress, address(_positionManager));
+
         // Prepare to memorialize the extant positions with the just minted NFT
         uint256[] memory pricesToMemorialize = new uint256[](3);
         pricesToMemorialize[0] = priceOne;

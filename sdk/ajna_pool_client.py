@@ -63,7 +63,7 @@ class AjnaPoolClient:
             quote_token = self.get_quote_token(pool_contract)
             quote_token.approve(pool_contract, amount, lender)
 
-        tx = pool_contract.addQuoteToken(lender, amount, price, {"from": lender})
+        tx = pool_contract.addQuoteToken(amount, price, {"from": lender})
         if ensure_passes and bool(tx.revert_msg):
             raise Exception(
                 f"Failed to deposit quote token to pool {pool_contract.address}. Revert message: {tx.revert_msg}"

@@ -68,10 +68,10 @@ interface IPool {
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner_    The original owner address of the position.
      *  @param  newOwner_ The new owner address of the position.
-     *  @param  price_    Price bucket at which LP tokens were moved.
+     *  @param  prices_    Array of price buckets at which LP tokens were moved.
      *  @param  lpTokens_ Amount of LP tokens transferred.
      */
-    event TransferLPTokens(address owner_, address newOwner_, uint256 price_, uint256 lpTokens_);
+    event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
 
     /***********************/
     /*** State Variables ***/
@@ -146,9 +146,9 @@ interface IPool {
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner_    The original owner address of the position.
      *  @param  newOwner_ The new owner address of the position.
-     *  @param  price_    Price bucket at which LP tokens were moved.
+     *  @param  prices_   Array of price buckets at which LP tokens were moved.
      */
-    function transferLPTokens(address owner_, address newOwner_, uint256 price_) external;
+    function transferLPTokens(address owner_, address newOwner_, uint256[] calldata prices_) external;
 
     /*******************************/
     /*** Pool External Functions ***/

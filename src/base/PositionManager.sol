@@ -150,9 +150,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         emit IncreaseLiquidity(params_.recipient, params_.price, params_.amount);
     }
 
-    // TODO: need to transfer tokens to PositionManager upon memorializing -> removeQuoteToken and reAdd from positionManager escrow
-    // TODO: problem of encumbered quote...
-    // TODO: Alternatively -> add function to transfer lp positions within the Pool contract
     /// TODO: (X) prices can be memorialized at a time
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         Position storage position = positions[params_.tokenId];
@@ -164,14 +161,14 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
                 params_.prices[i]
             );
 
-            // update pool lp token accounting and transfer ownership of lp tokens to PositionManager contract
-            IPool(params_.pool).transferLPTokens(params_.owner, address(this), params_.prices[i]);
-
             // increment call counter in gas efficient way by skipping safemath checks
             unchecked {
                 ++i;
             }
         }
+
+        // update pool lp token accounting and transfer ownership of lp tokens to PositionManager contract
+        IPool(params_.pool).transferLPTokens(params_.owner, address(this), params_.prices);
 
         emit MemorializePosition(params_.owner, params_.tokenId);
     }
