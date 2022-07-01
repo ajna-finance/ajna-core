@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { PoolState } from "./PoolState.sol";
-
 import { IBorrowerManager } from "./interfaces/IBorrowerManager.sol";
 import { IInterestManager } from "./interfaces/IInterestManager.sol";
 
@@ -11,7 +9,7 @@ import { Maths } from "../libraries/Maths.sol";
 /**
  *  @notice Interest related functionality.
  */
-abstract contract InterestManager is IInterestManager, PoolState {
+abstract contract InterestManager is IInterestManager {
 
     // /*****************/
     // /*** Constants ***/
