@@ -32,24 +32,6 @@ contract ERC721Pool is IERC721Pool, Pool {
 
     /// @dev Set of tokenIds that are currently being used as collateral
     EnumerableSet.UintSet internal _collateralTokenIdsAdded;
-    /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
-    /// @dev Defaults to length 0 if the whole collection is to be used
-    EnumerableSet.UintSet internal _tokenIdsAllowed;
-
-    /******************************************/
-    /*** ERC721BorrowerManager Declarations ***/
-    /******************************************/
-
-    using EnumerableSet for EnumerableSet.UintSet;
-
-    // TODO: rename
-    /// @dev Internal visibility is required as it contains a nested struct
-    // borrowers book: borrower address -> NFTBorrowerInfo
-    mapping(address => NFTBorrowerInfo) internal _NFTborrowers;
-
-    /*****************************************/
-    /*** ERC721BucketsManager Declarations ***/
-    /*****************************************/
 
     /**
      *  @notice Mapping of price to Set of NFT Token Ids that have been deposited into the bucket
@@ -57,6 +39,14 @@ contract ERC721Pool is IERC721Pool, Pool {
      */
     mapping(uint256 => EnumerableSet.UintSet) internal _collateralDeposited;
 
+    /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
+    /// @dev Defaults to length 0 if the whole collection is to be used
+    EnumerableSet.UintSet internal _tokenIdsAllowed;
+
+    // TODO: rename
+    /// @dev Internal visibility is required as it contains a nested struct
+    // borrowers book: borrower address -> NFTBorrowerInfo
+    mapping(address => NFTBorrowerInfo) internal _NFTborrowers;
 
     /*****************************/
     /*** Inititalize Functions ***/
@@ -299,10 +289,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         }
         borrower_.inflatorSnapshot = inflator_;
     }
-
-    /**********************************/
-    /*** Internal Bucket Functions ***/
-    /**********************************/
 
     function _claimNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
         Bucket memory bucket = _buckets[price_];

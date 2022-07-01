@@ -19,19 +19,14 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 
 contract ERC20Pool is IERC20Pool, Pool {
 
-    using SafeERC20 for ERC20;
+    using SafeERC20     for ERC20;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     /***********************/
     /*** State Variables ***/
     /***********************/
 
     uint256 public override collateralScale;
-
-    /*****************************************/
-    /*** ERC20BorrowerManager Declarations ***/
-    /*****************************************/
-
-    using EnumerableSet for EnumerableSet.UintSet;
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public override borrowers;
@@ -264,10 +259,6 @@ contract ERC20Pool is IERC20Pool, Pool {
         }
         borrower_.inflatorSnapshot = inflator_;
     }
-
-    /*********************************/
-    /*** Internal Bucket Functions ***/
-    /*********************************/
 
     /**
      *  @notice Called by a lender to claim accumulated collateral
