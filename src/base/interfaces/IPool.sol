@@ -63,9 +63,40 @@ interface IPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+    /**
+     *  @notice Emitted when pool interest rate is updated.
+     *  @param  oldRate_ Old pool interest rate.
+     *  @param  newRate_ New pool interest rate.
+     */
+    event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
+
     /***********************/
     /*** State Variables ***/
     /***********************/
+
+    /**
+     *  @notice Returns the `inflatorSnapshot` state variable.
+     *  @return inflatorSnapshot_ A snapshot of the last inflator value, in RAY units.
+     */
+    function inflatorSnapshot() external view returns (uint256 inflatorSnapshot_);
+
+    /**
+     *  @notice Returns the `interestRate` state variable.
+     *  @return interestRate_ TODO
+     */
+    function interestRate() external view returns (uint256 interestRate_);
+
+    /**
+     *  @notice Returns the `interestRateUpdate` state variable.
+     *  @return interestRateUpdate_ The timestamp of the last rate update.
+     */
+    function interestRateUpdate() external view returns (uint256 interestRateUpdate_);
+
+    /**
+     *  @notice Returns the `lastInflatorSnapshotUpdate` state variable.
+     *  @return lastInflatorSnapshotUpdate_ The timestamp of the last `inflatorSnapshot` update.
+     */
+    function lastInflatorSnapshotUpdate() external view returns (uint256 lastInflatorSnapshotUpdate_);
 
     /**
      *  @notice Nested mapping of lender's LP token balance at different price buckets.
@@ -74,6 +105,12 @@ interface IPool {
      *  @return balance_     LP token balance of the lender at the queried price bucket.
      */
     function lpBalance(address lp_, uint256 priceBucket_) external view returns (uint256 balance_);
+
+    /**
+     *  @notice Returns the `minFee` state variable.
+     *  @return minFee_ TODO
+     */
+    function minFee() external view returns (uint256 minFee_);
 
     /**
      *  @notice Returns the `quoteTokenScale` state variable.
