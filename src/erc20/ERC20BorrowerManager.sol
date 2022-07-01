@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { ERC20InterestManager }  from "./ERC20InterestManager.sol";
+// import { ERC20InterestManager }  from "./ERC20InterestManager.sol";
 import { IERC20BorrowerManager } from "./interfaces/IERC20BorrowerManager.sol";
 
 import { Maths } from "../libraries/Maths.sol";
@@ -11,7 +11,7 @@ import { Maths } from "../libraries/Maths.sol";
 /**
  *  @notice Lender Management related functionality
  */
-abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestManager {
+abstract contract ERC20BorrowerManager is IERC20BorrowerManager {
 
     // using EnumerableSet for EnumerableSet.UintSet;
 
