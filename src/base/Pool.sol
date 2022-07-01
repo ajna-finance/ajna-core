@@ -82,7 +82,6 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         emit MoveQuoteToken(msg.sender, fromPrice_, toPrice_, movedAmount, lup);
     }
 
-    // TODO: return lpTokens actually burned for increased precision
     function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokensToRemove) external override returns (uint256, uint256) {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
@@ -119,7 +118,7 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
 
         // move lp tokens to the new owners address
         lpBalance[owner_][price_] = 0;
-        lpBalance[newOwner_][price_] = tokensToTransfer;
+        lpBalance[newOwner_][price_] += tokensToTransfer;
 
         emit TransferLPTokens(owner_, newOwner_, price_, tokensToTransfer);
     }

@@ -185,8 +185,128 @@ contract PositionManagerTest is DSTestPlus {
         assert(positionAtWrongPriceLPTokens == 0);
     }
 
-    // TODO: implement test case where multiple users mints multiple NFTs to multiple pools
-    function testMintMultiple() external {}
+    /**
+     *  @notice Tests attachment of multiple previously created position to already existing NFTs.
+     *          LP tokens are checked to verify ownership of position.
+     */
+    function testMemorializeMultiple() external {
+        address testLender1 = generateAddress();
+        address testLender2 = generateAddress();
+        uint256 mintAmount  = 10000 * 1e18;
+
+        mintAndApproveQuoteTokens(testLender1, mintAmount);
+        mintAndApproveQuoteTokens(testLender2, mintAmount);
+
+        // call pool contract directly to add quote tokens
+        uint256 priceOne   = _p4000;
+        uint256 priceTwo   = _p3010;
+        uint256 priceThree = _p1004;
+        uint256 priceFour  = _p1_05;
+
+        vm.prank(testLender1);
+        _pool.addQuoteToken(3_000 * 1e18, priceOne);
+        vm.prank(testLender1);
+        _pool.addQuoteToken(3_000 * 1e18, priceTwo);
+        vm.prank(testLender1);
+        _pool.addQuoteToken(3_000 * 1e18, priceThree);
+
+        vm.prank(testLender2);
+        _pool.addQuoteToken(3_000 * 1e18, priceOne);
+        vm.prank(testLender2);
+        _pool.addQuoteToken(3_000 * 1e18, priceFour);
+
+        // mint NFTs to later memorialize existing positions into
+        uint256 tokenId1 = mintNFT(testLender1, address(_pool));
+        uint256 tokenId2 = mintNFT(testLender2, address(_pool));
+
+        // check lender, position manager,  and pool state
+        assertEq(_pool.lpBalance(testLender1, priceOne),   3_000 * 1e27);
+        assertEq(_pool.lpBalance(testLender1, priceTwo),   3_000 * 1e27);
+        assertEq(_pool.lpBalance(testLender1, priceThree), 3_000 * 1e27);
+
+        assertEq(_pool.lpBalance(testLender2, priceOne),  3_000 * 1e27);
+        assertEq(_pool.lpBalance(testLender2, priceFour), 3_000 * 1e27);
+
+        assertEq(_pool.lpBalance(address(_positionManager), priceOne),   0);
+        assertEq(_pool.lpBalance(address(_positionManager), priceTwo),   0);
+        assertEq(_pool.lpBalance(address(_positionManager), priceThree), 0);
+        assertEq(_pool.lpBalance(address(_positionManager), priceFour),  0);
+
+        assertEq(_positionManager.getLPTokens(tokenId1, priceOne),   0);
+        assertEq(_positionManager.getLPTokens(tokenId1, priceTwo),   0);
+        assertEq(_positionManager.getLPTokens(tokenId1, priceThree), 0);
+
+        assertEq(_positionManager.getLPTokens(tokenId2, priceOne),   0);
+        assertEq(_positionManager.getLPTokens(tokenId2, priceFour),  0);
+
+        assertEq(_pool.totalQuoteToken(), 15_000 * 1e18);
+
+        // memorialize lender 1 quote tokens into minted NFT
+        uint256[] memory prices = new uint256[](3);
+        prices[0] = priceOne;
+        prices[1] = priceTwo;
+        prices[2] = priceThree;
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId1, testLender1, address(_pool), prices
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testLender1, tokenId1);
+        vm.prank(testLender1);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check lender, position manager,  and pool state
+        assertEq(_pool.lpBalance(testLender1, priceOne),   0);
+        assertEq(_pool.lpBalance(testLender1, priceTwo),   0);
+        assertEq(_pool.lpBalance(testLender1, priceThree), 0);
+
+        assertEq(_pool.lpBalance(address(_positionManager), priceOne),   3_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_positionManager), priceTwo),   3_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_positionManager), priceThree), 3_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_positionManager), priceFour),  0);
+
+        assertEq(_positionManager.getLPTokens(tokenId1, priceOne),   3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, priceTwo),   3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, priceThree), 3_000 * 1e27);
+
+        assertEq(_pool.totalQuoteToken(), 15_000 * 1e18);
+
+        // memorialize lender 2 quote tokens into minted NFT
+        prices = new uint256[](2);
+        prices[0] = priceOne;
+        prices[1] = priceFour;
+        memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId2, testLender2, address(_pool), prices
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testLender2, tokenId2);
+        vm.prank(testLender2);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check lender, position manager,  and pool state
+        assertEq(_pool.lpBalance(testLender2, priceOne),  0);
+        assertEq(_pool.lpBalance(testLender2, priceFour), 0);
+
+        assertEq(_pool.lpBalance(address(_positionManager), priceOne),   6_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_positionManager), priceTwo),   3_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_positionManager), priceThree), 3_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_positionManager), priceFour),  3_000 * 1e27);
+
+        assertEq(_positionManager.getLPTokens(tokenId1, priceOne),   3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, priceTwo),   3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, priceThree), 3_000 * 1e27);
+
+        assertEq(_positionManager.getLPTokens(tokenId2, priceOne),   3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId2, priceFour),  3_000 * 1e27);
+
+        assertEq(_pool.totalQuoteToken(), 15_000 * 1e18);
+    }
+
+    function testMemorializeMultipleAndModifyLiquidity() external {
+
+    }
+
 
     /**
      *  @notice Tests a contract minting an NFT.
