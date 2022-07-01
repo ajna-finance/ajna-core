@@ -19,4 +19,5 @@ jobs:
         run: make test-with-gas-report
 
       - name: Run coverage
+        continue-on-error: true
         run: make coverage

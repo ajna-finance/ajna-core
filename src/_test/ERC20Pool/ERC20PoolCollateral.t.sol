@@ -92,6 +92,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(borrowerCollateralization, Maths.WAD);
 
         // get loan of 20_000 DAI, recheck borrower
+        skip(46800);
         _borrower.borrow(_pool, 20_000 * 1e18, 2500 * 1e18);
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(deposited,                        70 * 1e18);
@@ -107,6 +108,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertGt(actualUtilization, targetUtilization);
 
         // add some collateral
+        skip(46800);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 30 * 1e18);
         vm.expectEmit(true, true, false, true);
@@ -114,7 +116,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         _borrower.addCollateral(_pool, 30 * 1e18);
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(deposited,          100 * 1e18);
-        assertEq(borrowerEncumbered, 3.993894019676334605794103602 * 1e27);
+        assertEq(borrowerEncumbered, 3.994220018622067025199328602 * 1e27);
         // ensure collateralization increased and target utilization decreased
         assertLt(collateralization, _pool.getPoolCollateralization());
         assertGt(targetUtilization, _pool.getPoolTargetUtilization());
@@ -126,11 +128,12 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         _borrower.removeCollateral(_pool, 100 * 1e18);
 
         // remove some collateral
+        skip(46800);
         _borrower.removeCollateral(_pool, 20 * 1e18);
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(deposited,                 80 * 1e18);
-        assertEq(borrowerEncumbered,        3.993894019676334605794103602 * 1e27);
-        assertEq(borrowerCollateralization, 20.030576576612116629 * 1e18);
+        assertEq(borrowerEncumbered,        3.994578648196336715223476604 * 1e27);
+        assertEq(borrowerCollateralization, 20.027143547698634878 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), borrowerCollateralization);
         // ensure collateralization decreased and target utilization increased
@@ -142,13 +145,14 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         targetUtilization = _pool.getPoolTargetUtilization();
 
         // borrower repays part of the loan
+        skip(46800);
         _quote.mint(address(_borrower), 5_000 * 1e18);
         _borrower.approveToken(_quote, address(_pool), 5_000 * 1e18);
         _borrower.repay(_pool, 5_000 * 1e18);
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(deposited,                 80 * 1e18);
-        assertEq(borrowerEncumbered,        2.995420562760782536824065597 * 1e27);
-        assertEq(borrowerCollateralization, 26.707435007479076604 * 1e18);
+        assertEq(borrowerEncumbered,        2.996499721003926909283639902 * 1e27);
+        assertEq(borrowerCollateralization, 26.697816602231267185 * 1e18);
 
         assertEq(_pool.getPoolCollateralization(), borrowerCollateralization);
         // collateralization should increase, decreasing target utilization
@@ -160,13 +164,14 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         targetUtilization = _pool.getPoolTargetUtilization();
 
         // borrower pays back entire loan and accumulated debt
-        _quote.mint(address(_borrower), 15_001 * 1e18);
-        _borrower.approveToken(_quote, address(_pool), 15_001 * 1e18);
-        _borrower.repay(_pool, 15_001 * 1e18);
+        skip(46800);
+        _quote.mint(address(_borrower), 15_010 * 1e18);
+        _borrower.approveToken(_quote, address(_pool), 15_010 * 1e18);
+        _borrower.repay(_pool, 15_010 * 1e18);
         // since collateralization dropped to 100%, target utilization should increase
         assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertGt(actualUtilization,                _pool.getPoolActualUtilization());
-        assertLt(targetUtilization,                _pool.getPoolTargetUtilization());
+        assertEq(targetUtilization,                _pool.getPoolTargetUtilization());
 
         actualUtilization = _pool.getPoolActualUtilization();
         targetUtilization = _pool.getPoolTargetUtilization();
@@ -188,11 +193,11 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(borrowerCollateralization, Maths.WAD);
 
         assertEq(_collateral.balanceOf(address(_borrower)), 100 * 1e18);
-        // // check pool balances
+        // check pool balances
         poolEncumbered = _pool.getEncumberedCollateral(_pool.totalDebt());
         assertEq(poolEncumbered,                   borrowerEncumbered);
         assertEq(_pool.getPoolCollateralization(), borrowerCollateralization);
-        assertEq(_pool.getPoolTargetUtilization(), Maths.WAD);
+        assertEq(_pool.getPoolTargetUtilization(), 0.044881259098978985 * 1e18);
         assertEq(_pool.getPoolActualUtilization(), 0);
         assertEq(_pool.totalCollateral(),          0);
 
