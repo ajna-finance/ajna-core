@@ -23,6 +23,7 @@ abstract contract InterestManager is IInterestManager, PoolState {
 
     uint256 public constant RATE_INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant RATE_DECREASE_COEFFICIENT = 0.9 * 10**18;
+    // lambda used for the EMAs calculated as exp(-1/7 * ln2)
     uint256 public constant LAMBDA_EMA                = 0.905723664263906671 * 10**18;
     uint256 public constant EMA_RATE_FACTOR           = 10**18 - LAMBDA_EMA;
 
