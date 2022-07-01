@@ -73,10 +73,13 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
         
         if (loan.thresholdPrice > 0) {
             // loan exists
+            loan = _move(oldPrev_, newPrev_);
+            loan.thresholdPrice = thresholdPrice_;
+            loans[borrower_] = loan;
 
         } else if (head != address(0)) {
             // loan doesn't exist, other loans in queue
-            require(oldPrev_ == address(0), "B:U:PREV_SHD_B_ZRO");
+            require(oldPrev_ == address(0), "B:U:ALRDY_IN_QUE");
 
             // TODO: call updateLoanQueue when new borrower borrows
             loan.thresholdPrice = thresholdPrice_;
@@ -96,6 +99,38 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
             head = borrower_;
             loan.thresholdPrice = thresholdPrice_;
             loans[borrower_] = loan;
+        }
+
+        // protections
+        if (newPrev_ != address(0)) {
+            require(loans[newPrev_].thresholdPrice > thresholdPrice_, "B:U:QUE_WRNG_ORD");
+        }
+        if (loan.next != address(0)) {
+            require(loans[loan.next].thresholdPrice < thresholdPrice_, "B:U:QUE_WRNG_ORD");
+        }
+    }
+
+    function _move(address oldPrev_, address newPrev_) private returns (LoanInfo memory loan) {
+        address borrower;
+
+        if (oldPrev_ == address(0)) {
+            loan = loans[head];
+            borrower = head;
+            head = loan.next;
+        } else {
+            LoanInfo memory oldPrevLoan = loans[oldPrev_];
+            loan = loans[oldPrevLoan.next];
+            borrower = oldPrevLoan.next;
+            oldPrevLoan.next = loan.next;
+        }
+        if (newPrev_ == address(0)) {
+            loan.next = head;
+            head = borrower;
+
+        } else {
+            LoanInfo memory newPrevLoan = loans[newPrev_];
+            loan.next = newPrevLoan.next;
+            newPrevLoan.next = borrower;
         }
     }
 
