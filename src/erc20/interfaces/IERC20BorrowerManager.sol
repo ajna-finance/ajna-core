@@ -3,14 +3,12 @@ pragma solidity 0.8.14;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { IBorrowerManager } from "../../base/interfaces/IBorrowerManager.sol";
-
 /**
  *  @title Ajna ERC20 Borrower Manager
  *  @dev   Used to manage borrower positions of ERC-20 tokens.
  */
 
-interface IERC20BorrowerManager is IBorrowerManager {
+interface IERC20BorrowerManager {
 
     /***********************/
     /*** State Variables ***/

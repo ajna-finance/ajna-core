@@ -3,13 +3,11 @@ pragma solidity 0.8.14;
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { IBorrowerManager } from "../../base/interfaces/IBorrowerManager.sol";
-
 /**
  *  @title Ajna NFT Borrower Manager
  *  @dev   Used to manage borrower positions of ERC-721 tokens.
  */
-interface IERC721BorrowerManager is IBorrowerManager {
+interface IERC721BorrowerManager {
 
     /***************/
     /*** Structs ***/

@@ -9,15 +9,13 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 
 import { IPool } from "../base/interfaces/IPool.sol";
 
-import { InterestManager } from "./InterestManager.sol";
-
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
 
 // Added
 import { BitMaps } from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
-abstract contract Pool is IPool, InterestManager, Clone {
+abstract contract Pool is IPool, Clone {
 
     using SafeERC20 for ERC20;
 
