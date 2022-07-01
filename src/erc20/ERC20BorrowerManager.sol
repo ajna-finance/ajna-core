@@ -17,6 +17,8 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
 
     using EnumerableSet for EnumerableSet.UintSet;
 
+    event logThing(string name, address here);
+
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public override borrowers;
     mapping(address => LoanInfo) public override loans;
@@ -56,13 +58,14 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
 
     }
 
-    function getHighestThresholdPrice() public view returns ( BorrowerInfo memory borrower_) {
+    function getHighestThresholdPrice() external override view returns (uint256 thresholdPrice){
         if (head != address(0)) {
-            borrower_ = borrowers[head];
+            return loans[head].thresholdPrice;
         }
+        return 0;
     }
 
-    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_) public override {
+    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_) external override {
         require(oldPrev_ != borrower_ || newPrev_ != borrower_, "B:U:PNT_SELF_REF");
 
         if (loans[oldPrev_].next != address(0)) {
@@ -75,7 +78,6 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
             // loan exists
             loan = _move(oldPrev_, newPrev_);
             loan.thresholdPrice = thresholdPrice_;
-            loans[borrower_] = loan;
 
         } else if (head != address(0)) {
             // loan doesn't exist, other loans in queue
@@ -92,13 +94,11 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
                 loan.next = head;
                 head = borrower_;
             }
-            loans[borrower_] = loan;
         } else {
             // first loan in queue
             require(oldPrev_ == address(0) || newPrev_ == address(0), "B:U:PREV_SHD_B_ZRO");
             head = borrower_;
             loan.thresholdPrice = thresholdPrice_;
-            loans[borrower_] = loan;
         }
 
         // protections
@@ -108,9 +108,10 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
         if (loan.next != address(0)) {
             require(loans[loan.next].thresholdPrice < thresholdPrice_, "B:U:QUE_WRNG_ORD");
         }
+        loans[borrower_] = loan;
     }
 
-    function _move(address oldPrev_, address newPrev_) private returns (LoanInfo memory loan) {
+    function _move(address oldPrev_, address newPrev_) internal returns (LoanInfo memory loan) {
         address borrower;
 
         if (oldPrev_ == address(0)) {
@@ -122,15 +123,17 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
             loan = loans[oldPrevLoan.next];
             borrower = oldPrevLoan.next;
             oldPrevLoan.next = loan.next;
+            loans[oldPrev_] = oldPrevLoan;
         }
+
         if (newPrev_ == address(0)) {
             loan.next = head;
             head = borrower;
-
         } else {
             LoanInfo memory newPrevLoan = loans[newPrev_];
             loan.next = newPrevLoan.next;
             newPrevLoan.next = borrower;
+            loans[newPrev_] = newPrevLoan;
         }
     }
 
