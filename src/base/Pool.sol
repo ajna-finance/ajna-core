@@ -10,12 +10,13 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IPool } from "../base/interfaces/IPool.sol";
 
 import { InterestManager } from "./InterestManager.sol";
-import { LenderManager }   from "./LenderManager.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
 
-abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
+// Added
+
+abstract contract Pool is IPool, InterestManager, Clone {
 
     using SafeERC20 for ERC20;
 
@@ -27,6 +28,19 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
     uint256 internal _poolInitializations = 0;
 
     uint256 public override quoteTokenScale;
+
+    /********************************/
+    /*** LenderManager State Vars ***/
+    /********************************/
+
+    /**
+     *  @dev lender address -> price bucket [WAD] -> lender lp [RAY]
+     */
+    mapping(address => mapping(uint256 => uint256)) public override lpBalance;
+    /**
+     *  @dev lender address -> price bucket [WAD] -> timer
+     */
+    mapping(address => mapping(uint256 => uint256)) public lpTimer;  // TODO: override
 
 
     /*********************************/
@@ -103,6 +117,23 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(recipient_, amount / quoteTokenScale);
         emit RemoveQuoteToken(recipient_, price_, amount, lup);
+    }
+
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
+
+    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
+        require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
+
+        ( , , , uint256 onDeposit, uint256 debt, , uint256 lpOutstanding, uint256 bucketCollateral) = bucketAt(price_);
+
+        // calculate lpTokens share of all outstanding lpTokens for the bucket
+        uint256 lenderShare = Maths.rdiv(lpTokens_, lpOutstanding);
+
+        // calculate the amount of collateral and quote tokens equivalent to the lenderShare
+        collateralTokens_ = Maths.radToWad(bucketCollateral * lenderShare);
+        quoteTokens_      = Maths.radToWad((onDeposit + debt) * lenderShare);
     }
 
     /************************/

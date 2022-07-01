@@ -7,7 +7,7 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import { IERC20Pool }       from "../erc20/interfaces/IERC20Pool.sol";
 import { IERC721Pool }      from "../erc721/interfaces/IERC721Pool.sol";
-import { ILenderManager }   from "./interfaces/ILenderManager.sol";
+import { IPool }            from "./interfaces/IPool.sol";
 import { IPool }            from "./interfaces/IPool.sol";
 import { IPositionManager } from "./interfaces/IPositionManager.sol";
 
@@ -59,7 +59,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IERC20Pool pool = IERC20Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = IPool(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         pool.removeQuoteToken(params_.recipient, quoteTokenToRemove, params_.price);
 
@@ -79,7 +79,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IERC721Pool pool = IERC721Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = IPool(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
@@ -121,7 +121,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         Position storage position = positions[params_.tokenId];
         for (uint256 i = 0; i < params_.prices.length; ) {
-            position.lpTokens[params_.prices[i]] = ILenderManager(params_.pool).lpBalance(
+            position.lpTokens[params_.prices[i]] = IPool(params_.pool).lpBalance(
                 params_.owner,
                 params_.prices[i]
             );
@@ -174,7 +174,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256) {
         Position storage position = positions[tokenId_];
 
-        (uint256 collateral, uint256 quote) = ILenderManager(position.pool).getLPTokenExchangeValue(
+        (uint256 collateral, uint256 quote) = IPool(position.pool).getLPTokenExchangeValue(
             position.lpTokens[price_],
             price_
         );
