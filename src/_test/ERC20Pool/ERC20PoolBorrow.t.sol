@@ -288,6 +288,8 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.estimatePrice(25_000 * 1e18),  priceMed);
         assertEq(_pool.estimatePrice(75_000 * 1e18),  priceLow);
         assertEq(_pool.estimatePrice(175_000 * 1e18), 0);
+
+        skip(46800);
         _borrower2.addCollateral(_pool, 51 * 1e18);
 
         // check collateralization / utilization after borrower adds collateral
@@ -295,12 +297,12 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         uint256 targetUtilizationAfterAddCollateral = _pool.getPoolTargetUtilization();
         uint256 actualUtilizationAfterAddCollateral = _pool.getPoolActualUtilization();
 
-        assertEq(_pool.getPoolCollateralization(),    2.040226031599984258 * 1e18);
+        assertEq(_pool.getPoolCollateralization(),    2.040074650581713783 * 1e18);
         assertGt(poolCollateralizationAfterB2Actions, poolCollateralizationAfterB1Actions);
-        assertEq(actualUtilizationAfterAddCollateral, actualUtilizationAfterBorrow);
+        assertGt(actualUtilizationAfterAddCollateral, actualUtilizationAfterBorrow);
         assertLt(targetUtilizationAfterAddCollateral, targetUtilizationAfterBorrow);
 
-        assertEq(_pool.getPoolMinDebtAmount(), 100.000000961538461538 * 1e18);
+        assertEq(_pool.getPoolMinDebtAmount(), 100.007421328223714772 * 1e18);
         assertEq(_pool.totalBorrowers(),       1);
 
         // should revert when taking a loan below pool min debt amount
