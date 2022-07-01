@@ -2,9 +2,10 @@
 pragma solidity 0.8.14;
 import { console } from "@std/console.sol";
 
-import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ERC721 }    from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { ERC20 }           from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC721 }          from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import { IERC20Pool }       from "../erc20/interfaces/IERC20Pool.sol";
 import { IERC721Pool }      from "../erc721/interfaces/IERC721Pool.sol";
@@ -18,7 +19,7 @@ import { PositionNFT } from "./PositionNFT.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
-contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20 {
+contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
 
     using SafeERC20 for ERC20;
 
@@ -58,7 +59,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         delete positions[params_.tokenId];
     }
 
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
+    function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) nonReentrant {
         IERC20Pool pool = IERC20Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
@@ -79,14 +80,13 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             ERC20(pool.collateralTokenAddress()).safeTransfer(params_.recipient, collateralToRemove);
         }
 
-        // TODO: check for reentrancy
         // update position with lp tokens to be removed
         positions[params_.tokenId].lpTokens[params_.price] -= lpTokensRemoved;
 
         emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteRemoved);
     }
 
-    function decreaseLiquidityNFT(DecreaseLiquidityNFTParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
+    function decreaseLiquidityNFT(DecreaseLiquidityNFTParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) nonReentrant {
         IERC721Pool pool = IERC721Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
@@ -106,7 +106,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             // claim any unencumbered collateral accrued to the price bucket
             uint256 lpTokensClaimed = pool.claimCollateral(tokensToRemove, params_.price);
 
-            // TODO: check for reentrancy
             // update position with newly removed lp tokens
             lpTokensRemoved += lpTokensClaimed;
             positions[params_.tokenId].lpTokens[params_.price] -= lpTokensRemoved;
@@ -122,7 +121,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             emit DecreaseLiquidityNFT(params_.recipient, params_.price, tokensToRemove, quoteRemoved);
         }
         else {
-            // TODO: check for reentrancy
             // update position with newly removed lp tokens
             positions[params_.tokenId].lpTokens[params_.price] -= lpTokensRemoved;
 

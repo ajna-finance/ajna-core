@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
-import { console } from "@std/console.sol";
 
 import { PoolState } from "./PoolState.sol";
 
