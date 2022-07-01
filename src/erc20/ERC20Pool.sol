@@ -7,7 +7,6 @@ import { Clone } from "@clones/Clone.sol";
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { ERC20BorrowerManager } from "./ERC20BorrowerManager.sol";
 import { ERC20BucketsManager }  from "./ERC20BucketsManager.sol";
 import { IERC20Pool }           from "./interfaces/IERC20Pool.sol";
 
@@ -19,7 +18,7 @@ import { Maths }      from "../libraries/Maths.sol";
 // Added
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Pool {
+contract ERC20Pool is IERC20Pool, ERC20BucketsManager, Pool {
 
     using SafeERC20 for ERC20;
 

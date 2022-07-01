@@ -11,7 +11,6 @@ import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC
 import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { ERC721BorrowerManager } from "./ERC721BorrowerManager.sol";
 import { ERC721BucketsManager }  from "./ERC721BucketsManager.sol";
 import { IERC721Pool }           from "./interfaces/IERC721Pool.sol";
 
@@ -23,7 +22,7 @@ import { Maths }      from "../libraries/Maths.sol";
 // Added
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager, Pool {
+contract ERC721Pool is IERC721Pool, ERC721BucketsManager, Pool {
 
     using SafeERC20     for ERC20;
     using EnumerableSet for EnumerableSet.UintSet;
