@@ -63,7 +63,7 @@ contract MulticallTest is DSTestPlus {
 
         // allow position manager to take ownership of lenders position
         vm.prank(testAddress);
-        _pool.setPositionOwner(testAddress, address(_positionManager));
+        _pool.approveNewPositionOwner(testAddress, address(_positionManager));
 
         // Prepare to memorialize the extant positions with the just minted NFT
         uint256[] memory pricesToMemorialize = new uint256[](3);

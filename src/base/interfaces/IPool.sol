@@ -124,6 +124,14 @@ interface IPool {
     function addQuoteToken(uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
 
     /**
+     *  @notice Called by lenders to approve a new owner of their LP tokens.
+     *  @dev    Intended for use by the PositionManager contract.
+     *  @param  owner_           The existing owner of the LP tokens.
+     *  @param  allowedNewOwner_ The new owner of the LP tokens.
+     */
+    function approveNewPositionOwner(address owner_, address allowedNewOwner_) external;
+
+    /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
      *  @param  maxAmount_ The maximum amount of quote token to be moved by a lender.
      *  @param  fromPrice_ The bucket from which the quote tokens will be removed.
@@ -167,5 +175,5 @@ interface IPool {
     /**
      *  @notice Returns the address of the pools quote token
      */
-    function quoteTokenAddress() external view returns (address);
+    function quoteTokenAddress() external pure returns (address);
 }

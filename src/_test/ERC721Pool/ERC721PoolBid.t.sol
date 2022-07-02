@@ -107,6 +107,8 @@ contract ERC721PoolBidTest is DSTestPlus {
         assertEq(_NFTSubsetPool.getPoolCollateralization(),      2.400556145502927926 * 1e18);
         assertEq(_NFTSubsetPool.getPoolActualUtilization(),      0.407908729305961901 * 1e18);
 
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), _NFTSubsetPool.getCollateralDeposited().length);
+
         _tokenIds = new uint256[](1);
         _tokenIds[0] = 61;
 
@@ -167,6 +169,9 @@ contract ERC721PoolBidTest is DSTestPlus {
         assertEq(_NFTSubsetPool.totalQuoteToken(),               4_000 * 1e18);
         assertEq(_NFTSubsetPool.totalCollateral(),               4 * 1e18);
         assertEq(_NFTSubsetPool.totalDebt(),                     5_000.000961538461538462 * 1e18);
+
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), _NFTSubsetPool.getCollateralDeposited().length);
+
     }
 
 }

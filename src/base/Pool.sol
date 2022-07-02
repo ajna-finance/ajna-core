@@ -108,14 +108,13 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
     }
 
     mapping(address => LpTokenOwnership) lpTokenOwnership;
-
     struct LpTokenOwnership {
         address owner;
         address allowedNewOwner;
     }
 
-    function setPositionOwner(address owner_, address allowedNewOwner_) external {
-        require(msg.sender == owner_, "P:SPO:NOT_OWNER");
+    function approveNewPositionOwner(address owner_, address allowedNewOwner_) external {
+        require(msg.sender == owner_, "P:ANPO:NOT_OWNER");
 
         LpTokenOwnership storage tokenOwnership = lpTokenOwnership[owner_];
 
@@ -125,7 +124,6 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         lpTokenOwnership[owner_] = tokenOwnership;
     }
 
-    // TODO: since storage layout conflicts precluding use of delegatecall, use signature based access control or setPositionOwner
     function transferLPTokens(address owner_, address newOwner_, uint256[] calldata prices_) external {
         require(lpTokenOwnership[owner_].owner == owner_ && lpTokenOwnership[owner_].allowedNewOwner == newOwner_, "P:TLT:NOT_OWNER");
 
@@ -162,7 +160,7 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         return ERC20(_getArgAddress(0x14));
     }
 
-    function quoteTokenAddress() external view returns (address) {
+    function quoteTokenAddress() external pure returns (address) {
         return _getArgAddress(0x14);
     }
 

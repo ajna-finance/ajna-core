@@ -234,4 +234,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         return constructTokenURI(params);
     }
 
+    /** @notice Implementing this method allows contracts to receive ERC721 tokens
+     *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
+     */
+    function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
+        return this.onERC721Received.selector;
+    }
+
 }

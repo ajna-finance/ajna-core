@@ -174,12 +174,12 @@ contract PositionManagerTest is DSTestPlus {
         _positionManager.memorializePositions(memorializeParams);
 
         // set position ownership should revert if not called by owner
-        vm.expectRevert("P:SPO:NOT_OWNER");
-        _pool.setPositionOwner(testAddress, address(_positionManager));
+        vm.expectRevert("P:ANPO:NOT_OWNER");
+        _pool.approveNewPositionOwner(testAddress, address(_positionManager));
 
         // allow position manager to take ownership of the position
         vm.prank(testAddress);
-        _pool.setPositionOwner(testAddress, address(_positionManager));
+        _pool.approveNewPositionOwner(testAddress, address(_positionManager));
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
@@ -271,12 +271,12 @@ contract PositionManagerTest is DSTestPlus {
         _positionManager.memorializePositions(memorializeParams);
 
         // set position ownership should revert if not called by owner
-        vm.expectRevert("P:SPO:NOT_OWNER");
-        _pool.setPositionOwner(testLender1, address(_positionManager));
+        vm.expectRevert("P:ANPO:NOT_OWNER");
+        _pool.approveNewPositionOwner(testLender1, address(_positionManager));
 
         // allow position manager to take ownership of lender 1's position
         vm.prank(testLender1);
-        _pool.setPositionOwner(testLender1, address(_positionManager));
+        _pool.approveNewPositionOwner(testLender1, address(_positionManager));
 
         // memorialize lender 1 quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
@@ -304,7 +304,7 @@ contract PositionManagerTest is DSTestPlus {
 
         // allow position manager to take ownership of lender 2's position
         vm.prank(testLender2);
-        _pool.setPositionOwner(testLender2, address(_positionManager));
+        _pool.approveNewPositionOwner(testLender2, address(_positionManager));
 
         // memorialize lender 2 quote tokens into minted NFT
         prices = new uint256[](2);
@@ -555,7 +555,7 @@ contract PositionManagerTest is DSTestPlus {
      *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity in an NFT Pool.
      *          Lender reverts when attempting to interact with a pool the tokenId wasn't minted in
      */
-    function xtestDecreaseLiquidityWithDebtNFTPool() external {
+    function testDecreaseLiquidityWithDebtNFTPool() external {
         // deploy NFT pool and user contracts
         NFTCollateralToken _erc721Collateral  = new NFTCollateralToken();
         ERC721PoolFactory _erc721Factory      = new ERC721PoolFactory();
@@ -567,8 +567,8 @@ contract PositionManagerTest is DSTestPlus {
         UserWithNFTCollateral testBidder       = new UserWithNFTCollateral();
 
         // mint test tokens
-        _quote.mint(address(testBidder), 100_000 * 1e18);
-        _quote.mint(address(testLender), 200_000 * 1e18);
+        _quote.mint(address(testBidder), 600_000 * 1e18);
+        _quote.mint(address(testLender), 600_000 * 1e18);
 
         _erc721Collateral.mint(address(testBorrower), 60);
         _erc721Collateral.mint(address(testBidder), 5);
@@ -591,7 +591,7 @@ contract PositionManagerTest is DSTestPlus {
         vm.expectRevert("PM:W_POOL");
         vm.prank(address(testLender));
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId, address(testLender), address(_pool), 50_000 * 1e18, _p10016
+            tokenId, address(testLender), address(_pool), 80_000 * 1e18, _p10016
         );
         _positionManager.increaseLiquidity(increaseLiquidityParams);
 
@@ -625,25 +625,30 @@ contract PositionManagerTest is DSTestPlus {
         tokensToBuy[0] = 63;
         tokensToBuy[1] = 65;
         vm.expectEmit(true, true, false, true);
-        emit PurchaseWithNFTs(address(testBidder), _p10016, 15_000 * 1e18, tokensToBuy);
+        emit PurchaseWithNFTs(address(testBidder), _p10016, 20_000 * 1e18, tokensToBuy);
         vm.prank((address(testBidder)));
-        testBidder.purchaseBid(_NFTCollectionPool, 15_000 * 1e18, _p10016, tokensToBuy);
+        testBidder.purchaseBid(_NFTCollectionPool, 20_000 * 1e18, _p10016, tokensToBuy);
+
+        // add additional quote tokens to enable claiming
+        vm.prank(address(testBidder));
+        _quote.approve(address(_NFTCollectionPool), type(uint256).max);
+        vm.prank(address(testBidder));
+        _NFTCollectionPool.addQuoteToken(50_000 * 1e18, _p10016);
 
         // decrease liquidity via the NFT specific method
-        uint256 lpTokensToRemove = _positionManager.getLPTokens(tokenId, _p10016);
-
-        // TODO: determine how many tokenIds to remove dynamically
         uint256[] memory tokenIdsToRemove = new uint256[](2);
         tokenIdsToRemove[0] = 63;
         tokenIdsToRemove[1] = 65;
         IPositionManager.DecreaseLiquidityNFTParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityNFTParams(
-            tokenId, address(testLender), _NFTCollectionPoolAddress, _p10016, lpTokensToRemove, tokenIdsToRemove
+            tokenId, address(testLender), _NFTCollectionPoolAddress, _p10016, _positionManager.getLPTokens(tokenId, _p10016), tokenIdsToRemove
         );
 
+        uint256[] memory claimedTokens = new uint256[](1);
+        claimedTokens[0] = 63;
         vm.expectEmit(true, true, false, true);
-        emit ClaimNFTCollateral(address(testLender), _p10016, tokenIdsToRemove, 18200899161871735351932834024423);
+        emit ClaimNFTCollateral(address(_positionManager), _p10016, claimedTokens, 10009.894230256636224099811892602 * 1e27);
         vm.expectEmit(true, true, false, true);
-        emit DecreaseLiquidityNFT(address(testLender), _p10016, tokenIdsToRemove, 35_000.000961538461538462 * 1e18);
+        emit DecreaseLiquidityNFT(address(testLender), _p10016, claimedTokens, 39_973.184583540486612233 * 1e18);
         vm.prank((address(testLender)));
         _positionManager.decreaseLiquidityNFT(decreaseLiquidityParams);
 
@@ -651,11 +656,16 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(_NFTCollectionPool.lup(), _p10016);
         assertEq(_NFTCollectionPool.hpb(), _p10016);
 
-        assertEq(_NFTCollectionPool.getCollateralDeposited().length,       3);
+        // check colateral balances
+        assertEq(_NFTCollectionPool.getCollateralDeposited().length,       4);
         assertEq(_NFTCollectionPool.getCollateralDeposited()[0],           1);
         assertEq(_NFTCollectionPool.getCollateralDeposited()[1],           3);
         assertEq(_NFTCollectionPool.getCollateralDeposited()[2],           5);
-        assertEq(_erc721Collateral.balanceOf(address(_NFTCollectionPool)), 3);
+
+        assertEq(_erc721Collateral.balanceOf(address(_NFTCollectionPool)), 4);
+        assertEq(_erc721Collateral.balanceOf(address(_positionManager)),   0);
+        assertEq(_erc721Collateral.balanceOf(address(testLender)),         1);
+
     }
 
     /**

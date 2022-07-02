@@ -250,7 +250,7 @@ contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Poo
         return ERC20(_getArgAddress(0));
     }
 
-    function collateralTokenAddress() external view returns (address) {
+    function collateralTokenAddress() external pure returns (address) {
         return _getArgAddress(0);
     }
 

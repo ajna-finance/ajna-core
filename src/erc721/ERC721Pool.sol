@@ -249,7 +249,9 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager,
 
         // move required collateral from sender to pool
         for (uint i; i < collateralRequired;) {
+            _collateralTokenIdsAdded.add(usedTokens[i]);
             collateral().safeTransferFrom(msg.sender, address(this), usedTokens[i]);
+
             unchecked {
                 ++i;
             }
@@ -285,7 +287,7 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager,
         return ERC721(_getArgAddress(0));
     }
 
-    function collateralTokenAddress() external view returns (address) {
+    function collateralTokenAddress() external pure returns (address) {
         return _getArgAddress(0);
     }
 

@@ -96,6 +96,6 @@ interface IERC20Pool is IPool {
     /**
      *  @notice Returns the address of the pool's collateral token
      */
-    function collateralTokenAddress() external view returns (address);
+    function collateralTokenAddress() external pure returns (address);
 
 }

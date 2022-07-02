@@ -124,6 +124,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), 3);
         assertEq(_NFTSubsetPool.getCollateralDeposited().length, 3);
 
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), _NFTSubsetPool.getCollateralDeposited().length);
+
         // check borrower state before borrowing
         (,, uint256[] memory collateralDeposited, uint256 borrowerEncumbered, uint256 borrowerCollateralization,,) = _NFTSubsetPool.getBorrowerInfo(address(_borrower));
         assertEq(collateralDeposited.length, 3);
@@ -284,6 +286,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(borrowerCollateralization,  Maths.WAD);
         assertEq(_NFTSubsetPool.getPoolCollateralization(), borrowerCollateralization);
 
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), _NFTSubsetPool.getCollateralDeposited().length);
+
         // borrow against collateral
         uint256 borrowAmount = 2_000 * 1e18;
         vm.expectEmit(true, true, false, true);
@@ -329,6 +333,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(borrowerEncumbered,         0.798875879164494288582167879 * 1e27);
         assertEq(borrowerCollateralization,  2.503517820680358303 * 1e18);
         assertEq(_NFTSubsetPool.getPoolCollateralization(), borrowerCollateralization);
+
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), _NFTSubsetPool.getCollateralDeposited().length);
     }
 
     /**
@@ -397,6 +403,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_NFTSubsetPool)),          4_000 * 1e18);
         assertEq(_NFTSubsetPool.totalCollateral(),                   4 * 1e18);
 
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), _NFTSubsetPool.getCollateralDeposited().length);
+
         // check bucket state after purchase bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _NFTSubsetPool.bucketAt(_p4000);
         assertEq(deposit,          4_000 * 1e18);
@@ -443,6 +451,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)),                 190_000 * 1e18);
         assertEq(_quote.balanceOf(address(_NFTSubsetPool)),          4_000 * 1e18);
         assertEq(_NFTSubsetPool.totalCollateral(),                   3 * 1e18);
+
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), _NFTSubsetPool.getCollateralDeposited().length);
 
         // check bucket state after claim
         (, , , deposit, debt, , , bucketCollateral) = _NFTSubsetPool.bucketAt(_p4000);
@@ -554,6 +564,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_NFTSubsetPool)),          500 * 1e18);
         assertEq(_NFTSubsetPool.totalCollateral(),                   5 * 1e18);
 
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), _NFTSubsetPool.getCollateralDeposited().length);
+
         // check bucket state after purchase bid
         (, , , uint256 deposit, uint256 debt, , , uint256 bucketCollateral) = _NFTSubsetPool.bucketAt(_p4000);
         assertEq(deposit,          500 * 1e18);
@@ -586,6 +598,8 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)),                 190_000 * 1e18);
         assertEq(_quote.balanceOf(address(_NFTSubsetPool)),          500 * 1e18);
         assertEq(_NFTSubsetPool.totalCollateral(),                   3 * 1e18);
+
+        assertEq(_collateral.balanceOf(address(_NFTSubsetPool)), _NFTSubsetPool.getCollateralDeposited().length);
 
         // check bucket state after claim collateral
         (, , , deposit, debt, , , bucketCollateral) = _NFTSubsetPool.bucketAt(_p4000);
