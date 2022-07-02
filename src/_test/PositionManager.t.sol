@@ -19,9 +19,6 @@ import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
 
 contract PositionManagerTest is DSTestPlus {
 
-    // UserWithQuoteToken internal alice;
-    address internal _alice = 0x02B9219F667d91fBe64F8f77F691dE3D1000F223;
-
     CollateralToken  internal _collateral;
     ERC20Pool        internal _pool;
     ERC20PoolFactory internal _factory;
@@ -36,9 +33,6 @@ contract PositionManagerTest is DSTestPlus {
 
         address poolAddress = _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool = ERC20Pool(poolAddress);
-
-        // TODO: move logic to internal methods
-        _quote.mint(_alice, 30000000000 * 1e18);
     }
 
     /*************************/
@@ -110,16 +104,17 @@ contract PositionManagerTest is DSTestPlus {
      *  @notice Tests base NFT minting functionality.
      */
     function testMint() external {
-        uint256 mintAmount = 50 * 1e18;
-        uint256 mintPrice  = _p1004;
+        uint256 mintAmount  = 50 * 1e18;
+        uint256 mintPrice   = _p1004;
+        address testAddress = generateAddress();
 
-        mintAndApproveQuoteTokens(_alice, mintAmount);
+        mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         // test emitted Mint event
         vm.expectEmit(true, true, true, true);
-        emit Mint(_alice, address(_pool), 1);
+        emit Mint(testAddress, address(_pool), 1);
 
-        uint256 tokenId = mintNFT(_alice, address(_pool));
+        uint256 tokenId = mintNFT(testAddress, address(_pool));
 
         require(tokenId != 0, "tokenId nonce not incremented");
 
@@ -127,7 +122,7 @@ contract PositionManagerTest is DSTestPlus {
         (, address owner, ) = _positionManager.positions(tokenId);
         uint256 lpTokens    = _positionManager.getLPTokens(tokenId, mintPrice);
 
-        assertEq(owner, _alice);
+        assertEq(owner, testAddress);
         assert(lpTokens == 0);
     }
 

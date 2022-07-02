@@ -131,11 +131,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
         // transfer quote tokens from the sender to the position manager escrow
-        ERC20 quoteToken = ERC20(IPool(params_.pool).quoteTokenAddress());
-        quoteToken.safeTransferFrom(params_.recipient, address(this), params_.amount);
-
-        // approve spending of transferred quote tokens if it hasn't occured already
-        quoteToken.approve(params_.pool, type(uint256).max);
+        ERC20(IPool(params_.pool).quoteTokenAddress()).safeTransferFrom(params_.recipient, address(this), params_.amount);
         
         // Call out to pool contract to add quote tokens
         uint256 lpTokensAdded = IPool(params_.pool).addQuoteToken(params_.amount, params_.price);
@@ -171,7 +167,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         emit MemorializePosition(params_.owner, params_.tokenId);
     }
 
-    // TODO: run approval on pool tokens on first mint
     function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
         _safeMint(params_.recipient, (tokenId_ = _nextId++));
 
@@ -180,6 +175,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
+
+        // approve spending of quote tokens if it hasn't occured already
+        ERC20(IPool(params_.pool).quoteTokenAddress()).approve(params_.pool, type(uint256).max);
 
         emit Mint(params_.recipient, params_.pool, tokenId_);
     }

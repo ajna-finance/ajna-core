@@ -177,7 +177,6 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager,
     /*** Lender External Functions ***/
     /*********************************/
 
-    // TODO: check if all incoming tokenIds can be safely claimed
     function claimCollateral(uint256[] calldata tokenIds_, uint256 price_) external override returns (uint256 claimedLpTokens) {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 

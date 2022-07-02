@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import { Clone } from "@clones/Clone.sol";
-import { console } from "@std/console.sol";
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -61,7 +60,6 @@ contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Poo
 
         _updateInterestRate(curDebt);
 
-        // TODO: verify that the pool address is the holder of any token balances - i.e. if any funds are held in an escrow for backup interest purposes
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit AddCollateral(msg.sender, amount_);
@@ -182,7 +180,6 @@ contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Poo
     /*** Pool External Functions ***/
     /*******************************/
 
-    // TODO: replace local variables with references to borrower.<> (CHECK GAS SAVINGS)
     function liquidate(address borrower_) external override {
         BorrowerInfo memory borrower = borrowers[borrower_];
         require(borrower.debt != 0, "P:L:NO_DEBT");
