@@ -6,6 +6,9 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 import { ERC20Pool }  from "../../erc20/ERC20Pool.sol";
 import { ERC721Pool } from "../../erc721/ERC721Pool.sol";
+import { ScaledPool } from "../../ScaledPool.sol";
+
+import { BucketMath } from "../../libraries/BucketMath.sol";
 
 contract UserWithCollateral {
 
@@ -36,6 +39,27 @@ contract UserWithCollateral {
 
     function removeCollateral(ERC20Pool pool_, uint256 amount_) public {
         pool_.removeCollateral(amount_);
+    }
+
+}
+
+contract UserWithCollateralInScaledPool {
+
+    function approveAndDepositTokenAsCollateral(IERC20 token_, ScaledPool pool_, uint256 amount_) public {
+        token_.approve(address(pool_), amount_);
+        pool_.addCollateral(amount_);
+    }
+
+    function approveToken(IERC20 token_, address spender_, uint256 amount_) public {
+        token_.approve(spender_, amount_);
+    }
+
+    function addCollateral(ScaledPool pool_, uint256 amount_) public {
+        pool_.addCollateral(amount_);
+    }
+
+    function borrow(ScaledPool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
+        pool_.borrow(amount_, oldPrev_, newPrev_);
     }
 
 }
@@ -133,6 +157,22 @@ contract UserWithQuoteToken {
     // https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
     function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
         return this.onERC721Received.selector;
+    }
+
+}
+
+contract UserWithQuoteTokenInScaledPool {
+
+    function addQuoteToken(ScaledPool pool_, uint256 amount_, uint256 price_) public {
+        pool_.addQuoteToken(amount_, BucketMath.priceToIndex(price_));
+    }
+
+    function removeQuoteToken(ScaledPool pool_, uint256 amount_, uint256 price_) public {
+        pool_.removeQuoteToken(amount_, BucketMath.priceToIndex(price_));
+    }
+
+    function approveToken(IERC20 token_, address spender_, uint256 amount_) public {
+        token_.approve(spender_, amount_);
     }
 
 }
