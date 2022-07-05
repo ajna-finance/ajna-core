@@ -23,6 +23,9 @@ abstract contract PoolState is IPoolState, BucketsManager {
     /** @dev The count of unique borrowers in pool */
     uint256 public totalBorrowers;
 
+    uint256 public debtEma;   // [WAD]
+    uint256 public lupColEma; // [WAD]
+
     /**************************/
     /*** Internal Functions ***/
     /**************************/
@@ -51,8 +54,11 @@ abstract contract PoolState is IPoolState, BucketsManager {
         return totalDebt_ != 0 ? Maths.wdiv(totalDebt_, Maths.wad(Maths.max(1000, totalBorrowers_ * 10))) : 0;
     }
 
-    function _poolTargetUtilization(uint256 totalDebt_) internal view returns (uint256) {
-        return Maths.wdiv(Maths.WAD, _poolCollateralization(totalDebt_));
+    function _poolTargetUtilization(uint256 debtEma_, uint256 lupColEma_) internal pure returns (uint256) {
+        if (debtEma_ != 0 && lupColEma_ != 0) {
+            return Maths.wdiv(debtEma_, lupColEma_);
+        }
+        return Maths.WAD;
     }
 
     /**********************/
@@ -81,6 +87,6 @@ abstract contract PoolState is IPoolState, BucketsManager {
     }
 
     function getPoolTargetUtilization() public view override returns (uint256) {
-        return Maths.wdiv(Maths.WAD, getPoolCollateralization());
+        return _poolTargetUtilization(debtEma, lupColEma);
     }
 }

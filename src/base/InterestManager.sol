@@ -23,6 +23,9 @@ abstract contract InterestManager is IInterestManager, PoolState {
 
     uint256 public constant RATE_INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant RATE_DECREASE_COEFFICIENT = 0.9 * 10**18;
+    // lambda used for the EMAs calculated as exp(-1/7 * ln2)
+    uint256 public constant LAMBDA_EMA                = 0.905723664263906671 * 10**18;
+    uint256 public constant EMA_RATE_FACTOR           = 10**18 - LAMBDA_EMA;
 
     /***********************/
     /*** State Variables ***/
@@ -86,9 +89,13 @@ abstract contract InterestManager is IInterestManager, PoolState {
     function _updateInterestRate(uint256 curDebt_) internal {
         uint256 poolCollateralization = _poolCollateralization(curDebt_);
         if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.WAD) {
-            uint256 oldRate          = interestRate;
+            uint256 oldRate = interestRate;
+
+            uint256 curDebtEma   = Maths.wmul(curDebt_, EMA_RATE_FACTOR) + Maths.wmul(debtEma, LAMBDA_EMA);
+            uint256 curLupColEma = Maths.wmul(Maths.wmul(lup, totalCollateral), EMA_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA);
+
             int256 actualUtilization = int256(_poolActualUtilization(curDebt_));
-            int256 targetUtilization = int256(Maths.wdiv(Maths.WAD, poolCollateralization));
+            int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
 
             int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
             int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
@@ -98,6 +105,10 @@ abstract contract InterestManager is IInterestManager, PoolState {
             } else if (decreaseFactor > 10**18 - increaseFactor) {
                 interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
             }
+
+            debtEma   = curDebtEma;
+            lupColEma = curLupColEma;
+
             interestRateUpdate = block.timestamp;
 
             emit UpdateInterestRate(oldRate, interestRate);
