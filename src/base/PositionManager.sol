@@ -111,7 +111,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             positions[params_.tokenId].lpTokens[params_.price] -= lpTokensRemoved;
 
             // transfer claimed collateral to recipient
-            for (uint256 i = 0; i < tokensToRemove.length; ) {
+            uint256 tokensToRemoveLength = tokensToRemove.length;
+            for (uint256 i = 0; i < tokensToRemoveLength; ) {
                 ERC721(pool.collateralTokenAddress()).safeTransferFrom(address(this), params_.recipient, tokensToRemove[i]);
                 unchecked {
                     ++i;
@@ -148,7 +149,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         Position storage position = positions[params_.tokenId];
 
-        for (uint256 i = 0; i < params_.prices.length; ) {
+        uint256 pricesLength = params_.prices.length;
+        for (uint256 i = 0; i < pricesLength; ) {
             // update PositionManager accounting
             position.lpTokens[params_.prices[i]] = ILenderManager(params_.pool).lpBalance(
                 params_.owner,

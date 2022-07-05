@@ -83,6 +83,21 @@ interface IPool {
      */
     function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
 
+    /***************/
+    /*** Structs ***/
+    /***************/
+
+    /**
+     *  @notice struct tracking the owner of a given position
+     *  @dev    Used to provide access control for the transferLPTokens method
+     *  @param owner           Address of the current LP token owner
+     *  @param allowedNewOwner Address of the newly allowed LP token owner
+     */
+    struct LpTokenOwnership {
+        address owner;
+        address allowedNewOwner;
+    }
+
     /*****************************/
     /*** Inititalize Functions ***/
     /*****************************/

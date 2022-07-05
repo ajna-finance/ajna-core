@@ -2,8 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import { console } from "@std/console.sol";
-
 import { Clone } from "@clones/Clone.sol";
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
@@ -24,6 +22,9 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
     /***********************/
     /*** State Variables ***/
     /***********************/
+
+    /** @dev Used for tracking LP token ownership structs for transferLPTokens access control */
+    mapping(address => LpTokenOwnership) public lpTokenOwnership;
 
     /// @dev Counter used by onlyOnce modifier
     uint256 internal _poolInitializations = 0;
@@ -102,15 +103,10 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
         _updateInterestRate(curDebt);
 
         // move quote token amount from pool to lender
-        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
+        uint256 scaledAmount = amount / quoteTokenScale;
+        quoteToken().safeTransfer(msg.sender, scaledAmount);
         emit RemoveQuoteToken(msg.sender, price_, amount, lup);
-        return (amount / quoteTokenScale, lpTokens);
-    }
-
-    mapping(address => LpTokenOwnership) lpTokenOwnership;
-    struct LpTokenOwnership {
-        address owner;
-        address allowedNewOwner;
+        return (scaledAmount, lpTokens);
     }
 
     function approveNewPositionOwner(address owner_, address allowedNewOwner_) external {
@@ -129,14 +125,15 @@ abstract contract Pool is IPool, InterestManager, Clone, LenderManager {
 
         uint256 tokensTransferred;
 
-        for (uint256 i = 0; i < prices_.length; ) {
+        uint256 pricesLength = prices_.length;
+        for (uint256 i = 0; i < pricesLength; ) {
             require(BucketMath.isValidPrice(prices_[i]), "P:TLT:INVALID_PRICE");
 
             // calculate lp tokens to be moved in the given bucket
             uint256 tokensToTransfer = lpBalance[owner_][prices_[i]];
 
             // move lp tokens to the new owners address
-            lpBalance[owner_][prices_[i]] = 0;
+            delete lpBalance[owner_][prices_[i]];
             lpBalance[newOwner_][prices_[i]] += tokensToTransfer;
 
             tokensTransferred += tokensToTransfer;
