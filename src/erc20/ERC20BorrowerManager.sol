@@ -111,6 +111,17 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
         loans[borrower_] = loan;
     }
 
+    function removeLoanQueue(address borrower_, address oldPrev_) external override {
+        require(loans[oldPrev_].next == borrower_);
+        if (head == borrower_) {
+            head = loans[borrower_].next;
+        }
+
+        loans[oldPrev_].next = loans[borrower_].next;
+        loans[borrower_].next = address(0);
+        loans[borrower_].thresholdPrice = 0;
+    }
+
     function _move(address oldPrev_, address newPrev_) internal returns (LoanInfo memory loan) {
         address borrower;
 

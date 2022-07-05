@@ -86,4 +86,5 @@ interface IERC20BorrowerManager is IBorrowerManager {
 
     function getHighestThresholdPrice() external view returns (uint256 thresholdPrice);
 
+    function removeLoanQueue(address borrower_, address oldPrev_) external;
 }
