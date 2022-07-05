@@ -136,5 +136,4 @@ abstract contract ERC20BorrowerManager is IERC20BorrowerManager, ERC20InterestMa
             loans[newPrev_] = newPrevLoan;
         }
     }
-
 }
