@@ -57,6 +57,12 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         uint256 priceLow     = _p2503;
         uint256 priceLowest  = _p2000;
 
+        uint256 depositPriceHighest = _pool.priceToIndex(_p4000);
+        uint256 depositPriceHigh    = _pool.priceToIndex(_p3514);
+        uint256 depositPriceMed     = _pool.priceToIndex(_p3010);
+        uint256 depositPriceLow     = _pool.priceToIndex(_p2503);
+        uint256 depositPriceLowest  = _pool.priceToIndex(_p2000);
+
         // lender deposits 10000 DAI in 5 buckets each
         _lender.addQuoteToken(_pool, 10_000 * 1e18, priceHighest);
         _lender.addQuoteToken(_pool, 10_000 * 1e18, priceHigh);
@@ -68,6 +74,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.lup(), 0.000000099836282890 * 1e18);
 
         assertEq(_pool.treeSum(),            50_000 * 1e18);
+        assertEq(_pool.lenderDebt(),         0);
         assertEq(_pool.depositAccumulator(), 50_000 * 1e18);
 
         // check balances
@@ -77,158 +84,65 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         // borrower deposit 100 MKR collateral
         _borrower.addCollateral(_pool, 100 * 1e18);
 
-        // assertEq(15, _pool._findSum(21_000 * 1e18));
-        // assertEq(15, _pool._prefixSum(10000));
-        // assertEq(15, _pool._lupIndex(21_000 * 1e18));
-        // assertEq(11, BucketMath.indexToPrice(4959 - 3232));
         // get a 21_000 DAI loan
-        // vm.expectEmit(true, true, false, true);
-        // emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
-        // vm.expectEmit(true, true, false, true);
-        // emit Borrow(address(_borrower), priceMed, 21_000 * 1e18);
-        // _borrower.borrow(_pool, 21_000 * 1e18, address(0), address(0));
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(address(_borrower), priceMed, 21_000 * 1e18);
+        _borrower.borrow(_pool, 21_000 * 1e18, address(0), address(0));
 
-        // assertEq(_pool.hpb(), priceHighest);
-        // assertEq(_pool.lup(), priceMed);
+        assertEq(_pool.htp(), 0.201923076923077020 * 1e18);
+        assertEq(_pool.lup(), priceMed);
 
-        // assertEq(_pool.totalDebt(),       21_000.000961538461538462 * 1e18);
-        // assertEq(_pool.totalQuoteToken(), 29_000 * 1e18);
-        // assertEq(_pool.totalCollateral(), 100 * 1e18);
-        // assertEq(_pool.pdAccumulator(),   72_135_434.631135162709645000 * 1e18);
+        assertEq(_pool.treeSum(),            50_000 * 1e18);
+        assertEq(_pool.lenderDebt(),         21_000 * 1e18);
+        assertEq(_pool.depositAccumulator(), 29_000 * 1e18);
 
-        // assertEq(_pool.getPoolCollateralization(), 14.337580401602531154 * 1e18);
-        // assertEq(_pool.getPoolActualUtilization(), 0.467100971880547845 * 1e18);
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   29_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
 
-        // assertEq(_pool.getPendingPoolInterest(),               0);
-        // assertEq(_pool.getPendingBucketInterest(priceHighest), 0);
+        // check LPs
+        assertEq(_pool.lpBalance(depositPriceHighest, address(_lender)), 10_000 * 1e18);
+        assertEq(_pool.lpBalance(depositPriceHigh, address(_lender)),    10_000 * 1e18);
+        assertEq(_pool.lpBalance(depositPriceMed, address(_lender)),     10_000 * 1e18);
+        assertEq(_pool.lpBalance(depositPriceLow, address(_lender)),     10_000 * 1e18);
+        assertEq(_pool.lpBalance(depositPriceLowest, address(_lender)),  10_000 * 1e18);
 
-        // assertEq(_quote.balanceOf(address(_borrower)), 21_000 * 1e18);
-        // assertEq(_quote.balanceOf(address(_pool)),     29_000 * 1e18);
+        // check buckets
+        (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(depositPriceHighest);
+        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(availableCollateral, 0);
+        (lpAccumulator, availableCollateral) = _pool.buckets(depositPriceHigh);
+        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(availableCollateral, 0);
+        (lpAccumulator, availableCollateral) = _pool.buckets(depositPriceMed);
+        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(availableCollateral, 0);
+        (lpAccumulator, availableCollateral) = _pool.buckets(depositPriceLow);
+        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(availableCollateral, 0);
+        (lpAccumulator, availableCollateral) = _pool.buckets(depositPriceLowest);
+        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(availableCollateral, 0);
 
-        // // check bucket deposit and debt at 3_010.892022197881557845
-        // (, , , uint256 deposit, uint256 debt, , , ) = _pool.bucketAt(priceMed);
-        // assertEq(deposit, 9_000 * 1e18);
+        // borrow 19_000 DAI
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower), 19_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(address(_borrower), priceHigh, 19_000 * 1e18);
+        _borrower.borrow(_pool, 19_000 * 1e18, address(0), address(0));
 
-        // // check borrower balance
-        // (uint256 borrowerDebt, uint256 depositedCollateral, ) = _pool.borrowers(address(_borrower));
-        // assertEq(borrowerDebt,        21_000.000961538461538462 * 1e18);
-        // assertEq(depositedCollateral, 100 * 1e18);
+        assertEq(_pool.htp(), 0.384615384615384800 * 1e18);
+        assertEq(_pool.lup(), priceHigh);
 
-        // assertEq(
-        //     _pool.getEncumberedCollateral(_pool.totalDebt()),
-        //     _pool.getEncumberedCollateral(borrowerDebt)
-        // );
+        assertEq(_pool.treeSum(),            50_000 * 1e18);
+        assertEq(_pool.lenderDebt(),         40_000 * 1e18);
+        assertEq(_pool.depositAccumulator(), 10_000 * 1e18);
 
-        // skip(8200);
-
-        // // tie out borrower and pool debt
-        // (, uint256 borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower));
-        // uint256 poolPendingDebt = _pool.totalDebt() + _pool.getPendingPoolInterest();
-        // assertEq(borrowerPendingDebt, poolPendingDebt);
-
-        // // borrow remaining 9_000 DAI from LUP
-        // vm.expectEmit(true, true, false, true);
-        // emit Transfer(address(_pool), address(_borrower), 9_000 * 1e18);
-        // vm.expectEmit(true, true, false, true);
-        // emit Borrow(address(_borrower), priceMed, 9_000 * 1e18);
-        // _borrower.borrow(_pool, 9_000 * 1e18, priceLow);
-
-        // assertEq(_pool.hpb(), priceHighest);
-        // assertEq(_pool.lup(), priceMed);
-
-        // assertEq(_pool.totalDebt(),       30_000.274946172972626795 * 1e18);
-        // assertEq(_pool.totalQuoteToken(), 20_000 * 1e18);
-        // assertEq(_pool.totalCollateral(), 100 * 1e18);
-        // assertEq(_pool.pdAccumulator(),   45_037_406.431354228689040000 * 1e18);
-
-        // assertEq(_pool.getPoolCollateralization(), 10.036214760031625123 * 1e18);
-        // assertEq(_pool.getPoolActualUtilization(), 0.667289121131590564 * 1e18);
-
-        // assertEq(_pool.getPendingPoolInterest(),               0);
-        // assertEq(_pool.getPendingBucketInterest(priceHighest), 0.130010992165949015 * 1e18);
-
-        // assertEq(_quote.balanceOf(address(_borrower)), 30_000 * 1e18);
-        // assertEq(_quote.balanceOf(address(_pool)),     20_000 * 1e18);
-
-        // // check bucket debt at 2_503.519024294695168295
-        // (, , , deposit, debt, , , ) = _pool.bucketAt(priceLow);
-        // assertEq(debt,    0);
-        // assertEq(deposit, 10_000 * 1e18);
-
-        // // check bucket debt at 3_010.892022197881557845
-        // (, , , deposit, debt, , , ) = _pool.bucketAt(priceMed);
-        // assertEq(debt,    10_000.014924188640728764 * 1e18);
-        // assertEq(deposit, 0);
-
-        // // check bucket debt at 3_514.334495390401848927
-        // (, , , deposit, debt, , , ) = _pool.bucketAt(priceHigh);
-        // assertEq(debt,    10_000 * 1e18);
-        // assertEq(deposit, 0);
-
-        // // check bucket debt at 4_000.927678580567537368
-        // (, , , deposit, debt, , , ) = _pool.bucketAt(priceHighest);
-        // assertEq(debt,    10_000 * 1e18);
-        // assertEq(deposit, 0);
-
-        // // check borrower balances
-        // (borrowerDebt, depositedCollateral, ) = _pool.borrowers(address(_borrower));
-        // assertEq(borrowerDebt,        30_000.274946172972626795 * 1e18);
-        // assertEq(depositedCollateral, 100 * 1e18);
-
-        // assertEq(
-        //     _pool.getEncumberedCollateral(_pool.totalDebt()),
-        //     _pool.getEncumberedCollateral(borrowerDebt)
-        // );
-
-        // (, borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower));
-        // poolPendingDebt = _pool.totalDebt() + _pool.getPendingPoolInterest();
-        // assertEq(borrowerPendingDebt, poolPendingDebt);
-
-        // // deposit at 5_007.644384905151472283 price and reallocate entire debt
-        // _lender.addQuoteToken(_pool, address(_lender), 40_000 * 1e18, _p5007);
-
-        // assertEq(_pool.hpb(), _p5007);
-        // assertEq(_pool.lup(), _p5007);
-
-        // assertEq(_pool.totalDebt(),       30_000.274946172972626795 * 1e18);
-        // assertEq(_pool.totalQuoteToken(), 60_000 * 1e18);
-        // assertEq(_pool.totalCollateral(), 100 * 1e18);
-        // assertEq(_pool.pdAccumulator(),   200_375_037.411247156657331875 * 1e18);
-
-        // assertEq(_pool.getPoolCollateralization(), 16.691994969679298519 * 1e18);
-        // assertEq(_pool.getPoolActualUtilization(), 0.428489008475468263 * 1e18);
-
-        // assertEq(_pool.getPendingPoolInterest(),               0);
-        // assertEq(_pool.getPendingBucketInterest(priceHighest), 0);
-
-        // (, borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower));
-        // poolPendingDebt = _pool.totalDebt() + _pool.getPendingPoolInterest();
-        // assertEq(borrowerPendingDebt, poolPendingDebt);
-
-        // // check bucket debt at 2_503.519024294695168295
-        // (, , , deposit, debt, , , ) = _pool.bucketAt(priceLow);
-        // assertEq(debt,    0);
-        // assertEq(deposit, 10_000 * 1e18);
-
-        // // check bucket debt at 3_010.892022197881557845
-        // (, , , deposit, debt, , , ) = _pool.bucketAt(priceMed);
-        // assertEq(debt,    0);
-        // assertEq(deposit, 10_000.014924188640728764 * 1e18);
-
-        // // check bucket debt at 3_514.334495390401848927
-        // (, , , deposit, debt, , , ) = _pool.bucketAt(priceHigh);
-        // assertEq(debt,    0);
-        // assertEq(deposit, 10_000.130010992165949015 * 1e18);
-
-        // // check bucket debt at 4_000.927678580567537368
-        // (, , , deposit, debt, , , ) = _pool.bucketAt(priceHighest);
-        // assertEq(debt,    0);
-        // assertEq(deposit, 10_000.130010992165949015 * 1e18);
-
-        // // check bucket debt at 5_007.644384905151472283
-        // (, , , deposit, debt, , , ) = _pool.bucketAt(_p5007);
-        // assertEq(debt,    30_000.274946172972626794 * 1e18);
-        // assertEq(deposit, 9_999.725053827027373206 * 1e18);
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
     }
 
 }

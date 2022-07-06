@@ -164,11 +164,11 @@ contract UserWithQuoteToken {
 contract UserWithQuoteTokenInScaledPool {
 
     function addQuoteToken(ScaledPool pool_, uint256 amount_, uint256 price_) public {
-        pool_.addQuoteToken(amount_, BucketMath.priceToIndex(price_));
+        pool_.addQuoteToken(amount_, pool_.priceToIndex(price_));
     }
 
     function removeQuoteToken(ScaledPool pool_, uint256 amount_, uint256 price_) public {
-        pool_.removeQuoteToken(amount_, BucketMath.priceToIndex(price_));
+        pool_.removeQuoteToken(amount_, pool_.priceToIndex(price_));
     }
 
     function approveToken(IERC20 token_, address spender_, uint256 amount_) public {

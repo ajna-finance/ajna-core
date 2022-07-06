@@ -61,22 +61,22 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), _p4000, 10_000 * 1e18, 0.000000099836282890 * 1e18);
+        emit AddQuoteToken(address(_lender), 0.025077276122840968 * 1e18, 10_000 * 1e18, 1_004_968_987.606512354182109771 * 1e18);
         _lender.addQuoteToken(_pool, 10_000 * 1e18, _p4000);
 
         assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 0.000000099836282890 * 1e18);
+        assertEq(_pool.lup(), 1_004_968_987.606512354182109771 * 1e18);
 
-        assertEq(_pool.treeSum(),                             10_000 * 1e18);
+        assertEq(_pool.treeSum(),                         10_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              10_000 * 1e18);
-        assertEq(_pool.lpBalance(1663, address(_lender)), 10_000 * 1e18);
+        assertEq(_pool.lpBalance(4895, address(_lender)), 10_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 190_000 * 1e18);
 
         // check bucket balance
-        (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(1663);
+        (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(4895);
         assertEq(lpAccumulator,       10_000 * 1e18);
         assertEq(availableCollateral, 0);
 
@@ -84,22 +84,22 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 20_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), _p2000, 20_000 * 1e18, 0.000000099836282890 * 1e18);
+        emit AddQuoteToken(address(_lender), 0.050160625801770822 * 1e18, 20_000 * 1e18, 1_004_968_987.606512354182109771 * 1e18);
         _lender.addQuoteToken(_pool, 20_000 * 1e18, _p2000);
 
         assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 0.000000099836282890 * 1e18);
+        assertEq(_pool.lup(), 1_004_968_987.606512354182109771 * 1e18);
 
-        assertEq(_pool.treeSum(),                             30_000 * 1e18);
+        assertEq(_pool.treeSum(),                         30_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              30_000 * 1e18);
-        assertEq(_pool.lpBalance(1524, address(_lender)), 20_000 * 1e18);
+        assertEq(_pool.lpBalance(4756, address(_lender)), 20_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   30_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 170_000 * 1e18);
 
         // check bucket balance
-        (lpAccumulator, availableCollateral) = _pool.buckets(1524);
+        (lpAccumulator, availableCollateral) = _pool.buckets(4756);
         assertEq(lpAccumulator,       20_000 * 1e18);
         assertEq(availableCollateral, 0);
 
@@ -107,22 +107,22 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 40_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), _p5007, 40_000 * 1e18, 0.000000099836282890 * 1e18);
+        emit AddQuoteToken(address(_lender), 0.020035841292109319 * 1e18, 40_000 * 1e18, 1_004_968_987.606512354182109771 * 1e18);
         _lender.addQuoteToken(_pool, 40_000 * 1e18, _p5007);
 
         assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 0.000000099836282890 * 1e18);
+        assertEq(_pool.lup(), 1_004_968_987.606512354182109771 * 1e18);
 
         assertEq(_pool.treeSum(),                             70_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              70_000 * 1e18);
-        assertEq(_pool.lpBalance(1708, address(_lender)), 40_000 * 1e18);
+        assertEq(_pool.lpBalance(4940, address(_lender)), 40_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   70_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 130_000 * 1e18);
 
         // check bucket balance
-        (lpAccumulator, availableCollateral) = _pool.buckets(1708);
+        (lpAccumulator, availableCollateral) = _pool.buckets(4940);
         assertEq(lpAccumulator,       40_000 * 1e18);
         assertEq(availableCollateral, 0);
     }
