@@ -25,6 +25,15 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
+
+    // TODO: track list of prices associated with a positions
+
+    // TODO: enable operations on multiple price buckets at a time when decreasing liquidity, or increasing liquidity vs multicall
+
+    // TODO: check using tokenId to get pool instead of passing pool directly gas
+
+    // TODO: use msg.sender instead of _owner?
+
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -184,8 +193,16 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         emit Mint(params_.recipient, params_.pool, tokenId_);
     }
 
-    // TODO: implement moveLiquidity function
-    function moveLiquidity() external {}
+    function moveLiquidity(MoveLiquidityParams calldata params_) external {
+        address pool = poolKey[params_.tokenId];
+
+        uint256 lpBalance = IPool(pool).lpBalance(params_.owner, params_.fromPrice);
+        console.log(lpBalance);
+        (, uint256 maxQuote) = IPool(pool).getLPTokenExchangeValue(lpBalance, params_.fromPrice);
+        IPool(pool).moveQuoteToken(maxQuote, params_.fromPrice, params_.toPrice);
+
+        emit MoveLiquidity(params_.owner, params_.tokenId);
+    }
 
     /**************************/
     /*** Internal Functions ***/

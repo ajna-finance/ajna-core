@@ -772,4 +772,36 @@ contract PositionManagerTest is DSTestPlus {
 
     function testGetPositionValueInQuoteTokens() external {}
 
+    function testMoveLiquidity() external {
+        // generate a new address
+        address testAddress = generateAddress();
+        uint256 mintAmount  = 10000 * 1e18;
+        uint256 mintPrice   = _p1004;
+        mintAndApproveQuoteTokens(testAddress, mintAmount);
+
+        uint256 tokenId = mintNFT(testAddress, address(_pool));
+
+        // check newly minted position with no liquidity added
+        (, address originalPositionOwner, ) = _positionManager.positions(tokenId);
+        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintPrice);
+
+        assertEq(originalPositionOwner, testAddress);
+        assertEq(originalLPTokens, 0);
+
+        // add initial liquidity
+        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintPrice);
+
+        // construct move liquidity params
+        IPositionManager.MoveLiquidityParams memory moveLiquidityParams = IPositionManager.MoveLiquidityParams(
+            testAddress, tokenId, mintPrice, _p502
+        );
+
+        // move liquidity
+        vm.expectEmit(true, true, true, true);
+        emit MoveLiquidity(testAddress, tokenId);
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        // check state
+    }
+
 }
