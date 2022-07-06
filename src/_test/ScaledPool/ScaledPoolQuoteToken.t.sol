@@ -61,11 +61,11 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), 0.025077276122840968 * 1e18, 10_000 * 1e18, 1_004_968_987.606512354182109771 * 1e18);
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, _p4000);
+        emit AddQuoteToken(address(_lender), 4_000.927678580567537368 * 1e18, 10_000 * 1e18, 99836282890);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 4895);
 
         assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 1_004_968_987.606512354182109771 * 1e18);
+        assertEq(_pool.lup(), 99836282890);
 
         assertEq(_pool.treeSum(),                         10_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              10_000 * 1e18);
@@ -84,11 +84,11 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 20_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), 0.050160625801770822 * 1e18, 20_000 * 1e18, 1_004_968_987.606512354182109771 * 1e18);
-        _lender.addQuoteToken(_pool, 20_000 * 1e18, _p2000);
+        emit AddQuoteToken(address(_lender), 2_000.221618840727700609 * 1e18, 20_000 * 1e18, 99836282890);
+        _lender.addQuoteToken(_pool, 20_000 * 1e18, 4756);
 
         assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 1_004_968_987.606512354182109771 * 1e18);
+        assertEq(_pool.lup(), 99836282890);
 
         assertEq(_pool.treeSum(),                         30_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              30_000 * 1e18);
@@ -107,13 +107,13 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 40_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), 0.020035841292109319 * 1e18, 40_000 * 1e18, 1_004_968_987.606512354182109771 * 1e18);
-        _lender.addQuoteToken(_pool, 40_000 * 1e18, _p5007);
+        emit AddQuoteToken(address(_lender), 5_007.644384905151472283 * 1e18, 40_000 * 1e18, 99836282890);
+        _lender.addQuoteToken(_pool, 40_000 * 1e18, 4940);
 
         assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 1_004_968_987.606512354182109771 * 1e18);
+        assertEq(_pool.lup(), 99836282890);
 
-        assertEq(_pool.treeSum(),                             70_000 * 1e18);
+        assertEq(_pool.treeSum(),                         70_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              70_000 * 1e18);
         assertEq(_pool.lpBalance(4940, address(_lender)), 40_000 * 1e18);
 

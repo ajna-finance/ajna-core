@@ -223,7 +223,7 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
         return 0;
     }
 
-    function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
+    function _lupIndex(uint256 additionalDebt_) public view returns (uint256) {
         return _findSum(lenderDebt + additionalDebt_);
     }
 
