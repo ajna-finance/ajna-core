@@ -11,8 +11,6 @@ import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC
 import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-import { ERC721BorrowerManager } from "./ERC721BorrowerManager.sol";
-import { ERC721BucketsManager }  from "./ERC721BucketsManager.sol";
 import { IERC721Pool }           from "./interfaces/IERC721Pool.sol";
 
 import { Pool } from "../base/Pool.sol";
@@ -20,7 +18,10 @@ import { Pool } from "../base/Pool.sol";
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
 
-contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager, Pool {
+// Added
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+contract ERC721Pool is IERC721Pool, Pool {
 
     using SafeERC20     for ERC20;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -31,9 +32,21 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager,
 
     /// @dev Set of tokenIds that are currently being used as collateral
     EnumerableSet.UintSet internal _collateralTokenIdsAdded;
+
+    /**
+     *  @notice Mapping of price to Set of NFT Token Ids that have been deposited into the bucket
+     *  @dev price [WAD] -> collateralDeposited
+     */
+    mapping(uint256 => EnumerableSet.UintSet) internal _collateralDeposited;
+
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
     EnumerableSet.UintSet internal _tokenIdsAllowed;
+
+    // TODO: rename
+    /// @dev Internal visibility is required as it contains a nested struct
+    // borrowers book: borrower address -> NFTBorrowerInfo
+    mapping(address => NFTBorrowerInfo) internal _NFTborrowers;
 
     /*****************************/
     /*** Inititalize Functions ***/
@@ -259,10 +272,142 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager,
         emit PurchaseWithNFTs(msg.sender, price_, amount_, usedTokens);
     }
 
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
+
+    /**
+     *  @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
+     *  @param borrower_ Pointer to the struct which is accumulating interest on their debt
+     *  @param  inflator_ Pool inflator
+     *  @dev Only used by Borrowers using NFTs as collateral
+     *  @dev Only adds debt if a borrower has already initiated a debt position
+    */
+    function _accumulateBorrowerInterest(NFTBorrowerInfo storage borrower_, uint256 inflator_) internal {
+        if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
+            borrower_.debt += _pendingInterest(borrower_.debt, inflator_, borrower_.inflatorSnapshot);
+        }
+        borrower_.inflatorSnapshot = inflator_;
+    }
+
+    function _claimNFTCollateralFromBucket(uint256 price_, uint256[] memory tokenIds_, uint256 lpBalance_) internal returns (uint256 lpRedemption_) {
+        Bucket memory bucket = _buckets[price_];
+
+        // check available collateral given removal of the NFT
+        require(Maths.wad(tokenIds_.length) <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
+
+        // nft collateral is accounted for in WAD units
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(Maths.wad(tokenIds_.length), bucket.price), _exchangeRate(bucket));
+
+        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
+
+        // update bucket accounting
+        bucket.collateral -= Maths.wad(tokenIds_.length);
+        bucket.lpOutstanding -= lpRedemption_;
+
+        // update collateralDeposited
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
+        for (uint i; i < tokenIds_.length;) {
+            require(collateralDeposited.contains(tokenIds_[i]), "B:CC:T_NOT_IN_B");
+            collateralDeposited.remove(tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // bucket management
+        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
+        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
+        if (isEmpty && noClaim) {
+            _deactivateBucket(bucket); // cleanup if bucket no longer used
+        } else {
+            _buckets[price_] = bucket; // save bucket to storage
+        }
+    }
+
+    /**
+     *  @notice Puchase a given amount of quote tokens for given NFT collateral tokenIds
+     *  @param  price_      The price bucket at which the exchange will occur, WAD
+     *  @param  amount_     The amount of quote tokens to receive, WAD
+     *  @param  tokenIds_   Array of tokenIds used to purchase quote tokens
+     *  @param  inflator_   The current pool inflator rate, RAY
+     */
+    function _purchaseBidFromBucketNFTCollateral(
+        uint256 price_, uint256 amount_, uint256[] memory tokenIds_, uint256 inflator_
+    ) internal {
+        Bucket memory bucket    = _buckets[price_];
+        bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
+        bucket.inflatorSnapshot = inflator_;
+
+        uint256 available = bucket.onDeposit + bucket.debt;
+
+        require(amount_ <= available, "B:PB:INSUF_BUCKET_LIQ");
+
+        // Exchange collateral for quote token on deposit
+        uint256 purchaseFromDeposit = Maths.min(amount_, bucket.onDeposit);
+
+        amount_          -= purchaseFromDeposit;
+        // bucket accounting
+        bucket.onDeposit -= purchaseFromDeposit;
+        bucket.collateral += Maths.wad(tokenIds_.length);
+
+        // update collateralDeposited
+        EnumerableSet.UintSet storage collateralDeposited = _collateralDeposited[price_];
+        for (uint i; i < tokenIds_.length;) {
+            collateralDeposited.add(tokenIds_[i]);
+            unchecked {
+                ++i;
+            }
+        }
+
+        // debt reallocation
+        uint256 newLup = _reallocateDown(bucket, amount_, inflator_);
+
+        _buckets[price_] = bucket;
+
+        uint256 newHpb = (bucket.onDeposit == 0 && bucket.debt == 0) ? getHpb() : hpb;
+
+        // HPB and LUP management
+        if (lup != newLup) lup = newLup;
+        if (hpb != newHpb) hpb = newHpb;
+
+        pdAccumulator -= Maths.wmul(purchaseFromDeposit, bucket.price);
+    }
 
     /**********************/
     /*** View Functions ***/
     /**********************/
+
+    function getBorrowerInfo(address borrower_)
+        public view returns (
+            uint256 debt_,
+            uint256 pendingDebt_,
+            uint256[] memory collateralDeposited_,
+            uint256 collateralEncumbered_,
+            uint256 collateralization_,
+            uint256 borrowerInflatorSnapshot_,
+            uint256 inflatorSnapshot_
+        )
+    {
+        NFTBorrowerInfo storage borrower = _NFTborrowers[borrower_];
+
+        debt_                     = borrower.debt;
+        pendingDebt_              = debt_;
+        collateralDeposited_      = borrower.collateralDeposited.values();
+        collateralization_        = Maths.WAD;
+        borrowerInflatorSnapshot_ = borrower.inflatorSnapshot;
+        inflatorSnapshot_         = inflatorSnapshot;
+
+        if (debt_ > 0 && borrowerInflatorSnapshot_ != 0) {
+            pendingDebt_          += _pendingInterest(debt_, getPendingInflator(), borrowerInflatorSnapshot_);
+            collateralEncumbered_ = getEncumberedCollateral(pendingDebt_);
+            collateralization_    = Maths.wrdivw(Maths.wad(borrower.collateralDeposited.length()), collateralEncumbered_);
+        }
+    }
+
+    function getCollateralAtPrice(uint256 price_) public view returns (uint256[] memory) {
+        return _collateralDeposited[price_].values();
+    }
 
     function getCollateralDeposited() public view returns(uint256[] memory) {
         return _collateralTokenIdsAdded.values();
@@ -286,7 +431,7 @@ contract ERC721Pool is IERC721Pool, ERC721BorrowerManager, ERC721BucketsManager,
 
     /** @notice Implementing this method allows contracts to receive ERC721 tokens
      *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828
-     */    
+     */
     function onERC721Received(address, address, uint256, bytes memory) external pure returns (bytes4) {
         return this.onERC721Received.selector;
     }

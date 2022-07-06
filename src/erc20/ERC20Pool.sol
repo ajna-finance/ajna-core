@@ -7,8 +7,6 @@ import { Clone } from "@clones/Clone.sol";
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { ERC20BorrowerManager } from "./ERC20BorrowerManager.sol";
-import { ERC20BucketsManager }  from "./ERC20BucketsManager.sol";
 import { IERC20Pool }           from "./interfaces/IERC20Pool.sol";
 
 import { Pool } from "../base/Pool.sol";
@@ -16,9 +14,13 @@ import { Pool } from "../base/Pool.sol";
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
 
-contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Pool {
+// Added
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-    using SafeERC20 for ERC20;
+contract ERC20Pool is IERC20Pool, Pool {
+
+    using SafeERC20     for ERC20;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     /***********************/
     /*** State Variables ***/
@@ -26,6 +28,8 @@ contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Poo
 
     uint256 public override collateralScale;
 
+    // borrowers book: borrower address -> BorrowerInfo
+    mapping(address => BorrowerInfo) public override borrowers;
 
     /*****************************/
     /*** Inititalize Functions ***/
@@ -111,7 +115,7 @@ contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Poo
         totalCollateral -= amount_;
 
         // borrower accounting
-        borrower.collateralDeposited -= amount_;        
+        borrower.collateralDeposited -= amount_;
         borrowers[msg.sender]        = borrower; // save borrower to storage
 
         _updateInterestRate(curDebt);
@@ -236,6 +240,174 @@ contract ERC20Pool is IERC20Pool, ERC20BorrowerManager, ERC20BucketsManager, Poo
         // move quote token amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Purchase(msg.sender, price_, amount_, collateralRequired);
+    }
+
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
+
+    /**
+     *  @notice Add debt to a borrower given the current global inflator and the last rate at which that the borrower's debt accumulated.
+     *  @dev    Only adds debt if a borrower has already initiated a debt position
+     *  @dev    Only used by Borrowers using fungible tokens as collateral
+     *  @param  borrower_ Pointer to the struct which is accumulating interest on their debt
+     *  @param  inflator_ Pool inflator
+     */
+    function _accumulateBorrowerInterest(BorrowerInfo memory borrower_, uint256 inflator_) pure internal {
+        if (borrower_.debt != 0 && borrower_.inflatorSnapshot != 0) {
+            borrower_.debt += _pendingInterest(borrower_.debt, inflator_, borrower_.inflatorSnapshot);
+        }
+        borrower_.inflatorSnapshot = inflator_;
+    }
+
+    /**
+     *  @notice Called by a lender to claim accumulated collateral
+     *  @param  price_        The price bucket from which collateral should be claimed
+     *  @param  amount_       The amount of collateral tokens to be claimed, WAD
+     *  @param  lpBalance_    The claimers current LP balance, RAY
+     *  @return lpRedemption_ The amount of LP tokens that will be redeemed
+     */
+    function _claimCollateralFromBucket(
+        uint256 price_, uint256 amount_, uint256 lpBalance_
+    ) internal returns (uint256 lpRedemption_) {
+        Bucket memory bucket = _buckets[price_];
+
+        require(amount_ <= bucket.collateral, "B:CC:AMT_GT_COLLAT");
+
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, bucket.price), _exchangeRate(bucket));
+
+        require(lpRedemption_ <= lpBalance_, "B:CC:INSUF_LP_BAL");
+
+        // bucket accounting
+        bucket.collateral    -= amount_;
+        bucket.lpOutstanding -= lpRedemption_;
+
+        // bucket management
+        bool isEmpty = bucket.onDeposit == 0 && bucket.debt == 0;
+        bool noClaim = bucket.lpOutstanding == 0 && bucket.collateral == 0;
+        if (isEmpty && noClaim) {
+            _deactivateBucket(bucket); // cleanup if bucket no longer used
+        } else {
+            _buckets[price_] = bucket; // save bucket to storage
+        }
+    }
+
+    /**
+     *  @notice Liquidate a given position's collateral
+     *  @param  debt_               The amount of debt to cover, WAD
+     *  @param  collateral_         The amount of collateral deposited, WAD
+     *  @param  inflator_           The current pool inflator rate, RAY
+     *  @return requiredCollateral_ The amount of collateral to be liquidated
+     */
+    function _liquidateAtBucket(
+        uint256 debt_, uint256 collateral_, uint256 inflator_
+    ) internal returns (uint256 requiredCollateral_) {
+        uint256 curPrice = hpb;
+
+        while (true) {
+            Bucket storage bucket   = _buckets[curPrice];
+            uint256 curDebt         = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
+            bucket.inflatorSnapshot = inflator_;
+
+            uint256 bucketDebtToPurchase     = Maths.min(debt_, curDebt);
+            uint256 bucketRequiredCollateral = Maths.min(Maths.wdiv(debt_, bucket.price), collateral_);
+
+            debt_               -= bucketDebtToPurchase;
+            collateral_         -= bucketRequiredCollateral;
+            requiredCollateral_ += bucketRequiredCollateral;
+
+            // bucket accounting
+            curDebt           -= bucketDebtToPurchase;
+            bucket.collateral += bucketRequiredCollateral;
+
+            // forgive the debt when borrower has no remaining collateral but still has debt
+            if (debt_ != 0 && collateral_ == 0) {
+                bucket.debt = 0;
+                break;
+            }
+
+            bucket.debt = curDebt;
+
+            if (debt_ == 0) break; // stop if all debt reconciliated
+
+            curPrice = bucket.down;
+        }
+
+        // HPB and LUP management
+        uint256 newHpb = getHpb();
+        if (hpb != newHpb) hpb = newHpb;
+    }
+
+    /**
+     *  @notice Puchase a given amount of quote tokens for given collateral tokens
+     *  @param  price_      The price bucket at which the exchange will occur, WAD
+     *  @param  amount_     The amount of quote tokens to receive, WAD
+     *  @param  collateral_ The amount of collateral to exchange, WAD
+     *  @param  inflator_   The current pool inflator rate, RAY
+     */
+    function _purchaseBidFromBucket(
+        uint256 price_, uint256 amount_, uint256 collateral_, uint256 inflator_
+    ) internal {
+        Bucket memory bucket    = _buckets[price_];
+        bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
+        bucket.inflatorSnapshot = inflator_;
+
+        uint256 available = bucket.onDeposit + bucket.debt;
+
+        require(amount_ <= available, "B:PB:INSUF_BUCKET_LIQ");
+
+        // Exchange collateral for quote token on deposit
+        uint256 purchaseFromDeposit = Maths.min(amount_, bucket.onDeposit);
+
+        amount_          -= purchaseFromDeposit;
+        // bucket accounting
+        bucket.onDeposit -= purchaseFromDeposit;
+        bucket.collateral += collateral_;
+
+        // debt reallocation
+        uint256 newLup = _reallocateDown(bucket, amount_, inflator_);
+
+        _buckets[price_] = bucket;
+
+        uint256 newHpb = (bucket.onDeposit == 0 && bucket.debt == 0) ? getHpb() : hpb;
+
+        // HPB and LUP management
+        if (lup != newLup) lup = newLup;
+        if (hpb != newHpb) hpb = newHpb;
+
+        pdAccumulator -= Maths.wmul(purchaseFromDeposit, bucket.price);
+    }
+
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
+
+    function getBorrowerInfo(address borrower_)
+        public view override returns (
+            uint256 debt_,
+            uint256 pendingDebt_,
+            uint256 collateralDeposited_,
+            uint256 collateralEncumbered_,
+            uint256 collateralization_,
+            uint256 borrowerInflatorSnapshot_,
+            uint256 inflatorSnapshot_
+        )
+    {
+        BorrowerInfo memory borrower = borrowers[borrower_];
+
+        debt_                     = borrower.debt;
+        pendingDebt_              = borrower.debt;
+        collateralDeposited_      = borrower.collateralDeposited;
+        collateralization_        = Maths.WAD;
+        borrowerInflatorSnapshot_ = borrower.inflatorSnapshot;
+        inflatorSnapshot_         = inflatorSnapshot;
+
+        if (debt_ != 0 && borrowerInflatorSnapshot_ != 0) {
+            pendingDebt_          += _pendingInterest(debt_, getPendingInflator(), borrowerInflatorSnapshot_);
+            collateralEncumbered_ = getEncumberedCollateral(pendingDebt_);
+            collateralization_    = Maths.wrdivw(collateralDeposited_, collateralEncumbered_);
+        }
+
     }
 
     /************************/
