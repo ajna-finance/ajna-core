@@ -194,13 +194,13 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         emit Mint(params_.recipient, params_.pool, tokenId_);
     }
 
-    function moveLiquidity(MoveLiquidityParams calldata params_) external {
-        address pool = poolKey[params_.tokenId];
+    function moveLiquidity(MoveLiquidityParams calldata params_) external override {
+        IPool pool = IPool(poolKey[params_.tokenId]);
 
-        (, uint256 maxQuote) = IPool(pool).getLPTokenExchangeValue(
+        (, uint256 maxQuote) = pool.getLPTokenExchangeValue(
             positions[params_.tokenId].lpTokens[params_.fromPrice], params_.fromPrice
         );
-        IPool(pool).moveQuoteToken(maxQuote, params_.fromPrice, params_.toPrice);
+        pool.moveQuoteToken(maxQuote, params_.fromPrice, params_.toPrice);
 
         emit MoveLiquidity(params_.owner, params_.tokenId);
     }

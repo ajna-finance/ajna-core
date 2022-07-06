@@ -238,10 +238,17 @@ interface IPositionManager {
 
     /**
      *  @notice Called by lenders to add quote tokens and receive a representative NFT.
-     *  @param  params_  Calldata struct supplying inputs required to add quote tokens, and receive the NFT.
+     *  @param  params_  Calldata struct supplying inputs required to mint a position NFT.
      *  @return tokenId_ The tokenId of the newly minted NFT.
      */
     function mint(MintParams calldata params_) external payable returns (uint256 tokenId_);
+
+    /**
+     *  @notice Called by lenders to move liquidity between two price buckets.
+     *  @param  params_  Calldata struct supplying inputs required to move liquidity tokens.
+     */
+    function moveLiquidity(MoveLiquidityParams calldata params_) external;
+
 
     /**********************/
     /*** View Functions ***/
