@@ -9,7 +9,7 @@ import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuar
 
 import { IERC20Pool }       from "../erc20/interfaces/IERC20Pool.sol";
 import { IERC721Pool }      from "../erc721/interfaces/IERC721Pool.sol";
-import { ILenderManager }   from "./interfaces/ILenderManager.sol";
+import { IPool }            from "./interfaces/IPool.sol";
 import { IPool }            from "./interfaces/IPool.sol";
 import { IPositionManager } from "./interfaces/IPositionManager.sol";
 
@@ -63,7 +63,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IERC20Pool pool = IERC20Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = IPool(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         // remove and transfer quote tokens to recipient
         (uint256 quoteRemoved, uint256 lpTokensRemoved) = pool.removeQuoteToken(quoteTokenToRemove, params_.price, params_.lpTokens);
@@ -90,7 +90,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IERC721Pool pool = IERC721Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = ILenderManager(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = IPool(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         // remove and transfer quote tokens to recipient
         (uint256 quoteRemoved, uint256 lpTokensRemoved) = pool.removeQuoteToken(quoteTokenToRemove, params_.price, params_.lpTokens);
@@ -152,7 +152,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         uint256 pricesLength = params_.prices.length;
         for (uint256 i = 0; i < pricesLength; ) {
             // update PositionManager accounting
-            position.lpTokens[params_.prices[i]] = ILenderManager(params_.pool).lpBalance(
+            position.lpTokens[params_.prices[i]] = IPool(params_.pool).lpBalance(
                 params_.owner,
                 params_.prices[i]
             );
@@ -215,7 +215,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external override view returns (uint256) {
         Position storage position = positions[tokenId_];
 
-        (uint256 collateral, uint256 quote) = ILenderManager(position.pool).getLPTokenExchangeValue(
+        (uint256 collateral, uint256 quote) = IPool(position.pool).getLPTokenExchangeValue(
             position.lpTokens[price_],
             price_
         );
