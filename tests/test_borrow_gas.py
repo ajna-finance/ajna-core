@@ -17,7 +17,6 @@ def test_borrow_gas(
         txes = []
         for i in range(1643, 1663):
             mkr_dai_pool.addQuoteToken(
-                lenders[0],
                 10_000 * 10**18,
                 bucket_math.indexToPrice(i),
                 {"from": lenders[0]},
@@ -31,7 +30,6 @@ def test_borrow_gas(
             10_000 * 10**18, 1 * 10**18, {"from": borrowers[0]}
         )
         tx_reallocate_debt_one_bucket = mkr_dai_pool.addQuoteToken(
-            lenders[1],
             10_000 * 10**18,
             bucket_math.indexToPrice(1664),
             {"from": lenders[1]},
@@ -44,7 +42,6 @@ def test_borrow_gas(
             101_000 * 10**18, 1 * 10**18, {"from": borrowers[1]}
         )
         tx_reallocate_debt_11_buckets = mkr_dai_pool.addQuoteToken(
-            lenders[2],
             150_000 * 10**18,
             bucket_math.indexToPrice(1665),
             {"from": lenders[2]},

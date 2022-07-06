@@ -127,11 +127,11 @@ interface IERC20Pool is IPool {
 
     /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
-     *  @param  recipient_ The recipient claiming collateral.
      *  @param  amount_    The amount of unencumbered collateral to claim.
      *  @param  price_     The bucket from which unencumbered collateral will be claimed.
+     *  @return lpTokens_  The actual amount of lpTokens claimed.
      */
-    function claimCollateral(address recipient_, uint256 amount_, uint256 price_) external;
+    function claimCollateral(uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
 
     /*******************************/
     /*** Pool External Functions ***/
@@ -143,5 +143,10 @@ interface IERC20Pool is IPool {
      *  @param  price_  The purchasing price of quote token.
      */
     function purchaseBid(uint256 amount_, uint256 price_) external;
+
+    /**
+     *  @notice Returns the address of the pool's collateral token
+     */
+    function collateralTokenAddress() external pure returns (address);
 
 }

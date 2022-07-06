@@ -47,9 +47,9 @@ contract ERC20PoolBidTest is DSTestPlus {
      *          Bidder successfully purchases 6000 quote partially in 2 purchases.
      */
     function testPurchaseBidPartialAmount() external {
-        _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p4000);
-        _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p3010);
-        _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, _p1004);
+        _lender.addQuoteToken(_pool, 3_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, 3_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, 3_000 * 1e18, _p1004);
 
         assertEq(_pool.lup(), 0);
 
@@ -152,9 +152,9 @@ contract ERC20PoolBidTest is DSTestPlus {
      *          Bidder successfully purchases 6000 quote fully accross 2 purchases.
      */
     function testPurchaseBidEntireAmount() external {
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p4000);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p3010);
-        _lender.addQuoteToken(_pool, address(_lender), 5_000 * 1e18, _p2000);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, 5_000 * 1e18, _p2000);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), 0);
@@ -254,9 +254,9 @@ contract ERC20PoolBidTest is DSTestPlus {
     }
 
     function testPurchaseBidCannotReallocate() external {
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p4000);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p3010);
-        _lender.addQuoteToken(_pool, address(_lender), 500 * 1e18,   _p2000);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, 500 * 1e18,   _p2000);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), 0);
@@ -297,9 +297,9 @@ contract ERC20PoolBidTest is DSTestPlus {
      *          Bidder reverts: attempt to purchase 1000 quote.
      */
     function testPurchaseBidUndercollateralized() external {
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p4000);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p3010);
-        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, _p1);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, 2_000 * 1e18, _p1);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), 0);

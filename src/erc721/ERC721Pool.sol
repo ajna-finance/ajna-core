@@ -190,17 +190,17 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** Lender External Functions ***/
     /*********************************/
 
-    function claimCollateral(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external override {
+    function claimCollateral(uint256[] calldata tokenIds_, uint256 price_) external override returns (uint256 claimedLpTokens) {
         require(BucketMath.isValidPrice(price_), "P:CC:INVALID_PRICE");
 
-        uint256 maxClaim = lpBalance[recipient_][price_];
+        uint256 maxClaim = lpBalance[msg.sender][price_];
         require(maxClaim != 0, "P:CC:NO_CLAIM_TO_BUCKET");
 
         // claim collateral and get amount of LP tokens burned for claim
-        uint256 claimedLpTokens = _claimNFTCollateralFromBucket(price_, tokenIds_, maxClaim);
+        claimedLpTokens = _claimNFTCollateralFromBucket(price_, tokenIds_, maxClaim);
 
         // lender accounting
-        lpBalance[recipient_][price_] -= claimedLpTokens;
+        lpBalance[msg.sender][price_] -= claimedLpTokens;
 
         _updateInterestRate(totalDebt);
 
@@ -213,12 +213,12 @@ contract ERC721Pool is IERC721Pool, Pool {
             totalCollateral -= Maths.WAD;
 
             // move claimed collateral from pool to claimer
-            collateral().safeTransferFrom(address(this), recipient_, tokenIds_[i]);
+            collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
             unchecked {
                 ++i;
             }
         }
-        emit ClaimNFTCollateral(recipient_, price_, tokenIds_, claimedLpTokens);
+        emit ClaimNFTCollateral(msg.sender, price_, tokenIds_, claimedLpTokens);
     }
 
     /*******************************/
@@ -261,7 +261,9 @@ contract ERC721Pool is IERC721Pool, Pool {
 
         // move required collateral from sender to pool
         for (uint i; i < collateralRequired;) {
+            _collateralTokenIdsAdded.add(usedTokens[i]);
             collateral().safeTransferFrom(msg.sender, address(this), usedTokens[i]);
+
             unchecked {
                 ++i;
             }
@@ -427,6 +429,10 @@ contract ERC721Pool is IERC721Pool, Pool {
      */
     function collateral() public pure returns (ERC721) {
         return ERC721(_getArgAddress(0));
+    }
+
+    function collateralTokenAddress() external pure returns (address) {
+        return _getArgAddress(0);
     }
 
     /** @notice Implementing this method allows contracts to receive ERC721 tokens

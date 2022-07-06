@@ -64,6 +64,16 @@ interface IPool {
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     /**
+     *  @notice Emitted when a lender transfers their LP tokens to a different address.
+     *  @dev    Used by PositionManager.memorializePositions().
+     *  @param  owner_    The original owner address of the position.
+     *  @param  newOwner_ The new owner address of the position.
+     *  @param  prices_    Array of price buckets at which LP tokens were moved.
+     *  @param  lpTokens_ Amount of LP tokens transferred.
+     */
+    event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
+
+    /**
      *  @notice Emitted when pool interest rate is updated.
      *  @param  oldRate_ Old pool interest rate.
      *  @param  newRate_ New pool interest rate.
@@ -153,6 +163,17 @@ interface IPool {
     /***************/
 
     /**
+     *  @notice struct tracking the owner of a given position
+     *  @dev    Used to provide access control for the transferLPTokens method
+     *  @param owner           Address of the current LP token owner
+     *  @param allowedNewOwner Address of the newly allowed LP token owner
+     */
+    struct LpTokenOwnership {
+        address owner;
+        address allowedNewOwner;
+    }
+
+    /**
      *  @notice struct holding bucket info
      *  @param price            Current bucket price, WAD
      *  @param up               Upper utilizable bucket price, WAD
@@ -208,29 +229,46 @@ interface IPool {
 
     /**
      *  @notice Called by lenders to add an amount of credit at a specified price bucket.
-     *  @param  recipient_ The recipient adding quote tokens.
      *  @param  amount_    The amount of quote token to be added by a lender.
      *  @param  price_     The bucket to which the quote tokens will be added.
      *  @return lpTokens_  The amount of LP Tokens received for the added quote tokens.
      */
-    function addQuoteToken(address recipient_, uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
+    function addQuoteToken(uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
+
+    /**
+     *  @notice Called by lenders to approve a new owner of their LP tokens.
+     *  @dev    Intended for use by the PositionManager contract.
+     *  @param  owner_           The existing owner of the LP tokens.
+     *  @param  allowedNewOwner_ The new owner of the LP tokens.
+     */
+    function approveNewPositionOwner(address owner_, address allowedNewOwner_) external;
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
-     *  @param  recipient_ The recipient moving quote tokens.
      *  @param  maxAmount_ The maximum amount of quote token to be moved by a lender.
      *  @param  fromPrice_ The bucket from which the quote tokens will be removed.
      *  @param  toPrice_   The bucket to which the quote tokens will be added.
      */
-    function moveQuoteToken(address recipient_, uint256 maxAmount_, uint256 fromPrice_, uint256 toPrice_) external;
+    function moveQuoteToken(uint256 maxAmount_, uint256 fromPrice_, uint256 toPrice_) external;
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
-     *  @param  recipient_ The recipient removing quote tokens.
      *  @param  maxAmount_ The maximum amount of quote token to be removed by a lender.
      *  @param  price_     The bucket from which quote tokens will be removed.
+     *  @param  lpTokens_  The amount of LP tokens to be removed by a lender.
+     *  @return amount     The amount of quote tokens actually removed by the lender.
+     *  @return lpTokens     The amount of quote LP tokens actually removed by the lender.
      */
-    function removeQuoteToken(address recipient_, uint256 maxAmount_, uint256 price_) external;
+    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokens_) external returns (uint256 amount, uint256 lpTokens);
+
+    /**
+     *  @notice Called by lenders to transfers their LP tokens to a different address.
+     *  @dev    Used by PositionManager.memorializePositions().
+     *  @param  owner_    The original owner address of the position.
+     *  @param  newOwner_ The new owner address of the position.
+     *  @param  prices_   Array of price buckets at which LP tokens were moved.
+     */
+    function transferLPTokens(address owner_, address newOwner_, uint256[] calldata prices_) external;
 
     /*******************************/
     /*** Pool External Functions ***/
@@ -343,4 +381,8 @@ interface IPool {
      */
     function getPoolTargetUtilization() external view returns (uint256 poolTargetUtilization_);
 
+    /**
+     *  @notice Returns the address of the pools quote token
+     */
+    function quoteTokenAddress() external pure returns (address);
 }

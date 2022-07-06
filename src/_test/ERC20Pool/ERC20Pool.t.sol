@@ -88,7 +88,7 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(_pool.lastInflatorSnapshotUpdate(), 0);
 
         // Add quote tokens to the pool to allow initial values to change
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, _p4000);
 
         // add time to enable the inflator to update
         skip(8200);
@@ -110,7 +110,7 @@ contract ERC20PoolTest is DSTestPlus {
 
    function testDebtAccumulatorSingleBucket() external {
 
-        _lender.addQuoteToken(_pool, address(_lender), 100_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, 100_000 * 1e18, _p4000);
 
         skip(820000);
 
@@ -156,8 +156,8 @@ contract ERC20PoolTest is DSTestPlus {
     /**********************************************************/
 
    function testManipulationMitigations() external {
-        _lender.addQuoteToken(_pool, address(_lender), 100_000 * 1e18, _p4000);
-        _lender1.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_pool, 100_000 * 1e18, _p4000);
+        _lender1.addQuoteToken(_pool, 1_000 * 1e18, _p3010);
 
         assertEq(_pool.getPoolMinDebtAmount(), 0);
         assertEq(_pool.totalBorrowers(),       0);
@@ -202,9 +202,9 @@ contract ERC20PoolTest is DSTestPlus {
 
         // deposit should fail if amount < 10% of pool average debt amount
         vm.expectRevert("P:AQT:AMT_LT_AVG_DEBT");
-        _lender2.addQuoteToken(_pool, address(_lender), 0.1 * 1e18, _p2850);
+        _lender2.addQuoteToken(_pool, 0.1 * 1e18, _p2850);
 
-        _lender2.addQuoteToken(_pool, address(_lender), 151 * 1e18, _p2850);
+        _lender2.addQuoteToken(_pool, 151 * 1e18, _p2850);
 
         // repay all borrowers
         _quote.mint(address(_borrower), 200 * 1e18);
@@ -230,9 +230,9 @@ contract ERC20PoolTest is DSTestPlus {
         uint256 priceMed  = _p1004;
         uint256 priceLow  = _p502;
 
-        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 2_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 3_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, priceLow);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   6_000 * 1e18);
@@ -252,7 +252,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 1_998 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceHigh, 1_998 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
+        _lender.removeQuoteToken(_pool, 2_000 * 1e18, priceHigh);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   4_002 * 1e18);
@@ -272,7 +272,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 499.5 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceMed, 499.5 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18, priceMed);
+        _lender.removeQuoteToken(_pool, 500 * 1e18, priceMed);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   3_502.5 * 1e18);
@@ -291,7 +291,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 2_497.5 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceMed, 2_497.5 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 2_500 * 1e18, priceMed);
+        _lender.removeQuoteToken(_pool, 2_500 * 1e18, priceMed);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   1_005 * 1e18);
@@ -313,7 +313,7 @@ contract ERC20PoolTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 500 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceLow, 500 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 500 * 1e18, priceLow);
+        _lender.removeQuoteToken(_pool, 500 * 1e18, priceLow);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   505 * 1e18);
@@ -329,13 +329,13 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(_pool.lpBalance(address(_lender), priceLow), 500 * 1e27);
 
         // deposit at a different bucket should not impose penalty on current bucket
-        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 2_000 * 1e18, priceHigh);
 
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_lender), 100 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceLow, 100 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 100 * 1e18, priceLow);
+        _lender.removeQuoteToken(_pool, 100 * 1e18, priceLow);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   2_405 * 1e18);
@@ -351,13 +351,13 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(_pool.lpBalance(address(_lender), priceLow), 400 * 1e27);
 
         // deposit in current bucket should reactivate penalty
-        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 2_000 * 1e18, priceLow);
 
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_lender), 2_397.6 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceLow, 2_397.6 * 1e18, 0);
-        _lender.removeQuoteToken(_pool, address(_lender), 2_400 * 1e18, priceLow);
+        _lender.removeQuoteToken(_pool, 2_400 * 1e18, priceLow);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   2_007.4 * 1e18);
@@ -378,13 +378,13 @@ contract ERC20PoolTest is DSTestPlus {
         uint256 priceMed  = _p1004;
         uint256 priceLow  = _p502;
 
-        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 3_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 2_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 3_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 1_000 * 1e18, priceLow);
 
-        _lender1.addQuoteToken(_pool, address(_lender1), 500 * 1e18, priceHigh);
-        _lender1.addQuoteToken(_pool, address(_lender1), 1_000 * 1e18, priceMed);
-        _lender1.addQuoteToken(_pool, address(_lender1), 1_500 * 1e18, priceLow);
+        _lender1.addQuoteToken(_pool, 500 * 1e18, priceHigh);
+        _lender1.addQuoteToken(_pool, 1_000 * 1e18, priceMed);
+        _lender1.addQuoteToken(_pool, 1_500 * 1e18, priceLow);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),    9_000 * 1e18);
@@ -404,7 +404,7 @@ contract ERC20PoolTest is DSTestPlus {
         // there should be no penalty if moving to a higher bucket
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), priceLow, priceMed, 500 * 1e18, 0);
-        _lender.moveQuoteToken(_pool, address(_lender), 500 * 1e18, priceLow, priceMed);
+        _lender.moveQuoteToken(_pool, 500 * 1e18, priceLow, priceMed);
 
         // check buckets
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
@@ -428,7 +428,7 @@ contract ERC20PoolTest is DSTestPlus {
         // apply penalty if moving to a lower bucket
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), priceHigh, priceLow, 998.502212369222621532 * 1e18, 0);
-        _lender.moveQuoteToken(_pool, address(_lender), 1_000 * 1e18, priceHigh, priceLow);
+        _lender.moveQuoteToken(_pool, 1_000 * 1e18, priceHigh, priceLow);
 
         // check buckets
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceLow);
@@ -463,7 +463,7 @@ contract ERC20PoolTest is DSTestPlus {
 
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender1), priceHigh, priceMed, 500.499262543592459489 * 1e18, 0);
-        _lender1.moveQuoteToken(_pool, address(_lender1), 510 * 1e18, priceHigh, priceMed);
+        _lender1.moveQuoteToken(_pool, 510 * 1e18, priceHigh, priceMed);
 
         // check buckets
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
@@ -485,11 +485,11 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(_pool.lpBalance(address(_lender1), priceHigh), 0);
 
         // lender deposit in priceHigh bucket, check penalty applies only if moving from priceHigh bucket
-        _lender.addQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 2_000 * 1e18, priceHigh);
 
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), priceHigh, priceMed, 1_999.004768043588443074 * 1e18, 0);
-        _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceHigh, priceMed);
+        _lender.moveQuoteToken(_pool, 2_000 * 1e18, priceHigh, priceMed);
 
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceHigh);
         bipCredit = _pool.bipAt(priceHigh);
@@ -512,7 +512,7 @@ contract ERC20PoolTest is DSTestPlus {
         // penalty should not apply if moving from priceMed bucket to priceLow
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(address(_lender), priceMed, priceLow, 2_000 * 1e18, 0);
-        _lender.moveQuoteToken(_pool, address(_lender), 2_000 * 1e18, priceMed, priceLow);
+        _lender.moveQuoteToken(_pool, 2_000 * 1e18, priceMed, priceLow);
 
         (, , , deposit, , , lpOutstanding, ) = _pool.bucketAt(priceMed);
         bipCredit = _pool.bipAt(priceMed);

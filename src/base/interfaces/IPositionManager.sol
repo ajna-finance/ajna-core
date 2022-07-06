@@ -211,6 +211,8 @@ interface IPositionManager {
      *  @notice Called to memorialize existing positions with a given NFT.
      *  @dev    The array of price is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and only TODO: (X) prices can be memorialized at a time.
+     *  @dev    An additional call is made to the pool to transfer the LP tokens from their previous owner, to the Position Manager.
+     *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
      *  @param  params_ Calldata struct supplying inputs required to conduct the memorialization.
      */
     function memorializePositions(MemorializePositionsParams calldata params_) external;

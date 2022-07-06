@@ -14,7 +14,6 @@ def test_add_remove_collateral_gas(
 ):
     with test_utils.GasWatcher(["addQuoteToken", "addCollateral", "removeCollateral"]):
         mkr_dai_pool.addQuoteToken(
-            lenders[0],
             20_000 * 10**18,
             bucket_math.indexToPrice(1708),
             {"from": lenders[0]},
@@ -53,13 +52,13 @@ def test_claim_collateral_gas(
 
         # deposit DAI in 3 buckets
         mkr_dai_pool.addQuoteToken(
-            lender, 3_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
+            3_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 4_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+            4_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 5_000 * 10**18, bucket_math.indexToPrice(1386), {"from": lender}
+            5_000 * 10**18, bucket_math.indexToPrice(1386), {"from": lender}
         )
 
         mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
@@ -71,7 +70,7 @@ def test_claim_collateral_gas(
         )
 
         tx = mkr_dai_pool.claimCollateral(
-            lender, 0.4 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+            0.4 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
         )
 
         with capsys.disabled():

@@ -10,7 +10,6 @@ import { PoolDeployer } from "../base/PoolDeployer.sol";
 
 import { IERC721PoolFactory } from "./interfaces/IERC721PoolFactory.sol";
 
-// TODO: add IERC721PoolFactory
 contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
     using ClonesWithImmutableArgs for address;
