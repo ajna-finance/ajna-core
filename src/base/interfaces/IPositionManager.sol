@@ -58,6 +58,13 @@ interface IPositionManager {
      */
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
 
+    /**
+     *  @notice Emitted when a position's liquidity is moved between prices.
+     *  @param  lender_  Lender address.
+     *  @param  tokenId_ The tokenId of the newly minted NFT.
+     */
+    event MoveLiquidity(address indexed lender_, uint256 tokenId_);
+
     /***************/
     /*** Structs ***/
     /***************/
@@ -161,6 +168,20 @@ interface IPositionManager {
     struct MintParams {
         address recipient;
         address pool;
+    }
+
+    /**
+     *  @notice Struct holding parameters for moving the liquidity of a position.
+     *  @param  owner     The NFT owner address.
+     *  @param  tokenId   The tokenId of the NFT.
+     *  @param  fromPrice The price from which liquidity should be moved.
+     *  @param  toPrice   The Price to which liquidity should be moved.
+     */
+    struct MoveLiquidityParams {
+        address owner;
+        uint256 tokenId;
+        uint256 fromPrice;
+        uint256 toPrice;
     }
 
     /**

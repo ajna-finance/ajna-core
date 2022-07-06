@@ -781,15 +781,13 @@ contract PositionManagerTest is DSTestPlus {
 
         uint256 tokenId = mintNFT(testAddress, address(_pool));
 
-        // check newly minted position with no liquidity added
-        (, address originalPositionOwner, ) = _positionManager.positions(tokenId);
-        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintPrice);
-
-        assertEq(originalPositionOwner, testAddress);
-        assertEq(originalLPTokens, 0);
-
         // add initial liquidity
         increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintPrice);
+
+        // check pool state
+        assertEq(_pool.lpBalance(testAddress, mintPrice),               0);
+        assertGt(_pool.lpBalance(address(_positionManager), mintPrice), 0);
+        assertEq(_pool.lpBalance(address(_positionManager), _p502),     0);
 
         // construct move liquidity params
         IPositionManager.MoveLiquidityParams memory moveLiquidityParams = IPositionManager.MoveLiquidityParams(
@@ -801,7 +799,10 @@ contract PositionManagerTest is DSTestPlus {
         emit MoveLiquidity(testAddress, tokenId);
         _positionManager.moveLiquidity(moveLiquidityParams);
 
-        // check state
+        // check pool state
+        assertEq(_pool.lpBalance(testAddress, mintPrice),               0);
+        assertEq(_pool.lpBalance(address(_positionManager), mintPrice), 0);
+        assertGt(_pool.lpBalance(address(_positionManager), _p502),     0);
     }
 
 }

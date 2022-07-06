@@ -196,9 +196,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function moveLiquidity(MoveLiquidityParams calldata params_) external {
         address pool = poolKey[params_.tokenId];
 
-        uint256 lpBalance = IPool(pool).lpBalance(params_.owner, params_.fromPrice);
-        console.log(lpBalance);
-        (, uint256 maxQuote) = IPool(pool).getLPTokenExchangeValue(lpBalance, params_.fromPrice);
+        (, uint256 maxQuote) = IPool(pool).getLPTokenExchangeValue(
+            positions[params_.tokenId].lpTokens[params_.fromPrice], params_.fromPrice
+        );
         IPool(pool).moveQuoteToken(maxQuote, params_.fromPrice, params_.toPrice);
 
         emit MoveLiquidity(params_.owner, params_.tokenId);
