@@ -67,7 +67,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), 0.000000099836282890 * 1e18);
 
-        assertEq(_pool.sum(),                             10_000 * 1e18);
+        assertEq(_pool.treeSum(),                             10_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              10_000 * 1e18);
         assertEq(_pool.lpBalance(1663, address(_lender)), 10_000 * 1e18);
 
@@ -90,7 +90,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), 0.000000099836282890 * 1e18);
 
-        assertEq(_pool.sum(),                             30_000 * 1e18);
+        assertEq(_pool.treeSum(),                             30_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              30_000 * 1e18);
         assertEq(_pool.lpBalance(1524, address(_lender)), 20_000 * 1e18);
 
@@ -113,7 +113,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), 0.000000099836282890 * 1e18);
 
-        assertEq(_pool.sum(),                             70_000 * 1e18);
+        assertEq(_pool.treeSum(),                             70_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              70_000 * 1e18);
         assertEq(_pool.lpBalance(1708, address(_lender)), 40_000 * 1e18);
 

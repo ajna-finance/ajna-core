@@ -8,12 +8,12 @@ import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { BorrowerQueue }    from "./BorrowerQueue.sol";
-import { FenwickScaleTree } from "./FenwickScaleTree.sol";
+import { FenwickTree } from "./FenwickTree.sol";
 
 import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
-contract ScaledPool is BorrowerQueue, Clone, FenwickScaleTree {
+contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
     using SafeERC20 for ERC20;
 
     /**************/
@@ -93,6 +93,16 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickScaleTree {
         interestRate               = rate_;
         minFee                     = 0.0005 * 10**18;
 
+        // initialize Fenwick scale array with elements of 1
+        uint256[] memory scaleArray = new uint256[](8193);
+        for (uint256 i; i < 8193;) {
+            scaleArray[i] = 1;
+            unchecked {
+                ++i;
+            }
+        }
+        _s = scaleArray;
+
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
     }
@@ -114,7 +124,7 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickScaleTree {
 
         lpBalance[priceIndex_][msg.sender] += lpbChange_;
 
-        _addToDeposits(depositIndex, amount_);
+        _add(depositIndex, amount_);
         depositAccumulator += amount_;
 
         // move quote token amount from lender to pool
@@ -141,7 +151,7 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickScaleTree {
         uint256 newLup = BucketMath.indexToPrice(int256(_lupIndex(amount)) - INDEX_OFFSET);
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
 
-        _removeFromDeposits(withdrawalIndex, amount);
+        _remove(withdrawalIndex, amount);
         depositAccumulator -= amount;
 
         // move quote token amount from pool to lender
