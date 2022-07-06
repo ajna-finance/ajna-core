@@ -160,7 +160,7 @@ contract PositionManagerTest is DSTestPlus {
         prices[1] = priceTwo;
         prices[2] = priceThree;
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId, testAddress, address(_pool), prices
+            tokenId, testAddress, prices
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
@@ -257,7 +257,7 @@ contract PositionManagerTest is DSTestPlus {
         prices[1] = priceTwo;
         prices[2] = priceThree;
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId1, testLender1, address(_pool), prices
+            tokenId1, testLender1, prices
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
@@ -306,7 +306,7 @@ contract PositionManagerTest is DSTestPlus {
         prices[0] = priceOne;
         prices[1] = priceFour;
         memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId2, testLender2, address(_pool), prices
+            tokenId2, testLender2, prices
         );
 
         vm.expectEmit(true, true, true, true);

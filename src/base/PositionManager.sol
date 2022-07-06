@@ -32,7 +32,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     // TODO: check using tokenId to get pool instead of passing pool directly gas
 
-    // TODO: use msg.sender instead of _owner?
+    // TODO: use msg.sender instead of _owner? -> causes problems w/ permit and third party contracts
 
     /***********************/
     /*** State Variables ***/
@@ -157,11 +157,12 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /// TODO: (X) prices can be memorialized at a time
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         Position storage position = positions[params_.tokenId];
+        IPool pool = IPool(poolKey[params_.tokenId]);
 
         uint256 pricesLength = params_.prices.length;
         for (uint256 i = 0; i < pricesLength; ) {
             // update PositionManager accounting
-            position.lpTokens[params_.prices[i]] = IPool(params_.pool).lpBalance(
+            position.lpTokens[params_.prices[i]] = pool.lpBalance(
                 params_.owner,
                 params_.prices[i]
             );
@@ -173,7 +174,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         }
 
         // update pool lp token accounting and transfer ownership of lp tokens to PositionManager contract
-        IPool(params_.pool).transferLPTokens(params_.owner, address(this), params_.prices);
+        pool.transferLPTokens(params_.owner, address(this), params_.prices);
 
         emit MemorializePosition(params_.owner, params_.tokenId);
     }

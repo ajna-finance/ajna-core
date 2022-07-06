@@ -150,13 +150,11 @@ interface IPositionManager {
      *  @notice Struct holding parameters for memorializing positions.
      *  @param  tokenId The tokenId of the NFT.
      *  @param  owner   The NFT owner address.
-     *  @param  pool    The pool address.
      *  @param  prices  The array of price buckets with LP tokens to be tracked by a NFT.
      */
     struct MemorializePositionsParams {
         uint256 tokenId;
         address owner;
-        address pool;
         uint256[] prices;
     }
 
