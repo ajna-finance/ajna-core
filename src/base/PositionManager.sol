@@ -27,12 +27,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
 
-    // TODO: enable operations on multiple price buckets at a time when decreasing liquidity, or increasing liquidity vs multicall
-
-    // TODO: check using tokenId to get pool instead of passing pool directly gas
-
-    // TODO: use msg.sender instead of _owner? -> causes problems w/ permit and third party contracts
-
     /***********************/
     /*** State Variables ***/
     /***********************/
