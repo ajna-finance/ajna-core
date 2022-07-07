@@ -46,7 +46,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         assertEq(lastInflatorSnapshotUpdate, block.timestamp);
 
         skip(8200);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, _p4000);
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
@@ -71,7 +71,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
      *  @notice With 1 lender pending inflator is tested against calculated inflator.
      */
     function testCalculatePendingInflator() external {
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, _p4000);
         uint256 calculatedInflator = calculateInflator();
 
         skip(8200);

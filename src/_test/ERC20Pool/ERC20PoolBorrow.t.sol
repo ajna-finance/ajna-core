@@ -4,8 +4,6 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { BucketsManager } from "../../base/BucketsManager.sol";
-
 import { IPool } from "../../base/interfaces/IPool.sol";
 
 import { Maths }   from "../../libraries/Maths.sol";
@@ -58,11 +56,11 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         uint256 priceLowest  = _p2000;
 
         // lender deposits 10000 DAI in 5 buckets each
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHighest);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLow);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLowest);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceHighest);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceLowest);
 
         assertEq(_pool.hpb(), priceHighest);
         assertEq(_pool.lup(), 0);
@@ -202,7 +200,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(borrowerPendingDebt, poolPendingDebt);
 
         // deposit at 5_007.644384905151472283 price and reallocate entire debt
-        _lender.addQuoteToken(_pool, address(_lender), 40_000 * 1e18, _p5007);
+        _lender.addQuoteToken(_pool, 40_000 * 1e18, _p5007);
 
         assertEq(_pool.hpb(), _p5007);
         assertEq(_pool.lup(), _p5007);
@@ -259,9 +257,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         uint256 priceLow  = _p502;
 
         // lender deposits 200_000 DAI in 3 buckets
-        _lender.addQuoteToken(_pool, address(_lender), 100_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 100_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, priceLow);
 
         // borrower1 takes a loan of 100_000 DAI
         assertEq(_pool.estimatePrice(75_000 * 1e18),  priceHigh);
@@ -321,7 +319,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
     function testBorrowTestCollateralValidation() external {
         uint256 priceLow = _p13_57;
         // lender deposits 10_000 DAI at 13.578453165083418466 * 1e18
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceLow);
         _borrower.addCollateral(_pool, 100 * 1e18);
         // should not revert when borrower takes a loan on 10_000 DAI
         _borrower.borrow(_pool, 1_000 * 1e18, 13.537 * 1e18);
@@ -349,9 +347,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         uint256 priceLow  = _p502;
 
         // lender deposits 150_000 DAI in 3 buckets
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceMed);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, priceLow);
 
         // borrow max possible from hdp
         _borrower.addCollateral(_pool, 51 * 1e18);
@@ -375,9 +373,9 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // should revert when deposit lower than pool min debt amount
         vm.expectRevert("P:AQT:AMT_LT_AVG_DEBT");
-        _lender.addQuoteToken(_pool, address(_lender), 100 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 100 * 1e18, priceMed);
 
-        _lender.addQuoteToken(_pool, address(_lender), 50_100 * 1e18, priceMed);
+        _lender.addQuoteToken(_pool, 50_100 * 1e18, priceMed);
 
         // check hup moves up as additional quote tokens become available
         assertEq(_pool.getHup(), priceMed);

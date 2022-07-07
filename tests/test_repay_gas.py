@@ -17,7 +17,6 @@ def test_repay_gas(
     with test_utils.GasWatcher(["addQuoteToken", "addCollateral", "repay", "borrow"]):
         for i in range(1643, 1663):
             mkr_dai_pool.addQuoteToken(
-                lenders[0],
                 10_000 * 10**18,
                 bucket_math.indexToPrice(i),
                 {"from": lenders[0]},

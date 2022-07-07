@@ -50,13 +50,13 @@ contract ERC20PoolRepayTest is DSTestPlus {
         uint256 priceLow  = _p3010;
 
         // lender deposits 10000 DAI in 3 buckets each
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceHigh);
         skip(14);
 
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceMid);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceMid);
         skip(14);
 
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceLow);
 
         // borrower starts with 10_000 DAI and deposit 100 collateral
         _quote.mint(address(_borrower), 10_000 * 1e18);
@@ -186,9 +186,9 @@ contract ERC20PoolRepayTest is DSTestPlus {
         uint256 priceLow = _p3010;
 
         // lender deposits 10000 DAI in 3 buckets each
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceHigh);
-        _lender.addQuoteToken(_pool, address(_lender), 10_000 * 1e18, priceMid);
-        _lender.addQuoteToken(_pool, address(_lender), 10_600 * 1e18, priceLow);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceHigh);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, priceMid);
+        _lender.addQuoteToken(_pool, 10_600 * 1e18, priceLow);
 
         // borrower starts with 10_000 DAI and deposit 100 collateral
         _quote.mint(address(_borrower), 10_000 * 1e18);
