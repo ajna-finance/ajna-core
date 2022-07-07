@@ -47,7 +47,7 @@ def lenders(ajna_protocol, pool_client, weth_dai_pool):
 @pytest.fixture
 def borrowers(ajna_protocol, pool_client, weth_dai_pool):
     weth_client = pool_client.get_collateral_token()
-    amount = 13_000 * 10**18
+    amount = 5_000 * 10**18
     dai_client = pool_client.get_quote_token()
     borrowers = []
     for _ in range(100):
@@ -234,7 +234,7 @@ def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, ):
 
     print(f" lender {lender_index} adding {quantity / 10**18:.1f} liquidity at {price / 10**18:.1f}")
     try:
-        tx = pool.addQuoteToken(lender, quantity, price, {"from": lender})
+        tx = pool.addQuoteToken(quantity, price, {"from": lender})
         gas_validator.validate(tx)
         return price
     except VirtualMachineError as ex:
@@ -253,7 +253,7 @@ def remove_quote_token(lender, lender_index, price, pool):
         (_, claimable_quote) = pool.getLPTokenExchangeValue(lp_balance, price)
         claimable_quote = claimable_quote * 1.1  # include extra for unaccumulated interest
         print(f" lender {lender_index} removing {claimable_quote / 10**18:.1f} at {price / 10**18:.1f}")
-        tx = pool.removeQuoteToken(lender, claimable_quote, price, {"from": lender})
+        tx = pool.removeQuoteToken(claimable_quote, price, {"from": lender})
     else:
         print(f" lender {lender_index} has no claim to bucket {price / 10**18:.1f}")
 
