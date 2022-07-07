@@ -45,7 +45,7 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.prefixSum(11),   500 * 1e18);
         assertEq(tree.prefixSum(12),   500 * 1e18);
         assertEq(tree.prefixSum(14),   500 * 1e18);
-        // assertEq(tree.prefixSum(8191), 500 * 1e18); // FIXME: returns 0
+        assertEq(tree.prefixSum(8191), 500 * 1e18);
 
         assertEq(tree.treeSum(), 500 * 1e18);
 
@@ -72,7 +72,7 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.prefixSum(11),   912 * 1e18);
         assertEq(tree.prefixSum(12),   912 * 1e18);
         assertEq(tree.prefixSum(14),   912 * 1e18);
-        // assertEq(tree.prefixSum(8191), 672 * 1e18); // FIXME: returns 0
+        assertEq(tree.prefixSum(8191), 912 * 1e18);
 
         assertEq(tree.treeSum(), 912 * 1e18);
 

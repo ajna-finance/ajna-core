@@ -47,12 +47,18 @@ abstract contract FenwickTree {
         require(i_ >= 0 && i_ < _n, "FW:A:INVALID_INDEX");
 
         i_ += 1;
-        uint256 sc = _scale(i_);
+        uint256 j = 8192; // 1 << 13
+        uint256 ii;
+        uint256 sc = Maths.WAD;
 
-        while (i_ <= _n) {
-            _v[i_] += Maths.wdiv(x_, sc);
-            sc      = Maths.wdiv(sc, _s[i_]);
-            i_      += _lsb(i_);
+        while (j > 0) {
+            if (((i_ - 1) & j) != 0) {
+                ii += j;
+            } else {
+                sc = Maths.wmul(sc, _s[ii + j]);
+                _v[ii + j] += Maths.wdiv(x_, sc);
+            }
+            j = j >> 1;
         }
     }
 
@@ -60,22 +66,28 @@ abstract contract FenwickTree {
         require(i_ >= 0 && i_ < _n, "FW:A:INVALID_INDEX");
 
         i_ += 1;
-        uint256 sc = _scale(i_);
+        uint256 j = 8192; // 1 << 13
+        uint256 ii;
+        uint256 sc = Maths.WAD;
 
-        while (i_ <= _n) {
-            _v[i_] -= Maths.wdiv(x_, sc);
-            sc /= _s[i_];
-            i_ += _lsb(i_);
+        while (j > 0) {
+            if (((i_ - 1) & j) != 0) {
+                ii += j;
+            } else {
+                sc = Maths.wmul(sc, _s[ii + j]);
+                _v[ii + j] -= Maths.wdiv(x_, sc);
+            }
+            j = j >> 1;
         }
     }
 
     function _prefixSum(uint256 i_) internal view returns (uint256 s_) {
         i_ += 1;
         uint256 sc = Maths.WAD;
-        uint256 j  = 4096; // 1 << (_numBits - 1);
+        uint256 j  = 8192; // 1 << 13
         uint256 ii;
 
-        while (j > 0) {
+        while (j > 0 && ii + j <= _n) {
             if (i_ & j != 0) {
                 s_ += Maths.wmul(Maths.wmul(sc, _s[ii + j]), _v[ii + j]);
             } else {
