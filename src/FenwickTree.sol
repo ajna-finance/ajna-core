@@ -17,7 +17,7 @@ abstract contract FenwickTree {
         uint256 scaled;
         while (i_ <= SIZE) {
             scaled = _s[i_];
-            a_ = scaled != 0 ? Maths.wmul(a_, scaled) : a_;
+            if (scaled != 0) a_ = Maths.wmul(a_, scaled);
             i_ += _lsb(i_);
         }
     }
@@ -44,7 +44,7 @@ abstract contract FenwickTree {
             while ((_lsb(j) < _lsb(i_)) || (i_ == 0 && j <= SIZE)) {
                 _v[j] += sum;
                 scaledJ = _s[j];
-                sum = scaledJ != 0 ? Maths.wmul(sum, scaledJ) : sum;
+                if (scaledJ != 0) sum = Maths.wmul(sum, scaledJ);
                 j += _lsb(j);
             }
         }
@@ -65,7 +65,7 @@ abstract contract FenwickTree {
                 ii += j;
             } else {
                 scaled = _s[ii + j];
-                sc = scaled != 0 ? Maths.wmul(sc, scaled) : sc;
+                if (scaled != 0) sc = Maths.wmul(sc, scaled);
                 _v[ii + j] += Maths.wdiv(x_, sc);
             }
             j = j >> 1;
@@ -87,7 +87,7 @@ abstract contract FenwickTree {
                 ii += j;
             } else {
                 scaled = _s[ii + j];
-                sc = scaled != 0 ? Maths.wmul(sc, scaled) : sc;
+                if (scaled != 0) sc = Maths.wmul(sc, scaled);
                 _v[ii + j] -= Maths.wdiv(x_, sc);
             }
             j = j >> 1;
@@ -107,7 +107,7 @@ abstract contract FenwickTree {
             if (i_ & j != 0) {
                 s_ = scaled != 0 ? s_ + Maths.wmul(Maths.wmul(sc, scaled), _v[ii + j]) : s_ + Maths.wmul(sc, _v[ii + j]);
             } else {
-                sc = scaled != 0 ? Maths.wmul(sc, scaled) : sc;
+                if (scaled != 0) sc = Maths.wmul(sc, scaled);
             }
 
             ii = ii + (i_ & j);
@@ -138,7 +138,7 @@ abstract contract FenwickTree {
                 scaledM = _s[m_];
                 ss = scaledM != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledM), _v[m_]) : ss + Maths.wmul(sc, _v[m_]);
             } else {
-                sc = scaledMInc != 0 ? Maths.wmul(sc, scaledMInc) : sc;
+                if (scaledMInc != 0) sc = Maths.wmul(sc, scaledMInc);
             }
             i = i >> 1;
         }
