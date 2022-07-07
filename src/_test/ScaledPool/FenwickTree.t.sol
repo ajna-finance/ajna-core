@@ -7,16 +7,6 @@ import { DSTestPlus }  from "../utils/DSTestPlus.sol";
 import { Maths } from "../../libraries/Maths.sol";
 
 contract FenwickTreeInstance is FenwickTree {
-    constructor() public {
-        uint256[] memory scaleArray = new uint256[](8193);
-        for (uint256 i; i < 8193;) {
-            scaleArray[i] = Maths.WAD;
-            unchecked {
-                ++i;
-            }
-        }
-        _s = scaleArray;
-    }
 
     function add(uint256 i_, uint256 x_) public {
         _add(i_, x_);

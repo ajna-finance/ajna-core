@@ -93,17 +93,6 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
         interestRate               = rate_;
         minFee                     = 0.0005 * 10**18;
 
-        // initialize Fenwick scale array with elements of 1
-        uint256[] memory scaleArray = new uint256[](8193);
-        for (uint256 i; i < 8193;) {
-            scaleArray[i] = Maths.WAD;
-            unchecked {
-                ++i;
-            }
-        }
-        _s = scaleArray;
-        _n = 8192;
-
         // increment initializations count to ensure these values can't be updated
         _poolInitializations += 1;
     }
@@ -147,7 +136,7 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
         lpBalance[index_][msg.sender] -= lpbAmount_;
 
         // Calculate new LUP, revert if LUP would dip below HTP
-        uint256 newLup = BucketMath.indexToPrice(int256(_lupIndex(amount)) - INDEX_OFFSET);
+        uint256 newLup = _indexToPrice(_lupIndex(amount));
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
 
         _remove(index_, amount);

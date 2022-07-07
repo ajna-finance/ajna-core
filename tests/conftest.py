@@ -1,6 +1,6 @@
 import pytest
 from sdk import *
-from brownie import test, network, PositionManager
+from brownie import test, network, Contract, PositionManager, ScaledPoolFactory, ScaledPool
 from brownie.exceptions import VirtualMachineError
 from brownie.network.state import TxHistory
 from brownie.utils import color
@@ -63,6 +63,15 @@ def mkr_dai_pool(ajna_protocol):
 
 
 @pytest.fixture
+def scaled_pool(deployer):
+    scaled_factory = ScaledPoolFactory.deploy({"from": deployer})
+    scaled_factory.deployPool(MKR_ADDRESS, DAI_ADDRESS, 0.05 * 1e18, {"from": deployer})
+    return ScaledPool.at(
+        scaled_factory.deployedPools("2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2", MKR_ADDRESS, DAI_ADDRESS)
+        )
+
+
+@pytest.fixture
 def position_manager(deployer):
     position_manager = PositionManager.deploy({"from": deployer})
     yield position_manager
@@ -74,7 +83,7 @@ def weth_dai_pool(ajna_protocol):
 
 
 @pytest.fixture
-def lenders(ajna_protocol, mkr_dai_pool):
+def lenders(ajna_protocol, mkr_dai_pool, scaled_pool):
     amount = 200_000 * 10**18  # 200,000 DAI for each lender
     token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_quote_token()
 
@@ -84,6 +93,7 @@ def lenders(ajna_protocol, mkr_dai_pool):
 
         token.top_up(lender, amount)
         token.approve_max(mkr_dai_pool, lender)
+        token.approve_max(scaled_pool, lender)
 
         lenders.append(lender)
 
@@ -91,7 +101,7 @@ def lenders(ajna_protocol, mkr_dai_pool):
 
 
 @pytest.fixture
-def borrowers(ajna_protocol, mkr_dai_pool):
+def borrowers(ajna_protocol, mkr_dai_pool, scaled_pool):
     amount = 100 * 10**18  # 100 MKR for each borrower
     dai_token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_quote_token()
     mkr_token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_collateral_token()
@@ -103,6 +113,8 @@ def borrowers(ajna_protocol, mkr_dai_pool):
         mkr_token.top_up(borrower, amount)
         mkr_token.approve_max(mkr_dai_pool, borrower)
         dai_token.approve_max(mkr_dai_pool, borrower)
+        mkr_token.approve_max(scaled_pool, borrower)
+        dai_token.approve_max(scaled_pool, borrower)
 
         borrowers.append(borrower)
 
