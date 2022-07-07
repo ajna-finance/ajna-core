@@ -4,8 +4,9 @@ import { console } from "@std/console.sol";
 
 import { ERC20 }           from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC721 }          from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { EnumerableSet }   from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import { IERC20Pool }       from "../erc20/interfaces/IERC20Pool.sol";
 import { IERC721Pool }      from "../erc721/interfaces/IERC721Pool.sol";
@@ -21,12 +22,10 @@ import { Maths } from "../libraries/Maths.sol";
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
 
+    using EnumerableSet for EnumerableSet.UintSet;
     using SafeERC20 for ERC20;
 
     constructor() PositionNFT("Ajna Positions NFT-V1", "AJNA-V1-POS", "1") {}
-
-
-    // TODO: track list of prices associated with a positions
 
     // TODO: enable operations on multiple price buckets at a time when decreasing liquidity, or increasing liquidity vs multicall
 
@@ -38,11 +37,14 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /*** State Variables ***/
     /***********************/
 
+    /** @dev Mapping of tokenIds to Pool address */
+    mapping(uint256 => address) public poolKey;
+
     /** @dev Mapping of tokenIds to Position struct */
     mapping(uint256 => Position) public positions;
 
-    /** @dev Mapping of tokenIds to Pool address */
-    mapping(uint256 => address) public poolKey;
+    /** @dev Mapping of tokenIds to set of prices associated with a Position */
+    mapping(uint256 => EnumerableSet.UintSet) internal positionPrices;
 
     /** @dev The ID of the next token that will be minted. Skips 0 */
     uint176 private _nextId = 1;
@@ -61,9 +63,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /*** Lender Functions ***/
     /************************/
 
-    // TODO: Update burn check to ensure all position prices have removed liquidity
     function burn(BurnParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
-        require(positions[params_.tokenId].lpTokens[params_.price] == 0, "PM:B:LIQ_NOT_REMOVED");
+        require(positionPrices[params_.tokenId].length() == 0, "PM:B:LIQ_NOT_REMOVED");
+
         emit Burn(msg.sender, params_.price);
         delete positions[params_.tokenId];
     }
@@ -72,7 +74,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IERC20Pool pool = IERC20Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = IPool(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool.getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         // remove and transfer quote tokens to recipient
         (uint256 quoteRemoved, uint256 lpTokensRemoved) = pool.removeQuoteToken(quoteTokenToRemove, params_.price, params_.lpTokens);
@@ -92,6 +94,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         // update position with lp tokens to be removed
         positions[params_.tokenId].lpTokens[params_.price] -= lpTokensRemoved;
 
+        // update price set for liquidity removed
+        if (positions[params_.tokenId].lpTokens[params_.price] == 0) {
+            positionPrices[params_.tokenId].remove(params_.price);
+        }
+
         emit DecreaseLiquidity(params_.recipient, params_.price, collateralToRemove, quoteRemoved);
     }
 
@@ -99,7 +106,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IERC721Pool pool = IERC721Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = IPool(params_.pool).getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool.getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         // remove and transfer quote tokens to recipient
         (uint256 quoteRemoved, uint256 lpTokensRemoved) = pool.removeQuoteToken(quoteTokenToRemove, params_.price, params_.lpTokens);
@@ -137,6 +144,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             uint[] memory emptyArray = new uint[](0);
             emit DecreaseLiquidityNFT(params_.recipient, params_.price, emptyArray, quoteRemoved);
         }
+
+        // update price set for liquidity removed
+        if (positions[params_.tokenId].lpTokens[params_.price] == 0) {
+            positionPrices[params_.tokenId].remove(params_.price);
+        }
     }
 
     function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
@@ -150,6 +162,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // update position with newly added lp shares
         positions[params_.tokenId].lpTokens[params_.price] += lpTokensAdded;
+
+        // record price at which a position has added liquidity
+        positionPrices[params_.tokenId].add(params_.price);
 
         emit IncreaseLiquidity(params_.recipient, params_.price, params_.amount);
     }
@@ -166,6 +181,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
                 params_.owner,
                 params_.prices[i]
             );
+
+            // record price at which a position has added liquidity
+            positionPrices[params_.tokenId].add(params_.prices[i]);
 
             // increment call counter in gas efficient way by skipping safemath checks
             unchecked {
@@ -244,10 +262,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
         require(_exists(tokenId_));
 
-        // TODO: access the prices at which a tokenId has added liquidity
-        uint256[] memory prices;
-
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, positions[tokenId_].pool, prices);
+        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, positions[tokenId_].pool, positionPrices[tokenId_].values());
 
         return constructTokenURI(params);
     }
