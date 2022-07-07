@@ -5,8 +5,6 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../erc20/ERC20PoolFactory.sol";
 
-import { ERC20BorrowerManager } from "../erc20/ERC20BorrowerManager.sol";
-
 import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
 import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
@@ -51,9 +49,9 @@ contract BorrowQueueTest is DSTestPlus {
 
 
     function testGetHighestThresholdPrice () public {
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p50159);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p2807);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p12_66);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         assertEq(0, _pool.getHighestThresholdPrice());
 
@@ -73,9 +71,9 @@ contract BorrowQueueTest is DSTestPlus {
 
 
     function testAddLoanToQueue() public {
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p50159);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p2807);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p12_66);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         // borrow max possible from hdp
         _borrower.addCollateral(_pool, 51 * 1e18);
@@ -91,9 +89,9 @@ contract BorrowQueueTest is DSTestPlus {
     }
 
     function testMoveLoanToHeadInQueue() public {
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p50159);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p2807);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p12_66);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         // borrower becomes head
         _borrower.addCollateral(_pool, 51 * 1e18);
@@ -132,9 +130,9 @@ contract BorrowQueueTest is DSTestPlus {
     }
 
     function testMoveLoanInQueue() public {
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p50159);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p2807);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p12_66);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         // *borrower(HEAD)*
         _borrower.addCollateral(_pool, 51 * 1e18);
@@ -187,9 +185,9 @@ contract BorrowQueueTest is DSTestPlus {
 
 
     function testRemoveLoanInQueue() public {
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p50159);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p2807);
-        _lender.addQuoteToken(_pool, address(_lender), 50_000 * 1e18, _p12_66);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         // *borrower(HEAD)*
         _borrower.addCollateral(_pool, 51 * 1e18);
