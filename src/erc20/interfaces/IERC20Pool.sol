@@ -136,7 +136,7 @@ interface IERC20Pool is IPool {
 
     function getHighestThresholdPrice() external view returns (uint256 thresholdPrice);
 
-    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_) external;
+    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) external;
 
     function removeLoanQueue(address borrower_, address oldPrev_) external;
 

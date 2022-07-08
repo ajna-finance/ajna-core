@@ -29,6 +29,9 @@ contract ERC20Pool is IERC20Pool, Pool {
     uint256 public override collateralScale;
     address public override head;
 
+    event log_thing(string thing, uint256 value);
+    event log_add(string addre, address value);
+
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public override borrowers;
     mapping(address => LoanInfo) public override loans;
@@ -422,7 +425,29 @@ contract ERC20Pool is IERC20Pool, Pool {
         return 0;
     }
 
-    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_) external override {
+    function _searchRadius(uint256 radius_, uint256 thresholdPrice_, LoanInfo memory newPrevLoan_) internal returns (address prev_, LoanInfo memory prevLoan) {
+        address current = newPrevLoan_.next;
+        LoanInfo memory currentLoan;
+
+        for (uint256 i = 0; i <= radius_; ) {
+            prev_ = current;
+            current = loans[prev_].next;
+            currentLoan = loans[current];
+
+            emit log_thing("incoming thresh", thresholdPrice_);
+            emit log_thing("compare thresh", currentLoan.thresholdPrice);
+            if (currentLoan.thresholdPrice <= thresholdPrice_ || currentLoan.thresholdPrice == 0) {
+                return (prev_, loans[prev_]);
+            }
+
+            unchecked {
+                ++i;
+            }
+        }
+        require(currentLoan.thresholdPrice <= thresholdPrice_, "B:U:SRCH_RDS_FAIL");
+    }
+
+    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) external override {
         require(oldPrev_ != borrower_ || newPrev_ != borrower_, "B:U:PNT_SELF_REF");
         LoanInfo memory oldPrevLoan = loans[oldPrev_];
         LoanInfo memory newPrevLoan = loans[newPrev_];
@@ -432,8 +457,11 @@ contract ERC20Pool is IERC20Pool, Pool {
         }
 
         // protections
-        if (newPrev_ != address(0)) {
-            require(newPrevLoan.thresholdPrice > thresholdPrice_, "B:U:QUE_WRNG_ORD");
+        if (newPrev_ != address(0) && loans[newPrevLoan.next].thresholdPrice > thresholdPrice_ ) {
+            // newPrev is not accurate, search radius
+            (newPrev_, newPrevLoan) = _searchRadius(radius_, thresholdPrice_, loans[newPrevLoan.next]);
+            emit log_add("after search add", newPrev_);
+            emit log_thing("after search", loans[newPrevLoan.next].thresholdPrice);
         }
 
         LoanInfo memory loan = loans[borrower_];
@@ -468,6 +496,8 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // protections
         if (loan.next != address(0)) {
+            emit log_thing("incoming threh", thresholdPrice_);
+            emit log_thing("Prev check thresh", loans[loan.next].thresholdPrice);
             require(loans[loan.next].thresholdPrice < thresholdPrice_, "B:U:QUE_WRNG_ORD");
         }
 

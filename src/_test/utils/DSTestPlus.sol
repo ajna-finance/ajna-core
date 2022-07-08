@@ -8,6 +8,10 @@ import { Vm }     from "@std/Vm.sol";
 
 abstract contract DSTestPlus is Test {
 
+    // radius for borrow queue
+    uint256 internal _r3 = 3;
+
+
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
