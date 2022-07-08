@@ -317,11 +317,19 @@ contract BorrowQueueTest is DSTestPlus {
 
        (debt, ,collateral, , , , ) = _pool.getBorrowerInfo(address(_borrower6));
 
-       _pool.updateLoanQueue(address(_borrower6), debt/collateral, address(0), address(_borrower), _r3);
+       // newPrev passed in is incorrect & radius is too small, revert
+       vm.expectRevert("B:S:SRCH_RDS_FAIL");
+       _pool.updateLoanQueue(address(_borrower6), debt/collateral, address(0), address(_borrower), _r1);
+
+       // newPrev passed in is incorrect & radius supports correct placement
+       _pool.updateLoanQueue(address(_borrower6), debt/collateral, address(0), address(_borrower), _r2);
 
        (thresholdPrice, next) = _pool.loans(address(_borrower6));
        assertEq(address(next), address(0));
        assertEq(address(_borrower2), address(_pool.head()));
+
+       (thresholdPrice, next) = _pool.loans(address(_borrower4));
+       assertEq(address(next), address(_borrower5));
 
        (thresholdPrice, next) = _pool.loans(address(_borrower5));
        assertEq(address(next), address(_borrower6));

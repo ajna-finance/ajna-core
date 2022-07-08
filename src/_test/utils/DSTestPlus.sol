@@ -9,6 +9,8 @@ import { Vm }     from "@std/Vm.sol";
 abstract contract DSTestPlus is Test {
 
     // radius for borrow queue
+    uint256 internal _r1 = 1;
+    uint256 internal _r2 = 2;
     uint256 internal _r3 = 3;
 
 

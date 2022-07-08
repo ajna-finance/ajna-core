@@ -58,10 +58,6 @@ interface IERC20Pool is IPool {
      */
     function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateralDeposited, uint256 inflatorSnapshot);
 
-    function loans(address borrower_) external view returns (uint256 thresholdprice, address next);
-
-    function head() external view returns (address head_);
-
     /**
      *  @notice Returns the `collateralScale` state variable.
      *  @return collateralScale_ The precision of the collateral ERC-20 token based on decimals.
@@ -82,11 +78,6 @@ interface IERC20Pool is IPool {
         uint256 debt;
         uint256 collateralDeposited;
         uint256 inflatorSnapshot;
-    }
-
-    struct LoanInfo {
-        uint256 thresholdPrice;
-        address next;
     }
     
     /***********************************/
@@ -130,15 +121,6 @@ interface IERC20Pool is IPool {
         uint256 inflatorSnapshot_
     );
 
-    /***********************************/
-    /*** Queue Functions ***/
-    /***********************************/
-
-    function getHighestThresholdPrice() external view returns (uint256 thresholdPrice);
-
-    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) external;
-
-    function removeLoanQueue(address borrower_, address oldPrev_) external;
 
     /*********************************/
     /*** Lender External Functions ***/

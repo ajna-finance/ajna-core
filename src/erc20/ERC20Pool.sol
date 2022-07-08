@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.14;
 
 import { Clone } from "@clones/Clone.sol";
@@ -10,6 +9,7 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20Pool }           from "./interfaces/IERC20Pool.sol";
 
 import { Pool } from "../base/Pool.sol";
+import { Queue } from "../base/Queue.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
@@ -17,7 +17,7 @@ import { Maths }      from "../libraries/Maths.sol";
 // Added
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract ERC20Pool is IERC20Pool, Pool {
+contract ERC20Pool is IERC20Pool, Pool, Queue {
 
     using SafeERC20     for ERC20;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -27,14 +27,9 @@ contract ERC20Pool is IERC20Pool, Pool {
     /***********************/
 
     uint256 public override collateralScale;
-    address public override head;
-
-    event log_thing(string thing, uint256 value);
-    event log_add(string addre, address value);
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => BorrowerInfo) public override borrowers;
-    mapping(address => LoanInfo) public override loans;
 
 
     /*****************************/
@@ -413,134 +408,6 @@ contract ERC20Pool is IERC20Pool, Pool {
         }
 
     }
-
-    /************************/
-    /***  Queue functions ***/
-    /************************/
-
-    function getHighestThresholdPrice() external override view returns (uint256 thresholdPrice){
-        if (head != address(0)) {
-            return loans[head].thresholdPrice;
-        }
-        return 0;
-    }
-
-    function _searchRadius(uint256 radius_, uint256 thresholdPrice_, LoanInfo memory newPrevLoan_) internal returns (address prev_, LoanInfo memory prevLoan) {
-        address current = newPrevLoan_.next;
-        LoanInfo memory currentLoan;
-
-        for (uint256 i = 0; i <= radius_; ) {
-            prev_ = current;
-            current = loans[prev_].next;
-            currentLoan = loans[current];
-
-            emit log_thing("incoming thresh", thresholdPrice_);
-            emit log_thing("compare thresh", currentLoan.thresholdPrice);
-            if (currentLoan.thresholdPrice <= thresholdPrice_ || currentLoan.thresholdPrice == 0) {
-                return (prev_, loans[prev_]);
-            }
-
-            unchecked {
-                ++i;
-            }
-        }
-        require(currentLoan.thresholdPrice <= thresholdPrice_, "B:U:SRCH_RDS_FAIL");
-    }
-
-    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) external override {
-        require(oldPrev_ != borrower_ || newPrev_ != borrower_, "B:U:PNT_SELF_REF");
-        LoanInfo memory oldPrevLoan = loans[oldPrev_];
-        LoanInfo memory newPrevLoan = loans[newPrev_];
-
-        if (oldPrevLoan.next != address(0)) {
-            require(oldPrevLoan.next == borrower_, "B:U:OLDPREV_NOT_CUR_BRW");
-        }
-
-        // protections
-        if (newPrev_ != address(0) && loans[newPrevLoan.next].thresholdPrice > thresholdPrice_ ) {
-            // newPrev is not accurate, search radius
-            (newPrev_, newPrevLoan) = _searchRadius(radius_, thresholdPrice_, loans[newPrevLoan.next]);
-            emit log_add("after search add", newPrev_);
-            emit log_thing("after search", loans[newPrevLoan.next].thresholdPrice);
-        }
-
-        LoanInfo memory loan = loans[borrower_];
-        
-        if (loan.thresholdPrice > 0) {
-            // loan exists
-            (loan, oldPrevLoan, newPrevLoan)= _move(oldPrev_, oldPrevLoan, newPrev_, newPrevLoan);
-            loan.thresholdPrice = thresholdPrice_;
-
-        } else if (head != address(0)) {
-            // loan doesn't exist, other loans in queue
-            require(oldPrev_ == address(0), "B:U:ALRDY_IN_QUE");
-
-            // TODO: call updateLoanQueue when new borrower borrows
-            loan.thresholdPrice = thresholdPrice_;
-
-            if (newPrev_ != address(0)) {
-                loan.next = newPrevLoan.next;
-                newPrevLoan.next = borrower_;
-
-            } else {
-                loan.next = head;
-                head = borrower_;
-            }
-        } else {
-
-            // first loan in queue
-            require(oldPrev_ == address(0) || newPrev_ == address(0), "B:U:PREV_SHD_B_ZRO");
-            head = borrower_;
-            loan.thresholdPrice = thresholdPrice_;
-        }
-
-        // protections
-        if (loan.next != address(0)) {
-            emit log_thing("incoming threh", thresholdPrice_);
-            emit log_thing("Prev check thresh", loans[loan.next].thresholdPrice);
-            require(loans[loan.next].thresholdPrice < thresholdPrice_, "B:U:QUE_WRNG_ORD");
-        }
-
-        loans[oldPrev_] = oldPrevLoan;
-        loans[newPrev_] = newPrevLoan;
-        loans[borrower_] = loan;
-    }
-
-    function removeLoanQueue(address borrower_, address oldPrev_) external override {
-        require(loans[oldPrev_].next == borrower_);
-        if (head == borrower_) {
-            head = loans[borrower_].next;
-        }
-
-        loans[oldPrev_].next = loans[borrower_].next;
-        loans[borrower_].next = address(0);
-        loans[borrower_].thresholdPrice = 0;
-    }
-
-    function _move(address oldPrev_, LoanInfo memory oldPrevLoan_, address newPrev_, LoanInfo memory newPrevLoan_) internal returns (LoanInfo memory loan, LoanInfo memory, LoanInfo memory) {
-
-        address borrower;
-
-        if (oldPrev_ == address(0)) {
-            loan = loans[head];
-            borrower = head;
-            head = loan.next;
-        } else {
-            loan = loans[oldPrevLoan_.next];
-            borrower = oldPrevLoan_.next;
-            oldPrevLoan_.next = loan.next;
-        }
-
-        if (newPrev_ == address(0)) {
-            loan.next = head;
-            head = borrower;
-        } else {
-            loan.next = newPrevLoan_.next;
-            newPrevLoan_.next = borrower;
-        }
-        return (loan, oldPrevLoan_, newPrevLoan_);
-    }
-
 
     /************************/
     /*** Helper Functions ***/
