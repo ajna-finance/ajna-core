@@ -22,7 +22,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
     UserWithCollateral internal _borrower2;
     UserWithQuoteToken internal _lender;
 
-    function setUp() external {
+    function skip_setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
@@ -46,7 +46,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
      *          Lender reverts:
      *              attempts to call liquidate on borrower that is collateralized.
      */
-    function testLiquidateTwoBorrowers() external {
+    function skip_testLiquidateTwoBorrowers() external {
         // lender deposit in 3 buckets, price spaced
         uint256 priceHigh = _p10016;
         uint256 priceMed  = _p9020;
@@ -241,7 +241,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
      *          borrow occurs then successful liquidation is called.
      *          Borrower balances are checked.
      */
-    function testLiquidateScenario1NoTimeWarp() external {
+    function skip_testLiquidateScenario1NoTimeWarp() external {
         uint256 priceHighest = _p10016;
         uint256 priceHigh    = _p9020;
         uint256 priceMed     = _p8002;
@@ -380,7 +380,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
      *          borrows occur accross a time skip then successful liquidation is called.
      *          Borrower balances are checked.
      */
-    function testLiquidateScenario1TimeWarp() external {
+    function skip_testLiquidateScenario1TimeWarp() external {
         uint256 priceHighest = _p10016;
         uint256 priceHigh    = _p9020;
         uint256 priceMed     = _p8002;

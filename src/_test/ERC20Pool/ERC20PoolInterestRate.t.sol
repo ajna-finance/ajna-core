@@ -21,7 +21,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _pool        = ERC20Pool(_poolAddress);  
+        _pool        = ERC20Pool(_poolAddress);
 
         _borrower = new UserWithCollateral();
         _lender   = new UserWithQuoteToken();
@@ -331,7 +331,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
     /**
      *  @notice Test interest rate updates on liquidate action.
      */
-    function testUpdateInterestRateOnLiquidate() external {
+    function skip_testUpdateInterestRateOnLiquidate() external {
         _borrower1.addCollateral(_pool, 1_000 * 1e18);
         _borrower1.borrow(_pool, 60_000 * 1e18, 1 * 1e18);
 
@@ -373,7 +373,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
     /**
      *  @notice Test interest rate updates on claim collateral bid action.
      */
-    function testUpdateInterestRateOnClaimCollateral() external {
+    function skip_test_UpdateInterestRateOnClaimCollateral() external {
         _borrower1.addCollateral(_pool, 1_000 * 1e18);
         _borrower1.borrow(_pool, 60_000 * 1e18, 1 * 1e18);
 

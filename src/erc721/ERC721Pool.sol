@@ -116,7 +116,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         require(amount_ <= totalQuoteToken, "P:B:INSUF_LIQ");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
-        require(amount_ > _poolMinDebtAmount(curDebt, totalBorrowers), "P:B:AMT_LT_AVG_DEBT");
+        require(amount_ > _poolMinDebtAmount(curDebt, totalBorrowers), "P:B:AMT_LT_MIN_DEBT");
 
         NFTBorrowerInfo storage borrower = _NFTborrowers[msg.sender];
         _accumulateBorrowerInterest(borrower, curInflator);

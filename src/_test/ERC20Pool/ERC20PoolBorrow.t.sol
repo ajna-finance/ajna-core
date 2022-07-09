@@ -304,7 +304,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.totalBorrowers(),       1);
 
         // should revert when taking a loan below pool min debt amount
-        vm.expectRevert("P:B:AMT_LT_AVG_DEBT");
+        vm.expectRevert("P:B:AMT_LT_MIN_DEBT");
         _borrower2.borrow(_pool, 100 * 1e18, 1_000 * 1e18);
 
         // should revert when taking a loan of 5_000 DAI that will drive pool undercollateralized
@@ -372,7 +372,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.getPoolMinDebtAmount(), 100.000001923076923077 * 1e18);
 
         // should revert when deposit lower than pool min debt amount
-        vm.expectRevert("P:AQT:AMT_LT_AVG_DEBT");
+        vm.expectRevert("P:AQT:AMT_LT_MIN_DEBT");
         _lender.addQuoteToken(_pool, 100 * 1e18, priceMed);
 
         _lender.addQuoteToken(_pool, 50_100 * 1e18, priceMed);

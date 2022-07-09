@@ -309,7 +309,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
      *  @notice With 1 lender and 2 borrowers tests addQuoteToken, addCollateral,
      *          borrow, liquidate and then all collateral is claimed.
      */
-    function testLiquidateClaimAllCollateral() public {
+    function skip_testLiquidateClaimAllCollateral() public {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, _p10016);
         _lender.addQuoteToken(_pool, 1_000 * 1e18, _p9020);
         _lender.addQuoteToken(_pool, 1_000 * 1e18, _p8002);
