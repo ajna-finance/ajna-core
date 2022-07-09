@@ -184,34 +184,32 @@ contract ERC20Pool is IERC20Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
+    // TODO: replace local variables with references to borrower.<> (CHECK GAS SAVINGS)
     function liquidate(address borrower_) external override {
-        BorrowerInfo memory borrower = borrowers[borrower_];
-        require(borrower.debt != 0, "P:L:NO_DEBT");
+        accumulatePoolInterest();
 
-        (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
+        BorrowerInfo storage borrower = borrowers[borrower_];
+        accumulateBorrowerInterest(borrower);
 
-        _accumulateBorrowerInterest(borrower, curInflator);
-        uint256 debt = borrower.debt;
+        uint256 debt                = borrower.debt;
+        uint256 collateralDeposited = borrower.collateralDeposited;
+
+        require(debt != 0, "P:L:NO_DEBT");
         require(
-            getBorrowerCollateralization(borrower.collateralDeposited, debt) <= Maths.WAD,
+            getBorrowerCollateralization(collateralDeposited, debt) <= Maths.ONE_WAD,
             "P:L:BORROWER_OK"
         );
 
         // liquidate borrower and get collateral required to liquidate
-        uint256 requiredCollateral = _liquidateAtBucket(debt, borrower.collateralDeposited, curInflator);
-        curDebt -= debt;
+        uint256 requiredCollateral = _repossessCollateral(debt, collateralDeposited, inflatorSnapshot);
 
         // pool level accounting
+        totalDebt       -= borrower.debt;
         totalCollateral -= requiredCollateral;
-        totalDebt       = curDebt;
 
         // borrower accounting
-        totalBorrowers               -= 1;
         borrower.debt                = 0;
         borrower.collateralDeposited -= requiredCollateral;
-        borrowers[borrower_]         = borrower; // save borrower to storage
-
-        _updateInterestRate(curDebt);
 
         emit Liquidate(borrower_, debt, requiredCollateral);
     }
