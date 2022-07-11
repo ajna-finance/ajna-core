@@ -45,21 +45,21 @@ contract UserWithCollateral {
 
 contract UserWithCollateralInScaledPool {
 
-    function approveAndDepositTokenAsCollateral(IERC20 token_, ScaledPool pool_, uint256 amount_) public {
+    function approveAndDepositTokenAsCollateral(IERC20 token_, ScaledPool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
         token_.approve(address(pool_), amount_);
-        pool_.addCollateral(amount_);
+        pool_.addCollateral(amount_, oldPrev_, newPrev_);
     }
 
     function approveToken(IERC20 token_, address spender_, uint256 amount_) public {
         token_.approve(spender_, amount_);
     }
 
-    function addCollateral(ScaledPool pool_, uint256 amount_) public {
-        pool_.addCollateral(amount_);
+    function addCollateral(ScaledPool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
+        pool_.addCollateral(amount_, oldPrev_, newPrev_);
     }
 
-    function borrow(ScaledPool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
-        pool_.borrow(amount_, oldPrev_, newPrev_);
+    function borrow(ScaledPool pool_, uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) public {
+        pool_.borrow(amount_, limitIndex_, oldPrev_, newPrev_);
     }
 
 }

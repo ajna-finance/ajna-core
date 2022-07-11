@@ -57,72 +57,72 @@ contract ScaledQuoteTokenTest is DSTestPlus {
      */
     function testScaledPoolDepositQuoteToken() external {
 
-        // test 10_000 DAI deposit at price of 1 MKR = 4000 DAI
+        // test 10_000 DAI deposit at price of 1 MKR = 3_010.892022197881557845 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), 4_000.927678580567537368 * 1e18, 10_000 * 1e18, 99836282890);
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, 4895);
+        emit AddQuoteToken(address(_lender), _p3010, 10_000 * 1e18, 99836282890);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
 
-        assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 99836282890);
+        assertEq(_pool.htp(),      0);
+        assertEq(_pool.lupIndex(), 7388);
 
         assertEq(_pool.treeSum(),                         10_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              10_000 * 1e18);
-        assertEq(_pool.lpBalance(4895, address(_lender)), 10_000 * 1e18);
+        assertEq(_pool.lpBalance(2550, address(_lender)), 10_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 190_000 * 1e18);
 
         // check bucket balance
-        (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(4895);
+        (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(2550);
         assertEq(lpAccumulator,       10_000 * 1e18);
         assertEq(availableCollateral, 0);
 
-        // test 20_000 DAI deposit at price of 1 MKR = 2000.221618840727700609 DAI
+        // test 20_000 DAI deposit at price of 1 MKR = 2_995.912459898389633881 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 20_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), 2_000.221618840727700609 * 1e18, 20_000 * 1e18, 99836282890);
-        _lender.addQuoteToken(_pool, 20_000 * 1e18, 4756);
+        emit AddQuoteToken(address(_lender), 2_995.912459898389633881 * 1e18, 20_000 * 1e18, 99836282890);
+        _lender.addQuoteToken(_pool, 20_000 * 1e18, 2551);
 
-        assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 99836282890);
+        assertEq(_pool.htp(),      0);
+        assertEq(_pool.lupIndex(), 7388);
 
         assertEq(_pool.treeSum(),                         30_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              30_000 * 1e18);
-        assertEq(_pool.lpBalance(4756, address(_lender)), 20_000 * 1e18);
+        assertEq(_pool.lpBalance(2551, address(_lender)), 20_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   30_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 170_000 * 1e18);
 
         // check bucket balance
-        (lpAccumulator, availableCollateral) = _pool.buckets(4756);
+        (lpAccumulator, availableCollateral) = _pool.buckets(2551);
         assertEq(lpAccumulator,       20_000 * 1e18);
         assertEq(availableCollateral, 0);
 
-        // test 40_000 DAI deposit at price of 1 MKR = 5000 DAI
+        // test 40_000 DAI deposit at price of 1 MKR = 3_025.946482308870940904 DAI
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 40_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), 5_007.644384905151472283 * 1e18, 40_000 * 1e18, 99836282890);
-        _lender.addQuoteToken(_pool, 40_000 * 1e18, 4940);
+        emit AddQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 40_000 * 1e18, 99836282890);
+        _lender.addQuoteToken(_pool, 40_000 * 1e18, 2549);
 
-        assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 99836282890);
+        assertEq(_pool.htp(),      0);
+        assertEq(_pool.lupIndex(), 7388);
 
         assertEq(_pool.treeSum(),                         70_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              70_000 * 1e18);
-        assertEq(_pool.lpBalance(4940, address(_lender)), 40_000 * 1e18);
+        assertEq(_pool.lpBalance(2549, address(_lender)), 40_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   70_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 130_000 * 1e18);
 
         // check bucket balance
-        (lpAccumulator, availableCollateral) = _pool.buckets(4940);
+        (lpAccumulator, availableCollateral) = _pool.buckets(2549);
         assertEq(lpAccumulator,       40_000 * 1e18);
         assertEq(availableCollateral, 0);
     }

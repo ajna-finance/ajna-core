@@ -50,18 +50,13 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _lender1.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    function testScaledPoolBorrow() external {
-        uint256 priceHighest = _p4000;
-        uint256 priceHigh    = _p3514;
-        uint256 priceMed     = _p3010;
-        uint256 priceLow     = _p2503;
-        uint256 priceLowest  = _p2000;
+    function _testScaledPoolBorrow() external {
 
-        uint256 depositPriceHighest = _pool.priceToIndex(_p4000);
-        uint256 depositPriceHigh    = _pool.priceToIndex(_p3514);
-        uint256 depositPriceMed     = _pool.priceToIndex(_p3010);
-        uint256 depositPriceLow     = _pool.priceToIndex(_p2503);
-        uint256 depositPriceLowest  = _pool.priceToIndex(_p2000);
+        uint256 depositPriceHighest = 2550;
+        uint256 depositPriceHigh    = 2551;
+        uint256 depositPriceMed     = 2552;
+        uint256 depositPriceLow     = 2553;
+        uint256 depositPriceLowest  = 2554;
 
         // lender deposits 10000 DAI in 5 buckets each
         _lender.addQuoteToken(_pool, 10_000 * 1e18, depositPriceHighest);
@@ -70,8 +65,8 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, depositPriceLow);
         _lender.addQuoteToken(_pool, 10_000 * 1e18, depositPriceLowest);
 
-        assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 0.000000099836282890 * 1e18);
+        assertEq(_pool.htp(),      0);
+        assertEq(_pool.lupIndex(), 7388);
 
         assertEq(_pool.treeSum(),            50_000 * 1e18);
         assertEq(_pool.lenderDebt(),         0);
@@ -82,18 +77,17 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
 
         // borrower deposit 100 MKR collateral
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(_borrower));
 
         // get a 21_000 DAI loan
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Borrow(address(_borrower), priceMed, 21_000 * 1e18);
-        _borrower.borrow(_pool, 21_000 * 1e18, address(0), address(0));
+        emit Borrow(address(_borrower), 1, 21_000 * 1e18);
+        _borrower.borrow(_pool, 1, 21_000 * 1e18, address(0), address(_borrower));
 
         assertEq(_pool.htp(), 0.201923076923077020 * 1e18);
-        assertEq(_pool._lupIndex(0), 4838);
-        assertEq(_pool.lup(), priceMed);
+        assertEq(_pool.lupIndex(), 4838);
 
         assertEq(_pool.treeSum(),            50_000 * 1e18);
         assertEq(_pool.lenderDebt(),         21_000 * 1e18);
@@ -131,12 +125,12 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_borrower), 19_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Borrow(address(_borrower), priceHigh, 19_000 * 1e18);
-        _borrower.borrow(_pool, 19_000 * 1e18, address(0), address(0));
+        emit Borrow(address(_borrower), 1, 19_000 * 1e18);
+        _borrower.borrow(_pool, 1, 19_000 * 1e18, address(0), address(_borrower));
 
         assertEq(_pool.htp(), 0.384615384615384800 * 1e18);
-        assertEq(_pool._lupIndex(0), 4869);
-        assertEq(_pool.lup(), priceHigh);
+        assertEq(_pool.lupIndex(), 4869);
+        assertEq(_pool.lup(), 1);
 
         assertEq(_pool.treeSum(),            50_000 * 1e18);
         assertEq(_pool.lenderDebt(),         40_000 * 1e18);
