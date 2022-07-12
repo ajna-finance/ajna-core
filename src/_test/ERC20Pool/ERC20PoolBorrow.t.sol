@@ -78,18 +78,18 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // should revert if borrower wants to borrow a greater amount than in pool
         vm.expectRevert("P:B:INSUF_LIQ");
-        _borrower.borrow(_pool, 60_000 * 1e18, 2_000 * 1e18);
+        _borrower.borrow(_pool, 60_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         // should revert if insufficient collateral deposited by borrower
         vm.expectRevert("P:B:INSUF_COLLAT");
-        _borrower.borrow(_pool, 10_000 * 1e18, 4_000 * 1e18);
+        _borrower.borrow(_pool, 10_000 * 1e18, 4_000 * 1e18, address(0), address(0), _r3);
 
         // borrower deposit 10 MKR collateral
         _borrower.addCollateral(_pool, 10 * 1e18);
 
         // should revert if limit price exceeded
         vm.expectRevert("B:B:PRICE_LT_LIMIT");
-        _borrower.borrow(_pool, 15_000 * 1e18, 4_000 * 1e18);
+        _borrower.borrow(_pool, 15_000 * 1e18, 4_000 * 1e18, address(0), address(0), _r3);
 
         // borrower deposits additional 90 MKR collateral
         _borrower.addCollateral(_pool, 90 * 1e18);
@@ -101,7 +101,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), priceMed, 21_000 * 1e18);
-        _borrower.borrow(_pool, 21_000 * 1e18, 2_500 * 1e18);
+        _borrower.borrow(_pool, 21_000 * 1e18, 2_500 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHighest);
         assertEq(_pool.lup(), priceMed);
@@ -146,7 +146,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower), 9_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), priceMed, 9_000 * 1e18);
-        _borrower.borrow(_pool, 9_000 * 1e18, priceLow);
+        _borrower.borrow(_pool, 9_000 * 1e18, priceLow, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHighest);
         assertEq(_pool.lup(), priceMed);
@@ -266,7 +266,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         assertEq(_pool.estimatePrice(125_000 * 1e18), priceMed);
         assertEq(_pool.estimatePrice(175_000 * 1e18), priceLow);
         _borrower.addCollateral(_pool, 51 * 1e18);
-        _borrower.borrow(_pool, 100_000 * 1e18, 1_000 * 1e18);
+        _borrower.borrow(_pool, 100_000 * 1e18, 1_000 * 1e18, address(0), address(0), _r3);
 
         // check pool collateralization after borrower1 takes loan
         uint256 poolCollateralizationAfterB1Actions = _pool.getPoolCollateralization();
@@ -305,11 +305,11 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // should revert when taking a loan below pool min debt amount
         vm.expectRevert("P:B:AMT_LT_AVG_DEBT");
-        _borrower2.borrow(_pool, 100 * 1e18, 1_000 * 1e18);
+        _borrower2.borrow(_pool, 100 * 1e18, 1_000 * 1e18, address(0), address(0), _r3);
 
         // should revert when taking a loan of 5_000 DAI that will drive pool undercollateralized
         vm.expectRevert("P:B:POOL_UNDER_COLLAT");
-        _borrower2.borrow(_pool, 11_000 * 1e18, 1_000 * 1e18);
+        _borrower2.borrow(_pool, 11_000 * 1e18, 1_000 * 1e18, address(0), address(0), _r3);
     }
 
     /**
@@ -322,7 +322,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, priceLow);
         _borrower.addCollateral(_pool, 100 * 1e18);
         // should not revert when borrower takes a loan on 10_000 DAI
-        _borrower.borrow(_pool, 1_000 * 1e18, 13.537 * 1e18);
+        _borrower.borrow(_pool, 1_000 * 1e18, 13.537 * 1e18, address(0), address(0), _r3);
         skip(3600);
 
         // tie out debt between bucket, borrower, and pool
@@ -353,7 +353,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // borrow max possible from hdp
         _borrower.addCollateral(_pool, 51 * 1e18);
-        _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18);
+        _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         // check hup is below lup and lup equals hdp
         assertEq(_pool.lup(),    priceHigh);
@@ -362,7 +362,7 @@ contract ERC20PoolBorrowTest is DSTestPlus {
 
         // borrow max possible from previous hup
         _borrower2.addCollateral(_pool, 51 * 1e18);
-        _borrower2.borrow(_pool, 50_000 * 1e18, 1000 * 1e18);
+        _borrower2.borrow(_pool, 50_000 * 1e18, 1000 * 1e18, address(0), address(0), _r3);
 
         // check hup moves down
         assertEq(_pool.getHup(), priceLow);

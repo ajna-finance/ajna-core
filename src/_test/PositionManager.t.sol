@@ -497,7 +497,7 @@ contract PositionManagerTest is DSTestPlus {
 
         // add collateral and borrow against it
         testBorrower.addCollateral(_pool, collateralToMint);
-        testBorrower.borrow(_pool, 2_500 * 1e18, _p10016);
+        testBorrower.borrow(_pool, 2_500 * 1e18, _p10016, address(0), address(0), _r3);
 
         // check pool state
         assertEq(_pool.lup(),       _p10016);
@@ -613,7 +613,7 @@ contract PositionManagerTest is DSTestPlus {
         // borrow against the pool
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(testBorrower), _p10016, 30_000 * 1e18);
-        testBorrower.borrow(_NFTCollectionPool, 30_000 * 1e18, _p10016);
+        testBorrower.borrow(_NFTCollectionPool, 30_000 * 1e18, _p10016, address(0), address(0), _r3);
 
         // purchase bid from the pool
         uint256[] memory tokensToBuy = new uint256[](2);

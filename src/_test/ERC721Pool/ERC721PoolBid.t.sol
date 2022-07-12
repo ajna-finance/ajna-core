@@ -93,7 +93,7 @@ contract ERC721PoolBidTest is DSTestPlus {
         // borrow from pool
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p4000, 5_000 * 1e18);
-        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503);
+        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503, address(0), address(0), _r3);
 
         // check initial pool state after borrow and before bid
         assertEq(_NFTSubsetPool.lup(),                          _p4000);

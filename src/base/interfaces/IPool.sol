@@ -215,13 +215,13 @@ interface IPool {
      *  @param  amount_     The amount of quote token to borrow.
      *  @param  limitPrice_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
      */
-    function borrow(uint256 amount_, uint256 limitPrice_) external;
+    function borrow(uint256 amount_, uint256 limitPrice_, address oldPrev_, address newPrev_, uint256 radius) external;
 
     /**
      *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
      *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
      */
-    function repay(uint256 maxAmount_) external;
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_, uint256 radius) external;
 
     /*********************************/
     /*** Lender External Functions ***/

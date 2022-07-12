@@ -246,7 +246,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // Borrower draws 2400 debt, utilizing all three
         _borrower.addCollateral(_pool, 10 * 1e18);
-        _borrower.borrow(_pool, 2_400 * 1e18, 0);
+        _borrower.borrow(_pool, 2_400 * 1e18, 0, address(0), address(0), _r3);
         skip(3600 * 24 * 7);
 
         assertEq(_pool.hpb(), _p4000);
@@ -375,7 +375,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // Borrower draws debt utilizing all buckets with liquidity
         _borrower.addCollateral(_pool, 10 * 1e18);
-        _borrower.borrow(_pool, 2_100 * 1e18, 0);
+        _borrower.borrow(_pool, 2_100 * 1e18, 0, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p2821);
         assertEq(_pool.lup(), _p2779);
@@ -438,7 +438,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // Borrower draws 2000 debt fully utilizing the LUP
         _borrower.addCollateral(_pool, 10 * 1e18);
-        _borrower.borrow(_pool, 2_000 * 1e18, 0);
+        _borrower.borrow(_pool, 2_000 * 1e18, 0, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p2850);
         assertEq(_pool.lup(), _p2835);
@@ -570,7 +570,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // borrower takes a loan of 5_000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 5_000 * 1e18, 4_000 * 1e18);
+        _borrower.borrow(_pool, 5_000 * 1e18, 4_000 * 1e18, address(0), address(0), _r3);
         skip(3600);
 
         // should revert if trying to remove entire amount lended
@@ -644,7 +644,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // borrower takes a loan of 10_000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 10_000 * 1e18, 4_000 * 1e18);
+        _borrower.borrow(_pool, 10_000 * 1e18, 4_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p4000);
@@ -657,7 +657,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // borrower repays entire loan
         _quote.mint(address(_borrower), 1 * 1e18);
         _borrower.approveToken(_quote, address(_pool), 100_000 * 1e18);
-        _borrower.repay(_pool, 10_001 * 1e18);
+        _borrower.repay(_pool, 10_001 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), 0);
@@ -720,7 +720,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // borrower takes a loan of 3000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 3_000 * 1e18, 4_000 * 1e18);
+        _borrower.borrow(_pool, 3_000 * 1e18, 4_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceMed);
         assertEq(_pool.lup(), priceMed);
@@ -817,7 +817,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // borrower takes a loan of 4000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 4_000 * 1e18, 0);
+        _borrower.borrow(_pool, 4_000 * 1e18, 0, address(0), address(0), _r3);
         skip(3600);
 
         assertEq(_pool.hpb(), priceMed);
@@ -911,7 +911,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // Borrower draws 2400 debt partially utilizing the LUP
         _borrower.addCollateral(_pool, 10 * 1e18);
-        _borrower.borrow(_pool, 2_400 * 1e18, 0);
+        _borrower.borrow(_pool, 2_400 * 1e18, 0, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p2850);
         assertEq(_pool.lup(), _p2821);
@@ -1006,9 +1006,9 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // borrower takes a loan which partially utilizes the middle bucket
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 1_000 * 1e18, priceMed);
+        _borrower.borrow(_pool, 1_000 * 1e18, priceMed, address(0), address(0), _r3);
         skip(60); // fragment the inflator
-        _borrower.borrow(_pool, 400 * 1e18, priceMed);
+        _borrower.borrow(_pool, 400 * 1e18, priceMed, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), priceMed);
@@ -1134,7 +1134,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // borrower takes a loan of 3000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 3_000 * 1e18, priceHigh);
+        _borrower.borrow(_pool, 3_000 * 1e18, priceHigh, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), priceHigh);
@@ -1217,7 +1217,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // borrower takes a loan of 4000 DAI at priceLow
         uint256 borrowAmount = 4_000 * 1e18;
         _borrower.addCollateral(_pool, 5.1 * 1e18);
-        _borrower.borrow(_pool, borrowAmount, 1_000 * 1e18);
+        _borrower.borrow(_pool, borrowAmount, 1_000 * 1e18, address(0), address(0), _r3);
 
         uint256 borrowAmountPlusFee = borrowAmount + 0.000961538461538462 * 1e18;
 
@@ -1358,7 +1358,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertEq(_pool.getPoolCollateralization(), Maths.WAD);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
-        _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18);
+        _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p10016);
         assertEq(_pool.lup(), _p8002);
@@ -1374,7 +1374,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         skip(10000);
 
         // 2nd borrower takes a loan of 1_300 DAI, pushing lup to 100.332368143282009890
-        _borrower2.borrow(_pool, 1_300 * 1e18, 100 * 1e18);
+        _borrower2.borrow(_pool, 1_300 * 1e18, 100 * 1e18, address(0), address(_borrower), _r3);
 
         assertEq(_pool.hpb(), _p10016);
         assertEq(_pool.lup(), _p100);
@@ -1412,7 +1412,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         // borrower repays their initial loan principal
         skip(46800);
         _quote.mint(address(_borrower), 10 * 1e18);
-        _borrower.repay(_pool, 12_010 * 1e18);
+        _borrower.repay(_pool, 12_010 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p10016);
         assertEq(_pool.lup(), _p10016);
@@ -1793,7 +1793,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // borrower deposits 100 MKR collateral, borrows 46_000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
         assertEq(_pool.hpb(), _p3514);
@@ -1891,7 +1891,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         // borrower deposits 100 MKR collateral, borrows 46_000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18);
+        _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
         assertEq(_pool.hpb(), _p3514);

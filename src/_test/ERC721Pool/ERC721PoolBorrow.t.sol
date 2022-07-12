@@ -101,21 +101,21 @@ contract ERC721PoolBorrowTest is DSTestPlus {
 
         // should revert if borrower wants to borrow a greater amount than in pool
         vm.expectRevert("P:B:INSUF_LIQ");
-        _borrower.borrow(_NFTSubsetPool, 60_000 * 1e18, _p4000);
+        _borrower.borrow(_NFTSubsetPool, 60_000 * 1e18, _p4000, address(0), address(0), _r3);
 
         // should revert if limit price exceeded
         vm.expectRevert("B:B:PRICE_LT_LIMIT");
-        _borrower.borrow(_NFTSubsetPool, 15_000 * 1e18, _p4000);
+        _borrower.borrow(_NFTSubsetPool, 15_000 * 1e18, _p4000, address(0), address(0), _r3);
 
         // should revert if insufficient collateral deposited by borrower
         vm.expectRevert("P:B:INSUF_COLLAT");
-        _borrower.borrow(_NFTSubsetPool, 15_000 * 1e18, _p3010);
+        _borrower.borrow(_NFTSubsetPool, 15_000 * 1e18, _p3010, address(0), address(0), _r3);
 
         // borrow from pool
         uint256 borrowAmount = 6_000 * 1e18;
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p4000, borrowAmount);
-        _borrower.borrow(_NFTSubsetPool, borrowAmount, _p2503);
+        _borrower.borrow(_NFTSubsetPool, borrowAmount, _p2503, address(0), address(0), _r3);
 
         // check bucket balances
         (, , , uint256 deposit, uint256 debt, , , ) = _NFTSubsetPool.bucketAt(_p4000);
@@ -155,7 +155,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         // Attempt, but fail to borrow from pool if it would result in undercollateralization
         vm.prank((address(_borrower)));
         vm.expectRevert("P:B:INSUF_COLLAT");
-        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p3010);
+        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p3010, address(0), address(0), _r3);
 
         // add additional collateral
         // TODO: RAISES THE QUESTION -> How to deal with a pool where the universe of possible collateral has been exhausted
@@ -166,7 +166,7 @@ contract ERC721PoolBorrowTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p4000, 4_000 * 1e18);
         vm.prank((address(_borrower)));
-        _borrower.borrow(_NFTSubsetPool, 4_000 * 1e18, _p3010);
+        _borrower.borrow(_NFTSubsetPool, 4_000 * 1e18, _p3010, address(0), address(0), _r3);
 
         // check pool state
         assertEq(_NFTSubsetPool.hpb(),                            _p4000);

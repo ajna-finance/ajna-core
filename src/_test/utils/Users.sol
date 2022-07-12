@@ -22,16 +22,16 @@ contract UserWithCollateral {
         pool_.addCollateral(amount_);
     }
 
-    function borrow(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
-        pool_.borrow(amount_, price_);
+    function borrow(ERC20Pool pool_, uint256 amount_, uint256 price_, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.borrow(amount_, price_, oldPrev_, newPrev_, radius_);
     }
 
     function purchaseBid(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
         pool_.purchaseBid(amount_, price_);
     }
 
-    function repay(ERC20Pool pool_, uint256 amount_) public {
-        pool_.repay(amount_);
+    function repay(ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.repay(amount_, oldPrev_, newPrev_, radius_);
     }
 
     function removeCollateral(ERC20Pool pool_, uint256 amount_) public {
@@ -67,16 +67,16 @@ contract UserWithNFTCollateral {
         pool_.addCollateral(tokenIds_);
     }
 
-    function borrow(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
-        pool_.borrow(amount_, price_);
+    function borrow(ERC721Pool pool_, uint256 amount_, uint256 price_, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.borrow(amount_, price_, oldPrev_, newPrev_, radius_);
     }
 
     function purchaseBid(ERC721Pool pool_, uint256 amount_, uint256 price_, uint256[] memory tokenIds_) public {
         pool_.purchaseBid(amount_, price_, tokenIds_);
     }
 
-    function repay(ERC721Pool pool_, uint256 amount_) public {
-        pool_.repay(amount_);
+    function repay(ERC721Pool pool_, uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.repay(amount_, oldPrev_, newPrev_, radius_);
     }
 
     function removeCollateral(ERC721Pool pool_, uint256 tokenId_) public {
@@ -115,8 +115,8 @@ contract UserWithQuoteToken {
         pool_.moveQuoteToken(amount_, fromPrice_, toPrice_);
     }
 
-    function borrow(ERC20Pool pool_, uint256 amount_, uint256 limitPrice_) public {
-        pool_.borrow(amount_, limitPrice_);
+    function borrow(ERC20Pool pool_, uint256 amount_, uint256 limitPrice_, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.borrow(amount_, limitPrice_, oldPrev_, newPrev_, radius_);
     }
 
     function claimCollateral(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
@@ -150,8 +150,8 @@ contract UserWithQuoteTokenInNFTPool {
         pool_.removeQuoteToken(amount_, price_, lpTokensToRemove);
     }
 
-    function borrow(ERC721Pool pool_, uint256 amount_, uint256 stopPrice) public {
-        pool_.borrow(amount_, stopPrice);
+    function borrow(ERC721Pool pool_, uint256 amount_, uint256 stopPrice, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.borrow(amount_, stopPrice, oldPrev_, newPrev_, radius_);
     }
 
     function claimCollateral(ERC721Pool pool_, uint256 tokenId_, uint256 price_) public {

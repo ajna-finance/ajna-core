@@ -62,7 +62,7 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         // borrower takes a loan of 4000 DAI making bucket 4000 to be fully utilized
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 4_000 * 1e18, 3_000 * 1e18);
+        _borrower.borrow(_pool, 4_000 * 1e18, 3_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.lup(), _p3010);
 
@@ -169,9 +169,9 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         // borrower takes a loan of 1000 DAI from bucket 4000
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18);
+        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18, address(0), address(0), _r3);
         // borrower takes a loan of 1000 DAI from bucket 3000
-        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18);
+        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p3010);
@@ -271,10 +271,10 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         // borrower takes a loan of 1000 DAI from bucket 4000
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18);
+        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18, address(0), address(0), _r3);
 
         // borrower takes a loan of 1000 DAI from bucket 3000
-        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18);
+        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p3010);
@@ -314,10 +314,10 @@ contract ERC20PoolBidTest is DSTestPlus {
 
         // borrower takes a loan of 1000 DAI from bucket 4000
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18);
+        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18, address(0), address(0), _r3);
 
         // borrower takes a loan of 1000 DAI from bucket 3000
-        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18);
+        _borrower.borrow(_pool, 1_000 * 1e18, 3_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), _p4000);
         assertEq(_pool.lup(), _p3010);

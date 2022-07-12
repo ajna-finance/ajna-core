@@ -54,12 +54,12 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
-        _borrower.borrow(_pool, 10_000 * 1e18, 4000 * 1e18);
+        _borrower.borrow(_pool, 10_000 * 1e18, 4000 * 1e18, address(0), address(0), _r3);
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
         _borrower.approveToken(_quote, address(_pool), 1_000 * 1e18);
-        _borrower.repay(_pool, 1_000 * 1e18);
+        _borrower.repay(_pool, 1_000 * 1e18, address(0), address(0), _r3);
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);

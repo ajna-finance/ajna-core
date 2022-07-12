@@ -14,6 +14,7 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 import { IERC721Pool }           from "./interfaces/IERC721Pool.sol";
 
 import { Pool } from "../base/Pool.sol";
+import { Queue } from "../base/Queue.sol";
 
 import { BucketMath } from "../libraries/BucketMath.sol";
 import { Maths }      from "../libraries/Maths.sol";
@@ -21,7 +22,7 @@ import { Maths }      from "../libraries/Maths.sol";
 // Added
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
-contract ERC721Pool is IERC721Pool, Pool {
+contract ERC721Pool is IERC721Pool, Pool, Queue {
 
     using SafeERC20     for ERC20;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -112,7 +113,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         emit AddNFTCollateral(msg.sender, tokenIds_);
     }
 
-    function borrow(uint256 amount_, uint256 limitPrice_) external override {
+    function borrow(uint256 amount_, uint256 limitPrice_, address oldPrev_, address newPrev_, uint256 radius_) external override {
         require(amount_ <= totalQuoteToken, "P:B:INSUF_LIQ");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
@@ -136,6 +137,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         // borrower accounting
         if (borrower.debt == 0) totalBorrowers += 1;
         borrower.debt         += amount_ + fee;
+        updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited.length()), oldPrev_, newPrev_, radius_);
 
         _updateInterestRate(curDebt);
 
@@ -184,7 +186,7 @@ contract ERC721Pool is IERC721Pool, Pool {
 
 
     // TODO: finish implementing
-    function repay(uint256 amount_) external override {}
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_, uint256 radius) external override {}
 
     /*********************************/
     /*** Lender External Functions ***/

@@ -25,7 +25,7 @@ abstract contract Queue is IQueue {
         address current = newPrev_;
         LoanInfo memory currentLoan;
 
-        for (uint256 i = 0; i <= radius_; ) {
+        for (uint256 i = 0; i <= radius_;) {
             prev_ = current;
             current = loans[prev_].next;
             currentLoan = loans[current];
@@ -41,7 +41,7 @@ abstract contract Queue is IQueue {
         require(currentLoan.thresholdPrice <= thresholdPrice_, "B:S:SRCH_RDS_FAIL");
     }
 
-    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) external override {
+    function updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) internal {
 
         require(oldPrev_ != borrower_ || newPrev_ != borrower_, "B:U:PNT_SELF_REF");
         LoanInfo memory oldPrevLoan = loans[oldPrev_];
@@ -68,7 +68,6 @@ abstract contract Queue is IQueue {
             // loan doesn't exist, other loans in queue
             require(oldPrev_ == address(0), "B:U:ALRDY_IN_QUE");
 
-            // TODO: call updateLoanQueue when new borrower borrows
             loan.thresholdPrice = thresholdPrice_;
 
             if (newPrev_ != address(0)) {
@@ -89,7 +88,7 @@ abstract contract Queue is IQueue {
 
         // protections
         if (loan.next != address(0)) {
-            require(loans[loan.next].thresholdPrice < thresholdPrice_, "B:U:QUE_WRNG_ORD");
+            require(loans[loan.next].thresholdPrice <= thresholdPrice_, "B:U:QUE_WRNG_ORD");
         }
 
         loans[oldPrev_] = oldPrevLoan;
@@ -97,8 +96,8 @@ abstract contract Queue is IQueue {
         loans[borrower_] = loan;
     }
 
-    function removeLoanQueue(address borrower_, address oldPrev_) external override {
-        require(loans[oldPrev_].next == borrower_);
+    function removeLoanQueue(address borrower_, address oldPrev_) internal {
+        require(oldPrev_ == address(0) || loans[oldPrev_].next == borrower_);
         if (head == borrower_) {
             head = loans[borrower_].next;
         }

@@ -107,7 +107,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower), 10_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p2000, 10_000 * _quotePoolPrecision);
-        _borrower.borrow(_pool, 10_000 * 1e18, 2_000 * 1e18);
+        _borrower.borrow(_pool, 10_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), BUCKET_PRICE);
@@ -129,7 +129,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 5_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), _p2000, 5_000 * _quotePoolPrecision);
-        _borrower.repay(_pool, 5_000 * 1e18);
+        _borrower.repay(_pool, 5_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), BUCKET_PRICE);

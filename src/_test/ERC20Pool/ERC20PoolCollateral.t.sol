@@ -91,7 +91,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         // get loan of 20_000 DAI, recheck borrower
         skip(46800);
-        _borrower.borrow(_pool, 20_000 * 1e18, 2500 * 1e18);
+        _borrower.borrow(_pool, 20_000 * 1e18, 2500 * 1e18, address(0), address(0), _r3);
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(deposited,                        70 * 1e18);
         assertEq(borrowerEncumbered,               3.993894019676334605794103602 * 1e27);
@@ -146,7 +146,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         skip(46800);
         _quote.mint(address(_borrower), 5_000 * 1e18);
         _borrower.approveToken(_quote, address(_pool), 5_000 * 1e18);
-        _borrower.repay(_pool, 5_000 * 1e18);
+        _borrower.repay(_pool, 5_000 * 1e18, address(0), address(0), _r3);
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(deposited,                 80 * 1e18);
         assertEq(borrowerEncumbered,        2.996499721003926909283639902 * 1e27);
@@ -165,7 +165,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         skip(46800);
         _quote.mint(address(_borrower), 15_010 * 1e18);
         _borrower.approveToken(_quote, address(_pool), 15_010 * 1e18);
-        _borrower.repay(_pool, 15_010 * 1e18);
+        _borrower.repay(_pool, 15_010 * 1e18, address(0), address(0), _r3);
         // since collateralization dropped to 100%, target utilization should increase
         assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertGt(actualUtilization,                _pool.getPoolActualUtilization());
@@ -248,7 +248,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         // borrower takes a loan of 4000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
-        _borrower.borrow(_pool, 4_000 * 1e18, 3_000 * 1e18);
+        _borrower.borrow(_pool, 4_000 * 1e18, 3_000 * 1e18, address(0), address(0), _r3);
         assertEq(_pool.lup(), priceHigh);
 
         // check 4_000.927678580567537368 bucket balance before purchase Bid
@@ -320,10 +320,10 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         _borrower2.addCollateral(_pool, 200 * 1e18);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
-        _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18);
+        _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18, address(0), address(0), _r3);
 
         // 2nd borrower takes a loan of 1_300 DAI, pushing lup to 100.332368143282009890
-        _borrower2.borrow(_pool, 1_300 * 1e18, 100 * 1e18);
+        _borrower2.borrow(_pool, 1_300 * 1e18, 100 * 1e18, address(0), address(_borrower), _r3);
 
         // liquidate borrower
         _lender.liquidate(_pool, address(_borrower));

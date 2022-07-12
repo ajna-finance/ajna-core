@@ -80,7 +80,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_pool)),     100 * 1e18);
 
         // borrower takes loan of 25_000 DAI from 3 buckets
-        _borrower.borrow(_pool, 25_000 * 1e18, 2_500 * 1e18);
+        _borrower.borrow(_pool, 25_000 * 1e18, 2_500 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), priceLow);
@@ -115,7 +115,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), priceMid, 10_000 * 1e18);
-        _borrower.repay(_pool, 10_000 * 1e18);
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), priceMid);
@@ -147,7 +147,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 15_000.521009757842131923 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), 0, 15_000.521009757842131923 * 1e18);
-        _borrower.repay(_pool, 16_000 * 1e18);
+        _borrower.repay(_pool, 16_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), 0);
@@ -221,12 +221,12 @@ contract ERC20PoolRepayTest is DSTestPlus {
 
         // repay should revert if no debt
         vm.expectRevert("P:R:NO_DEBT");
-        _borrower.repay(_pool, 10_000 * 1e18);
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), _r3);
 
         // borrower takes loan of 25_000 DAI from 3 buckets
-        _borrower.borrow(_pool, 25_000 * 1e18, 2_500 * 1e18);
+        _borrower.borrow(_pool, 25_000 * 1e18, 2_500 * 1e18, address(0), address(0), _r3);
         // borrower2 takes loan of 2_600 DAI from 3 buckets
-        _borrower2.borrow(_pool, 2_600 * 1e18, 1 * 1e18);
+        _borrower2.borrow(_pool, 2_600 * 1e18, 1 * 1e18, address(0), address(_borrower), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), priceLow);
@@ -275,7 +275,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(depositedCollateral, 100 * 1e18);
         // repay should revert if amount not available
         vm.expectRevert("P:R:INSUF_BAL");
-        _borrower.repay(_pool, 50_000 * 1e18);
+        _borrower.repay(_pool, 50_000 * 1e18, address(0), address(0), _r3);
 
         // repay debt partially 10_000 DAI
         skip(8200);
@@ -283,7 +283,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), priceMid, 10_000 * 1e18);
-        _borrower.repay(_pool, 10_000 * 1e18);
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), priceMid);
@@ -326,7 +326,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 15_000.325989031377467940 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), priceHigh, 15_000.325989031377467940 * 1e18);
-        _borrower.repay(_pool, 15_001 * 1e18);
+        _borrower.repay(_pool, 15_001 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), priceHigh);
@@ -384,7 +384,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         emit Transfer(address(_borrower2), address(_pool), 2_600.034764408925742145 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower2), 0, 2_600.034764408925742145 * 1e18);
-        _borrower2.repay(_pool, 2_700 * 1e18);
+        _borrower2.repay(_pool, 2_700 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), 0);

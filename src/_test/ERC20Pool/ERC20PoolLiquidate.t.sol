@@ -74,7 +74,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   110_208_867.758432024184498000 * 1e18);
 
         // first borrower takes a loan of 11_000 DAI, pushing lup to 9_000
-        _borrower.borrow(_pool, 11_000 * 1e18, 9_000 * 1e18);
+        _borrower.borrow(_pool, 11_000 * 1e18, 9_000 * 1e18, address(0), address(0), _r3);
         (
             uint256 borrowerDebt,
             uint256 borrowerPendingDebt,
@@ -97,7 +97,7 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.getPoolActualUtilization(), 0.989791464378131405 * 1e18);
 
         // 2nd borrower takes a loan of 1_200 DAI, pushing lup to 100
-        _borrower2.borrow(_pool, 1_200 * 1e18, 100 * 1e18);
+        _borrower2.borrow(_pool, 1_200 * 1e18, 100 * 1e18, address(0), address(_borrower), _r3);
         (
             borrowerDebt,
             borrowerPendingDebt,
@@ -270,10 +270,10 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
-        _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18);
+        _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18, address(0), address(0), _r3);
 
         // 2nd borrower takes a loan of 1_300 DAI, pushing lup to 100.332368143282009890
-        _borrower2.borrow(_pool, 1_300 * 1e18, 100 * 1e18);
+        _borrower2.borrow(_pool, 1_300 * 1e18, 100 * 1e18, address(0), address(_borrower), _r3);
 
         assertEq(_pool.hpb(), priceHighest);
         assertEq(_pool.lup(), _p100);
@@ -409,13 +409,13 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         assertEq(_pool.getPoolActualUtilization(), 0);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_000
-        _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18);
+        _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18, address(0), address(0), _r3);
         // time warp
         skip(100000000);
 
         assertEq(_pool.getPoolMinDebtAmount(), 12.000000961538461538 * 1e18);
         // 2nd borrower takes a loan of 12_100 DAI, pushing lup to 100
-        _borrower2.borrow(_pool, 12_100 * 1e18, 100 * 1e18);
+        _borrower2.borrow(_pool, 12_100 * 1e18, 100 * 1e18, address(0), address(_borrower), _r3);
 
         assertEq(_pool.hpb(), priceHighest);
         assertEq(_pool.lup(), priceLow);

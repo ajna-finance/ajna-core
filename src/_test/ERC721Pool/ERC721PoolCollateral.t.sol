@@ -140,7 +140,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         skip(46800);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p4000, 5_000 * 1e18);
-        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503);
+        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503, address(0), address(0), _r3);
 
         // check borrower state after borrowing
         (,, collateralDeposited, borrowerEncumbered, borrowerCollateralization,,) = _NFTSubsetPool.getBorrowerInfo(address(_borrower));
@@ -292,7 +292,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         uint256 borrowAmount = 2_000 * 1e18;
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p2503, borrowAmount);
-        _borrower.borrow(_NFTSubsetPool, borrowAmount, _p2503);
+        _borrower.borrow(_NFTSubsetPool, borrowAmount, _p2503, address(0), address(0), _r3);
 
         // check pool and borrower state after borrowing
         (borrowerDebt,, collateralDeposited, borrowerEncumbered, borrowerCollateralization,,) = _NFTSubsetPool.getBorrowerInfo(address(_borrower));
@@ -370,7 +370,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         // borrow from pool
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p4000, 5_000 * 1e18);
-        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503);
+        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503, address(0), address(0), _r3);
 
         // pass time to allow interest to accrue
         skip(82000);
@@ -514,7 +514,7 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         // borrow from pool
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _p4000, 5_000 * 1e18);
-        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503);
+        _borrower.borrow(_NFTSubsetPool, 5_000 * 1e18, _p2503, address(0), address(0), _r3);
 
         // pass time to allow interest to accrue
         skip(82000);

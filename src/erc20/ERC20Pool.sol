@@ -70,7 +70,7 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         emit AddCollateral(msg.sender, amount_);
     }
 
-    function borrow(uint256 amount_, uint256 limitPrice_) external override {
+    function borrow(uint256 amount_, uint256 limitPrice_, address oldPrev_, address newPrev_, uint256 radius_) external override {
         require(amount_ <= totalQuoteToken, "P:B:INSUF_LIQ");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
@@ -94,8 +94,9 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         if (borrower.debt == 0) totalBorrowers += 1;
         borrower.debt         += amount_ + fee;
         borrowers[msg.sender] = borrower; // save borrower to storage
+        updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
 
-        _updateInterestRate(curDebt);
+        _updateInterestRate(curDebt); 
 
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
@@ -125,7 +126,7 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         emit RemoveCollateral(msg.sender, amount_);
     }
 
-    function repay(uint256 maxAmount_) external override {
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_, uint256 radius_) external override {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) * quoteTokenScale;
         require(availableAmount >= maxAmount_, "P:R:INSUF_BAL");
 
@@ -147,9 +148,16 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         totalDebt       = curDebt;
 
         // borrower accounting
-        if (remainingDebt == 0) totalBorrowers -= 1;
         borrower.debt         = remainingDebt;
         borrowers[msg.sender] = borrower; // save borrower to storage
+        if (remainingDebt == 0) {
+            totalBorrowers -= 1;
+            removeLoanQueue(msg.sender, oldPrev_);
+        } else {
+            updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
+        }
+        
+
 
         _updateInterestRate(curDebt);
 
