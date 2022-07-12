@@ -5,7 +5,7 @@ import { IQueue } from "./interfaces/IQueue.sol";
 
 abstract contract Queue is IQueue {
 
-    address public override head;
+    address public override loanQueueHead;
 
     mapping(address => LoanInfo) public override loans;
 
@@ -14,8 +14,8 @@ abstract contract Queue is IQueue {
     /************************/
 
     function getHighestThresholdPrice() external override view returns (uint256 thresholdPrice){
-        if (head != address(0)) {
-            return loans[head].thresholdPrice;
+        if (loanQueueHead != address(0)) {
+            return loans[loanQueueHead].thresholdPrice;
         }
         return 0;
     }
@@ -64,7 +64,7 @@ abstract contract Queue is IQueue {
             (loan, oldPrevLoan, newPrevLoan)= _move(oldPrev_, oldPrevLoan, newPrev_, newPrevLoan);
             loan.thresholdPrice = thresholdPrice_;
 
-        } else if (head != address(0)) {
+        } else if (loanQueueHead != address(0)) {
             // loan doesn't exist, other loans in queue
             require(oldPrev_ == address(0), "B:U:ALRDY_IN_QUE");
 
@@ -75,14 +75,14 @@ abstract contract Queue is IQueue {
                 newPrevLoan.next = borrower_;
 
             } else {
-                loan.next = head;
-                head = borrower_;
+                loan.next = loanQueueHead;
+                loanQueueHead = borrower_;
             }
         } else {
 
             // first loan in queue
             require(oldPrev_ == address(0) || newPrev_ == address(0), "B:U:PREV_SHD_B_ZRO");
-            head = borrower_;
+            loanQueueHead = borrower_;
             loan.thresholdPrice = thresholdPrice_;
         }
 
@@ -98,8 +98,8 @@ abstract contract Queue is IQueue {
 
     function removeLoanQueue(address borrower_, address oldPrev_) internal {
         require(oldPrev_ == address(0) || loans[oldPrev_].next == borrower_);
-        if (head == borrower_) {
-            head = loans[borrower_].next;
+        if (loanQueueHead == borrower_) {
+            loanQueueHead = loans[borrower_].next;
         }
 
         loans[oldPrev_].next = loans[borrower_].next;
@@ -112,9 +112,9 @@ abstract contract Queue is IQueue {
         address borrower;
 
         if (oldPrev_ == address(0)) {
-            loan = loans[head];
-            borrower = head;
-            head = loan.next;
+            loan = loans[loanQueueHead];
+            borrower = loanQueueHead;
+            loanQueueHead = loan.next;
         } else {
             loan = loans[oldPrevLoan_.next];
             borrower = oldPrevLoan_.next;
@@ -122,8 +122,8 @@ abstract contract Queue is IQueue {
         }
 
         if (newPrev_ == address(0)) {
-            loan.next = head;
-            head = borrower;
+            loan.next = loanQueueHead;
+            loanQueueHead = borrower;
         } else {
             loan.next = newPrevLoan_.next;
             newPrevLoan_.next = borrower;

@@ -12,7 +12,7 @@ import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
 import { DSTestPlus } from "./utils/DSTestPlus.sol";
 
-contract BorrowQueueTest is DSTestPlus {
+contract LoanQueueTest is DSTestPlus {
 
     address            internal _poolAddress;
     CollateralToken    internal _collateral;
@@ -78,7 +78,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
         assertEq(Maths.wdiv(debt, collateral), _pool.getHighestThresholdPrice());
     }
 
@@ -93,7 +93,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
     }
 
     function testMoveLoanToHeadInQueue() public {
@@ -107,7 +107,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
 
         // borrower2 replaces borrower as head
         _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
@@ -115,14 +115,14 @@ contract BorrowQueueTest is DSTestPlus {
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
         assertEq(address(next), address(_borrower));
-        assertEq(address(_borrower2), address(_pool.head()));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
         // borrower replaces borrower2 as head
         _borrower.borrow(_pool, 10_000 * 1e18, 2_000 * 1e18, address(_borrower2), address(0), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(_borrower2));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
     }
 
     function testMoveLoanInQueue() public {
@@ -136,7 +136,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
 
         // *borrower2(HEAD)* -> borrower
         _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
@@ -144,7 +144,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
         assertEq(address(next), address(_borrower));
-        assertEq(address(_borrower2), address(_pool.head()));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
         // borrower2(HEAD) -> borrower -> *borrower3*
         _borrower3.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
@@ -152,14 +152,14 @@ contract BorrowQueueTest is DSTestPlus {
 
         (thresholdPrice, next) = _pool.loans(address(_borrower3));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower2), address(_pool.head()));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
         // borrower2(HEAD) -> borrower3 -> *borrower*
         _borrower.repay(_pool, 10_000 * 1e18, address(_borrower2), address(_borrower3), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower2), address(_pool.head())); 
+        assertEq(address(_borrower2), address(_pool.loanQueueHead())); 
     }
 
     function testupdateLoanQueueRemoveCollateral() public {
@@ -174,7 +174,7 @@ contract BorrowQueueTest is DSTestPlus {
         (uint256 debt, , uint256 collateral,,,,) = _pool.getBorrowerInfo(address(_borrower));
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
 
         _borrower.removeCollateral(_pool, 11 * 1e18, address(0), address(0), _r3);
@@ -182,7 +182,7 @@ contract BorrowQueueTest is DSTestPlus {
         (debt, , collateral,,,,) = _pool.getBorrowerInfo(address(_borrower));
         (thresholdPrice, next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
     }
 
@@ -198,7 +198,7 @@ contract BorrowQueueTest is DSTestPlus {
         (uint256 debt, , uint256 collateral,,,,) = _pool.getBorrowerInfo(address(_borrower));
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
 
         _borrower.addCollateral(_pool, 11 * 1e18, address(0), address(0), _r3);
@@ -206,7 +206,7 @@ contract BorrowQueueTest is DSTestPlus {
         (debt, , collateral,,,,) = _pool.getBorrowerInfo(address(_borrower));
         (thresholdPrice, next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
     }
 
@@ -223,7 +223,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
 
         // *borrower2(HEAD)* -> borrower
         _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
@@ -231,7 +231,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
         assertEq(address(next), address(_borrower));
-        assertEq(address(_borrower2), address(_pool.head()));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
         // borrower2(HEAD)
         _borrower.repay(_pool, 15_000.000961538461538462 * 1e18, address(_borrower2), address(0), _r3);
@@ -239,7 +239,7 @@ contract BorrowQueueTest is DSTestPlus {
         (thresholdPrice, next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
         assertEq(thresholdPrice, 0);
-        assertEq(address(_borrower2), address(_pool.head()));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
         (, next) = _pool.loans(address(_borrower2));
         assertEq(address(next), address(0));
@@ -259,7 +259,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
 
         // *borrower2(HEAD)* -> borrower
         _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
@@ -267,7 +267,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
         assertEq(address(next), address(_borrower));
-        assertEq(address(_borrower2), address(_pool.head()));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
         // borrower2(HEAD) -> borrower -> *borrower3*
         _borrower3.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
@@ -275,7 +275,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (thresholdPrice, next) = _pool.loans(address(_borrower3));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower2), address(_pool.head()));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
         // borrower2(HEAD) -> borrower -> borrower3 -> *borrower4*
         _borrower4.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
@@ -283,7 +283,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (thresholdPrice, next) = _pool.loans(address(_borrower4));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower2), address(_pool.head()));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
         // borrower2(HEAD) -> borrower -> borrower3 -> borrower4 -> *borrower5*
         _borrower5.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
@@ -291,7 +291,7 @@ contract BorrowQueueTest is DSTestPlus {
 
         (thresholdPrice, next) = _pool.loans(address(_borrower5));
         assertEq(address(next), address(0));
-        assertEq(address(_borrower2), address(_pool.head()));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
 
        // borrower2(HEAD) -> borrower -> borrower3 -> borrower4 -> borrower5 -> *borrower6*
@@ -305,7 +305,7 @@ contract BorrowQueueTest is DSTestPlus {
 
        (thresholdPrice, next) = _pool.loans(address(_borrower6));
        assertEq(address(next), address(0));
-       assertEq(address(_borrower2), address(_pool.head()));
+       assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
        (thresholdPrice, next) = _pool.loans(address(_borrower4));
        assertEq(address(next), address(_borrower5));
