@@ -61,11 +61,11 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), _p3010, 10_000 * 1e18, 99836282890);
+        emit AddQuoteToken(address(_lender), _p3010, 10_000 * 1e18, BucketMath.MAX_PRICE);
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
 
-        assertEq(_pool.htp(),      0);
-        assertEq(_pool.lupIndex(), 7388);
+        assertEq(_pool.htp(), 0);
+        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
         assertEq(_pool.treeSum(),                         10_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              10_000 * 1e18);
@@ -84,11 +84,11 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 20_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), 2_995.912459898389633881 * 1e18, 20_000 * 1e18, 99836282890);
+        emit AddQuoteToken(address(_lender), 2_995.912459898389633881 * 1e18, 20_000 * 1e18, BucketMath.MAX_PRICE);
         _lender.addQuoteToken(_pool, 20_000 * 1e18, 2551);
 
-        assertEq(_pool.htp(),      0);
-        assertEq(_pool.lupIndex(), 7388);
+        assertEq(_pool.htp(), 0);
+        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
         assertEq(_pool.treeSum(),                         30_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              30_000 * 1e18);
@@ -107,11 +107,11 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 40_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 40_000 * 1e18, 99836282890);
+        emit AddQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 40_000 * 1e18, BucketMath.MAX_PRICE);
         _lender.addQuoteToken(_pool, 40_000 * 1e18, 2549);
 
-        assertEq(_pool.htp(),      0);
-        assertEq(_pool.lupIndex(), 7388);
+        assertEq(_pool.htp(), 0);
+        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
         assertEq(_pool.treeSum(),                         70_000 * 1e18);
         assertEq(_pool.depositAccumulator(),              70_000 * 1e18);

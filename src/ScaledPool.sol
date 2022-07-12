@@ -355,7 +355,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     function lupIndex() external view returns (uint256) {
-        return 7388 - _lupIndex(0);
+        return _lupIndex(0);
     }
 
     function htp() external view returns (uint256) {

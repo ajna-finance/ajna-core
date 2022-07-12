@@ -66,7 +66,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, depositPriceLowest);
 
         assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 1_004_968_987.606512354182109771 * 1e18);
+        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
         assertEq(_pool.treeSum(),            50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),       0);
