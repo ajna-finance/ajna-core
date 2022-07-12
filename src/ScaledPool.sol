@@ -7,13 +7,13 @@ import { Clone } from "@clones/Clone.sol";
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-import { BorrowerQueue }    from "./BorrowerQueue.sol";
 import { FenwickTree } from "./FenwickTree.sol";
+import { Queue }       from "./Queue.sol";
 
 import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
-contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
+contract ScaledPool is Clone, FenwickTree, Queue {
     using SafeERC20 for ERC20;
 
     /**************/
@@ -154,7 +154,7 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function addCollateral(uint256 amount_, address oldPrevBorrower_, address newPrevBorrower_) external {
+    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external {
         _accruePoolInterest();
 
         // borrower accounting
@@ -162,14 +162,14 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
         _accrueBorrowerInterest(borrower);
         borrower.collateral += amount_;
 
-        _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrevBorrower_, newPrevBorrower_);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
 
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit AddCollateral(msg.sender, amount_);
     }
 
-    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrevBorrower_, address newPrevBorrower_) external {
+    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_, uint256 radius_) external {
 
         Borrower storage borrower = borrowers[msg.sender];
         uint256 lupId = _lupIndex(amount_);
@@ -193,14 +193,14 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
         lenderDebt         += amount_;
         depositAccumulator -= amount_;
 
-        _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrevBorrower_, newPrevBorrower_);
+        _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
 
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, newLup, amount_);
     }
 
-    function removeCollateral(uint256 amount_, address oldPrevBorrower_, address newPrevBorrower_) external {
+    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external {
         _accruePoolInterest();
 
         // borrower accounting
@@ -210,14 +210,14 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
         require(borrower.debt <= Maths.wmul(_lup(), borrower.collateral - amount_), "S:RC:NOT_ENOUGH_COLLATERAL");
         borrower.collateral -= amount_;
 
-        _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrevBorrower_, newPrevBorrower_);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
 
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
         emit RemoveCollateral(msg.sender, amount_);
     }
 
-    function repay(uint256 maxAmount_, address oldPrevBorrower_, address newPrevBorrower_) external {
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_, uint256 radius_) external {
         uint256 availableAmount = quoteToken().balanceOf(msg.sender) * quoteTokenScale;
         require(availableAmount >= maxAmount_, "S:R:INSUF_BAL");
 
@@ -236,7 +236,8 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
         borrowerDebt = curBorrowerDebt;
         lenderDebt   -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curBorrowerDebt), amount));
 
-        _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrevBorrower_, newPrevBorrower_);
+        if (borrower.debt == 0) _removeLoanQueue(msg.sender, oldPrev_);
+        else _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
 
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
@@ -248,26 +249,29 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
     /**************************/
 
     function _accruePoolInterest() internal {
-        uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
-        if (elapsed != 0) {
-            uint256 spr = Maths.wadToRay(interestRate) / SECONDS_PER_YEAR;
-            uint256 pendingInflator = Maths.rmul(inflatorSnapshot, Maths.rpow(Maths.RAY + spr, elapsed));
+        uint256 debt = borrowerDebt;
+        if (debt != 0) {
+            uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
+            if (elapsed != 0 ) {
+                uint256 spr = Maths.wadToRay(interestRate) / SECONDS_PER_YEAR;
+                uint256 pendingInflator = Maths.rmul(inflatorSnapshot, Maths.rpow(Maths.RAY + spr, elapsed));
 
-            uint256 newInterest = Maths.radToWadTruncate(Maths.wmul(lenderInterestFactor, borrowerDebt) * (pendingInflator - Maths.RAY));
-            uint256 newHtp = _htp();
-            if (newHtp != 0) {
-                uint256 htpIndex = _priceToIndex(newHtp);
-                uint256 depositAboveHtp = _prefixSum(htpIndex);
-                if (depositAboveHtp != 0) {
-                    uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
-                    _mult(htpIndex, lenderFactor);
+                uint256 newInterest = Maths.radToWadTruncate(Maths.wmul(lenderInterestFactor, debt) * (pendingInflator - Maths.RAY));
+                uint256 newHtp = _htp();
+                if (newHtp != 0) {
+                    uint256 htpIndex = _priceToIndex(newHtp);
+                    uint256 depositAboveHtp = _prefixSum(htpIndex);
+                    if (depositAboveHtp != 0) {
+                        uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
+                        _mult(htpIndex, lenderFactor);
+                    }
                 }
+
+                borrowerDebt = Maths.wmul(debt, pendingInflator);
+
+                inflatorSnapshot           = pendingInflator;
+                lastInflatorSnapshotUpdate = block.timestamp;
             }
-
-            borrowerDebt = Maths.wmul(borrowerDebt, pendingInflator);
-
-            inflatorSnapshot           = pendingInflator;
-            lastInflatorSnapshotUpdate = block.timestamp;
         }
     }
 
@@ -290,8 +294,8 @@ contract ScaledPool is BorrowerQueue, Clone, FenwickTree {
     }
 
     function _htp() internal view returns (uint256) {
-        if (head != address(0)) {
-            return loans[head].thresholdPrice;
+        if (loanQueueHead != address(0)) {
+            return loans[loanQueueHead].thresholdPrice;
         }
         return 0;
     }
