@@ -251,12 +251,12 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 amount = Maths.min(borrower.debt, maxAmount_);
         borrower.debt -= amount;
 
-        uint256 curBorrowerDebt = borrowerDebt - amount;
+        uint256 curBorrowerDebt = borrowerDebt;
         uint256 curLenderDebt   = lenderDebt;
 
-        curLenderDebt -= Maths.min(curLenderDebt, amount); // TODO clarify formula and get inline with sim
+        curLenderDebt -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curBorrowerDebt), amount));
 
-        borrowerDebt = curBorrowerDebt;
+        borrowerDebt = curBorrowerDebt - amount;
         lenderDebt   = curLenderDebt;
 
         if (borrower.debt == 0) _removeLoanQueue(msg.sender, oldPrev_);
@@ -274,6 +274,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     /**************************/
 
     function _accruePoolInterest() internal {
+        //TODO add inline with sim
         uint256 debt = borrowerDebt;
         if (debt != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
@@ -281,10 +282,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
                 uint256 spr = Maths.wadToRay(interestRate) / SECONDS_PER_YEAR;
                 uint256 pendingInflator = Maths.rmul(inflatorSnapshot, Maths.rpow(Maths.RAY + spr, elapsed));
 
-                uint256 newInterest = Maths.radToWadTruncate(debt * (Maths.rdiv(pendingInflator, inflatorSnapshot) - Maths.RAY));
                 uint256 newHtp = _htp();
                 if (newHtp != 0) {
-                    uint256 htpIndex = _priceToIndex(newHtp);
+                    uint256 newInterest     = Maths.radToWadTruncate(debt * (Maths.rdiv(pendingInflator, inflatorSnapshot) - Maths.RAY));
+                    uint256 htpIndex        = _priceToIndex(newHtp);
                     uint256 depositAboveHtp = _prefixSum(htpIndex);
                     if (depositAboveHtp != 0) {
                         uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
@@ -342,7 +343,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     function _lup() internal view returns (uint256) {
-        return  BucketMath.indexToPrice(int256(_lupIndex(0)) - 3232);
+        return _indexToPrice(_lupIndex(0));
     }
 
     /**************************/
