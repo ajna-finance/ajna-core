@@ -50,7 +50,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
-        _borrower.addCollateral(_pool, 10 * 1e18);
+        _borrower.addCollateral(_pool, 10 * 1e18, address(0), address(0), _r3);
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
@@ -63,7 +63,7 @@ contract ERC20PoolInflatorTest is DSTestPlus {
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
 
         skip(8200);
-        _borrower.removeCollateral(_pool, 1 * 1e18);
+        _borrower.removeCollateral(_pool, 1 * 1e18, address(0), address(0), _r3);
         (inflatorSnapshot, lastInflatorSnapshotUpdate) = assertPoolInflator(lastInflatorSnapshotUpdate);
     }
 

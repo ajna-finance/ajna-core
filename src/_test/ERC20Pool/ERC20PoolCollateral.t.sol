@@ -56,7 +56,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
     function testAddRemoveCollateral() external {
         // should revert if trying to remove collateral when no available
         vm.expectRevert("P:RC:AMT_GT_AVAIL_COLLAT");
-        _borrower.removeCollateral(_pool, 10 * 1e18);
+        _borrower.removeCollateral(_pool, 10 * 1e18, address(0), address(0), _r3);
         // lender deposits 20_000 DAI in 5 buckets each
         _lender.addQuoteToken(_pool, 20_000 * 1e18, _p5007);
 
@@ -76,7 +76,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 70 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit AddCollateral(address(_borrower), 70 * 1e18);
-        _borrower.addCollateral(_pool, 70 * 1e18);
+        _borrower.addCollateral(_pool, 70 * 1e18, address(0), address(0), _r3);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_borrower)), 30 * 1e18);
@@ -111,7 +111,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 30 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit AddCollateral(address(_borrower), 30 * 1e18);
-        _borrower.addCollateral(_pool, 30 * 1e18);
+        _borrower.addCollateral(_pool, 30 * 1e18, address(0), address(0), _r3);
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(deposited,          100 * 1e18);
         assertEq(borrowerEncumbered, 3.994220018622067025199328602 * 1e27);
@@ -123,11 +123,11 @@ contract ERC20PoolCollateralTest is DSTestPlus {
 
         // should revert if trying to remove all collateral deposited
         vm.expectRevert("P:RC:AMT_GT_AVAIL_COLLAT");
-        _borrower.removeCollateral(_pool, 100 * 1e18);
+        _borrower.removeCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
 
         // remove some collateral
         skip(46800);
-        _borrower.removeCollateral(_pool, 20 * 1e18);
+        _borrower.removeCollateral(_pool, 20 * 1e18, address(0), address(0), _r3);
         (, , deposited, borrowerEncumbered, borrowerCollateralization, , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(deposited,                 80 * 1e18);
         assertEq(borrowerEncumbered,        3.994578648196336715223476604 * 1e27);
@@ -179,7 +179,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower), 80 * 1e18);
         vm.expectEmit(true, false, false, true);
         emit RemoveCollateral(address(_borrower), 80 * 1e18);
-        _borrower.removeCollateral(_pool, 80 * 1e18);
+        _borrower.removeCollateral(_pool, 80 * 1e18, address(0), address(0), _r3);
         assertEq(_pool.getPoolCollateralization(), Maths.WAD);
         assertEq(actualUtilization,                _pool.getPoolActualUtilization());
         assertEq(targetUtilization,                _pool.getPoolTargetUtilization());
@@ -247,7 +247,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         skip(3600 * 24 + 1);
 
         // borrower takes a loan of 4000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 4_000 * 1e18, 3_000 * 1e18, address(0), address(0), _r3);
         assertEq(_pool.lup(), priceHigh);
 
@@ -316,8 +316,8 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 1_300 * 1e18, _p100);
 
         // borrowers deposit collateral
-        _borrower.addCollateral(_pool, 2 * 1e18);
-        _borrower2.addCollateral(_pool, 200 * 1e18);
+        _borrower.addCollateral(_pool, 2 * 1e18, address(0), address(0), _r3);
+        _borrower2.addCollateral(_pool, 200 * 1e18, address(0), address(0), _r3);
 
         // first borrower takes a loan of 12_000 DAI, pushing lup to 8_002.824356287850613262
         _borrower.borrow(_pool, 12_000 * 1e18, 8_000 * 1e18, address(0), address(0), _r3);

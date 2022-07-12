@@ -93,7 +93,7 @@ contract ERC20PoolTest is DSTestPlus {
         // add time to enable the inflator to update
         skip(8200);
 
-        _borrower.addCollateral(_pool, 2 * 1e18);
+        _borrower.addCollateral(_pool, 2 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 1000 * 1e18, 3000 * 1e18, address(0), address(0), _r3);
 
         assertGt(_pool.inflatorSnapshot(),           initialInflator);
@@ -114,7 +114,7 @@ contract ERC20PoolTest is DSTestPlus {
 
         skip(820000);
 
-        _borrower.addCollateral(_pool, 200 * 1e18);
+        _borrower.addCollateral(_pool, 200 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 1000 * 1e18, 3000 * 1e18, address(0), address(0), _r3);
 
         skip(820000);
@@ -162,9 +162,9 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(_pool.getPoolMinDebtAmount(), 0);
         assertEq(_pool.totalBorrowers(),       0);
 
-        _borrower.addCollateral(_pool, 200 * 1e18);
-        _borrower1.addCollateral(_pool, 200 * 1e18);
-        _borrower2.addCollateral(_pool, 200 * 1e18);
+        _borrower.addCollateral(_pool, 200 * 1e18, address(0), address(0), _r3);
+        _borrower1.addCollateral(_pool, 200 * 1e18, address(0), address(0), _r3);
+        _borrower2.addCollateral(_pool, 200 * 1e18, address(0), address(0), _r3);
 
         _borrower.borrow(_pool, 100 * 1e18, 3000 * 1e18, address(0), address(0), _r3);
 

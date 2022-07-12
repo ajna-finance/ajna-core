@@ -61,8 +61,8 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _lender.liquidate(_pool, address(_borrower));
 
         // borrowers deposit collateral
-        _borrower.addCollateral(_pool, 2 * 1e18);
-        _borrower2.addCollateral(_pool, 200 * 1e18);
+        _borrower.addCollateral(_pool, 2 * 1e18, address(0), address(0), _r3);
+        _borrower2.addCollateral(_pool, 200 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), 0);
@@ -254,8 +254,8 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 1_300 * 1e18, priceLow);
 
         // borrowers deposit collateral
-        _borrower.addCollateral(_pool, 2 * 1e18);
-        _borrower2.addCollateral(_pool, 200 * 1e18);
+        _borrower.addCollateral(_pool, 2 * 1e18, address(0), address(0), _r3);
+        _borrower2.addCollateral(_pool, 200 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHighest);
         assertEq(_pool.lup(), 0);
@@ -393,8 +393,8 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 12_500 * 1e18, priceLow);
 
         // borrowers deposit collateral
-        _borrower.addCollateral(_pool, 2 * 1e18);
-        _borrower2.addCollateral(_pool, 200 * 1e18);
+        _borrower.addCollateral(_pool, 2 * 1e18, address(0), address(0), _r3);
+        _borrower2.addCollateral(_pool, 200 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHighest);
         assertEq(_pool.lup(), 0);

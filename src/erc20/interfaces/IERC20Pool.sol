@@ -88,13 +88,13 @@ interface IERC20Pool is IPool {
      *  @notice Called by borrowers to add collateral to the pool.
      *  @param  amount_ The amount of collateral in deposit tokens to be added to the pool.
      */
-    function addCollateral(uint256 amount_) external;
+    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external;
 
     /**
      *  @notice Called by borrowers to remove an amount of collateral.
      *  @param  amount_ The amount of collateral in deposit tokens to be removed from a position.
      */
-    function removeCollateral(uint256 amount_) external;
+    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external;
 
     /***********************************/
     /*** Borrower View Functions ***/

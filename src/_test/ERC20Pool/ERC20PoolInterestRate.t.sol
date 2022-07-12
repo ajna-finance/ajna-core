@@ -52,7 +52,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 30_000 * 1e18, priceLow);
 
         // borrower deposits 4000 MKR collateral and draws debt
-        _borrower.addCollateral(_pool, 4_000 * 1e18);
+        _borrower.addCollateral(_pool, 4_000 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 53_000 * 1e18, 2_500 * 1e18, address(0), address(0), _r3);
 
         skip(46800);
@@ -82,7 +82,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, _p100);
         skip(864000);
 
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.interestRate(),       0.055 * 1e18);
@@ -117,7 +117,7 @@ contract ERC20PoolInterestRateTest is DSTestPlus {
         skip(14);
 
         // borrower utilizes the entire pool
-        _borrower.addCollateral(_pool, 0.000284548895761533 * 1e18);
+        _borrower.addCollateral(_pool, 0.000284548895761533 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 1 * 1e18 - 0.000961538461538462 * 1e18, 0, address(0), address(0), _r3); // borrow 1 minus fee
         uint256 lastRate = _pool.interestRate();
         skip(3600 * 24);
@@ -169,7 +169,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, _p100);
         skip(864000);
 
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
     }
 
@@ -182,7 +182,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
 
         // no update if less than 12 hours passed
         skip(36000);
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         assertEq(_pool.interestRate(),       0.055 * 1e18);
         assertEq(_pool.interestRateUpdate(), 864000);
 
@@ -190,7 +190,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
         skip(36000);
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.055 * 1e18, 0.0605 * 1e18);
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         assertEq(_pool.interestRate(),       0.0605 * 1e18);
         assertEq(_pool.interestRateUpdate(), 936000);
     }
@@ -226,7 +226,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
 
         // no update if less than 12 hours passed
         skip(36000);
-        _borrower.removeCollateral(_pool, 1 * 1e18);
+        _borrower.removeCollateral(_pool, 1 * 1e18, address(0), address(0), _r3);
         assertEq(_pool.interestRate(),       0.055 * 1e18);
         assertEq(_pool.interestRateUpdate(), 864000);
 
@@ -234,7 +234,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
         skip(36000);
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.055 * 1e18, 0.0605 * 1e18);
-        _borrower.removeCollateral(_pool, 1 * 1e18);
+        _borrower.removeCollateral(_pool, 1 * 1e18, address(0), address(0), _r3);
         assertEq(_pool.interestRate(),       0.0605 * 1e18);
         assertEq(_pool.interestRateUpdate(), 936000);
     }
@@ -317,7 +317,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
         _lender.removeQuoteToken(_pool, 5_000 * 1e18, _p2503);
         assertEq(_pool.interestRate(),       0.055 * 1e18);
         assertEq(_pool.interestRateUpdate(), 864000);
-        _borrower.addCollateral(_pool, 1_000 * 1e18);
+        _borrower.addCollateral(_pool, 1_000 * 1e18, address(0), address(0), _r3);
 
         // update if more than 12 hours passed
         skip(36000);
@@ -332,7 +332,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
      *  @notice Test interest rate updates on liquidate action.
      */
     function testUpdateInterestRateOnLiquidate() external {
-        _borrower1.addCollateral(_pool, 1_000 * 1e18);
+        _borrower1.addCollateral(_pool, 1_000 * 1e18, address(0), address(0), _r3);
         _borrower1.borrow(_pool, 60_000 * 1e18, 1 * 1e18, address(0), address(_borrower), _r3);
 
         assertEq(_pool.interestRate(),       0.055 * 1e18);
@@ -350,7 +350,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
      *  @notice Test interest rate updates on purchase bid action.
      */
     function testUpdateInterestRateOnPurchaseBid() external {
-        _borrower1.addCollateral(_pool, 1_000 * 1e18);
+        _borrower1.addCollateral(_pool, 1_000 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.interestRate(),       0.055 * 1e18);
         assertEq(_pool.interestRateUpdate(), 864000);
@@ -374,7 +374,7 @@ contract ERC20PoolInterestRateTriggerTest is DSTestPlus {
      *  @notice Test interest rate updates on claim collateral bid action.
      */
     function testUpdateInterestRateOnClaimCollateral() external {
-        _borrower1.addCollateral(_pool, 1_000 * 1e18);
+        _borrower1.addCollateral(_pool, 1_000 * 1e18, address(0), address(0), _r3);
         _borrower1.borrow(_pool, 60_000 * 1e18, 1 * 1e18, address(0), address(_borrower), _r3);
 
         _lender.liquidate(_pool, address(_borrower));

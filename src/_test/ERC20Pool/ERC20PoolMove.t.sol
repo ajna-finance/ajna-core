@@ -175,7 +175,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_466_756.126702504695020000 * 1e18);
 
         // borrower deposit 10 MKR collateral, borrows 15_000 DAI
-        _borrower.addCollateral(_pool, 10 * 1e18);
+        _borrower.addCollateral(_pool, 10 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 15_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -237,7 +237,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposit 100 MKR collateral, borrows 35_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -300,7 +300,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 35_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -360,7 +360,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 31_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 31_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -428,7 +428,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 35_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -488,7 +488,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 35_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 35_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -551,7 +551,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   147_436_544.669302615327894500 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 31_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 31_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -617,7 +617,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 46_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -690,7 +690,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 31_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 31_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -764,7 +764,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 46_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -833,7 +833,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 46_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -896,7 +896,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 46_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -959,7 +959,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR collateral, borrows 46_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -1023,7 +1023,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposit 100 MKR, borrows 46_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -1079,7 +1079,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR, borrows 46_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 46_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -1140,7 +1140,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   170_553_265.286923014650070000 * 1e18);
 
         // borrower deposits 100 MKR, borrows 31_000 DAI
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 31_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 
@@ -1237,7 +1237,7 @@ contract ERC20PoolMoveQuoteTokenTest is DSTestPlus {
         assertEq(_pool.pdAccumulator(),   27_537_038.408453861794539000 * 1e18);
 
         // borrower deposit 10 MKR collateral, borrows 2_000 DAI
-        _borrower.addCollateral(_pool, 10 * 1e18);
+        _borrower.addCollateral(_pool, 10 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 2_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
         skip(864000);
 

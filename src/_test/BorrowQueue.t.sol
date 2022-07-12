@@ -71,7 +71,7 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(0, _pool.getHighestThresholdPrice());
 
         // borrow and insert into the Queue
-        _borrower.addCollateral(_pool, 51 * 1e18);
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         (uint256 debt, ,uint256 collateral, , , , ) = _pool.getBorrowerInfo(address(_borrower));
@@ -88,7 +88,7 @@ contract BorrowQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         // borrow max possible from hdp
-        _borrower.addCollateral(_pool, 51 * 1e18);
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         (, address next) = _pool.loans(address(_borrower));
@@ -102,7 +102,7 @@ contract BorrowQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         // borrower becomes head
-        _borrower.addCollateral(_pool, 51 * 1e18);
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 15_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -110,7 +110,7 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.head()));
 
         // borrower2 replaces borrower as head
-        _borrower2.addCollateral(_pool, 51 * 1e18);
+        _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower2.borrow(_pool, 20_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -131,7 +131,7 @@ contract BorrowQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         // *borrower(HEAD)*
-        _borrower.addCollateral(_pool, 51 * 1e18);
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 15_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -139,7 +139,7 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.head()));
 
         // *borrower2(HEAD)* -> borrower
-        _borrower2.addCollateral(_pool, 51 * 1e18);
+        _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower2.borrow(_pool, 20_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -147,7 +147,7 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(address(_borrower2), address(_pool.head()));
 
         // borrower2(HEAD) -> borrower -> *borrower3*
-        _borrower3.addCollateral(_pool, 51 * 1e18);
+        _borrower3.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower3.borrow(_pool, 10_000 * 1e18, 2_000 * 1e18,  address(0), address(_borrower), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower3));
@@ -162,14 +162,63 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(address(_borrower2), address(_pool.head())); 
     }
 
+    function testupdateLoanQueueRemoveCollateral() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
+
+        // *borrower(HEAD)*
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
+        _borrower.borrow(_pool, 15_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
+
+        (uint256 debt, , uint256 collateral,,,,) = _pool.getBorrowerInfo(address(_borrower));
+        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        assertEq(address(next), address(0));
+        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
+
+        _borrower.removeCollateral(_pool, 11 * 1e18, address(0), address(0), _r3);
+
+        (debt, , collateral,,,,) = _pool.getBorrowerInfo(address(_borrower));
+        (thresholdPrice, next) = _pool.loans(address(_borrower));
+        assertEq(address(next), address(0));
+        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
+    }
+
+    function testupdateLoanQueueAddCollateral() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
+
+        // *borrower(HEAD)*
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
+        _borrower.borrow(_pool, 15_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
+
+        (uint256 debt, , uint256 collateral,,,,) = _pool.getBorrowerInfo(address(_borrower));
+        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        assertEq(address(next), address(0));
+        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
+
+        _borrower.addCollateral(_pool, 11 * 1e18, address(0), address(0), _r3);
+
+        (debt, , collateral,,,,) = _pool.getBorrowerInfo(address(_borrower));
+        (thresholdPrice, next) = _pool.loans(address(_borrower));
+        assertEq(address(next), address(0));
+        assertEq(address(_borrower), address(_pool.head()));
+        assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
+    }
+
     // TODO: write test where we remove the head (oldPrev_ == 0)
+    // TODO: write test for removal during/after liquidation
     function testRemoveLoanInQueue() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         // *borrower(HEAD)*
-        _borrower.addCollateral(_pool, 51 * 1e18);
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 15_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3 );
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -177,7 +226,7 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.head()));
 
         // *borrower2(HEAD)* -> borrower
-        _borrower2.addCollateral(_pool, 51 * 1e18);
+        _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower2.borrow(_pool, 20_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -195,14 +244,17 @@ contract BorrowQueueTest is DSTestPlus {
         (, next) = _pool.loans(address(_borrower2));
         assertEq(address(next), address(0));
     }
-    
+
+    // TODO: write test with radius of 0 
+    // TODO: write test with decimal radius
+    // TODO: write test with radius larger than queue
     function testRadiusInQueue() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
         // *borrower(HEAD)*
-        _borrower.addCollateral(_pool, 51 * 1e18);
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower.borrow(_pool, 15_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -210,7 +262,7 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.head()));
 
         // *borrower2(HEAD)* -> borrower
-        _borrower2.addCollateral(_pool, 51 * 1e18);
+        _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower2.borrow(_pool, 20_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -218,7 +270,7 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(address(_borrower2), address(_pool.head()));
 
         // borrower2(HEAD) -> borrower -> *borrower3*
-        _borrower3.addCollateral(_pool, 51 * 1e18);
+        _borrower3.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower3.borrow(_pool, 10_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower3));
@@ -226,7 +278,7 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(address(_borrower2), address(_pool.head()));
 
         // borrower2(HEAD) -> borrower -> borrower3 -> *borrower4*
-        _borrower4.addCollateral(_pool, 51 * 1e18);
+        _borrower4.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower4.borrow(_pool, 5_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower3), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower4));
@@ -234,7 +286,7 @@ contract BorrowQueueTest is DSTestPlus {
         assertEq(address(_borrower2), address(_pool.head()));
 
         // borrower2(HEAD) -> borrower -> borrower3 -> borrower4 -> *borrower5*
-        _borrower5.addCollateral(_pool, 51 * 1e18);
+        _borrower5.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
         _borrower5.borrow(_pool, 2_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower4), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower5));
@@ -243,7 +295,7 @@ contract BorrowQueueTest is DSTestPlus {
 
 
        // borrower2(HEAD) -> borrower -> borrower3 -> borrower4 -> borrower5 -> *borrower6*
-       _borrower6.addCollateral(_pool, 51 * 1e18);
+       _borrower6.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
        // newPrev passed in is incorrect & radius is too small, revert
        vm.expectRevert("B:S:SRCH_RDS_FAIL");
        _borrower6.borrow(_pool, 1_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), _r1);
@@ -265,4 +317,9 @@ contract BorrowQueueTest is DSTestPlus {
        assertEq(address(next), address(_borrower3));
 
     }
+
+
+
+
+
 }

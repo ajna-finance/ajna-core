@@ -496,7 +496,7 @@ contract PositionManagerTest is DSTestPlus {
         mintAndApproveCollateralTokens(testBorrower, collateralToMint);
 
         // add collateral and borrow against it
-        testBorrower.addCollateral(_pool, collateralToMint);
+        testBorrower.addCollateral(_pool, collateralToMint, address(0), address(0), _r3);
         testBorrower.borrow(_pool, 2_500 * 1e18, _p10016, address(0), address(0), _r3);
 
         // check pool state

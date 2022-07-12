@@ -102,7 +102,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)), 190_000 * _quotePrecision);
 
         // borrow 10_000 quote token with 6 decimal precision
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_borrower), 10_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
@@ -195,7 +195,7 @@ contract ERC20PoolPrecisionTest is DSTestPlus {
         assertRemoveCollateral();
         vm.expectEmit(true, true, false, true);
         emit RemoveCollateral(address(_borrower), 0.499944601428501671 * 10**18);
-        _borrower.removeCollateral(_pool, 0.499944601428501671 * 1e18);
+        _borrower.removeCollateral(_pool, 0.499944601428501671 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), BUCKET_PRICE);
         assertEq(_pool.lup(), BUCKET_PRICE);

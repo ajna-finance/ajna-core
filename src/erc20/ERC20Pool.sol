@@ -55,13 +55,16 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function addCollateral(uint256 amount_) external override {
+    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external override {
         // pool level accounting
         (uint256 curDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
         totalCollateral += amount_;
 
         // borrower accounting
-        borrowers[msg.sender].collateralDeposited += amount_;
+        BorrowerInfo memory borrower = borrowers[msg.sender];
+        borrower.collateralDeposited += amount_;
+        if (borrower.debt != 0) updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
+        borrowers[msg.sender] = borrower;
 
         _updateInterestRate(curDebt);
 
@@ -103,7 +106,7 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         emit Borrow(msg.sender, lup, amount_);
     }
 
-    function removeCollateral(uint256 amount_) external override {
+    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external override {
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         BorrowerInfo memory borrower = borrowers[msg.sender];
@@ -118,6 +121,8 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         // borrower accounting
         borrower.collateralDeposited -= amount_;
         borrowers[msg.sender]        = borrower; // save borrower to storage
+        if (borrower.debt != 0) updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
+
 
         _updateInterestRate(curDebt);
 

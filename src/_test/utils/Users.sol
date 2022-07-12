@@ -9,17 +9,17 @@ import { ERC721Pool } from "../../erc721/ERC721Pool.sol";
 
 contract UserWithCollateral {
 
-    function approveAndDepositTokenAsCollateral(IERC20 token_, ERC20Pool pool_, uint256 amount_) public {
+    function approveAndDepositTokenAsCollateral(IERC20 token_, ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) public {
         token_.approve(address(pool_), amount_);
-        pool_.addCollateral(amount_);
+        pool_.addCollateral(amount_, oldPrev_, newPrev_, radius_);
     }
 
     function approveToken(IERC20 token_, address spender_, uint256 amount_) public {
         token_.approve(spender_, amount_);
     }
 
-    function addCollateral(ERC20Pool pool_, uint256 amount_) public {
-        pool_.addCollateral(amount_);
+    function addCollateral(ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.addCollateral(amount_, oldPrev_, newPrev_, radius_);
     }
 
     function borrow(ERC20Pool pool_, uint256 amount_, uint256 price_, address oldPrev_, address newPrev_, uint256 radius_) public {
@@ -34,8 +34,8 @@ contract UserWithCollateral {
         pool_.repay(amount_, oldPrev_, newPrev_, radius_);
     }
 
-    function removeCollateral(ERC20Pool pool_, uint256 amount_) public {
-        pool_.removeCollateral(amount_);
+    function removeCollateral(ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.removeCollateral(amount_, oldPrev_, newPrev_, radius_);
     }
 
 }

@@ -61,7 +61,7 @@ contract ERC20PoolRepayTest is DSTestPlus {
         // borrower starts with 10_000 DAI and deposit 100 collateral
         _quote.mint(address(_borrower), 10_000 * 1e18);
         _borrower.approveToken(_quote, address(_pool), 100_000 * 1e18);
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), 0);
@@ -193,12 +193,12 @@ contract ERC20PoolRepayTest is DSTestPlus {
         // borrower starts with 10_000 DAI and deposit 100 collateral
         _quote.mint(address(_borrower), 10_000 * 1e18);
         _borrower.approveToken(_quote, address(_pool), 100_000 * 1e18);
-        _borrower.addCollateral(_pool, 100 * 1e18);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
 
         // borrower2 starts with 10_000 DAI and deposit 100 collateral
         _quote.mint(address(_borrower2), 10_000 * 1e18);
         _borrower2.approveToken(_quote, address(_pool), 100_000 * 1e18);
-        _borrower2.addCollateral(_pool, 100 * 1e18);
+        _borrower2.addCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
 
         assertEq(_pool.hpb(), priceHigh);
         assertEq(_pool.lup(), 0);
@@ -430,10 +430,10 @@ contract ERC20PoolRepayTest is DSTestPlus {
         assertEq(depositedCollateral, 100 * 1e18);
 
         // remove deposited collateral
-        _borrower.removeCollateral(_pool, 100 * 1e18);
+        _borrower.removeCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         assertEq(_collateral.balanceOf(address(_borrower)), 100 * 1e18);
 
-        _borrower2.removeCollateral(_pool, 100 * 1e18);
+        _borrower2.removeCollateral(_pool, 100 * 1e18, address(0), address(0), _r3);
         assertEq(_collateral.balanceOf(address(_borrower2)), 100 * 1e18);
     }
 
