@@ -14,7 +14,7 @@ def test_quote_deposit_scaled(
 ):
     with test_utils.GasWatcher(["addQuoteToken"]):
         txes = []
-        for i in reversed(range(4830, 4850)):
+        for i in reversed(range(2550, 2530)):
             tx = scaled_pool.addQuoteToken(100 * 10**18, i, {"from": lenders[0]})
             txes.append(tx)
         with capsys.disabled():
@@ -25,6 +25,7 @@ def test_quote_deposit_scaled(
                 print(f"Transaction: {i} | {test_utils.get_usage(txes[i].gas_used)}")
 
 
+@pytest.mark.skip
 def test_borrow_scaled(
     lenders,
     borrowers,
