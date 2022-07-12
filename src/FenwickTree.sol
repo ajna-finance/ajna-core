@@ -7,8 +7,8 @@ import { Maths } from "./libraries/Maths.sol";
 abstract contract FenwickTree {
     uint256 public constant SIZE = 8192;
 
-    uint256[8193] public _v; // values
-    uint256[8193] public _s; // scaling
+    uint256[8193] public _values;  // values
+    uint256[8193] public _scaling; // scaling
 
     function _scale(uint256 i_) internal view returns (uint256 a_) {
         require(i_ >= 0 && i_ < SIZE, "FW:S:INVALID_INDEX");
@@ -16,7 +16,7 @@ abstract contract FenwickTree {
         a_ = Maths.WAD;
         uint256 scaled;
         while (i_ <= SIZE) {
-            scaled = _s[i_];
+            scaled = _scaling[i_];
             if (scaled != 0) a_ = Maths.wmul(a_, scaled);
             i_ += _lsb(i_);
         }
@@ -36,14 +36,14 @@ abstract contract FenwickTree {
         uint256 scaledJ;
 
         while (i_ > 0) {
-            scaledI =  _s[i_];
-            sum = scaledI != 0 ? sum + Maths.wmul(Maths.wmul(df, _v[i_]), scaledI) : sum + Maths.wmul(df, _v[i_]);
-            _s[i_] = scaledI != 0 ? Maths.wmul(f_, scaledI) : f_;
+            scaledI =  _scaling[i_];
+            sum = scaledI != 0 ? sum + Maths.wmul(Maths.wmul(df, _values[i_]), scaledI) : sum + Maths.wmul(df, _values[i_]);
+            _scaling[i_] = scaledI != 0 ? Maths.wmul(f_, scaledI) : f_;
             j = i_ + _lsb(i_);
             i_ -= _lsb(i_);
             while ((_lsb(j) < _lsb(i_)) || (i_ == 0 && j <= SIZE)) {
-                _v[j] += sum;
-                scaledJ = _s[j];
+                _values[j] += sum;
+                scaledJ = _scaling[j];
                 if (scaledJ != 0) sum = Maths.wmul(sum, scaledJ);
                 j += _lsb(j);
             }
@@ -64,9 +64,9 @@ abstract contract FenwickTree {
             if (((i_ - 1) & j) != 0) {
                 ii += j;
             } else {
-                scaled = _s[ii + j];
+                scaled = _scaling[ii + j];
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
-                _v[ii + j] += Maths.wdiv(x_, sc);
+                _values[ii + j] += Maths.wdiv(x_, sc);
             }
             j = j >> 1;
         }
@@ -86,9 +86,9 @@ abstract contract FenwickTree {
             if (((i_ - 1) & j) != 0) {
                 ii += j;
             } else {
-                scaled = _s[ii + j];
+                scaled = _scaling[ii + j];
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
-                _v[ii + j] -= Maths.wdiv(x_, sc);
+                _values[ii + j] -= Maths.wdiv(x_, sc);
             }
             j = j >> 1;
         }
@@ -103,9 +103,9 @@ abstract contract FenwickTree {
         uint256 scaled;
 
         while (j > 0 && ii + j <= SIZE) {
-            scaled = _s[ii + j];
+            scaled = _scaling[ii + j];
             if (i_ & j != 0) {
-                s_ = scaled != 0 ? s_ + Maths.wmul(Maths.wmul(sc, scaled), _v[ii + j]) : s_ + Maths.wmul(sc, _v[ii + j]);
+                s_ = scaled != 0 ? s_ + Maths.wmul(Maths.wmul(sc, scaled), _values[ii + j]) : s_ + Maths.wmul(sc, _values[ii + j]);
             } else {
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
             }
@@ -131,12 +131,12 @@ abstract contract FenwickTree {
         uint256 ssCond;
 
         while (i > 0) {
-            scaledMInc = _s[m_ + i];
-            ssCond = scaledMInc != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledMInc), _v[m_ + i]) : ss + Maths.wmul(sc, _v[m_ + i]);
+            scaledMInc = _scaling[m_ + i];
+            ssCond = scaledMInc != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledMInc), _values[m_ + i]) : ss + Maths.wmul(sc, _values[m_ + i]);
             if (ssCond < x_) {
                 m_ += i;
-                scaledM = _s[m_];
-                ss = scaledM != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledM), _v[m_]) : ss + Maths.wmul(sc, _v[m_]);
+                scaledM = _scaling[m_];
+                ss = scaledM != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledM), _values[m_]) : ss + Maths.wmul(sc, _values[m_]);
             } else {
                 if (scaledMInc != 0) sc = Maths.wmul(sc, scaledMInc);
             }
@@ -156,7 +156,7 @@ abstract contract FenwickTree {
     }
 
     function treeSum() external view returns (uint256) {
-        return _v[SIZE];
+        return _values[SIZE];
     }
 
     function get(uint256 i_) public view returns (uint256 m_) {
