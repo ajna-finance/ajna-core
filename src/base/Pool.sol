@@ -144,6 +144,7 @@ abstract contract Pool is IPool, Clone {
         emit Debug("decrementing by", lpTokens);
         lpBalance[msg.sender][price_] -= lpTokens; // FIXME: this blows up
         emit Debug("decremented lpBalance", lpTokens);
+        emit Debug("Ending lpBalance: ", lpBalance[msg.sender][price_]);
 
         _updateInterestRate(curDebt);
 
@@ -464,6 +465,7 @@ abstract contract Pool is IPool, Clone {
         uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
         amount_             = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
         lpTokens_           = Maths.rdiv(amount_, exchangeRate);                // RAY
+        // lpTokens_ = lpBalance_;
         amount_             = Maths.rayToWad(amount_);
 
         // bucket accounting
