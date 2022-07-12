@@ -22,6 +22,8 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
     using SafeERC20     for ERC20;
     using EnumerableSet for EnumerableSet.UintSet;
 
+    // event log_thing(string thing, address value);
+
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -63,7 +65,7 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         // borrower accounting
         BorrowerInfo memory borrower = borrowers[msg.sender];
         borrower.collateralDeposited += amount_;
-        if (borrower.debt != 0) updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRate(curDebt);
@@ -93,11 +95,14 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         totalQuoteToken -= amount_;
         totalDebt       = curDebt;
 
+        emit log_thing("msg.sender in borrow", msg.sender);
+        emit log_thing("newPrev in borrow", newPrev_);
+
         // borrower accounting
         if (borrower.debt == 0) totalBorrowers += 1;
         borrower.debt         += amount_ + fee;
         borrowers[msg.sender] = borrower; // save borrower to storage
-        updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
+        _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
 
         _updateInterestRate(curDebt); 
 
@@ -121,7 +126,7 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         // borrower accounting
         borrower.collateralDeposited -= amount_;
         borrowers[msg.sender]        = borrower; // save borrower to storage
-        if (borrower.debt != 0) updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
 
 
         _updateInterestRate(curDebt);
@@ -157,13 +162,11 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         borrowers[msg.sender] = borrower; // save borrower to storage
         if (remainingDebt == 0) {
             totalBorrowers -= 1;
-            removeLoanQueue(msg.sender, oldPrev_);
+            _removeLoanQueue(msg.sender, oldPrev_);
         } else {
-            updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
+            _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited), oldPrev_, newPrev_, radius_);
         }
         
-
-
         _updateInterestRate(curDebt);
 
         // move amount to repay from sender to pool

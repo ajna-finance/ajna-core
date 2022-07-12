@@ -82,6 +82,29 @@ contract LoanQueueTest is DSTestPlus {
         assertEq(Maths.wdiv(debt, collateral), _pool.getHighestThresholdPrice());
     }
 
+    function testBorrowerSelfRefLoanQueue() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
+
+        assertEq(0, _pool.getHighestThresholdPrice());
+
+        // borrow and insert into the Queue
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
+        _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
+
+        (uint256 debt, ,uint256 collateral, , , , ) = _pool.getBorrowerInfo(address(_borrower));
+
+        (, address next) = _pool.loans(address(_borrower));
+        assertEq(address(next), address(0));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        assertEq(Maths.wdiv(debt, collateral), _pool.getHighestThresholdPrice());
+
+        // borrow and insert into the Queue
+        vm.expectRevert("B:U:PNT_SELF_REF");
+        _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), _r3);
+    }
+
     function testAddLoanToQueue() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);

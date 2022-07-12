@@ -137,7 +137,8 @@ contract ERC721Pool is IERC721Pool, Pool, Queue {
         // borrower accounting
         if (borrower.debt == 0) totalBorrowers += 1;
         borrower.debt         += amount_ + fee;
-        updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited.length()), oldPrev_, newPrev_, radius_);
+
+        _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited.length()), oldPrev_, newPrev_, radius_);
 
         _updateInterestRate(curDebt);
 

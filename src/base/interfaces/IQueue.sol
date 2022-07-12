@@ -18,6 +18,11 @@ interface IQueue {
     /*** Queue Functions ***/
     /***********************************/
 
+    /**
+     *  @notice Returns the thresholdPrice of loanQueueHead.
+     *  @dev    If no loans in queue returns 0
+     *  @return thresholdPrice         debt / collateralDeposited of loanQueueHead.
+     */
     function getHighestThresholdPrice() external view returns (uint256 thresholdPrice);
  
 }
