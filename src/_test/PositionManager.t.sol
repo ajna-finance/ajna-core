@@ -160,7 +160,7 @@ contract PositionManagerTest is DSTestPlus {
         prices[1] = priceTwo;
         prices[2] = priceThree;
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId, testAddress, address(_pool), prices
+            tokenId, testAddress, prices
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
@@ -257,7 +257,7 @@ contract PositionManagerTest is DSTestPlus {
         prices[1] = priceTwo;
         prices[2] = priceThree;
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId1, testLender1, address(_pool), prices
+            tokenId1, testLender1, prices
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
@@ -306,7 +306,7 @@ contract PositionManagerTest is DSTestPlus {
         prices[0] = priceOne;
         prices[1] = priceFour;
         memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId2, testLender2, address(_pool), prices
+            tokenId2, testLender2, prices
         );
 
         vm.expectEmit(true, true, true, true);
@@ -771,5 +771,38 @@ contract PositionManagerTest is DSTestPlus {
     }
 
     function testGetPositionValueInQuoteTokens() external {}
+
+    function testMoveLiquidity() external {
+        // generate a new address
+        address testAddress = generateAddress();
+        uint256 mintAmount  = 10000 * 1e18;
+        uint256 mintPrice   = _p1004;
+        mintAndApproveQuoteTokens(testAddress, mintAmount);
+
+        uint256 tokenId = mintNFT(testAddress, address(_pool));
+
+        // add initial liquidity
+        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintPrice);
+
+        // check pool state
+        assertEq(_pool.lpBalance(testAddress, mintPrice),               0);
+        assertGt(_pool.lpBalance(address(_positionManager), mintPrice), 0);
+        assertEq(_pool.lpBalance(address(_positionManager), _p502),     0);
+
+        // construct move liquidity params
+        IPositionManager.MoveLiquidityParams memory moveLiquidityParams = IPositionManager.MoveLiquidityParams(
+            testAddress, tokenId, mintPrice, _p502
+        );
+
+        // move liquidity
+        vm.expectEmit(true, true, true, true);
+        emit MoveLiquidity(testAddress, tokenId);
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        // check pool state
+        assertEq(_pool.lpBalance(testAddress, mintPrice),               0);
+        assertEq(_pool.lpBalance(address(_positionManager), mintPrice), 0);
+        assertGt(_pool.lpBalance(address(_positionManager), _p502),     0);
+    }
 
 }
