@@ -47,6 +47,12 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     uint256 public constant WAD_WEEKS_PER_YEAR = 52 * 10**18;
     uint256 public constant SECONDS_PER_YEAR   = 3_600 * 24 * 365;
 
+    uint256 public constant RATE_INCREASE_COEFFICIENT = 1.1 * 10**18;
+    uint256 public constant RATE_DECREASE_COEFFICIENT = 0.9 * 10**18;
+    // lambda used for the EMAs calculated as exp(-1/7 * ln2)
+    uint256 public constant LAMBDA_EMA                = 0.905723664263906671 * 10**18;
+    uint256 public constant EMA_RATE_FACTOR           = 10**18 - LAMBDA_EMA;
+
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -64,6 +70,9 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     uint256 public quoteTokenScale;
 
     uint256 public depositAccumulator;
+
+    uint256 public debtEma;   // [WAD]
+    uint256 public lupColEma; // [WAD]
 
     /**
      *  @notice Mapping of buckets for a given pool
@@ -119,6 +128,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         _add(index_, amount_);
         depositAccumulator += amount_;
 
+        _updateInterestRate();
+
         // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, _lup());
@@ -145,6 +156,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         _remove(index_, amount);
         depositAccumulator -= amount;
 
+        _updateInterestRate();
+
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
@@ -164,6 +177,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
 
+        _updateInterestRate();
+
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit AddCollateral(msg.sender, amount_);
@@ -178,22 +193,26 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         _accruePoolInterest();
         _accrueBorrowerInterest(borrower);
 
-        uint256 fee   = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
-        uint256 debt  = Maths.wmul(amount_, fee);
-        borrower.debt += debt;
+        uint256 feeRate = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee) + Maths.WAD;
+        uint256 debt    = Maths.wmul(amount_, feeRate);
+        borrower.debt   += debt;
 
         uint256 newLup = _indexToPrice(lupId);
         require(_borrowerCollateralization(borrower.debt, borrower.collateral, newLup) >= Maths.WAD, "S:B:BUNDER_COLLAT");
+
+        uint256 curBorrowerDebt = borrowerDebt + debt;
         require(_poolCollateralization(
-            borrowerDebt, amount_, collateral().balanceOf(address(this)) / collateralScale, newLup) >= Maths.WAD,
+            curBorrowerDebt, amount_, collateral().balanceOf(address(this)) / collateralScale, newLup) >= Maths.WAD,
             "S:B:PUNDER_COLLAT"
         );
 
-        borrowerDebt       += borrowerDebt;
+        borrowerDebt       = curBorrowerDebt;
         lenderDebt         += amount_;
         depositAccumulator -= amount_;
 
         _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+
+        _updateInterestRate();
 
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
@@ -211,6 +230,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         borrower.collateral -= amount_;
 
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+
+        _updateInterestRate();
 
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
@@ -233,11 +254,15 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 curBorrowerDebt = borrowerDebt - amount;
         uint256 curLenderDebt   = lenderDebt;
 
+        curLenderDebt -= Maths.min(curLenderDebt, amount); // TODO clarify formula and get inline with sim
+
         borrowerDebt = curBorrowerDebt;
-        lenderDebt   -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curBorrowerDebt), amount));
+        lenderDebt   = curLenderDebt;
 
         if (borrower.debt == 0) _removeLoanQueue(msg.sender, oldPrev_);
         else _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+
+        _updateInterestRate();
 
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
@@ -256,7 +281,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
                 uint256 spr = Maths.wadToRay(interestRate) / SECONDS_PER_YEAR;
                 uint256 pendingInflator = Maths.rmul(inflatorSnapshot, Maths.rpow(Maths.RAY + spr, elapsed));
 
-                uint256 newInterest = Maths.radToWadTruncate(Maths.wmul(lenderInterestFactor, debt) * (pendingInflator - Maths.RAY));
+                uint256 newInterest = Maths.radToWadTruncate(debt * (Maths.rdiv(pendingInflator, inflatorSnapshot) - Maths.RAY));
                 uint256 newHtp = _htp();
                 if (newHtp != 0) {
                     uint256 htpIndex = _priceToIndex(newHtp);
@@ -280,6 +305,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
             borrower_.debt = Maths.wmul(borrower_.debt, Maths.wdiv(inflatorSnapshot, borrower_.inflatorSnapshot));
         }
         borrower_.inflatorSnapshot = inflatorSnapshot;
+    }
+
+    function _updateInterestRate() internal {
+        // TODO implement
     }
 
     function _borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) internal pure returns (uint256 collateralization_) {

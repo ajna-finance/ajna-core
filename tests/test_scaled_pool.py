@@ -36,8 +36,7 @@ def test_quote_deposit_remove_scaled(
                 print(f"Transaction: {i} | {test_utils.get_usage(remove_txes[i].gas_used)}")
 
 
-
-def test_borrow_scaled(
+def test_borrow_repay_scaled(
     lenders,
     borrowers,
     scaled_pool,
@@ -77,4 +76,18 @@ def test_borrow_scaled(
             print("==================================")
             for i in range(len(txes)):
                 print(f"Transaction: {i} | {test_utils.get_usage(txes[i].gas_used)}")
+
+        repay_txes = []
+        tx = scaled_pool.repay(110 * 10**18, '0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', 1, {"from": borrowers[0]})
+        repay_txes.append(tx)
+        tx = scaled_pool.repay(110 * 10**18, '0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', 1, {"from": borrowers[0]})
+        repay_txes.append(tx)
+        tx = scaled_pool.repay(50 * 10**18, '0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', 1, {"from": borrowers[0]})
+        repay_txes.append(tx)
+        with capsys.disabled():
+            print("\n==================================")
+            print(f"Gas estimations({inspect.stack()[0][3]})(repay in scaled pool):")
+            print("==================================")
+            for i in range(len(repay_txes)):
+                print(f"Transaction: {i} | {test_utils.get_usage(repay_txes[i].gas_used)}")
 

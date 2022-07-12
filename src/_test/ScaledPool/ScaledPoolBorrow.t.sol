@@ -26,7 +26,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
     function setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
-        _poolAddress = new ScaledPoolFactory().deployPool(address(_collateral), address(_quote),0.05 * 10**18 );
+        _poolAddress = new ScaledPoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ScaledPool(_poolAddress);
 
         _borrower   = new UserWithCollateralInScaledPool();
@@ -50,7 +50,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _lender1.approveToken(_quote, address(_pool), 200_000 * 1e18);
     }
 
-    function testScaledPoolBorrow() external {
+    function testScaledPoolBorrowAndRepay() external {
 
         uint256 depositPriceHighest = 2550;
         uint256 depositPriceHigh    = 2551;
@@ -69,6 +69,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.lupIndex(), 7388);
 
         assertEq(_pool.treeSum(),            50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(),       0);
         assertEq(_pool.lenderDebt(),         0);
         assertEq(_pool.depositAccumulator(), 50_000 * 1e18);
 
@@ -86,10 +87,11 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         emit Borrow(address(_borrower), 2_981.007422784467321543 * 1e18, 21_000 * 1e18);
         _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0), 1);
 
-        assertEq(_pool.htp(), 0.201923076923077020 * 1e18);
+        assertEq(_pool.htp(), 210.201923076923077020 * 1e18);
         assertEq(_pool.lupIndex(), 4836);
 
         assertEq(_pool.treeSum(),            50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(),       21_020.192307692307702000 * 1e18);
         assertEq(_pool.lenderDebt(),         21_000 * 1e18);
         assertEq(_pool.depositAccumulator(), 29_000 * 1e18);
 
@@ -128,16 +130,57 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         emit Borrow(address(_borrower), 2_966.176540084047110076 * 1e18, 19_000 * 1e18);
         _borrower.borrow(_pool, 19_000 * 1e18, 3500, address(0), address(0), 1);
 
-        assertEq(_pool.htp(), 0.384615384615384800 * 1e18);
+        assertEq(_pool.htp(), 400.384615384615384800 * 1e18);
         assertEq(_pool.lupIndex(), 4835);
 
         assertEq(_pool.treeSum(),            50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(),       40_038.461538461538480000 * 1e18);
         assertEq(_pool.lenderDebt(),         40_000 * 1e18);
         assertEq(_pool.depositAccumulator(), 10_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
+
+        // repay partial
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_borrower), address(_pool), 10_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Repay(address(_borrower), 0.033657201715239149 * 1e18, 10_000 * 1e18);
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), 1);
+
+        assertEq(_pool.htp(), 300.384615384615384800 * 1e18);
+        assertEq(_pool.lupIndex(), 4836);
+
+        assertEq(_pool.treeSum(),            50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(),       30_038.461538461538480000 * 1e18);
+        assertEq(_pool.lenderDebt(),         30_000 * 1e18);
+        assertEq(_pool.depositAccumulator(), 10_000 * 1e18);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   20_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
+
+        // repay entire loan
+        _quote.mint(address(_borrower), 40 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_borrower), address(_pool), 30_038.461538461538480000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Repay(address(_borrower), 99836282890, 30_038.461538461538480000 * 1e18);
+        _borrower.repay(_pool, 30_040 * 1e18, address(0), address(0), 1);
+
+        assertEq(_pool.htp(), 0);
+        assertEq(_pool.lupIndex(), 7388);
+
+        assertEq(_pool.treeSum(),            50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(),       0);
+        assertEq(_pool.lenderDebt(),         0);
+        assertEq(_pool.depositAccumulator(), 10_000 * 1e18);
+
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   50_038.461538461538480000 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
+
     }
 
 }
