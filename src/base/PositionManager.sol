@@ -214,6 +214,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         );
         pool.moveQuoteToken(maxQuote, params_.fromPrice, params_.toPrice);
 
+        // update prices set at which a position has liquidity
+        positionPrices[params_.tokenId].remove(params_.fromPrice);
+        positionPrices[params_.tokenId].add(params_.toPrice);
+
+
         emit MoveLiquidity(params_.owner, params_.tokenId);
     }
 
