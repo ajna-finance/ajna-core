@@ -214,14 +214,20 @@ interface IPool {
      *  @dev    Can only be called if quote tokens have already been added to the pool.
      *  @param  amount_     The amount of quote token to borrow.
      *  @param  limitPrice_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
+     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
+     *  @param  newPrev_ Previous borrower that now comes before placed loan (new).
+     *  @param  radius_  Distance checked to find lower thresholdPrice
      */
-    function borrow(uint256 amount_, uint256 limitPrice_, address oldPrev_, address newPrev_, uint256 radius) external;
+    function borrow(uint256 amount_, uint256 limitPrice_, address oldPrev_, address newPrev_, uint256 radius_) external;
 
     /**
      *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
      *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
+     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
+     *  @param  newPrev_ Previous borrower that now comes before placed loan (new).
+     *  @param  radius_  Distance checked to find lower thresholdPrice
      */
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_, uint256 radius) external;
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_, uint256 radius_) external;
 
     /*********************************/
     /*** Lender External Functions ***/

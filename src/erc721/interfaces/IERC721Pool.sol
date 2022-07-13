@@ -80,14 +80,20 @@ interface IERC721Pool is IPool {
     /**
      *  @notice Called by borrowers to add multiple NFTs to the pool.
      *  @param  tokenIds_ NFT token ids to be deposited as collateral in the pool.
+     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
+     *  @param  newPrev_ Previous borrower that now comes before placed loan (new).
+     *  @param  radius_  Distance checked to find lower thresholdPrice
      */
-    function addCollateral(uint256[] calldata tokenIds_) external;
+    function addCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_, uint256 radius_) external;
 
     /**
      *  @notice Called by borrowers to remove multiple NFTs from the pool.
      *  @param  tokenIds_ NFT token ids to be removed as collateral from the pool.
+     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
+     *  @param  newPrev_ Previous borrower that now comes before placed loan (new).
+     *  @param  radius_  Distance checked to find lower thresholdPrice
      */
-    function removeCollateral(uint256[] calldata tokenIds_) external;
+    function removeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_, uint256 radius_) external;
 
     /***********************************/
     /*** Borrower View Functions ***/

@@ -45,26 +45,29 @@ contract UserWithNFTCollateral {
     function approveAndDepositTokenAsCollateral(
         IERC721 token_,
         ERC721Pool pool_,
-        uint256 tokenId_
+        uint256 tokenId_,
+        address oldPrev_,
+        address newPrev_,
+        uint256 radius_
     ) public {
         token_.approve(address(pool_), tokenId_);
         uint[] memory tokens = new uint[](1);
         tokens[0] = tokenId_;
-        pool_.addCollateral(tokens);
+        pool_.addCollateral(tokens, oldPrev_, newPrev_, radius_);
     }
 
     function approveToken(IERC721 token_, address spender_, uint256 _tokenId) public {
         token_.approve(spender_, _tokenId);
     }
 
-    function addCollateral(ERC721Pool pool_, uint256 tokenId_) public {
+    function addCollateral(ERC721Pool pool_, uint256 tokenId_, address oldPrev_, address newPrev_, uint256 radius_) public {
         uint[] memory tokens = new uint[](1);
         tokens[0] = tokenId_;
-        pool_.addCollateral(tokens);
+        pool_.addCollateral(tokens, oldPrev_, newPrev_, radius_);
     }
 
-    function addCollateralMultiple(ERC721Pool pool_, uint256[] memory tokenIds_) public {
-        pool_.addCollateral(tokenIds_);
+    function addCollateralMultiple(ERC721Pool pool_, uint256[] memory tokenIds_, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.addCollateral(tokenIds_, oldPrev_, newPrev_, radius_);
     }
 
     function borrow(ERC721Pool pool_, uint256 amount_, uint256 price_, address oldPrev_, address newPrev_, uint256 radius_) public {
@@ -79,10 +82,10 @@ contract UserWithNFTCollateral {
         pool_.repay(amount_, oldPrev_, newPrev_, radius_);
     }
 
-    function removeCollateral(ERC721Pool pool_, uint256 tokenId_) public {
+    function removeCollateral(ERC721Pool pool_, uint256 tokenId_, address oldPrev_, address newPrev_, uint256 radius_) public {
         uint[] memory tokens = new uint[](1);
         tokens[0] = tokenId_;
-        pool_.removeCollateral(tokens);
+        pool_.removeCollateral(tokens, oldPrev_, newPrev_, radius_);
     }
 
     // Implementing this method allows contracts to receive ERC721 tokens

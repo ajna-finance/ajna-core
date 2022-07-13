@@ -72,16 +72,17 @@ contract ERC721PoolInterestRateTriggerTest is DSTestPlus {
         vm.prank((address(_borrower)));
         _tokenIds = new uint256[](1);
         _tokenIds[0] = 1;
-        _NFTSubsetPool.addCollateral(_tokenIds);
+        _NFTSubsetPool.addCollateral(_tokenIds, address(0), address(0), _r3);
         vm.prank((address(_borrower)));
         _tokenIds = new uint256[](1);
         _tokenIds[0] = 5;
-        _NFTSubsetPool.addCollateral(_tokenIds);
+        _NFTSubsetPool.addCollateral(_tokenIds, address(0), address(0), _r3);
         _borrower.borrow(_NFTSubsetPool, 6_000 * 1e18, _p2503, address(0), address(0), _r3);
     }
 
     /**
      *  @notice Test interest rate updates on add collateral action.
+
      */
     function testUpdateInterestRateOnAddCollateral() external {
     }

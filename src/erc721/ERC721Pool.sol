@@ -84,7 +84,7 @@ contract ERC721Pool is IERC721Pool, Pool, Queue {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function addCollateral(uint256[] calldata tokenIds_) external override {
+    function addCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_, uint256 radius_) external override {
 
         (uint256 curDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
@@ -110,6 +110,10 @@ contract ERC721Pool is IERC721Pool, Pool, Queue {
                 ++i;
             }
         }
+
+        NFTBorrowerInfo storage borrower = _NFTborrowers[msg.sender];
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited.length()), oldPrev_, newPrev_, radius_);
+
         emit AddNFTCollateral(msg.sender, tokenIds_);
     }
 
@@ -147,7 +151,7 @@ contract ERC721Pool is IERC721Pool, Pool, Queue {
         emit Borrow(msg.sender, lup, amount_);
     }
 
-    function removeCollateral(uint256[] calldata tokenIds_) external override {
+    function removeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_, uint256 radius_) external override {
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
@@ -182,6 +186,7 @@ contract ERC721Pool is IERC721Pool, Pool, Queue {
                 ++i;
             }
         }
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateralDeposited.length()), oldPrev_, newPrev_, radius_);
         emit RemoveNFTCollateral(msg.sender, tokenIds_);
     }
 

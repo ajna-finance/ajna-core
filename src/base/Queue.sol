@@ -22,9 +22,9 @@ abstract contract Queue is IQueue {
 
     /**
      *  @notice Called _updateLoanQueue if the newPrev_ position is incorrect
-     *  @param  radius_         Distance that should be checked to find lower thresholdPrice
+     *  @param  radius_         Distance checked to find lower thresholdPrice
      *  @param  thresholdPrice_ Debt / collateralDeposited
-     *  @param  newPrev__       Previous borrower that now comes before placed loan (new)
+     *  @param  newPrev_       Previous borrower that now comes before placed loan (new)
      *  @return prev_           Previous borrower that now comes before placed loan (new)
      *  @return prevLoan        Previous loan that now comes before placed loan (new)
      */
@@ -55,7 +55,7 @@ abstract contract Queue is IQueue {
      *  @param  thresholdPrice_  debt / collateralDeposited
      *  @param  oldPrev_         Previous borrower that came before placed loan (old)
      *  @param  newPrev_         Previous borrower that now comes before placed loan (new)
-     *  @param  radius_          Distance that should be checked to find lower thresholdPrice
+     *  @param  radius_          Distance checked to find lower thresholdPrice
      */
     function _updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) internal {
         require(oldPrev_ != borrower_ && newPrev_ != borrower_, "B:U:PNT_SELF_REF");
@@ -113,12 +113,9 @@ abstract contract Queue is IQueue {
 
 
     /**
-     *  @notice Called _updateLoanQueue if the newPrev_ position is incorrect
+     *  @notice Called _updateLoanQueue if borrower.debt == 0
      *  @param  borrower_        Borrower whose loan is being placed in queue
-     *  @param  thresholdPrice_  debt / collateralDeposited
      *  @param  oldPrev_         Previous borrower that came before placed loan (old)
-     *  @param  newPrev_         Previous borrower that now comes before placed loan (new)
-     *  @param  radius_          Distance that should be checked to find lower thresholdPrice
      */
     function _removeLoanQueue(address borrower_, address oldPrev_) internal {
         require(oldPrev_ == address(0) || loans[oldPrev_].next == borrower_);

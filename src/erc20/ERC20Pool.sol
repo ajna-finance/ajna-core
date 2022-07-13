@@ -95,9 +95,6 @@ contract ERC20Pool is IERC20Pool, Pool, Queue {
         totalQuoteToken -= amount_;
         totalDebt       = curDebt;
 
-        emit log_thing("msg.sender in borrow", msg.sender);
-        emit log_thing("newPrev in borrow", newPrev_);
-
         // borrower accounting
         if (borrower.debt == 0) totalBorrowers += 1;
         borrower.debt         += amount_ + fee;

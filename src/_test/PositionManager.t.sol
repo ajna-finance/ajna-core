@@ -608,7 +608,7 @@ contract PositionManagerTest is DSTestPlus {
         collateralToAdd[1] = 3;
         collateralToAdd[2] = 5;
         vm.prank((address(testBorrower)));
-        testBorrower.addCollateralMultiple(_NFTCollectionPool, collateralToAdd);
+        testBorrower.addCollateralMultiple(_NFTCollectionPool, collateralToAdd, address(0), address(0), _r3);
 
         // borrow against the pool
         vm.expectEmit(true, true, false, true);
