@@ -87,7 +87,7 @@ contract ERC721Pool is IERC721Pool, Pool {
 
         (uint256 curDebt, ) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // add tokenIds to the pool
         for (uint i; i < tokenIds_.length;) {
@@ -137,7 +137,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         if (borrower.debt == 0) totalBorrowers += 1;
         borrower.debt         += amount_ + fee;
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
@@ -159,7 +159,7 @@ contract ERC721Pool is IERC721Pool, Pool {
             "P:RC:AMT_GT_AVAIL_COLLAT"
         );
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // remove tokenIds from the pool
         for (uint i; i < tokenIds_.length;) {
@@ -202,7 +202,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         // lender accounting
         lpBalance[msg.sender][price_] -= claimedLpTokens;
 
-        _updateInterestRate(totalDebt);
+        _updateInterestRateAndEMAs(totalDebt);
 
         // claim tokenIds from the pool
         for (uint i; i < tokenIds_.length;) {
@@ -257,7 +257,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         totalQuoteToken -= amount_;
         totalCollateral += Maths.wad(usedTokens.length);
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // move required collateral from sender to pool
         for (uint i; i < collateralRequired;) {

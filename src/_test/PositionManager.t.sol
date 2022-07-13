@@ -106,7 +106,7 @@ contract PositionManagerTest is DSTestPlus {
     function testMint() external {
         uint256 mintAmount  = 50 * 1e18;
         uint256 mintPrice   = _p1004;
-        address testAddress = generateAddress();
+        address testAddress = _generateAddress();
 
         mintAndApproveQuoteTokens(testAddress, mintAmount);
 
@@ -134,7 +134,7 @@ contract PositionManagerTest is DSTestPlus {
      *              Attempts to set position owner when not owner of the LP tokens
      */
     function testMemorializePositions() external {
-        address testAddress = generateAddress();
+        address testAddress = _generateAddress();
         uint256 mintAmount  = 10000 * 1e18;
 
         mintAndApproveQuoteTokens(testAddress, mintAmount);
@@ -200,8 +200,8 @@ contract PositionManagerTest is DSTestPlus {
      *          LP tokens are checked to verify ownership of position.
      */
     function testMemorializeMultiple() external {
-        address testLender1 = generateAddress();
-        address testLender2 = generateAddress();
+        address testLender1 = _generateAddress();
+        address testLender2 = _generateAddress();
         uint256 mintAmount  = 10000 * 1e18;
 
         mintAndApproveQuoteTokens(testLender1, mintAmount);
@@ -360,7 +360,7 @@ contract PositionManagerTest is DSTestPlus {
      */
     function testIncreaseLiquidity() external {
         // generate a new address
-        address testAddress = generateAddress();
+        address testAddress = _generateAddress();
         uint256 mintAmount  = 10000 * 1e18;
         uint256 mintPrice   = _p1004;
         mintAndApproveQuoteTokens(testAddress, mintAmount);
@@ -404,8 +404,8 @@ contract PositionManagerTest is DSTestPlus {
      *          Recipient reverts: attempts to increase liquidity when not permited.
      */
     function testIncreaseLiquidityPermissions() external {
-        address recipient      = generateAddress();
-        address externalCaller = generateAddress();
+        address recipient      = _generateAddress();
+        address externalCaller = _generateAddress();
         uint256 tokenId        = mintNFT(recipient, address(_pool));
         uint256 mintAmount     = 10000 * 1e18;
         uint256 mintPrice      = 1000 * 10**18;
@@ -428,7 +428,7 @@ contract PositionManagerTest is DSTestPlus {
      */
     function testDecreaseLiquidityNoDebt() external {
         // generate a new address and set test params
-        address testAddress = generateAddress();
+        address testAddress = _generateAddress();
         uint256 mintAmount  = 10_000 * 1e18;
         uint256 mintPrice   = _p1004;
 
@@ -476,7 +476,7 @@ contract PositionManagerTest is DSTestPlus {
      */
     function testDecreaseLiquidityWithDebt() external {
         // generate a new address and set test params
-        address testLender      = generateAddress();
+        address testLender      = _generateAddress();
         uint256 mintAmount      = 50_000 * 1e18;
 
         mintAndApproveQuoteTokens(testLender, mintAmount);
@@ -670,8 +670,8 @@ contract PositionManagerTest is DSTestPlus {
      */
     function testNFTTransfer() external {
         // generate addresses and set test params
-        address testMinter      = generateAddress();
-        address testReceiver    = generateAddress();
+        address testMinter      = _generateAddress();
+        address testReceiver    = _generateAddress();
         uint256 testBucketPrice = _p10016;
         uint256 tokenId         = mintNFT(testMinter, address(_pool));
 
@@ -726,7 +726,7 @@ contract PositionManagerTest is DSTestPlus {
      */
     function testBurn() external {
         // generate a new address and set test params
-        address testAddress = generateAddress();
+        address testAddress = _generateAddress();
         uint256 mintAmount  = 10000 * 1e18;
         uint256 mintPrice   = _p1004;
 

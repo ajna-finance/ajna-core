@@ -849,8 +849,8 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         uint256 poolPendingDebt = _pool.totalDebt() + _pool.getPendingPoolInterest();
         (, uint256 borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower));
         assertEq(borrowerPendingDebt, poolPendingDebt);
-        assertLt(wadPercentDifference(bucketPendingDebt, borrowerPendingDebt), 0.000000000000000001 * 1e18);
-        assertLt(wadPercentDifference(bucketPendingDebt, poolPendingDebt),     0.000000000000000001 * 1e18);
+        assertLt(_wadPercentDifference(bucketPendingDebt, borrowerPendingDebt), 0.000000000000000001 * 1e18);
+        assertLt(_wadPercentDifference(bucketPendingDebt, poolPendingDebt),     0.000000000000000001 * 1e18);
 
         // lender removes entire bid from 4_000.927678580567537368 bucket
         uint256 withdrawalAmount = 3_010 * 1e18;

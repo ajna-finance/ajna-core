@@ -41,7 +41,7 @@ contract MulticallTest is DSTestPlus {
      *  @notice Use multicall to aggregate memorializePosition and increaseLiquidity method calls into one tx.
      */
     function testMulticallMemorializeIncreaseLiquidity() external {
-        address testAddress = generateAddress();
+        address testAddress = _generateAddress();
         uint256 mintAmount  = 10000 * 1e18;
 
         mintAndApproveQuoteTokens(testAddress, mintAmount);
@@ -114,8 +114,8 @@ contract MulticallTest is DSTestPlus {
      *  @notice Attempt two different multicalls that should revert and verify the revert reason is captured and returned properly.
      */
     function testMulticallRevertString() public {
-        address recipient      = generateAddress();
-        address externalCaller = generateAddress();
+        address recipient      = _generateAddress();
+        address externalCaller = _generateAddress();
 
         // mint an NFT
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(recipient, address(_pool));

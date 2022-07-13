@@ -28,6 +28,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint128 kickTime;
         uint128 referencePrice;
         uint256 remainingCollateral;
+        uint256 remainingDebt;
     }
 
     /***********************/
@@ -72,7 +73,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         // borrower accounting
         borrowers[msg.sender].collateralDeposited += amount_;
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
@@ -95,7 +96,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // Update total debt and interest rate
         curDebt += amount_ + fee;
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // Check resulting collateralization
         require(
@@ -132,7 +133,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         // Borrower accounting
         borrowers[msg.sender].collateralDeposited -= amount_;
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
@@ -159,7 +160,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         // lender accounting
         lpBalance[msg.sender][price_] -= claimedLpTokens;
 
-        _updateInterestRate(totalDebt);
+        _updateInterestRateAndEMAs(totalDebt);
 
         // move claimed collateral from pool to claimer
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
@@ -170,32 +171,35 @@ contract ERC20Pool is IERC20Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function kick(address borrower_) external {
+    function kick(address borrower_, uint256 debtToLiquidate_) external {
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         _accumulateBorrowerInterest(borrower_, curInflator);
+        _updateInterestRateAndEMAs(curDebt);
 
         BorrowerInfo memory borrower = borrowers[borrower_];
 
-        require(borrower.debt != 0, "P:L:NO_DEBT");
-
-        emit log_named_uint("bleh", 1);
-        emit log_named_uint("borrower.collateralDeposited", borrower.collateralDeposited);
-        emit log_named_uint("borrower.debt               ",  borrower.debt);
-        emit log_named_uint("collateralization           ", getBorrowerCollateralization(borrower.collateralDeposited, borrower.debt));
+        require(borrower.debt != 0, "P:K:NO_DEBT");
 
         require(
             getBorrowerCollateralization(borrower.collateralDeposited, borrower.debt) <= Maths.WAD,
-            "P:L:BORROWER_OK"
+            "P:K:BORROWER_OK"
         );
 
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),
             referencePrice:      uint128(hpb),
-            remainingCollateral: _repossessCollateral(borrower.debt, borrower.collateralDeposited, borrower.inflatorSnapshot)
+            remainingCollateral: borrower.collateralDeposited,
+            remainingDebt:       debtToLiquidate_
         });
 
-        // TODO: Post liquidation bond
+        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateralDeposited;
+        uint256 poolPrice      = totalDebt * Maths.WAD / totalCollateral;
+
+
+        require(lup < thresholdPrice, "P:K:LUP_GT_THRESHOLD");
+
+        // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
         // TODO: Account for repossessed collateral
 
         // Post the liquidation bond
@@ -273,7 +277,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         // pool level accounting
         totalQuoteToken -= amount_;
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // move required collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), collateralRequired / collateralScale);
@@ -442,7 +446,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         // Repay amount to buckets and update interest rate
         _repayBucket(amount, curInflator, amount >= curDebt);
         curDebt -= Maths.min(curDebt, amount);
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // Pool level accounting
         totalQuoteToken += amount;

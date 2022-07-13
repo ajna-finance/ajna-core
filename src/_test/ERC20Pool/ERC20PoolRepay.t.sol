@@ -371,8 +371,8 @@ contract ERC20PoolRepayTest is DSTestPlus {
         (, borrowerPendingDebt, , , , , ) = _pool.getBorrowerInfo(address(_borrower2));
 
         assertEq(borrowerPendingDebt, poolPendingDebt);
-        assertLt(wadPercentDifference(bucketPendingDebt, borrowerPendingDebt), 0.000000000000000001 * 1e18);
-        assertLt(wadPercentDifference(bucketPendingDebt, poolPendingDebt),     0.000000000000000001 * 1e18);
+        assertLt(_wadPercentDifference(bucketPendingDebt, borrowerPendingDebt), 0.000000000000000001 * 1e18);
+        assertLt(_wadPercentDifference(bucketPendingDebt, poolPendingDebt),     0.000000000000000001 * 1e18);
 
         // borrower2 attempts to repay 2_000 DAI plus accumulated debt
         (borrowerDebt, depositedCollateral, ) = _pool.borrowers(address(_borrower2));

@@ -74,8 +74,8 @@ contract PermitTest is DSTestPlus {
     function testPermitAjnaNFTByEOA() external {
         uint256 privateKey        = 0xBEEF;
         address owner             = vm.addr(privateKey);
-        address spender           = generateAddress();
-        address unapprovedSpender = generateAddress();
+        address spender           = _generateAddress();
+        address unapprovedSpender = _generateAddress();
 
         mintAndApproveQuoteTokens(owner,   10000 * 1e18);
         mintAndApproveQuoteTokens(spender, 10000 * 1e18);
@@ -142,9 +142,9 @@ contract PermitTest is DSTestPlus {
     function testSafeTransferFromWithPermit() external {
         uint256 privateKey        = 0xBEEF;
         address owner             = vm.addr(privateKey);
-        address newOwner          = generateAddress();
-        address spender           = generateAddress();
-        address unapprovedSpender = generateAddress();
+        address newOwner          = _generateAddress();
+        address spender           = _generateAddress();
+        address unapprovedSpender = _generateAddress();
 
         mintAndApproveQuoteTokens(owner, 10000 * 1e18);
 
@@ -247,8 +247,8 @@ contract PermitTest is DSTestPlus {
     function testPermitAjnaERC20() external {
         uint256 privateKey        = 0xBEEF;
         address owner             = vm.addr(privateKey);
-        address spender           = generateAddress();
-        address unapprovedSpender = generateAddress();
+        address spender           = _generateAddress();
+        address unapprovedSpender = _generateAddress();
 
         _ajnaToken.transfer(owner, 1 * 1e18);
         assert(_ajnaToken.balanceOf(owner) > 0);

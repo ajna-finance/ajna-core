@@ -27,16 +27,15 @@ abstract contract Pool is IPool, Clone {
     mapping(address => LpTokenOwnership) public lpTokenOwnership;
 
     uint256 public constant PENALTY_BPS         = 0.001 * 1e18;
-    uint256 public constant SECONDS_PER_DAY     = 86_400;
-    uint256 public constant SECONDS_PER_YEAR    = 86_400 * 365;
-    uint256 public constant SECONDS_PER_HALFDAY = 43_200;
-    uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 1e18;
+    uint256 public constant WAD_WEEKS_PER_YEAR  = 52    * 1e18;
 
     uint256 public constant RATE_INCREASE_COEFFICIENT = 1.1 * 1e18;
     uint256 public constant RATE_DECREASE_COEFFICIENT = 0.9 * 1e18;
 
-    uint256 public constant LAMBDA_EMA      = 0.905723664263906671 * 1e18; // lambda used for the EMAs calculated as exp(-1/7 * ln2)
-    uint256 public constant EMA_RATE_FACTOR = 1e18 - LAMBDA_EMA;
+    uint256 public constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest         EMAs calculated as exp(-1/7   * ln2)
+    uint256 public constant LAMBDA_EMA_180D      = 0.996156587220575207 * 1e18; // Lambda used for liquidation bond EMAs calculated as exp(-1/180 * ln2)
+    uint256 public constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
+    uint256 public constant EMA_180D_RATE_FACTOR = 1e18 - LAMBDA_EMA_180D;
 
     /// @dev Counter used by onlyOnce modifier
     uint256 internal _poolInitializations = 0;
@@ -58,9 +57,11 @@ abstract contract Pool is IPool, Clone {
     uint256 public override hpb;                         // [WAD]
     uint256 public override lastInflatorSnapshotUpdate;  // [SEC]
     uint256 public override lup;                         // [WAD]
+    uint256 public          lupEma;                      // [WAD]  // TODO: Override
     uint256 public          lupColEma;                   // [WAD]  // TODO: Override
     uint256 public override minFee;                      // [WAD]
     uint256 public override pdAccumulator;               // [WAD]
+    uint256 public          poolPriceEma;                // [WAD]  // TODO: Override
     uint256 public override quoteTokenScale;             // [N/A]
     uint256 public          totalBorrowers;              // [N/A]  // TODO: Override
     uint256 public override totalCollateral;             // [WAD]
@@ -68,7 +69,7 @@ abstract contract Pool is IPool, Clone {
     uint256 public override totalQuoteToken;             // [WAD]
 
     mapping(address => mapping(uint256 => uint256)) public override lpBalance;
-    mapping(address => mapping(uint256 => uint256)) public lpTimer;  // TODO: override
+    mapping(address => mapping(uint256 => uint256)) public          lpTimer;  // TODO: override
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -92,7 +93,7 @@ abstract contract Pool is IPool, Clone {
         lpBalance[msg.sender][price_] += lpTokens_;
         lpTimer[msg.sender][price_]   = block.timestamp;
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
@@ -117,7 +118,7 @@ abstract contract Pool is IPool, Clone {
         lpBalance[msg.sender][fromPrice_] -= fromLpTokens;
         lpBalance[msg.sender][toPrice_]   += toLpTokens;
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         emit MoveQuoteToken(msg.sender, fromPrice_, toPrice_, movedAmount, lup);
     }
@@ -139,7 +140,7 @@ abstract contract Pool is IPool, Clone {
         // lender accounting
         lpBalance[msg.sender][price_] -= lpTokens;
 
-        _updateInterestRate(curDebt);
+        _updateInterestRateAndEMAs(curDebt);
 
         // move quote token amount from pool to lender
         uint256 scaledAmount = amount / quoteTokenScale;
@@ -340,7 +341,7 @@ abstract contract Pool is IPool, Clone {
         toBucket.inflatorSnapshot = inflator_;
 
         // apply bid penalty if deposit happened less than 24h ago
-        if (fromBucket.price > toBucket.price && block.timestamp - lpTimer_ < SECONDS_PER_DAY) {
+        if (fromBucket.price > toBucket.price && block.timestamp - lpTimer_ < 24 hours) {
             uint256 penalty        = Maths.wmul(PENALTY_BPS, fromBucket.price - toBucket.price);
             amount_                -= penalty;
             _bip[fromBucket.price] += penalty;
@@ -470,7 +471,7 @@ abstract contract Pool is IPool, Clone {
         pdAccumulator  -= Maths.wmul(removeFromDeposit, bucket.price);
 
         // apply bid penalty if deposit happened less than 24h ago
-        if (block.timestamp - lpTimer_ < SECONDS_PER_DAY) {
+        if (block.timestamp - lpTimer_ < 24 hours) {
             uint256 penalty = Maths.wmul(PENALTY_BPS, amount_);
             amount_        -= penalty;
             _bip[bucket.price]   += penalty;
@@ -541,6 +542,7 @@ abstract contract Pool is IPool, Clone {
      *  @param  inflator_           The current pool inflator rate, RAY
      *  @return requiredCollateral_ The amount of collateral to be liquidated
      */
+    // TODO: Should we be repossessing collateral at the HPB price? Or at the LUP price always?
     function _repossessCollateral(
         uint256 debt_, uint256 collateral_, uint256 inflator_
     ) internal returns (uint256 requiredCollateral_) {
@@ -558,11 +560,11 @@ abstract contract Pool is IPool, Clone {
             collateral_         -= bucketRequiredCollateral;
             requiredCollateral_ += bucketRequiredCollateral;
 
-            // bucket accounting
+            // Bucket accounting
             curDebt           -= bucketDebtToPurchase;
             bucket.collateral += bucketRequiredCollateral;
 
-            // forgive the debt when borrower has no remaining collateral but still has debt
+            // Forgive the debt when borrower has no remaining collateral but still has debt
             if (debt_ != 0 && collateral_ == 0) {
                 bucket.debt = 0;
                 break;
@@ -570,7 +572,7 @@ abstract contract Pool is IPool, Clone {
 
             bucket.debt = curDebt;
 
-            if (debt_ == 0) break; // stop if all debt reconciliated
+            if (debt_ == 0) break; // Stop if all debt reconciliated
 
             curPrice = bucket.down;
         }
@@ -580,32 +582,39 @@ abstract contract Pool is IPool, Clone {
         if (hpb != newHpb) hpb = newHpb;
     }
 
-    function _updateInterestRate(uint256 curDebt_) internal {
-        uint256 poolCollateralization = _poolCollateralization(curDebt_);
-        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && poolCollateralization > Maths.WAD) {
-            uint256 oldRate = interestRate;
+    function _updateInterestRateAndEMAs(uint256 curDebt_) internal {
+        if (block.timestamp - interestRateUpdate > 12 hours) {
+            // Update EMAs for pool price and LUP
+            uint256 poolPrice = totalCollateral == 0 ? 0 : Maths.wdiv(curDebt_, totalCollateral);
 
-            uint256 curDebtEma   = Maths.wmul(curDebt_, EMA_RATE_FACTOR) + Maths.wmul(debtEma, LAMBDA_EMA);
-            uint256 curLupColEma = Maths.wmul(Maths.wmul(lup, totalCollateral), EMA_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA);
+            poolPriceEma = Maths.wdiv(poolPrice,  EMA_180D_RATE_FACTOR) + Maths.wdiv(poolPriceEma, LAMBDA_EMA_180D);
+            lupEma       = Maths.wdiv(lup,        EMA_180D_RATE_FACTOR) + Maths.wdiv(poolPriceEma, LAMBDA_EMA_180D);
 
-            int256 actualUtilization = int256(_poolActualUtilization(curDebt_));
-            int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
+            if (_poolCollateralization(curDebt_) > Maths.WAD) {
+                uint256 oldRate = interestRate;
 
-            int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
-            int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+                uint256 curDebtEma   = Maths.wmul(curDebt_,                         EMA_7D_RATE_FACTOR) + Maths.wmul(debtEma,   LAMBDA_EMA_7D);
+                uint256 curLupColEma = Maths.wmul(Maths.wmul(lup, totalCollateral), EMA_7D_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA_7D);
 
-            if (decreaseFactor < increaseFactor - 10**18) {
-                interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
-            } else if (decreaseFactor > 10**18 - increaseFactor) {
-                interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
+                int256 actualUtilization = int256(_poolActualUtilization(curDebt_));
+                int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
+
+                int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
+                int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+
+                if (decreaseFactor < increaseFactor - 10**18) {
+                    interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
+                } else if (decreaseFactor > 10**18 - increaseFactor) {
+                    interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
+                }
+
+                debtEma   = curDebtEma;
+                lupColEma = curLupColEma;
+
+                interestRateUpdate = block.timestamp;
+
+                emit UpdateInterestRate(oldRate, interestRate);
             }
-
-            debtEma   = curDebtEma;
-            lupColEma = curLupColEma;
-
-            interestRateUpdate = block.timestamp;
-
-            emit UpdateInterestRate(oldRate, interestRate);
         }
     }
 
@@ -1150,7 +1159,7 @@ abstract contract Pool is IPool, Clone {
      */
     function _pendingInflator(uint256 interestRate_, uint256 inflator_, uint256 elapsed_) internal pure returns (uint256) {
         // Calculate annualized interest rate
-        uint256 spr = Maths.wadToRay(interestRate_) / SECONDS_PER_YEAR;
+        uint256 spr = Maths.wadToRay(interestRate_) / 365 days;
         // secondsSinceLastUpdate is unscaled
         return Maths.rmul(inflator_, Maths.rpow(Maths.RAY + spr, elapsed_));
     }
