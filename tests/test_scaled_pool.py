@@ -46,7 +46,7 @@ def test_quote_deposit_move_remove_scaled(
             for i in range(len(remove_txes)):
                 print(f"Transaction: {i} | {test_utils.get_usage(remove_txes[i].gas_used)}")
 
-@pytest.mark.skip
+
 def test_borrow_repay_scaled(
     lenders,
     borrowers,

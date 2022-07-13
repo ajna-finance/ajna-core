@@ -62,6 +62,10 @@ contract UserWithCollateralInScaledPool {
         pool_.borrow(amount_, limitIndex_, oldPrev_, newPrev_, radius_);
     }
 
+    function removeCollateral(ScaledPool pool_, uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) public {
+        pool_.removeCollateral(amount_, oldPrev_, newPrev_, radius_);
+    }
+
     function repay(ScaledPool pool_, uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) public {
         pool_.repay(amount_, oldPrev_, newPrev_, radius_);
     }

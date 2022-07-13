@@ -155,8 +155,12 @@ abstract contract FenwickTree {
                 1);
     }
 
-    function treeSum() external view returns (uint256) {
+    function _treeSum() internal view returns (uint256) {
         return _values[SIZE];
+    }
+
+    function treeSum() external view returns (uint256) {
+        return _treeSum();
     }
 
     function get(uint256 i_) public view returns (uint256 m_) {
