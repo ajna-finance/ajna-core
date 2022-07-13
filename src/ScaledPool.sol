@@ -229,11 +229,11 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_, uint256 radius_) external {
 
-        Borrower memory borrower = borrowers[msg.sender];
         uint256 lupId = _lupIndex(amount_);
         require(lupId <= limitIndex_, "S:B:LIMIT_REACHED");
 
         uint256 curDebt = _accruePoolInterest();
+        Borrower memory borrower = borrowers[msg.sender];
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
         uint256 feeRate = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee) + Maths.WAD;
@@ -284,8 +284,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     function repay(uint256 maxAmount_, address oldPrev_, address newPrev_, uint256 radius_) external {
-        uint256 availableAmount = quoteToken().balanceOf(msg.sender) * quoteTokenScale;
-        require(availableAmount >= maxAmount_, "S:R:INSUF_BAL");
+        require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
 
         Borrower memory borrower = borrowers[msg.sender];
         require(borrower.debt != 0, "P:R:NO_DEBT");
@@ -296,7 +295,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 amount = Maths.min(borrower.debt, maxAmount_);
         borrower.debt -= amount;
 
-        uint256 curLenderDebt   = lenderDebt;
+        uint256 curLenderDebt = lenderDebt;
 
         curLenderDebt -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curDebt), amount));
         curDebt       -= amount;
@@ -324,7 +323,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     /*** Internal Functions ***/
     /**************************/
 
-    function _accruePoolInterest() internal returns (uint256 curDebt_){
+    function _accruePoolInterest() internal returns (uint256 curDebt_) {
         //TODO add inline with sim
         curDebt_ = borrowerDebt;
         if (curDebt_ != 0) {
