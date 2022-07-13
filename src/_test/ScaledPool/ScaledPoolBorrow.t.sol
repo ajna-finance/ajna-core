@@ -202,6 +202,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
         _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0), 1);
 
+        assertEq(_pool.borrowerDebt(), 21_020.192307692307702000 * 1e18);
         (uint256 debt, uint256 col, uint256 inflator) = _pool.borrowerInfo(address(_borrower));
         assertEq(debt,     21_020.192307692307702000 * 1e18);
         assertEq(col,      50 * 1e18);
@@ -209,31 +210,35 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         skip(864000);
         _borrower.addCollateral(_pool, 10 * 1e18, address(0), address(0), 1);
+        assertEq(_pool.borrowerDebt(), 21_083.636385042573188669 * 1e18);
         (debt, col, inflator) = _pool.borrowerInfo(address(_borrower));
-        assertEq(debt,     21_083.636385045805547721 * 1e18);
+        assertEq(debt,     21_083.636385042573188669 * 1e18);
         assertEq(col,      60 * 1e18);
-        assertEq(inflator, 1.003018244382582579 * 1e18);
+        assertEq(inflator, 1.003018244382428805 * 1e18);
 
         skip(864000);
         _borrower.removeCollateral(_pool, 10 * 1e18, address(0), address(0), 1);
+        assertEq(_pool.borrowerDebt(), 21_118.612213172841725096 * 1e18);
         (debt, col, inflator) = _pool.borrowerInfo(address(_borrower));
-        assertEq(debt,     21_118.612213171498583575 * 1e18);
+        assertEq(debt,     21_118.612213172841725096 * 1e18);
         assertEq(col,      50 * 1e18);
-        assertEq(inflator, 1.004682160088667422 * 1e18);
+        assertEq(inflator, 1.004682160088731320 * 1e18);
 
         skip(864000);
         _borrower.borrow(_pool, 0, 3000, address(0), address(0), 1);
+        assertEq(_pool.borrowerDebt(), 21_157.152642868828624051 * 1e18);
         (debt, col, inflator) = _pool.borrowerInfo(address(_borrower));
-        assertEq(debt,     21_157.152642880910920804 * 1e18);
+        assertEq(debt,     21_157.152642868828624051 * 1e18);
         assertEq(col,      50 * 1e18);
-        assertEq(inflator, 1.006515655669738225 * 1e18);
+        assertEq(inflator, 1.006515655669163431 * 1e18);
 
         skip(864000);
         _borrower.repay(_pool, 0, address(0), address(0), 1);
+        assertEq(_pool.borrowerDebt(), 21_199.628356700342110209 * 1e18);
         (debt, col, inflator) = _pool.borrowerInfo(address(_borrower));
-        assertEq(debt,     21_199.628356717731985576 * 1e18);
+        assertEq(debt,     21_199.628356700342110209 * 1e18);
         assertEq(col,      50 * 1e18);
-        assertEq(inflator, 1.008536365719154716 * 1e18);
+        assertEq(inflator, 1.008536365718327423 * 1e18);
     }
 
 

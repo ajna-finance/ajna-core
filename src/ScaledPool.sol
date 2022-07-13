@@ -62,7 +62,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     /*** State Variables ***/
     /***********************/
 
-    uint256 public inflatorSnapshot;           // [RAY]
+    uint256 public inflatorSnapshot;           // [WAD]
     uint256 public lastInflatorSnapshotUpdate; // [SEC]
     uint256 public minFee;                     // [WAD]
     uint256 public lenderInterestFactor;       // WAD
@@ -330,13 +330,13 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         if (curDebt_ != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
             if (elapsed != 0 ) {
-                uint256 spr             = Maths.wadToRay(interestRate) / SECONDS_PER_YEAR;
+                uint256 spr             = interestRate / SECONDS_PER_YEAR;
                 uint256 curInflator     = inflatorSnapshot;
-                uint256 pendingInflator = Maths.rmul(curInflator, Maths.rpow(Maths.RAY + spr, elapsed));
+                uint256 pendingInflator = Maths.wmul(curInflator, Maths.wpow(Maths.WAD + spr, elapsed));
 
                 uint256 newHtp = _htp();
                 if (newHtp != 0) {
-                    uint256 newInterest     = Maths.radToWadTruncate(curDebt_ * (Maths.rdiv(pendingInflator, curInflator) - Maths.RAY));
+                    uint256 newInterest     = Maths.wmul(curDebt_, Maths.wdiv(pendingInflator, curInflator) - Maths.WAD);
                     uint256 htpIndex        = _priceToIndex(newHtp);
                     uint256 depositAboveHtp = _prefixSum(htpIndex);
                     if (depositAboveHtp != 0) {
@@ -345,7 +345,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
                     }
                 }
 
-                curDebt_ = Maths.wmul(curDebt_, pendingInflator);
+                curDebt_ = Maths.wmul(curDebt_, Maths.wdiv(pendingInflator, curInflator));
                 borrowerDebt = curDebt_;
 
                 inflatorSnapshot           = pendingInflator;
