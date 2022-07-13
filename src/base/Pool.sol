@@ -15,6 +15,9 @@ import { Maths }      from "../libraries/Maths.sol";
 // Added
 import { BitMaps } from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
+import { console } from "@std/console.sol";
+
+
 abstract contract Pool is IPool, Clone {
 
     using SafeERC20 for ERC20;
@@ -128,10 +131,10 @@ abstract contract Pool is IPool, Clone {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
-
+        
         // remove quote token amount and get LP tokens burned
         (uint256 amount, uint256 lpTokens) = _removeQuoteTokenFromBucket(
-            price_, maxAmount_, lpTokensToRemove, lpTimer[msg.sender][price_], curInflator
+            price_, lpTokensToRemove, lpTimer[msg.sender][price_], curInflator
         );
         emit Debug("completed _removeQuoteTokenFromBucket", amount);
         require(_poolCollateralization(curDebt) >= Maths.WAD, "P:RQT:POOL_UNDER_COLLAT");
@@ -447,7 +450,6 @@ abstract contract Pool is IPool, Clone {
     /**
      *  @notice Called by a lender to remove quote tokens from a bucket
      *  @param  price_     The price bucket from which quote tokens should be removed
-     *  @param  maxAmount_ The maximum amount of quote tokens to be removed, WAD
      *  @param  lpBalance_ The LP balance for current lender, RAY
      *  @param  lpTimer_   The timestamp of the last lender deposit in bucket
      *  @param  inflator_  The current pool inflator rate, RAY
@@ -455,18 +457,26 @@ abstract contract Pool is IPool, Clone {
      *  @return lpTokens_  The amount of lpTokens removed equivalent to the quote tokens removed
      */
     function _removeQuoteTokenFromBucket(
-        uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
+        uint256 price_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
     ) internal returns (uint256 amount_, uint256 lpTokens_) {
         Bucket memory bucket    = _buckets[price_];
         bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
-        uint256 exchangeRate = _exchangeRate(bucket);                  // RAY
-        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
-        amount_             = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
-        lpTokens_           = Maths.rdiv(amount_, exchangeRate);                // RAY
-        // lpTokens_ = lpBalance_;
-        amount_             = Maths.rayToWad(amount_);
+        // OLD IMPLEMENTATION
+        // uint256 exchangeRate = _exchangeRate(bucket);                  // RAY
+        // uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
+        // amount_             = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
+        // lpTokens_           = Maths.rdiv(amount_, exchangeRate);                // RAY
+        // amount_             = Maths.rayToWad(amount_);
+
+        // NEW IMPLEMENTATION
+        uint256 exchangeRate   = _exchangeRate(bucket);                  // RAY
+        uint256 claimableQuote = Maths.rmul(lpBalance_, exchangeRate);   // RAY
+        lpTokens_             = lpBalance_;                // RAY
+        amount_               = Maths.rayToWad(claimableQuote);
+        console.log("P:RQT eR, claimableQuote: ", exchangeRate, claimableQuote);
+        console.log("P:RQT lpTokens", lpTokens_);
 
         // bucket accounting
         uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit); // Remove from deposit first
@@ -963,7 +973,22 @@ abstract contract Pool is IPool, Clone {
         }
     }
 
+    function getLpTokensFromQuoteTokens(uint256 collateralTokens, uint256 quoteTokens, uint256 price_) external view returns (uint256 lpTokens_) {
+        require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
+
+        ( , , , uint256 onDeposit, uint256 debt, , uint256 lpOutstanding, uint256 bucketCollateral) = bucketAt(price_);
+
+        uint256 collateralPercentage = collateralTokens != 0 ? Maths.wwdivr(collateralTokens, bucketCollateral) : 0;
+        uint256 quotePercentage      = Maths.wwdivr(quoteTokens, onDeposit + debt);
+
+        lpTokens_ = Maths.rmul(lpOutstanding, collateralPercentage + quotePercentage);
+    }
+
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
+        return _getLPTokenExchangeValue(lpTokens_, price_);
+    }
+
+    function _getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) internal view returns (uint256 collateralTokens_, uint256 quoteTokens_) {
         require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
 
         ( , , , uint256 onDeposit, uint256 debt, , uint256 lpOutstanding, uint256 bucketCollateral) = bucketAt(price_);

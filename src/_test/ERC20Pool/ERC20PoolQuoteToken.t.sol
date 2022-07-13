@@ -739,10 +739,12 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, ) = _pool.bucketAt(priceMed);
         assertEq(deposit, 400 * 1e18);
         assertEq(debt,    3_000.000961538461538462 * 1e18);
+        assertEq(lpOutstanding, 3_400 * 1e27);
 
-        (, , , deposit, debt, , , ) = _pool.bucketAt(priceLow);
+        (, , , deposit, debt, , lpOutstanding, ) = _pool.bucketAt(priceLow);
         assertEq(deposit, 3_400 * 1e18);
         assertEq(debt,    0);
+        assertEq(lpOutstanding, 3_400 * 1e27);
 
         // lender removes 1000 DAI from LUP
         skip(46800);
@@ -774,6 +776,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         assertGt(actualUtilizationAfterRemove,     actualUtilizationAfterBorrow);
         assertGt(targetUtilizationAfterRemove,     targetUtilizationAfterBorrow);
 
+        // TODO: fixing lp balance breaks lpOutstanding checks here
         // check 4000 bucket balance
         (, , , deposit, debt, , lpOutstanding, ) = _pool.bucketAt(priceMed);
         assertEq(deposit,       0);
@@ -1036,6 +1039,17 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
 
         skip(60);
 
+        emit log_uint(_pool.lpBalance(address(_lender), priceMed));
+        uint256 lpTokensToRemove = _pool.getLpTokensFromQuoteTokens(0, 500 * 1e18, priceMed);
+        emit log_uint(lpTokensToRemove);
+        (, uint256 quoteToRemove) = _pool.getLPTokenExchangeValue(lpTokensToRemove, priceMed);
+        emit log_uint(quoteToRemove);
+        // (, quoteToRemove) = _pool.getLPTokenExchangeValue(499999471154405509763249289000, priceMed);
+        // emit log_uint(quoteToRemove);
+
+        assertEq(quoteToRemove, 500 * 1e18);
+
+        // BROKEN here
         // lender removes 500 DAI from the lup
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_lender), 500 * 1e18);
