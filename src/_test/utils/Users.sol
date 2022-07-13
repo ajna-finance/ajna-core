@@ -171,6 +171,12 @@ contract UserWithQuoteTokenInScaledPool {
         pool_.addQuoteToken(amount_, index_);
     }
 
+    function moveQuoteToken(
+        ScaledPool pool_, uint256 amount_, uint256 fromIndex_, uint256 toIndex_
+    ) public {
+        pool_.moveQuoteToken(amount_, fromIndex_, toIndex_);
+    }
+
     function removeQuoteToken(ScaledPool pool_, uint256 amount_, uint256 index_) public {
         pool_.removeQuoteToken(amount_, index_);
     }

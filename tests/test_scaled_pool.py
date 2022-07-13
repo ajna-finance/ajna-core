@@ -5,7 +5,7 @@ from decimal import *
 import inspect
 
 
-def test_quote_deposit_remove_scaled(
+def test_quote_deposit_move_remove_scaled(
     lenders,
     scaled_pool,
     capsys,
@@ -24,8 +24,19 @@ def test_quote_deposit_remove_scaled(
             for i in range(len(add_txes)):
                 print(f"Transaction: {i} | {test_utils.get_usage(add_txes[i].gas_used)}")
 
-        remove_txes = []
+        move_txes = []
         for i in range(2530, 2550):
+            tx = scaled_pool.moveQuoteToken(100 * 10**18, i, i + 30, {"from": lenders[0]})
+            move_txes.append(tx)
+        with capsys.disabled():
+            print("\n==================================")
+            print(f"Gas estimations({inspect.stack()[0][3]})(move from scaled pool):")
+            print("==================================")
+            for i in range(len(move_txes)):
+                print(f"Transaction: {i} | {test_utils.get_usage(move_txes[i].gas_used)}")
+
+        remove_txes = []
+        for i in range(2560, 2570):
             tx = scaled_pool.removeQuoteToken(100 * 10**18, i, {"from": lenders[0]})
             remove_txes.append(tx)
         with capsys.disabled():
@@ -35,7 +46,7 @@ def test_quote_deposit_remove_scaled(
             for i in range(len(remove_txes)):
                 print(f"Transaction: {i} | {test_utils.get_usage(remove_txes[i].gas_used)}")
 
-
+@pytest.mark.skip
 def test_borrow_repay_scaled(
     lenders,
     borrowers,

@@ -127,4 +127,58 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(availableCollateral, 0);
     }
 
+    function testScaledPoolRemoveQuoteToken() external {
+        assertEq(_quote.balanceOf(address(_pool)),   0);
+        assertEq(_quote.balanceOf(address(_lender)), 200_000 * 1e18);
+
+        _lender.addQuoteToken(_pool, 40_000 * 1e18, 2549);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
+        _lender.addQuoteToken(_pool, 20_000 * 1e18, 2551);
+
+        assertEq(_pool.lpBalance(2549, address(_lender)), 40_000 * 1e18);
+
+        assertEq(_quote.balanceOf(address(_pool)),   70_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 130_000 * 1e18);
+
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 5_000 * 1e18, BucketMath.MAX_PRICE);
+        _lender.removeQuoteToken(_pool, 5_000 * 1e18, 2549);
+
+        assertEq(_pool.lpBalance(2549, address(_lender)), 35_000 * 1e18);
+
+        assertEq(_quote.balanceOf(address(_pool)),   65_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_lender)), 135_000 * 1e18);
+
+    }
+
+    function testScaledPoolMoveQuoteToken() external {
+        _lender.addQuoteToken(_pool, 40_000 * 1e18, 2549);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
+        _lender.addQuoteToken(_pool, 20_000 * 1e18, 2551);
+
+        assertEq(_pool.lpBalance(2549, address(_lender)), 40_000 * 1e18);
+        assertEq(_pool.lpBalance(2552, address(_lender)), 0);
+
+        vm.expectEmit(true, true, false, true);
+        emit MoveQuoteToken(address(_lender), 2549, 2552, 5_000 * 1e18, BucketMath.MAX_PRICE);
+        _lender.moveQuoteToken(_pool, 5_000 * 1e18, 2549, 2552);
+
+        assertEq(_pool.lpBalance(2549, address(_lender)), 35_000 * 1e18);
+        assertEq(_pool.lpBalance(2552, address(_lender)), 5_000 * 1e18);
+
+        vm.expectEmit(true, true, false, true);
+        emit MoveQuoteToken(address(_lender), 2549, 2540, 5_000* 1e18, BucketMath.MAX_PRICE);
+        _lender.moveQuoteToken(_pool, 5_000 * 1e18, 2549, 2540);
+
+        assertEq(_pool.lpBalance(2549, address(_lender)), 30_000 * 1e18);
+        assertEq(_pool.lpBalance(2540, address(_lender)), 5_000 * 1e18);
+
+        vm.expectEmit(true, true, false, true);
+        emit MoveQuoteToken(address(_lender), 2551, 2777, 15_000* 1e18, BucketMath.MAX_PRICE);
+        _lender.moveQuoteToken(_pool, 15_000 * 1e18, 2551, 2777);
+
+        assertEq(_pool.lpBalance(2551, address(_lender)), 5_000 * 1e18);
+        assertEq(_pool.lpBalance(2777, address(_lender)), 15_000 * 1e18);
+    }
+
 }

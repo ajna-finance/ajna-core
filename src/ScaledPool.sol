@@ -21,6 +21,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     /**************/
 
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
+    event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
 
     event AddCollateral(address indexed borrower_, uint256 amount_);
@@ -135,23 +136,56 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, _lup());
     }
 
+    function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external {
+        require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
+
+        uint256 availableLPs = lpBalance[fromIndex_][msg.sender];
+        require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:MQT:INSUF_LPS");
+
+        _accruePoolInterest();
+
+        Bucket storage fromBucket = buckets[fromIndex_];
+        uint256 bucketSize        = _rangeSum(fromIndex_, fromIndex_);
+        uint256 exchangeRate      = fromBucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, fromBucket.lpAccumulator) : Maths.WAD;
+        uint256 amount            = Maths.wmul(lpbAmount_, exchangeRate);
+        fromBucket.lpAccumulator  -= lpbAmount_;
+
+        Bucket storage toBucket = buckets[toIndex_];
+        bucketSize              = _rangeSum(toIndex_, toIndex_);
+        exchangeRate            = toBucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, toBucket.lpAccumulator) : Maths.WAD;
+        uint256 lpbChange       = Maths.wdiv(amount, exchangeRate);
+        toBucket.lpAccumulator  += lpbChange;
+
+        _remove(fromIndex_, amount);
+        _add(toIndex_, amount);
+
+        uint256 lup = _lup();
+        if (fromIndex_ < toIndex_) require(_htp() <= lup, "S:MQT:LUP_BELOW_HTP");
+
+        lpBalance[fromIndex_][msg.sender] -= lpbAmount_;
+        lpBalance[toIndex_][msg.sender]   += lpbChange;
+
+        _updateInterestRate();
+
+        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, lpbAmount_, lup);
+
+    }
+
     function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external {
         uint256 availableLPs = lpBalance[index_][msg.sender];
-        require(availableLPs != 0 && availableLPs <= lpbAmount_, "S:RQT:INSUF_LPS");
+        require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
 
         _accruePoolInterest();
 
         Bucket storage bucket = buckets[index_];
-        bucket.lpAccumulator  -= lpbAmount_;
         uint256 bucketSize    = _rangeSum(index_, index_);
         uint256 exchangeRate  = bucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, bucket.lpAccumulator) : Maths.WAD;
         uint256 amount        = Maths.wmul(lpbAmount_, exchangeRate);
+        bucket.lpAccumulator  -= lpbAmount_;
 
         lpBalance[index_][msg.sender] -= lpbAmount_;
 
-        // Calculate new LUP, revert if LUP would dip below HTP
-        uint256 newLup = _indexToPrice(_lupIndex(amount));
-        require(_htp() <= newLup, "S:RQT:BAD_LUP");
+        require(_htp() <= _indexToPrice(_lupIndex(amount)), "S:RQT:BAD_LUP");
 
         _remove(index_, amount);
         depositAccumulator -= amount;
@@ -160,7 +194,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
-        emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
+        emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, _lup());
     }
 
     /***********************************/
