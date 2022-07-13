@@ -192,12 +192,12 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         lpBalance[index_][msg.sender] -= lpbAmount_;
 
-        require(_htp() <= _indexToPrice(_lupIndex(amount)), "S:RQT:BAD_LUP");
-
         _remove(index_, amount);
-        depositAccumulator -= amount;
 
         uint256 newLup = _lup();
+        require(_htp() <= newLup, "S:RQT:BAD_LUP");
+        depositAccumulator -= amount;
+
         _updateInterestRate(curDebt, newLup);
 
         // move quote token amount from pool to lender
