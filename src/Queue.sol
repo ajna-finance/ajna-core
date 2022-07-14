@@ -35,8 +35,8 @@ abstract contract Queue is IQueue {
     }
 
     function _updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) internal {
+        require(oldPrev_ != borrower_ && newPrev_ != borrower_, "B:U:PNT_SELF_REF");
 
-        require(oldPrev_ != borrower_ || newPrev_ != borrower_, "B:U:PNT_SELF_REF");
         LoanInfo memory oldPrevLoan = loans[oldPrev_];
         LoanInfo memory newPrevLoan = loans[newPrev_];
 
