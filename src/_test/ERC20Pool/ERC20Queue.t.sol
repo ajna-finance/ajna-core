@@ -2,15 +2,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../erc20/ERC20PoolFactory.sol";
+import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { Maths }      from "../libraries/Maths.sol";
+import { Maths }      from "../../libraries/Maths.sol";
 
-import { CollateralToken, QuoteToken }            from "./utils/Tokens.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
+import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
-import { DSTestPlus } from "./utils/DSTestPlus.sol";
+import { DSTestPlus } from "../utils/DSTestPlus.sol";
 
 contract LoanQueueTest is DSTestPlus {
 
@@ -62,6 +62,19 @@ contract LoanQueueTest is DSTestPlus {
         _lender.approveToken(_quote, address(_pool), 300_000 * 1e18);
     }
 
+    function testAddLoanToQueue() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
+
+        // borrow max possible from hdp
+        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
+        _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
+
+        (, address next) = _pool.loans(address(_borrower));
+        assertEq(address(next), address(0));
+        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+    }
 
     function testGetHighestThresholdPrice() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
@@ -105,19 +118,6 @@ contract LoanQueueTest is DSTestPlus {
         _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), _r3);
     }
 
-    function testAddLoanToQueue() public {
-        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
-        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
-        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
-
-        // borrow max possible from hdp
-        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
-        _borrower.borrow(_pool, 50_000 * 1e18, 2_000 * 1e18, address(0), address(0), _r3);
-
-        (, address next) = _pool.loans(address(_borrower));
-        assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
-    }
 
     function testMoveLoanToHeadInQueue() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
