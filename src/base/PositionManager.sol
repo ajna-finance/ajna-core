@@ -60,6 +60,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) nonReentrant {
+        require(params_.lpTokens <= positions[params_.tokenId].lpTokens[params_.price], "PM:DL:INSUF_LP_BAL");
+        
         IERC20Pool pool = IERC20Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
@@ -87,6 +89,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     function decreaseLiquidityNFT(DecreaseLiquidityNFTParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) nonReentrant {
+        require(params_.lpTokens <= positions[params_.tokenId].lpTokens[params_.price], "PM:DL:INSUF_LP_BAL");
+
         IERC721Pool pool = IERC721Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
