@@ -29,6 +29,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     event RemoveCollateral(address indexed borrower_, uint256 amount_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+    event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
+
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
 
     /***************/
@@ -75,7 +77,6 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
 
-    uint256 public depositAccumulator;
     uint256 public pledgedCollateral;
 
     uint256 public debtEma;   // [WAD]
@@ -134,7 +135,6 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         lpBalance[index_][msg.sender] += lpbChange_;
 
         _add(index_, amount_);
-        depositAccumulator += amount_;
 
         uint256 newLup = _lup();
         _updateInterestRate(curDebt, newLup);
@@ -197,7 +197,6 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         uint256 newLup = _lup();
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
-        depositAccumulator -= amount;
 
         _updateInterestRate(curDebt, newLup);
 
@@ -252,9 +251,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
             "S:B:PUNDER_COLLAT"
         );
 
-        borrowerDebt       = curDebt;
-        lenderDebt         += amount_;
-        depositAccumulator -= amount_;
+        borrowerDebt = curDebt;
+        lenderDebt   += amount_;
 
         _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
         borrowers[msg.sender] = borrower;
@@ -292,7 +290,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
 
         Borrower memory borrower = borrowers[msg.sender];
-        require(borrower.debt != 0, "P:R:NO_DEBT");
+        require(borrower.debt != 0, "S:R:NO_DEBT");
 
         uint256 curDebt = _accruePoolInterest();
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
@@ -322,6 +320,31 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, newLup, amount);
+    }
+
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    function purchaseQuote(uint256 amount_, uint256 index_) external {
+        require(_rangeSum(index_, index_) >= amount_, "S:P:INSUF_QUOTE");
+
+        uint256 curDebt = _accruePoolInterest();
+
+        uint256 price = _indexToPrice(index_);
+        uint256 collateralRequired = Maths.wdiv(amount_, price);
+        require(collateral().balanceOf(msg.sender) >= collateralRequired, "S:P:INSUF_COL");
+
+        _remove(index_, amount_);
+        buckets[index_].availableCollateral += collateralRequired;
+
+        _updateInterestRate(curDebt, _lup());
+
+        // move required collateral from sender to pool
+        collateral().safeTransferFrom(msg.sender, address(this), collateralRequired / collateralScale);
+        // move quote token amount from pool to sender
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
+        emit Purchase(msg.sender, price, amount_, collateralRequired);
     }
 
     /**************************/

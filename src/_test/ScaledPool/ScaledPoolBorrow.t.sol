@@ -71,7 +71,6 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.treeSum(),            50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),       0);
         assertEq(_pool.lenderDebt(),         0);
-        assertEq(_pool.depositAccumulator(), 50_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   50_000 * 1e18);
@@ -93,7 +92,6 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.treeSum(),            50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),       21_020.192307692307702000 * 1e18);
         assertEq(_pool.lenderDebt(),         21_000 * 1e18);
-        assertEq(_pool.depositAccumulator(), 29_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   29_000 * 1e18);
@@ -136,7 +134,6 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.treeSum(),            50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),       40_038.461538461538480000 * 1e18);
         assertEq(_pool.lenderDebt(),         40_000 * 1e18);
-        assertEq(_pool.depositAccumulator(), 10_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);
@@ -155,7 +152,6 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.treeSum(),            50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),       30_038.461538461538480000 * 1e18);
         assertEq(_pool.lenderDebt(),         30_009.606147934678200000 * 1e18);
-        assertEq(_pool.depositAccumulator(), 10_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   20_000 * 1e18);
@@ -175,7 +171,6 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.treeSum(),            50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),       0);
         assertEq(_pool.lenderDebt(),         5402); // TODO check why this dust
-        assertEq(_pool.depositAccumulator(), 10_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   50_038.461538461538480000 * 1e18);
