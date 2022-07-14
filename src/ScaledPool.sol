@@ -76,6 +76,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     uint256 public quoteTokenScale;
 
     uint256 public depositAccumulator;
+    uint256 public pledgedCollateral;
 
     uint256 public debtEma;   // [WAD]
     uint256 public lupColEma; // [WAD]
@@ -220,6 +221,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
         borrowers[msg.sender] = borrower;
 
+        pledgedCollateral += amount_;
+
         _updateInterestRate(curDebt, _lup());
 
         // move collateral from sender to pool
@@ -245,7 +248,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         curDebt += debt;
         require(
-            _poolCollateralizationAtPrice(curDebt, amount_, _totalCollateral() / collateralScale, newLup) >= Maths.WAD,
+            _poolCollateralizationAtPrice(curDebt, amount_, pledgedCollateral / collateralScale, newLup) != Maths.WAD,
             "S:B:PUNDER_COLLAT"
         );
 
@@ -275,6 +278,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         borrower.collateral -= amount_;
 
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+
+        pledgedCollateral -= amount_;
 
         _updateInterestRate(curDebt, curLup);
 
@@ -324,7 +329,6 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     /**************************/
 
     function _accruePoolInterest() internal returns (uint256 curDebt_) {
-        //TODO add inline with sim
         curDebt_ = borrowerDebt;
         if (curDebt_ != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
@@ -335,11 +339,13 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
                 uint256 newHtp = _htp();
                 if (newHtp != 0) {
-                    uint256 newInterest     = Maths.wmul(curDebt_, Maths.wdiv(pendingInflator, curInflator) - Maths.WAD);
                     uint256 htpIndex        = _priceToIndex(newHtp);
                     uint256 depositAboveHtp = _prefixSum(htpIndex);
+
                     if (depositAboveHtp != 0) {
+                        uint256 newInterest  = Maths.wmul(lenderInterestFactor, Maths.wmul(pendingInflator - Maths.WAD, curDebt_));
                         uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
+
                         _mult(htpIndex, lenderFactor);
                     }
                 }
@@ -363,30 +369,34 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     function _updateInterestRate(uint256 curDebt_, uint256 lup_) internal {
-        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY && _poolCollateralization() > Maths.WAD) {
-            uint256 oldRate = interestRate;
 
-            uint256 curDebtEma   = Maths.wmul(curDebt_, EMA_RATE_FACTOR) + Maths.wmul(debtEma, LAMBDA_EMA);
-            uint256 curLupColEma = Maths.wmul(Maths.wmul(lup_, _totalCollateral()), EMA_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA);
+        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY) {
+            uint256 col = pledgedCollateral;
+            if (_poolCollateralization(curDebt_, col, lup_) != Maths.WAD) {
+                uint256 oldRate = interestRate;
 
-            int256 actualUtilization = int256(_poolActualUtilizationPriceWeighted(curDebt_));
-            int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
+                uint256 curDebtEma   = Maths.wmul(curDebt_, EMA_RATE_FACTOR) + Maths.wmul(debtEma, LAMBDA_EMA);
+                uint256 curLupColEma = Maths.wmul(Maths.wmul(lup_, col), EMA_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA);
 
-            int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
-            int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+                int256 actualUtilization = int256(_poolActualUtilization(curDebt_, col));
+                int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
 
-            if (decreaseFactor < increaseFactor - 10**18) {
-                interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
-            } else if (decreaseFactor > 10**18 - increaseFactor) {
-                interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
+                int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
+                int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+
+                if (decreaseFactor < increaseFactor - 10**18) {
+                    interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
+                } else if (decreaseFactor > 10**18 - increaseFactor) {
+                    interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
+                }
+
+                debtEma   = curDebtEma;
+                lupColEma = curLupColEma;
+
+                interestRateUpdate = block.timestamp;
+
+                emit UpdateInterestRate(oldRate, interestRate);
             }
-
-            debtEma   = curDebtEma;
-            lupColEma = curLupColEma;
-
-            interestRateUpdate = block.timestamp;
-
-            emit UpdateInterestRate(oldRate, interestRate);
         }
     }
 
@@ -402,9 +412,9 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         collateralization_ = encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
     }
 
-    function _poolCollateralization() internal view returns (uint256 collateralization_) {
-        uint256 encumbered = Maths.wdiv(borrowerDebt, _lup());
-        collateralization_ = encumbered != 0 ? Maths.wdiv(_totalCollateral(), encumbered) : Maths.WAD;
+    function _poolCollateralization(uint256 borrowerDebt_, uint256 pledgedCollateral_, uint256 lup_) internal pure returns (uint256 collateralization_) {
+        uint256 encumbered = Maths.wdiv(borrowerDebt_, lup_);
+        collateralization_ = encumbered != 0 ? Maths.wdiv(pledgedCollateral_, encumbered) : Maths.WAD;
     }
 
     function _poolTargetUtilization(uint256 debtEma_, uint256 lupColEma_) internal pure returns (uint256) {
@@ -414,13 +424,9 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         return Maths.WAD;
     }
 
-    function _poolActualUtilizationPriceWeighted(uint256 borrowerDebt_) internal view returns (uint256) {
-        if (borrowerDebt_ != 0) {
-            uint256 curLup = _lup();
-            uint256 lupMulDebt = Maths.wmul(curLup, borrowerDebt_);
-            return Maths.wdiv(lupMulDebt, Maths.wmul(curLup, _treeSum()));
-        }
-        return 0;
+    function _poolActualUtilization(uint256 borrowerDebt_, uint256 pledgedCollateral_) internal view returns (uint256 utilization_) {
+        uint256 ptpIndex = _priceToIndex(Maths.wdiv(borrowerDebt_, pledgedCollateral_));
+        if (ptpIndex != 0) utilization_ = Maths.wdiv(borrowerDebt_, _prefixSum(ptpIndex));
     }
 
     function _htp() internal view returns (uint256) {
@@ -446,10 +452,6 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         return _indexToPrice(_lupIndex(0));
     }
 
-    function _totalCollateral() internal view returns(uint256) {
-        return collateral().balanceOf(address(this));
-    }
-
     /**************************/
     /*** External Functions ***/
     /**************************/
@@ -471,7 +473,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     function poolCollateralization() external view returns (uint256) {
-        return _poolCollateralization();
+        return _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
     }
 
     function borrowerInfo(address borrower_) external view returns (uint256, uint256, uint256) {
