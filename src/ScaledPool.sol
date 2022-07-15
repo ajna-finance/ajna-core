@@ -332,8 +332,13 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         curLenderDebt -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curDebt), amount));
         curDebt       -= amount;
 
-        borrowerDebt = curDebt;
-        lenderDebt   = curLenderDebt;
+        if (curDebt != 0) {
+            borrowerDebt = curDebt;
+            lenderDebt   = curLenderDebt;
+        } else {
+            borrowerDebt = 0;
+            lenderDebt   = 0;
+        }
 
         if (borrower.debt == 0) {
             _removeLoanQueue(msg.sender, oldPrev_);

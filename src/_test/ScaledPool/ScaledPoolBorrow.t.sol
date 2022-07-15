@@ -68,9 +68,9 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.treeSum(),            50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(),       0);
-        assertEq(_pool.lenderDebt(),         0);
+        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 0);
+        assertEq(_pool.lenderDebt(),   0);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   50_000 * 1e18);
@@ -89,9 +89,9 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 210.201923076923077020 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
 
-        assertEq(_pool.treeSum(),            50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(),       21_020.192307692307702000 * 1e18);
-        assertEq(_pool.lenderDebt(),         21_000 * 1e18);
+        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 21_020.192307692307702000 * 1e18);
+        assertEq(_pool.lenderDebt(),   21_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   29_000 * 1e18);
@@ -131,9 +131,9 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 400.384615384615384800 * 1e18);
         assertEq(_pool.lup(), 2_966.176540084047110076 * 1e18);
 
-        assertEq(_pool.treeSum(),            50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(),       40_038.461538461538480000 * 1e18);
-        assertEq(_pool.lenderDebt(),         40_000 * 1e18);
+        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 40_038.461538461538480000 * 1e18);
+        assertEq(_pool.lenderDebt(),   40_000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);
@@ -149,9 +149,9 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 300.384615384615384800 * 1e18);
         assertEq(_pool.lup(), 2_966.176540084047110076 * 1e18);
 
-        assertEq(_pool.treeSum(),            50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(),       30_038.461538461538480000 * 1e18);
-        assertEq(_pool.lenderDebt(),         30_009.606147934678200000 * 1e18);
+        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 30_038.461538461538480000 * 1e18);
+        assertEq(_pool.lenderDebt(),   30_009.606147934678200000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   20_000 * 1e18);
@@ -162,20 +162,19 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 30_038.461538461538480000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Repay(address(_borrower), 3_010.892022197881557845 * 1e18, 30_038.461538461538480000 * 1e18);
+        emit Repay(address(_borrower), BucketMath.MAX_PRICE, 30_038.461538461538480000 * 1e18);
         _borrower.repay(_pool, 30_040 * 1e18, address(0), address(0), 1);
 
         assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), 3_010.892022197881557845 * 1e18);
+        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.treeSum(),            50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(),       0);
-        assertEq(_pool.lenderDebt(),         5402); // TODO check why this dust
+        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 0);
+        assertEq(_pool.lenderDebt(),   0);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   50_038.461538461538480000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
-
     }
 
     function testScaledPoolBorrowerInterestAccumulation() external {
