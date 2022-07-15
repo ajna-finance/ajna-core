@@ -21,6 +21,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     /**************/
 
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
+    event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
 
@@ -144,19 +145,43 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
     }
 
+    function claimCollateral(uint256 amount_, uint256 index_) external {
+        Bucket storage bucket = buckets[index_];
+        require(amount_ <= bucket.availableCollateral, "S:CC:AMT_GT_COLLAT");
+
+        uint256 price        = _indexToPrice(index_);
+        uint256 colValue     = Maths.wmul(price, bucket.availableCollateral);
+        uint256 bucketSize   = _rangeSum(index_, index_) + colValue;
+        uint256 exchangeRate = bucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, bucket.lpAccumulator) : Maths.WAD;
+        uint256 lpRedemption = Maths.wmul(amount_, Maths.wdiv(price, exchangeRate));
+        require(lpRedemption <= lpBalance[index_][msg.sender], "S:CC:INSUF_LP_BAL");
+
+        bucket.availableCollateral     -= amount_;
+        bucket.lpAccumulator           -= lpRedemption;
+        lpBalance[index_][msg.sender]  -= lpRedemption;
+
+        _updateInterestRate(borrowerDebt, _lup());
+
+        // move claimed collateral from pool to claimer
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+        emit ClaimCollateral(msg.sender, price, amount_, lpRedemption);
+    }
+
     function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
         uint256 availableLPs = lpBalance[fromIndex_][msg.sender];
         require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:MQT:INSUF_LPS");
 
+        Bucket storage fromBucket = buckets[fromIndex_];
+        require(fromBucket.availableCollateral == 0, "S:MQT:AVAIL_COL");
+
         uint256 curDebt = _accruePoolInterest();
 
-        Bucket storage fromBucket = buckets[fromIndex_];
-        uint256 bucketSize        = _rangeSum(fromIndex_, fromIndex_);
-        uint256 exchangeRate      = fromBucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, fromBucket.lpAccumulator) : Maths.WAD;
-        uint256 amount            = Maths.wmul(lpbAmount_, exchangeRate);
-        fromBucket.lpAccumulator  -= lpbAmount_;
+        uint256 bucketSize       = _rangeSum(fromIndex_, fromIndex_);
+        uint256 exchangeRate     = fromBucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, fromBucket.lpAccumulator) : Maths.WAD;
+        uint256 amount           = Maths.wmul(lpbAmount_, exchangeRate);
+        fromBucket.lpAccumulator -= lpbAmount_;
 
         Bucket storage toBucket = buckets[toIndex_];
         bucketSize              = _rangeSum(toIndex_, toIndex_);
@@ -395,11 +420,15 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY) {
             uint256 col = pledgedCollateral;
+
+            uint256 curDebtEma   = Maths.wmul(curDebt_, EMA_RATE_FACTOR) + Maths.wmul(debtEma, LAMBDA_EMA);
+            uint256 curLupColEma = Maths.wmul(Maths.wmul(lup_, col), EMA_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA);
+
+            debtEma   = curDebtEma;
+            lupColEma = curLupColEma;
+
             if (_poolCollateralization(curDebt_, col, lup_) != Maths.WAD) {
                 uint256 oldRate = interestRate;
-
-                uint256 curDebtEma   = Maths.wmul(curDebt_, EMA_RATE_FACTOR) + Maths.wmul(debtEma, LAMBDA_EMA);
-                uint256 curLupColEma = Maths.wmul(Maths.wmul(lup_, col), EMA_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA);
 
                 int256 actualUtilization = int256(_poolActualUtilization(curDebt_, col));
                 int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
@@ -412,9 +441,6 @@ contract ScaledPool is Clone, FenwickTree, Queue {
                 } else if (decreaseFactor > 10**18 - increaseFactor) {
                     interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
                 }
-
-                debtEma   = curDebtEma;
-                lupColEma = curLupColEma;
 
                 interestRateUpdate = block.timestamp;
 

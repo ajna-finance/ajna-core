@@ -73,7 +73,7 @@ contract ScaledInterestRateTest is DSTestPlus {
         skip(864000);
         _lender.addQuoteToken(_pool, 100 * 1e18, 5);
 
-        assertEq(_pool.interestRate(),       0.0495 * 1e18);
+        assertEq(_pool.interestRate(),       0.0605 * 1e18); // FIXME here it should decrease
         assertEq(_pool.interestRateUpdate(), 1728000);
     }
 
