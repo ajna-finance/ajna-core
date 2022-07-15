@@ -98,21 +98,21 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), 1);
 
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(2550);
-        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(lpAccumulator,       10_000 * 1e27);
         assertEq(availableCollateral, 3.321274866808485288 * 1e18);
 
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_lender), 3.321274866808485287* 1e18);
+        emit Transfer(address(_pool), address(_lender), availableCollateral);
         vm.expectEmit(true, true, false, true);
-        emit ClaimCollateral(address(_lender), 3_010.892022197881557845 * 1e18, 3.321274866808485287 * 1e18, 9_999.999999999999997208 * 1e18);
-        _lender.claimCollateral(_pool, 3.321274866808485287 * 1e18, 2550); // FIXME rounding issue, LPs should be RAY
+        emit ClaimCollateral(address(_lender), 3_010.892022197881557845 * 1e18, availableCollateral, 10_000 * 1e27);
+        _lender.claimCollateral(_pool, availableCollateral, 2550);
 
         // check balances
         assertEq(_quote.balanceOf(address(_lender)),      161_000 * 1e18);
-        assertEq(_collateral.balanceOf(address(_lender)), 99.666211875885747230 * 1e18);
+        assertEq(_collateral.balanceOf(address(_lender)), 99.666211875885747231 * 1e18);
 
         assertEq(_quote.balanceOf(address(_pool)),      28_000 * 1e18);
-        assertEq(_collateral.balanceOf(address(_pool)), 100.333788124114252770 * 1e18);
+        assertEq(_collateral.balanceOf(address(_pool)), 100.333788124114252769 * 1e18);
 
     }
 

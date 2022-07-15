@@ -98,27 +98,27 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
 
         // check LPs
-        assertEq(_pool.lpBalance(depositPriceHighest, address(_lender)), 10_000 * 1e18);
-        assertEq(_pool.lpBalance(depositPriceHigh, address(_lender)),    10_000 * 1e18);
-        assertEq(_pool.lpBalance(depositPriceMed, address(_lender)),     10_000 * 1e18);
-        assertEq(_pool.lpBalance(depositPriceLow, address(_lender)),     10_000 * 1e18);
-        assertEq(_pool.lpBalance(depositPriceLowest, address(_lender)),  10_000 * 1e18);
+        assertEq(_pool.lpBalance(depositPriceHighest, address(_lender)), 10_000 * 1e27);
+        assertEq(_pool.lpBalance(depositPriceHigh, address(_lender)),    10_000 * 1e27);
+        assertEq(_pool.lpBalance(depositPriceMed, address(_lender)),     10_000 * 1e27);
+        assertEq(_pool.lpBalance(depositPriceLow, address(_lender)),     10_000 * 1e27);
+        assertEq(_pool.lpBalance(depositPriceLowest, address(_lender)),  10_000 * 1e27);
 
         // check buckets
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(depositPriceHighest);
-        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(lpAccumulator,       10_000 * 1e27);
         assertEq(availableCollateral, 0);
         (lpAccumulator, availableCollateral) = _pool.buckets(depositPriceHigh);
-        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(lpAccumulator,       10_000 * 1e27);
         assertEq(availableCollateral, 0);
         (lpAccumulator, availableCollateral) = _pool.buckets(depositPriceMed);
-        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(lpAccumulator,       10_000 * 1e27);
         assertEq(availableCollateral, 0);
         (lpAccumulator, availableCollateral) = _pool.buckets(depositPriceLow);
-        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(lpAccumulator,       10_000 * 1e27);
         assertEq(availableCollateral, 0);
         (lpAccumulator, availableCollateral) = _pool.buckets(depositPriceLowest);
-        assertEq(lpAccumulator,       10_000 * 1e18);
+        assertEq(lpAccumulator,       10_000 * 1e27);
         assertEq(availableCollateral, 0);
 
         // borrow 19_000 DAI

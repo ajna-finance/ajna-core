@@ -39,8 +39,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     /***************/
 
     struct Bucket {
-        uint256 lpAccumulator;
-        uint256 availableCollateral;
+        uint256 lpAccumulator;       // [RAY]
+        uint256 availableCollateral; // [WAD]
     }
 
     struct Borrower {
@@ -90,7 +90,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     mapping(uint256 => Bucket) public buckets;
 
     /**
-     *  @dev deposit index -> lender address -> lender lp [WAD]
+     *  @dev deposit index -> lender address -> lender lp [RAY]
      */
     mapping(uint256 => mapping(address => uint256)) public lpBalance;
 
@@ -128,10 +128,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         Bucket storage bucket = buckets[index_];
         uint256 bucketSize    = _rangeSum(index_, index_);
-        uint256 exchangeRate  = bucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, bucket.lpAccumulator) : Maths.WAD;
+        uint256 exchangeRate  = bucket.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, bucket.lpAccumulator) : Maths.RAY;
 
-        lpbChange_            = Maths.wdiv(amount_, exchangeRate);
-        bucket.lpAccumulator  += lpbChange_;
+        lpbChange_           = Maths.rdiv(Maths.wadToRay(amount_), exchangeRate);
+        bucket.lpAccumulator += lpbChange_;
 
         lpBalance[index_][msg.sender] += lpbChange_;
 
@@ -152,8 +152,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 price        = _indexToPrice(index_);
         uint256 colValue     = Maths.wmul(price, bucket.availableCollateral);
         uint256 bucketSize   = _rangeSum(index_, index_) + colValue;
-        uint256 exchangeRate = bucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, bucket.lpAccumulator) : Maths.WAD;
-        uint256 lpRedemption = Maths.wmul(amount_, Maths.wdiv(price, exchangeRate));
+        uint256 exchangeRate = bucket.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, bucket.lpAccumulator) : Maths.RAY;
+        uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), exchangeRate);
         require(lpRedemption <= lpBalance[index_][msg.sender], "S:CC:INSUF_LP_BAL");
 
         bucket.availableCollateral     -= amount_;
@@ -171,6 +171,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
         uint256 availableLPs = lpBalance[fromIndex_][msg.sender];
+        lpbAmount_           = Maths.wadToRay(lpbAmount_);
         require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:MQT:INSUF_LPS");
 
         Bucket storage fromBucket = buckets[fromIndex_];
@@ -179,16 +180,17 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 curDebt = _accruePoolInterest();
 
         uint256 bucketSize       = _rangeSum(fromIndex_, fromIndex_);
-        uint256 exchangeRate     = fromBucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, fromBucket.lpAccumulator) : Maths.WAD;
-        uint256 amount           = Maths.wmul(lpbAmount_, exchangeRate);
+        uint256 exchangeRate     = fromBucket.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, fromBucket.lpAccumulator) : Maths.RAY;
+        uint256 amount           = Maths.rmul(lpbAmount_, exchangeRate);
         fromBucket.lpAccumulator -= lpbAmount_;
 
         Bucket storage toBucket = buckets[toIndex_];
         bucketSize              = _rangeSum(toIndex_, toIndex_);
-        exchangeRate            = toBucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, toBucket.lpAccumulator) : Maths.WAD;
-        uint256 lpbChange       = Maths.wdiv(amount, exchangeRate);
+        exchangeRate            = toBucket.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, toBucket.lpAccumulator) : Maths.RAY;
+        uint256 lpbChange       = Maths.rdiv(amount, exchangeRate);
         toBucket.lpAccumulator  += lpbChange;
 
+        amount = Maths.rayToWad(amount);
         _remove(fromIndex_, amount);
         _add(toIndex_, amount);
 
@@ -206,18 +208,20 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external {
         uint256 availableLPs = lpBalance[index_][msg.sender];
+        lpbAmount_           = Maths.wadToRay(lpbAmount_);
         require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
 
         uint256 curDebt = _accruePoolInterest();
 
         Bucket storage bucket = buckets[index_];
         uint256 bucketSize    = _rangeSum(index_, index_);
-        uint256 exchangeRate  = bucket.lpAccumulator != 0 ? Maths.wdiv(bucketSize, bucket.lpAccumulator) : Maths.WAD;
-        uint256 amount        = Maths.wmul(lpbAmount_, exchangeRate);
+        uint256 exchangeRate  = bucket.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, bucket.lpAccumulator) : Maths.RAY;
+        uint256 amount        = Maths.rmul(lpbAmount_, exchangeRate);
         bucket.lpAccumulator  -= lpbAmount_;
 
         lpBalance[index_][msg.sender] -= lpbAmount_;
 
+        amount = Maths.rayToWad(amount);
         _remove(index_, amount);
 
         uint256 newLup = _lup();
