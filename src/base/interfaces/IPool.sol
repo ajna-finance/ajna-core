@@ -350,6 +350,8 @@ interface IPool {
      */
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);
 
+    function getLpTokensFromQuoteTokens(uint256 collateralTokens, uint256 quoteTokens, uint256 price_, address owner_) external view returns (uint256 lpTokens_);
+
     /**
      *  @notice Returns the current minimum pool price.
      *  @return minPrice_ The current minimum pool price.

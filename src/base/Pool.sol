@@ -226,6 +226,7 @@ abstract contract Pool is IPool, Clone {
         // initialize bucket if required and get new HPB
         uint256 newHpb = !BitMaps.get(_bitmap, price_) ? initializeBucket(hpb, price_) : hpb;
 
+        // TODO: figure out why memory vs storage has impact here
         Bucket memory bucket    = _buckets[price_];
         bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
@@ -453,25 +454,16 @@ abstract contract Pool is IPool, Clone {
     function _removeQuoteTokenFromBucket(
         uint256 price_, uint256 lpTokensToRemove_, uint256 lpTimer_, uint256 inflator_
     ) internal returns (uint256 amount_, uint256 lpTokens_) {
-        Bucket memory bucket    = _buckets[price_];
+        Bucket storage bucket    = _buckets[price_];
+
+        require(bucket.collateral == 0, "P:RQTB:CLAIM_COLLATERAL");
+
         bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
-        // OLD IMPLEMENTATION
-        // uint256 exchangeRate = _exchangeRate(bucket);                  // RAY
-        // uint256 claimable    = Maths.rmul(lpTokensToRemove_, exchangeRate);   // RAY
-        // amount_             = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
-        // lpTokens_           = Maths.rdiv(amount_, exchangeRate);                // RAY
-        // amount_             = Maths.rayToWad(amount_);
-
-        console.log("lp tokens removing:", lpTokensToRemove_, lpBalance[msg.sender][price_], lpTokensToRemove_ < lpBalance[msg.sender][price_]);
-
-        // FIXME: fix security issue with min amount of lpTokens -> 
-        // someone using PositionManager calling with larger remove amount that exceeds their positions rights
-        // TODO: need to pass owner address here instead of using msg.sender
-        // NEW IMPLEMENTATION
+        // calculate amount of lpTokens and quoteTokens to remove
         lpTokens_ = Maths.min(lpTokensToRemove_, lpBalance[msg.sender][price_]); // RAY
-        amount_   = Maths.rayToWad(Maths.rmul(lpTokens_, _exchangeRate(bucket)));
+        amount_   = Maths.rayToWad(Maths.rmul(lpTokens_, _exchangeRate(bucket))); // WAD
 
         // bucket accounting
         uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit); // Remove from deposit first
@@ -968,25 +960,17 @@ abstract contract Pool is IPool, Clone {
         }
     }
 
+    // TODO: add support for collateral tokens as well...? Multiply incoming min(collateralTokens, collOwned) * price
     function getLpTokensFromQuoteTokens(uint256 collateralTokens, uint256 quoteTokens, uint256 price_, address owner_) external view returns (uint256 lpTokens_) {
         require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
 
-        ( , , , uint256 onDeposit, uint256 debt, , uint256 lpOutstanding, uint256 bucketCollateral) = bucketAt(price_);
-
         (uint256 collateralOwned, uint256 quoteOwned) = _getLPTokenExchangeValue(lpBalance[owner_][price_], price_);
 
-        console.log("lender", quoteTokens, quoteOwned);
+        quoteTokens = Maths.min(quoteTokens, quoteOwned);
 
-        // only allow calculations for lenders owned collateral and quote in the bucket
-        collateralTokens = Maths.min(collateralTokens, collateralOwned);
-        quoteTokens      = Maths.min(quoteTokens, quoteOwned);
+        Bucket memory bucket = _buckets[price_];
 
-        uint256 collateralPercentage = collateralTokens != 0 ? Maths.wwdivr(collateralTokens, bucketCollateral) : 0;
-        uint256 quotePercentage      = Maths.wwdivr(quoteTokens, onDeposit + debt);
-
-        console.log("bucket", onDeposit, debt);
-
-        lpTokens_ = Maths.rmul(lpOutstanding, collateralPercentage + quotePercentage);
+        lpTokens_ = Maths.rdiv(Maths.wadToRay(quoteTokens), _exchangeRate(bucket));
     }
 
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {

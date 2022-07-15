@@ -104,8 +104,7 @@ contract UserWithQuoteToken {
     }
 
     function removeQuoteToken(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
-        // uint256 lpTokensToRemove = pool_.lpBalance(address(this), price_);
-        uint256 lpTokensToRemove = pool_.getLpTokensFromQuoteTokens(0, amount_, price_);
+        uint256 lpTokensToRemove = pool_.getLpTokensFromQuoteTokens(0, amount_, price_, address(this));
 
         pool_.removeQuoteToken(amount_, price_, lpTokensToRemove);
     }
@@ -146,8 +145,8 @@ contract UserWithQuoteTokenInNFTPool {
     }
 
     function removeQuoteToken(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
-        // remove full lpToken balance
-        uint256 lpTokensToRemove = pool_.lpBalance(address(this), price_);
+        uint256 lpTokensToRemove = pool_.getLpTokensFromQuoteTokens(0, amount_, price_, address(this));
+
         pool_.removeQuoteToken(amount_, price_, lpTokensToRemove);
     }
 

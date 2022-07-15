@@ -610,10 +610,10 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(collateralDeposited.length, 0);
 
         // lender removes some quote tokens
-        uint256 lpTokensToRemove = _NFTSubsetPool.lpBalance(address(_lender), _p4000);
+        uint256 lpTokensToRemove = _NFTSubsetPool.lpBalance(address(_lender), _p4000) / 1000000;
         vm.prank((address(_lender)));
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_lender), _p4000, .999 * 1e18, _p4000);
+        emit RemoveQuoteToken(address(_lender), _p4000, .005495150403602401 * 1e18, _p4000);
         _NFTSubsetPool.removeQuoteToken(1 * 1e18, _p4000, lpTokensToRemove);
     }
 

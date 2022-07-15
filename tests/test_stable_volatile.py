@@ -162,13 +162,13 @@ def draw_and_bid(lenders, borrowers, start_from, pool, bucket_math, chain, gas_v
             utilization = pool.getPoolActualUtilization() / 10**18
             if utilization < MAX_UTILIZATION and len(buckets_deposited[user_index]) > 0:
                 price = buckets_deposited[user_index].pop()
-                # try:
-                remove_quote_token(lenders[user_index], user_index, price, pool)
-                # except VirtualMachineError as ex:
-                #     print(f" ERROR removing liquidity at {price / 10**18:.1f}, "
-                #           f"collateralized at {pool.getPoolCollateralization()/10**18:.1%}: {ex}")
-                #     print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hpb())))
-                #     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
+                try:
+                    remove_quote_token(lenders[user_index], user_index, price, pool)
+                except VirtualMachineError as ex:
+                    print(f" ERROR removing liquidity at {price / 10**18:.1f}, "
+                          f"collateralized at {pool.getPoolCollateralization()/10**18:.1%}: {ex}")
+                    print(TestUtils.dump_book(pool, bucket_math, MIN_BUCKET, bucket_math.priceToIndex(pool.hpb())))
+                    buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             else:
                 price = add_quote_token(lenders[user_index], user_index, pool, bucket_math, gas_validator)
                 if price:
@@ -251,9 +251,11 @@ def remove_quote_token(lender, lender_index, price, pool):
     if lp_balance > 0:
         assert lp_outstanding > 0
         (_, claimable_quote) = pool.getLPTokenExchangeValue(lp_balance, price)
+        lpTokensToRemove = pool.getLpTokensFromQuoteTokens(0, claimable_quote, price, lender)
+
         # claimable_quote = claimable_quote * 1.1  # include extra for unaccumulated interest
         print(f" lender {lender_index} removing {claimable_quote / 10**18:.1f} at {price / 10**18:.1f}")
-        tx = pool.removeQuoteToken(claimable_quote, price, lp_outstanding, {"from": lender})
+        tx = pool.removeQuoteToken(claimable_quote, price, lpTokensToRemove, {"from": lender})
     else:
         print(f" lender {lender_index} has no claim to bucket {price / 10**18:.1f}")
 
