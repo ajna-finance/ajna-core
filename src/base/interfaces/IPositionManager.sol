@@ -58,6 +58,13 @@ interface IPositionManager {
      */
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
 
+    /**
+     *  @notice Emitted when a position's liquidity is moved between prices.
+     *  @param  lender_  Lender address.
+     *  @param  tokenId_ The tokenId of the newly minted NFT.
+     */
+    event MoveLiquidity(address indexed lender_, uint256 tokenId_);
+
     /***************/
     /*** Structs ***/
     /***************/
@@ -143,13 +150,11 @@ interface IPositionManager {
      *  @notice Struct holding parameters for memorializing positions.
      *  @param  tokenId The tokenId of the NFT.
      *  @param  owner   The NFT owner address.
-     *  @param  pool    The pool address.
      *  @param  prices  The array of price buckets with LP tokens to be tracked by a NFT.
      */
     struct MemorializePositionsParams {
         uint256 tokenId;
         address owner;
-        address pool;
         uint256[] prices;
     }
 
@@ -161,6 +166,20 @@ interface IPositionManager {
     struct MintParams {
         address recipient;
         address pool;
+    }
+
+    /**
+     *  @notice Struct holding parameters for moving the liquidity of a position.
+     *  @param  owner     The NFT owner address.
+     *  @param  tokenId   The tokenId of the NFT.
+     *  @param  fromPrice The price from which liquidity should be moved.
+     *  @param  toPrice   The Price to which liquidity should be moved.
+     */
+    struct MoveLiquidityParams {
+        address owner;
+        uint256 tokenId;
+        uint256 fromPrice;
+        uint256 toPrice;
     }
 
     /**
@@ -219,10 +238,17 @@ interface IPositionManager {
 
     /**
      *  @notice Called by lenders to add quote tokens and receive a representative NFT.
-     *  @param  params_  Calldata struct supplying inputs required to add quote tokens, and receive the NFT.
+     *  @param  params_  Calldata struct supplying inputs required to mint a position NFT.
      *  @return tokenId_ The tokenId of the newly minted NFT.
      */
     function mint(MintParams calldata params_) external payable returns (uint256 tokenId_);
+
+    /**
+     *  @notice Called by lenders to move liquidity between two price buckets.
+     *  @param  params_  Calldata struct supplying inputs required to move liquidity tokens.
+     */
+    function moveLiquidity(MoveLiquidityParams calldata params_) external;
+
 
     /**********************/
     /*** View Functions ***/

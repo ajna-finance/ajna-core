@@ -72,7 +72,7 @@ contract MulticallTest is DSTestPlus {
         pricesToMemorialize[2] = priceThree;
 
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId, testAddress, address(_pool), pricesToMemorialize
+            tokenId, testAddress, pricesToMemorialize
         );
 
         // Prepare to add quotte tokens to a new price bucket and associate with NFT
@@ -86,7 +86,7 @@ contract MulticallTest is DSTestPlus {
 
         // https://ethereum.stackexchange.com/questions/65980/passing-struct-as-an-argument-in-call
         callsToExecute[0] = abi.encodeWithSignature(
-            "memorializePositions((uint256,address,address,uint256[]))",
+            "memorializePositions((uint256,address,uint256[]))",
             memorializeParams
         );
         callsToExecute[1] = abi.encodeWithSignature(
