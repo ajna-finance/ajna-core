@@ -342,11 +342,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         if (borrower.debt == 0) {
             _removeLoanQueue(msg.sender, oldPrev_);
-            delete borrowers[msg.sender];
         } else {
             _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
-            borrowers[msg.sender] = borrower;
         }
+        borrowers[msg.sender] = borrower;
 
         uint256 newLup = _lup();
         _updateInterestRate(curDebt, newLup);

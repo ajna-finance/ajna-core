@@ -61,20 +61,44 @@ contract ScaledInterestRateTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 4200);
         skip(864000);
 
+        assertEq(_pool.interestRate(),       0.05 * 1e18);
+        assertEq(_pool.interestRateUpdate(), 0);
+
         _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), 1);
         _borrower.borrow(_pool, 46_000 * 1e18, 4300, address(0), address(0), 1);
+
+        assertEq(_pool.htp(), 460.442307692307692520 * 1e18);
+        assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
+
+        assertEq(_pool.treeSum(),      110_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 46_044.230769230769252000 * 1e18);
+        assertEq(_pool.lenderDebt(),   46_000 * 1e18);
 
         assertEq(_pool.interestRate(),       0.055 * 1e18);
         assertEq(_pool.interestRateUpdate(), 864000);
 
-        _borrower.repay(_pool, 45_000 * 1e18, address(0), address(0), 1);
+        // repay entire loan
+        _quote.mint(address(_borrower), 200 * 1e18);
+        _borrower.repay(_pool, 46_200 * 1e18, address(0), address(0), 1);
 
         // enforce rate update - decrease
         skip(864000);
         _lender.addQuoteToken(_pool, 100 * 1e18, 5);
 
-        assertEq(_pool.interestRate(),       0.0605 * 1e18); // FIXME here it should decrease
-        assertEq(_pool.interestRateUpdate(), 1728000);
+        assertEq(_pool.htp(), 0);
+        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
+
+        assertEq(_pool.treeSum(),      110_162.490615926716800000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 0);
+        assertEq(_pool.lenderDebt(),   0);
+
+        (uint256 debt, uint256 col, uint256 inflator) = _pool.borrowerInfo(address(_borrower));
+        assertEq(debt,     0);
+        assertEq(col,      100 * 1e18);
+        assertEq(inflator, 1.001507985181560500 * 1e18);
+
+        assertEq(_pool.interestRate(),       0.055 * 1e18); // FIXME here it should decrease
+        assertEq(_pool.interestRateUpdate(), 864000);
     }
 
 }
