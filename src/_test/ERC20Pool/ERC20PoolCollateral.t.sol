@@ -296,7 +296,8 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(bucketCollateral, 0);
 
         // lender should be able to remove quote from the top bucket
-        _lender1.removeQuoteToken(_pool, 2_000 * 1e18, priceHigh);
+        uint256 lpTokensToRemove = _pool.getLpTokensFromQuoteTokens(2_000 * 1e18, priceHigh, address(_lender1));
+        _lender1.removeQuoteToken(_pool, lpTokensToRemove, priceHigh);
 
         // check 4_000.927678580567537368 bucket balance after quote tokens removed
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = _pool.bucketAt(_p4000);
