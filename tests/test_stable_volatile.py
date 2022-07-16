@@ -251,11 +251,11 @@ def remove_quote_token(lender, lender_index, price, pool):
     if lp_balance > 0:
         assert lp_outstanding > 0
         (_, claimable_quote) = pool.getLPTokenExchangeValue(lp_balance, price)
-        lpTokensToRemove = pool.getLpTokensFromQuoteTokens(0, claimable_quote, price, lender)
+        lpTokensToRemove = pool.getLpTokensFromQuoteTokens(claimable_quote, price, lender)
 
         # claimable_quote = claimable_quote * 1.1  # include extra for unaccumulated interest
         print(f" lender {lender_index} removing {claimable_quote / 10**18:.1f} at {price / 10**18:.1f}")
-        tx = pool.removeQuoteToken(claimable_quote, price, lpTokensToRemove, {"from": lender})
+        tx = pool.removeQuoteToken(price, lpTokensToRemove, {"from": lender})
     else:
         print(f" lender {lender_index} has no claim to bucket {price / 10**18:.1f}")
 
