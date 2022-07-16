@@ -283,7 +283,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         emit ClaimCollateral(address(_lender), priceHigh, 0.374913050298415730 * 1e18, 1_499.999759615423138588368817828 * 1e27);
         _lender.claimCollateral(_pool, 0.374913050298415730 * 1e18, priceHigh);
 
-        // FIXME: claim partial then claim full afterwards to test this
+        // FIXME: Need to add an additional lender to test this
         // should revert if claiming larger amount of collateral than LP balance allows
         // vm.expectRevert("B:CC:INSUF_LP_BAL");
         // _lender1.claimCollateral(_pool, 0.3 * 1e18, priceHigh);

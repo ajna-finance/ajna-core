@@ -15,9 +15,6 @@ import { Maths }      from "../libraries/Maths.sol";
 // Added
 import { BitMaps } from "@openzeppelin/contracts/utils/structs/BitMaps.sol";
 
-import { console } from "@std/console.sol";
-
-
 abstract contract Pool is IPool, Clone {
 
     using SafeERC20 for ERC20;
@@ -124,8 +121,6 @@ abstract contract Pool is IPool, Clone {
 
         emit MoveQuoteToken(msg.sender, fromPrice_, toPrice_, movedAmount, lup);
     }
-
-    event Debug(string where, uint256 what);
 
     function removeQuoteToken(uint256 price_, uint256 lpTokensToRemove) external override returns (uint256, uint256) {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
