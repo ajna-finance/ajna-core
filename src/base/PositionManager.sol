@@ -70,7 +70,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IERC20Pool pool = IERC20Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool.getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, ) = pool.getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         uint256 lpTokensRemoved;
 
@@ -86,7 +86,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         }
 
         // remove and transfer quote tokens to recipient
-        (uint256 quoteRemoved, uint256 lpTokensRemovedQuote) = pool.removeQuoteToken(quoteTokenToRemove, params_.price, params_.lpTokens);
+        (uint256 quoteRemoved, uint256 lpTokensRemovedQuote) = pool.removeQuoteToken(params_.price, params_.lpTokens);
         ERC20(pool.quoteTokenAddress()).safeTransfer(params_.recipient, quoteRemoved);
 
         // update position with lp tokens removed
@@ -107,7 +107,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IERC721Pool pool = IERC721Pool(params_.pool);
 
         // calculate equivalent underlying assets for given lpTokens
-        (uint256 collateralToRemove, uint256 quoteTokenToRemove) = pool.getLPTokenExchangeValue(params_.lpTokens, params_.price);
+        (uint256 collateralToRemove, ) = pool.getLPTokenExchangeValue(params_.lpTokens, params_.price);
 
         // enable lenders to remove quote token from a bucket that no debt is added to
         if (collateralToRemove != 0) {
@@ -130,7 +130,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             }
 
             // remove and transfer quote tokens to recipient
-            (uint256 quoteRemoved, uint256 lpTokensRemoved) = pool.removeQuoteToken(quoteTokenToRemove, params_.price, params_.lpTokens);
+            (uint256 quoteRemoved, uint256 lpTokensRemoved) = pool.removeQuoteToken(params_.price, params_.lpTokens);
             ERC20(pool.quoteTokenAddress()).safeTransfer(params_.recipient, quoteRemoved);
 
             // update position with newly removed lp tokens
@@ -141,7 +141,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         }
         else {
             // remove and transfer quote tokens to recipient
-            (uint256 quoteRemoved, uint256 lpTokensRemoved) = pool.removeQuoteToken(quoteTokenToRemove, params_.price, params_.lpTokens);
+            (uint256 quoteRemoved, uint256 lpTokensRemoved) = pool.removeQuoteToken(params_.price, params_.lpTokens);
             ERC20(pool.quoteTokenAddress()).safeTransfer(params_.recipient, quoteRemoved);
 
             // update position with newly removed lp tokens

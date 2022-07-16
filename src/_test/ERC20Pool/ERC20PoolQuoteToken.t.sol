@@ -1039,7 +1039,7 @@ contract ERC20PoolQuoteTokenTest is DSTestPlus {
         skip(60);
 
         // check lp token calculation from quote tokens
-        uint256 lpTokensToRemove = _pool.getLpTokensFromQuoteTokens(0, 500 * 1e18, priceMed, address(_lender));
+        uint256 lpTokensToRemove = _pool.getLpTokensFromQuoteTokens(500 * 1e18, priceMed, address(_lender));
         (, uint256 quoteToRemove) = _pool.getLPTokenExchangeValue(lpTokensToRemove, priceMed);
         assertEq(quoteToRemove, 500 * 1e18);
 

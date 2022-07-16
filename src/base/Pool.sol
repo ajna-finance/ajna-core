@@ -127,7 +127,7 @@ abstract contract Pool is IPool, Clone {
 
     event Debug(string where, uint256 what);
 
-    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokensToRemove) external override returns (uint256, uint256) {
+    function removeQuoteToken(uint256 price_, uint256 lpTokensToRemove) external override returns (uint256, uint256) {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
@@ -960,11 +960,10 @@ abstract contract Pool is IPool, Clone {
         }
     }
 
-    // TODO: add support for collateral tokens as well...? Multiply incoming min(collateralTokens, collOwned) * price
-    function getLpTokensFromQuoteTokens(uint256 collateralTokens, uint256 quoteTokens, uint256 price_, address owner_) external view returns (uint256 lpTokens_) {
+    function getLpTokensFromQuoteTokens(uint256 quoteTokens, uint256 price_, address owner_) external view returns (uint256 lpTokens_) {
         require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
 
-        (uint256 collateralOwned, uint256 quoteOwned) = _getLPTokenExchangeValue(lpBalance[owner_][price_], price_);
+        (, uint256 quoteOwned) = _getLPTokenExchangeValue(lpBalance[owner_][price_], price_);
 
         quoteTokens = Maths.min(quoteTokens, quoteOwned);
 
