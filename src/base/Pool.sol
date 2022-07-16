@@ -122,14 +122,14 @@ abstract contract Pool is IPool, Clone {
         emit MoveQuoteToken(msg.sender, fromPrice_, toPrice_, movedAmount, lup);
     }
 
-    function removeQuoteToken(uint256 price_, uint256 lpTokensToRemove) external override returns (uint256, uint256) {
+    function removeQuoteToken(uint256 price_, uint256 lpTokensToRemove_) external override returns (uint256, uint256) {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         // remove quote token amount and get LP tokens burned
         (uint256 amount, uint256 lpTokens) = _removeQuoteTokenFromBucket(
-            price_, lpTokensToRemove, lpTimer[msg.sender][price_], curInflator
+            price_, lpTokensToRemove_, lpTimer[msg.sender][price_], curInflator
         );
         require(_poolCollateralization(curDebt) >= Maths.WAD, "P:RQT:POOL_UNDER_COLLAT");
         // pool level accounting
