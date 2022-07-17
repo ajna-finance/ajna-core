@@ -269,7 +269,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         Borrower memory borrower = borrowers[msg.sender];
         uint256 borrowersCount = totalBorrowers;
-        if (borrowersCount != 0) require(borrower.debt + amount_ > Maths.wdiv(curDebt, Maths.wad(Maths.max(1000, borrowersCount * 10))), "S:B:AMT_LT_AVG_DEBT");
+        if (borrowersCount != 0) require(borrower.debt + amount_ > Maths.wdiv(Maths.wdiv(curDebt, Maths.wad(borrowersCount)), 10**19), "S:B:AMT_LT_AVG_DEBT");
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
@@ -344,7 +344,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
             totalBorrowers = borrowersCount - 1;
             _removeLoanQueue(msg.sender, oldPrev_);
         } else {
-            if (borrowersCount != 0) require(borrower.debt > Maths.wdiv(curDebt, Maths.wad(Maths.max(1000, borrowersCount * 10))), "R:B:AMT_LT_AVG_DEBT");
+            if (borrowersCount != 0) require(borrower.debt > Maths.wdiv(Maths.wdiv(curDebt, Maths.wad(borrowersCount)), 10**19), "R:B:AMT_LT_AVG_DEBT");
             _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
         }
         borrowers[msg.sender] = borrower;
