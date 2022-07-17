@@ -75,6 +75,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     uint256 public lenderDebt;
     uint256 public borrowerDebt;
 
+    uint256 public totalBorrowers;
+
     uint256 public collateralScale;
     uint256 public quoteTokenScale;
 
@@ -264,8 +266,13 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         require(lupId <= limitIndex_, "S:B:LIMIT_REACHED");
 
         uint256 curDebt = _accruePoolInterest();
+
         Borrower memory borrower = borrowers[msg.sender];
+        uint256 borrowersCount = totalBorrowers;
+        if (borrowersCount != 0) require(borrower.debt + amount_ > Maths.wdiv(curDebt, Maths.wad(Maths.max(1000, borrowersCount * 10))), "S:B:AMT_LT_AVG_DEBT");
+
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
 
         uint256 feeRate = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee) + Maths.WAD;
         uint256 debt    = Maths.wmul(amount_, feeRate);
@@ -332,6 +339,16 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         curLenderDebt -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curDebt), amount));
         curDebt       -= amount;
 
+        uint256 borrowersCount = totalBorrowers;
+        if (borrower.debt == 0) {
+            totalBorrowers = borrowersCount - 1;
+            _removeLoanQueue(msg.sender, oldPrev_);
+        } else {
+            if (borrowersCount != 0) require(borrower.debt > Maths.wdiv(curDebt, Maths.wad(Maths.max(1000, borrowersCount * 10))), "R:B:AMT_LT_AVG_DEBT");
+            _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+        }
+        borrowers[msg.sender] = borrower;
+
         if (curDebt != 0) {
             borrowerDebt = curDebt;
             lenderDebt   = curLenderDebt;
@@ -339,13 +356,6 @@ contract ScaledPool is Clone, FenwickTree, Queue {
             borrowerDebt = 0;
             lenderDebt   = 0;
         }
-
-        if (borrower.debt == 0) {
-            _removeLoanQueue(msg.sender, oldPrev_);
-        } else {
-            _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
-        }
-        borrowers[msg.sender] = borrower;
 
         uint256 newLup = _lup();
         _updateInterestRate(curDebt, newLup);
