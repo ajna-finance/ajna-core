@@ -50,13 +50,20 @@ contract MulticallTest is DSTestPlus {
         uint256 priceOne   = _p4000;
         uint256 priceTwo   = _p3010;
         uint256 priceThree = _p1004;
-        _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceOne);
-        _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceTwo);
-        _pool.addQuoteToken(address(testAddress), 3_000 * 1e18, priceThree);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, priceOne);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, priceTwo);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, priceThree);
 
         // mint an NFT capable of representing the positions
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(testAddress, address(_pool));
         uint256 tokenId = _positionManager.mint(mintParams);
+
+        // allow position manager to take ownership of lenders position
+        vm.prank(testAddress);
+        _pool.approveNewPositionOwner(testAddress, address(_positionManager));
 
         // Prepare to memorialize the extant positions with the just minted NFT
         uint256[] memory pricesToMemorialize = new uint256[](3);
@@ -65,7 +72,7 @@ contract MulticallTest is DSTestPlus {
         pricesToMemorialize[2] = priceThree;
 
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId, testAddress, address(_pool), pricesToMemorialize
+            tokenId, testAddress, pricesToMemorialize
         );
 
         // Prepare to add quotte tokens to a new price bucket and associate with NFT
@@ -79,7 +86,7 @@ contract MulticallTest is DSTestPlus {
 
         // https://ethereum.stackexchange.com/questions/65980/passing-struct-as-an-argument-in-call
         callsToExecute[0] = abi.encodeWithSignature(
-            "memorializePositions((uint256,address,address,uint256[]))",
+            "memorializePositions((uint256,address,uint256[]))",
             memorializeParams
         );
         callsToExecute[1] = abi.encodeWithSignature(

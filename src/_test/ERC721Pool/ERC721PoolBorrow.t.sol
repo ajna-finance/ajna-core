@@ -73,9 +73,9 @@ contract ERC721PoolBorrowTest is DSTestPlus {
      */
     function testBorrowNFTSubset() external {
         // add initial quote tokens to pool
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p4000);
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p3010);
-        _lender.addQuoteToken(_NFTSubsetPool, address(_lender), 10_000 * 1e18, _p2503);
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p4000);
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p3010);
+        _lender.addQuoteToken(_NFTSubsetPool, 10_000 * 1e18, _p2503);
 
         // check iniital pool balance
         assertEq(_NFTSubsetPool.totalQuoteToken(),                30_000 * 1e18);

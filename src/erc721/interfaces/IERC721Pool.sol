@@ -3,6 +3,9 @@ pragma solidity 0.8.14;
 
 import { IPool } from "../../base/interfaces/IPool.sol";
 
+
+import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 /**
  * @title Ajna ERC721 Pool
  */
@@ -44,6 +47,22 @@ interface IERC721Pool is IPool {
      */
     event RemoveNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
 
+    /***************/
+    /*** Structs ***/
+    /***************/
+
+     /**
+     *  @notice Struct holding borrower related info per price bucket, for borrowers using NFTs as collateral.
+     *  @param  debt                Borrower debt, WAD units.
+     *  @param  collateralDeposited OZ Enumberable Set tracking the tokenIds of collateral that have been deposited
+     *  @param  inflatorSnapshot    Current borrower inflator snapshot, RAY units.
+     */
+    struct NFTBorrowerInfo {
+        uint256   debt;
+        EnumerableSet.UintSet collateralDeposited;
+        uint256   inflatorSnapshot;
+    }
+
     /*****************************/
     /*** Inititalize Functions ***/
     /*****************************/
@@ -70,17 +89,42 @@ interface IERC721Pool is IPool {
      */
     function removeCollateral(uint256[] calldata tokenIds_) external;
 
+    /***********************************/
+    /*** Borrower View Functions ***/
+    /***********************************/
+
+    /**
+     *  @notice Returns a tuple of information about a given NFT borrower.
+     *  @param  borrower_                 Address of the borrower.
+     *  @return debt_                     Amount of debt that the borrower has, in quote token.
+     *  @return pendingDebt_              Amount of unaccrued debt that the borrower has, in quote token.
+     *  @return collateralDeposited_      Amount of collateral that tne borrower has deposited, in NFT tokens.
+     *  @return collateralEncumbered_     Amount of collateral that the borrower has encumbered, in NFT token.
+     *  @return collateralization_        Collateral ratio of the borrower's pool position.
+     *  @return borrowerInflatorSnapshot_ Snapshot of the borrower's inflator value.
+     *  @return inflatorSnapshot_         Snapshot of the pool's inflator value.
+     */
+    function getBorrowerInfo(address borrower_) external view returns (
+        uint256 debt_,
+        uint256 pendingDebt_,
+        uint256[] memory collateralDeposited_,
+        uint256 collateralEncumbered_,
+        uint256 collateralization_,
+        uint256 borrowerInflatorSnapshot_,
+        uint256 inflatorSnapshot_
+    );
+
     /*********************************/
     /*** Lender External Functions ***/
     /*********************************/
 
     /**
      *  @notice Called by lenders to claim multiple unencumbered collateral from a price bucket.
-     *  @param  recipient_ The recipient claiming collateral.
      *  @param  tokenIds_  NFT token ids to be claimed from the pool.
      *  @param  price_     The bucket from which unencumbered collateral will be claimed.
+     *  @return lpTokens_  The actual amount of lpTokens claimed.
      */
-    function claimCollateral(address recipient_, uint256[] calldata tokenIds_, uint256 price_) external;
+    function claimCollateral(uint256[] calldata tokenIds_, uint256 price_) external returns (uint256 lpTokens_);
 
     /*******************************/
     /*** Pool External Functions ***/
@@ -95,4 +139,10 @@ interface IERC721Pool is IPool {
      *  @param  tokenIds_ NFT token ids to be purchased from the pool.
      */
     function purchaseBid(uint256 amount_, uint256 price_, uint256[] calldata tokenIds_) external;
+
+    /**
+     *  @notice Returns the address of the pool's collateral token
+     */
+    function collateralTokenAddress() external pure returns (address);
+
 }

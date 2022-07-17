@@ -60,6 +60,7 @@ abstract contract DSTestPlus is Test {
     event IncreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 amount_);
     event MemorializePosition(address indexed lender_, uint256 tokenId_);
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
+    event MoveLiquidity(address indexed owner_, uint256 tokenId_);
 
     // Pool events
     event AddCollateral(address indexed borrower_, uint256 amount_);
@@ -76,6 +77,7 @@ abstract contract DSTestPlus is Test {
     event RemoveNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
+    event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
 
     // ERC20 events

@@ -21,13 +21,13 @@ def test_purchase_bid_gas(
         bidder = borrowers[1]
 
         mkr_dai_pool.addQuoteToken(
-            lender, 3_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
+            3_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 3_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+            3_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
         )
         mkr_dai_pool.addQuoteToken(
-            lender, 3_000 * 10**18, bucket_math.indexToPrice(1524), {"from": lender}
+            3_000 * 10**18, bucket_math.indexToPrice(1524), {"from": lender}
         )
 
         # borrower takes a loan of 4000 DAI making bucket 4000 to be fully utilized
