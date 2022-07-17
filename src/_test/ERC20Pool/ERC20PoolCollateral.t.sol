@@ -228,7 +228,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 4_000 * 1e18, priceMed);
         _lender.addQuoteToken(_pool, 5_000 * 1e18, priceLow);
 
-        _lender1.addQuoteToken(_pool, 3_000 * 1e18, priceHigh);
+        _lender1.addQuoteToken(_pool, 500 * 1e18, priceHigh);
 
         // check LP balance for lender
         assertEq(_pool.lpBalance(address(_lender), priceHigh),  3_000 * 1e27);
@@ -236,7 +236,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(_pool.lpBalance(address(_lender), priceLow),   5_000 * 1e27);
 
         // check LP balance for lender1
-        assertEq(_pool.lpBalance(address(_lender1), priceHigh), 3_000 * 1e27);
+        assertEq(_pool.lpBalance(address(_lender1), priceHigh), 500 * 1e27);
 
         // should revert when claiming collateral if no purchase bid was done on bucket
         vm.expectRevert("B:CC:AMT_GT_COLLAT");
@@ -249,13 +249,13 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         // borrower takes a loan of 4000 DAI
         _borrower.addCollateral(_pool, 100 * 1e18);
         _borrower.borrow(_pool, 4_000 * 1e18, 3_000 * 1e18);
-        assertEq(_pool.lup(), priceHigh);
+        assertEq(_pool.lup(), priceMed);
 
         // check 4_000.927678580567537368 bucket balance before purchase Bid
         (, , , uint256 deposit, uint256 debt, , uint256 lpOutstanding, uint256 bucketCollateral) = _pool.bucketAt(_p4000);
-        assertEq(deposit,          2_000 * 1e18);
-        assertEq(debt,             4_000.000961538461538462 * 1e18);
-        assertEq(lpOutstanding,    6_000 * 1e27);
+        assertEq(deposit,          0);
+        assertEq(debt,             3_500.000000000000000000 * 1e18);
+        assertEq(lpOutstanding,    3_500 * 1e27);
         assertEq(bucketCollateral, 0);
 
         // bidder purchases some of the top bucket
@@ -264,8 +264,8 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         // check 4_000.927678580567537368 bucket collateral after purchase Bid
         (, , , deposit, debt, , , bucketCollateral) = _pool.bucketAt(priceHigh);
         assertEq(bucketCollateral, 0.374913050298415730 * 1e18);
-        assertEq(deposit,          500 * 1e18);
-        assertEq(debt,             4_000.000961538461538462 * 1e18);
+        assertEq(deposit,          0);
+        assertEq(debt,             2_000.000000000000000000 * 1e18);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_lender)),     0);
@@ -273,26 +273,25 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_bidder)),     99.625086949701584270 * 1e18);
         assertEq(_collateral.balanceOf(address(_pool)),       100.374913050298415730 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)),          188_000 * 1e18);
-        assertEq(_quote.balanceOf(address(_pool)),            9_500 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)),            7_000 * 1e18);
         assertEq(_pool.totalCollateral(),                     100 * 1e18);
+
+        // should revert if claiming larger amount of collateral than LP balance allows
+        vm.expectRevert("B:CC:INSUF_LP_BAL");
+        _lender1.claimCollateral(_pool, 0.3 * 1e18, priceHigh);
 
         // lender claims entire 0.37491305029841573 collateral from price bucket
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_lender), 0.374913050298415730 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit ClaimCollateral(address(_lender), priceHigh, 0.374913050298415730 * 1e18, 1_499.999759615423138588368817828 * 1e27);
+        emit ClaimCollateral(address(_lender), priceHigh, 0.374913050298415730 * 1e18, 1_500.000000000000000026285714500 * 1e27);
         _lender.claimCollateral(_pool, 0.374913050298415730 * 1e18, priceHigh);
-
-        // FIXME: Need to add an additional lender to test this
-        // should revert if claiming larger amount of collateral than LP balance allows
-        // vm.expectRevert("B:CC:INSUF_LP_BAL");
-        // _lender1.claimCollateral(_pool, 0.3 * 1e18, priceHigh);
 
         // check 4_000.927678580567537368 bucket balance after collateral claimed
         (, , , deposit, debt, , lpOutstanding, bucketCollateral) = _pool.bucketAt(_p4000);
-        assertEq(deposit,          500 * 1e18);
-        assertEq(debt,             4_000.000961538461538462 * 1e18);
-        assertEq(lpOutstanding,    4_500.000240384576861411631182172 * 1e27);
+        assertEq(deposit,          0);
+        assertEq(debt,             2_000.000000000000000000 * 1e18);
+        assertEq(lpOutstanding,    1_999.999999999999999973714285500 * 1e27);
         assertEq(bucketCollateral, 0);
 
         // lender should be able to remove quote from the top bucket
@@ -310,7 +309,7 @@ contract ERC20PoolCollateralTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)),    188_000 * 1e18);
         assertEq(_collateral.balanceOf(address(_pool)), 100 * 1e18);
         assertEq(_pool.totalCollateral(),               100 * 1e18);
-        assertEq(_quote.balanceOf(address(_pool)),      7_500 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)),      6_499.999999999999999993 * 1e18);
     }
 
     /**

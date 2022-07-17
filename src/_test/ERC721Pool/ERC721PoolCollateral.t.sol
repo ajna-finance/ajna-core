@@ -545,9 +545,6 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _bidder.purchaseBid(_NFTSubsetPool, 8_000 * 1e18, _p4000, _tokenIds);
 
         // bidder purchases some of the top bucket, overpaying with two collateral in order to meet whole unit requirements
-        _tokenIds = new uint256[](2);
-        _tokenIds[0] = 61;
-        _tokenIds[1] = 63;
         vm.expectEmit(true, true, false, true);
         emit PurchaseWithNFTs(address(_bidder), _p4000, 4_500 * 1e18, _tokenIds);
         vm.prank((address(_bidder)));

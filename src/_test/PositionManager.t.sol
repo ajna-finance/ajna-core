@@ -555,7 +555,7 @@ contract PositionManagerTest is DSTestPlus {
      *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity in an NFT Pool.
      *          Lender reverts when attempting to interact with a pool the tokenId wasn't minted in
      */
-    function xtestDecreaseLiquidityWithDebtNFTPool() external {
+    function testDecreaseLiquidityWithDebtNFTPool() external {
         // deploy NFT pool and user contracts
         NFTCollateralToken _erc721Collateral  = new NFTCollateralToken();
         ERC721PoolFactory _erc721Factory      = new ERC721PoolFactory();
@@ -563,24 +563,19 @@ contract PositionManagerTest is DSTestPlus {
         ERC721Pool _NFTCollectionPool         = ERC721Pool(_NFTCollectionPoolAddress);
 
         UserWithQuoteTokenInNFTPool testLender = new UserWithQuoteTokenInNFTPool();
-        UserWithNFTCollateral testBorrower     = new UserWithNFTCollateral();
         UserWithNFTCollateral testBidder       = new UserWithNFTCollateral();
 
         // mint test tokens
         _quote.mint(address(testBidder), 600_000_000 * 1e18);
         _quote.mint(address(testLender), 600_000_000 * 1e18);
 
-        _erc721Collateral.mint(address(testBorrower), 60);
         _erc721Collateral.mint(address(testBidder), 5);
 
         // run token approvals for NFT Collection Pool
         testLender.approveToken(_quote, _NFTCollectionPoolAddress, 600_000_000 * 1e18);
         testLender.approveToken(_quote, address(_positionManager), 600_000_000 * 1e18);
-        testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 63);
-        testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 65);
-        testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 1);
-        testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 3);
-        testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 5);
+        testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 3);
+        testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 5);
 
         // mint position NFT
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(address(testLender), _NFTCollectionPoolAddress);
@@ -591,78 +586,55 @@ contract PositionManagerTest is DSTestPlus {
         vm.expectRevert("PM:W_POOL");
         vm.prank(address(testLender));
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId, address(testLender), address(_pool), 80_000 * 1e18, _p10016
+            tokenId, address(testLender), address(_pool), 80_000 * 1e18, _p4000
         );
         _positionManager.increaseLiquidity(increaseLiquidityParams);
 
         // add liquidity that can later be decreased
         vm.prank(address(testLender));
         vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(address(testLender), _p10016, 590_000_000 * 1e18);
+        emit IncreaseLiquidity(address(testLender), _p4000, 590_000_000 * 1e18);
         increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId, address(testLender), _NFTCollectionPoolAddress, 590_000_000 * 1e18, _p10016
+            tokenId, address(testLender), _NFTCollectionPoolAddress, 590_000_000 * 1e18, _p4000
         );
         _positionManager.increaseLiquidity(increaseLiquidityParams);
 
         assertEq(_quote.balanceOf(address(_positionManager)),          0);
         assertEq(_quote.balanceOf(address(_NFTCollectionPoolAddress)), 590_000_000 * 1e18);
 
-        // borrower adds initial collateral to the pool to borrow against
-        uint256[] memory collateralToAdd = new uint256[](3);
-        collateralToAdd[0] = 1;
-        collateralToAdd[1] = 3;
-        collateralToAdd[2] = 5;
-        vm.prank((address(testBorrower)));
-        testBorrower.addCollateralMultiple(_NFTCollectionPool, collateralToAdd);
-
-        // borrow against the pool
-        vm.expectEmit(true, true, false, true);
-        emit Borrow(address(testBorrower), _p10016, 30_000 * 1e18);
-        testBorrower.borrow(_NFTCollectionPool, 30_000 * 1e18, _p10016);
-
-        // add additional quote tokens to enable claiming
-        vm.prank(address(testBidder));
-        _quote.approve(address(_NFTCollectionPool), type(uint256).max);
-        vm.prank(address(testBidder));
-        _NFTCollectionPool.addQuoteToken(40_000 * 1e18, _p10016);
-
         // purchase bid from the pool
-        uint256[] memory tokensToBuyAndRemove = new uint256[](1);
-        tokensToBuyAndRemove[0] = 63;
-        // tokensToBuyAndRemove[1] = 65;
+        uint256[] memory tokensToBuyAndRemove = new uint256[](2);
+        tokensToBuyAndRemove[0] = 3;
+        tokensToBuyAndRemove[1] = 5;
         vm.expectEmit(true, true, false, true);
-        emit PurchaseWithNFTs(address(testBidder), _p10016, 8_000 * 1e18, tokensToBuyAndRemove);
+        emit PurchaseWithNFTs(address(testBidder), _p4000, 7000 * 1e18, tokensToBuyAndRemove);
         vm.prank((address(testBidder)));
-        testBidder.purchaseBid(_NFTCollectionPool, 8_000 * 1e18, _p10016, tokensToBuyAndRemove);
+        testBidder.purchaseBid(_NFTCollectionPool, 7000 * 1e18, _p4000, tokensToBuyAndRemove);
 
         // decrease liquidity via the NFT specific method
         IPositionManager.DecreaseLiquidityNFTParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityNFTParams(
-            tokenId, address(testLender), _NFTCollectionPoolAddress, _p10016, _positionManager.getLPTokens(tokenId, _p10016), tokensToBuyAndRemove
+            tokenId, address(testLender), _NFTCollectionPoolAddress, _p4000, _positionManager.getLPTokens(tokenId, _p4000), tokensToBuyAndRemove
         );
 
-        uint256[] memory claimedTokens = new uint256[](1);
-        claimedTokens[0] = 63;
+        uint256[] memory claimedTokens = new uint256[](2);
+        claimedTokens[0] = 3;
+        claimedTokens[1] = 5;
         vm.expectEmit(true, true, false, true);
-        emit ClaimNFTCollateral(address(_positionManager), _p10016, claimedTokens, 10009.894230256636224099811892602 * 1e27);
+        emit ClaimNFTCollateral(address(_positionManager), _p4000, claimedTokens, 8_001.841769554280865086578761291 * 1e27);
         vm.expectEmit(true, true, false, true);
-        emit DecreaseLiquidityNFT(address(testLender), _p10016, claimedTokens, 39_973.184583540486612233 * 1e18);
+        emit DecreaseLiquidityNFT(address(testLender), _p4000, claimedTokens, 589_403_007.000000000000000000 * 1e18);
         vm.prank((address(testLender)));
         _positionManager.decreaseLiquidityNFT(decreaseLiquidityParams);
 
         // check pool state
-        assertEq(_NFTCollectionPool.lup(), _p10016);
-        assertEq(_NFTCollectionPool.hpb(), _p10016);
+        assertEq(_NFTCollectionPool.lup(), _p4000);
+        assertEq(_NFTCollectionPool.hpb(), 0);
 
         // check colateral balances
-        assertEq(_NFTCollectionPool.getCollateralDeposited().length,       4);
-        assertEq(_NFTCollectionPool.getCollateralDeposited()[0],           1);
-        assertEq(_NFTCollectionPool.getCollateralDeposited()[1],           3);
-        assertEq(_NFTCollectionPool.getCollateralDeposited()[2],           5);
-
-        assertEq(_erc721Collateral.balanceOf(address(_NFTCollectionPool)), 4);
+        assertEq(_NFTCollectionPool.getCollateralDeposited().length,       0);
+        assertEq(_erc721Collateral.balanceOf(address(_NFTCollectionPool)), 0);
         assertEq(_erc721Collateral.balanceOf(address(_positionManager)),   0);
-        assertEq(_erc721Collateral.balanceOf(address(testLender)),         1);
-
+        assertEq(_erc721Collateral.balanceOf(address(testLender)),         2);
     }
 
     /**
