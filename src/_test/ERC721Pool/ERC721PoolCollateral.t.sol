@@ -545,9 +545,6 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         _bidder.purchaseBid(_NFTSubsetPool, 8_000 * 1e18, _p4000, _tokenIds);
 
         // bidder purchases some of the top bucket, overpaying with two collateral in order to meet whole unit requirements
-        _tokenIds = new uint256[](2);
-        _tokenIds[0] = 61;
-        _tokenIds[1] = 63;
         vm.expectEmit(true, true, false, true);
         emit PurchaseWithNFTs(address(_bidder), _p4000, 4_500 * 1e18, _tokenIds);
         vm.prank((address(_bidder)));
@@ -610,11 +607,11 @@ contract ERC721PoolCollateralTest is DSTestPlus {
         assertEq(collateralDeposited.length, 0);
 
         // lender removes some quote tokens
-        uint256 lpTokensToRemove = _NFTSubsetPool.lpBalance(address(_lender), _p4000);
+        uint256 lpTokensToRemove = _NFTSubsetPool.lpBalance(address(_lender), _p4000) / 1000000;
         vm.prank((address(_lender)));
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_lender), _p4000, .999 * 1e18, _p4000);
-        _NFTSubsetPool.removeQuoteToken(1 * 1e18, _p4000, lpTokensToRemove);
+        emit RemoveQuoteToken(address(_lender), _p4000, .005495150403602401 * 1e18, _p4000);
+        _NFTSubsetPool.removeQuoteToken(_p4000, lpTokensToRemove);
     }
 
     // TODO: implement

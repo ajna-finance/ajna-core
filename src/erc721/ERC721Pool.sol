@@ -337,7 +337,7 @@ contract ERC721Pool is IERC721Pool, Pool {
     function _purchaseBidFromBucketNFTCollateral(
         uint256 price_, uint256 amount_, uint256[] memory tokenIds_, uint256 inflator_
     ) internal {
-        Bucket memory bucket    = _buckets[price_];
+        Bucket storage bucket    = _buckets[price_];
         bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 

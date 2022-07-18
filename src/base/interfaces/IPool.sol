@@ -253,13 +253,12 @@ interface IPool {
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
-     *  @param  maxAmount_ The maximum amount of quote token to be removed by a lender.
      *  @param  price_     The bucket from which quote tokens will be removed.
      *  @param  lpTokens_  The amount of LP tokens to be removed by a lender.
      *  @return amount     The amount of quote tokens actually removed by the lender.
      *  @return lpTokens     The amount of quote LP tokens actually removed by the lender.
      */
-    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokens_) external returns (uint256 amount, uint256 lpTokens);
+    function removeQuoteToken(uint256 price_, uint256 lpTokens_) external returns (uint256 amount, uint256 lpTokens);
 
     /**
      *  @notice Called by lenders to transfers their LP tokens to a different address.
@@ -349,6 +348,15 @@ interface IPool {
      *  @return quoteTokens_      The equivalent value of quote tokens for the given LP Tokens, WAD units.
      */
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);
+
+    /**
+     *  @notice Calculate the amount of lpTokens equivalent to a given amount of quote tokens.
+     *  @param  quoteTokens_      The number of quote tokens to calculate LP tokens for, WAD units.
+     *  @param  price_            The price bucket for which the value should be calculated.
+     *  @param  owner_            The address which owns the LP tokens.
+     *  @return lpTokens_         The equivalent value of LP tokens for the given quote Tokens, RAY units.
+     */
+    function getLpTokensFromQuoteTokens(uint256 quoteTokens_, uint256 price_, address owner_) external view returns (uint256 lpTokens_);
 
     /**
      *  @notice Returns the current minimum pool price.
