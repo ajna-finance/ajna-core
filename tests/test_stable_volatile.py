@@ -280,7 +280,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth
