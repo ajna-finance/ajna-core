@@ -92,7 +92,9 @@ class AjnaPoolClient:
 
         lender = self._sdk.lenders[lender_index]
 
-        tx = pool_contract.removeQuoteToken(amount, price, {"from": lender})
+        lp_tokens = pool_contract.getLpTokensFromQuoteTokens(amount, price, lender)
+
+        tx = pool_contract.removeQuoteToken(price, lp_tokens, {"from": lender})
         if ensure_passes and bool(tx.revert_msg):
             raise Exception(
                 f"Failed to remove quote token from pool {pool_contract.address}. Revert message: {tx.revert_msg}"

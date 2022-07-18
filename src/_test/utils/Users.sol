@@ -135,10 +135,8 @@ contract UserWithQuoteToken {
         pool_.addQuoteToken(amount_, price_);
     }
 
-    function removeQuoteToken(ERC20Pool pool_, uint256 amount_, uint256 price_) public {
-        // remove full lpToken balance
-        uint256 lpTokensToRemove = pool_.lpBalance(address(this), price_);
-        pool_.removeQuoteToken(amount_, price_, lpTokensToRemove);
+    function removeQuoteToken(ERC20Pool pool_, uint256 lpTokensToRemove_, uint256 price_) public {
+        pool_.removeQuoteToken(price_, lpTokensToRemove_);
     }
 
     function moveQuoteToken(
@@ -206,10 +204,8 @@ contract UserWithQuoteTokenInNFTPool {
         pool_.addQuoteToken(amount_, price_);
     }
 
-    function removeQuoteToken(ERC721Pool pool_, uint256 amount_, uint256 price_) public {
-        // remove full lpToken balance
-        uint256 lpTokensToRemove = pool_.lpBalance(address(this), price_);
-        pool_.removeQuoteToken(amount_, price_, lpTokensToRemove);
+    function removeQuoteToken(ERC721Pool pool_, uint256 lpTokensToRemove_, uint256 price_) public {
+        pool_.removeQuoteToken(price_, lpTokensToRemove_);
     }
 
     function borrow(ERC721Pool pool_, uint256 amount_, uint256 stopPrice) public {

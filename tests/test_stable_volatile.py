@@ -47,7 +47,7 @@ def lenders(ajna_protocol, pool_client, weth_dai_pool):
 @pytest.fixture
 def borrowers(ajna_protocol, pool_client, weth_dai_pool):
     weth_client = pool_client.get_collateral_token()
-    amount = 13_000 * 10**18
+    amount = 5_000 * 10**18
     dai_client = pool_client.get_quote_token()
     borrowers = []
     for _ in range(100):
@@ -234,7 +234,7 @@ def add_quote_token(lender, lender_index, pool, bucket_math, gas_validator, ):
 
     print(f" lender {lender_index} adding {quantity / 10**18:.1f} liquidity at {price / 10**18:.1f}")
     try:
-        tx = pool.addQuoteToken(lender, quantity, price, {"from": lender})
+        tx = pool.addQuoteToken(quantity, price, {"from": lender})
         gas_validator.validate(tx)
         return price
     except VirtualMachineError as ex:
@@ -251,9 +251,11 @@ def remove_quote_token(lender, lender_index, price, pool):
     if lp_balance > 0:
         assert lp_outstanding > 0
         (_, claimable_quote) = pool.getLPTokenExchangeValue(lp_balance, price)
-        claimable_quote = claimable_quote * 1.1  # include extra for unaccumulated interest
+        lpTokensToRemove = pool.getLpTokensFromQuoteTokens(claimable_quote, price, lender)
+
+        # claimable_quote = claimable_quote * 1.1  # include extra for unaccumulated interest
         print(f" lender {lender_index} removing {claimable_quote / 10**18:.1f} at {price / 10**18:.1f}")
-        tx = pool.removeQuoteToken(lender, claimable_quote, price, {"from": lender})
+        tx = pool.removeQuoteToken(price, lpTokensToRemove, {"from": lender})
     else:
         print(f" lender {lender_index} has no claim to bucket {price / 10**18:.1f}")
 
@@ -278,7 +280,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth

@@ -85,7 +85,7 @@ def test_quote_removal_from_lup_with_reallocation(
 
         # lender removes 1000 DAI
         tx = mkr_dai_pool.removeQuoteToken(
-            1_000 * 10**18, bucket_math.indexToPrice(1663), lp_tokens, {"from": lender}
+            bucket_math.indexToPrice(1663), lp_tokens, {"from": lender}
         )
 
         with capsys.disabled():
@@ -130,7 +130,7 @@ def test_quote_removal_below_lup(
 
         # lender removes 1000 DAI
         tx = mkr_dai_pool.removeQuoteToken(
-            1_000 * 10**18, bucket_math.indexToPrice(1606), lp_tokens, {"from": lender}
+            bucket_math.indexToPrice(1606), lp_tokens, {"from": lender}
         )
 
         with capsys.disabled():
