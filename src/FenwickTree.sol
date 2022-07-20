@@ -2,13 +2,21 @@
 
 pragma solidity 0.8.14;
 
+import { IFenwickTree } from "./IFenwickTree.sol";
+
 import { Maths } from "./libraries/Maths.sol";
 
-abstract contract FenwickTree {
+abstract contract FenwickTree is IFenwickTree {
     uint256 public constant SIZE = 8192;
 
-    uint256[8193] public _values;  // values
-    uint256[8193] public _scaling; // scaling
+    /**
+     *  @notice Array of values in the FenwickTree.
+     */
+    uint256[8193] internal values;  // values
+    /**
+     *  @notice Array of values in the nested scaling FenwickTree.
+     */
+    uint256[8193] internal scaling; // scaling
 
     function _scale(uint256 i_) internal view returns (uint256 a_) {
         require(i_ >= 0 && i_ < SIZE, "FW:S:INVALID_INDEX");
@@ -16,13 +24,14 @@ abstract contract FenwickTree {
         a_ = Maths.WAD;
         uint256 scaled;
         while (i_ <= SIZE) {
-            scaled = _scaling[i_];
+            scaled = scaling[i_];
             if (scaled != 0) a_ = Maths.wmul(a_, scaled);
             i_ += _lsb(i_);
         }
     }
 
 
+    // TODO: add check to ensure scaling factor is at least a WAD? 
     function _mult(uint256 i_, uint256 f_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:M:INVALID_INDEX");
         require(f_ != 0, "FW:M:FACTOR_ZERO");
@@ -36,14 +45,14 @@ abstract contract FenwickTree {
         uint256 scaledJ;
 
         while (i_ > 0) {
-            scaledI =  _scaling[i_];
-            sum = scaledI != 0 ? sum + Maths.wmul(Maths.wmul(df, _values[i_]), scaledI) : sum + Maths.wmul(df, _values[i_]);
-            _scaling[i_] = scaledI != 0 ? Maths.wmul(f_, scaledI) : f_;
+            scaledI =  scaling[i_];
+            sum = scaledI != 0 ? sum + Maths.wmul(Maths.wmul(df, values[i_]), scaledI) : sum + Maths.wmul(df, values[i_]);
+            scaling[i_] = scaledI != 0 ? Maths.wmul(f_, scaledI) : f_;
             j = i_ + _lsb(i_);
             i_ -= _lsb(i_);
             while ((_lsb(j) < _lsb(i_)) || (i_ == 0 && j <= SIZE)) {
-                _values[j] += sum;
-                scaledJ = _scaling[j];
+                values[j] += sum;
+                scaledJ = scaling[j];
                 if (scaledJ != 0) sum = Maths.wmul(sum, scaledJ);
                 j += _lsb(j);
             }
@@ -64,16 +73,16 @@ abstract contract FenwickTree {
             if (((i_ - 1) & j) != 0) {
                 ii += j;
             } else {
-                scaled = _scaling[ii + j];
+                scaled = scaling[ii + j];
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
-                _values[ii + j] += Maths.wdiv(x_, sc);
+                values[ii + j] += Maths.wdiv(x_, sc);
             }
             j = j >> 1;
         }
     }
 
     function _remove(uint256 i_, uint256 x_) internal {
-        require(i_ >= 0 && i_ < SIZE, "FW:A:INVALID_INDEX");
+        require(i_ >= 0 && i_ < SIZE, "FW:R:INVALID_INDEX");
 
         i_ += 1;
         uint256 j = 8192; // 1 << 13
@@ -86,9 +95,9 @@ abstract contract FenwickTree {
             if (((i_ - 1) & j) != 0) {
                 ii += j;
             } else {
-                scaled = _scaling[ii + j];
+                scaled = scaling[ii + j];
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
-                _values[ii + j] -= Maths.wdiv(x_, sc);
+                values[ii + j] -= Maths.wdiv(x_, sc);
             }
             j = j >> 1;
         }
@@ -103,9 +112,9 @@ abstract contract FenwickTree {
         uint256 scaled;
 
         while (j > 0 && ii + j <= SIZE) {
-            scaled = _scaling[ii + j];
+            scaled = scaling[ii + j];
             if (i_ & j != 0) {
-                s_ = scaled != 0 ? s_ + Maths.wmul(Maths.wmul(sc, scaled), _values[ii + j]) : s_ + Maths.wmul(sc, _values[ii + j]);
+                s_ = scaled != 0 ? s_ + Maths.wmul(Maths.wmul(sc, scaled), values[ii + j]) : s_ + Maths.wmul(sc, values[ii + j]);
             } else {
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
             }
@@ -121,6 +130,8 @@ abstract contract FenwickTree {
         return _prefixSum(stop_) - _prefixSum(start_ - 1);
     }
 
+    // TODO: rename this to findIndexOfSum
+    // TODO: should this revert if failed to find a value past a given index instead of SIZE?
     function _findSum(uint256 x_) internal view returns (uint256 m_) {
         uint256 i = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
         uint256 ss;
@@ -131,12 +142,12 @@ abstract contract FenwickTree {
         uint256 ssCond;
 
         while (i > 0) {
-            scaledMInc = _scaling[m_ + i];
-            ssCond = scaledMInc != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledMInc), _values[m_ + i]) : ss + Maths.wmul(sc, _values[m_ + i]);
+            scaledMInc = scaling[m_ + i];
+            ssCond = scaledMInc != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledMInc), values[m_ + i]) : ss + Maths.wmul(sc, values[m_ + i]);
             if (ssCond < x_) {
                 m_ += i;
-                scaledM = _scaling[m_];
-                ss = scaledM != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledM), _values[m_]) : ss + Maths.wmul(sc, _values[m_]);
+                scaledM = scaling[m_];
+                ss = scaledM != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledM), values[m_]) : ss + Maths.wmul(sc, values[m_]);
             } else {
                 if (scaledMInc != 0) sc = Maths.wmul(sc, scaledMInc);
             }
@@ -156,30 +167,30 @@ abstract contract FenwickTree {
     }
 
     function _treeSum() internal view returns (uint256) {
-        return _values[SIZE];
+        return values[SIZE];
     }
 
     function treeSum() external view returns (uint256) {
         return _treeSum();
     }
 
-    function get(uint256 i_) public view returns (uint256 m_) {
+    function get(uint256 i_) external view returns (uint256 m_) {
         return _rangeSum(i_, i_);
     }
 
-    function scale(uint256 i_) public view returns (uint256 a_) {
+    function scale(uint256 i_) external view returns (uint256 a_) {
         return _scale(i_);
     }
 
-    function findSum(uint256 x_) public view returns (uint256 m_) {
+    function findSum(uint256 x_) external view returns (uint256 m_) {
         return _findSum(x_);
     }
 
-    function prefixSum(uint256 i_) public view returns (uint256 s_) {
+    function prefixSum(uint256 i_) external view returns (uint256 s_) {
         return _prefixSum(i_);
     }
 
-    function lsb(uint256 i_) public pure returns (uint256) {
+    function lsb(uint256 i_) external pure returns (uint256) {
         // "i & (-i)"
         return _lsb(i_);
     }
