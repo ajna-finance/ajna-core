@@ -12,29 +12,11 @@ interface IFenwickTree {
     /*** State Variables ***/
     /***********************/
 
-    // TODO: should scaling and values be internal to prevent external usage and avoid confusion on what they return?
-
-    // TODO: finish defining scaling factor
-    /**
-     *  @notice Returns a scaled value from an index in the FenwickTree's scaling state array.
-     *  @dev    Scaled by FIXME:
-     *  @param  i_  The index of the node to find the scaled value of.
-     *  @return     The value at the given index in the tree.
-     */
-    function scaling(uint256 i_) external view returns (uint256);
-
     /**
      *  @notice Returns the `SIZE` constant, equivalent to the maximum number of price indices in the pool.
      *  @return The maximum price constant.
      */
     function SIZE() external view returns (uint256);
-
-    /**
-     *  @notice Returns a value from an index in the FenwickTree's values state array.
-     *  @param  i_  The index of the node to find the value of.
-     *  @return     The value at the given index in the tree.
-     */
-    function values(uint256 i_) external view returns (uint256);
 
     /**********************/
     /*** View Functions ***/
@@ -50,7 +32,7 @@ interface IFenwickTree {
 
     /**
      *  @notice Returns the value of a given node.
-     *  @param  i_  The index of the node to calculate the sum of.
+     *  @param  i_ The index of the node to calculate the sum of.
      *  @return m_ The node value. 
      */
     function get(uint256 i_) external view returns (uint256 m_);
@@ -66,7 +48,7 @@ interface IFenwickTree {
     /**
      *  @notice Returns the accumulated sum of a sequence of nodes up to a given node.
      *  @dev Starts at the tree root and decremnts through nodes until the given index, i_, is reached.
-     *  @param i_   The final index in the sequence.
+     *  @param  i_  The final index in the sequence.
      *  @return s_  The sum of the sequence. 
      */
     function prefixSum(uint256 i_) external view returns (uint256 s_);
@@ -74,7 +56,7 @@ interface IFenwickTree {
     /**
      *  @notice Returns the scaled sum of a sequence of nodes from a given index to the max index.
      *  @dev    Starts at the given index, and ends at 8192.
-     *  @param i_   The starting index in the sequence. 
+     *  @param  i_  The starting index in the sequence. 
      *  @return a_  The scaled sum of the sequence. 
      */
     function scale(uint256 i_) external view returns (uint256 a_);

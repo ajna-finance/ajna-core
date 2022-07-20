@@ -9,8 +9,14 @@ import { Maths } from "./libraries/Maths.sol";
 abstract contract FenwickTree is IFenwickTree {
     uint256 public constant SIZE = 8192;
 
-    uint256[8193] public override values;  // values
-    uint256[8193] public override scaling; // scaling
+    /**
+     *  @notice Array of values in the FenwickTree.
+     */
+    uint256[8193] internal values;  // values
+    /**
+     *  @notice Array of values in the nested scaling FenwickTree.
+     */
+    uint256[8193] internal scaling; // scaling
 
     function _scale(uint256 i_) internal view returns (uint256 a_) {
         require(i_ >= 0 && i_ < SIZE, "FW:S:INVALID_INDEX");
@@ -25,6 +31,7 @@ abstract contract FenwickTree is IFenwickTree {
     }
 
 
+    // TODO: add check to ensure scaling factor is at least a WAD? 
     function _mult(uint256 i_, uint256 f_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:M:INVALID_INDEX");
         require(f_ != 0, "FW:M:FACTOR_ZERO");
@@ -75,7 +82,7 @@ abstract contract FenwickTree is IFenwickTree {
     }
 
     function _remove(uint256 i_, uint256 x_) internal {
-        require(i_ >= 0 && i_ < SIZE, "FW:A:INVALID_INDEX");
+        require(i_ >= 0 && i_ < SIZE, "FW:R:INVALID_INDEX");
 
         i_ += 1;
         uint256 j = 8192; // 1 << 13
