@@ -10,7 +10,7 @@ import { DSTestPlus }                             from "../utils/DSTestPlus.sol"
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
 import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
 
-contract ScaledQuoteTokenTest is DSTestPlus {
+contract ScaledPurchaseQuoteTokenTest is DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 

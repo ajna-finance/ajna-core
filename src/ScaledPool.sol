@@ -550,6 +550,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         return _htp();
     }
 
+    function indexToPrice(uint256 index_) external pure returns (uint256) {
+        return _indexToPrice(index_);
+    }
+
     function priceToIndex(uint256 price_) external pure returns (uint256) {
         return _priceToIndex(price_);
     }
