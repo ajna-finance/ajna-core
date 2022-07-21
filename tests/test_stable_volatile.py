@@ -8,7 +8,7 @@ from brownie import Contract
 from brownie.exceptions import VirtualMachineError
 from conftest import TestUtils
 from decimal import *
-from sdk import AjnaPoolClient, AjnaProtocol
+from sdk import AjnaProtocol, WETH_ADDRESS, DAI_ADDRESS
 
 
 MIN_BUCKET = 1543  # 2210.03602, lowest bucket involved in the test
@@ -27,13 +27,8 @@ last_triggered = {}
 
 
 @pytest.fixture
-def pool_client(ajna_protocol: AjnaProtocol, weth, dai) -> AjnaPoolClient:
-    return ajna_protocol.get_pool(weth.address, dai.address)
-
-
-@pytest.fixture
-def lenders(ajna_protocol, pool_client, weth_dai_pool):
-    dai_client = pool_client.get_quote_token()
+def lenders(ajna_protocol, weth_dai_pool):
+    dai_client = ajna_protocol.get_token(weth_dai_pool.quoteToken())
     amount = 3_000_000 * 10**18
     lenders = []
     for _ in range(100):
@@ -45,10 +40,10 @@ def lenders(ajna_protocol, pool_client, weth_dai_pool):
 
 
 @pytest.fixture
-def borrowers(ajna_protocol, pool_client, weth_dai_pool):
-    weth_client = pool_client.get_collateral_token()
+def borrowers(ajna_protocol, weth_dai_pool):
+    weth_client = ajna_protocol.get_token(weth_dai_pool.collateral())
+    dai_client = ajna_protocol.get_token(weth_dai_pool.quoteToken())
     amount = 5_000 * 10**18
-    dai_client = pool_client.get_quote_token()
     borrowers = []
     for _ in range(100):
         borrower = ajna_protocol.add_borrower()
@@ -58,18 +53,19 @@ def borrowers(ajna_protocol, pool_client, weth_dai_pool):
         dai_client.approve_max(weth_dai_pool, borrower)
         assert weth_client.get_contract().balanceOf(borrower) >= amount
         borrowers.append(borrower)
-
     return borrowers
 
 
 @pytest.fixture
-def pool1(pool_client, dai, weth, lenders, borrowers, bucket_math, test_utils):
+def pool1(ajna_protocol, lenders, borrowers, bucket_math, test_utils):
+    # TODO: Eliminate AjnaPoolClient, refactoring AjnaProtocol deploy_erc20_pool and get_pool accordingly
+    pool = ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS).get_contract()
+
     # Adds liquidity to an empty pool and draws debt up to a target utilization
-    add_initial_liquidity(lenders, pool_client, bucket_math)
-    draw_initial_debt(borrowers, pool_client, bucket_math, test_utils, target_utilization=GOAL_UTILIZATION)
+    add_initial_liquidity(lenders, pool, bucket_math)
+    draw_initial_debt(borrowers, pool, bucket_math, test_utils, target_utilization=GOAL_UTILIZATION)
     global last_triggered
     last_triggered = dict.fromkeys(range(0, 100), 0)
-    pool = pool_client.get_contract()
     test_utils.validate_book(pool, bucket_math, MIN_BUCKET, MAX_BUCKET)
     return pool
 
@@ -93,27 +89,26 @@ def tx_validator(pool1, bucket_math):
     return TransactionValidator(pool1, bucket_math, MIN_BUCKET)
 
 
-def add_initial_liquidity(lenders, pool_client, bucket_math):
+def add_initial_liquidity(lenders, pool, bucket_math):
     # Lenders 0-9 will be "new to the pool" upon actual testing
     for i in range(10, len(lenders) - 1):
         # determine how many buckets to deposit into
         for b in range(1, (i % 4) + 1):
-            place_initial_random_bid(i, pool_client, bucket_math)
+            place_initial_random_bid(lenders[i], pool, bucket_math)
 
 
-def place_initial_random_bid(lender_index, pool_client, bucket_math):
+def place_initial_random_bid(lender, pool, bucket_math):
     price_count = MAX_BUCKET - MIN_BUCKET
     price_position = 1 - random.expovariate(lambd=5.0)
     price_index = (
         max(0, min(int(price_position * price_count), price_count)) + MIN_BUCKET
     )
     price = bucket_math.indexToPrice(price_index)
-    pool_client.deposit_quote_token(60_000 * 10**18, price, lender_index)
+    pool.addQuoteToken(60_000 * 10**18, price, {"from": lender})
 
 
-def draw_initial_debt(borrowers, pool_client, bucket_math, test_utils, target_utilization, limit_price=2000 * 10**18):
-    pool = pool_client.get_contract()
-    weth = pool_client.get_collateral_token().get_contract()
+def draw_initial_debt(borrowers, pool, bucket_math, test_utils, target_utilization, limit_price=2000 * 10**18):
+    weth = Contract(pool.collateral())
     target_debt = pool.totalQuoteToken() * target_utilization
     for borrower_index in range(0, len(borrowers) - 1):
         borrower = borrowers[borrower_index]
@@ -127,9 +122,9 @@ def draw_initial_debt(borrowers, pool_client, bucket_math, test_utils, target_ut
         # WAD / WAD * unscaled
         collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
         assert collateral_balance > collateral_to_deposit
-        pool_client.deposit_collateral(collateral_to_deposit, borrower_index)
+        pool.addCollateral(collateral_to_deposit, {"from": borrower})
         # print(f"\nBorrower {borrower_index} drawing {borrow_amount/1e45:.1f} from bucket {pool.lup()/1e18:.1f}")
-        pool_client.borrow(borrow_amount, borrower_index, limit_price)
+        pool.borrow(borrow_amount, limit_price, {"from": borrower})
         # test_utils.validate_debt(pool, borrowers, bucket_math, MIN_BUCKET)
 
 
@@ -280,7 +275,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth
@@ -293,8 +288,7 @@ def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, 
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
-    # end_time = start_time + SECONDS_PER_YEAR  # TODO: one year test
-    end_time = start_time + SECONDS_PER_YEAR / 121
+    end_time = start_time + SECONDS_PER_YEAR / 365
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay']):
         while chain.time() < end_time:

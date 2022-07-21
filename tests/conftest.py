@@ -79,6 +79,7 @@ def position_manager(deployer):
 
 @pytest.fixture
 def weth_dai_pool(ajna_protocol):
+    # TODO: Eliminate AjnaPoolClient, refactoring AjnaProtocol deploy_erc20_pool and get_pool accordingly
     return ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS).get_contract()
 
 
