@@ -12,7 +12,6 @@ from brownie.network.account import Accounts, LocalAccount
 
 from .protocol_definition import *
 from .erc20_token_client import ERC20TokenClient, DaiTokenClient
-from .ajna_pool_client import AjnaPoolClient
 from .ajna_protocol_runner import AjnaProtocolRunner
 
 
@@ -45,10 +44,10 @@ class AjnaProtocol:
 
     def deploy_erc20_pool(
         self, collateral_address, quote_token_address, interest_rate=0.05 * 1e18
-    ) -> AjnaPoolClient:
+    ) -> ERC20Pool:
         """
         Deploys ERC20 contract pool for given `collateral` and `quote` token addresses contract
-        and returns AjnaPoolClient. Adds pool to list of pools stored in AjnaProtocol.
+        and returns ERC20Pool. Adds pool to list of pools stored in AjnaProtocol.
 
         Args:
             collateral_address: address of ERC20 token contract
@@ -56,7 +55,7 @@ class AjnaProtocol:
             interest_rate: default interest rate of pool
 
         Returns:
-            AjnaPoolClient
+            ERC20Pool
         """
 
         deploy_tx = self.ajna_factory.deployPool(
@@ -76,12 +75,7 @@ class AjnaProtocol:
             quote_token_address
         )
 
-        pool_contract = ERC20Pool.at(pool_address)
-
-        pool = AjnaPoolClient(self, pool_contract)
-        self.pools.append(pool)
-
-        return pool
+        return ERC20Pool.at(pool_address)
 
     def add_token(self, token_address: str, reserve_address: str) -> None:
         """
@@ -131,9 +125,9 @@ class AjnaProtocol:
 
     def get_pool(
         self, collateral_address, quote_token_address, *, force_deploy=False
-    ) -> AjnaPoolClient:
+    ) -> ERC20Pool:
         """
-        Returns AjnaPoolClient for given `collateral` and `quote` token addresses contract.
+        Returns ERC20Pool for given `collateral` and `quote` token addresses contract.
 
         Args:
             collateral_address: address of ERC20 token contract
@@ -141,7 +135,7 @@ class AjnaProtocol:
             force_deploy: if True, pool is deployed if it is not found.
 
         Returns:
-            AjnaPoolClient
+            ERC20Pool
         """
 
         pool_address = self.ajna_factory.deployedPools(
@@ -157,8 +151,7 @@ class AjnaProtocol:
         )
 
         if is_deployed:
-            pool_contract = ERC20Pool.at(pool_address)
-            return AjnaPoolClient(self, pool_contract)
+            return ERC20Pool.at(pool_address)
 
         if force_deploy:
             return self.deploy_erc20_pool(collateral_address, quote_token_address)

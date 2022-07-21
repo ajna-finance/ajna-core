@@ -59,7 +59,7 @@ def bucket_math(ajna_protocol):
 
 @pytest.fixture
 def mkr_dai_pool(ajna_protocol):
-    return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
+    return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS)
 
 
 @pytest.fixture
@@ -79,22 +79,21 @@ def position_manager(deployer):
 
 @pytest.fixture
 def weth_dai_pool(ajna_protocol):
-    # TODO: Eliminate AjnaPoolClient, refactoring AjnaProtocol deploy_erc20_pool and get_pool accordingly
-    return ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS).get_contract()
+    return ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS)
 
 
 @pytest.fixture
 def lenders(ajna_protocol, mkr_dai_pool, scaled_pool):
     amount = 200_000 * 10**18  # 200,000 DAI for each lender
-    token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_quote_token()
+    dai_client = ajna_protocol.get_token(mkr_dai_pool.quoteToken())
 
     lenders = []
     for _ in range(10):
         lender = ajna_protocol.add_lender()
 
-        token.top_up(lender, amount)
-        token.approve_max(mkr_dai_pool, lender)
-        token.approve_max(scaled_pool, lender)
+        dai_client.top_up(lender, amount)
+        dai_client.approve_max(mkr_dai_pool, lender)
+        dai_client.approve_max(scaled_pool, lender)
 
         lenders.append(lender)
 
@@ -104,18 +103,18 @@ def lenders(ajna_protocol, mkr_dai_pool, scaled_pool):
 @pytest.fixture
 def borrowers(ajna_protocol, mkr_dai_pool, scaled_pool):
     amount = 100 * 10**18  # 100 MKR for each borrower
-    dai_token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_quote_token()
-    mkr_token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_collateral_token()
+    dai_client = ajna_protocol.get_token(mkr_dai_pool.quoteToken())
+    mkr_client = ajna_protocol.get_token(mkr_dai_pool.collateral())
 
     borrowers = []
     for _ in range(10):
         borrower = ajna_protocol.add_borrower()
 
-        mkr_token.top_up(borrower, amount)
-        mkr_token.approve_max(mkr_dai_pool, borrower)
-        dai_token.approve_max(mkr_dai_pool, borrower)
-        mkr_token.approve_max(scaled_pool, borrower)
-        dai_token.approve_max(scaled_pool, borrower)
+        mkr_client.top_up(borrower, amount)
+        mkr_client.approve_max(mkr_dai_pool, borrower)
+        dai_client.approve_max(mkr_dai_pool, borrower)
+        mkr_client.approve_max(scaled_pool, borrower)
+        dai_client.approve_max(scaled_pool, borrower)
 
         borrowers.append(borrower)
 

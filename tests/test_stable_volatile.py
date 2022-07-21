@@ -58,8 +58,7 @@ def borrowers(ajna_protocol, weth_dai_pool):
 
 @pytest.fixture
 def pool1(ajna_protocol, lenders, borrowers, bucket_math, test_utils):
-    # TODO: Eliminate AjnaPoolClient, refactoring AjnaProtocol deploy_erc20_pool and get_pool accordingly
-    pool = ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS).get_contract()
+    pool = ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS)
 
     # Adds liquidity to an empty pool and draws debt up to a target utilization
     add_initial_liquidity(lenders, pool, bucket_math)
@@ -275,7 +274,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, bucket_math, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == weth
