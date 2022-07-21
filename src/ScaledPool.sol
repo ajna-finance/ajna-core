@@ -162,7 +162,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         bucket.availableCollateral     -= amount_;
         bucket.lpAccumulator           -= lpRedemption;
-        lpBalance[index_][msg.sender]  -= lpRedemption;
+        lpBalance[index_][msg.sender] -= lpRedemption;
 
         _updateInterestRate(borrowerDebt, _lup());
 
@@ -174,7 +174,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
-        uint256 availableLPs = lpBalance[fromIndex_][msg.sender];
+        uint256 availableLPs  = lpBalance[fromIndex_][msg.sender];
         lpbAmount_           = Maths.wadToRay(lpbAmount_);
         require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:MQT:INSUF_LPS");
 

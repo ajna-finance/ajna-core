@@ -46,7 +46,7 @@ contract ScaledQuoteCollateralTest is DSTestPlus {
     }
 
     /**
-     *  @notice With 1 lender and 1 borrower test addCollateral, borrow, removeCollateral, and claimCollateral.
+     *  @notice With 1 lender and 1 borrower test addCollateral, borrow, and removeCollateral.
      */
     function testAddRemoveCollateral() external {
         uint256 depositPriceHighest = 2550;
@@ -145,7 +145,6 @@ contract ScaledQuoteCollateralTest is DSTestPlus {
         assertEq(_pool.pledgedCollateral(), _pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()));
 
         assertEq(_pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()), 7.061038044466018134 * 1e18);
-        // FIXME: why does lender debt not increase...?
         assertEq(_pool.encumberedCollateral(_pool.lenderDebt(), _pool.lup()),   7.044598359431304627 * 1e18);
 
         // check borrower state
@@ -161,6 +160,11 @@ contract ScaledQuoteCollateralTest is DSTestPlus {
         assertEq(_pool.borrowerCollateralization(borrowerDebt, borrowerCollateral, _pool.lup()), _pool.poolCollateralization());
     }
 
+    /**
+     *  @notice 1 borrower tests reverts in removeCollateral.
+     *          Reverts:
+     *              Attempts to remove more than available unencumbered collateral.
+     */
     function testRemoveCollateralRequireEnoughCollateral() external {
         uint256 testCollateralAmount = 100 * 1e18;
 
@@ -179,6 +183,9 @@ contract ScaledQuoteCollateralTest is DSTestPlus {
         _borrower.removeCollateral(_pool, testCollateralAmount, address(0), address(0), 1);
     }
 
+    /**
+     *  @notice 1 lender, 1 bidder tests claimCollateral.
+     */
     function testClaimCollateral() external {
         // test setup
         uint256 testIndex = 2550;
@@ -230,6 +237,12 @@ contract ScaledQuoteCollateralTest is DSTestPlus {
         assertEq(lpAccumulator,       _pool.lpBalance(testIndex, address(_lender)));
     }
 
+    /**
+     *  @notice 1 lender, 1 bidder tests reverts in claimCollateral.
+     *          Reverts:
+     *              Attempts to claim collateral when there is none in the bucket.
+     *              Attempts to claim collateral when lpBalance is 0.
+     */
     function testClaimCollateralRequireChecks() external {
         // test setup
         uint256 testIndex = 2550;
@@ -256,8 +269,9 @@ contract ScaledQuoteCollateralTest is DSTestPlus {
 
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(testIndex);
 
-        // TODO: figure out how to test this case
         // should revert if attempting to claim more than lp balance allows
+        vm.expectRevert("S:CC:INSUF_LP_BAL");
+        _bidder.claimCollateral(_pool, availableCollateral, testIndex);
 
         // should be able to claim collateral if properly specified
         vm.expectEmit(true, true, true, true);
@@ -267,6 +281,6 @@ contract ScaledQuoteCollateralTest is DSTestPlus {
         _lender.claimCollateral(_pool, availableCollateral, testIndex);
     }
 
-    // TODO: add collateralization, utilization and encumberance test? -> use hardcoded amounts in view functions without creaitng whole borrower flows
+    // TODO: add collateralization, utilization and encumberance test? -> use hardcoded amounts in pure functions without creaitng whole pool flows
 
 }
