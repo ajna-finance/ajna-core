@@ -174,8 +174,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
-        uint256 availableLPs  = lpBalance[fromIndex_][msg.sender];
-        lpbAmount_           = Maths.wadToRay(lpbAmount_);
+        uint256 availableLPs = lpBalance[fromIndex_][msg.sender];
+        lpbAmount_          = Maths.wadToRay(lpbAmount_);
         require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:MQT:INSUF_LPS");
 
         Bucket storage fromBucket = buckets[fromIndex_];
@@ -183,24 +183,29 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         uint256 curDebt = _accruePoolInterest();
 
+        // update from bucket accounting
         uint256 bucketSize       = _rangeSum(fromIndex_, fromIndex_);
         uint256 exchangeRate     = fromBucket.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, fromBucket.lpAccumulator) : Maths.RAY;
         uint256 amount           = Maths.rmul(lpbAmount_, exchangeRate);
         fromBucket.lpAccumulator -= lpbAmount_;
 
+        // update to bucket accounting
         Bucket storage toBucket = buckets[toIndex_];
         bucketSize              = _rangeSum(toIndex_, toIndex_);
         exchangeRate            = toBucket.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, toBucket.lpAccumulator) : Maths.RAY;
         uint256 lpbChange       = Maths.rdiv(amount, exchangeRate);
         toBucket.lpAccumulator  += lpbChange;
 
+        // update FenwickTree
         amount = Maths.rayToWad(amount);
         _remove(fromIndex_, amount);
         _add(toIndex_, amount);
 
         uint256 newLup = _lup();
+        console.log("price checks", _htp(), newLup, _htp() <= newLup);
         if (fromIndex_ < toIndex_) require(_htp() <= newLup, "S:MQT:LUP_BELOW_HTP");
 
+        // update lender accounting
         lpBalance[fromIndex_][msg.sender] -= lpbAmount_;
         lpBalance[toIndex_][msg.sender]   += lpbChange;
 
@@ -217,20 +222,22 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         uint256 curDebt = _accruePoolInterest();
 
+        // update bucket accounting
         Bucket storage bucket = buckets[index_];
         uint256 bucketSize    = _rangeSum(index_, index_);
         uint256 exchangeRate  = bucket.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, bucket.lpAccumulator) : Maths.RAY;
         uint256 amount        = Maths.rmul(lpbAmount_, exchangeRate);
         bucket.lpAccumulator  -= lpbAmount_;
 
+        // update lender accounting
         lpBalance[index_][msg.sender] -= lpbAmount_;
 
         amount = Maths.rayToWad(amount);
-        _remove(index_, amount);
+        _remove(index_, amount); // update FenwickTree
 
+        // update pool accounting
         uint256 newLup = _lup();
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
-
         _updateInterestRate(curDebt, newLup);
 
         // move quote token amount from pool to lender
@@ -264,6 +271,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         emit AddCollateral(msg.sender, amount_);
     }
 
+    // FIXME: borrower amount calculations aren't correct... decreasing amount borrowed leads to pool under collateralization failure
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_, uint256 radius_) external {
 
         uint256 lupId = _lupIndex(amount_);
@@ -287,7 +295,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         curDebt += debt;
         require(
-            _poolCollateralizationAtPrice(curDebt, amount_, pledgedCollateral / collateralScale, newLup) != Maths.WAD,
+            _poolCollateralizationAtPrice(curDebt, amount_, pledgedCollateral / collateralScale, newLup) >= Maths.WAD,
             "S:B:PUNDER_COLLAT"
         );
 
@@ -295,10 +303,14 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         borrowerDebt = curDebt;
         lenderDebt   += amount_;
 
+        console.log("borrower col check", borrowerDebt, borrower.collateral, Maths.wdiv(borrower.debt, borrower.collateral));
+
         _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRate(curDebt, newLup);
+        console.log("htp", _htp());
+        console.log("lup", _lup());
 
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
