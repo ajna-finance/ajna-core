@@ -12,5 +12,6 @@ interface IQueue {
     function loans(address borrower_) external view returns (uint256 thresholdprice, address next);
 
     function loanQueueHead() external view returns (address head_);
- 
+
+    function loanInfo(address borrower_) external view returns (uint256, address);
 }

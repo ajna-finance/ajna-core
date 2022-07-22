@@ -6,6 +6,9 @@ from brownie.network.state import TxHistory
 from brownie.utils import color
 
 
+zero_address = '0x0000000000000000000000000000000000000000'
+
+
 @pytest.fixture(autouse=True)
 def get_capsys(capsys):
     if not TestUtils.capsys:
@@ -119,6 +122,49 @@ def borrowers(ajna_protocol, mkr_dai_pool, scaled_pool):
         borrowers.append(borrower)
 
     return borrowers
+
+
+class ScaledPoolUtils:
+    def __init__(self, ajna_protocol: AjnaProtocol):
+        self.bucket_math = ajna_protocol.bucket_math
+
+    @staticmethod
+    def find_loan_queue_params(pool: ScaledPool, borrower, threshold_price):
+        if pool.loanQueueHead != zero_address:
+            old_previous_borrower = zero_address
+            node_borrower = pool.loanQueueHead()
+            node_tp, node_next = pool.loanInfo(node_borrower)
+            if node_tp >= threshold_price and node_borrower != borrower:
+                new_previous_borrower = node_borrower
+            else:
+                new_previous_borrower = zero_address
+            while node_next != zero_address:
+                if node_next == borrower:
+                    old_previous_borrower = node_borrower
+                next_tp, next_next = pool.loanInfo(node_next)
+                if next_tp > threshold_price and node_next != borrower:
+                    new_previous_borrower = node_next
+                node_borrower = node_next
+                node_tp, node_next = next_tp, next_next
+            return old_previous_borrower, new_previous_borrower
+        else:
+            return zero_address, zero_address
+
+    @staticmethod
+    def get_origination_fee(pool: ScaledPool, amount):
+        fee_rate = max(pool.interestRate() / 52 * 10**18, 0.0005 * 10**18) + 10**18
+        return fee_rate * amount
+
+    def index_to_price(self, index):
+        return self.bucket_math.indexToPrice(7388 - index - 3232)
+
+    def price_to_index(self, price):
+        return 7388 - (self.bucket_math.priceToIndex(price) + 3232)
+
+
+@pytest.fixture
+def scaled_pool_utils(ajna_protocol):
+    return ScaledPoolUtils(ajna_protocol)
 
 
 class TestUtils:
@@ -308,7 +354,7 @@ class TestUtils:
             pe("bucket", bucket_debt_pending, "pool", pool_debt_pending)
             pe("borrower", borrower_debt_pending, "pool", pool_debt_pending)
 
-        # TODO: Get these to tie out to WAD (or RAD) precision.
+        # TODO: Get these to tie out to WAD (or RAY) precision.
         # assert (bucket_debt_pending - borrower_debt_pending) / 1e18 == 0
         # assert (bucket_debt_pending - pool_debt_pending) / 1e18 == 0
         # assert (borrower_debt_pending - pool_debt_pending) / 1e18 == 0

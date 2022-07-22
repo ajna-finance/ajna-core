@@ -3,8 +3,8 @@ from typing import List
 from brownie import *
 from brownie import (
     Contract,
-    ERC20PoolFactory,
-    ERC20Pool,
+    ScaledPoolFactory,
+    ScaledPool,
     BucketMath,
     Maths,
 )
@@ -28,9 +28,9 @@ class AjnaProtocol:
         self.bucket_math = BucketMath.deploy({"from": self.deployer})
         self.maths = Maths.deploy({"from": self.deployer})
 
-        self.ajna_factory = ERC20PoolFactory.deploy({"from": self.deployer})
+        self.ajna_factory = ScaledPoolFactory.deploy({"from": self.deployer})
 
-        self.pools: List[ERC20Pool] = []
+        self.pools: List[ScaledPool] = []
         self.lenders = []
         self.borrowers = []
 
@@ -44,10 +44,10 @@ class AjnaProtocol:
 
     def deploy_erc20_pool(
         self, collateral_address, quote_token_address, interest_rate=0.05 * 1e18
-    ) -> ERC20Pool:
+    ) -> ScaledPool:
         """
-        Deploys ERC20 contract pool for given `collateral` and `quote` token addresses contract
-        and returns ERC20Pool. Adds pool to list of pools stored in AjnaProtocol.
+        Deploys ERC20 contract pool for given `collateral` and `quote` token addresses contract.
+        Adds pool to list of pools stored in AjnaProtocol.
 
         Args:
             collateral_address: address of ERC20 token contract
@@ -55,7 +55,7 @@ class AjnaProtocol:
             interest_rate: default interest rate of pool
 
         Returns:
-            ERC20Pool
+            ScaledPool
         """
 
         deploy_tx = self.ajna_factory.deployPool(
@@ -75,7 +75,7 @@ class AjnaProtocol:
             quote_token_address
         )
 
-        return ERC20Pool.at(pool_address)
+        return ScaledPool.at(pool_address)
 
     def add_token(self, token_address: str, reserve_address: str) -> None:
         """
@@ -125,7 +125,7 @@ class AjnaProtocol:
 
     def get_pool(
         self, collateral_address, quote_token_address, *, force_deploy=False
-    ) -> ERC20Pool:
+    ) -> ScaledPool:
         """
         Returns ERC20Pool for given `collateral` and `quote` token addresses contract.
 
@@ -135,7 +135,7 @@ class AjnaProtocol:
             force_deploy: if True, pool is deployed if it is not found.
 
         Returns:
-            ERC20Pool
+            ScaledPool
         """
 
         pool_address = self.ajna_factory.deployedPools(
@@ -151,7 +151,7 @@ class AjnaProtocol:
         )
 
         if is_deployed:
-            return ERC20Pool.at(pool_address)
+            return ScaledPool.at(pool_address)
 
         if force_deploy:
             return self.deploy_erc20_pool(collateral_address, quote_token_address)

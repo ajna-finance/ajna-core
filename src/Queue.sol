@@ -123,4 +123,8 @@ abstract contract Queue is IQueue {
         }
         return (loan, oldPrevLoan_, newPrevLoan_);
     }
+
+    function loanInfo(address borrower_) external view returns (uint256, address) {
+        return (loans[borrower_].thresholdPrice, loans[borrower_].next);
+    }
 }
