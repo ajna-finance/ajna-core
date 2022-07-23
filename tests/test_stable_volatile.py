@@ -5,7 +5,7 @@ import pytest
 import random
 from brownie import Contract
 from brownie.exceptions import VirtualMachineError
-from conftest import ScaledPoolUtils, TestUtils
+from conftest import MAX_PRICE, ScaledPoolUtils, TestUtils
 from decimal import *
 from sdk import AjnaProtocol, DAI_ADDRESS, MKR_ADDRESS
 
@@ -60,11 +60,7 @@ def borrowers(ajna_protocol, scaled_pool):
 
 @pytest.fixture
 def pool1(scaled_pool, lenders, borrowers, scaled_pool_utils, test_utils):
-    pool = scaled_pool  # ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS)
-    # FIXME: LUP should be zero when there is no debt
-    assert pool.borrowerDebt() == 0
-    assert pool.lup() == 0
-
+    pool = scaled_pool
     # Adds liquidity to an empty pool and draws debt up to a target utilization
     add_initial_liquidity(lenders, pool, scaled_pool_utils)
     draw_initial_debt(borrowers, pool, scaled_pool_utils, test_utils, target_utilization=GOAL_UTILIZATION)
@@ -104,7 +100,7 @@ def place_initial_random_bid(lender, pool, scaled_pool_utils):
     price_count = MIN_BUCKET - MAX_BUCKET
     price_position = int(random.expovariate(lambd=6.3) * price_count)
     price_index = price_position + MAX_BUCKET
-    print(f"Adding 60k quote token to bucket {price_index} ({scaled_pool_utils.index_to_price(price_index)/1e18:.9f})")
+    print(f"Adding 60k quote token to bucket {price_index} ({pool.indexToPrice(price_index)/1e18:.9f})")
     pool.addQuoteToken(60_000 * 10**18, price_index, {"from": lender})
 
 
@@ -119,9 +115,9 @@ def draw_initial_debt(borrowers, pool, scaled_pool_utils, test_utils, target_uti
         borrow_amount = target_debt / NUM_ACTORS  # WAD
         assert borrow_amount > 10**18
         pool_price = pool.lup()
-        if pool_price == 0:
-            pool_price = 3293.70191 * 10**18  # MAX_BUCKET
-        print(f"\nPool price is {pool_price/1e18:.1f}")
+        if pool_price == MAX_PRICE:             # if there is no LUP,
+            pool_price = 3293.70191 * 10**18    # use the highest-priced bucket with deposit
+        print(f"\nPool price is {pool_price}, MAX_PRICE={MAX_PRICE}")
         collateralization_ratio = min((1 / target_utilization) + 0.05, 2.5)  # cap at 250% collateralization
         # WAD / WAD * unscaled
         collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
@@ -188,7 +184,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, scaled_pool_utils, chain,
                 except VirtualMachineError as ex:
                     print(f" ERROR removing liquidity at {price / 10**18:.1f}, "
                           f"collateralized at {pool.getPoolCollateralization()/10**18:.1%}: {ex}")
-                    print(TestUtils.dump_book(pool, MIN_BUCKET, scaled_pool_utils.price_to_index(pool.hpb())))
+                    print(TestUtils.dump_book(pool, MIN_BUCKET, pool.priceToIndex(pool.hpb())))
                     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
             else:
                 price = add_quote_token(lenders[user_index], user_index, pool, gas_validator)
@@ -196,12 +192,12 @@ def draw_and_bid(lenders, borrowers, start_from, pool, scaled_pool_utils, chain,
                     buckets_deposited[user_index].add(price)
 
             try:
-                max_bucket = scaled_pool_utils.price_to_index(pool.hpb()) + 100
+                max_bucket = pool.priceToIndex(pool.hpb()) + 100
                 test_utils.validate_book(pool, MIN_BUCKET - 100, max_bucket)
                 # test_utils.validate_debt(pool, borrowers, bucket_math, MIN_BUCKET)
             except AssertionError as ex:
                 print("Book or debt became invalid:")
-                print(TestUtils.dump_book(pool, MIN_BUCKET, scaled_pool_utils.price_to_index(pool.hpb())))
+                print(TestUtils.dump_book(pool, MIN_BUCKET, pool.priceToIndex(pool.hpb())))
                 raise ex
             chain.sleep(14)
 
@@ -240,9 +236,9 @@ def draw_debt(borrower, borrower_index, pool, gas_validator, collateralization=1
 
 def add_quote_token(lender, lender_index, pool, gas_validator, scaled_pool_utils):
     dai = Contract(pool.quoteToken())
-    lup_index = scaled_pool_utils.price_to_index(pool.lup())
+    lup_index = pool.priceToIndex(pool.lup())
     index_offset = ((lender_index % 6) - 2) * 2
-    price = scaled_pool_utils.index_to_price(lup_index + index_offset)
+    price = pool.indexToPrice(lup_index + index_offset)
     quantity = int(MIN_PARTICIPATION * ((lender_index % 4) + 1) ** 2) * 10**18
 
     if quantity < pool.getPoolMinDebtAmount():
@@ -261,7 +257,7 @@ def add_quote_token(lender, lender_index, pool, gas_validator, scaled_pool_utils
     except VirtualMachineError as ex:
         (_, _, _, _, _, bucket_inflator, _, _) = pool.bucketAt(price)
         print(f" ERROR adding liquidity at {price / 10**18:.1f}\n{ex}")
-        hpb_index = scaled_pool_utils.price_to_index(pool.hpb())
+        hpb_index = pool.priceToIndex(pool.hpb())
         print(TestUtils.dump_book(pool, MIN_BUCKET, hpb_index))
         assert False
 
@@ -301,7 +297,7 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_utils, chain, tx_validator):
     # Validate test set-up
     assert pool1.collateral() == MKR_ADDRESS
@@ -332,7 +328,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
 
     # Validate test ended with the pool in a meaningful state
     # test_utils.validate_debt(pool1, borrowers, bucket_math, MIN_BUCKET, print_error=True)
-    hpb_index = scaled_pool_utils.price_to_index(pool1.hpb())
+    hpb_index = pool.priceToIndex(pool1.hpb())
     # print("After test:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
     utilization = pool1.getPoolActualUtilization() / 10**18
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")

@@ -6,7 +6,8 @@ from brownie.network.state import TxHistory
 from brownie.utils import color
 
 
-zero_address = '0x0000000000000000000000000000000000000000'
+ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+MAX_PRICE = 1_004_968_987606512354182109771
 
 
 @pytest.fixture(autouse=True)
@@ -130,33 +131,26 @@ class ScaledPoolUtils:
 
     @staticmethod
     def find_loan_queue_params(pool: ScaledPool, borrower, threshold_price):
-        if pool.loanQueueHead != zero_address:
-            # print(f" looking for TP {threshold_price/1e18:.1f}")
-            old_previous_borrower = zero_address
+        if pool.loanQueueHead != ZERO_ADDRESS:
+            old_previous_borrower = ZERO_ADDRESS
             node_borrower = pool.loanQueueHead()
             node_tp, node_next = pool.loanInfo(node_borrower)
-            # print(f" {node_borrower} at TP {node_tp/1e18:.1f}, next is {node_next}")
             if node_tp >= threshold_price and node_borrower != borrower:
                 new_previous_borrower = node_borrower
-                # print(f"  br0: {new_previous_borrower}")
             else:
-                new_previous_borrower = zero_address
-                # print(f"  br1: {new_previous_borrower}")
+                new_previous_borrower = ZERO_ADDRESS
 
-            while node_next != zero_address:
+            while node_next != ZERO_ADDRESS:
                 if node_next == borrower:
                     old_previous_borrower = node_borrower
-                    # print(f"  br2: {old_previous_borrower}")
                 next_tp, next_next = pool.loanInfo(node_next)
                 if next_tp > threshold_price and node_next != borrower:
                     new_previous_borrower = node_next
-                    # print(f"  br3: {new_previous_borrower}")
                 node_borrower = node_next
                 node_tp, node_next = next_tp, next_next
-                # print(f" {node_borrower} at TP {node_tp / 1e18:.1f}, next is {node_next}")
             return old_previous_borrower, new_previous_borrower
         else:
-            return zero_address, zero_address
+            return ZERO_ADDRESS, ZERO_ADDRESS
 
     @staticmethod
     def get_origination_fee(pool: ScaledPool, amount):
@@ -164,13 +158,6 @@ class ScaledPoolUtils:
         assert fee_rate >= (0.0005 * 10**18)
         assert fee_rate < (100 * 10**18)
         return fee_rate * amount / 10**18
-
-    # TODO: remove these; pool now exposes them as external views
-    def index_to_price(self, index):
-        return self.bucket_math.indexToPrice(7388 - index - 3232)
-
-    def price_to_index(self, price):
-        return 7388 - (self.bucket_math.priceToIndex(price) + 3232)
 
 
 @pytest.fixture
