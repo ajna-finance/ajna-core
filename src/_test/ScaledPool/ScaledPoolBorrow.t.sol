@@ -79,6 +79,7 @@ contract ScaledBorrowTest is DSTestPlus {
 
         // borrower deposit 100 MKR collateral
         _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), 1);
+        assertEq(_pool.poolTargetUtilization(), 1 * 1e18);
         assertEq(_pool.poolActualUtilization(), 0);
 
         // get a 21_000 DAI loan
@@ -94,6 +95,7 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.treeSum(),      50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 21_020.192307692307702000 * 1e18);
         assertEq(_pool.lenderDebt(),   21_000 * 1e18);
+        assertEq(_pool.poolTargetUtilization(), 1 * 1e18);
         assertEq(_pool.poolActualUtilization(), 0.420403846153846154 * 1e18);
 
         // check balances
@@ -237,6 +239,5 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(col,      50 * 1e18);
         assertEq(inflator, 1.008536365718327423 * 1e18);
     }
-
 
 }

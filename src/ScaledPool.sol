@@ -540,6 +540,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         return _htp();
     }
 
+    function poolTargetUtilization() external view returns (uint256) {
+        return _poolTargetUtilization(debtEma, lupColEma);
+    }
+
     function poolActualUtilization() external view returns (uint256) {
         return _poolActualUtilization(borrowerDebt, pledgedCollateral);
     }
@@ -554,6 +558,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function poolCollateralization() external view returns (uint256) {
         return _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
+    }
+
+    function bucketAt(uint256 index_) external view returns (uint256, uint256, uint256, uint256) {
+        return (this.get(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, this.scale(index_));
     }
 
     function borrowerInfo(address borrower_) external view returns (uint256, uint256, uint256) {

@@ -358,8 +358,17 @@ class TestUtils:
         # assert (borrower_debt_pending - pool_debt_pending) / 1e18 == 0
 
     @staticmethod
-    def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926,
-                  with_headers=True, csv=False) -> str:
+    def dump_book(pool, min_bucket_index, max_bucket_index, with_headers=True, csv=False) -> str:
+        """
+        :param pool:             pool contract for which report shall be generated
+        :param min_bucket_index: highest-priced bucket from which to iterate downward in price
+        :param max_bucket_index: lowest-priced bucket
+        :param with_headers:     print column headings
+        :param csv:              export as CSV for importing into a spreadsheet
+        :return:                 multi-line string
+        """
+        assert min_bucket_index < max_bucket_index
+
         # formatting shortcuts
         w = 15
         def j(text):
@@ -373,43 +382,41 @@ class TestUtils:
         def fy(ray):
             return f"{ny(ray):>{w}.3f}"
 
-        hpb = pool.hpb()
-        lup = pool.lup()
+        lup_index = pool.lupIndex()
+        htp_index = pool.priceToIndex(pool.htp())
 
+        print(f"preparing report for bucket {min_bucket_index} to {max_bucket_index}")
         lines = []
         if with_headers:
             if csv:
-                lines.append("Price,Pointer,Deposit,Debt,Collateral,LP Outstanding,Inflator")
+                lines.append("Index,Price,Pointer,Quote,Collateral,LP Outstanding,Scale")
             else:
-                lines.append(j('Price') + j('Pointer') + j('Deposit') + j('Debt') + j('Collateral')
-                             + j('LPOutstndg') + j('Inflator'))
-        for i in range(max_bucket_index, min_bucket_index, -1):
-            price = bucket_math.indexToPrice(i)
+                lines.append(j('Index') + j('Pointer') + j('Price') + j('Quote') + j('Collateral')
+                             + j('LP Outstanding') + j('Scale'))
+        for i in range(min_bucket_index, max_bucket_index):
+            print(f"on bucket {i}")
+            price = pool.indexToPrice(i)
             pointer = ""
-            if price == hpb:
-                pointer += "HPB"
-            if price == lup:
+            if i == lup_index:
                 pointer += "LUP"
+            if i == htp_index:
+                pointer += "HTP"
             try:
                 (
-                    _,
-                    _,
-                    _,
-                    bucket_deposit,
-                    bucket_debt,
-                    bucket_inflator,
-                    bucket_lp,
+                    bucket_quote,
                     bucket_collateral,
-                ) = pool.bucketAt(price)
+                    bucket_lpAccumulator,
+                    bucket_scale
+                ) = pool.bucketAt(i)
             except VirtualMachineError as ex:
                 lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
                 continue
             if csv:
-                lines.append(','.join([nw(price), pointer, nw(bucket_deposit), nw(bucket_debt), nw(bucket_collateral),
-                                       ny(bucket_lp), ny(bucket_inflator)]))
+                lines.append(','.join([j(str(i)), nw(price), pointer, nw(bucket_quote), nw(bucket_collateral),
+                                       ny(bucket_lpAccumulator), ny(bucket_scale)]))
             else:
-                lines.append(''.join([fw(price), j(pointer), fw(bucket_deposit), fw(bucket_debt), fw(bucket_collateral),
-                                      fy(bucket_lp), f"{ny(bucket_inflator):>{w}.9f}"]))
+                lines.append(''.join([j(str(i)), fw(price), j(pointer), fw(bucket_quote), fw(bucket_collateral),
+                                      fy(bucket_lpAccumulator), f"{ny(bucket_scale):>{w}.9f}"]))
         return '\n'.join(lines)
 
 

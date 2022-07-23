@@ -166,7 +166,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, scaled_pool_utils, chain,
         if chain.time() - last_triggered[user_index] > get_time_between_interactions(user_index):
 
             # Draw debt, repay debt, or do nothing depending on interest rate
-            utilization = pool.getPoolActualUtilization() / 10**18
+            utilization = pool.poolActualUtilization() / 10**18
             if interest_rate < 0.10 and utilization < MAX_UTILIZATION:
                 target_collateralization = max(1.1, 1/GOAL_UTILIZATION)
                 draw_debt(borrowers[user_index], user_index, pool, gas_validator,
@@ -297,9 +297,10 @@ def repay(borrower, borrower_index, pool, gas_validator):
             print(f" borrower {borrower_index} has insufficient funds to repay {pending_debt / 10**18:.1f}")
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_utils, chain, tx_validator):
     # Validate test set-up
+    print("Before test:\n" + test_utils.dump_book(pool1, MAX_BUCKET, MIN_BUCKET))
     assert pool1.collateral() == MKR_ADDRESS
     assert pool1.quoteToken() == DAI_ADDRESS
     assert len(lenders) == NUM_ACTORS
@@ -315,9 +316,9 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay']):
         while chain.time() < end_time:
-            utilization = pool1.getPoolActualUtilization() / 10**18
-            target = pool1.getPoolTargetUtilization() / 10**18
-            collateralization = pool1.getPoolCollateralization() / 10**18
+            utilization = pool1.poolActualUtilization() / 10**18
+            target = pool1.poolTargetUtilization() / 10**18
+            collateralization = pool1.poolCollateralization() / 10**18
             print(f"actual utlzn: {utilization:>6.1%}   "
                   f"target utlzn: {target:>6.1%}   "
                   f"collateralization: {collateralization:>6.1%}   "
@@ -328,7 +329,6 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
 
     # Validate test ended with the pool in a meaningful state
     # test_utils.validate_debt(pool1, borrowers, bucket_math, MIN_BUCKET, print_error=True)
-    hpb_index = pool.priceToIndex(pool1.hpb())
     # print("After test:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
     utilization = pool1.getPoolActualUtilization() / 10**18
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")
