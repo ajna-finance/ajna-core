@@ -131,30 +131,41 @@ class ScaledPoolUtils:
     @staticmethod
     def find_loan_queue_params(pool: ScaledPool, borrower, threshold_price):
         if pool.loanQueueHead != zero_address:
+            # print(f" looking for TP {threshold_price/1e18:.1f}")
             old_previous_borrower = zero_address
             node_borrower = pool.loanQueueHead()
             node_tp, node_next = pool.loanInfo(node_borrower)
+            # print(f" {node_borrower} at TP {node_tp/1e18:.1f}, next is {node_next}")
             if node_tp >= threshold_price and node_borrower != borrower:
                 new_previous_borrower = node_borrower
+                # print(f"  br0: {new_previous_borrower}")
             else:
                 new_previous_borrower = zero_address
+                # print(f"  br1: {new_previous_borrower}")
+
             while node_next != zero_address:
                 if node_next == borrower:
                     old_previous_borrower = node_borrower
+                    # print(f"  br2: {old_previous_borrower}")
                 next_tp, next_next = pool.loanInfo(node_next)
                 if next_tp > threshold_price and node_next != borrower:
                     new_previous_borrower = node_next
+                    # print(f"  br3: {new_previous_borrower}")
                 node_borrower = node_next
                 node_tp, node_next = next_tp, next_next
+                # print(f" {node_borrower} at TP {node_tp / 1e18:.1f}, next is {node_next}")
             return old_previous_borrower, new_previous_borrower
         else:
             return zero_address, zero_address
 
     @staticmethod
     def get_origination_fee(pool: ScaledPool, amount):
-        fee_rate = max(pool.interestRate() / 52 * 10**18, 0.0005 * 10**18) + 10**18
-        return fee_rate * amount
+        fee_rate = max(pool.interestRate() / (52 * 10**18), 0.0005 * 10**18) + 10**18
+        assert fee_rate >= (0.0005 * 10**18)
+        assert fee_rate < (100 * 10**18)
+        return fee_rate * amount / 10**18
 
+    # TODO: remove these; pool now exposes them as external views
     def index_to_price(self, index):
         return self.bucket_math.indexToPrice(7388 - index - 3232)
 

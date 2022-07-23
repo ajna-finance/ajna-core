@@ -10,7 +10,7 @@ import { DSTestPlus }                             from "../utils/DSTestPlus.sol"
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
 import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
 
-contract ScaledQuoteTokenTest is DSTestPlus {
+contract ScaledBorrowTest is DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
@@ -52,6 +52,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
     function testScaledPoolBorrowAndRepay() external {
 
+        // TODO: these are indexes, not prices; rename to avoid confusion
         uint256 depositPriceHighest = 2550;
         uint256 depositPriceHigh    = 2551;
         uint256 depositPriceMed     = 2552;
@@ -78,6 +79,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         // borrower deposit 100 MKR collateral
         _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), 1);
+        assertEq(_pool.poolActualUtilization(), 0);
 
         // get a 21_000 DAI loan
         vm.expectEmit(true, true, false, true);
@@ -92,6 +94,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.treeSum(),      50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 21_020.192307692307702000 * 1e18);
         assertEq(_pool.lenderDebt(),   21_000 * 1e18);
+        assertEq(_pool.poolActualUtilization(), 0.420403846153846154 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   29_000 * 1e18);

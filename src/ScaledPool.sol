@@ -492,8 +492,13 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     function _poolActualUtilization(uint256 borrowerDebt_, uint256 pledgedCollateral_) internal view returns (uint256 utilization_) {
-        uint256 ptpIndex = _priceToIndex(Maths.wdiv(borrowerDebt_, pledgedCollateral_));
-        if (ptpIndex != 0) utilization_ = Maths.wdiv(borrowerDebt_, _prefixSum(ptpIndex));
+        uint256 ptp = Maths.wdiv(borrowerDebt_, pledgedCollateral_);
+        if (ptp == 0) {
+            utilization_ = 0;
+        } else {
+            uint256 ptpIndex = _priceToIndex(ptp);
+            utilization_ = Maths.wdiv(borrowerDebt_, _prefixSum(ptpIndex));
+        }
     }
 
     function _htp() internal view returns (uint256) {
@@ -535,8 +540,16 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         return _htp();
     }
 
+    function poolActualUtilization() external view returns (uint256) {
+        return _poolActualUtilization(borrowerDebt, pledgedCollateral);
+    }
+
     function priceToIndex(uint256 price_) external pure returns (uint256) {
         return _priceToIndex(price_);
+    }
+
+    function indexToPrice(uint256 index_) external pure returns (uint256) {
+        return _indexToPrice(index_);
     }
 
     function poolCollateralization() external view returns (uint256) {

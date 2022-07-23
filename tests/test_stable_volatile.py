@@ -7,7 +7,7 @@ from brownie import Contract
 from brownie.exceptions import VirtualMachineError
 from conftest import ScaledPoolUtils, TestUtils
 from decimal import *
-from sdk import AjnaProtocol
+from sdk import AjnaProtocol, DAI_ADDRESS, MKR_ADDRESS
 
 
 MAX_BUCKET = 2532  # 3293.70191, highest bucket for initial deposits, is exceeded after initialization
@@ -17,7 +17,7 @@ MIN_UTILIZATION = 0.4
 MAX_UTILIZATION = 0.8
 GOAL_UTILIZATION = 0.6      # borrowers should collateralize such that target utilization approaches this
 MIN_PARTICIPATION = 10000   # in quote token, the minimum amount to lend
-NUM_ACTORS = 15
+NUM_ACTORS = 100
 
 
 # set of buckets deposited into, indexed by lender index
@@ -121,8 +121,7 @@ def draw_initial_debt(borrowers, pool, scaled_pool_utils, test_utils, target_uti
         pool_price = pool.lup()
         if pool_price == 0:
             pool_price = 3293.70191 * 10**18  # MAX_BUCKET
-            print(f"Pool price should be {scaled_pool_utils.index_to_price(MAX_BUCKET)}")
-        print(f"Pool price is {pool_price/1e18:.1f}")
+        print(f"\nPool price is {pool_price/1e18:.1f}")
         collateralization_ratio = min((1 / target_utilization) + 0.05, 2.5)  # cap at 250% collateralization
         # WAD / WAD * unscaled
         collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
@@ -131,7 +130,8 @@ def draw_initial_debt(borrowers, pool, scaled_pool_utils, test_utils, target_uti
         # pledge collateral
         threshold_price = debt / (collateral_deposited + collateral_to_deposit)
         old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower, threshold_price)
-        print(f"\nBorrower pledging {collateral_to_deposit/1e18:.1f} collateral to borrow {borrow_amount/1e18:.1f}")
+        print(f"Borrower pledging {collateral_to_deposit/1e18:.1f} collateral to borrow {borrow_amount/1e18:.1f} "
+              f"TP={threshold_price/1e18:.1f}")
         assert collateral_to_deposit > 10**18
         pool.addCollateral(collateral_to_deposit, old_prev, new_prev, 1, {"from": borrower})
         collateral_deposited += collateral_to_deposit
@@ -141,10 +141,15 @@ def draw_initial_debt(borrowers, pool, scaled_pool_utils, test_utils, target_uti
         pending_debt = debt
         new_debt = borrow_amount + ScaledPoolUtils.get_origination_fee(pool, borrow_amount)
         threshold_price = (pending_debt + new_debt) / collateral_deposited
+        print(f"pending_debt={pending_debt/1e18:.1f} "
+              f"new_debt={new_debt/1e18:.1f} "
+              f"collateral_deposited={collateral_deposited/1e18:.1f}")
         old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower, threshold_price)
         (debt, collateral_deposited, inflator) = pool.borrowerInfo(borrower.address)
         print(f"Borrower {borrower_index} drawing {borrow_amount/1e18:.1f} from bucket {pool.lup()/1e18:.1f} "
-              f"with {collateral_deposited/1e18:.1f} collateral deposited")
+              f"with {collateral_deposited/1e18:.1f} collateral deposited, "
+              f"TP={threshold_price/1e18:.1f} "
+              f"old_prev={old_prev[:6]} new_prev={new_prev[:6]}")
         pool.borrow(borrow_amount, MIN_BUCKET, old_prev, new_prev, 1, {"from": borrower})
         # test_utils.validate_debt(pool, borrowers, bucket_math, MIN_BUCKET)
 
@@ -297,15 +302,15 @@ def repay(borrower, borrower_index, pool, gas_validator):
 
 
 @pytest.mark.skip
-def test_stable_volatile_one(pool1, dai, weth, lenders, borrowers, scaled_pool_utils, test_utils, chain, tx_validator):
+def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_utils, chain, tx_validator):
     # Validate test set-up
-    assert pool1.collateral() == weth
-    assert pool1.quoteToken() == dai
+    assert pool1.collateral() == MKR_ADDRESS
+    assert pool1.quoteToken() == DAI_ADDRESS
     assert len(lenders) == NUM_ACTORS
     assert len(borrowers) == NUM_ACTORS
-    assert pool1.totalQuoteToken() > 2_700_000 * 10**18  # 50% utilization
-    assert pool1.getPoolActualUtilization() > 0.50 * 10**18
-    test_utils.validate_debt(pool1, borrowers, MIN_BUCKET, print_error=True)
+    assert pool1.treeSum() > 2_700_000 * 10**18
+    assert pool1.poolActualUtilization() > 0.50 * 10**18  # TODO: not yet exposed
+    # test_utils.validate_debt(pool1, borrowers, MIN_BUCKET, print_error=True)
 
     return
     # Simulate pool activity over a configured time duration
