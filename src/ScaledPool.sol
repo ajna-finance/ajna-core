@@ -524,6 +524,11 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         return _indexToPrice(_lupIndex(0));
     }
 
+    function _exchangeRate(Bucket memory bucket_, uint256 index_) internal view returns (uint256) {
+        uint256 bucketSize = _rangeSum(index_, index_);
+        return bucket_.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, bucket_.lpAccumulator) : Maths.RAY;
+    }
+
     /**************************/
     /*** External Functions ***/
     /**************************/
@@ -566,6 +571,11 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function borrowerInfo(address borrower_) external view returns (uint256, uint256, uint256) {
         return (borrowers[borrower_].debt, borrowers[borrower_].collateral, borrowers[borrower_].inflatorSnapshot);
+    }
+
+    function exchangeRate(uint256 index_) external view returns (uint256) {
+        Bucket storage bucket = buckets[index_];
+        return _exchangeRate(bucket, index_);
     }
 
     /************************/
