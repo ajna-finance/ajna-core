@@ -341,8 +341,23 @@ contract LoanQueueTest is DSTestPlus {
 
     }
 
+    function testWrongOrder() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
 
+        assertEq(0, _pool.getHighestThresholdPrice());
 
+        // borrower deposits some collateral and draws debt
+        _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(0), address(0), 0);
+        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        assertEq(thresholdPrice, 750.000024038461538462 * 1e18);
 
-
+        // borrower2 successfully deposits slightly less collateral
+        _borrower2.addCollateral(_pool, 39.9 * 1e18, address(0), address(_borrower), 0);
+        // borrower2 draws the same debt, producing a higher TP, but supplies the wrong order
+        vm.expectRevert("B:U:QUE_WRNG_ORD_P");
+        _borrower2.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), 0);
+    }
 }
