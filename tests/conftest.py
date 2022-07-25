@@ -130,31 +130,55 @@ class ScaledPoolUtils:
         self.bucket_math = ajna_protocol.bucket_math
 
     @staticmethod
-    def find_loan_queue_params(pool: ScaledPool, borrower, threshold_price):
+    def find_loan_queue_params(pool, borrower, threshold_price):
+        class Loan:
+            def __init__(self, borrower, loan_info):
+                self.borrower = borrower
+                self.tp = loan_info[0]
+                self.next = loan_info[1]
+
+        assert isinstance(borrower, str)
+        assert isinstance(threshold_price, int)
+        assert threshold_price == 0 or threshold_price > 10**18
+        # TODO: break iteration once return values have been found rename "node" to "loan"
         if pool.loanQueueHead != ZERO_ADDRESS:
+            # print(f" looking for borrower {borrower[:6]} and TP {threshold_price / 1e18:.8f}")
             old_previous_borrower = ZERO_ADDRESS
-            node_borrower = pool.loanQueueHead()
-            node_tp, node_next = pool.loanInfo(node_borrower)
-            if node_tp >= threshold_price and node_borrower != borrower:
-                new_previous_borrower = node_borrower
+            node = Loan(pool.loanQueueHead(), pool.loanInfo(pool.loanQueueHead()))
+
+            # print(f"  {node.borrower[:6]} at TP {node.tp/1e18:.8f}, next is {node.next[:6]}")
+            if node.tp >= threshold_price and node.borrower != borrower:
+                new_previous_borrower = node.borrower
             else:
                 new_previous_borrower = ZERO_ADDRESS
 
-            while node_next != ZERO_ADDRESS:
-                if node_next == borrower:
-                    old_previous_borrower = node_borrower
-                next_tp, next_next = pool.loanInfo(node_next)
-                if next_tp > threshold_price and node_next != borrower:
-                    new_previous_borrower = node_next
-                node_borrower = node_next
-                node_tp, node_next = next_tp, next_next
+            while node.next != ZERO_ADDRESS:
+                if node.next == borrower:
+                    # print(f"  node_next {node_next} == borrower; setting old_prev to {node_borrower}")
+                    old_previous_borrower = node.borrower
+
+                next_node = Loan(node.next, pool.loanInfo(node.next))
+                if next_node.tp > threshold_price and next_node.borrower != borrower:
+                    new_previous_borrower = node.next
+
+                assert next_node.borrower != next_node.next
+                node = next_node
+                print(f"  {node.borrower[:6]} at TP {node.tp / 1e18:.8f}, next is {node.next[:6]}")
+
+            # validation
+            assert old_previous_borrower != borrower
+            assert new_previous_borrower != borrower
+            _, check_old_prev_next = pool.loanInfo(old_previous_borrower)
+            assert check_old_prev_next == ZERO_ADDRESS or check_old_prev_next == borrower
+
+            # print(f" returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
             return old_previous_borrower, new_previous_borrower
         else:
             return ZERO_ADDRESS, ZERO_ADDRESS
 
     @staticmethod
     def get_origination_fee(pool: ScaledPool, amount):
-        fee_rate = max(pool.interestRate() / (52 * 10**18), 0.0005 * 10**18) + 10**18
+        fee_rate = max(pool.interestRate() / (52 * 10**18), 0.0005 * 10**18)
         assert fee_rate >= (0.0005 * 10**18)
         assert fee_rate < (100 * 10**18)
         return fee_rate * amount / 10**18
@@ -358,6 +382,22 @@ class TestUtils:
         # assert (borrower_debt_pending - pool_debt_pending) / 1e18 == 0
 
     @staticmethod
+    def validate_queue(pool):
+        found_borrowers = set()
+
+        borrower = pool.loanQueueHead()
+        tp, next = pool.loanInfo(borrower)
+        last_tp = tp
+        found_borrowers.add(borrower)
+        while next != ZERO_ADDRESS:
+            borrower = next
+            tp, next = pool.loanInfo(borrower)
+            assert borrower not in found_borrowers  # catch duplicate borrowers
+            assert last_tp >= tp                    # catch missorted threshold prices
+            last_tp = tp
+            found_borrowers.add(borrower)
+
+    @staticmethod
     def dump_book(pool, min_bucket_index, max_bucket_index, with_headers=True, csv=False) -> str:
         """
         :param pool:             pool contract for which report shall be generated
@@ -385,7 +425,6 @@ class TestUtils:
         lup_index = pool.lupIndex()
         htp_index = pool.priceToIndex(pool.htp())
 
-        print(f"preparing report for bucket {min_bucket_index} to {max_bucket_index}")
         lines = []
         if with_headers:
             if csv:
@@ -394,7 +433,6 @@ class TestUtils:
                 lines.append(j('Index') + j('Pointer') + j('Price') + j('Quote') + j('Collateral')
                              + j('LP Outstanding') + j('Scale'))
         for i in range(min_bucket_index, max_bucket_index):
-            print(f"on bucket {i}")
             price = pool.indexToPrice(i)
             pointer = ""
             if i == lup_index:
