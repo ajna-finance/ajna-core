@@ -357,7 +357,7 @@ contract LoanQueueTest is DSTestPlus {
         // borrower2 successfully deposits slightly less collateral
         _borrower2.addCollateral(_pool, 39.9 * 1e18, address(0), address(_borrower), 0);
         // borrower2 draws the same debt, producing a higher TP, but supplies the wrong order
-        vm.expectRevert("B:U:QUE_WRNG_ORD");
+        vm.expectRevert("B:U:QUE_WRNG_ORD_P");
         _borrower2.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), 0);
     }
 }
