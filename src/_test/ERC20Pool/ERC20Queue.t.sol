@@ -354,12 +354,6 @@ contract LoanQueueTest is DSTestPlus {
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
         assertEq(thresholdPrice, 750.000024038461538462 * 1e18);
 
-        // borrower2 deposits slightly less collateral but specifies wrong order
-        (uint256 debt, , , , , , ) = _pool.getBorrowerInfo(address(_borrower2));
-        assertEq(debt, 0);  // no debt, so their TP should be 0
-        vm.expectRevert("B:U:QUE_WRNG_ORD");
-        _borrower2.addCollateral(_pool, 39.9 * 1e18, address(0), address(0), 0);
-
         // borrower2 successfully deposits slightly less collateral
         _borrower2.addCollateral(_pool, 39.9 * 1e18, address(0), address(_borrower), 0);
         // borrower2 draws the same debt, producing a higher TP, but supplies the wrong order
