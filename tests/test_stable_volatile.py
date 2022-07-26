@@ -125,33 +125,29 @@ def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
 
 
 def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils):
-    (debt, collateral_deposited, inflator) = pool.borrowerInfo(borrower.address)
+    (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
 
     # pledge collateral
-    threshold_price = int(debt / (collateral_deposited + collateral_to_deposit) * 10**18)
+    threshold_price = int(pending_debt / (collateral_deposited + collateral_to_deposit) * 10**18)
     old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price)
     print(f"Borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral "
           f"TP={threshold_price / 1e18:.1f}")
     assert collateral_to_deposit > 10 ** 18
+    # TODO: if debt is 0, contracts require passing old_prev and new_prev=0, which is awkward
     pool.addCollateral(collateral_to_deposit, old_prev, new_prev, 0, {"from": borrower})
     test_utils.validate_queue(pool)
     collateral_deposited += collateral_to_deposit
 
     # draw debt
-    # TODO: calculate pending debt using pending inflator
-    pending_debt = debt
+    (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
     new_debt = borrow_amount + ScaledPoolUtils.get_origination_fee(pool, borrow_amount)
-    (_, actual_collateral_deposited, _) = pool.borrowerInfo(borrower.address)
-    assert actual_collateral_deposited == collateral_deposited
-
     threshold_price = int((pending_debt + new_debt) / collateral_deposited * 10**18)
     assert threshold_price > 10**18
     old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price)
-    (debt, collateral_deposited, inflator) = pool.borrowerInfo(borrower.address)
     print(f"Borrower {borrower_index} drawing {borrow_amount / 1e18:.8f} from bucket {pool.lup() / 1e18:.1f} "
           f"with {collateral_deposited / 1e18:.8f} collateral deposited, "
-          f"TP={threshold_price / 1e18:.8f} "
-          f"old_prev={old_prev[:6]} new_prev={new_prev[:6]}")
+          f"TP={threshold_price / 1e18:.8f} with {(pending_debt + new_debt)/1e18:.8f} total debt "
+          f"adding {new_debt/1e18:.8f} new debt, old_prev={old_prev[:6]} new_prev={new_prev[:6]}")
     tx = pool.borrow(borrow_amount, MIN_BUCKET, old_prev, new_prev, 0, {"from": borrower})
     test_utils.validate_queue(pool)
     # test_utils.validate_debt(pool, borrowers, bucket_math, MIN_BUCKET)
@@ -284,14 +280,14 @@ def remove_quote_token(lender, lender_index, price, pool):
 
 def repay(borrower, borrower_index, pool, gas_validator, test_utils):
     dai = Contract(pool.quoteToken())
-    (debt, _, _) = pool.borrowerInfo(borrower)
+    (debt, pending_debt, _, _) = pool.borrowerInfo(borrower)
     quote_balance = dai.balanceOf(borrower)
     if debt > 1000 * 10**18:
         # TODO: handle partial repayment when out-of-funds, which requires calculating pending debt
         #if quote_balance > 100 * 10**18:
         if quote_balance > debt:
             # repay the debt
-            (_, collateral_deposited, _) = pool.borrowerInfo(borrower)
+            (_, _, collateral_deposited, _) = pool.borrowerInfo(borrower)
             collateral_encumbered = debt / pool.lup() * 10 ** 18
             repay_amount = min(debt * 1.05, quote_balance)
             old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, 0)

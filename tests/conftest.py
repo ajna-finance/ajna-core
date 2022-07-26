@@ -142,11 +142,11 @@ class ScaledPoolUtils:
         assert threshold_price == 0 or threshold_price > 10**18
         # TODO: break iteration once return values have been found rename "node" to "loan"
         if pool.loanQueueHead != ZERO_ADDRESS:
-            # print(f" looking for borrower {borrower[:6]} and TP {threshold_price / 1e18:.8f}")
+            print(f" looking for borrower {borrower[:6]} and TP {threshold_price / 1e18:.8f}")
             old_previous_borrower = ZERO_ADDRESS
             node = Loan(pool.loanQueueHead(), pool.loanInfo(pool.loanQueueHead()))
 
-            # print(f"  {node.borrower[:6]} at TP {node.tp/1e18:.8f}, next is {node.next[:6]}")
+            print(f"  {node.borrower[:6]} at TP {node.tp/1e18:.8f}, next is {node.next[:6]}")
             if node.tp >= threshold_price and node.borrower != borrower:
                 new_previous_borrower = node.borrower
             else:
@@ -154,7 +154,7 @@ class ScaledPoolUtils:
 
             while node.next != ZERO_ADDRESS:
                 if node.next == borrower:
-                    # print(f"  node_next {node_next} == borrower; setting old_prev to {node_borrower}")
+                    # print(f"  node_next {node.next} == borrower; setting old_prev to {node.borrower}")
                     old_previous_borrower = node.borrower
 
                 next_node = Loan(node.next, pool.loanInfo(node.next))
@@ -171,16 +171,17 @@ class ScaledPoolUtils:
             _, check_old_prev_next = pool.loanInfo(old_previous_borrower)
             assert check_old_prev_next == ZERO_ADDRESS or check_old_prev_next == borrower
 
-            # print(f" returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
+            print(f" returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
             return old_previous_borrower, new_previous_borrower
         else:
             return ZERO_ADDRESS, ZERO_ADDRESS
 
     @staticmethod
     def get_origination_fee(pool: ScaledPool, amount):
-        fee_rate = max(pool.interestRate() / (52 * 10**18), 0.0005 * 10**18)
+        fee_rate = max(pool.interestRate() / 52, 0.0005 * 10**18)
         assert fee_rate >= (0.0005 * 10**18)
         assert fee_rate < (100 * 10**18)
+        print(f"get_origination_fee fee_rate is {fee_rate/1e18:.18f}")
         return fee_rate * amount / 10**18
 
 
