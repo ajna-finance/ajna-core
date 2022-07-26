@@ -68,7 +68,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     uint256 public inflatorSnapshot;           // [WAD]
     uint256 public lastInflatorSnapshotUpdate; // [SEC]
     uint256 public minFee;                     // [WAD]
-    uint256 public lenderInterestFactor;       // WAD
+    uint256 public lenderInterestFactor;       // [WAD]
     uint256 public interestRate;               // [WAD]
     uint256 public interestRateUpdate;         // [SEC]
 
@@ -160,7 +160,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         bucket.availableCollateral     -= amount_;
         bucket.lpAccumulator           -= lpRedemption;
-        lpBalance[index_][msg.sender]  -= lpRedemption;
+        lpBalance[index_][msg.sender] -= lpRedemption;
 
         _updateInterestRate(borrowerDebt, _lup());
 
@@ -172,7 +172,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
-        uint256 availableLPs = lpBalance[fromIndex_][msg.sender];
+        uint256 availableLPs  = lpBalance[fromIndex_][msg.sender];
         lpbAmount_           = Maths.wadToRay(lpbAmount_);
         require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:MQT:INSUF_LPS");
 
@@ -248,11 +248,13 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         borrower.collateral += amount_;
 
+        // update loan queue
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+
         borrowers[msg.sender] = borrower;
 
+        // update pool state
         pledgedCollateral += amount_;
-
         _updateInterestRate(curDebt, _lup());
 
         // move collateral from sender to pool
@@ -287,6 +289,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
             "S:B:PUNDER_COLLAT"
         );
 
+        // update actor accounting
         borrowerDebt = curDebt;
         lenderDebt   += amount_;
 
@@ -308,13 +311,14 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
         uint256 curLup = _lup();
-        require(borrower.debt <= Maths.wmul(curLup, borrower.collateral - amount_), "S:RC:NOT_ENOUGH_COLLATERAL");
+        require(borrower.collateral - _encumberedCollateral(borrower.debt, curLup) >= amount_, "S:RC:NOT_ENOUGH_COLLATERAL");
         borrower.collateral -= amount_;
 
+        // update loan queue
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
 
+        // update pool state
         pledgedCollateral -= amount_;
-
         _updateInterestRate(curDebt, curLup);
 
         // move collateral from pool to sender
@@ -329,16 +333,19 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         require(borrower.debt != 0, "S:R:NO_DEBT");
 
         uint256 curDebt = _accruePoolInterest();
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
+        // update borrower accounting
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 amount = Maths.min(borrower.debt, maxAmount_);
         borrower.debt -= amount;
 
+        // update lender accounting
         uint256 curLenderDebt = lenderDebt;
-
         curLenderDebt -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curDebt), amount));
+
         curDebt       -= amount;
 
+        // update loan queue
         uint256 borrowersCount = totalBorrowers;
         if (borrower.debt == 0) {
             totalBorrowers = borrowersCount - 1;
@@ -349,6 +356,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         }
         borrowers[msg.sender] = borrower;
 
+        // update pool state
         if (curDebt != 0) {
             borrowerDebt = curDebt;
             lenderDebt   = curLenderDebt;
@@ -468,19 +476,24 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     function _borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) internal pure returns (uint256 collateralization_) {
-        uint256 encumberedCollateral = price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        uint256 encumberedCollateral = _encumberedCollateral(debt_, price_);
         collateralization_ = collateral_ != 0 && encumberedCollateral != 0 ? Maths.wdiv(collateral_, encumberedCollateral) : Maths.WAD;
+    }
+
+    // TODO: Check if price and debt checks here are really needed
+    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
+        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 
     function _poolCollateralizationAtPrice(
         uint256 borrowerDebt_, uint256 additionalDebt_, uint256 collateral_, uint256 price_
     ) internal pure returns (uint256 collateralization_) {
-        uint256 encumbered = Maths.wdiv(borrowerDebt_ + additionalDebt_, price_);
+        uint256 encumbered = _encumberedCollateral(borrowerDebt_ + additionalDebt_, price_);
         collateralization_ = encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
     }
 
     function _poolCollateralization(uint256 borrowerDebt_, uint256 pledgedCollateral_, uint256 lup_) internal pure returns (uint256 collateralization_) {
-        uint256 encumbered = Maths.wdiv(borrowerDebt_, lup_);
+        uint256 encumbered = _encumberedCollateral(borrowerDebt_, lup_);
         collateralization_ = encumbered != 0 ? Maths.wdiv(pledgedCollateral_, encumbered) : Maths.WAD;
     }
 
@@ -572,6 +585,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         return _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
     }
 
+    function borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) external pure returns (uint256) {
+        return _borrowerCollateralization(debt_, collateral_, price_);
+    }
+
     function bucketAt(uint256 index_) external view returns (uint256, uint256, uint256, uint256) {
         return (
             this.get(index_),                    // quote token in bucket, deposit + interest (WAD)
@@ -595,6 +612,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     function exchangeRate(uint256 index_) external view returns (uint256) {
         Bucket storage bucket = buckets[index_];
         return _exchangeRate(bucket, index_);
+    }
+
+    function encumberedCollateral(uint256 debt_, uint256 price_) external pure returns (uint256) {
+        return _encumberedCollateral(debt_, price_);
     }
 
     /************************/

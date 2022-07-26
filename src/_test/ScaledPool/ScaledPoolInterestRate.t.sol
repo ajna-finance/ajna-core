@@ -102,4 +102,6 @@ contract ScaledInterestRateTest is DSTestPlus {
         assertEq(_pool.interestRateUpdate(), 864000);
     }
 
+    // TODO: add test related to pool utilization changes
+
 }
