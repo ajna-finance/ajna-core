@@ -529,6 +529,13 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         return bucket_.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, bucket_.lpAccumulator) : Maths.RAY;
     }
 
+    function _pendingInflator() internal view returns (uint256) {
+        uint256 elapsed     = block.timestamp - lastInflatorSnapshotUpdate;
+        uint256 spr         = interestRate / SECONDS_PER_YEAR;
+        uint256 curInflator = inflatorSnapshot;
+        return Maths.wmul(curInflator, Maths.wpow(Maths.WAD + spr, elapsed));
+    }
+
     /**************************/
     /*** External Functions ***/
     /**************************/
@@ -566,11 +573,23 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     function bucketAt(uint256 index_) external view returns (uint256, uint256, uint256, uint256) {
-        return (this.get(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, this.scale(index_));
+        return (
+            this.get(index_),                    // quote token in bucket, deposit + interest (WAD)
+            buckets[index_].availableCollateral, // unencumbered collateral in bucket (WAD)
+            buckets[index_].lpAccumulator,       // outstanding LP balance (WAD)
+            this.scale(index_)                   // lender interest multiplier (WAD)
+        );
     }
 
-    function borrowerInfo(address borrower_) external view returns (uint256, uint256, uint256) {
-        return (borrowers[borrower_].debt, borrowers[borrower_].collateral, borrowers[borrower_].inflatorSnapshot);
+    function borrowerInfo(address borrower_) external view returns (uint256, uint256, uint256, uint256) {
+        uint256 pending_debt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
+
+        return (
+            borrowers[borrower_].debt,            // accrued debt (WAD)
+            pending_debt,                         // current debt, accrued and pending accrual (WAD)
+            borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
+            borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
+        );
     }
 
     function exchangeRate(uint256 index_) external view returns (uint256) {
