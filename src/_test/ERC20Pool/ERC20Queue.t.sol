@@ -360,4 +360,47 @@ contract LoanQueueTest is DSTestPlus {
         vm.expectRevert("B:U:QUE_WRNG_ORD_P");
         _borrower2.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), 0);
     }
+
+    function testMoveToSameLocation() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
+
+        assertEq(0, _pool.getHighestThresholdPrice());
+
+        // borrower deposits some collateral and draws debt
+        _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(0), address(0), 0);
+        (uint256 thresholdPrice, ) = _pool.loans(address(_borrower));
+        assertEq(thresholdPrice, 750.000024038461538462 * 1e18);
+
+        // borrower2 draws slightly more debt producing a higher TP
+        _borrower2.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower2.borrow(_pool, 31_000 * 1e18, 2_000 * 1e18, address(0), address(0), 0);
+        (thresholdPrice, ) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 775.000024038461538462 * 1e18);
+
+        // borrower3 draws slightly more debt producing a higher TP
+        _borrower3.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower3.borrow(_pool, 32_000 * 1e18, 2_000 * 1e18, address(0), address(0), 0);
+        (thresholdPrice, ) = _pool.loans(address(_borrower3));
+        assertEq(thresholdPrice, 800.000024038461538462 * 1e18);
+
+        // borrower2 adds collateral, decreasing their TP, but maintaining their same position in queue
+        _borrower2.addCollateral(_pool, 0.1 * 1e18, address(_borrower3), address(_borrower3), 0);
+        (thresholdPrice, ) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 773.067355649338192979 * 1e18);
+
+        // confirm queue is in the correct order
+        assertEq(address(_pool.loanQueueHead()), address(_borrower3));
+
+        (, address next) = _pool.loans(address(_borrower3));
+        assertEq(next, address(_borrower2));
+
+        (, next) = _pool.loans(address(_borrower2));
+        assertEq(next, address(_borrower));
+
+        (, next) = _pool.loans(address(_borrower));
+        assertEq(next, address(0));
+    }
 }
