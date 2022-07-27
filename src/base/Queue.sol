@@ -24,29 +24,32 @@ abstract contract Queue is IQueue {
      *  @notice Called _updateLoanQueue if the newPrev_ position is incorrect
      *  @param  radius_         Distance checked to find lower thresholdPrice
      *  @param  thresholdPrice_ Debt / collateralDeposited
-     *  @param  newPrev_       Previous borrower that now comes before placed loan (new)
-     *  @return prev_           Previous borrower that now comes before placed loan (new)
-     *  @return prevLoan        Previous loan that now comes before placed loan (new)
+     *  @param  newPrev_        Previous location the caller believes points to their loan
+     *  @param  borrower_       Borrower whose TP might be changing, thus should be ignored
+     *  @return newPrev         Corrected previous borrower that now comes before placed loan (new)
+     *  @return newPrevLoan     Corrected previous loan that now comes before placed loan (new)
      */
-    function _searchRadius(uint256 radius_, uint256 thresholdPrice_, address newPrev_) internal view returns (address prev_, LoanInfo memory prevLoan) {
-
+    function _searchRadius(uint256 radius_, uint256 thresholdPrice_, address newPrev_, address borrower_) internal returns (address, LoanInfo memory) {
         address current = newPrev_;
-        LoanInfo memory currentLoan;
+        LoanInfo memory currentLoan = loans[current];
+        LoanInfo memory nextLoan;
 
-        for (uint256 i = 0; i <= radius_;) {
-            prev_ = current;
-            current = loans[prev_].next;
-            currentLoan = loans[current];
+        for (uint256 i = 0; i < radius_;) {
+            nextLoan = loans[currentLoan.next];
 
-            if (currentLoan.thresholdPrice <= thresholdPrice_ || currentLoan.thresholdPrice == 0) {
-                return (prev_, loans[prev_]);
+            if (current != borrower_ && (nextLoan.thresholdPrice <= thresholdPrice_)) {
+                break;
             }
 
+            current = loans[current].next;
+            currentLoan = nextLoan;
             unchecked {
                 ++i;
             }
         }
-        require(currentLoan.thresholdPrice <= thresholdPrice_, "B:S:SRCH_RDS_FAIL");
+
+        require(currentLoan.next == borrower_ || loans[currentLoan.next].thresholdPrice <= thresholdPrice_, "B:S:SRCH_RDS_FAIL");
+        return (current, currentLoan);
     }
 
     /**
@@ -67,16 +70,15 @@ abstract contract Queue is IQueue {
         }
 
         // protections
-        if (newPrev_ != address(0) && loans[newPrevLoan.next].thresholdPrice > thresholdPrice_ ) {
-            // newPrev is not accurate, search radius
-            (newPrev_, newPrevLoan) = _searchRadius(radius_, thresholdPrice_, newPrevLoan.next);
-        }
+        (newPrev_, newPrevLoan) = _searchRadius(radius_, thresholdPrice_, newPrev_, borrower_);
 
         LoanInfo memory loan = loans[borrower_];
         
         if (loan.thresholdPrice > 0) {
             // loan exists
-            (loan, oldPrevLoan, newPrevLoan)= _move(oldPrev_, oldPrevLoan, newPrev_, newPrevLoan);
+            if (oldPrev_ != newPrev_) {
+                (loan, oldPrevLoan, newPrevLoan) = _move(oldPrev_, oldPrevLoan, newPrev_, newPrevLoan);
+            }
             loan.thresholdPrice = thresholdPrice_;
 
         } else if (loanQueueHead != address(0)) {
@@ -142,7 +144,7 @@ abstract contract Queue is IQueue {
      *  @return newPrevLoan_     Previous loan that now comes before placed loan (new)
      */
     function _move(address oldPrev_, LoanInfo memory oldPrevLoan_, address newPrev_, LoanInfo memory newPrevLoan_) internal returns (LoanInfo memory loan, LoanInfo memory, LoanInfo memory) {
-
+        require(oldPrev_ != newPrev_, "B:U:QUE_INV_MOVE");
         address borrower;
 
         if (oldPrev_ == address(0)) {
