@@ -506,12 +506,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function _poolActualUtilization(uint256 borrowerDebt_, uint256 pledgedCollateral_) internal view returns (uint256 utilization_) {
         uint256 ptp = Maths.wdiv(borrowerDebt_, pledgedCollateral_);
-        if (ptp == 0) {
-            utilization_ = 0;
-        } else {
-            uint256 ptpIndex = _priceToIndex(ptp);
-            utilization_ = Maths.wdiv(borrowerDebt_, _prefixSum(ptpIndex));
-        }
+        if (ptp != 0) utilization_ = Maths.wdiv(borrowerDebt_, _prefixSum(_priceToIndex(ptp)));
     }
 
     function _htp() internal view returns (uint256) {
