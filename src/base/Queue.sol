@@ -37,7 +37,7 @@ abstract contract Queue is IQueue {
         for (uint256 i = 0; i < radius_;) {
             nextLoan = loans[currentLoan.next];
 
-            if (current != borrower_ && (nextLoan.thresholdPrice <= thresholdPrice_ || nextLoan.thresholdPrice == 0)) {
+            if (current != borrower_ && (nextLoan.thresholdPrice <= thresholdPrice_)) {
                 break;
             }
 
