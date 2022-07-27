@@ -116,4 +116,42 @@ contract ScaledPurchaseQuoteTokenTest is DSTestPlus {
 
     }
 
+    /**
+     *  @notice 1 lender, 1 bidder tests reverts in purchaseQuote.
+     *          Reverts:
+     *              Attempts to purchase more quote than is available in the bucket.
+     *              Attempts to purchase without sufficient collateral.
+     */
+    function testScaledPoolPurchaseQuoteTokenRequireChecks() external {
+        // test setup
+        uint256 testIndex = 2550;
+        uint256 priceAtTestIndex = _pool.indexToPrice(testIndex);
+
+        // lender adds initial quote to pool
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
+
+        // should revert if no there is an attempt to purchase more quote than is available in the bucket
+        vm.expectRevert("S:P:INSUF_QUOTE");
+        _lender1.purchaseQuote(_pool, 20_000 * 1e18, testIndex);
+
+        // should revert if lender has insufficient collateral
+        vm.expectRevert("S:P:INSUF_COL");
+        _lender1.purchaseQuote(_pool, 10_000 * 1e18, testIndex);
+
+        // mint and approve collateral to allow lender1 to bid
+        _collateral.mint(address(_lender1), 100 * 1e18);
+        _lender1.approveToken(_collateral, address(_pool), 100 * 1e18);
+
+        // should be able to purchase quote with collateral if properly specified
+        uint256 collateralToPurchaseWith = 3.321274866808485288 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_lender1), address(_pool), collateralToPurchaseWith);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_lender1), 10_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Purchase(address(_lender1), priceAtTestIndex, 10_000 * 1e18, collateralToPurchaseWith);
+        _lender1.purchaseQuote(_pool, 10_000 * 1e18, testIndex);
+    }
+
+
 }
