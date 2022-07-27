@@ -271,6 +271,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         emit AddCollateral(msg.sender, amount_);
     }
 
+    // FIXME: borrower amount calculations aren't correct... decreasing amount borrowed leads to pool under collateralization failure
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_, uint256 radius_) external {
 
         uint256 lupId = _lupIndex(amount_);
