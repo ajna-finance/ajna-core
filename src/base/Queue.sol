@@ -30,35 +30,27 @@ abstract contract Queue is IQueue {
      *  @return newPrevLoan     Corrected previous loan that now comes before placed loan (new)
      */
     function _searchRadius(uint256 radius_, uint256 thresholdPrice_, address newPrev_, address borrower_) internal returns (address, LoanInfo memory) {
-        emit Debug("_searchRadius looking for", thresholdPrice_);
         address current = newPrev_;
         LoanInfo memory currentLoan = loans[current];
         LoanInfo memory nextLoan;
 
         for (uint256 i = 0; i < radius_;) {
-            emit Debug2("_searchRadius looking at", current);
-            emit Debug("_searchRadius current tp", currentLoan.thresholdPrice);
-            LoanInfo memory nextLoan = loans[currentLoan.next];
+            nextLoan = loans[currentLoan.next];
 
             if (current != borrower_ && (nextLoan.thresholdPrice <= thresholdPrice_ || nextLoan.thresholdPrice == 0)) {
-                emit Debug("_searchRadius found break at nextLoan.thresholdPrice", nextLoan.thresholdPrice);
                 break;
             }
 
             current = loans[current].next;
             currentLoan = nextLoan;
-            unchecked {  // FIXME: need to impose a meaningful maximum radius_ if we want this unchecked
+            unchecked {
                 ++i;
             }
         }
 
         require(currentLoan.next == borrower_ || loans[currentLoan.next].thresholdPrice <= thresholdPrice_, "B:S:SRCH_RDS_FAIL");
-        emit Debug2("_searchRadius returning", current);
         return (current, currentLoan);
     }
-
-    event Debug(string where, uint256 what);
-    event Debug2(string where, address what);
 
     /**
      *  @notice Called by borrower methods to update loan position
@@ -77,10 +69,8 @@ abstract contract Queue is IQueue {
             require(oldPrevLoan.next == borrower_, "B:U:OLDPREV_NOT_CUR_BRW");
         }
 
-        emit Debug2("newPrev_ before search", newPrev_);
         // protections
         (newPrev_, newPrevLoan) = _searchRadius(radius_, thresholdPrice_, newPrev_, borrower_);
-        emit Debug2("newPrev_ after search", newPrev_);
 
         LoanInfo memory loan = loans[borrower_];
         
@@ -154,7 +144,7 @@ abstract contract Queue is IQueue {
      *  @return newPrevLoan_     Previous loan that now comes before placed loan (new)
      */
     function _move(address oldPrev_, LoanInfo memory oldPrevLoan_, address newPrev_, LoanInfo memory newPrevLoan_) internal returns (LoanInfo memory loan, LoanInfo memory, LoanInfo memory) {
-        emit Debug2("_move called with newPrev_", newPrev_);
+        require(oldPrev_ != newPrev_, "B:U:QUE_INV_MOVE");
         address borrower;
 
         if (oldPrev_ == address(0)) {
@@ -171,7 +161,6 @@ abstract contract Queue is IQueue {
             loan.next = loanQueueHead;
             loanQueueHead = borrower;
         } else {
-            // FIXME: This won't handle oldPrev_ == newPrev_
             loan.next = newPrevLoan_.next;
             newPrevLoan_.next = borrower;
         }
