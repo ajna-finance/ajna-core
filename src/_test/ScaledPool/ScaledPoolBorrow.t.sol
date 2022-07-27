@@ -338,36 +338,4 @@ contract ScaledBorrowTest is DSTestPlus {
         _borrower.repay(_pool, 0.0001 * 1e18, address(0), address(_borrower2), 1);
     }
 
-    // // TODO: finish implementing
-    // // TODO: test how threshold price based ordering would be impacted by 5 borrowers with some varying, some same tp
-    // function testScaledPoolTPOrderingHighCollateralization() external {
-
-    //     // add initial quote to the pool
-    //     _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
-    //     _lender.addQuoteToken(_pool, 10_000 * 1e18, 2551);
-
-    //     // borrower 1 borrows 1000 quote from the pool
-    //     uint256 borrowAmount = 1_000 * 1e18;
-    //     uint256 collateralToAdd = 50 * 1e18;
-    //     _borrower.addCollateral(_pool, collateralToAdd, address(0), address(0), 1);
-    //     _borrower.borrow(_pool, borrowAmount, 3000, address(0), address(0), 1);
-
-    //     // check threshold price of borrower 1
-    //     (uint256 borrowerDebt, uint256 borrowerCollateral, uint256 inflatorSnapshot) = _pool.borrowerInfo(address(_borrower));
-    //     assertEq(borrowerDebt / borrowerCollateral, borrowAmount / collateralToAdd);
-
-    //     // borrower 2 borrows 5k quote from the pool
-    //     _borrower2.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
-    //     _borrower2.borrow(_pool, 5_000 * 1e18, 3000, address(0), address(_borrower), 1);
-
-
-
-    // }
-
-    // // TODO: finish implementing
-    // function testScaledPoolOrderingFuzzy() external {
-
-    // }
-
-
 }
