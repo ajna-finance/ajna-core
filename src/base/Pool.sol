@@ -122,17 +122,16 @@ abstract contract Pool is IPool, Clone {
         emit MoveQuoteToken(msg.sender, fromPrice_, toPrice_, movedAmount, lup);
     }
 
-    function removeQuoteToken(uint256 maxAmount_, uint256 price_, uint256 lpTokensToRemove) external override returns (uint256, uint256) {
+    function removeQuoteToken(uint256 price_, uint256 lpTokensToRemove_) external override returns (uint256, uint256) {
         require(BucketMath.isValidPrice(price_), "P:RQT:INVALID_PRICE");
 
         (uint256 curDebt, uint256 curInflator) = _accumulatePoolInterest(totalDebt, inflatorSnapshot);
 
         // remove quote token amount and get LP tokens burned
         (uint256 amount, uint256 lpTokens) = _removeQuoteTokenFromBucket(
-            price_, maxAmount_, lpTokensToRemove, lpTimer[msg.sender][price_], curInflator
+            price_, lpTokensToRemove_, lpTimer[msg.sender][price_], curInflator
         );
         require(_poolCollateralization(curDebt) >= Maths.WAD, "P:RQT:POOL_UNDER_COLLAT");
-
         // pool level accounting
         totalQuoteToken -= amount;
 
@@ -222,6 +221,7 @@ abstract contract Pool is IPool, Clone {
         // initialize bucket if required and get new HPB
         uint256 newHpb = !BitMaps.get(_bitmap, price_) ? initializeBucket(hpb, price_) : hpb;
 
+        // TODO: figure out why memory vs storage has impact here
         Bucket memory bucket    = _buckets[price_];
         bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
@@ -439,26 +439,26 @@ abstract contract Pool is IPool, Clone {
 
     /**
      *  @notice Called by a lender to remove quote tokens from a bucket
-     *  @param  price_     The price bucket from which quote tokens should be removed
-     *  @param  maxAmount_ The maximum amount of quote tokens to be removed, WAD
-     *  @param  lpBalance_ The LP balance for current lender, RAY
-     *  @param  lpTimer_   The timestamp of the last lender deposit in bucket
-     *  @param  inflator_  The current pool inflator rate, RAY
-     *  @return amount_    The actual amount being removed
-     *  @return lpTokens_  The amount of lpTokens removed equivalent to the quote tokens removed
+     *  @param  price_            The price bucket from which quote tokens should be removed
+     *  @param  lpTokensToRemove_ The LP balance for current lender, RAY
+     *  @param  lpTimer_          The timestamp of the last lender deposit in bucket
+     *  @param  inflator_         The current pool inflator rate, RAY
+     *  @return amount_           The actual amount being removed
+     *  @return lpTokens_         The amount of lpTokens removed equivalent to the quote tokens removed
      */
     function _removeQuoteTokenFromBucket(
-        uint256 price_, uint256 maxAmount_, uint256 lpBalance_, uint256 lpTimer_, uint256 inflator_
+        uint256 price_, uint256 lpTokensToRemove_, uint256 lpTimer_, uint256 inflator_
     ) internal returns (uint256 amount_, uint256 lpTokens_) {
-        Bucket memory bucket    = _buckets[price_];
+        Bucket storage bucket    = _buckets[price_];
+
+        require(bucket.collateral == 0, "P:RQTB:CLAIM_COLLATERAL");
+
         bucket.debt             = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
         bucket.inflatorSnapshot = inflator_;
 
-        uint256 exchangeRate = _exchangeRate(bucket);                  // RAY
-        uint256 claimable    = Maths.rmul(lpBalance_, exchangeRate);   // RAY
-        amount_             = Maths.min(Maths.wadToRay(maxAmount_), claimable); // RAY
-        lpTokens_           = Maths.rdiv(amount_, exchangeRate);                // RAY
-        amount_             = Maths.rayToWad(amount_);
+        // calculate amount of lpTokens and quoteTokens to remove
+        lpTokens_ = Maths.min(lpTokensToRemove_, lpBalance[msg.sender][price_]); // RAY
+        amount_   = Maths.rayToWad(Maths.rmul(lpTokens_, _exchangeRate(bucket))); // WAD
 
         // bucket accounting
         uint256 removeFromDeposit = Maths.min(amount_, bucket.onDeposit); // Remove from deposit first
@@ -955,7 +955,23 @@ abstract contract Pool is IPool, Clone {
         }
     }
 
+    function getLpTokensFromQuoteTokens(uint256 quoteTokens, uint256 price_, address owner_) external view returns (uint256 lpTokens_) {
+        require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
+
+        (, uint256 quoteOwned) = _getLPTokenExchangeValue(lpBalance[owner_][price_], price_);
+
+        quoteTokens = Maths.min(quoteTokens, quoteOwned);
+
+        Bucket memory bucket = _buckets[price_];
+
+        lpTokens_ = Maths.rdiv(Maths.wadToRay(quoteTokens), _exchangeRate(bucket));
+    }
+
     function getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) external view override returns (uint256 collateralTokens_, uint256 quoteTokens_) {
+        return _getLPTokenExchangeValue(lpTokens_, price_);
+    }
+
+    function _getLPTokenExchangeValue(uint256 lpTokens_, uint256 price_) internal view returns (uint256 collateralTokens_, uint256 quoteTokens_) {
         require(BucketMath.isValidPrice(price_), "P:GLPTEV:INVALID_PRICE");
 
         ( , , , uint256 onDeposit, uint256 debt, , uint256 lpOutstanding, uint256 bucketCollateral) = bucketAt(price_);

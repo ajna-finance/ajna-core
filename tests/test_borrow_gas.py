@@ -4,7 +4,7 @@ import pytest
 from decimal import *
 import inspect
 
-
+@pytest.mark.skip
 def test_borrow_gas(
     lenders,
     borrowers,

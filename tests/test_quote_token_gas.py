@@ -4,7 +4,7 @@ import pytest
 from decimal import *
 import inspect
 
-
+@pytest.mark.skip
 def test_quote_deposit_gas_below_hdp(
     lenders,
     mkr_dai_pool,
@@ -28,7 +28,7 @@ def test_quote_deposit_gas_below_hdp(
             for i in range(len(txes)):
                 print(f"Transaction: {i} | {test_utils.get_usage(txes[i].gas_used)}")
 
-
+@pytest.mark.skip
 def test_quote_deposit_gas_above_hdp(
     lenders,
     mkr_dai_pool,
@@ -54,7 +54,7 @@ def test_quote_deposit_gas_above_hdp(
                     f"Transaction: {i} | Gas used: {test_utils.get_usage(txes[i].gas_used)}"
                 )
 
-
+@pytest.mark.skip
 def test_quote_removal_from_lup_with_reallocation(
     lenders,
     borrowers,
@@ -85,7 +85,7 @@ def test_quote_removal_from_lup_with_reallocation(
 
         # lender removes 1000 DAI
         tx = mkr_dai_pool.removeQuoteToken(
-            1_000 * 10**18, bucket_math.indexToPrice(1663), lp_tokens, {"from": lender}
+            bucket_math.indexToPrice(1663), lp_tokens, {"from": lender}
         )
 
         with capsys.disabled():
@@ -96,7 +96,7 @@ def test_quote_removal_from_lup_with_reallocation(
                 f"Remove quote token from lup (reallocate to one bucket)           - {test_utils.get_usage(tx.gas_used)}"
             )
 
-
+@pytest.mark.skip
 def test_quote_removal_below_lup(
     lenders,
     borrowers,
@@ -130,7 +130,7 @@ def test_quote_removal_below_lup(
 
         # lender removes 1000 DAI
         tx = mkr_dai_pool.removeQuoteToken(
-            1_000 * 10**18, bucket_math.indexToPrice(1606), lp_tokens, {"from": lender}
+            bucket_math.indexToPrice(1606), lp_tokens, {"from": lender}
         )
 
         with capsys.disabled():
@@ -141,7 +141,7 @@ def test_quote_removal_below_lup(
                 f"Remove quote token below lup            - {test_utils.get_usage(tx.gas_used)}"
             )
 
-
+@pytest.mark.skip
 def test_quote_move_from_lup_with_reallocation(
     lenders,
     borrowers,
@@ -181,7 +181,7 @@ def test_quote_move_from_lup_with_reallocation(
                 f"Move quote token from lup           - {test_utils.get_usage(tx.gas_used)}"
             )
 
-
+@pytest.mark.skip
 def test_quote_move_to_lup(
     lenders,
     borrowers,

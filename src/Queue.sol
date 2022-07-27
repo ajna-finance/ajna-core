@@ -80,6 +80,9 @@ abstract contract Queue is IQueue {
         }
 
         // protections
+        if (newPrev_ != address(0)) {
+            require(newPrevLoan.thresholdPrice >= thresholdPrice_, "B:U:QUE_WRNG_ORD_P");
+        }
         if (loan.next != address(0)) {
             require(loans[loan.next].thresholdPrice <= thresholdPrice_, "B:U:QUE_WRNG_ORD");
         }
@@ -122,5 +125,9 @@ abstract contract Queue is IQueue {
             newPrevLoan_.next = borrower;
         }
         return (loan, oldPrevLoan_, newPrevLoan_);
+    }
+
+    function loanInfo(address borrower_) external view returns (uint256, address) {
+        return (loans[borrower_].thresholdPrice, loans[borrower_].next);
     }
 }
