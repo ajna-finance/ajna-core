@@ -402,4 +402,45 @@ contract LoanQueueTest is DSTestPlus {
         (, next) = _pool.loans(address(_borrower));
         assertEq(next, address(0));
     }
+
+    function testMoveToBottom() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p50159);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p2807);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, _p12_66);
+
+        assertEq(0, _pool.getHighestThresholdPrice());
+
+        // borrower deposits some collateral and draws debt
+        _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(0), address(0), 0);
+        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        assertEq(thresholdPrice, 750.000024038461538462 * 1e18);
+
+        // borrower2 deposits slightly less collateral and draws the same debt, producing a higher TP
+        _borrower2.addCollateral(_pool, 39 * 1e18, address(0), address(_borrower), 0);
+        _borrower2.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(0), address(0), 0);
+        (thresholdPrice, next) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 769.230793885601577909 * 1e18);
+
+        // borrower2 deposits some collateral, reducing their TP, pushing it to the end of the queue
+        _borrower2.addCollateral(_pool, 42 * 1e18, address(0), address(_borrower), 0);
+        (thresholdPrice, next) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 370.370382241215574549 * 1e18);
+        assertEq(next, address(0));
+
+        // borrower2 draws more debt, but should still be at the end of queue
+        _borrower2.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), 0);
+        (thresholdPrice, ) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 740.740764482431149098 * 1e18);
+        assertEq(next, address(0));
+
+        // confirm rest of queue is in the correct order
+        // FIXME: points to wrong borrower
+        assertEq(address(_pool.loanQueueHead()), address(_borrower));
+
+        (thresholdPrice, next) = _pool.loans(address(_borrower));
+        assertEq(thresholdPrice, 750.000024038461538462 * 1e18);
+        // FIXME: points to wrong borrower
+        assertEq(next, address(_borrower2));
+    }
 }
