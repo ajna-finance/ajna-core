@@ -277,9 +277,9 @@ contract ScaledBorrowTest is DSTestPlus {
         _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
         _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0), 1);
 
-        // borrower 2 borrows 15k quote from the pool
+        // borrower 2 borrows 15k quote from the pool with borrower2 becoming new queue HEAD
         _borrower2.addCollateral(_pool, 6 * 1e18, address(0), address(0), 1);
-        _borrower2.borrow(_pool, 15_000 * 1e18, 3000, address(0), address(_borrower), 1);
+        _borrower2.borrow(_pool, 15_000 * 1e18, 3000, address(0), address(0), 1);
 
         // should revert if borrower attempts to borrow more than minimum amount
         vm.expectRevert("S:B:AMT_LT_AVG_DEBT");
@@ -294,7 +294,7 @@ contract ScaledBorrowTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower2), 10 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower2), 2_995.912459898389633881 * 1e18, 10 * 1e18);
-        _borrower2.borrow(_pool, 10 * 1e18, 3000, address(0), address(_borrower), 1);
+        _borrower2.borrow(_pool, 10 * 1e18, 3000, address(0), address(0), 1);
     }
 
     /**
@@ -322,9 +322,9 @@ contract ScaledBorrowTest is DSTestPlus {
         _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
         _borrower.borrow(_pool, 1_000 * 1e18, 3000, address(0), address(0), 1);
 
-        // borrower 2 borrows 5k quote from the pool
+        // borrower 2 borrows 5k quote from the pool and becomes new queue HEAD
         _borrower2.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
-        _borrower2.borrow(_pool, 5_000 * 1e18, 3000, address(0), address(_borrower), 1);
+        _borrower2.borrow(_pool, 5_000 * 1e18, 3000, address(0), address(0), 1);
 
         // should revert if amount left after repay is less than the average debt
         vm.expectRevert("R:B:AMT_LT_AVG_DEBT");
