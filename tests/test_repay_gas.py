@@ -4,7 +4,7 @@ from brownie import Contract
 import pytest
 import inspect
 
-
+@pytest.mark.skip
 def test_repay_gas(
     lenders,
     borrowers,

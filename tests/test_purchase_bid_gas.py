@@ -3,7 +3,7 @@ from brownie import Contract
 import pytest
 from decimal import *
 
-
+@pytest.mark.skip
 def test_purchase_bid_gas(
     lenders,
     borrowers,

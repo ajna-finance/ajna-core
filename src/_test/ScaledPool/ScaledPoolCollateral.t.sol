@@ -98,7 +98,7 @@ contract ScaledCollateralTest is DSTestPlus {
         assertEq(_pool.encumberedCollateral(_pool.lenderDebt(), _pool.lup()),   7.044598359431304627 * 1e18);
 
         // check borrower state
-        (uint256 borrowerDebt, uint256 borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
+        (uint256 borrowerDebt, , uint256 borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
         assertEq(borrowerDebt,       _pool.borrowerDebt());
         assertEq(borrowerCollateral, _pool.pledgedCollateral());
         assertEq(
@@ -118,7 +118,7 @@ contract ScaledCollateralTest is DSTestPlus {
         _borrower.removeCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
 
         // check borrower state
-        (borrowerDebt, borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
+        (borrowerDebt, , borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
         assertEq(borrowerDebt,       _pool.borrowerDebt());
         assertEq(borrowerCollateral, _pool.pledgedCollateral());
         assertEq(
@@ -148,7 +148,7 @@ contract ScaledCollateralTest is DSTestPlus {
         assertEq(_pool.encumberedCollateral(_pool.lenderDebt(), _pool.lup()),   7.044598359431304627 * 1e18);
 
         // check borrower state
-        (borrowerDebt, borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
+        (borrowerDebt, , borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
         assertEq(borrowerDebt,       _pool.borrowerDebt());
         assertEq(borrowerCollateral, _pool.pledgedCollateral());
         assertEq(

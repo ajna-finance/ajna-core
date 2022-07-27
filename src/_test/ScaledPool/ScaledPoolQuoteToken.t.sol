@@ -69,6 +69,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         assertEq(_pool.treeSum(),                         10_000 * 1e18);
         assertEq(_pool.lpBalance(2550, address(_lender)), 10_000 * 1e27);
+        assertEq(_pool.exchangeRate(2550),                     1 * 1e27);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);

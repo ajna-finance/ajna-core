@@ -3,7 +3,7 @@ from brownie import Contract
 import pytest
 import inspect
 
-
+@pytest.mark.skip
 def test_add_remove_collateral_gas(
     lenders,
     borrowers,
@@ -34,7 +34,7 @@ def test_add_remove_collateral_gas(
                 f"Remove collateral       - {test_utils.get_usage(tx_remove_collateral.gas_used)}"
             )
 
-
+@pytest.mark.skip
 def test_claim_collateral_gas(
     lenders,
     borrowers,
