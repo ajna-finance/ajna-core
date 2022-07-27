@@ -268,7 +268,7 @@ contract LoanQueueTest is DSTestPlus {
         assertEq(address(next), address(0));
     }
 
-    // TODO: write test with radius of 0 
+    // TODO: write test with radius of 0
     // TODO: write test with decimal radius
     // TODO: write test with radius larger than queue
     function testRadiusInQueue() public {
@@ -317,28 +317,27 @@ contract LoanQueueTest is DSTestPlus {
         assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
 
-       // borrower2(HEAD) -> borrower -> borrower3 -> borrower4 -> borrower5 -> *borrower6*
-       _borrower6.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
-       // newPrev passed in is incorrect & radius is too small, revert
-       vm.expectRevert("B:S:SRCH_RDS_FAIL");
-       _borrower6.borrow(_pool, 1_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), _r1);
+        // borrower2(HEAD) -> borrower -> borrower3 -> borrower4 -> borrower5 -> *borrower6*
+        _borrower6.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
+        // newPrev passed in is incorrect & radius is too small, revert
+        vm.expectRevert("B:S:SRCH_RDS_FAIL");
+        _borrower6.borrow(_pool, 1_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), _r1);
 
-       // newPrev passed in is incorrect & radius supports correct placement
-       _borrower6.borrow(_pool, 1_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), _r2);
+        // newPrev passed in is incorrect & radius supports correct placement
+        _borrower6.borrow(_pool, 1_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), _r3);
 
-       (thresholdPrice, next) = _pool.loans(address(_borrower6));
-       assertEq(address(next), address(0));
-       assertEq(address(_borrower2), address(_pool.loanQueueHead()));
+        (thresholdPrice, next) = _pool.loans(address(_borrower6));
+        assertEq(address(next), address(0));
+        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
-       (thresholdPrice, next) = _pool.loans(address(_borrower4));
-       assertEq(address(next), address(_borrower5));
+        (thresholdPrice, next) = _pool.loans(address(_borrower4));
+        assertEq(address(next), address(_borrower5));
 
-       (thresholdPrice, next) = _pool.loans(address(_borrower5));
-       assertEq(address(next), address(_borrower6));
+        (thresholdPrice, next) = _pool.loans(address(_borrower5));
+        assertEq(address(next), address(_borrower6));
 
-       (thresholdPrice, next) = _pool.loans(address(_borrower));
-       assertEq(address(next), address(_borrower3));
-
+        (thresholdPrice, next) = _pool.loans(address(_borrower));
+        assertEq(address(next), address(_borrower3));
     }
 
     function testWrongOrder() public {
