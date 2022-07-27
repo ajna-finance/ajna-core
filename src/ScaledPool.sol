@@ -201,8 +201,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         _remove(fromIndex_, amount);
         _add(toIndex_, amount);
 
+        // move lup if necessary and check loan book's htp against new lup
         uint256 newLup = _lup();
-        console.log("price checks", _htp(), newLup, _htp() <= newLup);
         if (fromIndex_ < toIndex_) require(_htp() <= newLup, "S:MQT:LUP_BELOW_HTP");
 
         // update lender accounting
@@ -271,7 +271,6 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         emit AddCollateral(msg.sender, amount_);
     }
 
-    // FIXME: borrower amount calculations aren't correct... decreasing amount borrowed leads to pool under collateralization failure
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_, uint256 radius_) external {
 
         uint256 lupId = _lupIndex(amount_);
@@ -281,7 +280,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         Borrower memory borrower = borrowers[msg.sender];
         uint256 borrowersCount = totalBorrowers;
-        if (borrowersCount != 0) require(borrower.debt + amount_ > Maths.wdiv(Maths.wdiv(curDebt, Maths.wad(borrowersCount)), 10**19), "S:B:AMT_LT_AVG_DEBT");
+        if (borrowersCount != 0) require(borrower.debt + amount_ > _poolMinDebtAmount(curDebt), "S:B:AMT_LT_AVG_DEBT");
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
@@ -303,14 +302,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         borrowerDebt = curDebt;
         lenderDebt   += amount_;
 
-        console.log("borrower col check", borrowerDebt, borrower.collateral, Maths.wdiv(borrower.debt, borrower.collateral));
-
         _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRate(curDebt, newLup);
-        console.log("htp", _htp());
-        console.log("lup", _lup());
 
         // move borrowed amount from pool to sender
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
@@ -365,7 +360,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
             totalBorrowers = borrowersCount - 1;
             _removeLoanQueue(msg.sender, oldPrev_);
         } else {
-            if (borrowersCount != 0) require(borrower.debt > Maths.wdiv(Maths.wdiv(curDebt, Maths.wad(borrowersCount)), 10**19), "R:B:AMT_LT_AVG_DEBT");
+            if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
             _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
         }
         borrowers[msg.sender] = borrower;
@@ -540,6 +535,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function _priceToIndex(uint256 price_) internal pure returns (uint256) {
         return uint256(7388 - (BucketMath.priceToIndex(price_) + 3232));
+    }
+
+    function _poolMinDebtAmount(uint256 debt_) internal view returns (uint256) {
+        return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(totalBorrowers)), 10**19);
     }
 
     function _lup() internal view returns (uint256) {
