@@ -81,7 +81,7 @@ contract ScaledQueueTest is DSTestPlus {
     /**
      *  @notice With 1 lender and 1 borrower test borrowing and avoidance of self referential ordering.
      *          Reverts:
-     *              Borrow references themself instead of the correct queue state.
+     *              Borrower references themself instead of the correct queue state.
      */
     function testBorrowerSelfRefLoanQueue() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
@@ -179,12 +179,52 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
     }
 
-    // TODO: finish implementing
+    /**
+     *  @notice With 1 lender and 3 borrowers test borrowing that changes TP, but doesn't change queue order
+     */
     function testMoveToSameLocation() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
+        assertEq(0, _pool.getHighestThresholdPrice());
+
+        // borrower deposits some collateral and draws debt
+        _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(0), 0);
+        (uint256 thresholdPrice, ) = _pool.loans(address(_borrower));
+        assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
+
+        // borrower2 draws slightly more debt producing a higher TP
+        _borrower2.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower2.borrow(_pool, 31_000 * 1e18, 2551, address(0), address(0), 0);
+        (thresholdPrice, ) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 775.745192307692308050 * 1e18);
+
+        // borrower3 draws slightly more debt producing a higher TP
+        _borrower3.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower3.borrow(_pool, 32_000 * 1e18, 2551, address(0), address(0), 0);
+        (thresholdPrice, ) = _pool.loans(address(_borrower3));
+        assertEq(thresholdPrice, 800.769230769230769600 * 1e18);
+
+        // borrower2 adds collateral, decreasing their TP, but maintaining their same position in queue
+        _borrower2.addCollateral(_pool, 0.1 * 1e18, address(_borrower3), address(_borrower3), 0);
+        (thresholdPrice, ) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 773.810665643583349676 * 1e18);
+
+        // confirm queue is in the correct order
+        assertEq(address(_pool.loanQueueHead()), address(_borrower3));
+
+        (, address next) = _pool.loans(address(_borrower3));
+        assertEq(next, address(_borrower2));
+
+        (, next) = _pool.loans(address(_borrower2));
+        assertEq(next, address(_borrower));
+
+        (, next) = _pool.loans(address(_borrower));
+        assertEq(next, address(0));
     }
 
-    // FIXME: this test is currently broken: AMT_LT_AVG_DEBT
     // TODO: write test where we remove the head (oldPrev_ == 0)
     // TODO: write test for removal during/after liquidation
     /**
@@ -211,8 +251,10 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(next), address(_borrower));
         assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
+        (uint256 debt, uint256 pendingDebt, uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
+
         // borrower2(HEAD)
-        _borrower.repay(_pool, 15_000.000961538461538462 * 1e18, address(_borrower2), address(0), _r3);
+        _borrower.repay(_pool, pendingDebt, address(_borrower2), address(0), _r3);
 
         // check that borrower 1 has been removed from the queue, and queue head was updated to borrower 2
         (thresholdPrice, next) = _pool.loans(address(_borrower));
@@ -224,7 +266,6 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(next), address(0));
     }
 
-    // FIXME: this test is currently broken: AMT_LT_AVG_DEBT
     // TODO: write test with radius of 0
     // TODO: write test with decimal radius
     // TODO: write test with radius larger than queue
@@ -273,16 +314,15 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(next), address(0));
         assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
-
         // borrower2(HEAD) -> borrower -> borrower3 -> borrower4 -> borrower5 -> *borrower6*
         _borrower6.addCollateral(_pool, 51 * 1e18, address(0), address(0), _r3);
 
         // newPrev passed in is incorrect & radius is too small, revert
         vm.expectRevert("B:S:SRCH_RDS_FAIL");
-        _borrower6.borrow(_pool, 1_000 * 1e18, 2551, address(0), address(_borrower), _r1);
+        _borrower6.borrow(_pool, 1_100 * 1e18, 2551, address(0), address(_borrower), _r1);
 
         // newPrev passed in is incorrect & radius supports correct placement
-        _borrower6.borrow(_pool, 1_000 * 1e18, 2551, address(0), address(_borrower), _r3);
+        _borrower6.borrow(_pool, 1_100 * 1e18, 2551, address(0), address(_borrower), _r3);
 
         (thresholdPrice, next) = _pool.loans(address(_borrower6));
         assertEq(address(next), address(0));
@@ -348,9 +388,30 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
     }
 
-    // TODO: finish implementing
+    /**
+     *  @notice With 1 lender and 2 borrower test borrowing and proper ordering in params.
+     *          Reverts:
+     *              Borrower supplies the wrong order when borrowing themself instead of the correct queue state.
+     */
     function testWrongOrder() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
+        assertEq(0, _pool.getHighestThresholdPrice());
+
+        // borrower deposits some collateral and draws debt
+        _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(0), 0);
+        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
+
+        // borrower2 successfully deposits slightly less collateral
+        _borrower2.addCollateral(_pool, 39.9 * 1e18, address(0), address(_borrower), 0);
+
+        // borrower2 draws the same debt, producing a higher TP, but supplies the wrong order
+        vm.expectRevert("B:U:QUE_WRNG_ORD_P");
+        _borrower2.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(_borrower), 0);
     }
 
     function testGetHighestThresholdPrice() public {
@@ -372,7 +433,5 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
         assertEq(Maths.wdiv(debt, collateral), _pool.getHighestThresholdPrice());
     }
-
-
 
 }
