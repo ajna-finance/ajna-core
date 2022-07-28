@@ -252,4 +252,90 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(inflator,    1.008536365718327423 * 1e18);
     }
 
+    /**
+     *  @notice 1 lender, 2 borrowers tests reverts in borrow.
+     *          Reverts:
+     *              Attempts to borrow with no available quote.
+     *              Attempts to borrow more than minimum amount.
+     *              Attempts to borrow when result would be borrower under collateralization.
+     *              Attempts to borrow when result would be pool under collateralization.
+     */
+    function testScaledPoolBorrowRequireChecks() external {
+        // should revert if borrower attempts to borrow with an out of bounds limitIndex
+        vm.expectRevert("S:B:LIMIT_REACHED");
+        _borrower.borrow(_pool, 1_000 * 1e18, 5000, address(0), address(0), 1);
+
+        // add initial quote to the pool
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2551);
+
+        // should revert if borrow would result in pool under collateralization
+        vm.expectRevert("S:B:PUNDER_COLLAT");
+        _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0), 1);
+
+        // borrower 1 borrows 500 quote from the pool after adding sufficient collateral
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
+        _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0), 1);
+
+        // borrower 2 borrows 15k quote from the pool with borrower2 becoming new queue HEAD
+        _borrower2.addCollateral(_pool, 6 * 1e18, address(0), address(0), 1);
+        _borrower2.borrow(_pool, 15_000 * 1e18, 3000, address(0), address(0), 1);
+
+        // should revert if borrower attempts to borrow more than minimum amount
+        vm.expectRevert("S:B:AMT_LT_AVG_DEBT");
+        _borrower.borrow(_pool, 10 * 1e18, 3000, address(0), address(_borrower2), 1);
+
+        // should revert if borrow would result in borrower under collateralization
+        vm.expectRevert("S:B:BUNDER_COLLAT");
+        _borrower2.borrow(_pool, 4_500 * 1e18, 3000, address(0), address(_borrower), 1);
+
+        // should be able to borrow if properly specified
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower2), 10 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(address(_borrower2), 2_995.912459898389633881 * 1e18, 10 * 1e18);
+        _borrower2.borrow(_pool, 10 * 1e18, 3000, address(0), address(0), 1);
+    }
+
+    /**
+     *  @notice 1 lender, 2 borrowers tests reverts in repay.
+     *          Reverts:
+     *              Attempts to repay without quote tokens.
+     *              Attempts to repay without debt.
+     *              Attempts to repay when bucket would be left with amount less than averge debt.
+     */
+    function testScaledPoolRepayRequireChecks() external {
+        // add initial quote to the pool
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2551);
+
+        // should revert if borrower has insufficient quote to repay desired amount
+        vm.expectRevert("S:R:INSUF_BAL");
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), 1);
+
+        // should revert if borrower has no debt
+        _quote.mint(address(_borrower), 10_000 * 1e18);
+        vm.expectRevert("S:R:NO_DEBT");
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), 1);
+
+        // borrower 1 borrows 1000 quote from the pool
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
+        _borrower.borrow(_pool, 1_000 * 1e18, 3000, address(0), address(0), 1);
+
+        // borrower 2 borrows 5k quote from the pool and becomes new queue HEAD
+        _borrower2.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
+        _borrower2.borrow(_pool, 5_000 * 1e18, 3000, address(0), address(0), 1);
+
+        // should revert if amount left after repay is less than the average debt
+        vm.expectRevert("R:B:AMT_LT_AVG_DEBT");
+        _borrower.repay(_pool, 750 * 1e18, address(0), address(_borrower2), 1);
+
+        // should be able to repay loan if properly specified
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_borrower), address(_pool), 0.0001 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Repay(address(_borrower), _pool.lup(), 0.0001 * 1e18);
+        _borrower.repay(_pool, 0.0001 * 1e18, address(0), address(_borrower2), 1);
+    }
+
 }

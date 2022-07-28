@@ -8,7 +8,7 @@ import { BucketMath }        from "../../libraries/BucketMath.sol";
 
 import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
-import { UserWithCollateral, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
+import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
 
 contract ScaledQuoteTokenTest is DSTestPlus {
 
@@ -18,8 +18,8 @@ contract ScaledQuoteTokenTest is DSTestPlus {
     CollateralToken                internal _collateral;
     ScaledPool                     internal _pool;
     QuoteToken                     internal _quote;
-    UserWithCollateral             internal _borrower;
-    UserWithCollateral             internal _borrower2;
+    UserWithCollateralInScaledPool internal _borrower;
+    UserWithCollateralInScaledPool internal _borrower2;
     UserWithQuoteTokenInScaledPool internal _lender;
     UserWithQuoteTokenInScaledPool internal _lender1;
 
@@ -29,8 +29,8 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _poolAddress = new ScaledPoolFactory().deployPool(address(_collateral), address(_quote),0.05 * 10**18 );
         _pool        = ScaledPool(_poolAddress);
 
-        _borrower   = new UserWithCollateral();
-        _borrower2  = new UserWithCollateral();
+        _borrower   = new UserWithCollateralInScaledPool();
+        _borrower2  = new UserWithCollateralInScaledPool();
         _lender     = new UserWithQuoteTokenInScaledPool();
         _lender1    = new UserWithQuoteTokenInScaledPool();
 
@@ -146,6 +146,37 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         assertEq(_quote.balanceOf(address(_pool)),   65_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 135_000 * 1e18);
+    }
+
+    /**
+     *  @notice 1 lender tests reverts in removeQuoteToken.
+     *          Reverts:
+     *              Attempts to remove more quote tokens than available from lpBalance.
+     *              Attempts to remove quote token when doing so would drive lup below htp.
+     */
+    function testScaledPoolRemoveQuoteTokenRequireChecks() external {
+        // lender adds initial quote token
+        _lender.addQuoteToken(_pool, 40_000 * 1e18, 4549);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 4550);
+        _lender.addQuoteToken(_pool, 20_000 * 1e18, 4551);
+
+        vm.expectRevert("S:RQT:INSUF_LPS");
+        _lender.removeQuoteToken(_pool, 50_000 * 1e18, 4549);
+
+        // add collateral and borrow all available quote in the higher priced original 3 buckets
+        _lender.addQuoteToken(_pool, 30_000 * 1e18, 4990);
+        _collateral.mint(address(_borrower), 3500000 * 1e18);
+        _borrower.approveToken(_collateral, address(_pool), 3500000 * 1e18);
+        _borrower.addCollateral(_pool, 3500000 * 1e18, address(0), address(0), 1);
+        _borrower.borrow(_pool, 70000 * 1e18, 4551, address(0), address(0), 1);
+
+        // should revert if removing quote token from higher price buckets would drive lup below htp
+        vm.expectRevert("S:RQT:BAD_LUP");
+        _lender.removeQuoteToken(_pool, 20_000 * 1e18, 4551);
+
+        // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
+        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(4990), 10_000 * 1e18, _pool.indexToPrice(4551));
+        _lender.removeQuoteToken(_pool, 10_000 * 1e18, 4990);
 
     }
 
@@ -177,6 +208,58 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         assertEq(_pool.lpBalance(2551, address(_lender)), 5_000 * 1e27);
         assertEq(_pool.lpBalance(2777, address(_lender)), 15_000 * 1e27);
+    }
+
+    /**
+     *  @notice 1 lender, 1 bidder, 1 borrower tests reverts in moveQuoteToken.
+     *          Reverts:
+     *              Attempts to move quote token to the same price.
+     *              Attempts to move quote token from bucket with available collateral.
+     *              Attempts to move quote token when doing so would drive lup below htp.
+     */
+    function testScaledPoolMoveQuoteTokenRequireChecks() external {
+        // test setup
+        _collateral.mint(address(_lender1), 100000 * 1e18);
+        _lender1.approveToken(_collateral, address(_pool), 100000 * 1e18);
+
+        // lender adds initial quote token
+        _lender.addQuoteToken(_pool, 40_000 * 1e18, 4549);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 4550);
+        _lender.addQuoteToken(_pool, 20_000 * 1e18, 4551);
+
+        // should revert if moving quote token to the existing price
+        vm.expectRevert("S:MQT:SAME_PRICE");
+        _lender.moveQuoteToken(_pool, 5_000 * 1e18, 4549, 4549);
+
+        // bidder purchases some collateral
+        uint256 collateralToPurchaseWith = 71712.422545270036353445 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_lender1), address(_pool), collateralToPurchaseWith);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_lender1), 10_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Purchase(address(_lender1), _pool.indexToPrice(4551), 10_000 * 1e18, collateralToPurchaseWith);
+        _lender1.purchaseQuote(_pool, 10_000 * 1e18, 4551);
+
+        // should revert if moving quote tokens to from a bucket with available collateral
+        vm.expectRevert("S:MQT:AVAIL_COL");
+        _lender.moveQuoteToken(_pool, 5_000 * 1e18, 4551, 4549);
+
+        // add collateral and borrow all available quote in the higher priced original 3 buckets, as well as some of the new lowest price bucket
+        _lender.addQuoteToken(_pool, 30_000 * 1e18, 4651);
+        _collateral.mint(address(_borrower), 1500000 * 1e18);
+        _borrower.approveToken(_collateral, address(_pool), 1500000 * 1e18);
+        _borrower.addCollateral(_pool, 1500000 * 1e18, address(0), address(0), 1);
+        _borrower.borrow(_pool, 60000.1 * 1e18, 4651, address(0), address(0), 1);
+
+        // should revert if movement would drive lup below htp
+        vm.expectRevert("S:MQT:LUP_BELOW_HTP");
+        _lender.moveQuoteToken(_pool, 40_000 * 1e18, 4549, 6000);
+
+        // should be able to moveQuoteToken if properly specified
+        vm.expectEmit(true, true, false, true);
+        emit MoveQuoteToken(address(_lender), 4549, 4550, 10_000 * 1e27, _pool.indexToPrice(4651));
+        _lender.moveQuoteToken(_pool, 10_000 * 1e18, 4549, 4550);
     }
 
 }
