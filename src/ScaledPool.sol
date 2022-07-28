@@ -125,6 +125,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     /*** Lender External Functions ***/
     /*********************************/
 
+    // TODO: check index incoming index_ is valid?
     function addQuoteToken(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_) {
         uint256 curDebt = _accruePoolInterest();
 

@@ -322,20 +322,24 @@ contract ScaledBorrowTest is DSTestPlus {
         _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
         _borrower.borrow(_pool, 1_000 * 1e18, 3000, address(0), address(0), 1);
 
+        assertEq(address(_borrower), _pool.loanQueueHead());
+
         // borrower 2 borrows 5k quote from the pool and becomes new queue HEAD
-        _borrower2.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
+        _borrower2.addCollateral(_pool, 50 * 1e18, address(0), address(_borrower), 1);
         _borrower2.borrow(_pool, 5_000 * 1e18, 3000, address(0), address(0), 1);
+
+        assertEq(address(_borrower2), _pool.loanQueueHead());
 
         // should revert if amount left after repay is less than the average debt
         vm.expectRevert("R:B:AMT_LT_AVG_DEBT");
-        _borrower.repay(_pool, 750 * 1e18, address(0), address(_borrower2), 1);
+        _borrower.repay(_pool, 750 * 1e18, address(0), address(0), 1);
 
         // should be able to repay loan if properly specified
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 0.0001 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), _pool.lup(), 0.0001 * 1e18);
-        _borrower.repay(_pool, 0.0001 * 1e18, address(0), address(_borrower2), 1);
+        _borrower.repay(_pool, 0.0001 * 1e18, address(_borrower2), address(_borrower2), 1);
     }
 
 }

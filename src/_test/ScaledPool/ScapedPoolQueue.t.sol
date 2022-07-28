@@ -63,6 +63,9 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.approveToken(_quote, address(_pool), 300_000 * 1e18);
     }
 
+    /**
+     *  @notice With 1 lender and 1 borrower test adding collateral and borrowing.
+     */
     function testAddLoanToQueue() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
@@ -148,6 +151,56 @@ contract ScaledQueueTest is DSTestPlus {
     }
 
     /**
+     *  @notice With 1 lender and 2 borrowers test borrowing and subsequent movement to bottom of the queue.
+     */
+   function testMoveToBottom() public {
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
+        _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
+
+        assertEq(0, _pool.getHighestThresholdPrice());
+
+        // borrower deposits some collateral and draws debt
+        _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0), 0);
+        _borrower.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(0), 0);
+        assertEq(address(_pool.loanQueueHead()), address(_borrower));
+        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
+
+        // borrower2 deposits slightly less collateral and draws the same debt, producing a higher TP
+        _borrower2.addCollateral(_pool, 39 * 1e18, address(0), address(_borrower), 0);
+        _borrower2.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(0), 0);
+        assertEq(address(_pool.loanQueueHead()), address(_borrower2));
+        (thresholdPrice, next) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 769.970414201183432308 * 1e18);
+
+        // borrower2 deposits some collateral, reducing their TP, pushing it to the end of the queue
+        _borrower2.addCollateral(_pool, 42 * 1e18, address(0), address(_borrower), 0);
+        assertEq(address(_pool.loanQueueHead()), address(_borrower));
+        (thresholdPrice, next) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 370.726495726495726667 * 1e18);
+        assertEq(next, address(0));
+
+        // borrower2 draws more debt, but should still be at the end of queue; should revert passing wrong oldPrev
+        vm.expectRevert("B:U:OLDPREV_WRNG");
+        _borrower2.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(_borrower), 0);
+
+        _borrower2.borrow(_pool, 30_000 * 1e18, 2551, address(_borrower), address(_borrower), 0);
+        assertEq(address(_pool.loanQueueHead()), address(_borrower));
+        (thresholdPrice, next) = _pool.loans(address(_borrower2));
+        assertEq(thresholdPrice, 741.452991452991453333 * 1e18);
+        assertEq(next, address(0));
+
+        assertEq(address(_borrower), address(0x70BEce5a3D1a6eFBC54e1A134cfF3b47EF346bbE));
+        assertEq(address(_borrower2), address(0xB4FFCD625FefD541b77925c7A37A55f488bC69d9));
+
+        // confirm rest of queue is in the correct order
+        (thresholdPrice, next) = _pool.loans(address(_borrower));
+        assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
+        assertEq(next, address(_borrower2));
+    }
+
+    /**
      *  @notice With 1 lender and 2 borrowers test borrowing and updating the loanQueueHead.
      */
     function testMoveLoanToHeadInQueue() public {
@@ -229,7 +282,7 @@ contract ScaledQueueTest is DSTestPlus {
     // TODO: write test for removal during/after liquidation
     /**
      *  @notice With 1 lender and 2 borrowers test borrowing, with subsequent repayment and removal of one of the loans.
-     */    
+     */
     function testRemoveLoanInQueue() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
@@ -269,6 +322,9 @@ contract ScaledQueueTest is DSTestPlus {
     // TODO: write test with radius of 0
     // TODO: write test with decimal radius
     // TODO: write test with radius larger than queue
+    /**
+     *  @notice With 1 lender and 6 borrowers test borrowing, check loan placement in the queue with various search radii.
+     */
     function testRadiusInQueue() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
@@ -339,6 +395,10 @@ contract ScaledQueueTest is DSTestPlus {
     }
 
     // TODO: test with multiple borrowers and update of threshold prices causing queue reordering
+    /**
+     *  @notice With 1 lender and 1 borrower test adding collateral, borrowing, and adding additional collateral. 
+     *  Check that loan queue updates, and threshold price shifts on each action.
+     */
     function testUpdateLoanQueueAddCollateral() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
@@ -364,6 +424,10 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
     }
 
+    /**
+     *  @notice With 1 lender and 1 borrower test adding collateral, borrowing, and removing collateral. 
+     *  Check that loan queue updates on each action.
+     */
     function testUpdateLoanQueueRemoveCollateral() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
@@ -414,6 +478,9 @@ contract ScaledQueueTest is DSTestPlus {
         _borrower2.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(_borrower), 0);
     }
 
+    /**
+     *  @notice With 1 lender and 1 borrower test borrowing and check threshold price is correctly set.
+     */
     function testGetHighestThresholdPrice() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);

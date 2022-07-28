@@ -59,16 +59,17 @@ abstract contract Queue is IQueue {
 
         LoanInfo memory oldPrevLoan = loans[oldPrev_];
         LoanInfo memory newPrevLoan = loans[newPrev_];
+        LoanInfo memory loan = loans[borrower_];
 
-        if (oldPrevLoan.next != address(0)) {
+        if (oldPrev_ == address(0)) {
+            require(loan.thresholdPrice == 0 || loanQueueHead == borrower_, "B:U:OLDPREV_WRNG");
+        } else {
             require(oldPrevLoan.next == borrower_, "B:U:OLDPREV_NOT_CUR_BRW");
         }
 
         // search for the correct previous borrower given the incoming threshold price
         (newPrev_, newPrevLoan) = _searchRadius(radius_, thresholdPrice_, newPrev_, borrower_);
 
-        LoanInfo memory loan = loans[borrower_];
-        
         if (loan.thresholdPrice > 0) {
             // loan already exists and needs to be moved within the queue
             if (oldPrev_ != newPrev_) {
