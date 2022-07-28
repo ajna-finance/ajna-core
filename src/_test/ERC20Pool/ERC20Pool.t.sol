@@ -193,7 +193,7 @@ contract ERC20PoolTest is DSTestPlus {
         vm.expectRevert("P:R:AMT_LT_AVG_DEBT");
         _borrower2.repay(_pool, 199.9 * 1e18, address(_borrower1), address(0), _r3);
 
-        _borrower2.repay(_pool, 100 * 1e18, address(0), address(_borrower1), _r3);
+        _borrower2.repay(_pool, 100 * 1e18, address(_borrower), address(_borrower1), _r3);
         assertEq(_pool.getPoolMinDebtAmount(), 0.400003846153846154 * 1e18);
         assertEq(_pool.totalBorrowers(),       3);
         _borrower2.repay(_pool, 200 * 1e18, address(0), address(0), _r3);
@@ -217,7 +217,7 @@ contract ERC20PoolTest is DSTestPlus {
         assertEq(_pool.getPoolMinDebtAmount(), 0.100000961538461538 * 1e18);
         assertEq(_pool.totalBorrowers(),       1);
 
-        _borrower1.repay(_pool, 20 * 1e18, address(_borrower), address(0), _r3);
+        _borrower1.repay(_pool, 20 * 1e18, address(0), address(0), 0);
         assertEq(_pool.getPoolMinDebtAmount(), 0.080000961538461538 * 1e18);
         assertEq(_pool.totalBorrowers(),       1);
         _borrower1.repay(_pool, 100 * 1e18, address(0), address(_borrower), _r3);
