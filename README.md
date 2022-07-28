@@ -58,7 +58,4 @@ To drop into the console upon test failure:
 brownie test --interactive
 ```
 
-From there, use `chain.undo` to roll back the most recent transaction.
-Copy/paste the failed transaction prefixed with `tx = ` and you can interact 
-with the transaction receipt as desired.
-
+From there, you can pull the last transaction using `tx=history[-1]`, followed by `tx.events` to debug.

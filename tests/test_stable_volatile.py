@@ -66,7 +66,7 @@ def pool1(scaled_pool, lenders, borrowers, scaled_pool_utils, test_utils):
     draw_initial_debt(borrowers, pool, test_utils, target_utilization=GOAL_UTILIZATION)
     global last_triggered
     last_triggered = dict.fromkeys(range(0, NUM_ACTORS), 0)
-    # test_utils.validate_book(pool, bucket_math, MIN_BUCKET, MAX_BUCKET)
+    test_utils.validate_pool(pool)
     return pool
 
 
@@ -124,33 +124,31 @@ def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
         pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
 
 
-def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils):
+def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
 
     # pledge collateral
     threshold_price = int(pending_debt / (collateral_deposited + collateral_to_deposit) * 10**18)
-    old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price)
-    print(f"Borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral "
-          f"TP={threshold_price / 1e18:.1f}")
+    old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price, debug)
+    print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral TP={threshold_price / 1e18:.1f}")
     assert collateral_to_deposit > 10 ** 18
     # TODO: if debt is 0, contracts require passing old_prev and new_prev=0, which is awkward
     pool.addCollateral(collateral_to_deposit, old_prev, new_prev, 0, {"from": borrower})
     test_utils.validate_queue(pool)
-    collateral_deposited += collateral_to_deposit
 
     # draw debt
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
     new_debt = borrow_amount + ScaledPoolUtils.get_origination_fee(pool, borrow_amount)
     threshold_price = int((pending_debt + new_debt) / collateral_deposited * 10**18)
     assert threshold_price > 10**18
-    old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price)
-    print(f"Borrower {borrower_index} drawing {borrow_amount / 1e18:.8f} from bucket {pool.lup() / 1e18:.1f} "
+    old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price, debug)
+    print(f" borrower {borrower_index} drawing {borrow_amount / 1e18:.8f} from bucket {pool.lup() / 1e18:.1f} "
           f"with {collateral_deposited / 1e18:.8f} collateral deposited, "
           f"TP={threshold_price / 1e18:.8f} with {(pending_debt + new_debt)/1e18:.8f} total debt "
           f"adding {new_debt/1e18:.8f} new debt, old_prev={old_prev[:6]} new_prev={new_prev[:6]}")
     tx = pool.borrow(borrow_amount, MIN_BUCKET, old_prev, new_prev, 0, {"from": borrower})
     test_utils.validate_queue(pool)
-    # test_utils.validate_debt(pool, borrowers, bucket_math, MIN_BUCKET)
+    test_utils.validate_pool(pool)
     print("")
     return tx
 
@@ -196,15 +194,12 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, gas_validator, tes
                 if price:
                     buckets_deposited[user_index].add(price)
 
-            # TODO: implement and run validations
-            # try:
-            #     max_bucket = pool.priceToIndex(pool.hpb()) + 100
-            #     test_utils.validate_book(pool, MIN_BUCKET - 100, max_bucket)
-            #     test_utils.validate_debt(pool, borrowers, bucket_math, MIN_BUCKET)
-            # except AssertionError as ex:
-            #     print("Book or debt became invalid:")
-            #     print(TestUtils.dump_book(pool, MIN_BUCKET, pool.priceToIndex(pool.hpb())))
-            #     raise ex
+            try:
+                test_utils.validate_pool(pool)
+            except AssertionError as ex:
+                print("Book or debt became invalid:")
+                print(TestUtils.dump_book(pool, MAX_BUCKET, MIN_BUCKET))
+                raise ex
             chain.sleep(14)
 
             last_triggered[user_index] = chain.time()
@@ -240,7 +235,7 @@ def draw_debt(borrower, borrower_index, pool, gas_validator, test_utils, collate
           f"collateralizing at {collateralization:.1%}, (pool price is {pool.lup() / 10**18:.1f})")
     assert collateral_to_deposit > 10**18
     assert borrow_amount > 10**18
-    tx = pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
+    tx = pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=True)
     gas_validator.validate(tx)
 
 
@@ -288,9 +283,8 @@ def repay(borrower, borrower_index, pool, gas_validator, test_utils):
         if quote_balance > debt:
             # repay the debt
             (_, _, collateral_deposited, _) = pool.borrowerInfo(borrower)
-            collateral_encumbered = debt / pool.lup() * 10 ** 18
             repay_amount = min(debt * 1.05, quote_balance)
-            old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, 0)
+            old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, 0, debug=True)
             print(f" borrower {borrower_index} is repaying {repay_amount / 10**18:.1f}")
             pool.repay(repay_amount, old_prev, new_prev, 0, {"from": borrower})
 
@@ -315,7 +309,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
     assert len(borrowers) == NUM_ACTORS
     assert pool1.treeSum() > 2_700_000 * 10**18
     assert pool1.poolActualUtilization() > 0.50 * 10**18  # TODO: not yet exposed
-    # test_utils.validate_debt(pool1, borrowers, MIN_BUCKET, print_error=True)
+    test_utils.validate_pool(pool1)
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
@@ -335,7 +329,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}")
 
     # Validate test ended with the pool in a meaningful state
-    # test_utils.validate_debt(pool1, borrowers, bucket_math, MIN_BUCKET, print_error=True)
+    test_utils.validate_pool(pool1)
     # print("After test:\n" + test_utils.dump_book(pool1, bucket_math, MIN_BUCKET, hpb_index))
     utilization = pool1.poolActualUtilization() / 10**18
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")

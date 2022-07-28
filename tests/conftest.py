@@ -130,7 +130,7 @@ class ScaledPoolUtils:
         self.bucket_math = ajna_protocol.bucket_math
 
     @staticmethod
-    def find_loan_queue_params(pool, borrower, threshold_price):
+    def find_loan_queue_params(pool, borrower, threshold_price, debug=False):
         class Loan:
             def __init__(self, borrower, loan_info):
                 self.borrower = borrower
@@ -139,39 +139,35 @@ class ScaledPoolUtils:
 
         assert isinstance(borrower, str)
         assert isinstance(threshold_price, int)
-        assert threshold_price == 0 or threshold_price > 10**18
-        # TODO: break iteration once return values have been found rename "node" to "loan"
+
         if pool.loanQueueHead != ZERO_ADDRESS:
-            print(f" looking for borrower {borrower[:6]} and TP {threshold_price / 1e18:.8f}")
+            if debug:
+                print(f"  looking for borrower {borrower[:6]} and TP {threshold_price / 1e18:.18f}")
             old_previous_borrower = ZERO_ADDRESS
             node = Loan(pool.loanQueueHead(), pool.loanInfo(pool.loanQueueHead()))
 
-            print(f"  {node.borrower[:6]} at TP {node.tp/1e18:.8f}, next is {node.next[:6]}")
             if node.tp >= threshold_price and node.borrower != borrower:
                 new_previous_borrower = node.borrower
             else:
                 new_previous_borrower = ZERO_ADDRESS
 
-            while node.next != ZERO_ADDRESS:
+            while node.borrower != ZERO_ADDRESS:
+                if debug:
+                    print(f"   {node.borrower[:6]} at TP {node.tp / 1e18:.18f}, next is {node.next[:6]}")
                 if node.next == borrower:
-                    # print(f"  node_next {node.next} == borrower; setting old_prev to {node.borrower}")
                     old_previous_borrower = node.borrower
-
-                next_node = Loan(node.next, pool.loanInfo(node.next))
-                if next_node.tp > threshold_price and next_node.borrower != borrower:
-                    new_previous_borrower = node.next
-
-                assert next_node.borrower != next_node.next
-                node = next_node
-                print(f"  {node.borrower[:6]} at TP {node.tp / 1e18:.8f}, next is {node.next[:6]}")
+                if node.tp > threshold_price:
+                    new_previous_borrower = node.borrower
+                node = Loan(node.next, pool.loanInfo(node.next))
 
             # validation
             assert old_previous_borrower != borrower
             assert new_previous_borrower != borrower
             _, check_old_prev_next = pool.loanInfo(old_previous_borrower)
-            assert check_old_prev_next == ZERO_ADDRESS or check_old_prev_next == borrower
+            assert (check_old_prev_next == ZERO_ADDRESS or check_old_prev_next == borrower)
 
-            print(f" returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
+            if debug:
+                print(f"  returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
             return old_previous_borrower, new_previous_borrower
         else:
             return ZERO_ADDRESS, ZERO_ADDRESS
@@ -181,7 +177,6 @@ class ScaledPoolUtils:
         fee_rate = max(pool.interestRate() / 52, 0.0005 * 10**18)
         assert fee_rate >= (0.0005 * 10**18)
         assert fee_rate < (100 * 10**18)
-        print(f"get_origination_fee fee_rate is {fee_rate/1e18:.18f}")
         return fee_rate * amount / 10**18
 
 
@@ -321,82 +316,41 @@ class TestUtils:
             )
 
     @staticmethod
-    def validate_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=4156):
-        calc_lup = None
-        calc_hpb = None
-        partially_utilized_buckets = []
-        cached_buckets = {}
-        for i in range(max_bucket_index - 1, min_bucket_index, -1):
-            (_, _, _, on_deposit, debt, _, _, _) = pool.bucketAt(bucket_math.indexToPrice(i))
-            cached_buckets[i] = (on_deposit, debt)
-            if not calc_hpb and (on_deposit or debt):
-                calc_hpb = i
-            if debt:
-                calc_lup = i
-            if on_deposit and debt:
-                partially_utilized_buckets.append(i)
+    def validate_pool(pool):
+        # if pool is collateralized, ensure borrowers owe more than lenders are owed
+        if pool.lupIndex() > pool.priceToIndex(pool.htp()):
+            assert pool.borrowerDebt() >= pool.lenderDebt()
 
-        # Ensure utilization is not fragmented
-        for i in range(max_bucket_index - 1, min_bucket_index, -1):
-            (on_deposit, debt) = cached_buckets[i]
-            if calc_hpb and calc_lup and calc_lup < i < calc_hpb:
-                assert on_deposit == 0  # If there's deposit between LUP and HPB, utilization is fragmented
+        # if there are no borrowers in the pool, ensure there is no debt
+        if pool.totalBorrowers() == 0:
+            assert pool.borrowerDebt() == 0
 
-        # Confirm price pointers are correct
-        assert bucket_math.indexToPrice(calc_hpb) == pool.hpb()
-        assert bucket_math.indexToPrice(calc_lup) == pool.lup()
-
-        # Ensure multiple buckets are not partially utilized
-        assert len(partially_utilized_buckets) <= 1
-        # Ensure price pointers make sense
-        assert calc_lup <= calc_hpb
-
-    @staticmethod
-    def validate_debt(pool, borrowers, bucket_math, min_bucket_index=-3232, print_error=False):
-        def pe(lhs_name, lhs_value, rhs_name, rhs_value):
-            error = lhs_value - rhs_value
-            print(f"{lhs_name:>8} vs {rhs_name:<8} error: {error/1e18:>{24}.18f}")
-
-        borrower_debt_pending = 0
-        for borrower in borrowers:
-            (_, pending_debt, _, _, _, _, _) = pool.getBorrowerInfo(borrower.address)
-            borrower_debt_pending += pending_debt
-
-        bucket_debt_pending = 0
-        hpb_index = bucket_math.priceToIndex(pool.hpb())
-        for i in range(hpb_index, min_bucket_index, -1):
-            price = bucket_math.indexToPrice(i)
-            (_, _, _, _, debt, inflator, _, _) = pool.bucketAt(price)
-            bucket_debt_pending += debt + pool.getPendingBucketInterest(price)
-            assert 0 <= inflator / 1e27 < 2
-
-        pool_debt_pending = pool.totalDebt() + pool.getPendingPoolInterest()
-
-        if print_error:
-            pe("bucket", bucket_debt_pending, "borrower", borrower_debt_pending)
-            pe("bucket", bucket_debt_pending, "pool", pool_debt_pending)
-            pe("borrower", borrower_debt_pending, "pool", pool_debt_pending)
-
-        # TODO: Get these to tie out to WAD (or RAY) precision.
-        # assert (bucket_debt_pending - borrower_debt_pending) / 1e18 == 0
-        # assert (bucket_debt_pending - pool_debt_pending) / 1e18 == 0
-        # assert (borrower_debt_pending - pool_debt_pending) / 1e18 == 0
+        # totalBorrowers should be decremented as borrowers repay debt
+        if pool.totalBorrowers() > 0:
+            assert pool.borrowerDebt() > 0
 
     @staticmethod
     def validate_queue(pool):
         found_borrowers = set()
+        assert len(found_borrowers) == 0
 
         borrower = pool.loanQueueHead()
-        tp, next = pool.loanInfo(borrower)
+        tp, next_borrower = pool.loanInfo(borrower)
         last_tp = tp
-        found_borrowers.add(borrower)
-        while next != ZERO_ADDRESS:
-            borrower = next
-            tp, next = pool.loanInfo(borrower)
-            assert borrower not in found_borrowers  # catch duplicate borrowers
-            assert last_tp >= tp                    # catch missorted threshold prices
-            last_tp = tp
+        while next_borrower != ZERO_ADDRESS:
+            # catch duplicate borrowers
+            assert borrower not in found_borrowers
             found_borrowers.add(borrower)
+
+            # iterate
+            borrower = next_borrower
+            tp, next_borrower = pool.loanInfo(borrower)
+            # print(f"DEBUG: validate_queue on borrower {borrower} with TP {tp/1e18:.8f}")
+
+            # catch missorted threshold prices
+            assert last_tp >= tp
+            last_tp = tp
+
 
     @staticmethod
     def dump_book(pool, min_bucket_index, max_bucket_index, with_headers=True, csv=False) -> str:
