@@ -432,7 +432,7 @@ contract LoanQueueTest is DSTestPlus {
         assertEq(next, address(0));
 
         // borrower2 draws more debt, but should still be at the end of queue; should revert passing wrong oldPrev
-        vm.expectRevert("B:U:QUE_WRNG_ORD_P");
+        vm.expectRevert("B:U:OLDPREV_WRNG");
         _borrower2.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(0), address(_borrower), 0);
 
         _borrower2.borrow(_pool, 30_000 * 1e18, 2_000 * 1e18, address(_borrower), address(_borrower), 0);
