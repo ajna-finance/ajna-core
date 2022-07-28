@@ -328,14 +328,14 @@ contract ScaledBorrowTest is DSTestPlus {
 
         // should revert if amount left after repay is less than the average debt
         vm.expectRevert("R:B:AMT_LT_AVG_DEBT");
-        _borrower.repay(_pool, 750 * 1e18, address(0), address(_borrower2), 1);
+        _borrower.repay(_pool, 750 * 1e18, address(_borrower2), address(_borrower2), 1);
 
         // should be able to repay loan if properly specified
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 0.0001 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), _pool.lup(), 0.0001 * 1e18);
-        _borrower.repay(_pool, 0.0001 * 1e18, address(0), address(_borrower2), 1);
+        _borrower.repay(_pool, 0.0001 * 1e18, address(_borrower2), address(_borrower2), 1);
     }
 
 }
