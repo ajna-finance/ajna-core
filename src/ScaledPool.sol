@@ -283,11 +283,11 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 newLup = _indexToPrice(lupId);
         require(_borrowerCollateralization(borrower.debt, borrower.collateral, newLup) >= Maths.WAD, "S:B:BUNDER_COLLAT");
 
-        curDebt += debt;
         require(
-            _poolCollateralizationAtPrice(curDebt, amount_, pledgedCollateral / collateralScale, newLup) >= Maths.WAD,
+            _poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral / collateralScale, newLup) >= Maths.WAD,
             "S:B:PUNDER_COLLAT"
         );
+        curDebt += debt;
 
         // update actor accounting
         borrowerDebt = curDebt;
