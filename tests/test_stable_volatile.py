@@ -103,42 +103,46 @@ def place_initial_random_bid(lender, pool, scaled_pool_utils):
 
 
 def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
-    collateral_token = Contract(pool.collateral())
     target_debt = (pool.treeSum() - pool.borrowerDebt()) * target_utilization
     for borrower_index in range(0, len(borrowers) - 1):
         # determine amount we want to borrow and how much collateral should be deposited
         borrower = borrowers[borrower_index]
 
-        collateral_balance = collateral_token.balanceOf(borrower)
         borrow_amount = target_debt / NUM_ACTORS  # WAD
         assert borrow_amount > 10**18
         pool_price = pool.lup()
         if pool_price == MAX_PRICE:             # if there is no LUP,
             pool_price = 3293.70191 * 10**18    # use the highest-priced bucket with deposit
         collateralization_ratio = min((1 / target_utilization) + 0.05, 2.5)  # cap at 250% collateralization
-        # WAD / WAD * unscaled
         collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
-        assert collateral_balance > collateral_to_deposit
-
         pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
 
 
 def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
+    inflator = pool.pendingInflator()
 
     # pledge collateral
-    threshold_price = int(pending_debt / (collateral_deposited + collateral_to_deposit) * 10**18)
+    collateral_token = Contract(pool.collateral())
+    collateral_balance = collateral_token.balanceOf(borrower)
+    if collateral_balance < collateral_to_deposit:
+        print(f" WARN: borrower {borrower_index} only has {collateral_balance/1e18:.1f} collateral "
+              f"and cannot deposit {collateral_to_deposit/1e18:.1f} to draw debt")
+        return
+    borrower_collateral = collateral_deposited + collateral_to_deposit
+    threshold_price = int(pending_debt / (inflator * borrower_collateral))
     old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price, debug)
     print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral TP={threshold_price / 1e18:.1f}")
-    assert collateral_to_deposit > 10 ** 18
+    assert collateral_to_deposit > 10**18
     # TODO: if debt is 0, contracts require passing old_prev and new_prev=0, which is awkward
     pool.addCollateral(collateral_to_deposit, old_prev, new_prev, 0, {"from": borrower})
     test_utils.validate_queue(pool)
 
     # draw debt
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
+    inflator = pool.pendingInflator()
     new_total_debt = pending_debt + borrow_amount + ScaledPoolUtils.get_origination_fee(pool, borrow_amount)
-    threshold_price = int(new_total_debt / collateral_deposited * 10**18)
+    threshold_price = int(new_total_debt * 10**36 / (inflator * collateral_deposited))
     assert threshold_price > 10**18
     old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price, debug)
     print(f" borrower {borrower_index} drawing {borrow_amount / 1e18:.8f} from bucket {pool.lup() / 1e18:.1f} "

@@ -622,6 +622,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         );
     }
 
+    function pendingInflator() external view returns (uint256) {
+        return _pendingInflator();
+    }
+
     function exchangeRate(uint256 index_) external view returns (uint256) {
         Bucket storage bucket = buckets[index_];
         return _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
