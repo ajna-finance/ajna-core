@@ -125,6 +125,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     /*** Lender External Functions ***/
     /*********************************/
 
+    // TODO: check index incoming index_ is valid?
     function addQuoteToken(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_) {
         uint256 curDebt = _accruePoolInterest();
 
@@ -264,7 +265,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_, uint256 radius_) external {
 
         uint256 lupId = _lupIndex(amount_);
-        require(lupId <= limitIndex_, "S:B:LIMIT_REACHED");
+        require(lupId <= limitIndex_, "S:B:LIMIT_REACHED"); // TODO: add check that limitIndex is <= MAX_INDEX
 
         uint256 curDebt = _accruePoolInterest();
 

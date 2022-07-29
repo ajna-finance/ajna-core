@@ -13,15 +13,9 @@ abstract contract Queue is IQueue {
     /***  Queue functions ***/
     /************************/
 
-    function getHighestThresholdPrice() external override view returns (uint256 thresholdPrice){
-        if (loanQueueHead != address(0)) {
-            return loans[loanQueueHead].thresholdPrice;
-        }
-        return 0;
-    }
-
     /**
-     *  @notice Called _updateLoanQueue if the newPrev_ position is incorrect
+     *  @notice Search to the given radius for the correct previous borrower.
+     *  @dev    Called by _updateLoanQueue if the newPrev_ position is incorrect
      *  @param  radius_         Distance checked to find lower thresholdPrice
      *  @param  thresholdPrice_ Debt / collateralDeposited
      *  @param  newPrev_        Previous location the caller believes points to their loan
@@ -53,7 +47,7 @@ abstract contract Queue is IQueue {
     }
 
     /**
-     *  @notice Called by borrower methods to update loan position
+     *  @notice Called by borrower methods to update loan position.
      *  @param  borrower_        Borrower whose loan is being placed
      *  @param  thresholdPrice_  debt / collateralDeposited
      *  @param  oldPrev_         Previous borrower that came before placed loan (old)
@@ -72,18 +66,18 @@ abstract contract Queue is IQueue {
             require(oldPrevLoan.next == borrower_, "B:U:OLDPREV_NOT_CUR_BRW");
         }
 
-        // protections
+        // search for the correct previous borrower given the incoming threshold price
         (newPrev_, newPrevLoan) = _searchRadius(radius_, thresholdPrice_, newPrev_, borrower_);
 
         if (loan.thresholdPrice > 0) {
-            // loan exists
+            // loan already exists and needs to be moved within the queue
             if (oldPrev_ != newPrev_) {
                 (loan, oldPrevLoan, newPrevLoan) = _move(oldPrev_, oldPrevLoan, newPrev_, newPrevLoan);
             }
             loan.thresholdPrice = thresholdPrice_;
 
         } else if (loanQueueHead != address(0)) {
-            // loan doesn't exist, other loans in queue
+            // loan doesn't exist yet, other loans in queue
             require(oldPrev_ == address(0), "B:U:ALRDY_IN_QUE");
 
             loan.thresholdPrice = thresholdPrice_;
@@ -97,14 +91,13 @@ abstract contract Queue is IQueue {
                 loanQueueHead = borrower_;
             }
         } else {
-
             // first loan in queue
             require(oldPrev_ == address(0) || newPrev_ == address(0), "B:U:PREV_SHD_B_ZRO");
             loanQueueHead = borrower_;
             loan.thresholdPrice = thresholdPrice_;
         }
 
-        // protections
+        // check that queue has been ordered properly
         if (newPrev_ != address(0)) {
             require(newPrevLoan.thresholdPrice >= thresholdPrice_, "B:U:QUE_WRNG_ORD_P");
         }
@@ -112,16 +105,17 @@ abstract contract Queue is IQueue {
             require(loans[loan.next].thresholdPrice <= thresholdPrice_, "B:U:QUE_WRNG_ORD_N");
         }
 
+        // update structs with the new ordering
         loans[oldPrev_] = oldPrevLoan;
         loans[newPrev_] = newPrevLoan;
         loans[borrower_] = loan;
     }
 
-
     /**
-     *  @notice Called _updateLoanQueue if borrower.debt == 0
-     *  @param  borrower_        Borrower whose loan is being placed in queue
-     *  @param  oldPrev_         Previous borrower that came before placed loan (old)
+     *  @notice Removes a borrower from the loan queue and repairs the queue order.
+     *  @dev    Called by _updateLoanQueue if borrower.debt == 0.
+     *  @param  borrower_        Borrower whose loan is being placed in queue.
+     *  @param  oldPrev_         Previous borrower that came before placed loan (old).
      */
     function _removeLoanQueue(address borrower_, address oldPrev_) internal {
         require(oldPrev_ == address(0) || loans[oldPrev_].next == borrower_);
@@ -135,7 +129,8 @@ abstract contract Queue is IQueue {
     }
 
     /**
-     *  @notice Called by _updateLoanQueue if loan exists in the queue
+     *  @notice Move a given loan within the queue.
+     *  @dev    Called by _updateLoanQueue if loan exists in the queue and needs to be moved.
      *  @param  oldPrev_         Previous borrower that came before placed loan (old)
      *  @param  oldPrevLoan_     Previous loan that came before placed loan (old)
      *  @param  newPrev_         Previous borrower that now comes before placed loan (new)
@@ -166,6 +161,17 @@ abstract contract Queue is IQueue {
             newPrevLoan_.next = borrower;
         }
         return (loan, oldPrevLoan_, newPrevLoan_);
+    }
+
+    /**************************/
+    /*** External Functions ***/
+    /**************************/
+
+    function getHighestThresholdPrice() external view override returns (uint256 thresholdPrice){
+        if (loanQueueHead != address(0)) {
+            return loans[loanQueueHead].thresholdPrice;
+        }
+        return 0;
     }
 
     function loanInfo(address borrower_) external view returns (uint256, address) {
