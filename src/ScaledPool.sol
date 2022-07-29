@@ -130,7 +130,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 curDebt = _accruePoolInterest();
 
         Bucket storage bucket = buckets[index_];
-        uint256 exchangeRate  = _exchangeRate(bucket, index_);
+        uint256 exchangeRate  = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
 
         lpbChange_           = Maths.rdiv(Maths.wadToRay(amount_), exchangeRate);
         bucket.lpAccumulator += lpbChange_;
@@ -152,7 +152,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         require(amount_ <= bucket.availableCollateral, "S:CC:AMT_GT_COLLAT");
 
         uint256 price        = _indexToPrice(index_);
-        uint256 exchangeRate = _exchangeRate(bucket, index_);
+        uint256 exchangeRate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), exchangeRate);
         require(lpRedemption <= lpBalance[index_][msg.sender], "S:CC:INSUF_LP_BAL");
 
@@ -179,13 +179,13 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
         uint256 curDebt = _accruePoolInterest();
 
-        uint256 exchangeRate     = _exchangeRate(fromBucket, fromIndex_);
+        uint256 exchangeRate     = _exchangeRate(fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
         uint256 amount           = Maths.rmul(lpbAmount_, exchangeRate);
         fromBucket.lpAccumulator -= lpbAmount_;
 
         // update to bucket accounting
         Bucket storage toBucket = buckets[toIndex_];
-        exchangeRate            = _exchangeRate(toBucket, toIndex_);
+        exchangeRate            = _exchangeRate(toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
         uint256 lpbChange       = Maths.rdiv(amount, exchangeRate);
         toBucket.lpAccumulator  += lpbChange;
 
@@ -210,14 +210,13 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external {
         uint256 availableLPs = lpBalance[index_][msg.sender];
-        lpbAmount_           = Maths.wadToRay(lpbAmount_);
         require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
 
         uint256 curDebt = _accruePoolInterest();
 
         // update bucket accounting
         Bucket storage bucket = buckets[index_];
-        uint256 exchangeRate  = _exchangeRate(bucket, index_);
+        uint256 exchangeRate  = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 amount        = Maths.rmul(lpbAmount_, exchangeRate);
         bucket.lpAccumulator  -= lpbAmount_;
 
@@ -284,11 +283,11 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 newLup = _indexToPrice(lupId);
         require(_borrowerCollateralization(borrower.debt, borrower.collateral, newLup) >= Maths.WAD, "S:B:BUNDER_COLLAT");
 
-        curDebt += debt;
         require(
-            _poolCollateralizationAtPrice(curDebt, amount_, pledgedCollateral / collateralScale, newLup) >= Maths.WAD,
+            _poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral / collateralScale, newLup) >= Maths.WAD,
             "S:B:PUNDER_COLLAT"
         );
+        curDebt += debt;
 
         // update actor accounting
         borrowerDebt = curDebt;
@@ -537,10 +536,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         return _indexToPrice(_lupIndex(0));
     }
 
-    function _exchangeRate(Bucket memory bucket_, uint256 index_) internal view returns (uint256) {
-        uint256 colValue   = Maths.wmul(_indexToPrice(index_), bucket_.availableCollateral);
+    function _exchangeRate(uint256 availableCollateral_, uint256 lpAccumulator_, uint256 index_) internal view returns (uint256) {
+        uint256 colValue   = Maths.wmul(_indexToPrice(index_), availableCollateral_);
         uint256 bucketSize = _rangeSum(index_, index_) + colValue;
-        return bucket_.lpAccumulator != 0 ? Maths.wrdivr(bucketSize, bucket_.lpAccumulator) : Maths.RAY;
+        return lpAccumulator_ != 0 ? Maths.wrdivr(bucketSize, lpAccumulator_) : Maths.RAY;
     }
 
     function _pendingInflator() internal view returns (uint256) {
@@ -612,7 +611,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function exchangeRate(uint256 index_) external view returns (uint256) {
         Bucket storage bucket = buckets[index_];
-        return _exchangeRate(bucket, index_);
+        return _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
     }
 
     function encumberedCollateral(uint256 debt_, uint256 price_) external pure returns (uint256) {

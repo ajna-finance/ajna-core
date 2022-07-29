@@ -47,7 +47,7 @@ abstract contract Queue is IQueue {
     }
 
     /**
-     *  @notice Called by borrower methods to update a loan position.
+     *  @notice Called by borrower methods to update loan position.
      *  @param  borrower_        Borrower whose loan is being placed
      *  @param  thresholdPrice_  debt / collateralDeposited
      *  @param  oldPrev_         Previous borrower that came before placed loan (old)
@@ -56,7 +56,6 @@ abstract contract Queue is IQueue {
      */
     function _updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) internal {
         require(oldPrev_ != borrower_ && newPrev_ != borrower_, "B:U:PNT_SELF_REF");
-
         LoanInfo memory oldPrevLoan = loans[oldPrev_];
         LoanInfo memory newPrevLoan = loans[newPrev_];
         LoanInfo memory loan = loans[borrower_];
@@ -103,7 +102,7 @@ abstract contract Queue is IQueue {
             require(newPrevLoan.thresholdPrice >= thresholdPrice_, "B:U:QUE_WRNG_ORD_P");
         }
         if (loan.next != address(0)) {
-            require(loans[loan.next].thresholdPrice <= thresholdPrice_, "B:U:QUE_WRNG_ORD");
+            require(loans[loan.next].thresholdPrice <= thresholdPrice_, "B:U:QUE_WRNG_ORD_N");
         }
 
         // update structs with the new ordering
