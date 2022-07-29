@@ -160,14 +160,14 @@ class ScaledPoolUtils:
                     new_previous_borrower = node.borrower
                 node = Loan(node.next, pool.loanInfo(node.next))
 
+            if debug:
+                print(f"  returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
+
             # validation
             assert old_previous_borrower != borrower
             assert new_previous_borrower != borrower
             _, check_old_prev_next = pool.loanInfo(old_previous_borrower)
-            assert (check_old_prev_next == ZERO_ADDRESS or check_old_prev_next == borrower)
-
-            if debug:
-                print(f"  returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
+            assert (old_previous_borrower == ZERO_ADDRESS or check_old_prev_next == borrower)
             return old_previous_borrower, new_previous_borrower
         else:
             return ZERO_ADDRESS, ZERO_ADDRESS

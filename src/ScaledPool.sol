@@ -209,7 +209,6 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external {
         uint256 availableLPs = lpBalance[index_][msg.sender];
-        lpbAmount_           = Maths.wadToRay(lpbAmount_);
         require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
 
         uint256 curDebt = _accruePoolInterest();
