@@ -44,9 +44,9 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     struct Borrower {
-        uint256 debt;
-        uint256 collateral;
-        uint256 inflatorSnapshot;
+        uint256 debt;                // [WAD]
+        uint256 collateral;          // [WAD]
+        uint256 inflatorSnapshot;    // [WAD]
     }
 
     int256  public constant INDEX_OFFSET = 3232;
@@ -249,7 +249,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         borrower.collateral += amount_;
 
         // update loan queue
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+        uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_, radius_);
 
         borrowers[msg.sender] = borrower;
 
@@ -293,7 +294,9 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         borrowerDebt = curDebt;
         lenderDebt   += amount_;
 
-        _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+        // update loan queue
+        uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+        _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_, radius_);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRate(curDebt, newLup);
@@ -315,7 +318,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         borrower.collateral -= amount_;
 
         // update loan queue
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+        uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_, radius_);
 
         // update pool state
         pledgedCollateral -= amount_;
@@ -352,7 +356,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
             _removeLoanQueue(msg.sender, oldPrev_);
         } else {
             if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
-            _updateLoanQueue(msg.sender, Maths.wdiv(borrower.debt, borrower.collateral), oldPrev_, newPrev_, radius_);
+            uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+            _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_, radius_);
         }
         borrowers[msg.sender] = borrower;
 
@@ -511,7 +516,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function _htp() internal view returns (uint256) {
         if (loanQueueHead != address(0)) {
-            return loans[loanQueueHead].thresholdPrice;
+            return Maths.wmul(loans[loanQueueHead].thresholdPrice, inflatorSnapshot);
         }
         return 0;
     }
@@ -547,6 +552,14 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 spr         = interestRate / SECONDS_PER_YEAR;
         uint256 curInflator = inflatorSnapshot;
         return Maths.wmul(curInflator, Maths.wpow(Maths.WAD + spr, elapsed));
+    }
+
+    function _threshold_price(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256) {
+        if (collateral_ == 0) {
+            return 0;
+        } else {
+            return Maths.wdiv(debt_, Maths.wmul(inflator_, collateral_));
+        }
     }
 
     /**************************/
