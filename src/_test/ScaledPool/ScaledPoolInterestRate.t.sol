@@ -64,8 +64,8 @@ contract ScaledInterestRateTest is DSTestPlus {
         assertEq(_pool.interestRate(),       0.05 * 1e18);
         assertEq(_pool.interestRateUpdate(), 0);
 
-        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), 1);
-        _borrower.borrow(_pool, 46_000 * 1e18, 4300, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0));
+        _borrower.borrow(_pool, 46_000 * 1e18, 4300, address(0), address(0));
 
         assertEq(_pool.htp(), 460.442307692307692520 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
@@ -79,7 +79,7 @@ contract ScaledInterestRateTest is DSTestPlus {
 
         // repay entire loan
         _quote.mint(address(_borrower), 200 * 1e18);
-        _borrower.repay(_pool, 46_200 * 1e18, address(0), address(0), 1);
+        _borrower.repay(_pool, 46_200 * 1e18, address(0), address(0));
 
         // enforce rate update - decrease
         skip(864000);
