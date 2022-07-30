@@ -342,4 +342,28 @@ contract ScaledBorrowTest is DSTestPlus {
         _borrower.repay(_pool, 0.0001 * 1e18, address(_borrower2), address(_borrower2), 1);
     }
 
+    /**
+     *  @notice 1 lender, 1 borrower tests reverts in borrow.
+     *          Reverts:
+     *              Attempts to borrow with a TP of 0.
+     */
+    function testZeroThresholdPriceLoan() external {
+        // add initial quote to the pool
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2551);
+
+        assertEq(0, _pool.getHighestThresholdPrice());
+
+        // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
+        vm.expectRevert("B:U:TP_EQ_0");
+        _borrower.borrow(_pool, .00000000000000001 * 1e18, 3000, address(0), address(0), 1);
+
+        // borrower 1 borrows 500 quote from the pool after using a non 0 TP
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
+        _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0), 1);
+
+        assertGt(_pool.getHighestThresholdPrice(), 0);
+    }
+
 }
