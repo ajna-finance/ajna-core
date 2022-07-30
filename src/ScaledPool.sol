@@ -555,11 +555,8 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     function _threshold_price(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256) {
-        if (collateral_ == 0) {
-            return 0;
-        } else {
-            return Maths.wdiv(debt_, Maths.wmul(inflator_, collateral_));
-        }
+        if (collateral_ != 0) return Maths.wdiv(debt_, Maths.wmul(inflator_, collateral_));
+        return 0;
     }
 
     /**************************/
