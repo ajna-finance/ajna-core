@@ -13,6 +13,8 @@ import { Queue }       from "./Queue.sol";
 import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
+import { console } from "@std/console.sol";
+
 contract ScaledPool is Clone, FenwickTree, Queue {
     using SafeERC20 for ERC20;
 
@@ -284,7 +286,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         require(_borrowerCollateralization(borrower.debt, borrower.collateral, newLup) >= Maths.WAD, "S:B:BUNDER_COLLAT");
 
         require(
-            _poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral / collateralScale, newLup) >= Maths.WAD,
+            _poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) >= Maths.WAD,
             "S:B:PUNDER_COLLAT"
         );
         curDebt += debt;
