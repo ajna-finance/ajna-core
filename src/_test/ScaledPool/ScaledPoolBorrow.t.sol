@@ -51,7 +51,6 @@ contract ScaledBorrowTest is DSTestPlus {
     }
 
     function testScaledPoolBorrowAndRepay() external {
-
         // TODO: these are indexes, not prices; rename to avoid confusion
         uint256 depositPriceHighest = 2550;
         uint256 depositPriceHigh    = 2551;
@@ -69,9 +68,10 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.treeSum(),      50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(), 0);
-        assertEq(_pool.lenderDebt(),   0);
+        assertEq(_pool.treeSum(),               50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(),          0);
+        assertEq(_pool.lenderDebt(),            0);
+        assertEq(_pool.poolActualUtilization(), 0);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   50_000 * 1e18);
