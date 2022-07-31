@@ -29,7 +29,7 @@ last_triggered = {}
 @pytest.fixture
 def lenders(ajna_protocol, scaled_pool):
     dai_client = ajna_protocol.get_token(scaled_pool.quoteToken())
-    amount = 3_000_000 * 10**18
+    amount = 30_000_000 * 10**18
     lenders = []
     print("Initializing lenders")
     for _ in range(NUM_ACTORS):
@@ -105,6 +105,12 @@ def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
 def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
     inflator = pool.pendingInflator()
+    quote_token = Contract(pool.quoteToken())
+    pool_quote_balance = quote_token.balanceOf(pool)
+    if pool_quote_balance < borrow_amount:
+        print(f" WARN: contract has {pool_quote_balance/1e18:.1f} quote token; "
+              f"cannot fund loan of {borrow_amount/1e18:.1f}")
+        return
 
     # pledge collateral
     collateral_token = Contract(pool.collateral())
@@ -247,11 +253,17 @@ def add_quote_token(lender, lender_index, pool):
 
 
 def remove_quote_token(lender, lender_index, price, pool):
+    quote_token = Contract(pool.quoteToken())
+    pool_quote_balance = quote_token.balanceOf(pool)
     price_index = pool.priceToIndex(price)
     lp_balance = pool.lpBalance(price_index, lender)
     if lp_balance > 0:
         exchange_rate = pool.exchangeRate(price_index)
         claimable_quote = lp_balance * 10**9 / exchange_rate
+        if pool_quote_balance < claimable_quote:
+            print(f" WARN: contract has {pool_quote_balance / 1e18:.1f} quote token; "
+                  f"cannot withdraw {claimable_quote / 1e18:.1f}")
+            return
         print(f" lender {lender_index} removing {lp_balance/1e27:.27f} lp "
               f"(~{claimable_quote / 10**18:.1f} quote) from bucket {price_index} ({price / 10**18:.1f})")
         tx = pool.removeQuoteToken(lp_balance, price_index, {"from": lender})
@@ -284,7 +296,7 @@ def repay(borrower, borrower_index, pool, test_utils):
             print(f" borrower {borrower_index} has insufficient funds to repay {debt / 10**18:.1f}")
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_utils, chain):
     # Validate test set-up
     print("Before test:\n" + test_utils.dump_book(pool1, MAX_BUCKET, MIN_BUCKET))
