@@ -136,7 +136,7 @@ contract ScaledCollateralTest is DSTestPlus {
         _borrower.removeCollateral(_pool, unencumberedCollateral, address(0), address(0), 1);
 
         // check pool state
-        assertEq(_pool.htp(), 2_981.007422784467321477 * 1e18);
+        assertEq(_pool.htp(), 2_981.007422784467321484 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
 
         assertEq(_pool.treeSum(),           30_025.933063881970800000 * 1e18);
@@ -179,7 +179,7 @@ contract ScaledCollateralTest is DSTestPlus {
 
         // should be able to now remove collateral
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateral(address(_borrower), testCollateralAmount);        
+        emit RemoveCollateral(address(_borrower), testCollateralAmount);
         _borrower.removeCollateral(_pool, testCollateralAmount, address(0), address(0), 1);
     }
 

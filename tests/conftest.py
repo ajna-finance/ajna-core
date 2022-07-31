@@ -156,7 +156,7 @@ class ScaledPoolUtils:
                     print(f"   {node.borrower[:6]} at TP {node.tp / 1e18:.18f}, next is {node.next[:6]}")
                 if node.next == borrower:
                     old_previous_borrower = node.borrower
-                if node.tp > threshold_price:
+                if node.tp > threshold_price and node.borrower != borrower:
                     new_previous_borrower = node.borrower
                 node = Loan(node.next, pool.loanInfo(node.next))
 
