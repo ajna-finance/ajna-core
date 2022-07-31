@@ -44,9 +44,9 @@ contract ScaledPool is Clone, FenwickTree, Queue {
     }
 
     struct Borrower {
-        uint256 debt;
-        uint256 collateral;
-        uint256 inflatorSnapshot;
+        uint256 debt;                // [WAD]
+        uint256 collateral;          // [WAD]
+        uint256 inflatorSnapshot;    // [WAD]
     }
 
     int256  public constant INDEX_OFFSET = 3232;
@@ -511,7 +511,7 @@ contract ScaledPool is Clone, FenwickTree, Queue {
 
     function _htp() internal view returns (uint256) {
         if (loanQueueHead != address(0)) {
-            return loans[loanQueueHead].thresholdPrice;
+            return Maths.wmul(loans[loanQueueHead].thresholdPrice, inflatorSnapshot);
         }
         return 0;
     }
@@ -547,6 +547,11 @@ contract ScaledPool is Clone, FenwickTree, Queue {
         uint256 spr         = interestRate / SECONDS_PER_YEAR;
         uint256 curInflator = inflatorSnapshot;
         return Maths.wmul(curInflator, Maths.wpow(Maths.WAD + spr, elapsed));
+    }
+
+    function _threshold_price(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256) {
+        if (collateral_ != 0) return Maths.wdiv(debt_, Maths.wmul(inflator_, collateral_));
+        return 0;
     }
 
     /**************************/
@@ -607,6 +612,10 @@ contract ScaledPool is Clone, FenwickTree, Queue {
             borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
             borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
         );
+    }
+
+    function pendingInflator() external view returns (uint256) {
+        return _pendingInflator();
     }
 
     function exchangeRate(uint256 index_) external view returns (uint256) {
