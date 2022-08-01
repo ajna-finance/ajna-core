@@ -7,6 +7,7 @@ from brownie.utils import color
 
 
 ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+MIN_PRICE = 99836282890
 MAX_PRICE = 1_004_968_987606512354182109771
 
 
@@ -179,6 +180,15 @@ class ScaledPoolUtils:
         assert fee_rate < (100 * 10**18)
         return fee_rate * amount / 10**18
 
+    @staticmethod
+    def price_to_index_safe(pool, price):
+        if price < MIN_PRICE:
+            return pool.priceToIndex(MIN_PRICE)
+        elif price > MAX_PRICE:
+            return pool.priceToIndex(MAX_PRICE)
+        else:
+            return pool.priceToIndex(price)
+
 
 @pytest.fixture
 def scaled_pool_utils(ajna_protocol):
@@ -318,7 +328,7 @@ class TestUtils:
     @staticmethod
     def validate_pool(pool):
         # if pool is collateralized, ensure borrowers owe more than lenders are owed
-        if pool.lupIndex() > pool.priceToIndex(pool.htp()):
+        if pool.lupIndex() > ScaledPoolUtils.price_to_index_safe(pool, pool.htp()):
             assert pool.borrowerDebt() >= pool.lenderDebt()
 
         # if there are no borrowers in the pool, ensure there is no debt
@@ -378,7 +388,7 @@ class TestUtils:
             return f"{ny(ray):>{w}.3f}"
 
         lup_index = pool.lupIndex()
-        htp_index = pool.priceToIndex(pool.htp())
+        htp_index = ScaledPoolUtils.price_to_index_safe(pool, pool.htp())
 
         lines = []
         if with_headers:
