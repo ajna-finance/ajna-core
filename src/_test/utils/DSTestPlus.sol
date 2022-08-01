@@ -11,11 +11,6 @@ abstract contract DSTestPlus is Test {
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
-    // radius for borrow queue
-    uint256 internal _r1 = 1;
-    uint256 internal _r2 = 2;
-    uint256 internal _r3 = 3;
-
     // prices
     uint256 internal _p50159    = 50_159.593888626183666006 * 1e18;
     uint256 internal _p49910    = 49_910.043670274810022205 * 1e18;

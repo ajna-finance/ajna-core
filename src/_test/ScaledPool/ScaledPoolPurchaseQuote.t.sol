@@ -61,8 +61,8 @@ contract ScaledPurchaseQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2553);
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2554);
 
-        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), 1);
-        _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0));
+        _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0));
 
         // check balances
         assertEq(_quote.balanceOf(address(_lender)),   150_000 * 1e18);
@@ -95,7 +95,7 @@ contract ScaledPurchaseQuoteTokenTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_pool)),      18_000 * 1e18);
         assertEq(_collateral.balanceOf(address(_pool)), 103.655062990922738057 * 1e18);
 
-        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), 1);
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0));
 
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(2550);
         assertEq(lpAccumulator,       10_000 * 1e27);
