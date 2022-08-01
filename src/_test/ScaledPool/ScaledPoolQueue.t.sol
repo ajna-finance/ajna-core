@@ -304,7 +304,7 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(next), address(_borrower));
         assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
-        (uint256 debt, uint256 pendingDebt, uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
+        ( , uint256 pendingDebt, , ) = _pool.borrowerInfo(address(_borrower));
 
         // borrower2(HEAD)
         _borrower.repay(_pool, pendingDebt, address(_borrower2), address(0));
