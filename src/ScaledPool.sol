@@ -478,8 +478,10 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _poolActualUtilization(uint256 borrowerDebt_, uint256 pledgedCollateral_) internal view returns (uint256 utilization_) {
-        uint256 ptp = Maths.wdiv(borrowerDebt_, pledgedCollateral_);
-        if (ptp != 0) utilization_ = Maths.wdiv(borrowerDebt_, _prefixSum(_priceToIndex(ptp)));
+        if (pledgedCollateral_ != 0) {
+            uint256 ptp = Maths.wdiv(borrowerDebt_, pledgedCollateral_);
+            if (ptp != 0) utilization_ = Maths.wdiv(borrowerDebt_, _prefixSum(_priceToIndex(ptp)));
+        }
     }
 
     function _htp() internal view returns (uint256) {
@@ -523,7 +525,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _threshold_price(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256) {
-        if (collateral_ != 0) return Maths.wdiv(debt_, Maths.wmul(inflator_, collateral_));
+        if (collateral_ != 0) return Maths.wdiv(Maths.wmul(inflator_, debt_), collateral_);
         return 0;
     }
 

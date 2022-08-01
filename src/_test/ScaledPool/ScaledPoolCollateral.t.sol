@@ -136,7 +136,7 @@ contract ScaledCollateralTest is DSTestPlus {
         _borrower.removeCollateral(_pool, unencumberedCollateral, address(0), address(0));
 
         // check pool state
-        assertEq(_pool.htp(), 2_981.007422784467321484 * 1e18);
+        assertEq(_pool.htp(), 2_989.185764494416579966 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
 
         assertEq(_pool.treeSum(),           30_025.933063881970800000 * 1e18);

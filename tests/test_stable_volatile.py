@@ -29,7 +29,7 @@ last_triggered = {}
 @pytest.fixture
 def lenders(ajna_protocol, scaled_pool):
     dai_client = ajna_protocol.get_token(scaled_pool.quoteToken())
-    amount = 3_000_000 * 10**18
+    amount = 30_000_000 * 10**18
     lenders = []
     print("Initializing lenders")
     for _ in range(NUM_ACTORS):
@@ -102,9 +102,44 @@ def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
         pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
 
 
+def ensure_pool_is_funded(pool, quote_token_amount: int, action: str) -> bool:
+    """ Ensures pool has enough funds for an operation which requires an amount of quote token. """
+    pool_quote_balance = Contract(pool.quoteToken()).balanceOf(pool)
+    if pool_quote_balance < quote_token_amount:
+        print(f" WARN: contract has {pool_quote_balance/1e18:.1f} quote token; "
+              f"cannot {action} {quote_token_amount/1e18:.1f}")
+        return False
+    print(f"DEBUG: contract has {pool_quote_balance/1e18:.1f} quote token; "
+          f"fine to {action} {quote_token_amount/1e18:.1f}")
+    return True
+
+
+def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:  # WAD
+    # Iterates through number of buckets passed as parameter, adding deposit to determine what loan size will be
+    # required to utilize the buckets.
+    index = pool.lupIndex()
+    (quote, _, _, _) = pool.bucketAt(index)
+    cumulative_deposit = quote
+    while bucket_depth > 0 and index > MIN_BUCKET:
+        index += 1
+        print(f" get_cumulative_bucket_deposit at {index}")
+        # TODO: This ignores partially-utilized buckets; difficult to calculate in v10
+        (quote, _, _, _) = pool.bucketAt(index)
+        cumulative_deposit += quote
+        bucket_depth -= 1
+    return cumulative_deposit
+
+
+def get_time_between_interactions(actor_index):
+    # Distribution function throttles time between interactions based upon user_index
+    return 333 * math.exp(actor_index/10) + 3600
+
+
 def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
     inflator = pool.pendingInflator()
+    if not ensure_pool_is_funded(pool, borrow_amount, "borrow"):
+        return
 
     # pledge collateral
     collateral_token = Contract(pool.collateral())
@@ -114,7 +149,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
               f"and cannot deposit {collateral_to_deposit/1e18:.1f} to draw debt")
         return
     borrower_collateral = collateral_deposited + collateral_to_deposit
-    threshold_price = int(pending_debt / (inflator * borrower_collateral))
+    threshold_price = int((inflator * pending_debt) / borrower_collateral)
     old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price, debug)
     print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral TP={threshold_price / 1e18:.1f}")
     assert collateral_to_deposit > 10**18
@@ -126,7 +161,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
     inflator = pool.pendingInflator()
     new_total_debt = pending_debt + borrow_amount + ScaledPoolUtils.get_origination_fee(pool, borrow_amount)
-    threshold_price = int(new_total_debt * 10**36 / (inflator * collateral_deposited))
+    threshold_price = int((inflator * new_total_debt) / collateral_deposited)
     assert threshold_price > 10**18
     old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price, debug)
     print(f" borrower {borrower_index} drawing {borrow_amount / 1e18:.8f} from bucket {pool.lup() / 1e18:.1f} "
@@ -140,12 +175,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
     return tx
 
 
-def get_time_between_interactions(actor_index):
-    # Distribution function throttles time between interactions based upon user_index
-    return 333 * math.exp(actor_index/10) + 3600
-
-
-def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, duration=3600):
+def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, duration=3600, debug=True):
     user_index = start_from
     end_time = chain.time() + duration
     # Update the interest rate
@@ -154,6 +184,16 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, durati
 
     while chain.time() < end_time:
         if chain.time() - last_triggered[user_index] > get_time_between_interactions(user_index):
+
+            if debug:
+                pool_quote_balance = Contract(pool.quoteToken()).balanceOf(pool)
+                ptp = pool.borrowerDebt() * 10**18 / pool.pledgedCollateral()
+                ptp_index= pool.priceToIndex(ptp)
+                ru = pool.prefixSum(ptp_index)
+                print(f"DEBUG: pool_quote_balance={pool_quote_balance/1e18:.1f} "
+                      f"borrowerDebt={pool.borrowerDebt()/1e18:.1f} pledged={pool.pledgedCollateral()/1e18:.1f} "
+                      f"ptp={ptp/1e18:.3f} (bucket {ptp_index}) ru={ru/1e18:.1f} "
+                      f"actualUtilization={pool.poolActualUtilization()/1e18:.1%}")
 
             # Draw debt, repay debt, or do nothing depending on interest rate
             utilization = pool.poolActualUtilization() / 10**18
@@ -184,7 +224,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, durati
             try:
                 test_utils.validate_pool(pool)
             except AssertionError as ex:
-                print("Book or debt became invalid:")
+                print("Pool state became invalid:")
                 print(TestUtils.dump_book(pool, MAX_BUCKET, MIN_BUCKET))
                 raise ex
             chain.sleep(14)
@@ -194,22 +234,6 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, durati
         chain.sleep(274)
         user_index = (user_index + 1) % NUM_ACTORS  # increment with wraparound
     return user_index
-
-
-def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:  # WAD
-    # Iterates through number of buckets passed as parameter, adding deposit to determine what loan size will be
-    # required to utilize the buckets.
-    index = pool.lupIndex()
-    (quote, _, _, _) = pool.bucketAt(index)
-    cumulative_deposit = quote
-    while bucket_depth > 0 and index > MIN_BUCKET:
-        index += 1
-        print(f" get_cumulative_bucket_deposit at {index}")
-        # TODO: This ignores partially-utilized buckets; difficult to calculate in v10
-        (quote, _, _, _) = pool.bucketAt(index)
-        cumulative_deposit += quote
-        bucket_depth -= 1
-    return cumulative_deposit
 
 
 def draw_debt(borrower, borrower_index, pool, test_utils, collateralization=1.1):
@@ -251,9 +275,13 @@ def remove_quote_token(lender, lender_index, price, pool):
     lp_balance = pool.lpBalance(price_index, lender)
     if lp_balance > 0:
         exchange_rate = pool.exchangeRate(price_index)
-        claimable_quote = lp_balance * 10**9 / exchange_rate
-        print(f" lender {lender_index} removing {lp_balance/1e27:.27f} lp "
-              f"(~{claimable_quote / 10**18:.1f} quote) from bucket {price_index} ({price / 10**18:.1f})")
+        claimable_quote = lp_balance * 10**18 / exchange_rate
+        print(f" lender {lender_index} removing {lp_balance/1e27:.8f} lp "
+              f"(~{claimable_quote / 10**18:.1f} quote) from bucket {price_index} ({price / 10**18:.1f}); "
+              f"exchange rate is {exchange_rate/1e27:.8f}")
+        if not ensure_pool_is_funded(pool, claimable_quote * 2, "withdraw"):
+            print("DEBUG: pool insufficiently funded; returning")
+            return
         tx = pool.removeQuoteToken(lp_balance, price_index, {"from": lender})
     else:
         print(f" lender {lender_index} has no claim to bucket {price / 10**18:.1f}")
