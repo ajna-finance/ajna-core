@@ -326,6 +326,17 @@ interface IScaledPool {
      */
     function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external;
 
+    /***************************************/
+    /*** ERC20 Lender External Functions ***/
+    /***************************************/
+
+    /**
+     *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
+     *  @param  amount_ The amount of unencumbered collateral to claim.
+     *  @param  index_  The index of the bucket from which unencumbered collateral will be claimed.
+     */
+    function claimCollateral(uint256 amount_, uint256 index_) external;
+
     /*******************************/
     /*** Pool External Functions ***/
     /*******************************/

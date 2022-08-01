@@ -115,7 +115,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
     }
 
-    function claimCollateral(uint256 amount_, uint256 index_) external {
+    function claimCollateral(uint256 amount_, uint256 index_) external override {
         Bucket storage bucket = buckets[index_];
         require(amount_ <= bucket.availableCollateral, "S:CC:AMT_GT_COLLAT");
 
