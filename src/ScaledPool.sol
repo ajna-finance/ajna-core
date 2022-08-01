@@ -208,7 +208,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external override {
+    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -218,7 +218,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_, radius_);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         borrowers[msg.sender] = borrower;
 
@@ -231,7 +231,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit AddCollateral(msg.sender, amount_);
     }
 
-    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_, uint256 radius_) external override {
+    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
 
         uint256 lupId = _lupIndex(amount_);
         require(lupId <= limitIndex_, "S:B:LIMIT_REACHED"); // TODO: add check that limitIndex is <= MAX_INDEX
@@ -264,7 +264,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_, radius_);
+        _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRate(curDebt, newLup);
@@ -274,7 +274,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit Borrow(msg.sender, newLup, amount_);
     }
 
-    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external override {
+    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -287,7 +287,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_, radius_);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         // update pool state
         pledgedCollateral -= amount_;
@@ -298,7 +298,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit RemoveCollateral(msg.sender, amount_);
     }
 
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_, uint256 radius_) external override {
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
         require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
 
         Borrower memory borrower = borrowers[msg.sender];
@@ -325,7 +325,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         } else {
             if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
             uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-            _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_, radius_);
+            _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
         }
         borrowers[msg.sender] = borrower;
 

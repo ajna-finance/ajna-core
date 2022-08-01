@@ -78,7 +78,7 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
 
         // borrower deposit 100 MKR collateral
-        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0));
         assertEq(_pool.poolTargetUtilization(), 1 * 1e18);
         assertEq(_pool.poolActualUtilization(), 0);
 
@@ -87,7 +87,7 @@ contract ScaledBorrowTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), 2_981.007422784467321543 * 1e18, 21_000 * 1e18);
-        _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0), 1);
+        _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0));
 
         assertEq(_pool.htp(), 210.201923076923077020 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
@@ -131,7 +131,7 @@ contract ScaledBorrowTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower), 19_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), 2_966.176540084047110076 * 1e18, 19_000 * 1e18);
-        _borrower.borrow(_pool, 19_000 * 1e18, 3500, address(0), address(0), 1);
+        _borrower.borrow(_pool, 19_000 * 1e18, 3500, address(0), address(0));
 
         assertEq(_pool.htp(), 400.384615384615384800 * 1e18);
         assertEq(_pool.lup(), 2_966.176540084047110076 * 1e18);
@@ -149,7 +149,7 @@ contract ScaledBorrowTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 10_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), 2_966.176540084047110076 * 1e18, 10_000 * 1e18);
-        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), 1);
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0));
 
         assertEq(_pool.htp(), 300.384615384615384800 * 1e18);
         assertEq(_pool.lup(), 2_966.176540084047110076 * 1e18);
@@ -168,7 +168,7 @@ contract ScaledBorrowTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 30_038.461538461538480000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), BucketMath.MAX_PRICE, 30_038.461538461538480000 * 1e18);
-        _borrower.repay(_pool, 30_040 * 1e18, address(0), address(0), 1);
+        _borrower.repay(_pool, 30_040 * 1e18, address(0), address(0));
 
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
@@ -198,8 +198,8 @@ contract ScaledBorrowTest is DSTestPlus {
 
         skip(864000);
 
-        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
-        _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0));
+        _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0));
 
         assertEq(_pool.borrowerDebt(), 21_020.192307692307702000 * 1e18);
         (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(address(_borrower));
@@ -209,7 +209,7 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(inflator,    1 * 1e18);
 
         skip(864000);
-        _borrower.addCollateral(_pool, 10 * 1e18, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 10 * 1e18, address(0), address(0));
         assertEq(_pool.borrowerDebt(), 21_083.636385042573188669 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
         assertEq(debt,        21_083.636385042573188669 * 1e18);
@@ -218,7 +218,7 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(inflator,    1.003018244382428805 * 1e18);
 
         skip(864000);
-        _borrower.removeCollateral(_pool, 10 * 1e18, address(0), address(0), 1);
+        _borrower.removeCollateral(_pool, 10 * 1e18, address(0), address(0));
         assertEq(_pool.borrowerDebt(), 21_118.612213172841725096 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
         assertEq(debt,        21_118.612213172841725096 * 1e18);
@@ -227,7 +227,7 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(inflator,    1.004682160088731320 * 1e18);
 
         skip(864000);
-        _borrower.borrow(_pool, 0, 3000, address(0), address(0), 1);
+        _borrower.borrow(_pool, 0, 3000, address(0), address(0));
         assertEq(_pool.borrowerDebt(), 21_157.152642868828624051 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
         assertEq(debt,        21_157.152642868828624051 * 1e18);
@@ -236,7 +236,7 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(inflator,    1.006515655669163431 * 1e18);
 
         skip(864000);
-        _borrower.repay(_pool, 0, address(0), address(0), 1);
+        _borrower.repay(_pool, 0, address(0), address(0));
         assertEq(_pool.borrowerDebt(), 21_199.628356700342110209 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
         assertEq(debt,        21_199.628356700342110209 * 1e18);
@@ -263,7 +263,7 @@ contract ScaledBorrowTest is DSTestPlus {
     function testScaledPoolBorrowRequireChecks() external {
         // should revert if borrower attempts to borrow with an out of bounds limitIndex
         vm.expectRevert("S:B:LIMIT_REACHED");
-        _borrower.borrow(_pool, 1_000 * 1e18, 5000, address(0), address(0), 1);
+        _borrower.borrow(_pool, 1_000 * 1e18, 5000, address(0), address(0));
 
         // add initial quote to the pool
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
@@ -271,30 +271,30 @@ contract ScaledBorrowTest is DSTestPlus {
 
         // should revert if borrow would result in pool under collateralization
         vm.expectRevert("S:B:PUNDER_COLLAT");
-        _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0), 1);
+        _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0));
 
         // borrower 1 borrows 500 quote from the pool after adding sufficient collateral
-        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
-        _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0));
+        _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0));
 
         // borrower 2 borrows 15k quote from the pool with borrower2 becoming new queue HEAD
-        _borrower2.addCollateral(_pool, 6 * 1e18, address(0), address(0), 1);
-        _borrower2.borrow(_pool, 15_000 * 1e18, 3000, address(0), address(0), 1);
+        _borrower2.addCollateral(_pool, 6 * 1e18, address(0), address(0));
+        _borrower2.borrow(_pool, 15_000 * 1e18, 3000, address(0), address(0));
 
         // should revert if borrower attempts to borrow more than minimum amount
         vm.expectRevert("S:B:AMT_LT_AVG_DEBT");
-        _borrower.borrow(_pool, 10 * 1e18, 3000, address(0), address(_borrower2), 1);
+        _borrower.borrow(_pool, 10 * 1e18, 3000, address(0), address(_borrower2));
 
         // should revert if borrow would result in borrower under collateralization
         vm.expectRevert("S:B:BUNDER_COLLAT");
-        _borrower2.borrow(_pool, 4_500 * 1e18, 3000, address(0), address(_borrower), 1);
+        _borrower2.borrow(_pool, 4_500 * 1e18, 3000, address(0), address(_borrower));
 
         // should be able to borrow if properly specified
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_borrower2), 10 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower2), 2_995.912459898389633881 * 1e18, 10 * 1e18);
-        _borrower2.borrow(_pool, 10 * 1e18, 3000, address(0), address(0), 1);
+        _borrower2.borrow(_pool, 10 * 1e18, 3000, address(0), address(0));
     }
 
     /**
@@ -311,35 +311,35 @@ contract ScaledBorrowTest is DSTestPlus {
 
         // should revert if borrower has insufficient quote to repay desired amount
         vm.expectRevert("S:R:INSUF_BAL");
-        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), 1);
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0));
 
         // should revert if borrower has no debt
         _quote.mint(address(_borrower), 10_000 * 1e18);
         vm.expectRevert("S:R:NO_DEBT");
-        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0), 1);
+        _borrower.repay(_pool, 10_000 * 1e18, address(0), address(0));
 
         // borrower 1 borrows 1000 quote from the pool
-        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
-        _borrower.borrow(_pool, 1_000 * 1e18, 3000, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0));
+        _borrower.borrow(_pool, 1_000 * 1e18, 3000, address(0), address(0));
 
         assertEq(address(_borrower), _pool.loanQueueHead());
 
         // borrower 2 borrows 5k quote from the pool and becomes new queue HEAD
-        _borrower2.addCollateral(_pool, 50 * 1e18, address(0), address(_borrower), 1);
-        _borrower2.borrow(_pool, 5_000 * 1e18, 3000, address(0), address(0), 1);
+        _borrower2.addCollateral(_pool, 50 * 1e18, address(0), address(_borrower));
+        _borrower2.borrow(_pool, 5_000 * 1e18, 3000, address(0), address(0));
 
         assertEq(address(_borrower2), _pool.loanQueueHead());
 
         // should revert if amount left after repay is less than the average debt
         vm.expectRevert("R:B:AMT_LT_AVG_DEBT");
-        _borrower.repay(_pool, 750 * 1e18, address(0), address(0), 1);
+        _borrower.repay(_pool, 750 * 1e18, address(0), address(0));
 
         // should be able to repay loan if properly specified
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 0.0001 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), _pool.lup(), 0.0001 * 1e18);
-        _borrower.repay(_pool, 0.0001 * 1e18, address(_borrower2), address(_borrower2), 1);
+        _borrower.repay(_pool, 0.0001 * 1e18, address(_borrower2), address(_borrower2));
     }
 
 }

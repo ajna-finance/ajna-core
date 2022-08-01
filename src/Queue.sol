@@ -14,47 +14,13 @@ abstract contract Queue is IQueue {
     /************************/
 
     /**
-     *  @notice Search to the given radius for the correct previous borrower.
-     *  @dev    Called by _updateLoanQueue if the newPrev_ position is incorrect
-     *  @param  radius_         Distance checked to find lower thresholdPrice
-     *  @param  thresholdPrice_ Debt / collateralDeposited
-     *  @param  newPrev_        Previous location the caller believes points to their loan
-     *  @param  borrower_       Borrower whose TP might be changing, thus should be ignored
-     *  @return newPrev         Corrected previous borrower that now comes before placed loan (new)
-     *  @return newPrevLoan     Corrected previous loan that now comes before placed loan (new)
-     */
-    function _searchRadius(uint256 radius_, uint256 thresholdPrice_, address newPrev_, address borrower_) internal view returns (address, LoanInfo memory) {
-        address current = newPrev_;
-        LoanInfo memory currentLoan = loans[current];
-        LoanInfo memory nextLoan;
-
-        for (uint256 i = 0; i < radius_;) {
-            nextLoan = loans[currentLoan.next];
-
-            if (current != borrower_ && (nextLoan.thresholdPrice <= thresholdPrice_)) {
-                break;
-            }
-
-            current = loans[current].next;
-            currentLoan = nextLoan;
-            unchecked {
-                ++i;
-            }
-        }
-
-        require(currentLoan.next == borrower_ || loans[currentLoan.next].thresholdPrice <= thresholdPrice_, "B:S:SRCH_RDS_FAIL");
-        return (current, currentLoan);
-    }
-
-    /**
      *  @notice Called by borrower methods to update loan position.
      *  @param  borrower_        Borrower whose loan is being placed
      *  @param  thresholdPrice_  debt / collateralDeposited
      *  @param  oldPrev_         Previous borrower that came before placed loan (old)
      *  @param  newPrev_         Previous borrower that now comes before placed loan (new)
-     *  @param  radius_          Distance checked to find lower thresholdPrice
      */
-    function _updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_, uint256 radius_) internal {
+    function _updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_) internal {
         require(oldPrev_ != borrower_ && newPrev_ != borrower_, "B:U:PNT_SELF_REF");
         LoanInfo memory oldPrevLoan = loans[oldPrev_];
         LoanInfo memory newPrevLoan = loans[newPrev_];
@@ -65,9 +31,6 @@ abstract contract Queue is IQueue {
         } else {
             require(oldPrevLoan.next == borrower_, "B:U:OLDPREV_NOT_CUR_BRW");
         }
-
-        // search for the correct previous borrower given the incoming threshold price
-        (newPrev_, newPrevLoan) = _searchRadius(radius_, thresholdPrice_, newPrev_, borrower_);
 
         if (loan.thresholdPrice > 0) {
             // loan already exists and needs to be moved within the queue

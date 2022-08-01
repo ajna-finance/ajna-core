@@ -264,18 +264,16 @@ interface IScaledPool {
      *  @param  limitIndex_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
      *  @param  oldPrev_    Previous borrower that came before placed loan (old)
      *  @param  newPrev_    Previous borrower that now comes before placed loan (new)
-     *  @param  radius_     Distance checked to find lower thresholdPrice
      */
-    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_, uint256 radius_) external;
+    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
      *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
      *  @param  oldPrev_   Previous borrower that came before placed loan (old)
      *  @param  newPrev_   Previous borrower that now comes before placed loan (new)
-     *  @param  radius_    Distance checked to find lower thresholdPrice
      */
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_, uint256 radius_) external;
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external;
 
     /*****************************************/
     /*** ERC20 Borrower External Functions ***/
@@ -286,18 +284,16 @@ interface IScaledPool {
      *  @param  amount_  The amount of collateral in deposit tokens to be added to the pool.
      *  @param  oldPrev_ Previous borrower that came before placed loan (old)
      *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
-     *  @param  radius_  Distance checked to find lower thresholdPrice
      */
-    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external;
+    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by borrowers to remove an amount of collateral.
      *  @param  amount_ The amount of collateral in deposit tokens to be removed from a position.
      *  @param  oldPrev_ Previous borrower that came before placed loan (old)
      *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
-     *  @param  radius_  Distance checked to find lower thresholdPrice
      */
-    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_, uint256 radius_) external;
+    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /*********************************/
     /*** Lender External Functions ***/
