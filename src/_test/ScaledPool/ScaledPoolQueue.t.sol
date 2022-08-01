@@ -393,7 +393,7 @@ contract ScaledQueueTest is DSTestPlus {
         // borrower deposits some collateral and draws debt
         _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(0));
-        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        (uint256 thresholdPrice, ) = _pool.loans(address(_borrower));
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
 
         // borrower2 successfully deposits slightly less collateral
