@@ -110,8 +110,8 @@ contract ScaledInterestRateTest is DSTestPlus {
         skip(3600);
 
         // draw debt
-        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 0);
-        _borrower.borrow(_pool, 15_000 * 1e18, 4300, address(0), address(0), 0);
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0));
+        _borrower.borrow(_pool, 15_000 * 1e18, 4300, address(0), address(0));
         assertEq(_pool.inflatorSnapshot(), 1.0 * 1e18);
         assertEq(_pool.pendingInflator(), 1.000005707778841975 * 1e18);
         vm.warp(block.timestamp+3600);
