@@ -356,13 +356,13 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(address(_pool.loanQueueHead()), address(0));
 
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
-        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0));
         vm.expectRevert("B:U:TP_EQ_0");
-        _borrower.borrow(_pool, .00000000000000001 * 1e18, 3000, address(0), address(0), 1);
+        _borrower.borrow(_pool, .00000000000000001 * 1e18, 3000, address(0), address(0));
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
-        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
-        _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0));
+        _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0));
 
         assertGt(_pool.getHighestThresholdPrice(), 0);
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
@@ -383,8 +383,8 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.getHighestThresholdPrice(), 0);
 
         // borrower 1 borrows 500 quote from the pool
-        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0), 1);
-        _borrower.borrow(_pool, 500 * 1e18, 2551, address(0), address(0), 1);
+        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0));
+        _borrower.borrow(_pool, 500 * 1e18, 2551, address(0), address(0));
 
         assertGt(_pool.getHighestThresholdPrice(), 0);
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
@@ -394,10 +394,10 @@ contract ScaledBorrowTest is DSTestPlus {
 
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert("B:U:TP_EQ_0");
-        _borrower.repay(_pool, pendingDebt - 1, address(0), address(0), 1);
+        _borrower.repay(_pool, pendingDebt - 1, address(0), address(0));
 
         // should be able to pay back all pendingDebt
-        _borrower.repay(_pool, pendingDebt, address(0), address(0), 1);
+        _borrower.repay(_pool, pendingDebt, address(0), address(0));
         assertEq(_pool.getHighestThresholdPrice(), 0);
         assertEq(address(_pool.loanQueueHead()), address(0));
     }
