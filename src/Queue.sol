@@ -22,6 +22,8 @@ abstract contract Queue is IQueue {
      */
     function _updateLoanQueue(address borrower_, uint256 thresholdPrice_, address oldPrev_, address newPrev_) internal {
         require(oldPrev_ != borrower_ && newPrev_ != borrower_, "B:U:PNT_SELF_REF");
+        require(thresholdPrice_ != 0, "B:U:TP_EQ_0");
+
         LoanInfo memory oldPrevLoan = loans[oldPrev_];
         LoanInfo memory newPrevLoan = loans[newPrev_];
         LoanInfo memory loan = loans[borrower_];
@@ -41,15 +43,18 @@ abstract contract Queue is IQueue {
 
         } else if (loanQueueHead != address(0)) {
             // loan doesn't exist yet, other loans in queue
+
             require(oldPrev_ == address(0), "B:U:ALRDY_IN_QUE");
 
             loan.thresholdPrice = thresholdPrice_;
 
             if (newPrev_ != address(0)) {
+                // loan gets appended to newPrev_
                 loan.next = newPrevLoan.next;
                 newPrevLoan.next = borrower_;
 
             } else {
+                // loan becomes new queue head
                 loan.next = loanQueueHead;
                 loanQueueHead = borrower_;
             }

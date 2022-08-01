@@ -253,7 +253,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         require(_borrowerCollateralization(borrower.debt, borrower.collateral, newLup) >= Maths.WAD, "S:B:BUNDER_COLLAT");
 
         require(
-            _poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral / collateralScale, newLup) >= Maths.WAD,
+            _poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) >= Maths.WAD,
             "S:B:PUNDER_COLLAT"
         );
         curDebt += debt;
