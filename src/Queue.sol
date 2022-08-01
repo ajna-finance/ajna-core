@@ -23,7 +23,7 @@ abstract contract Queue is IQueue {
      *  @return newPrev         Corrected previous borrower that now comes before placed loan (new)
      *  @return newPrevLoan     Corrected previous loan that now comes before placed loan (new)
      */
-    function _searchRadius(uint256 radius_, uint256 thresholdPrice_, address newPrev_, address borrower_) internal returns (address, LoanInfo memory) {
+    function _searchRadius(uint256 radius_, uint256 thresholdPrice_, address newPrev_, address borrower_) internal view returns (address, LoanInfo memory) {
         address current = newPrev_;
         LoanInfo memory currentLoan = loans[current];
         LoanInfo memory nextLoan;
