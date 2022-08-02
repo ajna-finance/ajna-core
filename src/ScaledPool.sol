@@ -11,11 +11,13 @@ import { FenwickTree } from "./FenwickTree.sol";
 import { IScaledPool } from "./IScaledPool.sol";
 import { Queue }       from "./Queue.sol";
 
-import { BucketMath } from "./libraries/BucketMath.sol";
-import { Maths }      from "./libraries/Maths.sol";
+import { BucketMath }     from "./libraries/BucketMath.sol";
+import { Maths }          from "./libraries/Maths.sol";
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     using SafeERC20 for ERC20;
+    using PRBMathSD59x18 for int256;
 
     int256  public constant INDEX_OFFSET = 3232;
 
@@ -380,9 +382,9 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         if (curDebt_ != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
             if (elapsed != 0 ) {
-                uint256 spr          = interestRate / SECONDS_PER_YEAR;
+                uint256 rate         = (interestRate / SECONDS_PER_YEAR) * elapsed;
                 uint256 curInflator  = inflatorSnapshot;
-                uint256 nextInflator = Maths.wmul(curInflator, Maths.wpow(Maths.WAD + spr, elapsed));
+                uint256 nextInflator = Maths.wmul(curInflator, uint256(PRBMathSD59x18.exp(int256(rate))));
 
                 uint256 newHtp = _htp();
                 if (newHtp != 0) {

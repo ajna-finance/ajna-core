@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { DSTestPlus } from "./utils/DSTestPlus.sol";
-import { Maths }      from "../libraries/Maths.sol";
+import { DSTestPlus }     from "./utils/DSTestPlus.sol";
+import { Maths }          from "../libraries/Maths.sol";
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 
 contract MathTest is DSTestPlus {
 
@@ -53,5 +54,9 @@ contract MathTest is DSTestPlus {
         assertEq(Maths.wadToIntRoundingDown(testNum1), 11_000);
         assertEq(Maths.wadToIntRoundingDown(testNum2), 1_001);
         assertEq(Maths.wadToIntRoundingDown(testNum3), 0);
+    }
+
+    function testExp() external {
+        assertEq(PRBMathSD59x18.exp(1.53 * 1e18), 4.618176822299780807 * 1e18);
     }
 }
