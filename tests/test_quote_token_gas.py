@@ -8,8 +8,7 @@ def test_quote_deposit_gas_below_hdp(
     lenders,
     scaled_pool,
     capsys,
-    test_utils,
-    bucket_math,
+    test_utils
 ):
     with test_utils.GasWatcher(["addQuoteToken"]):
         txes = []

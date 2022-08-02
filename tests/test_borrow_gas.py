@@ -9,8 +9,7 @@ def test_borrow_gas(
     borrowers,
     scaled_pool,
     capsys,
-    test_utils,
-    bucket_math,
+    test_utils
 ):
     with test_utils.GasWatcher(["borrow", "addCollateral", "addQuoteToken"]):
         txes = []

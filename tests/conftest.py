@@ -56,12 +56,6 @@ def weth(ajna_protocol):
     return ajna_protocol.get_token(WETH_ADDRESS).get_contract()
 
 
-# TODO: convert to deploying all necessary libraries "libraries(deployer)"
-@pytest.fixture
-def bucket_math(ajna_protocol):
-    return ajna_protocol.bucket_math
-
-
 @pytest.fixture
 def mkr_dai_pool(ajna_protocol):
     return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS)
@@ -74,12 +68,6 @@ def scaled_pool(deployer):
     return ScaledPool.at(
         scaled_factory.deployedPools("2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2", MKR_ADDRESS, DAI_ADDRESS)
         )
-
-
-@pytest.fixture
-def position_manager(deployer):
-    position_manager = PositionManager.deploy({"from": deployer})
-    yield position_manager
 
 
 @pytest.fixture

@@ -30,8 +30,7 @@ def test_claim_collateral_gas(
     borrowers,
     scaled_pool,
     capsys,
-    test_utils,
-    bucket_math
+    test_utils
 ):
     with test_utils.GasWatcher(
         ["addQuoteToken", "addCollateral", "borrow", "purchaseBid", "claimCollateral"]
