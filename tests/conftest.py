@@ -196,6 +196,7 @@ def scaled_pool_utils(ajna_protocol):
 
 
 class TestUtils:
+    OXO = '0x0000000000000000000000000000000000000000'
     capsys = None
 
     @staticmethod
@@ -203,6 +204,8 @@ class TestUtils:
         in_eth = gas * 100 * 10e-9
         in_fiat = in_eth * 3000
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
+    
+
 
     class GasWatcher(object):
         _cache = {}

@@ -8,14 +8,13 @@ def test_add_remove_collateral_gas(
     borrowers,
     scaled_pool,
     capsys,
-    test_utils,
-    bucket_math,
+    test_utils
 ):
     with test_utils.GasWatcher(["addQuoteToken", "addCollateral", "removeCollateral"]):
         scaled_pool.addQuoteToken(20_000 * 10**18, 1708, {"from": lenders[0]})
-        tx_add_collateral = scaled_pool.addCollateral(100 * 10**18, '0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrowers[0]})
-        scaled_pool.borrow(20_000 * 10**18, 2500 * 10**18,'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrowers[0]})
-        tx_remove_collateral = scaled_pool.removeCollateral(10 * 10**18,'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrowers[0]})
+        tx_add_collateral = scaled_pool.addCollateral(100 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrowers[0]})
+        scaled_pool.borrow(20_000 * 10**18, 2500 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrowers[0]})
+        tx_remove_collateral = scaled_pool.removeCollateral(10 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrowers[0]})
         with capsys.disabled():
             print("\n==================================")
             print(f"Gas estimations({inspect.stack()[0][3]}):")
@@ -32,8 +31,7 @@ def test_claim_collateral_gas(
     scaled_pool,
     capsys,
     test_utils,
-    bucket_math,
-    dai
+    bucket_math
 ):
     with test_utils.GasWatcher(
         ["addQuoteToken", "addCollateral", "borrow", "purchaseBid", "claimCollateral"]
@@ -53,18 +51,13 @@ def test_claim_collateral_gas(
             5_000 * 10**18, 1386, {"from": lender}
         )
 
-        scaled_pool.addCollateral(100 * 10**18, '0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrower})
-        scaled_pool.borrow(4_000 * 10**18, 3000 * 10**18,'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrower})
+        scaled_pool.borrow(4_000 * 10**18, 3000 * 10**18,test_utils.OXO, test_utils.OXO, {"from": borrower})
 
         # bidder purchases some of the middle bucket
-        print(f"balance of bidder - {dai.balanceOf(bidder)}")
-
         scaled_pool.purchaseQuote(
             1_500 * 10**18, 1606, {"from": bidder}
         )
-
-        print(f"bucket at - {scaled_pool.bucketAt(1606)}")
-        print(f"bucket math - {bucket_math.indexToPrice(1606)}")
 
         tx = scaled_pool.claimCollateral(
             0.004 * 10**18, 1606, {"from": lender}
