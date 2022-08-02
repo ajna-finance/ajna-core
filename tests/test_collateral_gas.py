@@ -3,28 +3,19 @@ from brownie import Contract
 import pytest
 import inspect
 
-@pytest.mark.skip
 def test_add_remove_collateral_gas(
     lenders,
     borrowers,
-    mkr_dai_pool,
+    scaled_pool,
     capsys,
     test_utils,
     bucket_math,
 ):
     with test_utils.GasWatcher(["addQuoteToken", "addCollateral", "removeCollateral"]):
-        mkr_dai_pool.addQuoteToken(
-            20_000 * 10**18,
-            bucket_math.indexToPrice(1708),
-            {"from": lenders[0]},
-        )
-        tx_add_collateral = mkr_dai_pool.addCollateral(
-            100 * 10**18, {"from": borrowers[0]}
-        )
-        mkr_dai_pool.borrow(20_000 * 10**18, 2500 * 10**18, {"from": borrowers[0]})
-        tx_remove_collateral = mkr_dai_pool.removeCollateral(
-            10 * 10**18, {"from": borrowers[0]}
-        )
+        scaled_pool.addQuoteToken(20_000 * 10**18, 1708, {"from": lenders[0]})
+        tx_add_collateral = scaled_pool.addCollateral(100 * 10**18, '0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrowers[0]})
+        scaled_pool.borrow(20_000 * 10**18, 2500 * 10**18,'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrowers[0]})
+        tx_remove_collateral = scaled_pool.removeCollateral(10 * 10**18,'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrowers[0]})
         with capsys.disabled():
             print("\n==================================")
             print(f"Gas estimations({inspect.stack()[0][3]}):")
@@ -38,10 +29,11 @@ def test_add_remove_collateral_gas(
 def test_claim_collateral_gas(
     lenders,
     borrowers,
-    mkr_dai_pool,
+    scaled_pool,
     capsys,
     test_utils,
     bucket_math,
+    dai
 ):
     with test_utils.GasWatcher(
         ["addQuoteToken", "addCollateral", "borrow", "purchaseBid", "claimCollateral"]
@@ -51,31 +43,37 @@ def test_claim_collateral_gas(
         bidder = borrowers[1]
 
         # deposit DAI in 3 buckets
-        mkr_dai_pool.addQuoteToken(
-            3_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
+        scaled_pool.addQuoteToken(
+            3_000 * 10**18, 1663, {"from": lender}
         )
-        mkr_dai_pool.addQuoteToken(
-            4_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+        scaled_pool.addQuoteToken(
+            4_000 * 10**18, 1606, {"from": lender}
         )
-        mkr_dai_pool.addQuoteToken(
-            5_000 * 10**18, bucket_math.indexToPrice(1386), {"from": lender}
+        scaled_pool.addQuoteToken(
+            5_000 * 10**18, 1386, {"from": lender}
         )
 
-        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
-        mkr_dai_pool.borrow(4_000 * 10**18, 3000 * 10**18, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, '0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrower})
+        scaled_pool.borrow(4_000 * 10**18, 3000 * 10**18,'0x0000000000000000000000000000000000000000', '0x0000000000000000000000000000000000000000', {"from": borrower})
 
         # bidder purchases some of the middle bucket
-        mkr_dai_pool.purchaseBid(
-            1_500 * 10**18, bucket_math.indexToPrice(1606), {"from": bidder}
+        print(f"balance of bidder - {dai.balanceOf(bidder)}")
+
+        scaled_pool.purchaseQuote(
+            1_500 * 10**18, 1606, {"from": bidder}
         )
 
-        tx = mkr_dai_pool.claimCollateral(
-            0.4 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+        print(f"bucket at - {scaled_pool.bucketAt(1606)}")
+        print(f"bucket math - {bucket_math.indexToPrice(1606)}")
+
+        tx = scaled_pool.claimCollateral(
+            0.004 * 10**18, 1606, {"from": lender}
         )
+        assert 1 == 0
 
         with capsys.disabled():
             print("\n==================================")
-            print("Gas estimations:")
+            print(f"Gas estimations({inspect.stack()[0][3]}):")
             print("==================================")
             print(f"Claim collateral           - {test_utils.get_usage(tx.gas_used)}")
             print("==================================")
