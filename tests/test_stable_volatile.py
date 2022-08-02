@@ -89,7 +89,6 @@ def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
     for borrower_index in range(0, len(borrowers) - 1):
         # determine amount we want to borrow and how much collateral should be deposited
         borrower = borrowers[borrower_index]
-
         borrow_amount = target_debt / NUM_ACTORS  # WAD
         assert borrow_amount > 10**18
         pool_price = pool.lup()
@@ -98,6 +97,7 @@ def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
         collateralization_ratio = min((1 / target_utilization) + 0.05, 2.5)  # cap at 250% collateralization
         collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
         pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
+        test_utils.validate_pool(pool)
 
 
 def ensure_pool_is_funded(pool, quote_token_amount: int, action: str) -> bool:
@@ -152,7 +152,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
         print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral TP={threshold_price / 1e18:.1f}")
     assert collateral_to_deposit > 10**18
     # TODO: if debt is 0, contracts require passing old_prev and new_prev=0, which is awkward
-    pool.addCollateral(collateral_to_deposit, old_prev, new_prev, 0, {"from": borrower})
+    pool.addCollateral(collateral_to_deposit, old_prev, new_prev, {"from": borrower})
     test_utils.validate_queue(pool)
 
     # draw debt
@@ -166,7 +166,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
           f"with {collateral_deposited / 1e18:.18f} collateral deposited, "
           f"TP={threshold_price / 1e18:.8f} with {new_total_debt/1e18:.18f} total debt "
           f"old_prev={old_prev[:6]} new_prev={new_prev[:6]}")
-    tx = pool.borrow(borrow_amount, MIN_BUCKET, old_prev, new_prev, 0, {"from": borrower})
+    tx = pool.borrow(borrow_amount, MIN_BUCKET, old_prev, new_prev, {"from": borrower})
     test_utils.validate_queue(pool)
     test_utils.validate_pool(pool)
     return tx
@@ -288,19 +288,19 @@ def repay(borrower, borrower_index, pool, test_utils):
             repay_amount = min(debt * 1.05, quote_balance)
             print(f" borrower {borrower_index} is repaying {repay_amount / 10**18:.1f}")
             old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, 0)
-            pool.repay(repay_amount, old_prev, new_prev, 0, {"from": borrower})
+            pool.repay(repay_amount, old_prev, new_prev, {"from": borrower})
 
             # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
             # FIXME: this was producing a negative number; fix it
             # collateral_to_withdraw = collateral_deposited - (collateral_encumbered * 1.667)
             print(f" borrower {borrower_index} is withdrawing {collateral_deposited / 10**18:.1f} collateral")
-            tx = pool.removeCollateral(collateral_deposited, old_prev, new_prev, 0, {"from": borrower})
+            tx = pool.removeCollateral(collateral_deposited, old_prev, new_prev, {"from": borrower})
             test_utils.validate_queue(pool)
         else:
             print(f" borrower {borrower_index} has insufficient funds to repay {debt / 10**18:.1f}")
 
 
-# @pytest.mark.skip
+@pytest.mark.skip
 def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_utils, chain):
     # Validate test set-up
     print("Before test:\n" + test_utils.dump_book(pool1, MAX_BUCKET, MIN_BUCKET))
