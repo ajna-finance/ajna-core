@@ -14,6 +14,8 @@ import { Queue }       from "./Queue.sol";
 import { BucketMath } from "./libraries/BucketMath.sol";
 import { Maths }      from "./libraries/Maths.sol";
 
+import { console } from "@std/console.sol";
+
 contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     using SafeERC20 for ERC20;
 

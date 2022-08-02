@@ -91,7 +91,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
-        assertEq(0, _pool.getHighestThresholdPrice());
+        assertEq(0, _pool.htp());
 
         // borrow and insert into the Queue
         _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
@@ -103,7 +103,7 @@ contract ScaledQueueTest is DSTestPlus {
         (, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
-        assertEq(Maths.wdiv(debt, collateral), _pool.getHighestThresholdPrice());
+        assertEq(Maths.wdiv(debt, collateral), _pool.htp());
 
         // should revert if the borrower references themself and not the correct queue ordering
         vm.expectRevert("B:U:PNT_SELF_REF");
@@ -158,7 +158,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
-        assertEq(0, _pool.getHighestThresholdPrice());
+        assertEq(0, _pool.htp());
 
         // borrower deposits some collateral and draws debt
         _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0));
@@ -240,7 +240,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
-        assertEq(0, _pool.getHighestThresholdPrice());
+        assertEq(0, _pool.htp());
 
         // borrower deposits some collateral and draws debt
         _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0));
@@ -387,7 +387,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
-        assertEq(0, _pool.getHighestThresholdPrice());
+        assertEq(0, _pool.htp());
 
         // borrower deposits some collateral and draws debt
         _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0));
@@ -411,7 +411,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
-        assertEq(0, _pool.getHighestThresholdPrice());
+        assertEq(0, _pool.htp());
 
         // borrow and insert into the Queue
         _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
@@ -423,7 +423,7 @@ contract ScaledQueueTest is DSTestPlus {
         (, address next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
-        assertEq(Maths.wdiv(debt, collateral), _pool.getHighestThresholdPrice());
+        assertEq(Maths.wdiv(debt, collateral), _pool.htp());
     }
 
 }
