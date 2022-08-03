@@ -1,5 +1,5 @@
 ## defaults for _all_ profiles
-[default]
+[profile.default]
 src = 'src'
 test = 'test'
 out = 'out'

@@ -1,9 +1,6 @@
-import brownie
-import pytest
 import inspect
 from decimal import *
 from conftest import ZRO_ADD
-from brownie import Contract
 
 def test_quote_deposit_gas_below_hdp(
     lenders,
