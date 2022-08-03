@@ -3,11 +3,11 @@ import math
 import brownie
 import pytest
 import random
+from decimal import *
 from brownie import Contract
 from brownie.exceptions import VirtualMachineError
-from conftest import MAX_PRICE, ScaledPoolUtils, TestUtils
-from decimal import *
 from sdk import AjnaProtocol, DAI_ADDRESS, MKR_ADDRESS
+from conftest import MAX_PRICE, ScaledPoolUtils, TestUtils
 
 
 MAX_BUCKET = 2532  # 3293.70191, highest bucket for initial deposits, is exceeded after initialization
