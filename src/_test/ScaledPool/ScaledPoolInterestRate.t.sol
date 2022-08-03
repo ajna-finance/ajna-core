@@ -113,12 +113,12 @@ contract ScaledInterestRateTest is DSTestPlus {
         _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 15_000 * 1e18, 4300, address(0), address(0));
         assertEq(_pool.inflatorSnapshot(), 1.0 * 1e18);
-        assertEq(_pool.pendingInflator(), 1.000005707778841975 * 1e18);
+        assertEq(_pool.pendingInflator(), 1.000005707778845707 * 1e18);
         vm.warp(block.timestamp+3600);
 
         // ensure pendingInflator increases as time passes
         assertEq(_pool.inflatorSnapshot(), 1.0 * 1e18);
-        assertEq(_pool.pendingInflator(), 1.000011415590262688 * 1e18);
+        assertEq(_pool.pendingInflator(), 1.000011415590270154 * 1e18);
     }
 
     // TODO: add test related to pool utilization changes

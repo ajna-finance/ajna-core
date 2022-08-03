@@ -174,10 +174,10 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectRevert("S:RQT:BAD_LUP");
         _lender.removeQuoteToken(_pool, 20_000 * 1e27, 4551);
 
+        // FIXME: Reverts with S:RQT:BAD_LUP when removing 10k, perhaps because interest accumulation has pushed debt to 4551.
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(4990), 10_000 * 1e18, _pool.indexToPrice(4551));
         _lender.removeQuoteToken(_pool, 10_000 * 1e27, 4990);
-
     }
 
     function testScaledPoolMoveQuoteToken() external {
