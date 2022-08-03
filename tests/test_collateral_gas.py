@@ -1,7 +1,8 @@
 import brownie
-from brownie import Contract
 import pytest
 import inspect
+from conftest import ZRO_ADD
+from brownie import Contract
 
 def test_add_remove_collateral_gas(
     lenders,
@@ -12,9 +13,9 @@ def test_add_remove_collateral_gas(
 ):
     with test_utils.GasWatcher(["addQuoteToken", "addCollateral", "removeCollateral"]):
         scaled_pool.addQuoteToken(20_000 * 10**18, 1708, {"from": lenders[0]})
-        tx_add_collateral = scaled_pool.addCollateral(100 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrowers[0]})
-        scaled_pool.borrow(20_000 * 10**18, 2500 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrowers[0]})
-        tx_remove_collateral = scaled_pool.removeCollateral(10 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrowers[0]})
+        tx_add_collateral = scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        scaled_pool.borrow(20_000 * 10**18, 2500 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx_remove_collateral = scaled_pool.removeCollateral(10 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
         with capsys.disabled():
             print("\n==================================")
             print(f"Gas estimations({inspect.stack()[0][3]}):")
@@ -50,8 +51,8 @@ def test_claim_collateral_gas(
             5_000 * 10**18, 1386, {"from": lender}
         )
 
-        scaled_pool.addCollateral(100 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
-        scaled_pool.borrow(4_000 * 10**18, 3000 * 10**18,test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.borrow(4_000 * 10**18, 3000 * 10**18,ZRO_ADD, ZRO_ADD, {"from": borrower})
 
         # bidder purchases some of the middle bucket
         scaled_pool.purchaseQuote(

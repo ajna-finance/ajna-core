@@ -1,8 +1,9 @@
 import brownie
-from brownie import Contract
 import pytest
-from decimal import *
 import inspect
+from decimal import *
+from brownie import Contract
+from conftest import ZRO_ADD
 
 def test_borrow_gas(
     lenders,
@@ -16,18 +17,18 @@ def test_borrow_gas(
         for i in range(1643, 1663):
             scaled_pool.addQuoteToken(10_000 * 10**18, i, {"from": lenders[0]})
 
-        scaled_pool.addCollateral(100 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrowers[0]})
-        scaled_pool.addCollateral(100 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrowers[1]})
+        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[1]})
 
         # borrower 0 draws 10_000 DAI from single bucket (LUP)
         tx1 = scaled_pool.borrow(
-            10_000 * 10**18, 1 * 10**18,test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrowers[0]})
+            10_000 * 10**18, 1 * 10**18,ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
         txes.append(tx1)
         tx2 = scaled_pool.addQuoteToken(10_000 * 10**18, 1664, {"from": lenders[1]})
         txes.append(tx2)
 
         # borrower 1 draws 101_000 DAI from 11 buckets
-        tx3 = scaled_pool.borrow(101_000 * 10**18, 1 * 10**18,test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrowers[1]})
+        tx3 = scaled_pool.borrow(101_000 * 10**18, 1 * 10**18,ZRO_ADD, ZRO_ADD, {"from": borrowers[1]})
         tx4 = scaled_pool.addQuoteToken(150_000 * 10**18, 1665, {"from": lenders[2]})
         txes.append(tx3)
         txes.append(tx4)

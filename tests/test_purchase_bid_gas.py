@@ -1,7 +1,7 @@
 import brownie
-from brownie import Contract
 import pytest
 from decimal import *
+from brownie import Contract
 
 @pytest.mark.skip
 def test_purchase_bid_gas(

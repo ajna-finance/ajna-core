@@ -182,7 +182,6 @@ def scaled_pool_utils(ajna_protocol):
 
 
 class TestUtils:
-    ZRO_ADD = ZRO_ADD
     capsys = None
 
     @staticmethod
