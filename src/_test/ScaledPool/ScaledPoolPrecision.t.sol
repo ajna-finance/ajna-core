@@ -13,6 +13,7 @@ import { QuoteToken, QuoteTokenWith6Decimals }           from "../utils/Tokens.s
 import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
 
 
+// TODO: add assertBalances checks
 contract ScaledPoolPrecisionTest is DSTestPlus {
 
     uint256 internal _lpPoolPrecision         = 10**27;
@@ -50,10 +51,10 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         _bidder      = new UserWithQuoteTokenInScaledPool();
         _lender      = new UserWithQuoteTokenInScaledPool();
 
+        _collateral.mint(address(_bidder), 150 * _collateralPrecision);
         _collateral.mint(address(_borrower), 150 * _collateralPrecision);
         _collateral.mint(address(_borrower2), 200 * _collateralPrecision);
         _collateral.mint(address(_borrower3), 200 * _collateralPrecision);
-        _quote.mint(address(_bidder), 200_000 * _quotePrecision);
         _quote.mint(address(_lender), 200_000 * _quotePrecision);
 
         _borrower.approveToken(_collateral, address(_pool), 150 * _collateralPrecision);
@@ -65,7 +66,8 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         _borrower3.approveToken(_collateral, address(_pool), 200 * _collateralPrecision);
         _borrower3.approveToken(_quote,      address(_pool), 200_000 * _quotePrecision);
 
-        _bidder.approveToken(_quote,  address(_pool), 200_000 * _quotePrecision);
+        _bidder.approveToken(_collateral,  address(_pool), 200_000 * _collateralPrecision);
+
         _lender.approveToken(_quote,  address(_pool), 200_000 * _quotePrecision);
     }
 
@@ -121,6 +123,7 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(availableCollateral, 0);
     }
 
+    // TODO: add check for removing some of the collateral
     function testBorrowRepayPrecision() external virtual {
         // deposit 50_000 quote tokens into each of 3 buckets
         _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2549);
@@ -197,7 +200,69 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
     }
 
     function testPurchaseClaimPrecision() external virtual {
+        // deposit 50_000 quote tokens into each of 3 buckets
+        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2549);
+        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2550);
+        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2551);
 
+        // bidder purchases quote with collateral
+        uint256 quoteToPurchase = 500 * _quotePoolPrecision;
+        uint256 collateralRequired = Maths.wdiv(quoteToPurchase, _pool.indexToPrice(2549));
+        uint256 adjustedCollateralReq = collateralRequired / _pool.collateralScale();
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_bidder), address(_pool), adjustedCollateralReq);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_bidder), 500 * _quotePrecision);
+        vm.expectEmit(true, true, false, true);
+        emit Purchase(address(_bidder), _pool.indexToPrice(2549), quoteToPurchase, collateralRequired);
+        _bidder.purchaseQuote(_pool, quoteToPurchase, 2549);
+
+        // check bucket state
+        (uint256 lpAccumulatorStateOne, uint256 availableCollateral) = _pool.buckets(2549);
+        assertEq(availableCollateral, collateralRequired);
+        assertGt(availableCollateral, 0);
+        assertEq(lpAccumulatorStateOne,       _pool.lpBalance(2549, address(_lender)));
+        assertGt(lpAccumulatorStateOne,       0);
+
+        // check balances
+        assertEq(_collateral.balanceOf(address(_pool)),   adjustedCollateralReq);
+        assertEq(_collateral.balanceOf(address(_bidder)), 150 * _collateralPrecision - adjustedCollateralReq);
+        assertEq(_quote.balanceOf(address(_pool)),   150_000 * _quotePrecision - 500 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_bidder)), 500 * _quotePrecision);
+
+        // check pool state
+        assertEq(_pool.htp(), 0);
+        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
+
+        assertEq(_pool.treeSum(),                         149_500 * _quotePoolPrecision);
+        assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
+
+        // lender claims newly available collateral from bucket
+        uint256 lpRedemption = Maths.wrdivr(Maths.wmul(availableCollateral, _pool.indexToPrice(2549)), _pool.exchangeRate(2549));
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_lender), adjustedCollateralReq);
+        vm.expectEmit(true, true, true, true);
+        emit ClaimCollateral(address(_lender), _pool.indexToPrice(2549), availableCollateral, lpRedemption);
+        _lender.claimCollateral(_pool, availableCollateral, 2549);
+
+        // check bucket state
+        (uint256 lpAccumulatorStateTwo, uint256 availableCollateralStateTwo) = _pool.buckets(2549);
+        assertEq(availableCollateralStateTwo, 0);
+        assertEq(lpAccumulatorStateTwo,       _pool.lpBalance(2549, address(_lender)));
+        assertGt(lpAccumulatorStateTwo,       0);
+        assertLt(lpAccumulatorStateTwo, lpAccumulatorStateOne);
+
+        // check balances
+        assertEq(_collateral.balanceOf(address(_pool)),   0);
+        assertEq(_collateral.balanceOf(address(_bidder)), 150 * _collateralPrecision - adjustedCollateralReq);
+        assertEq(_collateral.balanceOf(address(_lender)), adjustedCollateralReq);
+        assertEq(_quote.balanceOf(address(_pool)),   150_000 * _quotePrecision - 500 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_bidder)), 500 * _quotePrecision);
+
+        // check pool state
+        assertEq(_pool.htp(),     0);
+        assertEq(_pool.lup(),     BucketMath.MAX_PRICE);
+        assertEq(_pool.treeSum(), 149_500 * _quotePoolPrecision);
     }
 }
 
@@ -214,4 +279,24 @@ contract CollateralAndQuoteWith6DecimalPrecisionTest is ScaledPoolPrecisionTest 
 
 }
 
+// TODO: move this setup method to main and remove the overriding classes
 // TODO: add fuzzy test with arbitrary decimals
+contract CollateralAndQuoteWithRandomDecimalPrecisionTest is ScaledPoolPrecisionTest {
+
+    function setUp(uint256 collateralPrecision_, uint256 quotePrecision_) external {
+        collateralPrecision_ = bound(collateralPrecision_, 1, 18);
+        quotePrecision_      = bound(quotePrecision_, 1, 18);
+
+        _collateralPrecision = 10**collateralPrecision_;
+        _quotePrecision      = 10**_quotePrecision;
+        _collateral          = new CollateralTokenWith6Decimals();
+        _quote               = new QuoteTokenWith6Decimals();
+
+        init();
+    }
+
+    function testAddRemoveQuotePrecision() external virtual override {
+
+    }
+
+}
