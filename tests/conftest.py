@@ -5,11 +5,9 @@ from brownie.exceptions import VirtualMachineError
 from brownie.network.state import TxHistory
 from brownie.utils import color
 
-
-ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+ZRO_ADD = '0x0000000000000000000000000000000000000000' 
 MIN_PRICE = 99836282890
 MAX_PRICE = 1_004_968_987606512354182109771
-
 
 @pytest.fixture(autouse=True)
 def get_capsys(capsys):
@@ -129,18 +127,18 @@ class ScaledPoolUtils:
         assert isinstance(borrower, str)
         assert isinstance(threshold_price, int)
 
-        if pool.loanQueueHead != ZERO_ADDRESS:
+        if pool.loanQueueHead != ZRO_ADD:
             if debug:
                 print(f"  looking for borrower {borrower[:6]} and TP {threshold_price / 1e18:.18f}")
-            old_previous_borrower = ZERO_ADDRESS
+            old_previous_borrower = ZRO_ADD
             node = Loan(pool.loanQueueHead(), pool.loanInfo(pool.loanQueueHead()))
 
             if node.tp >= threshold_price and node.borrower != borrower:
                 new_previous_borrower = node.borrower
             else:
-                new_previous_borrower = ZERO_ADDRESS
+                new_previous_borrower = ZRO_ADD
 
-            while node.borrower != ZERO_ADDRESS:
+            while node.borrower != ZRO_ADD:
                 if debug:
                     print(f"   {node.borrower[:6]} at TP {node.tp / 1e18:.18f}, next is {node.next[:6]}")
                 if node.next == borrower:
@@ -156,10 +154,10 @@ class ScaledPoolUtils:
             assert old_previous_borrower != borrower
             assert new_previous_borrower != borrower
             _, check_old_prev_next = pool.loanInfo(old_previous_borrower)
-            assert (old_previous_borrower == ZERO_ADDRESS or check_old_prev_next == borrower)
+            assert (old_previous_borrower == ZRO_ADD or check_old_prev_next == borrower)
             return old_previous_borrower, new_previous_borrower
         else:
-            return ZERO_ADDRESS, ZERO_ADDRESS
+            return ZRO_ADD, ZRO_ADD
 
     @staticmethod
     def get_origination_fee(pool: ScaledPool, amount):
@@ -184,7 +182,7 @@ def scaled_pool_utils(ajna_protocol):
 
 
 class TestUtils:
-    OXO = '0x0000000000000000000000000000000000000000'
+    ZRO_ADD = ZRO_ADD
     capsys = None
 
     @staticmethod
@@ -338,7 +336,7 @@ class TestUtils:
         borrower = pool.loanQueueHead()
         tp, next_borrower = pool.loanInfo(borrower)
         last_tp = tp
-        while next_borrower != ZERO_ADDRESS:
+        while next_borrower != ZRO_ADD:
             # catch duplicate borrowers
             assert borrower not in found_borrowers
             found_borrowers.add(borrower)

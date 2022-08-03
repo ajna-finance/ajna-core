@@ -72,8 +72,8 @@ def test_quote_removal_from_lup_with_reallocation(
         )
 
         # borrower takes a loan of 3000 DAI
-        scaled_pool.addCollateral(100 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrower})
-        scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
+        scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
 
         lp_tokens = scaled_pool.lpBalance(1_663, lender)
 
@@ -115,8 +115,8 @@ def test_quote_removal_below_lup(
         )
 
         # borrower takes a loan of 3000 DAI
-        scaled_pool.addCollateral(100 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrower})
-        scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
+        scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
 
         lp_tokens = scaled_pool.lpBalance(1_663, lender)
 
@@ -153,8 +153,8 @@ def test_quote_move_from_lup_with_reallocation(
         )
 
         # borrower takes a loan of 3000 DAI
-        scaled_pool.addCollateral(100 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrower})
-        scaled_pool.borrow(3_000 * 10**18, 4000 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
+        scaled_pool.borrow(3_000 * 10**18, 4000 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
 
         # lender moves 400 DAI
         tx = scaled_pool.moveQuoteToken(
@@ -194,8 +194,8 @@ def test_quote_move_to_lup(
         )
 
         # borrower takes a loan of 3000 DAI
-        scaled_pool.addCollateral(100 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrower})
-        scaled_pool.borrow(3_000 * 10**18, 4000 * 10**18, test_utils.OXO, test_utils.OXO, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
+        scaled_pool.borrow(3_000 * 10**18, 4000 * 10**18, test_utils.ZRO_ADD, test_utils.ZRO_ADD, {"from": borrower})
 
         # lender moves 1000 DAI to lup
         tx = scaled_pool.moveQuoteToken(
