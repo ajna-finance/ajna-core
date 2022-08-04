@@ -177,7 +177,6 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(4990), 10_000 * 1e18, _pool.indexToPrice(4551));
         _lender.removeQuoteToken(_pool, 10_000 * 1e27, 4990);
-
     }
 
     function testScaledPoolMoveQuoteToken() external {
