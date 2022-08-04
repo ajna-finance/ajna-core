@@ -116,6 +116,31 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
     }
 
+    function addCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
+        // TODO: Unit testing
+        uint256 curDebt = _accruePoolInterest();
+
+        require(collateral().balanceOf(msg.sender) >= amount_, "S:AC:INSUF_COL");
+
+        Bucket storage bucket = buckets[index_];
+        // Calculate exchange rate before new collateral has been accounted for.
+        // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
+        uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+
+        uint256 quoteValue   = amount_ * _indexToPrice(index_);
+        lpbChange_           = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
+        bucket.lpAccumulator += lpbChange_;
+
+        lpBalance[index_][msg.sender] += lpbChange_;
+
+        buckets[index_].availableCollateral += amount_;
+
+        _updateInterestRate(curDebt, _lup());
+
+        // move required collateral from sender to pool
+        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
+    }
+
     function claimCollateral(uint256 amount_, uint256 index_) external override {
         Bucket storage bucket = buckets[index_];
         require(amount_ <= bucket.availableCollateral, "S:CC:AMT_GT_COLLAT");
@@ -345,31 +370,6 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // move amount to repay from sender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, newLup, amount);
-    }
-
-    /*******************************/
-    /*** Pool External Functions ***/
-    /*******************************/
-
-    function purchaseQuote(uint256 amount_, uint256 index_) external override {
-        require(_rangeSum(index_, index_) >= amount_, "S:P:INSUF_QUOTE");
-
-        uint256 curDebt = _accruePoolInterest();
-
-        uint256 price = _indexToPrice(index_);
-        uint256 collateralRequired = Maths.wdiv(amount_, price);
-        require(collateral().balanceOf(msg.sender) >= collateralRequired, "S:P:INSUF_COL");
-
-        _remove(index_, amount_);
-        buckets[index_].availableCollateral += collateralRequired;
-
-        _updateInterestRate(curDebt, _lup());
-
-        // move required collateral from sender to pool
-        collateral().safeTransferFrom(msg.sender, address(this), collateralRequired / collateralScale);
-        // move quote token amount from pool to sender
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
-        emit Purchase(msg.sender, price, amount_, collateralRequired);
     }
 
     /**************************/

@@ -230,19 +230,20 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectRevert("S:MQT:SAME_PRICE");
         _lender.moveQuoteToken(_pool, 5_000 * 1e18, 4549, 4549);
 
-        // bidder purchases some collateral
-        uint256 collateralToPurchaseWith = 71712.422545270036353445 * 1e18;
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_lender1), address(_pool), collateralToPurchaseWith);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_lender1), 10_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
-        emit Purchase(address(_lender1), _pool.indexToPrice(4551), 10_000 * 1e18, collateralToPurchaseWith);
-        _lender1.purchaseQuote(_pool, 10_000 * 1e18, 4551);
+        // TODO: Confirm this part of the test no longer applies, as move restrictions have been eliminated.
+//        // bidder purchases some collateral
+//        uint256 collateralToPurchaseWith = 71712.422545270036353445 * 1e18;
+//        vm.expectEmit(true, true, false, true);
+//        emit Transfer(address(_lender1), address(_pool), collateralToPurchaseWith);
+//        vm.expectEmit(true, true, false, true);
+//        emit Transfer(address(_pool), address(_lender1), 10_000 * 1e18);
+//        vm.expectEmit(true, true, false, true);
+//        emit Purchase(address(_lender1), _pool.indexToPrice(4551), 10_000 * 1e18, collateralToPurchaseWith);
+//        _lender1.purchaseQuote(_pool, 10_000 * 1e18, 4551);
 
-        // should revert if moving quote tokens to from a bucket with available collateral
-        vm.expectRevert("S:MQT:AVAIL_COL");
-        _lender.moveQuoteToken(_pool, 5_000 * 1e18, 4551, 4549);
+//        // should revert if moving quote tokens to from a bucket with available collateral
+//        vm.expectRevert("S:MQT:AVAIL_COL");
+//        _lender.moveQuoteToken(_pool, 5_000 * 1e18, 4551, 4549);
 
         // add collateral and borrow all available quote in the higher priced original 3 buckets, as well as some of the new lowest price bucket
         _lender.addQuoteToken(_pool, 30_000 * 1e18, 4651);
@@ -257,7 +258,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         // should be able to moveQuoteToken if properly specified
         vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(address(_lender), 4549, 4550, 10_000 * 1e27, _pool.indexToPrice(4651));
+        emit MoveQuoteToken(address(_lender), 4549, 4550, 10_000 * 1e27, _pool.indexToPrice(4551));
         _lender.moveQuoteToken(_pool, 10_000 * 1e18, 4549, 4550);
     }
 
