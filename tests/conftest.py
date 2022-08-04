@@ -448,7 +448,8 @@ class TestUtils:
               f"pledged collaterl: {pool.pledgedCollateral()/1e18:>7.1f}  "
               f"ptp: {ptp/1e18:>10.3f}  "
               f"ru: {ru/1e18:>12.1f}  "
-              f"sum: {pool.treeSum()/1e18:>12.1f}")
+              f"sum: {pool.treeSum()/1e18:>12.1f}  "
+              f"rate:     {pool.interestRate()/1e18:>10.6f}")
 
 
 @pytest.fixture

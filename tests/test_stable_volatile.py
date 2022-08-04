@@ -162,9 +162,9 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
     threshold_price = int((inflator * new_total_debt) / collateral_deposited)
     assert threshold_price > 10**18
     old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price, debug)
-    print(f" borrower {borrower_index} drawing {borrow_amount / 1e18:.8f} from bucket {pool.lup() / 1e18:.1f} "
-          f"with {collateral_deposited / 1e18:.18f} collateral deposited, "
-          f"TP={threshold_price / 1e18:.8f} with {new_total_debt/1e18:.18f} total debt "
+    print(f" borrower {borrower_index} drawing {borrow_amount / 1e18:.1f} from bucket {pool.lup() / 1e18:.3f} "
+          f"with {collateral_deposited / 1e18:.1f} collateral deposited, "
+          f"TP={threshold_price / 1e18:.8f} with {new_total_debt/1e18:.1f} total debt "
           f"old_prev={old_prev[:6]} new_prev={new_prev[:6]}")
     tx = pool.borrow(borrow_amount, MIN_BUCKET, old_prev, new_prev, {"from": borrower})
     test_utils.validate_queue(pool)
@@ -265,7 +265,7 @@ def remove_quote_token(lender, lender_index, price, pool):
     if lp_balance > 0:
         exchange_rate = pool.exchangeRate(price_index)
         claimable_quote = lp_balance * 10**18 / exchange_rate
-        print(f" lender {lender_index} removing {lp_balance/1e27:.8f} lp "
+        print(f" lender {lender_index} removing {lp_balance/1e27:.1f} lp "
               f"(~{claimable_quote / 10**18:.1f} quote) from bucket {price_index} ({price / 10**18:.1f}); "
               f"exchange rate is {exchange_rate/1e27:.8f}")
         if not ensure_pool_is_funded(pool, claimable_quote * 2, "withdraw"):
@@ -277,27 +277,41 @@ def remove_quote_token(lender, lender_index, price, pool):
 
 def repay(borrower, borrower_index, pool, test_utils):
     dai = Contract(pool.quoteToken())
-    (debt, pending_debt, _, _) = pool.borrowerInfo(borrower)
+    (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower)
     quote_balance = dai.balanceOf(borrower)
-    if debt > 1000 * 10**18:
-        # TODO: handle partial repayment when out-of-funds, which requires calculating pending debt
-        #if quote_balance > 100 * 10**18:
-        if quote_balance > debt:
-            # repay the debt
-            (_, _, collateral_deposited, _) = pool.borrowerInfo(borrower)
-            repay_amount = min(debt * 1.05, quote_balance)
-            print(f" borrower {borrower_index} is repaying {repay_amount / 10**18:.1f}")
-            old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, 0)
-            pool.repay(repay_amount, old_prev, new_prev, {"from": borrower})
+    min_debt = pool.poolMinDebtAmount()
 
-            # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
-            # FIXME: this was producing a negative number; fix it
-            # collateral_to_withdraw = collateral_deposited - (collateral_encumbered * 1.667)
-            print(f" borrower {borrower_index} is withdrawing {collateral_deposited / 10**18:.1f} collateral")
-            tx = pool.removeCollateral(collateral_deposited, old_prev, new_prev, {"from": borrower})
-            test_utils.validate_queue(pool)
-        else:
-            print(f" borrower {borrower_index} has insufficient funds to repay {debt / 10**18:.1f}")
+    if quote_balance < 100 * 10**18:
+        print(f" borrower {borrower_index} only has {quote_balance/1e18:.1f} quote token and will not repay debt")
+        return
+
+    if pending_debt > 100 * 10**18:
+        repay_amount = min(pending_debt, quote_balance)
+
+        # if partial repayment, ensure we're not leaving a dust amount
+        if repay_amount != pending_debt and pending_debt - repay_amount < min_debt:
+            print(f" borrower {borrower_index} not repaying loan of {pending_debt / 1e18:.1f}; "
+                  f"repayment would drop below min debt amount of {min_debt / 1e18:.1f}")
+            return
+
+        # do the repayment
+        repay_amount = int(repay_amount * 1.01)
+        print(f" borrower {borrower_index} repaying {repay_amount/1e18:.1f} of {pending_debt/1e18:.1f} debt")
+        old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, 0)
+        pool.repay(repay_amount, old_prev, new_prev, {"from": borrower})
+
+        # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
+        (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower)
+        collateral_encumbered = int((pending_debt * 10**18) / pool.lup())
+        collateral_to_withdraw = int(collateral_deposited - (collateral_encumbered * 1.667))
+        print(f" borrower {borrower_index}, with {collateral_deposited/1e18:.1f} deposited "
+              f"and {collateral_encumbered/1e18:.1f} encumbered, "
+              f"is withdrawing {collateral_deposited/1e18:.1f} collateral")
+        assert collateral_to_withdraw > 0
+        tx = pool.removeCollateral(collateral_to_withdraw, old_prev, new_prev, {"from": borrower})
+        test_utils.validate_queue(pool)
+    else:
+        print(f" borrower {borrower_index} will not repay dusty {pending_debt/1e18:.1f} debt")
 
 
 @pytest.mark.skip
