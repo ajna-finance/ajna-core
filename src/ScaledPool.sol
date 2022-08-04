@@ -13,11 +13,10 @@ import { Queue }       from "./Queue.sol";
 
 import { BucketMath }     from "./libraries/BucketMath.sol";
 import { Maths }          from "./libraries/Maths.sol";
-import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     using SafeERC20 for ERC20;
-    using PRBMathSD59x18 for int256;
 
     int256  public constant INDEX_OFFSET = 3232;
 
@@ -518,9 +517,8 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
-        uint256 rate         = (interestRate / SECONDS_PER_YEAR) * elapsed_;
-        uint256 curInflator  = inflatorSnapshot;
-        return uint256(PRBMathSD59x18.exp(int256(rate)));
+        uint256 rate = (interestRate / SECONDS_PER_YEAR) * elapsed_;
+        return PRBMathUD60x18.exp(rate);
     }
 
     function _pendingInflator() internal view returns (uint256) {
