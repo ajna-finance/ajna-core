@@ -106,7 +106,7 @@ contract ScaledPurchaseQuoteTokenTest is DSTestPlus {
 //        emit Transfer(address(_pool), address(_lender), availableCollateral);
 //        vm.expectEmit(true, true, false, true);
 //        emit ClaimCollateral(address(_lender), 3_010.892022197881557845 * 1e18, availableCollateral, 10_000 * 1e27);
-//        _lender.claimCollateral(_pool, availableCollateral, 2550);
+//        _lender.removeCollateral(_pool, availableCollateral, 2550);
 //
 //        // check balances
 //        assertEq(_quote.balanceOf(address(_lender)),      161_000 * 1e18);

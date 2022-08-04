@@ -67,6 +67,14 @@ interface IScaledPool {
     /********************/
 
     /**
+     *  @notice Emitted when actor adds unencumbered collateral to a bucket.
+     *  @param  actor_  Recipient that added collateral.
+     *  @param  price_  Price at which collateral were added.
+     *  @param  amount_ Amount of collateral added to the pool.
+     */
+    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
+
+    /**
      *  @notice Emitted when borrower locks collateral in the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  amount_   Amount of collateral locked in the pool.
@@ -74,20 +82,20 @@ interface IScaledPool {
     event PledgeCollateral(address indexed borrower_, uint256 amount_);
 
     /**
-     *  @notice Emitted when lender claims unencumbered collateral.
-     *  @param  claimer_ Recipient that claimed collateral.
-     *  @param  price_   Price at which unencumbered collateral was claimed.
-     *  @param  amount_  The amount of Quote tokens transferred to the claimer.
-     *  @param  lps_     The amount of LP tokens burned in the claim.
-     */
-    event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
-
-    /**
      *  @notice Emitted when borrower removes collateral from the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  amount_   Amount of collateral removed from the pool.
      */
     event PullCollateral(address indexed borrower_, uint256 amount_);
+
+    /**
+     *  @notice Emitted when actor claims unencumbered collateral.
+     *  @param  actor_ Recipient that claimed collateral.
+     *  @param  price_   Price at which unencumbered collateral was claimed.
+     *  @param  amount_  The amount of Quote tokens transferred to the claimer.
+     *  @param  lps_     The amount of LP tokens burned in the claim.
+     */
+    event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_, uint256 lps_);
 
     /***********************/
     /*** State Variables ***/
@@ -329,7 +337,7 @@ interface IScaledPool {
      *  @param  amount_ The amount of unencumbered collateral to claim.
      *  @param  index_  The index of the bucket from which unencumbered collateral will be claimed.
      */
-    function claimCollateral(uint256 amount_, uint256 index_) external;
+    function removeCollateral(uint256 amount_, uint256 index_) external;
 
     /**********************/
     /*** View Functions ***/

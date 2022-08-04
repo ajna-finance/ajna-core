@@ -185,8 +185,8 @@ contract UserWithQuoteTokenInScaledPool {
         pool_.removeQuoteToken(amount_, index_);
     }
 
-    function claimCollateral(ScaledPool pool_, uint256 amount_, uint256 index_) public {
-        pool_.claimCollateral(amount_, index_);
+    function removeCollateral(ScaledPool pool_, uint256 amount_, uint256 index_) public {
+        pool_.removeCollateral(amount_, index_);
     }
 
     function approveToken(IERC20 token_, address spender_, uint256 amount_) public {

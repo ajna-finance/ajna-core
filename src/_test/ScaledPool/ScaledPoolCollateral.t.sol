@@ -184,9 +184,9 @@ contract ScaledCollateralTest is DSTestPlus {
     }
 
     /**
-     *  @notice 1 lender, 1 bidder tests claimCollateral.
+     *  @notice 1 lender, 1 bidder tests removeCollateral.
      */
-    function testClaimCollateral() external {
+    function testRemoveCollateral() external {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = _pool.indexToPrice(testIndex);
@@ -219,12 +219,12 @@ contract ScaledCollateralTest is DSTestPlus {
 //        assertEq(_collateral.balanceOf(address(_pool)),   collateralToPurchaseWith);
 //        assertEq(_quote.balanceOf(address(_pool)),        0);
 //
-//        // lender claims all available collateral
+//        // lender removes all available collateral
 //        vm.expectEmit(true, true, true, true);
 //        emit Transfer(address(_pool), address(_lender), availableCollateral);
 //        vm.expectEmit(true, true, true, true);
-//        emit ClaimCollateral(address(_lender), priceAtTestIndex, availableCollateral, lpAccumulator);
-//        _lender.claimCollateral(_pool, availableCollateral, testIndex);
+//        emit RemoveCollateral(address(_lender), priceAtTestIndex, availableCollateral, lpAccumulator);
+//        _lender.removeCollateral(_pool, availableCollateral, testIndex);
 //
 //        // check pool state and balances
 //        assertEq(_collateral.balanceOf(address(_lender)), availableCollateral);
@@ -239,12 +239,12 @@ contract ScaledCollateralTest is DSTestPlus {
     }
 
     /**
-     *  @notice 1 lender, 1 bidder tests reverts in claimCollateral.
+     *  @notice 1 lender, 1 bidder tests reverts in removeCollateral.
      *          Reverts:
-     *              Attempts to claim collateral when there is none in the bucket.
-     *              Attempts to claim collateral when lpBalance is 0.
+     *              Attempts to remove collateral when there is none in the bucket.
+     *              Attempts to remove collateral when lpBalance is 0.
      */
-    function testClaimCollateralRequireChecks() external {
+    function testRemoveCollateralRequireChecks() external {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = _pool.indexToPrice(testIndex);
@@ -255,8 +255,8 @@ contract ScaledCollateralTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
 
         // should revert if no collateral is available in the bucket
-        vm.expectRevert("S:CC:AMT_GT_COLLAT");
-        _lender.claimCollateral(_pool, Maths.WAD, testIndex);
+        vm.expectRevert("S:RC:AMT_GT_COLLAT");
+        _lender.removeCollateral(_pool, Maths.WAD, testIndex);
 
         // TODO: Rework test to have an actor deposit the collateral
 //        // bidder purchases some of the initial quote
@@ -271,16 +271,16 @@ contract ScaledCollateralTest is DSTestPlus {
 //
 //        (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(testIndex);
 //
-//        // should revert if attempting to claim more than lp balance allows
-//        vm.expectRevert("S:CC:INSUF_LP_BAL");
-//        _bidder.claimCollateral(_pool, availableCollateral, testIndex);
+//        // should revert if attempting to remove more than lp balance allows
+//        vm.expectRevert("S:RC:INSUF_LP_BAL");
+//        _bidder.removeCollateral(_pool, availableCollateral, testIndex);
 //
-//        // should be able to claim collateral if properly specified
+//        // should be able to remove collateral if properly specified
 //        vm.expectEmit(true, true, true, true);
 //        emit Transfer(address(_pool), address(_lender), availableCollateral);
 //        vm.expectEmit(true, true, true, true);
-//        emit ClaimCollateral(address(_lender), priceAtTestIndex, availableCollateral, lpAccumulator);
-//        _lender.claimCollateral(_pool, availableCollateral, testIndex);
+//        emit RemoveCollateral(address(_lender), priceAtTestIndex, availableCollateral, lpAccumulator);
+//        _lender.removeCollateral(_pool, availableCollateral, testIndex);
     }
 
     // TODO: add collateralization, utilization and encumberance test? -> use hardcoded amounts in pure functions without creaitng whole pool flows

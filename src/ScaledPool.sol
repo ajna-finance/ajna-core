@@ -139,16 +139,17 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // move required collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
+        emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
     }
 
-    function claimCollateral(uint256 amount_, uint256 index_) external override {
+    function removeCollateral(uint256 amount_, uint256 index_) external override {
         Bucket storage bucket = buckets[index_];
-        require(amount_ <= bucket.availableCollateral, "S:CC:AMT_GT_COLLAT");
+        require(amount_ <= bucket.availableCollateral, "S:RC:AMT_GT_COLLAT");
 
         uint256 price        = _indexToPrice(index_);
         uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), rate);
-        require(lpRedemption <= lpBalance[index_][msg.sender], "S:CC:INSUF_LP_BAL");
+        require(lpRedemption <= lpBalance[index_][msg.sender], "S:RC:INSUF_LP_BAL");
 
         bucket.availableCollateral     -= amount_;
         bucket.lpAccumulator           -= lpRedemption;
@@ -158,7 +159,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // move claimed collateral from pool to claimer
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-        emit ClaimCollateral(msg.sender, price, amount_, lpRedemption);
+        emit RemoveCollateral(msg.sender, price, amount_, lpRedemption);
     }
 
     function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external override {

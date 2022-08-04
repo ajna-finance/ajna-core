@@ -34,7 +34,7 @@ def test_claim_collateral_gas(
     test_utils
 ):
     with test_utils.GasWatcher(
-        ["addQuoteToken", "pledgeCollateral", "borrow", "purchaseBid", "claimCollateral"]
+        ["addQuoteToken", "pledgeCollateral", "borrow", "purchaseBid", "removeCollateral"]
     ):
         lender = lenders[0]
         borrower = borrowers[0]
@@ -59,7 +59,7 @@ def test_claim_collateral_gas(
             1_500 * 10**18, 1606, {"from": bidder}
         )
 
-        tx = scaled_pool.claimCollateral(
+        tx = scaled_pool.removeCollateral(
             0.004 * 10**18, 1606, {"from": lender}
         )
         assert 1 == 0
