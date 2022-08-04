@@ -12,7 +12,6 @@ import { TokenWithNDecimals }                            from "../utils/Tokens.s
 import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
 
 
-// TODO: add assertBalances checks
 contract ScaledPoolPrecisionTest is DSTestPlus {
 
     uint256 internal _lpPoolPrecision         = 10**27;
@@ -31,9 +30,9 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
     UserWithQuoteTokenInScaledPool internal _lender;
     UserWithQuoteTokenInScaledPool internal _bidder;
 
-    function init(uint256 collateralPrecision_, uint256 quotePrecision_) internal {
-        _collateral          = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecision_));
-        _quote               = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecision_));
+    function init(uint256 collateralPrecisionDecimals_, uint256 quotePrecisionDecimals_) internal {
+        _collateral          = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
+        _quote               = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
 
         _poolAddress = new ScaledPoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ScaledPool(_poolAddress);
@@ -64,10 +63,10 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         _lender.approveToken(_quote,  address(_pool), 200_000 * _quotePrecision);
     }
 
-    function testAddRemoveQuotePrecision(uint8 collateralPrecision_, uint8 quotePrecision_) external virtual {
+    function testAddRemoveQuotePrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
         // setup fuzzy bounds and initialize the pool
-        uint256 boundColPrecision = bound(uint256(collateralPrecision_), 1, 18);
-        uint256 boundQuotePrecision = bound(uint256(quotePrecision_), 1, 18);
+        uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
         _collateralPrecision = uint256(10) ** boundColPrecision;
         _quotePrecision = uint256(10) ** boundQuotePrecision;
 
@@ -125,10 +124,10 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
     }
 
     // TODO: add check for removing some of the collateral
-    function testBorrowRepayPrecision(uint8 collateralPrecision_, uint8 quotePrecision_) external virtual {
+    function testBorrowRepayPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
         // setup fuzzy bounds and initialize the pool
-        uint256 boundColPrecision = bound(uint256(collateralPrecision_), 1, 18);
-        uint256 boundQuotePrecision = bound(uint256(quotePrecision_), 1, 18);
+        uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
         _collateralPrecision = uint256(10) ** boundColPrecision;
         _quotePrecision = uint256(10) ** boundQuotePrecision;
 
@@ -208,10 +207,10 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.exchangeRate(2549),                     1 * _lpPoolPrecision);
     }
 
-    function testPurchaseClaimPrecision(uint8 collateralPrecision_, uint8 quotePrecision_) external virtual {
+    function testPurchaseClaimPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
         // setup fuzzy bounds and initialize the pool
-        uint256 boundColPrecision = bound(uint256(collateralPrecision_), 1, 18);
-        uint256 boundQuotePrecision = bound(uint256(quotePrecision_), 1, 18);
+        uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
         _collateralPrecision = uint256(10) ** boundColPrecision;
         _quotePrecision = uint256(10) ** boundQuotePrecision;
 
