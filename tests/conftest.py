@@ -315,8 +315,11 @@ class TestUtils:
 
     @staticmethod
     def validate_pool(pool):
-        # if pool is collateralized, ensure borrowers owe more than lenders are owed
+        # if pool is collateralized...
         if pool.lupIndex() > ScaledPoolUtils.price_to_index_safe(pool, pool.htp()):
+            # ...ensure debt is less than the size of the pool
+            assert pool.borrowerDebt <= pool.treeSum()
+            # ...ensure borrowers owe more than lenders are owed
             assert pool.borrowerDebt() >= pool.lenderDebt()
 
         # if there are no borrowers in the pool, ensure there is no debt
@@ -348,7 +351,6 @@ class TestUtils:
             # catch missorted threshold prices
             assert last_tp >= tp
             last_tp = tp
-
 
     @staticmethod
     def dump_book(pool, min_bucket_index, max_bucket_index, with_headers=True, csv=False) -> str:
@@ -383,7 +385,7 @@ class TestUtils:
             if csv:
                 lines.append("Index,Price,Pointer,Quote,Collateral,LP Outstanding,Scale")
             else:
-                lines.append(j('Index') + j('Pointer') + j('Price') + j('Quote') + j('Collateral')
+                lines.append(j('Index') + j('Price') + j('Pointer') + j('Quote') + j('Collateral')
                              + j('LP Outstanding') + j('Scale'))
         for i in range(min_bucket_index, max_bucket_index):
             price = pool.indexToPrice(i)
@@ -404,11 +406,38 @@ class TestUtils:
                 continue
             if csv:
                 lines.append(','.join([j(str(i)), nw(price), pointer, nw(bucket_quote), nw(bucket_collateral),
-                                       ny(bucket_lpAccumulator), ny(bucket_scale)]))
+                                       ny(bucket_lpAccumulator), nw(bucket_scale)]))
             else:
                 lines.append(''.join([j(str(i)), fw(price), j(pointer), fw(bucket_quote), fw(bucket_collateral),
-                                      fy(bucket_lpAccumulator), f"{ny(bucket_scale):>{w}.9f}"]))
+                                      fy(bucket_lpAccumulator), f"{nw(bucket_scale):>{w}.9f}"]))
         return '\n'.join(lines)
+
+    @staticmethod
+    def summarize_pool(pool):
+        print(f"actual utlzn:   {pool.poolActualUtilization()/1e18:>12.1%}  "
+              f"target utlzn: {pool.poolTargetUtilization()/1e18:>10.1%}   "
+              f"collateralization: {pool.poolCollateralization()/1e18:>7.1%}  "
+              f"borrowerDebt: {pool.borrowerDebt()/1e18:>12.1f}  "
+              f"lenderDebt: {pool.lenderDebt()/1e18:>12.1f}  "
+              f"pendingInf: {pool.pendingInflator()/1e18:>20.18f}")
+
+        contract_quote_balance = Contract(pool.quoteToken()).balanceOf(pool)
+        reserves = contract_quote_balance + pool.borrowerDebt() - pool.treeSum()
+        pledged_collateral = pool.pledgedCollateral()
+        if pledged_collateral > 0:
+            ptp = pool.borrowerDebt() * 10 ** 18 / pledged_collateral
+            ptp_index = pool.priceToIndex(ptp)
+            ru = pool.prefixSum(ptp_index)
+        else:
+            ptp = 0
+            ru = 0
+        print(f"contract q bal: {contract_quote_balance/1e18:>12.1f}  "
+              f"reserves:   {reserves/1e18:>12.1f}   "
+              f"pledged collaterl: {pool.pledgedCollateral()/1e18:>7.1f}  "
+              f"ptp: {ptp/1e18:>10.3f}  "
+              f"ru: {ru/1e18:>12.1f}  "
+              f"sum: {pool.treeSum()/1e18:>12.1f}  "
+              f"rate:     {pool.interestRate()/1e18:>10.6f}")
 
 
 @pytest.fixture

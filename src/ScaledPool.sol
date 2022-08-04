@@ -11,8 +11,9 @@ import { FenwickTree } from "./FenwickTree.sol";
 import { IScaledPool } from "./IScaledPool.sol";
 import { Queue }       from "./Queue.sol";
 
-import { BucketMath } from "./libraries/BucketMath.sol";
-import { Maths }      from "./libraries/Maths.sol";
+import { BucketMath }     from "./libraries/BucketMath.sol";
+import { Maths }          from "./libraries/Maths.sol";
+import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     using SafeERC20 for ERC20;
@@ -380,28 +381,26 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         if (curDebt_ != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
             if (elapsed != 0 ) {
-                uint256 spr          = interestRate / SECONDS_PER_YEAR;
-                uint256 curInflator  = inflatorSnapshot;
-                uint256 nextInflator = Maths.wmul(curInflator, Maths.wpow(Maths.WAD + spr, elapsed));
+                uint256 factor = _pendingInterestFactor(elapsed);
+                inflatorSnapshot = Maths.wmul(inflatorSnapshot, factor);
+                lastInflatorSnapshotUpdate = block.timestamp;
 
+                // Scale the fenwick tree to update amount of debt owed to lenders
                 uint256 newHtp = _htp();
                 if (newHtp != 0) {
                     uint256 htpIndex        = _priceToIndex(newHtp);
                     uint256 depositAboveHtp = _prefixSum(htpIndex);
 
                     if (depositAboveHtp != 0) {
-                        uint256 newInterest  = Maths.wmul(lenderInterestFactor, Maths.wmul(nextInflator - Maths.WAD, curDebt_));
+                        uint256 newInterest  = Maths.wmul(lenderInterestFactor, Maths.wmul(factor - Maths.WAD, curDebt_));
                         uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
-
                         _mult(htpIndex, lenderFactor);
                     }
                 }
 
-                curDebt_ = Maths.wmul(curDebt_, Maths.wdiv(nextInflator, curInflator));
+                // Scale the borrower inflator to update amount of interest owed by borrowers
+                curDebt_ = Maths.wmul(curDebt_, factor);
                 borrowerDebt = curDebt_;
-
-                inflatorSnapshot           = nextInflator;
-                lastInflatorSnapshotUpdate = block.timestamp;
             }
         }
     }
@@ -517,11 +516,14 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return lpAccumulator_ != 0 ? Maths.wrdivr(bucketSize, lpAccumulator_) : Maths.RAY;
     }
 
+    function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
+        uint256 rate = (interestRate / SECONDS_PER_YEAR) * elapsed_;
+        return PRBMathUD60x18.exp(rate);
+    }
+
     function _pendingInflator() internal view returns (uint256) {
-        uint256 elapsed     = block.timestamp - lastInflatorSnapshotUpdate;
-        uint256 spr         = interestRate / SECONDS_PER_YEAR;
-        uint256 curInflator = inflatorSnapshot;
-        return Maths.wmul(curInflator, Maths.wpow(Maths.WAD + spr, elapsed));
+        uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
+        return Maths.wmul(inflatorSnapshot, _pendingInterestFactor(elapsed));
     }
 
     function _threshold_price(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256) {
@@ -599,6 +601,11 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function encumberedCollateral(uint256 debt_, uint256 price_) external pure override returns (uint256) {
         return _encumberedCollateral(debt_, price_);
+    }
+
+    function poolMinDebtAmount() external view returns (uint256) {
+        if (borrowerDebt != 0) return _poolMinDebtAmount(borrowerDebt);
+        return 0;
     }
 
     /************************/
