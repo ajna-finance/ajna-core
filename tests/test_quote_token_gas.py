@@ -60,7 +60,7 @@ def test_quote_removal_from_lup_with_reallocation(
 ):
 
     with test_utils.GasWatcher(
-        ["removeQuoteToken", "addCollateral", "addQuoteToken", "borrow"]
+        ["removeQuoteToken", "pledgeCollateral", "addQuoteToken", "borrow"]
     ):
         lender = lenders[0]
         borrower = borrowers[0]
@@ -73,7 +73,7 @@ def test_quote_removal_from_lup_with_reallocation(
         )
 
         # borrower takes a loan of 3000 DAI
-        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
         scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
         lp_tokens = scaled_pool.lpBalance(1_663, lender)
@@ -100,7 +100,7 @@ def test_quote_removal_below_lup(
 ):
 
     with test_utils.GasWatcher(
-        ["removeQuoteToken", "addCollateral", "addQuoteToken", "borrow"]
+        ["removeQuoteToken", "pledgeCollateral", "addQuoteToken", "borrow"]
     ):
         lender = lenders[0]
         borrower = borrowers[0]
@@ -116,7 +116,7 @@ def test_quote_removal_below_lup(
         )
 
         # borrower takes a loan of 3000 DAI
-        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
         scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
         lp_tokens = scaled_pool.lpBalance(1_663, lender)
@@ -141,7 +141,7 @@ def test_quote_move_from_lup_with_reallocation(
 ):
 
     with test_utils.GasWatcher(
-        ["moveQuoteToken", "addCollateral", "addQuoteToken", "borrow"]
+        ["moveQuoteToken", "pledgeCollateral", "addQuoteToken", "borrow"]
     ):
         lender = lenders[0]
         borrower = borrowers[0]
@@ -154,7 +154,7 @@ def test_quote_move_from_lup_with_reallocation(
         )
 
         # borrower takes a loan of 3000 DAI
-        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
         scaled_pool.borrow(3_000 * 10**18, 4000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
         # lender moves 400 DAI
@@ -179,7 +179,7 @@ def test_quote_move_to_lup(
 ):
 
     with test_utils.GasWatcher(
-        ["moveQuoteToken", "addCollateral", "addQuoteToken", "borrow"]
+        ["moveQuoteToken", "pledgeCollateral", "addQuoteToken", "borrow"]
     ):
         lender = lenders[0]
         borrower = borrowers[0]
@@ -195,7 +195,7 @@ def test_quote_move_to_lup(
         )
 
         # borrower takes a loan of 3000 DAI
-        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
         scaled_pool.borrow(3_000 * 10**18, 4000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
         # lender moves 1000 DAI to lup

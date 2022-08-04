@@ -34,7 +34,7 @@ def test_claim_collateral_gas(
     test_utils
 ):
     with test_utils.GasWatcher(
-        ["addQuoteToken", "addCollateral", "borrow", "purchaseBid", "claimCollateral"]
+        ["addQuoteToken", "pledgeCollateral", "borrow", "purchaseBid", "claimCollateral"]
     ):
         lender = lenders[0]
         borrower = borrowers[0]
@@ -51,7 +51,7 @@ def test_claim_collateral_gas(
             5_000 * 10**18, 1386, {"from": lender}
         )
 
-        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
         scaled_pool.borrow(4_000 * 10**18, 3000 * 10**18,ZRO_ADD, ZRO_ADD, {"from": borrower})
 
         # bidder purchases some of the middle bucket

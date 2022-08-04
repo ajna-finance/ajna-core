@@ -13,12 +13,12 @@ def test_repay_gas(
     capsys,
     test_utils
 ):
-    with test_utils.GasWatcher(["addQuoteToken", "addCollateral", "repay", "borrow"]):
+    with test_utils.GasWatcher(["addQuoteToken", "pledgeCollateral", "repay", "borrow"]):
         for i in range(1643, 1663):
             scaled_pool.addQuoteToken(10_000 * 10**18, i, {"from": lenders[0]})
 
         dai.transfer(borrowers[0], 10_000 * 10**18, {"from": lenders[1]})
-        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
 
         # borrow 10_000 DAI from single bucket (LUP)
         scaled_pool.borrow(10_000 * 10**18, 1 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
