@@ -1,23 +1,22 @@
 import brownie
-from brownie import Contract
 import pytest
-from decimal import *
 import inspect
+from decimal import *
+from conftest import ZRO_ADD
+from brownie import Contract
 
-@pytest.mark.skip
 def test_quote_deposit_gas_below_hdp(
     lenders,
-    mkr_dai_pool,
+    scaled_pool,
     capsys,
-    test_utils,
-    bucket_math,
+    test_utils
 ):
     with test_utils.GasWatcher(["addQuoteToken"]):
         txes = []
         for i in reversed(range(1000, 1020)):
-            tx = mkr_dai_pool.addQuoteToken(
+            tx = scaled_pool.addQuoteToken(
                 100 * 10**18,
-                bucket_math.indexToPrice(i),
+                i,
                 {"from": lenders[0]},
             )
             txes.append(tx)
@@ -28,20 +27,18 @@ def test_quote_deposit_gas_below_hdp(
             for i in range(len(txes)):
                 print(f"Transaction: {i} | {test_utils.get_usage(txes[i].gas_used)}")
 
-@pytest.mark.skip
 def test_quote_deposit_gas_above_hdp(
     lenders,
-    mkr_dai_pool,
+    scaled_pool,
     capsys,
-    test_utils,
-    bucket_math,
+    test_utils
 ):
     with test_utils.GasWatcher(["addQuoteToken"]):
         txes = []
         for i in range(1000, 1020):
-            tx = mkr_dai_pool.addQuoteToken(
+            tx = scaled_pool.addQuoteToken(
                 100 * 10**18,
-                bucket_math.indexToPrice(i),
+                i,
                 {"from": lenders[0]},
             )
             txes.append(tx)
@@ -54,14 +51,12 @@ def test_quote_deposit_gas_above_hdp(
                     f"Transaction: {i} | Gas used: {test_utils.get_usage(txes[i].gas_used)}"
                 )
 
-@pytest.mark.skip
 def test_quote_removal_from_lup_with_reallocation(
     lenders,
     borrowers,
-    mkr_dai_pool,
+    scaled_pool,
     capsys,
-    test_utils,
-    bucket_math,
+    test_utils
 ):
 
     with test_utils.GasWatcher(
@@ -70,22 +65,22 @@ def test_quote_removal_from_lup_with_reallocation(
         lender = lenders[0]
         borrower = borrowers[0]
 
-        mkr_dai_pool.addQuoteToken(
-            3_400 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
+        scaled_pool.addQuoteToken(
+            3_400 * 10**18, 1_663, {"from": lender}
         )
-        mkr_dai_pool.addQuoteToken(
-            3_400 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+        scaled_pool.addQuoteToken(
+            3_400 * 10**18, 1_606, {"from": lender}
         )
 
         # borrower takes a loan of 3000 DAI
-        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
-        mkr_dai_pool.borrow(3_000 * 10**18, 4000 * 10**18, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
-        lp_tokens = mkr_dai_pool.lpBalance(lender, bucket_math.indexToPrice(1663))
+        lp_tokens = scaled_pool.lpBalance(1_663, lender)
 
-        # lender removes 1000 DAI
-        tx = mkr_dai_pool.removeQuoteToken(
-            bucket_math.indexToPrice(1663), lp_tokens, {"from": lender}
+        # lender removes 3_400 DAI
+        tx = scaled_pool.removeQuoteToken(
+            lp_tokens, 1_663, {"from": lender}
         )
 
         with capsys.disabled():
@@ -96,14 +91,12 @@ def test_quote_removal_from_lup_with_reallocation(
                 f"Remove quote token from lup (reallocate to one bucket)           - {test_utils.get_usage(tx.gas_used)}"
             )
 
-@pytest.mark.skip
 def test_quote_removal_below_lup(
     lenders,
     borrowers,
-    mkr_dai_pool,
+    scaled_pool,
     capsys,
-    test_utils,
-    bucket_math,
+    test_utils
 ):
 
     with test_utils.GasWatcher(
@@ -112,26 +105,24 @@ def test_quote_removal_below_lup(
         lender = lenders[0]
         borrower = borrowers[0]
 
-        mkr_dai_pool.addQuoteToken(
-            5_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
+        scaled_pool.addQuoteToken(
+            5_000 * 10**18, 1_663, {"from": lender}
         )
-        mkr_dai_pool.addQuoteToken(
-            5_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+        scaled_pool.addQuoteToken(
+            5_000 * 10**18, 1_606, {"from": lender}
         )
-        mkr_dai_pool.addQuoteToken(
-            5_000 * 10**18, bucket_math.indexToPrice(1524), {"from": lender}
+        scaled_pool.addQuoteToken(
+            5_000 * 10**18, 1_524, {"from": lender}
         )
 
         # borrower takes a loan of 3000 DAI
-        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
-        mkr_dai_pool.borrow(3_000 * 10**18, 4000 * 10**18, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
-        lp_tokens = mkr_dai_pool.lpBalance(lender, bucket_math.indexToPrice(1606))
+        lp_tokens = scaled_pool.lpBalance(1_663, lender)
 
-        # lender removes 1000 DAI
-        tx = mkr_dai_pool.removeQuoteToken(
-            bucket_math.indexToPrice(1606), lp_tokens, {"from": lender}
-        )
+        # lender removes 5_000 DAI
+        tx = scaled_pool.removeQuoteToken(lp_tokens, 1_606, {"from": lender})
 
         with capsys.disabled():
             print("\n==================================")
@@ -141,14 +132,12 @@ def test_quote_removal_below_lup(
                 f"Remove quote token below lup            - {test_utils.get_usage(tx.gas_used)}"
             )
 
-@pytest.mark.skip
 def test_quote_move_from_lup_with_reallocation(
     lenders,
     borrowers,
-    mkr_dai_pool,
+    scaled_pool,
     capsys,
-    test_utils,
-    bucket_math,
+    test_utils
 ):
 
     with test_utils.GasWatcher(
@@ -157,20 +146,20 @@ def test_quote_move_from_lup_with_reallocation(
         lender = lenders[0]
         borrower = borrowers[0]
 
-        mkr_dai_pool.addQuoteToken(
-            3_400 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
+        scaled_pool.addQuoteToken(
+            3_400 * 10**18, 1663, {"from": lender}
         )
-        mkr_dai_pool.addQuoteToken(
-            3_400 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+        scaled_pool.addQuoteToken(
+            3_400 * 10**18, 1606, {"from": lender}
         )
 
         # borrower takes a loan of 3000 DAI
-        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
-        mkr_dai_pool.borrow(3_000 * 10**18, 4000 * 10**18, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.borrow(3_000 * 10**18, 4000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
         # lender moves 400 DAI
-        tx = mkr_dai_pool.moveQuoteToken(
-            400 * 10**18, bucket_math.indexToPrice(1663), bucket_math.indexToPrice(1000), {"from": lender}
+        tx = scaled_pool.moveQuoteToken(
+            400 * 10**18, 1663, 1_000, {"from": lender}
         )
 
         with capsys.disabled():
@@ -181,14 +170,12 @@ def test_quote_move_from_lup_with_reallocation(
                 f"Move quote token from lup           - {test_utils.get_usage(tx.gas_used)}"
             )
 
-@pytest.mark.skip
 def test_quote_move_to_lup(
     lenders,
     borrowers,
-    mkr_dai_pool,
+    scaled_pool,
     capsys,
-    test_utils,
-    bucket_math,
+    test_utils
 ):
 
     with test_utils.GasWatcher(
@@ -197,23 +184,23 @@ def test_quote_move_to_lup(
         lender = lenders[0]
         borrower = borrowers[0]
 
-        mkr_dai_pool.addQuoteToken(
-            5_000 * 10**18, bucket_math.indexToPrice(1663), {"from": lender}
+        scaled_pool.addQuoteToken(
+            5_000 * 10**18, 1663, {"from": lender}
         )
-        mkr_dai_pool.addQuoteToken(
-            5_000 * 10**18, bucket_math.indexToPrice(1606), {"from": lender}
+        scaled_pool.addQuoteToken(
+            5_000 * 10**18, 1606, {"from": lender}
         )
-        mkr_dai_pool.addQuoteToken(
-            5_000 * 10**18, bucket_math.indexToPrice(1524), {"from": lender}
+        scaled_pool.addQuoteToken(
+            5_000 * 10**18, 1524, {"from": lender}
         )
 
         # borrower takes a loan of 3000 DAI
-        mkr_dai_pool.addCollateral(100 * 10**18, {"from": borrower})
-        mkr_dai_pool.borrow(3_000 * 10**18, 4000 * 10**18, {"from": borrower})
+        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
+        scaled_pool.borrow(3_000 * 10**18, 4000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
         # lender moves 1000 DAI to lup
-        tx = mkr_dai_pool.moveQuoteToken(
-            5_000 * 10**18, bucket_math.indexToPrice(1606), bucket_math.indexToPrice(1663), {"from": lender}
+        tx = scaled_pool.moveQuoteToken(
+            5_000 * 10**18, 1606, 1663, {"from": lender}
         )
 
         with capsys.disabled():
