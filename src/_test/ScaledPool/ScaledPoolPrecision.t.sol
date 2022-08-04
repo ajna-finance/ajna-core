@@ -123,7 +123,6 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(availableCollateral, 0);
     }
 
-    // TODO: add check for removing some of the collateral
     function testBorrowRepayPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
@@ -179,6 +178,10 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.lup(), _pool.indexToPrice(2549));
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
 
+        assertEq(_pool.borrowerDebt(),      debt);
+        assertEq(_pool.pledgedCollateral(), col);
+        assertEq(_pool.lenderDebt(),        10_000 * _quotePoolPrecision);
+
         assertEq(_pool.treeSum(),                         150_000 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
         assertEq(_pool.exchangeRate(2549),                     1 * _lpPoolPrecision);
@@ -202,9 +205,36 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.lup(), _pool.indexToPrice(2549));
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
 
+        assertEq(_pool.borrowerDebt(),      debt);
+        assertEq(_pool.pledgedCollateral(), col);
+        // FIXME: assertEq(_pool.lenderDebt(),        5_004.803073967339100000 * _quotePoolPrecision);
+
         assertEq(_pool.treeSum(),                         150_000 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
         assertEq(_pool.exchangeRate(2549),                     1 * _lpPoolPrecision);
+
+        // remove all of the remaining unencumbered collateral
+        uint256 unencumberedCollateral = col - _pool.encumberedCollateral(debt, _pool.lup());
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower), unencumberedCollateral / _pool.collateralScale());
+        vm.expectEmit(true, true, false, true);
+        emit RemoveCollateral(address(_borrower), unencumberedCollateral);
+        _borrower.removeCollateral(_pool, unencumberedCollateral, address(0), address(0));
+
+        //  FIXME: check balances
+        // assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
+        // assertEq(_collateral.balanceOf(address(_borrower)), 100 * _collateralPrecision);
+        // assertEq(_quote.balanceOf(address(_pool)),   145_000 * _quotePrecision);
+        // assertEq(_quote.balanceOf(address(_borrower)), 5_000 * _quotePrecision);
+
+        // check pool state
+        (debt, , col,) = _pool.borrowerInfo(address(_borrower));
+        assertEq(_pool.htp(), Maths.wdiv(debt, col));
+        assertEq(_pool.lup(), _pool.indexToPrice(2549));
+        assertEq(address(_pool.loanQueueHead()), address(_borrower));
+
+        assertEq(_pool.borrowerDebt(),      debt);
+        assertEq(_pool.pledgedCollateral(), col); 
     }
 
     function testPurchaseClaimPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
