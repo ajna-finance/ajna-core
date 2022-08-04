@@ -72,6 +72,7 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.borrowerDebt(),          0);
         assertEq(_pool.lenderDebt(),            0);
         assertEq(_pool.poolActualUtilization(), 0);
+        assertEq(_pool.poolMinDebtAmount(),     0);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   50_000 * 1e18);
@@ -97,6 +98,7 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.lenderDebt(),   21_000 * 1e18);
         assertEq(_pool.poolTargetUtilization(), 1 * 1e18);
         assertEq(_pool.poolActualUtilization(), 0.420403846153846154 * 1e18);
+        assertEq(_pool.poolMinDebtAmount(),     2_102.0192307692307702 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   29_000 * 1e18);
@@ -136,9 +138,10 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.htp(), 400.384615384615384800 * 1e18);
         assertEq(_pool.lup(), 2_951.419442869698640451 * 1e18);
 
-        assertEq(_pool.treeSum(),      50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(), 40_038.461538461538480000 * 1e18);
-        assertEq(_pool.lenderDebt(),   40_000 * 1e18);
+        assertEq(_pool.treeSum(),           50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(),      40_038.461538461538480000 * 1e18);
+        assertEq(_pool.lenderDebt(),        40_000 * 1e18);
+        assertEq(_pool.poolMinDebtAmount(), 4_003.846153846153848 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);

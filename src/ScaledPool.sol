@@ -606,8 +606,8 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function poolMinDebtAmount() external view returns (uint256) {
-        // TODO: unit test coverage
-        return Maths.wdiv(Maths.wdiv(borrowerDebt, Maths.wad(totalBorrowers)), 10**19);
+        if (borrowerDebt != 0) return _poolMinDebtAmount(borrowerDebt);
+        return 0;
     }
 
     /************************/
