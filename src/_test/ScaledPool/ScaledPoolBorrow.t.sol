@@ -132,11 +132,11 @@ contract ScaledBorrowTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_borrower), 19_000 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Borrow(address(_borrower), 2_951.419442869698640451 * 1e18, 19_000 * 1e18);
+        emit Borrow(address(_borrower), 2_966.176540084047110076 * 1e18, 19_000 * 1e18);
         _borrower.borrow(_pool, 19_000 * 1e18, 3500, address(0), address(0));
 
         assertEq(_pool.htp(), 400.384615384615384800 * 1e18);
-        assertEq(_pool.lup(), 2_951.419442869698640451 * 1e18);
+        assertEq(_pool.lup(), 2_966.176540084047110076 * 1e18);
 
         assertEq(_pool.treeSum(),           50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),      40_038.461538461538480000 * 1e18);

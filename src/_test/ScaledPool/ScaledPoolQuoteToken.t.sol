@@ -174,7 +174,6 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         vm.expectRevert("S:RQT:BAD_LUP");
         _lender.removeQuoteToken(_pool, 20_000 * 1e27, 4551);
 
-        assertEq(_pool.borrowerDebt(), 70_067.30769230769234 * 1e18);
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(4990), 10_000 * 1e18, _pool.indexToPrice(4551));
         _lender.removeQuoteToken(_pool, 10_000 * 1e27, 4990);
