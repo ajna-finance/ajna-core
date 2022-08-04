@@ -152,7 +152,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
         print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral TP={threshold_price / 1e18:.1f}")
     assert collateral_to_deposit > 10**18
     # TODO: if debt is 0, contracts require passing old_prev and new_prev=0, which is awkward
-    pool.addCollateral(collateral_to_deposit, old_prev, new_prev, {"from": borrower})
+    pool.pledgeCollateral(collateral_to_deposit, old_prev, new_prev, {"from": borrower})
     test_utils.validate_queue(pool)
 
     # draw debt

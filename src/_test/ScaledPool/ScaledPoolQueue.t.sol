@@ -72,7 +72,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
         // borrow max possible from hdp
-        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 50_000 * 1e18, 2551, address(0), address(0));
 
         // check queue head was set correctly
@@ -94,7 +94,7 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(0, _pool.getHighestThresholdPrice());
 
         // borrow and insert into the Queue
-        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 50_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
@@ -119,7 +119,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
         // *borrower(HEAD)*
-        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 15_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -127,7 +127,7 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
 
         // *borrower2(HEAD)* -> borrower
-        _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower2.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower2.borrow(_pool, 20_000 * 1e18, 2551, address(0), address(0));
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -135,7 +135,7 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(_borrower2), address(_pool.loanQueueHead()));
 
         // borrower2(HEAD) -> borrower -> *borrower3*
-        _borrower3.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower3.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower3.borrow(_pool, 10_000 * 1e18, 2551,  address(0), address(_borrower));
 
         (thresholdPrice, next) = _pool.loans(address(_borrower3));
@@ -161,21 +161,21 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(0, _pool.getHighestThresholdPrice());
 
         // borrower deposits some collateral and draws debt
-        _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 40 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(0));
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
 
         // borrower2 deposits slightly less collateral and draws the same debt, producing a higher TP
-        _borrower2.addCollateral(_pool, 39 * 1e18, address(0), address(_borrower));
+        _borrower2.pledgeCollateral(_pool, 39 * 1e18, address(0), address(_borrower));
         _borrower2.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(0));
         assertEq(address(_pool.loanQueueHead()), address(_borrower2));
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
         assertEq(thresholdPrice, 769.970414201183432308 * 1e18);
 
         // borrower2 deposits some collateral, reducing their TP, pushing it to the end of the queue
-        _borrower2.addCollateral(_pool, 42 * 1e18, address(0), address(_borrower));
+        _borrower2.pledgeCollateral(_pool, 42 * 1e18, address(0), address(_borrower));
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
         assertEq(thresholdPrice, 370.726495726495726667 * 1e18);
@@ -209,7 +209,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
         // borrower becomes head
-        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 15_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -217,7 +217,7 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
 
         // borrower2 replaces borrower as head
-        _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower2.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower2.borrow(_pool, 20_000 * 1e18, 2551, address(0), address(0));
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -243,25 +243,25 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(0, _pool.getHighestThresholdPrice());
 
         // borrower deposits some collateral and draws debt
-        _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 40 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(0));
         (uint256 thresholdPrice, ) = _pool.loans(address(_borrower));
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
 
         // borrower2 draws slightly more debt producing a higher TP
-        _borrower2.addCollateral(_pool, 40 * 1e18, address(0), address(0));
+        _borrower2.pledgeCollateral(_pool, 40 * 1e18, address(0), address(0));
         _borrower2.borrow(_pool, 31_000 * 1e18, 2551, address(0), address(0));
         (thresholdPrice, ) = _pool.loans(address(_borrower2));
         assertEq(thresholdPrice, 775.745192307692308050 * 1e18);
 
         // borrower3 draws slightly more debt producing a higher TP
-        _borrower3.addCollateral(_pool, 40 * 1e18, address(0), address(0));
+        _borrower3.pledgeCollateral(_pool, 40 * 1e18, address(0), address(0));
         _borrower3.borrow(_pool, 32_000 * 1e18, 2551, address(0), address(0));
         (thresholdPrice, ) = _pool.loans(address(_borrower3));
         assertEq(thresholdPrice, 800.769230769230769600 * 1e18);
 
         // borrower2 adds collateral, decreasing their TP, but maintaining their same position in queue
-        _borrower2.addCollateral(_pool, 0.1 * 1e18, address(_borrower3), address(_borrower3));
+        _borrower2.pledgeCollateral(_pool, 0.1 * 1e18, address(_borrower3), address(_borrower3));
         (thresholdPrice, ) = _pool.loans(address(_borrower2));
         assertEq(thresholdPrice, 773.810665643583349676 * 1e18);
 
@@ -289,7 +289,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
         // *borrower(HEAD)*
-        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 15_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -297,7 +297,7 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
 
         // *borrower2(HEAD)* -> borrower
-        _borrower2.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower2.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower2.borrow(_pool, 20_000 * 1e18, 2551, address(0), address(0));
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -324,13 +324,13 @@ contract ScaledQueueTest is DSTestPlus {
      *  @notice With 1 lender and 1 borrower test adding collateral, borrowing, and adding additional collateral. 
      *  Check that loan queue updates, and threshold price shifts on each action.
      */
-    function testUpdateLoanQueueAddCollateral() public {
+    function testUpdateLoanQueuePledgeCollateral() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
         // borrower 1 borrows and becomes initial HEAD
-        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 15_000 * 1e18, 2551, address(0), address(0));
 
         // check queue head and threshold price were set correctly
@@ -340,7 +340,7 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
 
-        _borrower.addCollateral(_pool, 11 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 11 * 1e18, address(0), address(0));
 
         (debt, , collateral, ) = _pool.borrowerInfo(address(_borrower));
         (thresholdPrice, next) = _pool.loans(address(_borrower));
@@ -359,7 +359,7 @@ contract ScaledQueueTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
 
         // *borrower(HEAD)*
-        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 15_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
@@ -390,13 +390,13 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(0, _pool.getHighestThresholdPrice());
 
         // borrower deposits some collateral and draws debt
-        _borrower.addCollateral(_pool, 40 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 40 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 30_000 * 1e18, 2551, address(0), address(0));
         (uint256 thresholdPrice, ) = _pool.loans(address(_borrower));
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
 
         // borrower2 successfully deposits slightly less collateral
-        _borrower2.addCollateral(_pool, 39.9 * 1e18, address(0), address(_borrower));
+        _borrower2.pledgeCollateral(_pool, 39.9 * 1e18, address(0), address(_borrower));
 
         // borrower2 draws the same debt, producing a higher TP, but supplies the wrong order
         vm.expectRevert("B:U:QUE_WRNG_ORD_P");
@@ -414,7 +414,7 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(0, _pool.getHighestThresholdPrice());
 
         // borrow and insert into the Queue
-        _borrower.addCollateral(_pool, 51 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 51 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 50_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));

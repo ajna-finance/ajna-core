@@ -71,7 +71,7 @@ interface IScaledPool {
      *  @param  borrower_ `msg.sender`.
      *  @param  amount_   Amount of collateral locked in the pool.
      */
-    event AddCollateral(address indexed borrower_, uint256 amount_);
+    event PledgeCollateral(address indexed borrower_, uint256 amount_);
 
     /**
      *  @notice Emitted when lender claims unencumbered collateral.
@@ -285,7 +285,7 @@ interface IScaledPool {
      *  @param  oldPrev_ Previous borrower that came before placed loan (old)
      *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
      */
-    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
+    function pledgeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by borrowers to remove an amount of collateral.

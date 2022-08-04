@@ -167,7 +167,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 30_000 * 1e18, 4990);
         _collateral.mint(address(_borrower), 3500000 * 1e18);
         _borrower.approveToken(_collateral, address(_pool), 3500000 * 1e18);
-        _borrower.addCollateral(_pool, 3500000 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 3500000 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 70000 * 1e18, 4551, address(0), address(0));
 
         // should revert if removing quote token from higher price buckets would drive lup below htp
@@ -248,7 +248,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 30_000 * 1e18, 4651);
         _collateral.mint(address(_borrower), 1500000 * 1e18);
         _borrower.approveToken(_collateral, address(_pool), 1500000 * 1e18);
-        _borrower.addCollateral(_pool, 1500000 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 1500000 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 60000.1 * 1e18, 4651, address(0), address(0));
 
         // should revert if movement would drive lup below htp

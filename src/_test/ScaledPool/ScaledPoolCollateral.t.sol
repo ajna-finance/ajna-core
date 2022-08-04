@@ -46,7 +46,7 @@ contract ScaledCollateralTest is DSTestPlus {
     }
 
     /**
-     *  @notice With 1 lender and 1 borrower test addCollateral, borrow, and removeCollateral.
+     *  @notice With 1 lender and 1 borrower test pledgeCollateral, borrow, and removeCollateral.
      */
     function testAddRemoveCollateral() external {
         uint256 depositPriceHighest = 2550;
@@ -71,8 +71,8 @@ contract ScaledCollateralTest is DSTestPlus {
 
         // borrower deposits 100 collateral
         vm.expectEmit(true, true, false, true);
-        emit AddCollateral(address(_borrower), 100 * 1e18);
-        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0));
+        emit PledgeCollateral(address(_borrower), 100 * 1e18);
+        _borrower.pledgeCollateral(_pool, 100 * 1e18, address(0), address(0));
 
         // check pool state collateral accounting updated successfully
         assertEq(_pool.pledgedCollateral(), 100 * 1e18);
@@ -174,8 +174,8 @@ contract ScaledCollateralTest is DSTestPlus {
 
         // borrower deposits 100 collateral
         vm.expectEmit(true, true, true, true);
-        emit AddCollateral(address(_borrower), testCollateralAmount);
-        _borrower.addCollateral(_pool, testCollateralAmount, address(0), address(0));
+        emit PledgeCollateral(address(_borrower), testCollateralAmount);
+        _borrower.pledgeCollateral(_pool, testCollateralAmount, address(0), address(0));
 
         // should be able to now remove collateral
         vm.expectEmit(true, true, true, true);

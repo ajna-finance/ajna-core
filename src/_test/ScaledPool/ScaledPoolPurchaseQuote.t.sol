@@ -61,7 +61,7 @@ contract ScaledPurchaseQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2553);
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2554);
 
-        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 100 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0));
 
         // check balances
