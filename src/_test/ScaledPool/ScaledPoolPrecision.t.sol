@@ -8,8 +8,7 @@ import { BucketMath }        from "../../libraries/BucketMath.sol";
 import { Maths }             from "../../libraries/Maths.sol";
 
 import { DSTestPlus }                                    from "../utils/DSTestPlus.sol";
-import { CollateralToken, CollateralTokenWith6Decimals } from "../utils/Tokens.sol";
-import { QuoteToken, QuoteTokenWith6Decimals }           from "../utils/Tokens.sol";
+import { TokenWithNDecimals }                            from "../utils/Tokens.sol";
 import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
 
 
@@ -23,25 +22,19 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
     uint256 internal _quotePrecision;
 
     address                        internal _poolAddress;
-    CollateralToken                internal _collateral;
+    TokenWithNDecimals             internal _collateral;
     ScaledPool                     internal _pool;
-    QuoteToken                     internal _quote;
+    TokenWithNDecimals             internal _quote;
     UserWithCollateralInScaledPool internal _borrower;
     UserWithCollateralInScaledPool internal _borrower2;
     UserWithCollateralInScaledPool internal _borrower3;
     UserWithQuoteTokenInScaledPool internal _lender;
     UserWithQuoteTokenInScaledPool internal _bidder;
 
-    function setUp() external virtual {
-        _collateralPrecision = 10**18;
-        _quotePrecision      = 10**18;
-        _collateral          = new CollateralToken();
-        _quote               = new QuoteToken();
+    function init(uint256 collateralPrecision_, uint256 quotePrecision_) internal {
+        _collateral          = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecision_));
+        _quote               = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecision_));
 
-        init();
-    }
-
-    function init() internal {
         _poolAddress = new ScaledPoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ScaledPool(_poolAddress);
 
@@ -71,7 +64,15 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         _lender.approveToken(_quote,  address(_pool), 200_000 * _quotePrecision);
     }
 
-    function testAddRemoveQuotePrecision() external virtual {
+    function testAddRemoveQuotePrecision(uint8 collateralPrecision_, uint8 quotePrecision_) external virtual {
+        // setup fuzzy bounds and initialize the pool
+        uint256 boundColPrecision = bound(uint256(collateralPrecision_), 1, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecision_), 1, 18);
+        _collateralPrecision = uint256(10) ** boundColPrecision;
+        _quotePrecision = uint256(10) ** boundQuotePrecision;
+
+        init(boundColPrecision, boundQuotePrecision);
+
         // deposit 50_000 quote tokens into each of 3 buckets
         _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2549);
         _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2550);
@@ -124,7 +125,15 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
     }
 
     // TODO: add check for removing some of the collateral
-    function testBorrowRepayPrecision() external virtual {
+    function testBorrowRepayPrecision(uint8 collateralPrecision_, uint8 quotePrecision_) external virtual {
+        // setup fuzzy bounds and initialize the pool
+        uint256 boundColPrecision = bound(uint256(collateralPrecision_), 1, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecision_), 1, 18);
+        _collateralPrecision = uint256(10) ** boundColPrecision;
+        _quotePrecision = uint256(10) ** boundQuotePrecision;
+
+        init(boundColPrecision, boundQuotePrecision);
+
         // deposit 50_000 quote tokens into each of 3 buckets
         _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2549);
         _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2550);
@@ -199,7 +208,15 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.exchangeRate(2549),                     1 * _lpPoolPrecision);
     }
 
-    function testPurchaseClaimPrecision() external virtual {
+    function testPurchaseClaimPrecision(uint8 collateralPrecision_, uint8 quotePrecision_) external virtual {
+        // setup fuzzy bounds and initialize the pool
+        uint256 boundColPrecision = bound(uint256(collateralPrecision_), 1, 18);
+        uint256 boundQuotePrecision = bound(uint256(quotePrecision_), 1, 18);
+        _collateralPrecision = uint256(10) ** boundColPrecision;
+        _quotePrecision = uint256(10) ** boundQuotePrecision;
+
+        init(boundColPrecision, boundQuotePrecision);
+
         // deposit 50_000 quote tokens into each of 3 buckets
         _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2549);
         _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2550);
@@ -262,41 +279,6 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         // check pool state
         assertEq(_pool.htp(),     0);
         assertEq(_pool.lup(),     BucketMath.MAX_PRICE);
-        assertEq(_pool.treeSum(), 149_500 * _quotePoolPrecision);
+        assertEq(_pool.treeSum(), 149_500 * _quotePoolPrecision);   
     }
-}
-
-contract CollateralAndQuoteWith6DecimalPrecisionTest is ScaledPoolPrecisionTest {
-
-    function setUp() external override {
-        _collateralPrecision = 10**6;
-        _quotePrecision      = 10**6;
-        _collateral          = new CollateralTokenWith6Decimals();
-        _quote               = new QuoteTokenWith6Decimals();
-
-        init();
-    }
-
-}
-
-// TODO: move this setup method to main and remove the overriding classes
-// TODO: add fuzzy test with arbitrary decimals
-contract CollateralAndQuoteWithRandomDecimalPrecisionTest is ScaledPoolPrecisionTest {
-
-    function setUp(uint256 collateralPrecision_, uint256 quotePrecision_) external {
-        collateralPrecision_ = bound(collateralPrecision_, 1, 18);
-        quotePrecision_      = bound(quotePrecision_, 1, 18);
-
-        _collateralPrecision = 10**collateralPrecision_;
-        _quotePrecision      = 10**_quotePrecision;
-        _collateral          = new CollateralTokenWith6Decimals();
-        _quote               = new QuoteTokenWith6Decimals();
-
-        init();
-    }
-
-    function testAddRemoveQuotePrecision() external virtual override {
-
-    }
-
 }
