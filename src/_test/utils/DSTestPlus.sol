@@ -72,6 +72,7 @@ abstract contract DSTestPlus is Test {
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event PledgeCollateral(address indexed borrower_, uint256 amount_);
+    event PullCollateral(address indexed borrower_, uint256 amount_);
     event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
     event PurchaseWithNFTs(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256[] tokenIds_);
     event RemoveCollateral(address indexed borrower_, uint256 amount_);

@@ -300,7 +300,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit Borrow(msg.sender, newLup, amount_);
     }
 
-    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
+    function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -321,7 +321,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-        emit RemoveCollateral(msg.sender, amount_);
+        emit PullCollateral(msg.sender, amount_);
     }
 
     function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {

@@ -87,7 +87,7 @@ interface IScaledPool {
      *  @param  borrower_ `msg.sender`.
      *  @param  amount_   Amount of collateral removed from the pool.
      */
-    event RemoveCollateral(address indexed borrower_, uint256 amount_);
+    event PullCollateral(address indexed borrower_, uint256 amount_);
 
     /***********************/
     /*** State Variables ***/
@@ -284,7 +284,7 @@ interface IScaledPool {
      *  @param  oldPrev_ Previous borrower that came before placed loan (old)
      *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
      */
-    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
+    function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /*********************************/
     /*** Lender External Functions ***/

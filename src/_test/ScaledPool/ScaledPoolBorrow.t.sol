@@ -221,7 +221,7 @@ contract ScaledBorrowTest is DSTestPlus {
         assertEq(inflator,    1.003018244385032969 * 1e18);
 
         skip(864000);
-        _borrower.removeCollateral(_pool, 10 * 1e18, address(0), address(0));
+        _borrower.pullCollateral(_pool, 10 * 1e18, address(0), address(0));
         assertEq(_pool.borrowerDebt(), 21_118.612213256345042351 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
         assertEq(debt,        21_118.612213256345042351 * 1e18);

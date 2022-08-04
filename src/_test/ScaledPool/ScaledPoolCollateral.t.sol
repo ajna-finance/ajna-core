@@ -46,9 +46,9 @@ contract ScaledCollateralTest is DSTestPlus {
     }
 
     /**
-     *  @notice With 1 lender and 1 borrower test pledgeCollateral, borrow, and removeCollateral.
+     *  @notice With 1 lender and 1 borrower test pledgeCollateral, borrow, and pullCollateral.
      */
-    function testAddRemoveCollateral() external {
+    function testAddPullCollateral() external {
         uint256 depositPriceHighest = 2550;
         uint256 depositPriceHigh    = 2551;
         uint256 depositPriceMed     = 2552;
@@ -114,8 +114,8 @@ contract ScaledCollateralTest is DSTestPlus {
 
         // remove some of the collateral
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateral(address(_borrower), 50 * 1e18);
-        _borrower.removeCollateral(_pool, 50 * 1e18, address(0), address(0));
+        emit PullCollateral(address(_borrower), 50 * 1e18);
+        _borrower.pullCollateral(_pool, 50 * 1e18, address(0), address(0));
 
         // check borrower state
         (borrowerDebt, , borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
@@ -132,8 +132,8 @@ contract ScaledCollateralTest is DSTestPlus {
         // remove all of the remaining unencumbered collateral
         uint256 unencumberedCollateral = borrowerCollateral - _pool.encumberedCollateral(borrowerDebt, _pool.lup());
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateral(address(_borrower), unencumberedCollateral);
-        _borrower.removeCollateral(_pool, unencumberedCollateral, address(0), address(0));
+        emit PullCollateral(address(_borrower), unencumberedCollateral);
+        _borrower.pullCollateral(_pool, unencumberedCollateral, address(0), address(0));
 
         // check pool state
         assertEq(_pool.htp(), 2_989.185764499773229142 * 1e18);
@@ -161,16 +161,16 @@ contract ScaledCollateralTest is DSTestPlus {
     }
 
     /**
-     *  @notice 1 borrower tests reverts in removeCollateral.
+     *  @notice 1 borrower tests reverts in pullCollateral.
      *          Reverts:
      *              Attempts to remove more than available unencumbered collateral.
      */
-    function testRemoveCollateralRequireEnoughCollateral() external {
+    function testPullCollateralRequireEnoughCollateral() external {
         uint256 testCollateralAmount = 100 * 1e18;
 
         // should revert if trying to remove more collateral than is available
         vm.expectRevert("S:RC:NOT_ENOUGH_COLLATERAL");
-        _borrower.removeCollateral(_pool, testCollateralAmount, address(0), address(0));
+        _borrower.pullCollateral(_pool, testCollateralAmount, address(0), address(0));
 
         // borrower deposits 100 collateral
         vm.expectEmit(true, true, true, true);
@@ -179,8 +179,8 @@ contract ScaledCollateralTest is DSTestPlus {
 
         // should be able to now remove collateral
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateral(address(_borrower), testCollateralAmount);
-        _borrower.removeCollateral(_pool, testCollateralAmount, address(0), address(0));
+        emit PullCollateral(address(_borrower), testCollateralAmount);
+        _borrower.pullCollateral(_pool, testCollateralAmount, address(0), address(0));
     }
 
     /**

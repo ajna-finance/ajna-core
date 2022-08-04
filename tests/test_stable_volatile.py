@@ -308,7 +308,7 @@ def repay(borrower, borrower_index, pool, test_utils):
               f"and {collateral_encumbered/1e18:.1f} encumbered, "
               f"is withdrawing {collateral_deposited/1e18:.1f} collateral")
         assert collateral_to_withdraw > 0
-        tx = pool.removeCollateral(collateral_to_withdraw, old_prev, new_prev, {"from": borrower})
+        tx = pool.pullCollateral(collateral_to_withdraw, old_prev, new_prev, {"from": borrower})
         test_utils.validate_queue(pool)
     else:
         print(f" borrower {borrower_index} will not repay dusty {pending_debt/1e18:.1f} debt")

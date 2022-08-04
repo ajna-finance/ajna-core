@@ -353,7 +353,7 @@ contract ScaledQueueTest is DSTestPlus {
      *  @notice With 1 lender and 1 borrower test adding collateral, borrowing, and removing collateral. 
      *  Check that loan queue updates on each action.
      */
-    function testUpdateLoanQueueRemoveCollateral() public {
+    function testUpdateLoanQueuePullCollateral() public {
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2549);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2550);
         _lender.addQuoteToken(_pool, 50_000 * 1e18, 2551);
@@ -368,7 +368,7 @@ contract ScaledQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
 
-        _borrower.removeCollateral(_pool, 11 * 1e18, address(0), address(0));
+        _borrower.pullCollateral(_pool, 11 * 1e18, address(0), address(0));
 
         (debt, , collateral, ) = _pool.borrowerInfo(address(_borrower));
         (thresholdPrice, next) = _pool.loans(address(_borrower));

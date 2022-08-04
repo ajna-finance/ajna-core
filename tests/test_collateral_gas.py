@@ -11,11 +11,11 @@ def test_add_remove_collateral_gas(
     capsys,
     test_utils
 ):
-    with test_utils.GasWatcher(["addQuoteToken", "pledgeCollateral", "removeCollateral"]):
+    with test_utils.GasWatcher(["addQuoteToken", "pledgeCollateral", "pullCollateral"]):
         scaled_pool.addQuoteToken(20_000 * 10**18, 1708, {"from": lenders[0]})
         tx_add_collateral = scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
         scaled_pool.borrow(20_000 * 10**18, 2500 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
-        tx_remove_collateral = scaled_pool.removeCollateral(10 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx_remove_collateral = scaled_pool.pullCollateral(10 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
         with capsys.disabled():
             print("\n==================================")
             print(f"Gas estimations({inspect.stack()[0][3]}):")
