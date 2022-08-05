@@ -355,7 +355,7 @@ interface IScaledPool {
     /**
      *  @notice Returns exchange rate of the bucket.
      *  @param  index_        The index of the bucket to calculate exchange rate for.
-     *  @return exchangeRate_ The exchange rate of the bucket, in WAD units.
+     *  @return exchangeRate_ The exchange rate of the bucket, in RAY units.
      */
     function exchangeRate(uint256 index_) external view returns (uint256 exchangeRate_);
 
