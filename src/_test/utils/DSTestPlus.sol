@@ -64,6 +64,7 @@ abstract contract DSTestPlus is Test {
 
     // Pool events
     event AddCollateral(address indexed borrower_, uint256 amount_);
+    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event AddNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);

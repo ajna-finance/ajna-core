@@ -45,6 +45,10 @@ contract UserWithCollateral {
 
 contract UserWithCollateralInScaledPool {
 
+    function addCollateral(ScaledPool pool_, uint256 amount_, uint256 index_) public {
+        pool_.addCollateral(amount_, index_);
+    }
+
     function approveAndDepositTokenAsCollateral(IERC20 token_, ScaledPool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
         token_.approve(address(pool_), amount_);
         pool_.pledgeCollateral(amount_, oldPrev_, newPrev_);
@@ -64,6 +68,10 @@ contract UserWithCollateralInScaledPool {
 
     function pullCollateral(ScaledPool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
         pool_.pullCollateral(amount_, oldPrev_, newPrev_);
+    }
+
+    function removeQuoteToken(ScaledPool pool_, uint256 amount_, uint256 index_) public {
+        pool_.removeQuoteToken(amount_, index_);
     }
 
     function repay(ScaledPool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
