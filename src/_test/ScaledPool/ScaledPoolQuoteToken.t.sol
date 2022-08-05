@@ -140,7 +140,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 5_000 * 1e18, BucketMath.MAX_PRICE);
-        _lender.removeQuoteToken(_pool, 5_000 * 1e27, 2549);
+        _lender.removeQuoteToken(_pool, 5_000 * 1e18, 2549);
 
         assertEq(_pool.lpBalance(2549, address(_lender)), 35_000 * 1e27);
 
@@ -161,7 +161,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 20_000 * 1e18, 4551);
 
         vm.expectRevert("S:RQT:INSUF_LPS");
-        _lender.removeQuoteToken(_pool, 50_000 * 1e27, 4549);
+        _lender1.removeQuoteToken(_pool, 10_000 * 1e18, 4549);
 
         // add collateral and borrow all available quote in the higher priced original 3 buckets
         _lender.addQuoteToken(_pool, 30_000 * 1e18, 4990);
@@ -172,11 +172,11 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         // should revert if removing quote token from higher price buckets would drive lup below htp
         vm.expectRevert("S:RQT:BAD_LUP");
-        _lender.removeQuoteToken(_pool, 20_000 * 1e27, 4551);
+        _lender.removeQuoteToken(_pool, 20_000 * 1e18, 4551);
 
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(4990), 10_000 * 1e18, _pool.indexToPrice(4551));
-        _lender.removeQuoteToken(_pool, 10_000 * 1e27, 4990);
+        _lender.removeQuoteToken(_pool, 10_000 * 1e18, 4990);
     }
 
     function testScaledPoolMoveQuoteToken() external {

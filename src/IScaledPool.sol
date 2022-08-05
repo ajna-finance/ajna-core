@@ -316,10 +316,10 @@ interface IScaledPool {
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
-     *  @param  lpbAmount_  The amount of LP tokens to be removed by a lender.
+     *  @param  maxAmount_  The maximum amount of quote token to be removed by a lender.
      *  @param  index_      The bucket index from which quote tokens will be removed.
      */
-    function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external;
+    function removeQuoteToken(uint256 maxAmount_, uint256 index_) external;
 
     /***************************************/
     /*** ERC20 Lender External Functions ***/
