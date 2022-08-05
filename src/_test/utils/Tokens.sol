@@ -22,6 +22,24 @@ contract CollateralTokenWith6Decimals is CollateralToken {
 
 }
 
+contract TokenWithNDecimals is ERC20 {
+
+    uint8 _decimals;
+
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) ERC20(name_, symbol_) {
+        _decimals = decimals_;
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return _decimals;
+    }
+
+    function mint(address to_, uint256 amount_) public {
+        _mint(to_, amount_);
+    }
+
+}
+
 contract NFTCollateralToken is ERC721 {
 
     /// @dev The ID of the next token that will be minted. Skips 0

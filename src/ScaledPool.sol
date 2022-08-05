@@ -121,7 +121,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         require(amount_ <= bucket.availableCollateral, "S:CC:AMT_GT_COLLAT");
 
         uint256 price        = _indexToPrice(index_);
-        uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate         = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), rate);
         require(lpRedemption <= lpBalance[index_][msg.sender], "S:CC:INSUF_LP_BAL");
 
@@ -358,7 +358,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         uint256 price = _indexToPrice(index_);
         uint256 collateralRequired = Maths.wdiv(amount_, price);
-        require(collateral().balanceOf(msg.sender) >= collateralRequired, "S:P:INSUF_COL");
+        require(collateral().balanceOf(msg.sender) * collateralScale >= collateralRequired, "S:P:INSUF_COL");
 
         _remove(index_, amount_);
         buckets[index_].availableCollateral += collateralRequired;
