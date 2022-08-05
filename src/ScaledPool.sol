@@ -15,8 +15,6 @@ import { BucketMath }     from "./libraries/BucketMath.sol";
 import { Maths }          from "./libraries/Maths.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { console } from "@std/console.sol";
-
 contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     using SafeERC20 for ERC20;
 

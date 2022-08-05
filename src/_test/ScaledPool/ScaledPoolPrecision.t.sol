@@ -207,7 +207,6 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
 
         assertEq(_pool.borrowerDebt(),      debt);
         assertEq(_pool.pledgedCollateral(), col);
-        // FIXME: assertEq(_pool.lenderDebt(),        5_004.803073967339100000 * _quotePoolPrecision);
 
         assertEq(_pool.treeSum(),                         150_000 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
@@ -222,10 +221,10 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
         _borrower.removeCollateral(_pool, unencumberedCollateral, address(0), address(0));
 
         //  FIXME: check balances
-        // assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
-        // assertEq(_collateral.balanceOf(address(_borrower)), 100 * _collateralPrecision);
-        // assertEq(_quote.balanceOf(address(_pool)),   145_000 * _quotePrecision);
-        // assertEq(_quote.balanceOf(address(_borrower)), 5_000 * _quotePrecision);
+        // assertEq(_collateral.balanceOf(address(_pool)),   1.7 * _collateralPrecision);
+        // assertEq(_collateral.balanceOf(address(_borrower)), 148.30 * _collateralPrecision);
+        assertEq(_quote.balanceOf(address(_pool)),   145_000 * _quotePrecision);
+        assertEq(_quote.balanceOf(address(_borrower)), 5_000 * _quotePrecision);
 
         // check pool state
         (debt, , col,) = _pool.borrowerInfo(address(_borrower));
