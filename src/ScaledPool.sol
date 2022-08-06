@@ -127,7 +127,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
         uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
 
-        uint256 quoteValue   = amount_ * _indexToPrice(index_);
+        uint256 quoteValue   = Maths.wmul(amount_, _indexToPrice(index_));
         lpbChange_           = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
         bucket.lpAccumulator += lpbChange_;
 
@@ -142,13 +142,18 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
     }
 
+
+    event DebugN(string where, uint256 what);
+
     function removeCollateral(uint256 amount_, uint256 index_) external override {
         Bucket storage bucket = buckets[index_];
         require(amount_ <= bucket.availableCollateral, "S:RC:AMT_GT_COLLAT");
 
-        uint256 price        = _indexToPrice(index_);
+        uint256 price = _indexToPrice(index_);
         uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), rate);
+        emit DebugN("removeCollateral lpRedemption       ", lpRedemption);
+        emit DebugN("removeCollateral lpBalance of sender", lpBalance[index_][msg.sender]);
         require(lpRedemption <= lpBalance[index_][msg.sender], "S:RC:INSUF_LP_BAL");
 
         bucket.availableCollateral     -= amount_;
@@ -314,7 +319,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
         uint256 curLup = _lup();
-        require(borrower.collateral - _encumberedCollateral(borrower.debt, curLup) >= amount_, "S:RC:NOT_ENOUGH_COLLATERAL");
+        require(borrower.collateral - _encumberedCollateral(borrower.debt, curLup) >= amount_, "S:PC:NOT_ENOUGH_COLLATERAL");
         borrower.collateral -= amount_;
 
         // update loan queue

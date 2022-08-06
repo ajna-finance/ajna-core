@@ -70,6 +70,10 @@ contract UserWithCollateralInScaledPool {
         pool_.pullCollateral(amount_, oldPrev_, newPrev_);
     }
 
+    function removeCollateral(ScaledPool pool_, uint256 amount_, uint256 index_) public {
+        pool_.removeCollateral(amount_, index_);
+    }
+
     function removeQuoteToken(ScaledPool pool_, uint256 amount_, uint256 index_) public {
         pool_.removeQuoteToken(amount_, index_);
     }
