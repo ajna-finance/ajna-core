@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { IPool } from "../../base/interfaces/IPool.sol";
+import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
 
 /**
  * @title Ajna ERC20 Pool
  */
-interface IERC20Pool is IPool {
+interface IERC20Pool is IScaledPool {
 
-    /**************/
-    /*** Events ***/
-    /**************/
+    /************************/
+    /*** ERC20Pool Events ***/
+    /************************/
 
     /**
      *  @notice Emitted when borrower locks collateral in the pool.
@@ -18,6 +18,14 @@ interface IERC20Pool is IPool {
      *  @param  amount_   Amount of collateral locked in the pool.
      */
     event AddCollateral(address indexed borrower_, uint256 amount_);
+
+    /**
+     *  @notice Emitted when borrower borrows quote tokens from pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  lup_      LUP after borrow.
+     *  @param  amount_   Amount of quote tokens borrowed from the pool.
+     */
+    event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     /**
      *  @notice Emitted when lender claims unencumbered collateral.
@@ -44,19 +52,27 @@ interface IERC20Pool is IPool {
      */
     event RemoveCollateral(address indexed borrower_, uint256 amount_);
 
-    /***********************/
-    /*** State Variables ***/
-    /***********************/
+    /**
+     *  @notice Emitted when borrower repays quote tokens to the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  lup_      LUP after repay.
+     *  @param  amount_   Amount of quote tokens repayed to the pool.
+     */
+    event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
+
+    /*********************************/
+    /*** ERC20Pool State Variables ***/
+    /*********************************/
 
     /**
-     *  @notice Mapping of borrower addresses to {BorrowerInfo} structs.
+     *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
-     *  @param  borrower_           Address of the borrower.
-     *  @return debt                Amount of debt that the borrower has, in quote token.
-     *  @return collateralDeposited Amount of collateral that the borrower has deposited, in collateral token.
-     *  @return inflatorSnapshot    Snapshot of inflator value used to track interest on loans.
+     *  @param  borrower_        Address of the borrower.
+     *  @return debt             Amount of debt that the borrower has, in quote token.
+     *  @return collateral       Amount of collateral that the borrower has deposited, in collateral token.
+     *  @return inflatorSnapshot Snapshot of inflator value used to track interest on loans.
      */
-    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateralDeposited, uint256 inflatorSnapshot);
+    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 inflatorSnapshot);
 
     /**
      *  @notice Returns the `collateralScale` state variable.
@@ -64,89 +80,95 @@ interface IERC20Pool is IPool {
      */
     function collateralScale() external view returns (uint256 collateralScale_);
 
-    /***************/
-    /*** Structs ***/
-    /***************/
-
-    /**
-     *  @notice Struct holding borrower related info per price bucket.
-     *  @param  debt                Borrower debt, WAD units.
-     *  @param  collateralDeposited Collateral deposited by borrower, WAD units.
-     *  @param  inflatorSnapshot    Current borrower inflator snapshot, RAY units.
-     */
-    struct BorrowerInfo {
-        uint256 debt;
-        uint256 collateralDeposited;
-        uint256 inflatorSnapshot;
-    }
-
-    /***********************************/
-    /*** Borrower External Functions ***/
-    /***********************************/
+    /*********************************************/
+    /*** ERC20Pool Borrower External Functions ***/
+    /*********************************************/
 
     /**
      *  @notice Called by borrowers to add collateral to the pool.
-     *  @param  amount_ The amount of collateral in deposit tokens to be added to the pool.
+     *  @param  amount_  The amount of collateral in deposit tokens to be added to the pool.
+     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
+     *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
      */
-    function addCollateral(uint256 amount_) external;
+    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
+
+    /**
+     *  @notice Called by a borrower to open or expand a position.
+     *  @dev    Can only be called if quote tokens have already been added to the pool.
+     *  @param  amount_     The amount of quote token to borrow.
+     *  @param  limitIndex_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
+     *  @param  oldPrev_    Previous borrower that came before placed loan (old)
+     *  @param  newPrev_    Previous borrower that now comes before placed loan (new)
+     */
+    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by borrowers to remove an amount of collateral.
      *  @param  amount_ The amount of collateral in deposit tokens to be removed from a position.
+     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
+     *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
      */
-    function removeCollateral(uint256 amount_) external;
-
-    /***********************************/
-    /*** Borrower View Functions ***/
-    /***********************************/
+    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /**
-     *  @notice Returns a tuple of information about a given borrower.
-     *  @param  borrower_                 Address of the borrower.
-     *  @return debt_                     Amount of debt that the borrower has, in quote token.
-     *  @return pendingDebt_              Amount of unaccrued debt that the borrower has, in quote token.
-     *  @return collateralDeposited_      Amount of collateral that tne borrower has deposited, in collateral token.
-     *  @return collateralEncumbered_     Amount of collateral that the borrower has encumbered, in collateral token.
-     *  @return collateralization_        Collateral ratio of the borrower's pool position.
-     *  @return borrowerInflatorSnapshot_ Snapshot of the borrower's inflator value.
-     *  @return inflatorSnapshot_         Snapshot of the pool's inflator value.
+     *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
+     *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
+     *  @param  oldPrev_   Previous borrower that came before placed loan (old)
+     *  @param  newPrev_   Previous borrower that now comes before placed loan (new)
      */
-    function getBorrowerInfo(address borrower_) external view returns (
-        uint256 debt_,
-        uint256 pendingDebt_,
-        uint256 collateralDeposited_,
-        uint256 collateralEncumbered_,
-        uint256 collateralization_,
-        uint256 borrowerInflatorSnapshot_,
-        uint256 inflatorSnapshot_
-    );
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external;
 
-    /*********************************/
-    /*** Lender External Functions ***/
-    /*********************************/
+    /*****************************/
+    /*** Initialize Functions ***/
+    /*****************************/
+
+    /**
+     *  @notice Initializes a new pool, setting initial state variables.
+     *  @param  interestRate_ Default interest rate of the pool.
+     */
+    function initialize(uint256 interestRate_) external;
+
+    /*******************************************/
+    /*** ERC20Pool Lender External Functions ***/
+    /*******************************************/
 
     /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
-     *  @param  amount_    The amount of unencumbered collateral to claim.
-     *  @param  price_     The bucket from which unencumbered collateral will be claimed.
-     *  @return lpTokens_  The actual amount of lpTokens claimed.
+     *  @param  amount_ The amount of unencumbered collateral to claim.
+     *  @param  index_  The index of the bucket from which unencumbered collateral will be claimed.
      */
-    function claimCollateral(uint256 amount_, uint256 price_) external returns (uint256 lpTokens_);
+    function claimCollateral(uint256 amount_, uint256 index_) external;
 
-    /*******************************/
-    /*** Pool External Functions ***/
-    /*******************************/
+    /************************************/
+    /*** ERC20Pool External Functions ***/
+    /************************************/
 
     /**
-     *  @notice Exchanges collateral for quote token.
-     *  @param  amount_ WAD The amount of quote token to purchase.
-     *  @param  price_  The purchasing price of quote token.
+     *  @notice Purchase amount of quote token from specified bucket price.
+     *  @param  amount_ Amount of quote tokens to purchase.
+     *  @param  index_  The bucket index from which quote tokens will be purchased.
      */
-    function purchaseBid(uint256 amount_, uint256 price_) external;
+    function purchaseQuote(uint256 amount_, uint256 index_) external;
+
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
 
     /**
-     *  @notice Returns the address of the pool's collateral token
+     *  @notice Get a borrower info struct for a given address.
+     *  @param  borrower_         The borrower address.
+     *  @return debt_             Borrower accrued debt (WAD)
+     *  @return pendingDebt_      Borrower current debt, accrued and pending accrual (WAD)
+     *  @return collateral_       Deposited collateral including encumbered (WAD)
+     *  @return inflatorSnapshot_ Inflator used to calculate pending interest (WAD)
      */
-    function collateralTokenAddress() external pure returns (address);
-
+    function borrowerInfo(address borrower_)
+        external
+        view
+        returns (
+            uint256 debt_,
+            uint256 pendingDebt_,
+            uint256 collateral_,
+            uint256 inflatorSnapshot_
+        );
 }

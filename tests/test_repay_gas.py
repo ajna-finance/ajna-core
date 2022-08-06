@@ -1,9 +1,5 @@
-import brownie
-import pytest
 import inspect
 from conftest import ZRO_ADD
-from brownie import Contract
-from multiprocessing import pool
 
 def test_repay_gas(
     lenders,

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ScaledPool }        from "../../ScaledPool.sol";
-import { ScaledPoolFactory } from "../../ScaledPoolFactory.sol";
+import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { BucketMath }        from "../../libraries/BucketMath.sol";
 import { Maths }             from "../../libraries/Maths.sol";
 
-import { DSTestPlus }                                    from "../utils/DSTestPlus.sol";
-import { TokenWithNDecimals }                            from "../utils/Tokens.sol";
-import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
+import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
+import { TokenWithNDecimals }                     from "../utils/Tokens.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
 
-contract ScaledPoolPrecisionTest is DSTestPlus {
+contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
 
     uint256 internal _lpPoolPrecision         = 10**27;
     uint256 internal _quotePoolPrecision      = 10**18;
@@ -20,28 +20,28 @@ contract ScaledPoolPrecisionTest is DSTestPlus {
     uint256 internal _collateralPrecision;
     uint256 internal _quotePrecision;
 
-    address                        internal _poolAddress;
-    TokenWithNDecimals             internal _collateral;
-    ScaledPool                     internal _pool;
-    TokenWithNDecimals             internal _quote;
-    UserWithCollateralInScaledPool internal _borrower;
-    UserWithCollateralInScaledPool internal _borrower2;
-    UserWithCollateralInScaledPool internal _borrower3;
-    UserWithQuoteTokenInScaledPool internal _lender;
-    UserWithQuoteTokenInScaledPool internal _bidder;
+    address            internal _poolAddress;
+    TokenWithNDecimals internal _collateral;
+    ERC20Pool         internal _pool;
+    TokenWithNDecimals internal _quote;
+    UserWithCollateral internal _borrower;
+    UserWithCollateral internal _borrower2;
+    UserWithCollateral internal _borrower3;
+    UserWithQuoteToken internal _lender;
+    UserWithQuoteToken internal _bidder;
 
     function init(uint256 collateralPrecisionDecimals_, uint256 quotePrecisionDecimals_) internal {
         _collateral          = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
         _quote               = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
 
-        _poolAddress = new ScaledPoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _pool        = ScaledPool(_poolAddress);
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        _pool        = ERC20Pool(_poolAddress);
 
-        _borrower    = new UserWithCollateralInScaledPool();
-        _borrower2   = new UserWithCollateralInScaledPool();
-        _borrower3   = new UserWithCollateralInScaledPool();
-        _bidder      = new UserWithQuoteTokenInScaledPool();
-        _lender      = new UserWithQuoteTokenInScaledPool();
+        _borrower    = new UserWithCollateral();
+        _borrower2   = new UserWithCollateral();
+        _borrower3   = new UserWithCollateral();
+        _bidder      = new UserWithQuoteToken();
+        _lender      = new UserWithQuoteToken();
 
         _collateral.mint(address(_bidder), 150 * _collateralPrecision);
         _collateral.mint(address(_borrower), 150 * _collateralPrecision);

@@ -1,38 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ScaledPool }        from "../../ScaledPool.sol";
-import { ScaledPoolFactory } from "../../ScaledPoolFactory.sol";
+import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { BucketMath }        from "../../libraries/BucketMath.sol";
+import { BucketMath } from "../../libraries/BucketMath.sol";
 
 import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
-import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
-contract ScaledQuoteTokenTest is DSTestPlus {
+contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
-    address                        internal _poolAddress;
-    CollateralToken                internal _collateral;
-    ScaledPool                     internal _pool;
-    QuoteToken                     internal _quote;
-    UserWithCollateralInScaledPool internal _borrower;
-    UserWithCollateralInScaledPool internal _borrower2;
-    UserWithQuoteTokenInScaledPool internal _lender;
-    UserWithQuoteTokenInScaledPool internal _lender1;
+    address            internal _poolAddress;
+    CollateralToken    internal _collateral;
+    ERC20Pool          internal _pool;
+    QuoteToken         internal _quote;
+    UserWithCollateral internal _borrower;
+    UserWithCollateral internal _borrower2;
+    UserWithQuoteToken internal _lender;
+    UserWithQuoteToken internal _lender1;
 
     function setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
-        _poolAddress = new ScaledPoolFactory().deployPool(address(_collateral), address(_quote),0.05 * 10**18 );
-        _pool        = ScaledPool(_poolAddress);
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        _pool        = ERC20Pool(_poolAddress);
 
-        _borrower   = new UserWithCollateralInScaledPool();
-        _borrower2  = new UserWithCollateralInScaledPool();
-        _lender     = new UserWithQuoteTokenInScaledPool();
-        _lender1    = new UserWithQuoteTokenInScaledPool();
+        _borrower   = new UserWithCollateral();
+        _borrower2  = new UserWithCollateral();
+        _lender     = new UserWithQuoteToken();
+        _lender1    = new UserWithQuoteToken();
 
         _collateral.mint(address(_borrower), 100 * 1e18);
         _collateral.mint(address(_borrower2), 200 * 1e18);
