@@ -18,7 +18,7 @@ contract AjnaTokenTest is DSTestPlus {
     }
 
     // TODO: figure out why GitHub action is unhappy with this
-    function skip_invariantMetadata() external {
+    function invariantMetadata() external {
         assertEq(_token.name(),     "Ajna");
         assertEq(_token.symbol(),   "AJNA");
         assertEq(_token.decimals(), 18);

@@ -373,6 +373,8 @@ interface IScaledPool {
 
     /**
      *  @notice Returns the Highest Threshold Price (HTP).
+     *  @dev    If no loans in queue returns 0
+     *  @dev    Value is scaled by current pool inflator snapshot
      *  @return htp_ The price value of the current HTP bucket, in WAD units.
      */
     function htp() external view returns (uint256 htp_);

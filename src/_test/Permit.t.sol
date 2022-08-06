@@ -164,7 +164,7 @@ contract PermitTest is DSTestPlus {
         );
 
         // it should block an unapproved spender from interacting with the NFT
-        vm.expectRevert("ERC721: transfer caller is not owner nor approved");
+        vm.expectRevert("ERC721: caller is not token owner or approved");
         vm.prank(unapprovedSpender);
         _positionManager.safeTransferFromWithPermit(owner, newOwner, spender, tokenId, deadline, v, r, s);
 
