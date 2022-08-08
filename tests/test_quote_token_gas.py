@@ -1,5 +1,4 @@
 import inspect
-import pytest
 from decimal import *
 from conftest import ZRO_ADD
 
@@ -49,7 +48,6 @@ def test_quote_deposit_gas_above_hdp(
                     f"Transaction: {i} | Gas used: {test_utils.get_usage(txes[i].gas_used)}"
                 )
 
-@pytest.mark.skip
 def test_quote_removal_from_lup_with_reallocation(
     lenders,
     borrowers,
@@ -87,7 +85,6 @@ def test_quote_removal_from_lup_with_reallocation(
                 f"Remove quote token from lup (reallocate to one bucket)           - {test_utils.get_usage(tx.gas_used)}"
             )
 
-@pytest.mark.skip
 def test_quote_removal_below_lup(
     lenders,
     borrowers,

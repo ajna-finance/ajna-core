@@ -132,24 +132,21 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, lpbAmount_, newLup);
     }
 
-    event DebugN(string where, uint256 what);
-
     function removeQuoteToken(uint256 maxAmount_, uint256 index_) external override {
+        // get exchange rate prior to accumulating interest
+        Bucket storage bucket = buckets[index_];
+        uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+
         // scale the tree, accumulating interest owed to lenders
         uint256 curDebt = _accruePoolInterest();
 
         // determine amount of quote token to remove
         uint256 availableQuoteToken = _rangeSum(index_, index_);
         uint256 amount = Maths.min(maxAmount_, availableQuoteToken);
-        emit DebugN("removeQuoteToken availableQuoteToken", availableQuoteToken);
 
         // calculate amount of LP required to remove it
-        Bucket storage bucket = buckets[index_];
-        uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs = lpBalance[index_][msg.sender];
         uint256 lpbAmount = Maths.wmul(amount, rate);
-        emit DebugN("removeQuoteToken availableLPs (has)", availableLPs);
-        emit DebugN("removeQuoteToken lpbAmount (needs)", lpbAmount);
         require(availableLPs != 0 && lpbAmount <= availableLPs, "S:RQT:INSUF_LPS");
 
         // update bucket accounting

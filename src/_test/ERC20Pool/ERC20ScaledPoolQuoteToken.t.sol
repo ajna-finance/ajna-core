@@ -179,11 +179,15 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         _lender.removeQuoteToken(_pool, 10_000 * 1e18, 4990);
     }
 
-    function skip_testScaledPoolRemoveQuoteTokenWithDebt() external {
+    function testScaledPoolRemoveQuoteTokenWithDebt() external {
         // lender adds initial quote token
         _lender.addQuoteToken(_pool, 3_400 * 1e18, 1663);
         _lender.addQuoteToken(_pool, 3_400 * 1e18, 1606);
+        uint256 lpb_before = _pool.lpBalance(1663, address(_lender));
+        uint256 exchangeRateBefore = _pool.exchangeRate(1663);
         skip(3600);
+        assertEq(lpb_before, _pool.lpBalance(1663, address(_lender)));
+        assertEq(exchangeRateBefore, _pool.exchangeRate(1663));
 
         // borrower takes a loan of 3000 quote token
         _collateral.mint(address(_borrower), 100 * 1e18);
@@ -193,10 +197,16 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertGt(limitPrice, 1663);
         _borrower.borrow(_pool, 3_000 * 1e18, limitPrice, address(0), address(0));
         skip(3600);
+        assertEq(lpb_before, _pool.lpBalance(1663, address(_lender)));
+        assertEq(exchangeRateBefore, _pool.exchangeRate(1663));
 
         // lender removes 3_400 quote token
+        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1663), 3_400 * 1e18, _pool.indexToPrice(1663));
         _lender.removeQuoteToken(_pool, 3_400 * 1e18, 1663);
     }
+
+    // TODO: Test similar to above, but with multiple lenders.
+    //      Ensure first lender may remove their liquidity after another interest accumulation occurs.
 
     function testScaledPoolMoveQuoteToken() external {
         _lender.addQuoteToken(_pool, 40_000 * 1e18, 2549);
