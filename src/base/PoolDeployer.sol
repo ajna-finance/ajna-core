@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.14;
 
 abstract contract PoolDeployer {
@@ -33,13 +32,5 @@ abstract contract PoolDeployer {
         require(deployedPools[subsetHash_][collateral_][quote_] == address(0), "PF:DP:POOL_EXISTS");
         require(MIN_RATE <= interestRate_ && interestRate_ <= MAX_RATE,        "PF:DP:INVALID_RATE");
         _;
-    }
-
-    /*********************************/
-    /*** Pool Creation Functions ***/
-    /*********************************/
-
-    function getNFTSubsetHash(uint256[] memory tokenIds_) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(tokenIds_));
     }
 }

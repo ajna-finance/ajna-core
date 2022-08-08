@@ -150,18 +150,6 @@ interface IScaledPool {
     /***************/
 
     /**
-     *  @notice Struct holding borrower related info.
-     *  @param  debt             Borrower debt, WAD units.
-     *  @param  collateral       Collateral deposited by borrower, WAD units.
-     *  @param  inflatorSnapshot Current borrower inflator snapshot, WAD units.
-     */
-    struct Borrower {
-        uint256 debt;                // [WAD]
-        uint256 collateral;          // [WAD]
-        uint256 inflatorSnapshot;    // [WAD]
-    }
-
-    /**
      *  @notice struct holding bucket info
      *  @param lpAccumulator       Bucket LP accumulator, RAY
      *  @param availableCollateral Available collateral tokens deposited in the bucket, WAD
