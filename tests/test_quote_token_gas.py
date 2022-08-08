@@ -1,9 +1,6 @@
-import brownie
-import pytest
 import inspect
 from decimal import *
 from conftest import ZRO_ADD
-from brownie import Contract
 
 def test_quote_deposit_gas_below_hdp(
     lenders,
@@ -76,12 +73,9 @@ def test_quote_removal_from_lup_with_reallocation(
         scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
         scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
-        lp_tokens = scaled_pool.lpBalance(1_663, lender)
-
         # lender removes 3_400 DAI
-        tx = scaled_pool.removeQuoteToken(
-            lp_tokens, 1_663, {"from": lender}
-        )
+        # FIXME: removing all quote token from bucket reverts with S:RQT:INSUF_LPS
+        tx = scaled_pool.removeQuoteToken(3_400 * 10**18, 1_663, {"from": lender})
 
         with capsys.disabled():
             print("\n==================================")
@@ -119,10 +113,8 @@ def test_quote_removal_below_lup(
         scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
         scaled_pool.borrow(3_000 * 10**18, 4_000 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrower})
 
-        lp_tokens = scaled_pool.lpBalance(1_663, lender)
-
         # lender removes 5_000 DAI
-        tx = scaled_pool.removeQuoteToken(lp_tokens, 1_606, {"from": lender})
+        tx = scaled_pool.removeQuoteToken(5_000 * 10**18, 1_606, {"from": lender})
 
         with capsys.disabled():
             print("\n==================================")

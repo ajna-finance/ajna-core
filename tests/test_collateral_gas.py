@@ -1,8 +1,6 @@
-import brownie
 import pytest
 import inspect
 from conftest import ZRO_ADD
-from brownie import Contract
 
 def test_add_remove_collateral_gas(
     lenders,

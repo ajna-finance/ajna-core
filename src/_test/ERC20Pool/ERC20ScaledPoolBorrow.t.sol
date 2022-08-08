@@ -1,38 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ScaledPool }        from "../../ScaledPool.sol";
-import { ScaledPoolFactory } from "../../ScaledPoolFactory.sol";
+import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { BucketMath }        from "../../libraries/BucketMath.sol";
+import { BucketMath } from "../../libraries/BucketMath.sol";
 
 import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
-import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
-contract ScaledBorrowTest is DSTestPlus {
+contract ERC20ScaledBorrowTest is DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
-    address                        internal _poolAddress;
-    CollateralToken                internal _collateral;
-    ScaledPool                     internal _pool;
-    QuoteToken                     internal _quote;
-    UserWithCollateralInScaledPool internal _borrower;
-    UserWithCollateralInScaledPool internal _borrower2;
-    UserWithQuoteTokenInScaledPool internal _lender;
-    UserWithQuoteTokenInScaledPool internal _lender1;
+    address            internal _poolAddress;
+    CollateralToken    internal _collateral;
+    ERC20Pool          internal _pool;
+    QuoteToken         internal _quote;
+    UserWithCollateral internal _borrower;
+    UserWithCollateral internal _borrower2;
+    UserWithQuoteToken internal _lender;
+    UserWithQuoteToken internal _lender1;
 
     function setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
-        _poolAddress = new ScaledPoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _pool        = ScaledPool(_poolAddress);
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        _pool        = ERC20Pool(_poolAddress);
 
-        _borrower   = new UserWithCollateralInScaledPool();
-        _borrower2  = new UserWithCollateralInScaledPool();
-        _lender     = new UserWithQuoteTokenInScaledPool();
-        _lender1    = new UserWithQuoteTokenInScaledPool();
+        _borrower   = new UserWithCollateral();
+        _borrower2  = new UserWithCollateral();
+        _lender     = new UserWithQuoteToken();
+        _lender1    = new UserWithQuoteToken();
 
         _collateral.mint(address(_borrower), 100 * 1e18);
         _collateral.mint(address(_borrower2), 200 * 1e18);
@@ -357,7 +357,7 @@ contract ScaledBorrowTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2551);
 
-        assertEq(_pool.getHighestThresholdPrice(), 0);
+        assertEq(_pool.htp(), 0);
         assertEq(address(_pool.loanQueueHead()), address(0));
 
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
@@ -369,7 +369,7 @@ contract ScaledBorrowTest is DSTestPlus {
         _borrower.pledgeCollateral(_pool, 50 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 500 * 1e18, 3000, address(0), address(0));
 
-        assertGt(_pool.getHighestThresholdPrice(), 0);
+        assertGt(_pool.htp(), 0);
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
 
     }
@@ -385,16 +385,16 @@ contract ScaledBorrowTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 2551);
 
-        assertEq(_pool.getHighestThresholdPrice(), 0);
+        assertEq(_pool.htp(), 0);
 
         // borrower 1 borrows 500 quote from the pool
         _borrower.pledgeCollateral(_pool, 50 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 500 * 1e18, 2551, address(0), address(0));
 
-        assertGt(_pool.getHighestThresholdPrice(), 0);
+        assertGt(_pool.htp(), 0);
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
 
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(address(_borrower));
+        (, uint256 pendingDebt, , ) = _pool.borrowerInfo(address(_borrower));
         _quote.mint(address(_borrower), 10_000 * 1e18);
 
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
@@ -403,7 +403,7 @@ contract ScaledBorrowTest is DSTestPlus {
 
         // should be able to pay back all pendingDebt
         _borrower.repay(_pool, pendingDebt, address(0), address(0));
-        assertEq(_pool.getHighestThresholdPrice(), 0);
+        assertEq(_pool.htp(), 0);
         assertEq(address(_pool.loanQueueHead()), address(0));
     }
 

@@ -7,16 +7,17 @@ import { Clone } from "@clones/Clone.sol";
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
+import { IScaledPool } from "./interfaces/IScaledPool.sol";
+
 import { FenwickTree } from "./FenwickTree.sol";
-import { IScaledPool } from "./IScaledPool.sol";
 import { Queue }       from "./Queue.sol";
 
-import { BucketMath }     from "./libraries/BucketMath.sol";
-import { Maths }          from "./libraries/Maths.sol";
+import { BucketMath }     from "../libraries/BucketMath.sol";
+import { Maths }          from "../libraries/Maths.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
-    using SafeERC20 for ERC20;
+abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
+    using SafeERC20      for ERC20;
 
     int256  public constant INDEX_OFFSET = 3232;
 
@@ -45,10 +46,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     uint256 public override borrowerDebt;
 
     uint256 public override totalBorrowers;
-
-    uint256 public override collateralScale;
     uint256 public override quoteTokenScale;
-
     uint256 public override pledgedCollateral;
 
     uint256 public override debtEma;   // [WAD]
@@ -65,30 +63,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
      */
     mapping(uint256 => mapping(address => uint256)) public override lpBalance;
 
-    // borrowers book: borrower address -> BorrowerInfo
-    mapping(address => Borrower) public override borrowers;
-
     uint256 internal _poolInitializations = 0;
-
-    /*****************************/
-    /*** Inititalize Functions ***/
-    /*****************************/
-
-    function initialize(uint256 rate_) external {
-        require(_poolInitializations == 0, "P:INITIALIZED");
-        collateralScale = 10**(18 - collateral().decimals());
-        quoteTokenScale = 10**(18 - quoteToken().decimals());
-
-        inflatorSnapshot           = 10**18;
-        lastInflatorSnapshotUpdate = block.timestamp;
-        lenderInterestFactor       = 0.9 * 10**18;
-        interestRate               = rate_;
-        interestRateUpdate         = block.timestamp;
-        minFee                     = 0.0005 * 10**18;
-
-        // increment initializations count to ensure these values can't be updated
-        _poolInitializations += 1;
-    }
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -116,52 +91,7 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
     }
 
-    function addCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
-        // TODO: Unit testing
-        uint256 curDebt = _accruePoolInterest();
-
-        require(collateral().balanceOf(msg.sender) >= amount_, "S:AC:INSUF_COL");
-
-        Bucket storage bucket = buckets[index_];
-        // Calculate exchange rate before new collateral has been accounted for.
-        // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
-        uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
-
-        uint256 quoteValue   = amount_ * _indexToPrice(index_);
-        lpbChange_           = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
-        bucket.lpAccumulator += lpbChange_;
-
-        lpBalance[index_][msg.sender] += lpbChange_;
-
-        buckets[index_].availableCollateral += amount_;
-
-        _updateInterestRate(curDebt, _lup());
-
-        // move required collateral from sender to pool
-        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
-        emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
-    }
-
-    function removeCollateral(uint256 amount_, uint256 index_) external override {
-        Bucket storage bucket = buckets[index_];
-        require(amount_ <= bucket.availableCollateral, "S:RC:AMT_GT_COLLAT");
-
-        uint256 price        = _indexToPrice(index_);
-        uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), rate);
-        require(lpRedemption <= lpBalance[index_][msg.sender], "S:RC:INSUF_LP_BAL");
-
-        bucket.availableCollateral     -= amount_;
-        bucket.lpAccumulator           -= lpRedemption;
-        lpBalance[index_][msg.sender] -= lpRedemption;
-
-        _updateInterestRate(borrowerDebt, _lup());
-
-        // move claimed collateral from pool to claimer
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-        emit RemoveCollateral(msg.sender, price, amount_, lpRedemption);
-    }
-
+    // TODO: Take maxAmount_ to move instead of lpbAmount_
     function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external override {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
@@ -200,25 +130,30 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, lpbAmount_, newLup);
-
     }
 
-    function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external override {
-        uint256 availableLPs = lpBalance[index_][msg.sender];
-        require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
+    function removeQuoteToken(uint256 maxAmount_, uint256 index_) external override {
+        // get exchange rate prior to accumulating interest
+        Bucket storage bucket = buckets[index_];
+        uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
 
+        // scale the tree, accumulating interest owed to lenders
         uint256 curDebt = _accruePoolInterest();
 
+        // determine amount of quote token to remove
+        uint256 availableQuoteToken = _rangeSum(index_, index_);
+        uint256 amount = Maths.min(maxAmount_, availableQuoteToken);
+
+        // calculate amount of LP required to remove it
+        uint256 availableLPs = lpBalance[index_][msg.sender];
+        uint256 lpbAmount = Maths.wmul(amount, rate);
+        require(availableLPs != 0 && lpbAmount <= availableLPs, "S:RQT:INSUF_LPS");
+
         // update bucket accounting
-        Bucket storage bucket = buckets[index_];
-        uint256 rate          = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 amount        = Maths.rmul(lpbAmount_, rate);
-        bucket.lpAccumulator  -= lpbAmount_;
+        bucket.lpAccumulator  -= lpbAmount;
 
         // update lender accounting
-        lpBalance[index_][msg.sender] -= lpbAmount_;
-
-        amount = Maths.rayToWad(amount);
+        lpBalance[index_][msg.sender] -= lpbAmount;
         _remove(index_, amount); // update FenwickTree
 
         // update pool accounting
@@ -229,148 +164,6 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
-    }
-
-    /***********************************/
-    /*** Borrower External Functions ***/
-    /***********************************/
-
-    function pledgeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
-        uint256 curDebt = _accruePoolInterest();
-
-        // borrower accounting
-        Borrower memory borrower = borrowers[msg.sender];
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        borrower.collateral += amount_;
-
-        // update loan queue
-        uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
-
-        borrowers[msg.sender] = borrower;
-
-        // update pool state
-        pledgedCollateral += amount_;
-        _updateInterestRate(curDebt, _lup());
-
-        // move collateral from sender to pool
-        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
-        emit PledgeCollateral(msg.sender, amount_);
-    }
-
-    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
-
-        uint256 lupId = _lupIndex(amount_);
-        require(lupId <= limitIndex_, "S:B:LIMIT_REACHED"); // TODO: add check that limitIndex is <= MAX_INDEX
-
-        uint256 curDebt = _accruePoolInterest();
-
-        Borrower memory borrower = borrowers[msg.sender];
-        uint256 borrowersCount = totalBorrowers;
-        if (borrowersCount != 0) require(borrower.debt + amount_ > _poolMinDebtAmount(curDebt), "S:B:AMT_LT_AVG_DEBT");
-
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
-
-        uint256 feeRate = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee) + Maths.WAD;
-        uint256 debt    = Maths.wmul(amount_, feeRate);
-        borrower.debt   += debt;
-
-        uint256 newLup = _indexToPrice(lupId);
-        require(_borrowerCollateralization(borrower.debt, borrower.collateral, newLup) >= Maths.WAD, "S:B:BUNDER_COLLAT");
-
-        require(
-            _poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) >= Maths.WAD,
-            "S:B:PUNDER_COLLAT"
-        );
-        curDebt += debt;
-
-        // update actor accounting
-        borrowerDebt = curDebt;
-        lenderDebt   += amount_;
-
-        // update loan queue
-        uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
-        borrowers[msg.sender] = borrower;
-
-        _updateInterestRate(curDebt, newLup);
-
-        // move borrowed amount from pool to sender
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
-        emit Borrow(msg.sender, newLup, amount_);
-    }
-
-    function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
-        uint256 curDebt = _accruePoolInterest();
-
-        // borrower accounting
-        Borrower storage borrower = borrowers[msg.sender];
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-
-        uint256 curLup = _lup();
-        require(borrower.collateral - _encumberedCollateral(borrower.debt, curLup) >= amount_, "S:RC:NOT_ENOUGH_COLLATERAL");
-        borrower.collateral -= amount_;
-
-        // update loan queue
-        uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
-
-        // update pool state
-        pledgedCollateral -= amount_;
-        _updateInterestRate(curDebt, curLup);
-
-        // move collateral from pool to sender
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-        emit PullCollateral(msg.sender, amount_);
-    }
-
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
-        require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
-
-        Borrower memory borrower = borrowers[msg.sender];
-        require(borrower.debt != 0, "S:R:NO_DEBT");
-
-        uint256 curDebt = _accruePoolInterest();
-
-        // update borrower accounting
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        uint256 amount = Maths.min(borrower.debt, maxAmount_);
-        borrower.debt -= amount;
-
-        // update lender accounting
-        uint256 curLenderDebt = lenderDebt;
-        curLenderDebt -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curDebt), amount));
-
-        curDebt       -= amount;
-
-        // update loan queue
-        uint256 borrowersCount = totalBorrowers;
-        if (borrower.debt == 0) {
-            totalBorrowers = borrowersCount - 1;
-            _removeLoanQueue(msg.sender, oldPrev_);
-        } else {
-            if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
-            uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-            _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
-        }
-        borrowers[msg.sender] = borrower;
-
-        // update pool state
-        if (curDebt != 0) {
-            borrowerDebt = curDebt;
-            lenderDebt   = curLenderDebt;
-        } else {
-            borrowerDebt = 0;
-            lenderDebt   = 0;
-        }
-
-        uint256 newLup = _lup();
-        _updateInterestRate(curDebt, newLup);
-
-        // move amount to repay from sender to pool
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
-        emit Repay(msg.sender, newLup, amount);
     }
 
     /**************************/
@@ -581,17 +374,6 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         );
     }
 
-    function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
-        uint256 pending_debt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
-
-        return (
-            borrowers[borrower_].debt,            // accrued debt (WAD)
-            pending_debt,                         // current debt, accrued and pending accrual (WAD)
-            borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
-            borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
-        );
-    }
-
     function pendingInflator() external view override returns (uint256) {
         return _pendingInflator();
     }
@@ -612,13 +394,6 @@ contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     /************************/
     /*** Helper Functions ***/
     /************************/
-
-    /**
-     *  @dev Pure function used to facilitate accessing token via clone state.
-     */
-    function collateral() public pure returns (ERC20) {
-        return ERC20(_getArgAddress(0));
-    }
 
     /**
      *  @dev Pure function used to facilitate accessing token via clone state.

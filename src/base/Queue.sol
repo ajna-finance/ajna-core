@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { IQueue } from "./IQueue.sol";
+import { IQueue } from "./interfaces/IQueue.sol";
 
 abstract contract Queue is IQueue {
 
@@ -134,13 +134,6 @@ abstract contract Queue is IQueue {
     /**************************/
     /*** External Functions ***/
     /**************************/
-
-    function getHighestThresholdPrice() external view override returns (uint256 thresholdPrice){
-        if (loanQueueHead != address(0)) {
-            return loans[loanQueueHead].thresholdPrice;
-        }
-        return 0;
-    }
 
     function loanInfo(address borrower_) external view returns (uint256, address) {
         return (loans[borrower_].thresholdPrice, loans[borrower_].next);

@@ -1,38 +1,38 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ScaledPool }        from "../../ScaledPool.sol";
-import { ScaledPoolFactory } from "../../ScaledPoolFactory.sol";
+import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { BucketMath }        from "../../libraries/BucketMath.sol";
+import { BucketMath } from "../../libraries/BucketMath.sol";
 
 import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
-import { UserWithCollateralInScaledPool, UserWithQuoteTokenInScaledPool } from "../utils/Users.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
-contract ScaledQuoteTokenTest is DSTestPlus {
+contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
-    address                        internal _poolAddress;
-    CollateralToken                internal _collateral;
-    ScaledPool                     internal _pool;
-    QuoteToken                     internal _quote;
-    UserWithCollateralInScaledPool internal _borrower;
-    UserWithCollateralInScaledPool internal _borrower2;
-    UserWithQuoteTokenInScaledPool internal _lender;
-    UserWithQuoteTokenInScaledPool internal _lender1;
+    address            internal _poolAddress;
+    CollateralToken    internal _collateral;
+    ERC20Pool          internal _pool;
+    QuoteToken         internal _quote;
+    UserWithCollateral internal _borrower;
+    UserWithCollateral internal _borrower2;
+    UserWithQuoteToken internal _lender;
+    UserWithQuoteToken internal _lender1;
 
     function setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
-        _poolAddress = new ScaledPoolFactory().deployPool(address(_collateral), address(_quote),0.05 * 10**18 );
-        _pool        = ScaledPool(_poolAddress);
+        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        _pool        = ERC20Pool(_poolAddress);
 
-        _borrower   = new UserWithCollateralInScaledPool();
-        _borrower2  = new UserWithCollateralInScaledPool();
-        _lender     = new UserWithQuoteTokenInScaledPool();
-        _lender1    = new UserWithQuoteTokenInScaledPool();
+        _borrower   = new UserWithCollateral();
+        _borrower2  = new UserWithCollateral();
+        _lender     = new UserWithQuoteToken();
+        _lender1    = new UserWithQuoteToken();
 
         _collateral.mint(address(_borrower), 100 * 1e18);
         _collateral.mint(address(_borrower2), 200 * 1e18);
@@ -140,7 +140,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 5_000 * 1e18, BucketMath.MAX_PRICE);
-        _lender.removeQuoteToken(_pool, 5_000 * 1e27, 2549);
+        _lender.removeQuoteToken(_pool, 5_000 * 1e18, 2549);
 
         assertEq(_pool.lpBalance(2549, address(_lender)), 35_000 * 1e27);
 
@@ -161,7 +161,7 @@ contract ScaledQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 20_000 * 1e18, 4551);
 
         vm.expectRevert("S:RQT:INSUF_LPS");
-        _lender.removeQuoteToken(_pool, 50_000 * 1e27, 4549);
+        _lender1.removeQuoteToken(_pool, 10_000 * 1e18, 4549);
 
         // add collateral and borrow all available quote in the higher priced original 3 buckets
         _lender.addQuoteToken(_pool, 30_000 * 1e18, 4990);
@@ -172,12 +172,41 @@ contract ScaledQuoteTokenTest is DSTestPlus {
 
         // should revert if removing quote token from higher price buckets would drive lup below htp
         vm.expectRevert("S:RQT:BAD_LUP");
-        _lender.removeQuoteToken(_pool, 20_000 * 1e27, 4551);
+        _lender.removeQuoteToken(_pool, 20_000 * 1e18, 4551);
 
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(4990), 10_000 * 1e18, _pool.indexToPrice(4551));
-        _lender.removeQuoteToken(_pool, 10_000 * 1e27, 4990);
+        _lender.removeQuoteToken(_pool, 10_000 * 1e18, 4990);
     }
+
+    function testScaledPoolRemoveQuoteTokenWithDebt() external {
+        // lender adds initial quote token
+        _lender.addQuoteToken(_pool, 3_400 * 1e18, 1663);
+        _lender.addQuoteToken(_pool, 3_400 * 1e18, 1606);
+        uint256 lpb_before = _pool.lpBalance(1663, address(_lender));
+        uint256 exchangeRateBefore = _pool.exchangeRate(1663);
+        skip(3600);
+        assertEq(lpb_before, _pool.lpBalance(1663, address(_lender)));
+        assertEq(exchangeRateBefore, _pool.exchangeRate(1663));
+
+        // borrower takes a loan of 3000 quote token
+        _collateral.mint(address(_borrower), 100 * 1e18);
+        _borrower.approveToken(_collateral, address(_pool), 100 * 1e18);
+        _borrower.pledgeCollateral(_pool, 100 * 1e18, address(0), address(0));
+        uint256 limitPrice = _pool.priceToIndex(4_000 * 1e18);
+        assertGt(limitPrice, 1663);
+        _borrower.borrow(_pool, 3_000 * 1e18, limitPrice, address(0), address(0));
+        skip(3600);
+        assertEq(lpb_before, _pool.lpBalance(1663, address(_lender)));
+        assertEq(exchangeRateBefore, _pool.exchangeRate(1663));
+
+        // lender removes 3_400 quote token
+        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1663), 3_400 * 1e18, _pool.indexToPrice(1663));
+        _lender.removeQuoteToken(_pool, 3_400 * 1e18, 1663);
+    }
+
+    // TODO: Test similar to above, but with multiple lenders.
+    //      Ensure first lender may remove their liquidity after another interest accumulation occurs.
 
     function testScaledPoolMoveQuoteToken() external {
         _lender.addQuoteToken(_pool, 40_000 * 1e18, 2549);
