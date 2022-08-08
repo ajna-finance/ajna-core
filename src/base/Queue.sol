@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { IQueue } from "./IQueue.sol";
+import { IQueue } from "./interfaces/IQueue.sol";
 
 abstract contract Queue is IQueue {
 

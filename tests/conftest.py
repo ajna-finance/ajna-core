@@ -1,6 +1,6 @@
 import pytest
 from sdk import *
-from brownie import test, network, Contract, PositionManager, ScaledPoolFactory, ScaledPool
+from brownie import test, network, Contract, ERC20PoolFactory, ERC20Pool
 from brownie.exceptions import VirtualMachineError
 from brownie.network.state import TxHistory
 from brownie.utils import color
@@ -22,8 +22,6 @@ def ajna_protocol() -> AjnaProtocol:
         .add_token(MKR_ADDRESS, MKR_RESERVE_ADDRESS)
         .add_token(WETH_ADDRESS, WETH_RESERVE_ADDRESS)
         .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
-        .deploy_pool(MKR_ADDRESS, DAI_ADDRESS)
-        .deploy_pool(WETH_ADDRESS, DAI_ADDRESS)
     )
 
     ajna_protocol = AjnaProtocol()
@@ -55,35 +53,24 @@ def weth(ajna_protocol):
 
 
 @pytest.fixture
-def mkr_dai_pool(ajna_protocol):
-    return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS)
-
-
-@pytest.fixture
 def scaled_pool(deployer):
-    scaled_factory = ScaledPoolFactory.deploy({"from": deployer})
+    scaled_factory = ERC20PoolFactory.deploy({"from": deployer})
     scaled_factory.deployPool(MKR_ADDRESS, DAI_ADDRESS, 0.05 * 1e18, {"from": deployer})
-    return ScaledPool.at(
+    return ERC20Pool.at(
         scaled_factory.deployedPools("2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2", MKR_ADDRESS, DAI_ADDRESS)
         )
 
 
 @pytest.fixture
-def weth_dai_pool(ajna_protocol):
-    return ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS)
-
-
-@pytest.fixture
-def lenders(ajna_protocol, mkr_dai_pool, scaled_pool):
+def lenders(ajna_protocol, scaled_pool):
     amount = 200_000 * 10**18  # 200,000 DAI for each lender
-    dai_client = ajna_protocol.get_token(mkr_dai_pool.quoteToken())
+    dai_client = ajna_protocol.get_token(scaled_pool.quoteToken())
 
     lenders = []
     for _ in range(10):
         lender = ajna_protocol.add_lender()
 
         dai_client.top_up(lender, amount)
-        dai_client.approve_max(mkr_dai_pool, lender)
         dai_client.approve_max(scaled_pool, lender)
 
         lenders.append(lender)
@@ -92,18 +79,16 @@ def lenders(ajna_protocol, mkr_dai_pool, scaled_pool):
 
 
 @pytest.fixture
-def borrowers(ajna_protocol, mkr_dai_pool, scaled_pool):
+def borrowers(ajna_protocol, scaled_pool):
     amount = 100 * 10**18  # 100 MKR for each borrower
-    dai_client = ajna_protocol.get_token(mkr_dai_pool.quoteToken())
-    mkr_client = ajna_protocol.get_token(mkr_dai_pool.collateral())
+    dai_client = ajna_protocol.get_token(scaled_pool.quoteToken())
+    mkr_client = ajna_protocol.get_token(scaled_pool.collateral())
 
     borrowers = []
     for _ in range(10):
         borrower = ajna_protocol.add_borrower()
 
         mkr_client.top_up(borrower, amount)
-        mkr_client.approve_max(mkr_dai_pool, borrower)
-        dai_client.approve_max(mkr_dai_pool, borrower)
         mkr_client.approve_max(scaled_pool, borrower)
         dai_client.approve_max(scaled_pool, borrower)
 
@@ -160,7 +145,7 @@ class ScaledPoolUtils:
             return ZRO_ADD, ZRO_ADD
 
     @staticmethod
-    def get_origination_fee(pool: ScaledPool, amount):
+    def get_origination_fee(pool: ERC20Pool, amount):
         fee_rate = max(pool.interestRate() / 52, 0.0005 * 10**18)
         assert fee_rate >= (0.0005 * 10**18)
         assert fee_rate < (100 * 10**18)
@@ -186,8 +171,8 @@ class TestUtils:
 
     @staticmethod
     def get_usage(gas) -> str:
-        in_eth = gas * 100 * 10e-9
-        in_fiat = in_eth * 3000
+        in_eth = gas * 50 * 10e-9
+        in_fiat = in_eth * 1700
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
     
 

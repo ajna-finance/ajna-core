@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { FenwickTree } from "../../FenwickTree.sol";
-import { DSTestPlus }  from "../utils/DSTestPlus.sol";
+import { FenwickTree } from "../base/FenwickTree.sol";
+import { DSTestPlus }  from "./utils/DSTestPlus.sol";
 
-import { Maths } from "../../libraries/Maths.sol";
+import { Maths } from "../libraries/Maths.sol";
 
 contract FenwickTreeInstance is FenwickTree {
 

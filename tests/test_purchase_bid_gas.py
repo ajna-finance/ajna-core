@@ -1,4 +1,3 @@
-import brownie
 import pytest
 from decimal import *
 from brownie import Contract

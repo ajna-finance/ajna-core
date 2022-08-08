@@ -3,8 +3,8 @@ from typing import List
 from brownie import *
 from brownie import (
     Contract,
-    ScaledPoolFactory,
-    ScaledPool,
+    ERC20PoolFactory,
+    ERC20Pool,
     BucketMath,
     Maths,
 )
@@ -28,9 +28,9 @@ class AjnaProtocol:
         self.bucket_math = BucketMath.deploy({"from": self.deployer})
         self.maths = Maths.deploy({"from": self.deployer})
 
-        self.ajna_factory = ScaledPoolFactory.deploy({"from": self.deployer})
+        self.ajna_factory = ERC20PoolFactory.deploy({"from": self.deployer})
 
-        self.pools: List[ScaledPool] = []
+        self.pools: List[ERC20Pool] = []
         self.lenders = []
         self.borrowers = []
 
@@ -44,7 +44,7 @@ class AjnaProtocol:
 
     def deploy_erc20_pool(
         self, collateral_address, quote_token_address, interest_rate=0.05 * 1e18
-    ) -> ScaledPool:
+    ) -> ERC20Pool:
         """
         Deploys ERC20 contract pool for given `collateral` and `quote` token addresses contract.
         Adds pool to list of pools stored in AjnaProtocol.
@@ -125,7 +125,7 @@ class AjnaProtocol:
 
     def get_pool(
         self, collateral_address, quote_token_address, *, force_deploy=False
-    ) -> ScaledPool:
+    ) -> ERC20Pool:
         """
         Returns ERC20Pool for given `collateral` and `quote` token addresses contract.
 
