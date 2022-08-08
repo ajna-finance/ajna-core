@@ -17,7 +17,6 @@ contract AjnaTokenTest is DSTestPlus {
         assert(false == _token.transfer(address(_token), 1));
     }
 
-    // TODO: figure out why GitHub action is unhappy with this
     function invariantMetadata() external {
         assertEq(_token.name(),     "Ajna");
         assertEq(_token.symbol(),   "AJNA");
