@@ -63,8 +63,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
      */
     mapping(uint256 => mapping(address => uint256)) public override lpBalance;
 
-    /** @dev Used for tracking LP token ownership structs for transferLPTokens access control */
-    mapping(address => LpTokenOwnership) public override lpTokenOwnership;
+    /** @dev Used for tracking LP token ownership address for transferLPTokens access control */
+    mapping(address => address) public override lpTokenOwnership;
 
     uint256 internal _poolInitializations = 0;
 
@@ -96,11 +96,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function approveNewPositionOwner(address owner_, address allowedNewOwner_) external {
         require(msg.sender == owner_, "S:ANPO:NOT_OWNER");
-
-        LpTokenOwnership storage tokenOwnership = lpTokenOwnership[owner_];
-
-        tokenOwnership.owner           = owner_;
-        tokenOwnership.allowedNewOwner = allowedNewOwner_;
+        lpTokenOwnership[owner_] = allowedNewOwner_;
     }
 
     function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external override {
@@ -173,7 +169,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external {
-        require(lpTokenOwnership[owner_].owner == owner_ && lpTokenOwnership[owner_].allowedNewOwner == newOwner_, "S:TLT:NOT_OWNER");
+        address allowedOwner = lpTokenOwnership[owner_];
+        require(allowedOwner != address(0) && newOwner_ == allowedOwner, "S:TLT:NOT_OWNER");
 
         uint256 tokensTransferred;
 
@@ -197,6 +194,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
                 ++i;
             }
         }
+        delete lpTokenOwnership[owner_];
 
         emit TransferLPTokens(owner_, newOwner_, prices, tokensTransferred);
     }

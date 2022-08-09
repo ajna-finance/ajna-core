@@ -132,12 +132,11 @@ interface IScaledPool {
     function lpBalance(uint256 depositIndex_, address lp_) external view returns (uint256 balance_);
 
     /**
-     *  @notice Nested mapping of LP token ownership structs for transferLPTokens access control.
+     *  @notice Nested mapping of LP token ownership address for transferLPTokens access control.
      *  @param  owner_           Address of the LP owner.
-     *  @return curOwner_        Address of current LP token owner.
      *  @return allowedNewOwner_ Address of the newly allowed LP token owner.
      */
-    function lpTokenOwnership(address owner_) external view returns (address curOwner_, address allowedNewOwner_);
+    function lpTokenOwnership(address owner_) external view returns (address allowedNewOwner_);
 
     /**
      *  @notice Returns the `minFee` state variable.
@@ -175,17 +174,6 @@ interface IScaledPool {
     struct Bucket {
         uint256 lpAccumulator;       // [RAY]
         uint256 availableCollateral; // [WAD]
-    }
-
-    /**
-     *  @notice struct tracking the owner of a given position
-     *  @dev    Used to provide access control for the transferLPTokens method
-     *  @param owner           Address of the current LP token owner
-     *  @param allowedNewOwner Address of the newly allowed LP token owner
-     */
-    struct LpTokenOwnership {
-        address owner;
-        address allowedNewOwner;
     }
 
     /*********************************/
