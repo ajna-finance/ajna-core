@@ -40,6 +40,16 @@ interface IScaledPool {
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
 
     /**
+     *  @notice Emitted when a lender transfers their LP tokens to a different address.
+     *  @dev    Used by PositionManager.memorializePositions().
+     *  @param  owner_    The original owner address of the position.
+     *  @param  newOwner_ The new owner address of the position.
+     *  @param  prices_    Array of price buckets at which LP tokens were moved.
+     *  @param  lpTokens_ Amount of LP tokens transferred.
+     */
+    event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
+
+    /**
      *  @notice Emitted when pool interest rate is updated.
      *  @param  oldRate_ Old pool interest rate.
      *  @param  newRate_ New pool interest rate.
@@ -122,6 +132,14 @@ interface IScaledPool {
     function lpBalance(uint256 depositIndex_, address lp_) external view returns (uint256 balance_);
 
     /**
+     *  @notice Nested mapping of LP token ownership structs for transferLPTokens access control.
+     *  @param  owner_           Address of the LP owner.
+     *  @return curOwner_        Address of current LP token owner.
+     *  @return allowedNewOwner_ Address of the newly allowed LP token owner.
+     */
+    function lpTokenOwnership(address owner_) external view returns (address curOwner_, address allowedNewOwner_);
+
+    /**
      *  @notice Returns the `minFee` state variable.
      *  @return minFee_ TODO
      */
@@ -159,6 +177,17 @@ interface IScaledPool {
         uint256 availableCollateral; // [WAD]
     }
 
+    /**
+     *  @notice struct tracking the owner of a given position
+     *  @dev    Used to provide access control for the transferLPTokens method
+     *  @param owner           Address of the current LP token owner
+     *  @param allowedNewOwner Address of the newly allowed LP token owner
+     */
+    struct LpTokenOwnership {
+        address owner;
+        address allowedNewOwner;
+    }
+
     /*********************************/
     /*** Lender External Functions ***/
     /*********************************/
@@ -172,6 +201,14 @@ interface IScaledPool {
     function addQuoteToken(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_);
 
     /**
+     *  @notice Called by lenders to approve a new owner of their LP tokens.
+     *  @dev    Intended for use by the PositionManager contract.
+     *  @param  owner_           The existing owner of the LP tokens.
+     *  @param  allowedNewOwner_ The new owner of the LP tokens.
+     */
+    function approveNewPositionOwner(address owner_, address allowedNewOwner_) external;
+
+    /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
      *  @param  lpbAmount_ The maximum amount of quote token to be moved by a lender.
      *  @param  fromIndex_ The bucket index from which the quote tokens will be removed.
@@ -181,10 +218,20 @@ interface IScaledPool {
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
-     *  @param  lpbAmount_  The amount of LP tokens to be removed by a lender.
-     *  @param  index_      The bucket index from which quote tokens will be removed.
+     *  @param  lpbAmount_ The amount of LP tokens to be removed by a lender.
+     *  @param  index_     The bucket index from which quote tokens will be removed.
+     *  @return amount_    The amount of quote tokens actually removed by the lender.
      */
-    function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external;
+    function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external returns (uint256 amount_);
+
+    /**
+     *  @notice Called by lenders to transfers their LP tokens to a different address.
+     *  @dev    Used by PositionManager.memorializePositions().
+     *  @param  owner_    The original owner address of the position.
+     *  @param  newOwner_ The new owner address of the position.
+     *  @param  indexes_  Array of price buckets index at which LP tokens were moved.
+     */
+    function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external;
 
     /**********************/
     /*** View Functions ***/
@@ -290,4 +337,32 @@ interface IScaledPool {
      *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
      */
     function poolTargetUtilization() external view returns (uint256 poolTargetUtilization_);
+
+    /**
+     *  @notice Returns the address of the pool's collateral token
+     */
+    function collateralTokenAddress() external pure returns (address);
+
+    /**
+     *  @notice Returns the address of the pools quote token
+     */
+    function quoteTokenAddress() external pure returns (address);
+
+    /**
+     *  @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens.
+     *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
+     *  @param  index_            The price bucket index for which the value should be calculated.
+     *  @return collateralTokens_ The equivalent value of collateral tokens for the given LP Tokens, WAD units.
+     *  @return quoteTokens_      The equivalent value of quote tokens for the given LP Tokens, WAD units.
+     */
+    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 index_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);
+
+    /**
+     *  @notice Calculate the amount of lpTokens equivalent to a given amount of quote tokens.
+     *  @param  quoteTokens_      The number of quote tokens to calculate LP tokens for, WAD units.
+     *  @param  index_            The price bucket index for which the value should be calculated.
+     *  @param  owner_            The address which owns the LP tokens.
+     *  @return lpTokens_         The equivalent value of LP tokens for the given quote Tokens, RAY units.
+     */
+    function getLpTokensFromQuoteTokens(uint256 quoteTokens_, uint256 index_, address owner_) external view returns (uint256 lpTokens_);
 }

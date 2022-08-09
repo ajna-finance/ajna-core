@@ -150,10 +150,11 @@ interface IERC20Pool is IScaledPool {
 
     /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
-     *  @param  amount_ The amount of unencumbered collateral to claim.
-     *  @param  index_  The index of the bucket from which unencumbered collateral will be claimed.
+     *  @param  amount_       The amount of unencumbered collateral to claim.
+     *  @param  index_        The index of the bucket from which unencumbered collateral will be claimed.
+     *  @return lpRedemption_ The actual amount of lp redemption tokens.
      */
-    function claimCollateral(uint256 amount_, uint256 index_) external;
+    function claimCollateral(uint256 amount_, uint256 index_) external returns (uint256 lpRedemption_);
 
     /************************************/
     /*** ERC20Pool External Functions ***/

@@ -36,6 +36,18 @@ interface IERC721Pool is IScaledPool {
      */
     function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_) external;
 
+    /*********************************/
+    /*** Lender External Functions ***/
+    /*********************************/
+
+    /**
+     *  @notice Called by lenders to claim multiple unencumbered collateral from a price bucket.
+     *  @param  tokenIds_  NFT token ids to be claimed from the pool.
+     *  @param  price_     The bucket from which unencumbered collateral will be claimed.
+     *  @return lpTokens_  The actual amount of lpTokens claimed.
+     */
+    function claimCollateral(uint256[] calldata tokenIds_, uint256 price_) external returns (uint256 lpTokens_);
+
     /**********************/
     /*** View Functions ***/
     /**********************/

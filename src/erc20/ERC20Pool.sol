@@ -188,24 +188,24 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Lender External Functions ***/
     /*********************************/
 
-    function claimCollateral(uint256 amount_, uint256 index_) external override {
+    function claimCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpRedemption_) {
         Bucket storage bucket = buckets[index_];
         require(amount_ <= bucket.availableCollateral, "S:CC:AMT_GT_COLLAT");
 
-        uint256 price        = _indexToPrice(index_);
-        uint256 rate         = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), rate);
-        require(lpRedemption <= lpBalance[index_][msg.sender], "S:CC:INSUF_LP_BAL");
+        uint256 price = _indexToPrice(index_);
+        uint256 rate  = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+        lpRedemption_ = Maths.wrdivr(Maths.wmul(amount_, price), rate);
+        require(lpRedemption_ <= lpBalance[index_][msg.sender], "S:CC:INSUF_LP_BAL");
 
         bucket.availableCollateral     -= amount_;
-        bucket.lpAccumulator           -= lpRedemption;
-        lpBalance[index_][msg.sender] -= lpRedemption;
+        bucket.lpAccumulator           -= lpRedemption_;
+        lpBalance[index_][msg.sender] -= lpRedemption_;
 
         _updateInterestRate(borrowerDebt, _lup());
 
         // move claimed collateral from pool to claimer
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-        emit ClaimCollateral(msg.sender, price, amount_, lpRedemption);
+        emit ClaimCollateral(msg.sender, price, amount_, lpRedemption_);
     }
 
     /*******************************/
