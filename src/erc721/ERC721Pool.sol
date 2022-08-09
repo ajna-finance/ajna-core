@@ -12,8 +12,8 @@ import { IERC721Pool } from "./interfaces/IERC721Pool.sol";
 
 import { ScaledPool } from "../base/ScaledPool.sol";
 
-// Added
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import { Maths } from "../libraries/Maths.sol";
+
 
 contract ERC721Pool is IERC721Pool, ScaledPool {
     using SafeERC20     for ERC20;
@@ -36,10 +36,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /// @dev Defaults to length 0 if the whole collection is to be used
     EnumerableSet.UintSet internal _tokenIdsAllowed;
 
-    // TODO: rename
     /// @dev Internal visibility is required as it contains a nested struct
     // borrowers book: borrower address -> NFTBorrower
-    mapping(address => NFTBorrower) internal _NFTborrowers;
+    mapping(address => NFTBorrower) internal borrowers;
 
     /****************************/
     /*** Initialize Functions ***/
@@ -72,6 +71,139 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             }
         }
     }
+
+    /***********************************/
+    /*** Borrower External Functions ***/
+    /***********************************/
+
+    function addCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
+        // update pool interest and debt
+        uint256 curDebt = _accruePoolInterest();
+        _updateInterestRate(curDebt, _lup());
+
+        NFTBorrower storage borrower = borrowers[msg.sender];
+
+        // add tokenIds to the pool
+        for (uint i; i < tokenIds_.length;) {
+            if (_tokenIdsAllowed.length() != 0) {
+                require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
+            }
+
+            // update pool state
+            _collateralTokenIdsAdded.add(tokenIds_[i]);
+
+            // update borrower accounting
+            borrower.collateralDeposited.add(tokenIds_[i]);
+
+            // move collateral from sender to pool
+            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+        }
+
+        pledgedCollateral += Maths.wad(tokenIds_.length);
+
+        // accrue interest to borrower
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+
+        // update loan queue
+        uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+
+        emit AddCollateral(msg.sender, tokenIds_);
+    }
+
+    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
+        uint256 lupId = _lupIndex(amount_);
+        require(lupId <= limitIndex_, "S:B:LIMIT_REACHED"); // TODO: add check that limitIndex is <= MAX_INDEX
+
+        // update pool interest
+        uint256 curDebt = _accruePoolInterest();
+
+        // borrower accounting
+        NFTBorrower storage borrower = borrowers[msg.sender];
+        uint256 borrowersCount = totalBorrowers;
+        if (borrowersCount != 0) require(borrower.debt + amount_ > _poolMinDebtAmount(curDebt), "S:B:AMT_LT_AVG_DEBT");
+
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
+
+        uint256 feeRate = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee) + Maths.WAD;
+        uint256 debt    = Maths.wmul(amount_, feeRate);
+        borrower.debt   += debt;
+
+        // pool accounting
+        uint256 newLup = _indexToPrice(lupId);
+        require(_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), newLup) >= Maths.WAD, "S:B:BUNDER_COLLAT");
+
+        require(
+            _poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) >= Maths.WAD,
+            "S:B:PUNDER_COLLAT"
+        );
+        curDebt += debt;
+
+        borrowerDebt = curDebt;
+        lenderDebt   += amount_;
+
+        // update loan queue
+        uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+
+        _updateInterestRate(curDebt, newLup);
+
+        // move borrowed amount from pool to sender
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
+        emit Borrow(msg.sender, newLup, amount_);
+    }
+
+    // TODO: check for reentrancy
+    function removeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
+        uint256 curDebt = _accruePoolInterest();
+
+        // borrower accounting
+        NFTBorrower storage borrower = borrowers[msg.sender];
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+
+        // check collateralization for sufficient unenecumbered collateral
+        uint256 curLup = _lup();
+        require(Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) >= tokenIds_.length, "S:RC:NOT_ENOUGH_COLLATERAL");
+
+        // update pool state
+        pledgedCollateral -= Maths.wad(tokenIds_.length);
+        _updateInterestRate(curDebt, curLup);
+
+        // remove tokenIds and transfer to caller
+        for (uint i; i < tokenIds_.length;) {
+            require(collateral().ownerOf(tokenIds_[i]) == address(this), "P:T_NOT_IN_P");
+
+            // pool level accounting
+            _collateralTokenIdsAdded.remove(tokenIds_[i]);
+
+            // borrower accounting
+            borrower.collateralDeposited.remove(tokenIds_[i]);
+
+            // move collateral from pool to sender
+            collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        // update loan queue
+        uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+
+        emit RemoveCollateral(msg.sender, tokenIds_);
+    }
+
+    // TODO: finish implementing
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {}
+
+
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
+
+    // TODO: determine if any of these functions are needed
 
     /**********************/
     /*** View Functions ***/

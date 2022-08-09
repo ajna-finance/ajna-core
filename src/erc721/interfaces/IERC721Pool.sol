@@ -10,6 +10,33 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
  */
 interface IERC721Pool is IScaledPool {
 
+    /************************/
+    /*** ERC20Pool Events ***/
+    /************************/
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
+     */
+    event AddCollateral(address indexed borrower_, uint256[] tokenIds_);
+
+    /**
+     *  @notice Emitted when borrower borrows quote tokens from pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  lup_      LUP after borrow.
+     *  @param  amount_   Amount of quote tokens borrowed from the pool.
+     */
+    event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
+
+    /**
+     *  @notice Emitted when borrower removes collateral from the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  tokenIds_ Array of tokenIds to be removed from the pool.
+     */
+    event RemoveCollateral(address indexed borrower_, uint256[] tokenIds_);
+
+
     /**************************/
     /*** ERC721Pool Structs ***/
     /**************************/
@@ -35,6 +62,45 @@ interface IERC721Pool is IScaledPool {
      *  @dev Used to initialize pools that only support a subset of tokenIds
      */
     function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_) external;
+
+    /***********************************/
+    /*** Borrower External Functions ***/
+    /***********************************/
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
+     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
+     *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
+     */
+    function addCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
+
+    /**
+     *  @notice Called by a borrower to open or expand a position.
+     *  @dev    Can only be called if quote tokens have already been added to the pool.
+     *  @param  amount_     The amount of quote token to borrow.
+     *  @param  limitIndex_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
+     *  @param  oldPrev_    Previous borrower that came before placed loan (old)
+     *  @param  newPrev_    Previous borrower that now comes before placed loan (new)
+     */
+    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external;
+
+    /**
+     *  @notice Called by borrowers to remove an amount of collateral.
+     *  @param  tokenIds_ Array of tokenIds to be removed from the pool.
+     *  @param  oldPrev_  Previous borrower that came before placed loan (old)
+     *  @param  newPrev_  Previous borrower that now comes before placed loan (new)
+     */
+    function removeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
+
+    /**
+     *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
+     *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
+     *  @param  oldPrev_   Previous borrower that came before placed loan (old)
+     *  @param  newPrev_   Previous borrower that now comes before placed loan (new)
+     */
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external;
+
 
     /**********************/
     /*** View Functions ***/
