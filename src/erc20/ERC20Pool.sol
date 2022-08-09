@@ -221,8 +221,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 price        = _indexToPrice(index_);
         uint256 rate         = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), rate);
-//        emit DebugN("removeCollateral lpRedemption       ", lpRedemption);
-//        emit DebugN("removeCollateral lpBalance of sender", lpBalance[index_][msg.sender]);
         require(lpRedemption <= lpBalance[index_][msg.sender], "S:RC:INSUF_LP_BAL");
 
         bucket.availableCollateral     -= amount_;

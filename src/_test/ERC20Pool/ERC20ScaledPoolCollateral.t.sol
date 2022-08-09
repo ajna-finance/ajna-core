@@ -266,6 +266,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = _pool.indexToPrice(testIndex);
+        assertEq(priceAtTestIndex, 3_010.892022197881557845 * 1e18);
         _collateral.mint(address(_bidder), 100 * 1e18);
         _bidder.approveToken(_collateral, address(_pool), 100 * 1e18);
 
@@ -273,6 +274,8 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, testIndex);
 
         // bidder deposits collateral into a bucket
+        // FIXME: When bidder purchases with Maths.wdiv(10_000 * 1e18, priceAtTestIndex),
+        //  their LP balance is slightly over 10k due to rounding error.  Makes line 290 ugly.
         uint256 collateralToPurchaseWith = 4 * 1e18;
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_bidder), address(_pool), collateralToPurchaseWith);
@@ -305,24 +308,21 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_pool)),   collateralToPurchaseWith);
         assertEq(_quote.balanceOf(address(_pool)),        0);
 
-//        // bidder removes excess _collateral?
-        uint256 exchangeRate = _pool.exchangeRate(testIndex);
-        uint256 lpValueInQuote = Maths.rmul(_pool.lpBalance(testIndex, address(_bidder)), exchangeRate);
-//        uint256 excessCollateral = lpValueInQuote * 1e9 / priceAtTestIndex;
-//        assertEq(excessCollateral, 0.678725133191514712 * 1e18);
-//        _bidder.removeCollateral(_pool, excessCollateral, testIndex);
-//        assertEq(_pool.lpBalance(testIndex, address(_bidder)), 0); // FIXME: leaves a dust amount behind
-
         // lender exchanges their LP for collateral
-        lpValueInQuote = _pool.lpBalance(testIndex, address(_lender)) * exchangeRate / 1e36;
+        uint256 exchangeRate = _pool.exchangeRate(testIndex);
+        uint256 lpBalance = _pool.lpBalance(testIndex, address(_lender));
+        uint256 lpValueInQuote = lpBalance * exchangeRate / 1e36;
         assertGe(lpValueInQuote, 10_000 * 1e18);
+        uint256 lpValueInCollateral = Maths.wad(Maths.rdiv(lpValueInQuote, Maths.ray(priceAtTestIndex)));
+        assertGe(lpValueInCollateral, 2 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_lender), lpValueInCollateral);
+        // FIXME: LPs redeemed for collateral doesn't match the event.
 //        vm.expectEmit(true, true, true, true);
-//        emit Transfer(address(_pool), address(_lender), availableCollateral);
-//        vm.expectEmit(true, true, true, true);
-//        emit RemoveCollateral(address(_lender), priceAtTestIndex, availableCollateral, lpAccumulator);
-        // FIXME: lender needs 12043 LP to remove, but only has 10000 LP
-//        _lender.removeCollateral(_pool, availableCollateral, testIndex);
-//
+//        emit RemoveCollateral(address(_lender), priceAtTestIndex, lpValueInCollateral, lpBalance);
+        _lender.removeCollateral(_pool, lpValueInCollateral, testIndex);
+
+        // TODO: bidder still has some collateral in there
 //        // check pool state and balances
 //        assertEq(_collateral.balanceOf(address(_lender)), availableCollateral);
 //        assertEq(_collateral.balanceOf(address(_pool)),   0);

@@ -160,9 +160,6 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 4550);
         _lender.addQuoteToken(_pool, 20_000 * 1e18, 4551);
 
-        vm.expectRevert("S:RQT:INSUF_LPS");
-        _lender1.removeQuoteToken(_pool, 10_000 * 1e18, 4549);
-
         // add collateral and borrow all available quote in the higher priced original 3 buckets
         _lender.addQuoteToken(_pool, 30_000 * 1e18, 4990);
         _collateral.mint(address(_borrower), 3500000 * 1e18);

@@ -132,6 +132,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, lpbAmount_, newLup);
     }
 
+    event DebugN(string where, uint256 what);
+
     function removeQuoteToken(uint256 maxAmount_, uint256 index_) external override {
         // get exchange rate prior to accumulating interest
         Bucket storage bucket = buckets[index_];
@@ -141,18 +143,27 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 curDebt = _accruePoolInterest();
 
         // determine amount of quote token to remove
+        uint256 availableLPs = lpBalance[index_][msg.sender];
         uint256 availableQuoteToken = _rangeSum(index_, index_);
-        uint256 amount = Maths.min(maxAmount_, availableQuoteToken);
+        // TODO: implement a Maths.rwdivw to simplify this
+        uint256 claimableQuoteToken = Maths.wad(Maths.rdiv(availableLPs, rate));
+        uint256 amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, claimableQuoteToken));
 
         // calculate amount of LP required to remove it
-        uint256 availableLPs = lpBalance[index_][msg.sender];
         uint256 lpbAmount = Maths.wmul(amount, rate);
-        require(availableLPs != 0 && lpbAmount <= availableLPs, "S:RQT:INSUF_LPS");
+        emit DebugN("removeQuoteToken lpbAmount", lpbAmount);
 
         // update bucket accounting
         bucket.lpAccumulator  -= lpbAmount;
 
         // update lender accounting
+        // FIXME: Real-world test uncovered an integer over/underflow here a few hours into the test.
+        // Logs:
+        // lender 0 removing 10000.0 lp (~9999.6 quote) from bucket 2549 (3025.9); exchange rate is 1.00003491
+        // removeQuoteToken amount      10099646212443299905536
+        // removeQuoteToken lpbAmount   10099998800448357119059113791964
+        // removeQuoteToken LPB          9999998812325105057182360750716
+        emit DebugN("removeQuoteToken LPB", lpBalance[index_][msg.sender]);
         lpBalance[index_][msg.sender] -= lpbAmount;
         _remove(index_, amount); // update FenwickTree
 
