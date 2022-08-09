@@ -91,4 +91,33 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(2500 * 1e18), 5);
     }
 
+    function testFenwickFuzzy(uint256 index_, uint256 amount_) external {
+        uint256 boundIndex   = bound(index_, 0, 8192);
+        uint256 boundAmount  = bound(amount_, 1, 9_000_000_000_000_000 * 1e18);
+        uint256 boundScaler  = bound(amount_, 1, 2 * 1e18);
+
+        FenwickTreeInstance tree = new FenwickTreeInstance();
+
+        // check adds work as expected
+        tree.add(boundIndex, boundAmount);
+        assertEq(tree.treeSum(),             boundAmount);
+        assertEq(tree.prefixSum(boundIndex), boundAmount);
+
+        if (boundIndex != 0) {
+            assertEq(tree.get(boundIndex), boundAmount);
+        }
+        else {
+            // can't find the rangeSum of the 0 index due to integer underflow
+        }
+
+        // check scaling of the tree
+        // tree.mult(boundIndex, boundScaler);
+        // assertEq(tree.treeSum(),             boundAmount);
+
+        // TODO: dynamically add multiple indexes and check findSum
+        // uint256 nextIndex = boundIndex > 0 ? boundIndex : boundIndex + 1;
+        // assertEq(tree.get(boundIndex),      boundAmount);
+        // assertEq(tree.findSum(2500 * 1e18), 8);
+    }
+
 }
