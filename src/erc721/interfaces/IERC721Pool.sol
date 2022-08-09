@@ -101,6 +101,28 @@ interface IERC721Pool is IScaledPool {
      */
     function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external;
 
+    /*********************************/
+    /*** Lender External Functions ***/
+    /*********************************/
+
+    /**
+     *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
+     *  @param  tokenIds_ Array of unencumbered collateral to claim.
+     *  @param  index_    The index of the bucket from which unencumbered collateral will be claimed.
+     */
+    function claimCollateral(uint256[] calldata tokenIds_, uint256 index_) external;
+
+    /*********************************/
+    /*** Pool External Functions ***/
+    /*********************************/
+
+    /**
+     *  @notice Purchase amount of quote token from specified bucket price.
+     *  @param  amount_   Amount of quote tokens to purchase.
+     *  @param  index_    The bucket index from which quote tokens will be purchased.
+     *  @param  tokenIds_ Array of tokenIds to use as collateral for the purchase.
+     */
+    function purchaseQuote(uint256 amount_, uint256 index_, uint256[] calldata tokenIds_) external;
 
     /**********************/
     /*** View Functions ***/

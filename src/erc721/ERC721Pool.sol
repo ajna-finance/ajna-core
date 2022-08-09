@@ -198,6 +198,19 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     // TODO: finish implementing
     function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {}
 
+    /*********************************/
+    /*** Lender External Functions ***/
+    /*********************************/
+
+    // TODO: finish implementing
+    function claimCollateral(uint256[] calldata tokenIds_, uint256 index_) external override {}
+
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    // TODO: finish implementing
+    function purchaseQuote(uint256 amount_, uint256 index_, uint256[] calldata tokenIds_) external override {}
 
     /**************************/
     /*** Internal Functions ***/
