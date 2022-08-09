@@ -54,9 +54,14 @@ library Maths {
         return (x * 1e27 + y / 2) / y;
     }
 
+    /** @notice Divides a RAY by another RAY and returns a WAD */
+    function rrdivw(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * 1e18 + y / 2) / y;
+    }
+
     /** @notice Divides a RAY by a WAD and returns a WAD */
     function rwdivw(uint256 x, uint256 y) internal pure returns (uint256) {
-        return (x * 1e18 + y / 2) / y;
+        return (x * 1e9 + y / 2) / y;
     }
 
     function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {

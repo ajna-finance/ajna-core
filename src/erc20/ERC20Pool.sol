@@ -189,9 +189,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*********************************/
 
     function addCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
-        // TODO: Unit testing
-        uint256 curDebt = _accruePoolInterest();
-
         require(collateral().balanceOf(msg.sender) >= amount_, "S:AC:INSUF_COL");
 
         Bucket storage bucket = buckets[index_];
@@ -207,31 +204,47 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         buckets[index_].availableCollateral += amount_;
 
-        _updateInterestRate(curDebt, _lup());
+        _updateInterestRate(borrowerDebt, _lup());
 
         // move required collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
     }
 
-    function removeCollateral(uint256 amount_, uint256 index_) external override {
-        Bucket storage bucket = buckets[index_];
-        require(amount_ <= bucket.availableCollateral, "S:RC:AMT_GT_COLLAT");
+    event DebugN(string where, uint256 what);
 
+    function removeCollateral(uint256 maxAmount_, uint256 index_) external override {
+        // determine amount of collateral to remove
+        Bucket storage bucket = buckets[index_];
         uint256 price        = _indexToPrice(index_);
         uint256 rate         = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), rate);
-        require(lpRedemption <= lpBalance[index_][msg.sender], "S:RC:INSUF_LP_BAL");
+        uint256 availableLPs = lpBalance[index_][msg.sender];
+//        uint256 claimableCollateral = Maths.rwdivw(Maths.rdiv(availableLPs, rate), price);
+        uint256 claimableCollateral = availableLPs * 1e36 / rate / price;
+        emit DebugN("removeCollateral claimableCollateral", claimableCollateral);
+        emit DebugN("removeCollateral bucket.availableCollateral", bucket.availableCollateral);
+        uint256 amount = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
+        emit DebugN("removeCollateral amount", amount);
 
-        bucket.availableCollateral     -= amount_;
-        bucket.lpAccumulator           -= lpRedemption;
+        // calculate amount of LP required to remove it
+//        uint256 lpRedemption = Maths.wrdivr(amount * price), rate);
+        uint256 lpRedemption = amount * price * 1e18 / rate;
+        emit DebugN("removeCollateral lpRedemption", lpRedemption);
+        emit DebugN("removeCollateral LPB", lpBalance[index_][msg.sender]);
+
+        // update bucket accounting
+        bucket.availableCollateral    -= amount;
+        bucket.lpAccumulator          -= lpRedemption;
+
+        // update lender accounting
         lpBalance[index_][msg.sender] -= lpRedemption;
 
+        // update pool accounting
         _updateInterestRate(borrowerDebt, _lup());
 
-        // move claimed collateral from pool to claimer
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-        emit RemoveCollateral(msg.sender, price, amount_, lpRedemption);
+        // move collateral from pool to lender
+        collateral().safeTransfer(msg.sender, amount / collateralScale);
+        emit RemoveCollateral(msg.sender, price, amount, lpRedemption);
     }
 
     /**********************/

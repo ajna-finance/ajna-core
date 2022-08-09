@@ -46,7 +46,9 @@ contract MathTest is DSTestPlus {
         assertEq(Maths.rdiv(Maths.wadToRay(debt), exchangeRate), Maths.wrdivr(debt, exchangeRate));
 
         uint256 lpBalance = 36_900.58124 * 1e27;
-        assertEq(Maths.rayToWad(Maths.rdiv(lpBalance, exchangeRate)), Maths.rwdivw(lpBalance, exchangeRate));
+        uint256 lpRedemption = Maths.rdiv(lpBalance, exchangeRate);
+        assertEq(Maths.rayToWad(lpRedemption), Maths.rrdivw(lpBalance, exchangeRate));
+        assertEq(Maths.rayToWad(Maths.rdiv(lpRedemption, Maths.wadToRay(price))), Maths.rwdivw(lpRedemption, price));
     }
 
     function testWadToIntRoundingDown() external {
