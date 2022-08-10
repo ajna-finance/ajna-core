@@ -28,6 +28,10 @@ contract UserWithCollateral {
         pool_.borrow(amount_, limitIndex_, oldPrev_, newPrev_);
     }
 
+    function purchaseQuote(ERC20Pool pool_, uint256 amount_, uint256 index_) public {
+        pool_.purchaseQuote(amount_, index_);
+    }
+
     function removeCollateral(ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
         pool_.removeCollateral(amount_, oldPrev_, newPrev_);
     }
