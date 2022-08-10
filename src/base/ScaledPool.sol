@@ -302,6 +302,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return _indexToPrice(_lupIndex(0));
     }
 
+    // TODO: This performs the (expensive) _rangeSum and throws away the result.
+    // We should either pass the _rangeSum as an argument, or have this method return it alongside the rate.
     function _exchangeRate(uint256 availableCollateral_, uint256 lpAccumulator_, uint256 index_) internal view returns (uint256) {
         uint256 colValue   = Maths.wmul(_indexToPrice(index_), availableCollateral_);
         uint256 bucketSize = _rangeSum(index_, index_) + colValue;

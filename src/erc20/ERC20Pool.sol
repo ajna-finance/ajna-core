@@ -191,7 +191,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function addCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
         require(collateral().balanceOf(msg.sender) >= amount_, "S:AC:INSUF_COL");
 
-        uint256 curDebt = _accruePoolInterest();
+        _accruePoolInterest();
 
         Bucket storage bucket = buckets[index_];
         // Calculate exchange rate before new collateral has been accounted for.
@@ -213,10 +213,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
     }
 
-    event DebugN(string where, uint256 what);
-
     function removeCollateral(uint256 maxAmount_, uint256 index_) external override {
-        uint256 curDebt = _accruePoolInterest();
+        _accruePoolInterest();
 
         // determine amount of collateral to remove
         Bucket storage bucket = buckets[index_];
@@ -224,12 +222,18 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 rate         = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs = lpBalance[index_][msg.sender];
         uint256 claimableCollateral = Maths.rwdivw(Maths.rdiv(availableLPs, rate), price);
-        emit DebugN("removeCollateral claimableCollateral", claimableCollateral);
-        emit DebugN("removeCollateral availableCollateral", bucket.availableCollateral);
-        uint256 amount = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
 
-        // calculate amount of LP required to remove it
-        uint256 lpRedemption = Maths.min(availableLPs, Maths.rdiv((amount * price / 1e9), rate));
+        uint256 amount;
+        uint256 lpRedemption;
+        if (maxAmount_ > claimableCollateral && bucket.availableCollateral >= claimableCollateral) {
+            // lender wants to redeem all of their LPB for collateral, and the bucket has enough to offer
+            amount = claimableCollateral;
+            lpRedemption = availableLPs;
+        } else {
+            // calculate how much collateral may be awarded to lender, and how much LPB to redeem
+            amount = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
+            lpRedemption = Maths.min(availableLPs, Maths.rdiv((amount * price / 1e9), rate));
+        }
 
         // update bucket accounting
         bucket.availableCollateral    -= Maths.min(bucket.availableCollateral, amount);
