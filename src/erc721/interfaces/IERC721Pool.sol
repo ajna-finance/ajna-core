@@ -19,7 +19,7 @@ interface IERC721Pool is IScaledPool {
      *  @param  borrower_ `msg.sender`.
      *  @param  tokenIds_ Array of tokenIds to be added to the pool.
      */
-    event AddCollateral(address indexed borrower_, uint256[] tokenIds_);
+    event AddCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
 
     /**
      *  @notice Emitted when borrower borrows quote tokens from pool.
@@ -34,7 +34,7 @@ interface IERC721Pool is IScaledPool {
      *  @param  borrower_ `msg.sender`.
      *  @param  tokenIds_ Array of tokenIds to be removed from the pool.
      */
-    event RemoveCollateral(address indexed borrower_, uint256[] tokenIds_);
+    event RemoveCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
 
 
     /**************************/

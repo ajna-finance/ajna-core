@@ -6,11 +6,11 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 
-import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
+import { ERC20DSTestPlus }                             from "./ERC20DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
 import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
-contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
+contract ERC20ScaledPurchaseQuoteTokenTest is ERC20DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 

@@ -7,12 +7,12 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 import { BucketMath }        from "../../libraries/BucketMath.sol";
 import { Maths }             from "../../libraries/Maths.sol";
 
-import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
+import { ERC20DSTestPlus }                             from "./ERC20DSTestPlus.sol";
 import { TokenWithNDecimals }                     from "../utils/Tokens.sol";
 import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
 
-contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
+contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
 
     uint256 internal _lpPoolPrecision         = 10**27;
     uint256 internal _quotePoolPrecision      = 10**18;

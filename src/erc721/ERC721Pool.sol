@@ -14,6 +14,8 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
+import { console } from "@std/console.sol";
+
 
 contract ERC721Pool is IERC721Pool, ScaledPool {
     using SafeERC20     for ERC20;
@@ -97,6 +99,10 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
             // move collateral from sender to pool
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+
+            unchecked {
+                ++i;
+            }
         }
 
         pledgedCollateral += Maths.wad(tokenIds_.length);
@@ -108,7 +114,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
-        emit AddCollateral(msg.sender, tokenIds_);
+        emit AddCollateralNFT(msg.sender, tokenIds_);
     }
 
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
@@ -192,7 +198,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
-        emit RemoveCollateral(msg.sender, tokenIds_);
+        emit RemoveCollateralNFT(msg.sender, tokenIds_);
     }
 
     // TODO: finish implementing

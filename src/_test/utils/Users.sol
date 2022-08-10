@@ -56,6 +56,10 @@ contract UserWithNFTCollateral {
         token_.approve(spender_, _tokenId);
     }
 
+    function approveCollection(IERC721 token_, address spender_) public {
+        token_.setApprovalForAll(spender_, true);
+    }
+
     function approveQuoteToken(IERC20 token_, address spender_, uint256 _tokenId) public {
         token_.approve(spender_, _tokenId);
     }
