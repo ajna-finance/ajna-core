@@ -20,24 +20,6 @@ interface IPositionManager {
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
-     *  @param  lender_     Lender address.
-     *  @param  price_      The price at quote tokens were added.
-     *  @param  collateral_ The amount of collateral removed from the pool.
-     *  @param  quote_      The amount of quote tokens removed from the pool.
-     */
-    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 collateral_, uint256 quote_);
-
-    /**
-     *  @notice Emitted when liquidity of the pool was increased.
-     *  @param  lender_     Lender address.
-     *  @param  price_      The price at quote tokens were added.
-     *  @param  collateral_ The array of collateral tokenIds to be removed from the pool.
-     *  @param  quote_      The amount of quote tokens removed from the pool.
-     */
-    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_, uint256[] collateral_, uint256 quote_);
-
-    /**
-     *  @notice Emitted when liquidity of the pool was increased.
      *  @param  lender_ Lender address.
      *  @param  price_  The price at quote tokens were added.
      *  @param  amount_ The amount of quote tokens added to the pool.
@@ -93,41 +75,6 @@ interface IPositionManager {
         uint256 tokenId;
         address pool;
         uint256[] indexes;
-    }
-
-    /**
-     *  @notice Struct holding parameters for decreasing liquidity.
-     *  @param  tokenId   The tokenId of the NFT to burn.
-     *  @param  recipient The NFT owner address.
-     *  @param  pool      The pool address to remove quote tokens from.
-     *  @param  index     The price bucket index from where liquidity should be removed.
-     *  @param  lpTokens  The number of LP tokens to use.
-     */
-    struct DecreaseLiquidityParams {
-        uint256 tokenId;
-        address recipient;
-        address pool;
-        uint256 index;
-        uint256 lpTokens;
-    }
-
-    /**
-     *  @notice Struct holding parameters for decreasing liquidity.
-     *  @param  tokenId   The tokenId of the NFT to burn.
-     *  @param  recipient The NFT owner address.
-     *  @param  pool      The pool address to remove quote tokens from.
-     *  @param  index     The price bucket index from where liquidity should be removed.
-     *  @param  lpTokens  The number of LP tokens to use.
-     *  @param  lpTokens  The number of LP tokens to use.
-
-     */
-    struct DecreaseLiquidityNFTParams {
-        uint256 tokenId;
-        address recipient;
-        address pool;
-        uint256 index;
-        uint256 lpTokens;
-        uint256[] tokenIdsToRemove;
     }
 
     /**
@@ -207,20 +154,6 @@ interface IPositionManager {
     function burn(BurnParams calldata params_) external payable;
 
     /**
-     *  @notice Called by lenders to remove liquidity from an existing position.
-     *  @dev    Called to operate on an ERC20 type pool.
-     *  @param  params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
-     */
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external payable;
-
-    /**
-     *  @notice Called by lenders to remove liquidity from an existing position.
-     *  @dev    Called to operate on an ERC721 type pool.
-     *  @param  params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
-     */
-    function decreaseLiquidityNFT(DecreaseLiquidityNFTParams calldata params_) external payable;
-
-    /**
      *  @notice Called by lenders to add liquidity to an existing position.
      *  @param  params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
      */
@@ -270,8 +203,5 @@ interface IPositionManager {
      *  @return quoteTokens_ Value of the LP tokens in the price bucket for this position, in quote token.
     */
     function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 index_) external view returns (uint256 quoteTokens_);
-
-    // TODO: Not sure how to make an interface for a function that returns a struct with a mapping.
-    // function positions(uint256 tokenId_) external view returns ()
 
 }
