@@ -178,8 +178,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256[] memory prices = new uint256[](indexesLength);
 
         for (uint256 i = 0; i < indexesLength; ) {
+            require(BucketMath.isValidIndex(_indexToBucketIndex(indexes_[i])), "P:TLT:INVALID_INDEX");
             prices[i] = _indexToPrice(indexes_[i]);
-            require(BucketMath.isValidPrice(prices[i]), "P:TLT:INVALID_PRICE");
 
             // calculate lp tokens to be moved in the given bucket
             uint256 tokensToTransfer = lpBalance[indexes_[i]][owner_];
@@ -321,8 +321,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return _findSum(lenderDebt + additionalDebt_);
     }
 
+    function _indexToBucketIndex(uint256 index_) internal pure returns (int256) {
+        return 7388 - int256(index_) - 3232;
+    }
+
     function _indexToPrice(uint256 index_) internal pure returns (uint256) {
-        return BucketMath.indexToPrice(7388 - int256(index_) - 3232);
+        return BucketMath.indexToPrice(_indexToBucketIndex(index_));
     }
 
     function _priceToIndex(uint256 price_) internal pure returns (uint256) {
