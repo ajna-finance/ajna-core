@@ -215,6 +215,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 price        = _indexToPrice(index_);
         uint256 rate         = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs = lpBalance[index_][msg.sender];
+        // This rounds up, potentially causing underflow.
 //        uint256 claimableCollateral = Maths.rwdivw(Maths.rdiv(availableLPs, rate), price);
         // TODO: Worried about max amounts here; 1e27+1e36 takes us close to what a uint256 can handle.
         uint256 claimableCollateral = availableLPs * 1e36 / rate / price;
@@ -223,9 +224,12 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // calculate amount of LP required to remove it
         uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount, price), rate);
 
-        // TODO: find a better way of dealing with dust amounts
+        // TODO: These dust thresholds are too high.  There shouldn't be that much error.
         if (availableLPs - lpRedemption < 1e18) {
             lpRedemption = availableLPs;
+        }
+        if (bucket.availableCollateral - claimableCollateral < 1e9) {
+            amount = bucket.availableCollateral;
         }
 
         // update bucket accounting

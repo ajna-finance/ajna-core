@@ -11,7 +11,7 @@ abstract contract DSTestPlus is Test {
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
-    // prices
+    // FIXME: these prices are all wrong; the highest priced bucket now has the lowest index
     uint256 internal _p50159    = 50_159.593888626183666006 * 1e18;
     uint256 internal _p49910    = 49_910.043670274810022205 * 1e18;
     uint256 internal _p15000    = 15_000.520048194378317056 * 1e18;

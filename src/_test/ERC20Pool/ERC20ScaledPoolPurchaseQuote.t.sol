@@ -21,7 +21,6 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
     ERC20Pool          internal _pool;
     QuoteToken         internal _quote;
     UserWithCollateral internal _borrower;
-    UserWithCollateral internal _borrower2;
     UserWithQuoteToken internal _lender;
     UserWithQuoteToken internal _lender1;
     UserWithCollateral internal _bidder;
@@ -33,14 +32,12 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         _pool        = ERC20Pool(_poolAddress);
 
         _borrower   = new UserWithCollateral();
-        _borrower2  = new UserWithCollateral();
         _bidder     = new UserWithCollateral();
         _lender     = new UserWithQuoteToken();
         _lender1    = new UserWithQuoteToken();
 
         _collateral.mint(address(_bidder), 100 * 1e18);
         _collateral.mint(address(_borrower), 100 * 1e18);
-        _collateral.mint(address(_borrower2), 200 * 1e18);
 
         _quote.mint(address(_bidder), 200_000 * 1e18);
         _quote.mint(address(_lender), 200_000 * 1e18);
@@ -48,9 +45,6 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
 
         _borrower.approveToken(_collateral, address(_pool), 100 * 1e18);
         _borrower.approveToken(_quote,      address(_pool), 200_000 * 1e18);
-
-        _borrower2.approveToken(_collateral, address(_pool), 200 * 1e18);
-        _borrower2.approveToken(_quote,      address(_pool), 200_000 * 1e18);
 
         _bidder.approveToken(_quote,  address(_pool), 200_000 * 1e18);
         _bidder.approveToken(_collateral, address(_pool), 100 * 1e18);
@@ -63,7 +57,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
     /**
      *  @notice 1 lender, 1 bidder tests purchasing quote token with collateral.
      */
-    function testPurchaseCollateral() external {
+    function testPurchaseQuote() external {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = _pool.indexToPrice(testIndex);
@@ -92,6 +86,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_bidder), priceAtTestIndex, 10_000 * 1e18, _pool.lup());
         _bidder.removeQuoteToken(_pool, 10_000 * 1e18, testIndex);
+        assertEq(_quote.balanceOf(address(_bidder)), 10_000 * 1e18);
 
         // check bucket state
         (lpAccumulator, availableCollateral) = _pool.buckets(testIndex);
@@ -119,26 +114,57 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
 
         // bidder removes their _collateral
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), address(_bidder), 0.678725133191514711 * 1e18);
+        emit Transfer(address(_pool), address(_bidder), 0.678725133191514713 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(
             address(_bidder),
             priceAtTestIndex,
-            0.678725133191514711 * 1e18,
+            0.678725133191514713 * 1e18,
             2_043.56808879152623138 * 1e27
         );
         _bidder.removeCollateral(_pool, collateralToPurchaseWith, testIndex);
 
-        // check pool state and balances
-//        assertEq(_collateral.balanceOf(address(_pool)),   0);  // FIXME: 2 left over
-        assertEq(_quote.balanceOf(address(_pool)),        0);
+        // check pool balances
+        assertEq(_collateral.balanceOf(address(_pool)), 0);
+        assertEq(_quote.balanceOf(address(_pool)),      0);
 
         // check bucket state
         (lpAccumulator, availableCollateral) = _pool.buckets(testIndex);
-//        assertEq(availableCollateral,  0);                    // FIXME: 2 left over
+        assertEq(availableCollateral,  0);
         assertEq(lpAccumulator,        0);
         assertEq(_pool.get(testIndex), 0);
     }
 
-    // TODO: Test purchase with multiple lenders, debt, and skips.
+    /**
+     *  @notice 2 lenders, 1 borrower, 1 bidder tests purchasing quote token with collateral.
+     */
+    function testPurchaseQuoteWithDebt() external {
+        uint256 p2550 = _pool.indexToPrice(2550);
+        assertEq(p2550, 3_010.892022197881557845 * 1e18);
+
+        // lenders add liquidity
+        _lender.addQuoteToken(_pool, 6_000 * 1e18, 2550);
+        _lender1.addQuoteToken(_pool, 4_000 * 1e18, 2550);
+        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2551);
+        _lender.addQuoteToken(_pool, 5_000 * 1e18, 2552);
+        _lender1.addQuoteToken(_pool, 5_000 * 1e18, 2552);
+        skip(3600);
+
+        // borrower draws debt
+        _borrower.pledgeCollateral(_pool, 100 * 1e18, address(0), address(0));
+        _borrower.borrow(_pool, 20_000 * 1e18, 3000, address(0), address(0));
+        skip(7200);
+
+        // check pool balances
+        assertEq(_collateral.balanceOf(address(_pool)), 100 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)),      10_000 * 1e18);
+
+        // bidder purchases most of the quote from the highest bucket
+        // TODO:
+        uint256 amountToPurchase = 10_000 * 1e18;
+        uint256 collateralToPurchaseWith = Maths.wdiv(amountToPurchase, p2550);
+        _bidder.addCollateral(_pool, collateralToPurchaseWith, 2550);
+        _bidder.removeQuoteToken(_pool, amountToPurchase, 2550);
+        assertEq(_quote.balanceOf(address(_bidder)), 10_000 * 1e18);
+    }
 }
