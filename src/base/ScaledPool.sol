@@ -178,7 +178,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256[] memory prices = new uint256[](indexesLength);
 
         for (uint256 i = 0; i < indexesLength; ) {
-            require(BucketMath.isValidIndex(_indexToBucketIndex(indexes_[i])), "P:TLT:INVALID_INDEX");
+            require(BucketMath.isValidIndex(_indexToBucketIndex(indexes_[i])), "S:TLT:INVALID_INDEX");
             prices[i] = _indexToPrice(indexes_[i]);
 
             // calculate lp tokens to be moved in the given bucket

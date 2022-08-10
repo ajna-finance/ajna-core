@@ -23,6 +23,8 @@ abstract contract DSTestPlus is Test {
     uint256 internal _p3514     = 3_514.334495390401848927 * 1e18;
     uint256 internal _p3010     = 3_010.892022197881557845 * 1e18;
     uint256 internal _p3002     = 3_002.895231777120270013 * 1e18;
+    uint256 internal _p2995     = 2_995.912459898389633881 * 1e18;
+    uint256 internal _p2981     = 2_981.007422784467321543 * 1e18;
     uint256 internal _p2850     = 2_850.155149230026939621 * 1e18;
     uint256 internal _p2835     = 2_835.975272865698470386 * 1e18;
     uint256 internal _p2821     = 2_821.865943149948749647 * 1e18;
