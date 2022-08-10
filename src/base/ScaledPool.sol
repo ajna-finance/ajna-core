@@ -94,9 +94,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
     }
 
-    function approveNewPositionOwner(address owner_, address allowedNewOwner_) external {
-        require(msg.sender == owner_, "S:ANPO:NOT_OWNER");
-        lpTokenOwnership[owner_] = allowedNewOwner_;
+    function approveNewPositionOwner(address allowedNewOwner_) external {
+        lpTokenOwnership[msg.sender] = allowedNewOwner_;
     }
 
     function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external override {

@@ -43,20 +43,11 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
     /*** Approve new position Tests ***/
     /**********************************/
 
-    function testApproveNewPositionWithDifferentOwner() external {
-        // default 0x address if no new position owner approved
-        assertEq(_pool.lpTokenOwnership(address(_lender)), address(0));
-
-        // should fail if msg.sender is not owner
-        vm.expectRevert("S:ANPO:NOT_OWNER");
-        _lender.approveNewPositionOwner(_pool, address(_lender1), address(_lender2));
-    }
-
     function testApproveNewPositionOwner() external {
         // default 0x address if no new position owner approved
         assertEq(_pool.lpTokenOwnership(address(_lender)), address(0));
 
-        _lender.approveNewPositionOwner(_pool, address(_lender), address(_lender1));
+        _lender.approveNewPositionOwner(_pool, address(_lender1));
         assertEq(_pool.lpTokenOwnership(address(_lender)), address(_lender1));
     }
 
@@ -75,7 +66,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         _lender.transferLPTokens(_pool, address(_lender1), address(_lender2), indexes);
 
         // should fail if allowed owner is set to 0x
-        _lender1.approveNewPositionOwner(_pool, address(_lender1), address(0));
+        _lender1.approveNewPositionOwner(_pool, address(0));
         vm.expectRevert("S:TLT:NOT_OWNER");
         _lender.transferLPTokens(_pool, address(_lender1), address(_lender2), indexes);
     }
@@ -87,7 +78,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         indexes[2] = 2552;
 
         // should fail if allowed owner is set to lender2 address but trying to transfer to lender address
-        _lender1.approveNewPositionOwner(_pool, address(_lender1), address(_lender2));
+        _lender1.approveNewPositionOwner(_pool, address(_lender2));
         vm.expectRevert("S:TLT:NOT_OWNER");
         _lender.transferLPTokens(_pool, address(_lender1), address(_lender), indexes);
     }
@@ -99,7 +90,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         indexes[2] = 2552;
 
         // should fail since 9999 is not a valid index
-        _lender1.approveNewPositionOwner(_pool, address(_lender1), address(_lender2));
+        _lender1.approveNewPositionOwner(_pool, address(_lender2));
         vm.expectRevert("S:TLT:INVALID_INDEX");
         _lender.transferLPTokens(_pool, address(_lender1), address(_lender2), indexes);
     }
@@ -108,7 +99,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         uint256[] memory indexes = new uint256[](0);
 
         // set allowed owner to lender2 address
-        _lender1.approveNewPositionOwner(_pool, address(_lender1), address(_lender2));
+        _lender1.approveNewPositionOwner(_pool, address(_lender2));
         assertEq(_pool.lpTokenOwnership(address(_lender1)), address(_lender2));
 
         vm.expectEmit(true, true, true, true);
@@ -144,7 +135,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         assertEq(_pool.lpBalance(indexes[2], address(_lender2)), 0);
 
         // set allowed owner to lender2 address
-        _lender1.approveNewPositionOwner(_pool, address(_lender1), address(_lender2));
+        _lender1.approveNewPositionOwner(_pool, address(_lender2));
         assertEq(_pool.lpTokenOwnership(address(_lender1)), address(_lender2));
 
         // transfer LP tokens for all indexes
@@ -193,7 +184,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         assertEq(_pool.lpBalance(depositIndexes[2], address(_lender2)), 0);
 
         // set allowed owner to lender2 address
-        _lender1.approveNewPositionOwner(_pool, address(_lender1), address(_lender2));
+        _lender1.approveNewPositionOwner(_pool, address(_lender2));
         assertEq(_pool.lpTokenOwnership(address(_lender1)), address(_lender2));
 
         // transfer LP tokens for 2 indexes
@@ -243,7 +234,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         assertEq(_pool.lpBalance(indexes[2], address(_lender2)), 15_000 * 1e27);
 
         // set allowed owner to lender2 address
-        _lender1.approveNewPositionOwner(_pool, address(_lender1), address(_lender2));
+        _lender1.approveNewPositionOwner(_pool, address(_lender2));
         assertEq(_pool.lpTokenOwnership(address(_lender1)), address(_lender2));
 
         // transfer LP tokens for all indexes

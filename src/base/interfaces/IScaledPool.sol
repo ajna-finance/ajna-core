@@ -191,10 +191,9 @@ interface IScaledPool {
     /**
      *  @notice Called by lenders to approve a new owner of their LP tokens.
      *  @dev    Intended for use by the PositionManager contract.
-     *  @param  owner_           The existing owner of the LP tokens.
      *  @param  allowedNewOwner_ The new owner of the LP tokens.
      */
-    function approveNewPositionOwner(address owner_, address allowedNewOwner_) external;
+    function approveNewPositionOwner(address allowedNewOwner_) external;
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.

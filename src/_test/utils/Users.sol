@@ -48,8 +48,8 @@ contract UserWithQuoteToken {
         pool_.addQuoteToken(amount_, index_);
     }
 
-    function approveNewPositionOwner(ERC20Pool pool_, address owner_, address allowedNewOwner_) public {
-        pool_.approveNewPositionOwner(owner_, allowedNewOwner_);
+    function approveNewPositionOwner(ERC20Pool pool_, address allowedNewOwner_) public {
+        pool_.approveNewPositionOwner(allowedNewOwner_);
     }
 
     function moveQuoteToken(

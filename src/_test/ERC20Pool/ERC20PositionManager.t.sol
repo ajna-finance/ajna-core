@@ -169,13 +169,9 @@ contract ERC20PositionManagerTest is DSTestPlus {
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 
-        // set position ownership should revert if not called by owner
-        vm.expectRevert("S:ANPO:NOT_OWNER");
-        _pool.approveNewPositionOwner(testAddress, address(_positionManager));
-
         // allow position manager to take ownership of the position
         vm.prank(testAddress);
-        _pool.approveNewPositionOwner(testAddress, address(_positionManager));
+        _pool.approveNewPositionOwner(address(_positionManager));
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
@@ -264,18 +260,9 @@ contract ERC20PositionManagerTest is DSTestPlus {
             tokenId1, testLender1, indexes
         );
 
-        // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert("S:TLT:NOT_OWNER");
-        vm.prank(testLender1);
-        _positionManager.memorializePositions(memorializeParams);
-
-        // set position ownership should revert if not called by owner
-        vm.expectRevert("S:ANPO:NOT_OWNER");
-        _pool.approveNewPositionOwner(testLender1, address(_positionManager));
-
         // allow position manager to take ownership of lender 1's position
         vm.prank(testLender1);
-        _pool.approveNewPositionOwner(testLender1, address(_positionManager));
+        _pool.approveNewPositionOwner(address(_positionManager));
 
         // memorialize lender 1 quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
@@ -303,7 +290,7 @@ contract ERC20PositionManagerTest is DSTestPlus {
 
         // allow position manager to take ownership of lender 2's position
         vm.prank(testLender2);
-        _pool.approveNewPositionOwner(testLender2, address(_positionManager));
+        _pool.approveNewPositionOwner(address(_positionManager));
 
         // memorialize lender 2 quote tokens into minted NFT
         uint256[] memory newIndexes = new uint256[](2);
