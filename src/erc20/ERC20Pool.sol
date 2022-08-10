@@ -204,14 +204,10 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         buckets[index_].availableCollateral += amount_;
 
-        _updateInterestRate(borrowerDebt, _lup());
-
         // move required collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
     }
-
-    event DebugN(string where, uint256 what);
 
     function removeCollateral(uint256 maxAmount_, uint256 index_) external override {
         // determine amount of collateral to remove
@@ -220,17 +216,17 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 rate         = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs = lpBalance[index_][msg.sender];
 //        uint256 claimableCollateral = Maths.rwdivw(Maths.rdiv(availableLPs, rate), price);
+        // TODO: Worried about max amounts here; 1e27+1e36 takes us close to what a uint256 can handle.
         uint256 claimableCollateral = availableLPs * 1e36 / rate / price;
-        emit DebugN("removeCollateral claimableCollateral", claimableCollateral);
-        emit DebugN("removeCollateral bucket.availableCollateral", bucket.availableCollateral);
         uint256 amount = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
-        emit DebugN("removeCollateral amount", amount);
 
         // calculate amount of LP required to remove it
-//        uint256 lpRedemption = Maths.wrdivr(amount * price), rate);
-        uint256 lpRedemption = amount * price * 1e18 / rate;
-        emit DebugN("removeCollateral lpRedemption", lpRedemption);
-        emit DebugN("removeCollateral LPB", lpBalance[index_][msg.sender]);
+        uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount, price), rate);
+
+        // TODO: find a better way of dealing with dust amounts
+        if (availableLPs - lpRedemption < 1e18) {
+            lpRedemption = availableLPs;
+        }
 
         // update bucket accounting
         bucket.availableCollateral    -= amount;
@@ -238,9 +234,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update lender accounting
         lpBalance[index_][msg.sender] -= lpRedemption;
-
-        // update pool accounting
-        _updateInterestRate(borrowerDebt, _lup());
 
         // move collateral from pool to lender
         collateral().safeTransfer(msg.sender, amount / collateralScale);

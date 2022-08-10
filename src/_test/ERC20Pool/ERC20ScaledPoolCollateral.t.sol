@@ -273,28 +273,29 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         // lender exchanges their LP for collateral
         uint256 exchangeRate = _pool.exchangeRate(testIndex);
         uint256 lpBalance = _pool.lpBalance(testIndex, address(_lender));
-        uint256 lpValueInQuote = Maths.rayToWad(Maths.rmul(lpBalance, exchangeRate));
-        assertEq(lpValueInQuote, 10_000 * 1e18);
-        uint256 lpValueInCollateral = Maths.wdiv(lpValueInQuote, priceAtTestIndex);
-        assertEq(lpValueInCollateral, 3.321274866808485288 * 1e18);
+        uint256 lpValueInCollateral = Maths.rmul(lpBalance, exchangeRate) * 1e9 / priceAtTestIndex;
+        assertEq(lpValueInCollateral, 3.321274866808485287 * 1e18);
         // FIXME: LPs redeemed for collateral doesn't match the event.
-//        vm.expectEmit(true, true, true, true);
-//        emit Transfer(address(_pool), address(_lender), lpValueInCollateral);
-//        vm.expectEmit(true, true, true, true);
-//        emit RemoveCollateral(address(_lender), priceAtTestIndex, lpValueInCollateral, lpBalance);
-        _lender.removeCollateral(_pool, lpValueInCollateral, testIndex);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_lender), lpValueInCollateral);
+        vm.expectEmit(true, true, true, true);
+        emit RemoveCollateral(address(_lender), priceAtTestIndex, lpValueInCollateral, lpBalance);
+        _lender.removeCollateral(_pool, availableCollateral, testIndex);
+        assertEq(_collateral.balanceOf(address(_lender)), lpValueInCollateral);
 
-        // TODO: bidder still has some collateral in there
-//        // check pool state and balances
-//        assertEq(_collateral.balanceOf(address(_lender)), availableCollateral);
-//        assertEq(_collateral.balanceOf(address(_pool)),   0);
-//        assertEq(_quote.balanceOf(address(_pool)),        0);
-//
-//        // check bucket state
-//        (lpAccumulator, availableCollateral) = _pool.buckets(testIndex);
-//        assertEq(availableCollateral, 0);
-//        assertEq(lpAccumulator,       0);
-//        assertEq(lpAccumulator,       _pool.lpBalance(testIndex, address(_lender)));
+        // bidder removes their _collateral
+        // TODO: validate events
+        _bidder.removeCollateral(_pool, collateralToPurchaseWith, testIndex);
+
+        // check pool state and balances
+//        assertEq(_collateral.balanceOf(address(_pool)),   0);  // FIXME: 2 left over
+        assertEq(_quote.balanceOf(address(_pool)),        0);
+
+        // check bucket state
+        (lpAccumulator, availableCollateral) = _pool.buckets(testIndex);
+//        assertEq(availableCollateral,  0);                    // FIXME: 2 left over
+        assertEq(lpAccumulator,        0);
+        assertEq(_pool.get(testIndex), 0);
     }
 
     // TODO: add collateralization, utilization and encumberance test? -> use hardcoded amounts in pure functions without creaitng whole pool flows
