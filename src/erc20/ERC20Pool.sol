@@ -47,7 +47,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
+    function pledgeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -67,7 +67,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // move collateral from sender to pool
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
-        emit AddCollateral(msg.sender, amount_);
+        emit PledgeCollateral(msg.sender, amount_);
     }
 
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
@@ -112,7 +112,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit Borrow(msg.sender, newLup, amount_);
     }
 
-    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
+    function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -120,7 +120,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
         uint256 curLup = _lup();
-        require(borrower.collateral - _encumberedCollateral(borrower.debt, curLup) >= amount_, "S:RC:NOT_ENOUGH_COLLATERAL");
+        require(borrower.collateral - _encumberedCollateral(borrower.debt, curLup) >= amount_, "S:PC:NOT_ENOUGH_COLLATERAL");
         borrower.collateral -= amount_;
 
         // update loan queue
@@ -133,7 +133,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // move collateral from pool to sender
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-        emit RemoveCollateral(msg.sender, amount_);
+        emit PullCollateral(msg.sender, amount_);
     }
 
     function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
@@ -188,49 +188,67 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Lender External Functions ***/
     /*********************************/
 
-    function claimCollateral(uint256 amount_, uint256 index_) external override {
-        Bucket storage bucket = buckets[index_];
-        require(amount_ <= bucket.availableCollateral, "S:CC:AMT_GT_COLLAT");
+    function addCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
+        require(collateral().balanceOf(msg.sender) >= amount_, "S:AC:INSUF_COL");
 
-        uint256 price        = _indexToPrice(index_);
-        uint256 rate         = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 lpRedemption = Maths.wrdivr(Maths.wmul(amount_, price), rate);
-        require(lpRedemption <= lpBalance[index_][msg.sender], "S:CC:INSUF_LP_BAL");
+        _accruePoolInterest();
 
-        bucket.availableCollateral     -= amount_;
-        bucket.lpAccumulator           -= lpRedemption;
+        Bucket memory bucket = buckets[index_];
+        // Calculate exchange rate before new collateral has been accounted for.
+        // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
+        uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+
+        uint256 quoteValue   = Maths.wmul(amount_, _indexToPrice(index_));
+        lpbChange_           = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
+        bucket.lpAccumulator += lpbChange_;
+
+        lpBalance[index_][msg.sender] += lpbChange_;
+
+        bucket.availableCollateral += amount_;
+        buckets[index_] = bucket;
+
+        _updateInterestRate(borrowerDebt, _lup());
+
+        // move required collateral from sender to pool
+        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
+        emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
+    }
+
+    function removeCollateral(uint256 maxAmount_, uint256 index_) external override {
+        _accruePoolInterest();
+
+        // determine amount of collateral to remove
+        Bucket memory bucket        = buckets[index_];
+        uint256 price               = _indexToPrice(index_);
+        uint256 rate                = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 availableLPs        = lpBalance[index_][msg.sender];
+        uint256 claimableCollateral = Maths.rwdivw(Maths.rdiv(availableLPs, rate), price);
+
+        uint256 amount;
+        uint256 lpRedemption;
+        if (maxAmount_ > claimableCollateral && bucket.availableCollateral >= claimableCollateral) {
+            // lender wants to redeem all of their LPB for collateral, and the bucket has enough to offer
+            amount       = claimableCollateral;
+            lpRedemption = availableLPs;
+        } else {
+            // calculate how much collateral may be awarded to lender, and how much LPB to redeem
+            amount       = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
+            lpRedemption = Maths.min(availableLPs, Maths.rdiv((amount * price / 1e9), rate));
+        }
+
+        // update bucket accounting
+        bucket.availableCollateral -= Maths.min(bucket.availableCollateral, amount);
+        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpRedemption);
+        buckets[index_] = bucket;
+
+        // update lender accounting
         lpBalance[index_][msg.sender] -= lpRedemption;
 
         _updateInterestRate(borrowerDebt, _lup());
 
-        // move claimed collateral from pool to claimer
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-        emit ClaimCollateral(msg.sender, price, amount_, lpRedemption);
-    }
-
-    /*******************************/
-    /*** Pool External Functions ***/
-    /*******************************/
-
-    function purchaseQuote(uint256 amount_, uint256 index_) external override {
-        require(_rangeSum(index_, index_) >= amount_, "S:P:INSUF_QUOTE");
-
-        uint256 curDebt = _accruePoolInterest();
-
-        uint256 price = _indexToPrice(index_);
-        uint256 collateralRequired = Maths.wdiv(amount_, price);
-        require(collateral().balanceOf(msg.sender) * collateralScale >= collateralRequired, "S:P:INSUF_COL");
-
-        _remove(index_, amount_);
-        buckets[index_].availableCollateral += collateralRequired;
-
-        _updateInterestRate(curDebt, _lup());
-
-        // move required collateral from sender to pool
-        collateral().safeTransferFrom(msg.sender, address(this), collateralRequired / collateralScale);
-        // move quote token amount from pool to sender
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
-        emit Purchase(msg.sender, price, amount_, collateralRequired);
+        // move collateral from pool to lender
+        collateral().safeTransfer(msg.sender, amount / collateralScale);
+        emit RemoveCollateral(msg.sender, price, amount, lpRedemption);
     }
 
     /**********************/

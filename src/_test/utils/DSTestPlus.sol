@@ -10,7 +10,7 @@ abstract contract DSTestPlus is Test {
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
-    // prices
+    // FIXME: these prices are all wrong; the highest priced bucket now has the lowest index
     uint256 internal _p50159    = 50_159.593888626183666006 * 1e18;
     uint256 internal _p49910    = 49_910.043670274810022205 * 1e18;
     uint256 internal _p15000    = 15_000.520048194378317056 * 1e18;
@@ -67,7 +67,6 @@ abstract contract DSTestPlus is Test {
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
-    event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
     event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
 
