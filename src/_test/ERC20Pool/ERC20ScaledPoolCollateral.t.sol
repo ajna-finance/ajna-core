@@ -22,7 +22,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
     UserWithCollateral internal _borrower;
     UserWithCollateral internal _borrower2;
     UserWithQuoteToken internal _lender;
-    UserWithQuoteToken internal _bidder;
+    UserWithCollateral internal _bidder;
 
     function setUp() external {
         _collateral  = new CollateralToken();
@@ -31,7 +31,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         _pool        = ERC20Pool(_poolAddress);
 
         _borrower   = new UserWithCollateral();
-        _bidder     = new UserWithQuoteToken();
+        _bidder     = new UserWithCollateral();
         _lender     = new UserWithQuoteToken();
 
         _collateral.mint(address(_borrower), 150 * 1e18);
@@ -46,9 +46,9 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
     }
 
     /**
-     *  @notice With 1 lender and 1 borrower test addCollateral, borrow, and removeCollateral.
+     *  @notice With 1 lender and 1 borrower test pledgeCollateral, borrow, and pullCollateral.
      */
-    function testAddRemoveCollateral() external {
+    function testAddPullCollateral() external {
         uint256 depositPriceHighest = 2550;
         uint256 depositPriceHigh    = 2551;
         uint256 depositPriceMed     = 2552;
@@ -71,8 +71,8 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
 
         // borrower deposits 100 collateral
         vm.expectEmit(true, true, false, true);
-        emit AddCollateral(address(_borrower), 100 * 1e18);
-        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0));
+        emit PledgeCollateral(address(_borrower), 100 * 1e18);
+        _borrower.pledgeCollateral(_pool, 100 * 1e18, address(0), address(0));
 
         // check pool state collateral accounting updated successfully
         assertEq(_pool.pledgedCollateral(), 100 * 1e18);
@@ -114,8 +114,8 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
 
         // remove some of the collateral
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateral(address(_borrower), 50 * 1e18);
-        _borrower.removeCollateral(_pool, 50 * 1e18, address(0), address(0));
+        emit PullCollateral(address(_borrower), 50 * 1e18);
+        _borrower.pullCollateral(_pool, 50 * 1e18, address(0), address(0));
 
         // check borrower state
         (borrowerDebt, , borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
@@ -132,8 +132,8 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         // remove all of the remaining unencumbered collateral
         uint256 unencumberedCollateral = borrowerCollateral - _pool.encumberedCollateral(borrowerDebt, _pool.lup());
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateral(address(_borrower), unencumberedCollateral);
-        _borrower.removeCollateral(_pool, unencumberedCollateral, address(0), address(0));
+        emit PullCollateral(address(_borrower), unencumberedCollateral);
+        _borrower.pullCollateral(_pool, unencumberedCollateral, address(0), address(0));
 
         // check pool state
         assertEq(_pool.htp(), 2_989.185764499773229142 * 1e18);
@@ -161,126 +161,65 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
     }
 
     /**
-     *  @notice 1 borrower tests reverts in removeCollateral.
+     *  @notice 1 borrower tests reverts in pullCollateral.
      *          Reverts:
      *              Attempts to remove more than available unencumbered collateral.
      */
-    function testRemoveCollateralRequireEnoughCollateral() external {
+    function testPullCollateralRequireEnoughCollateral() external {
         uint256 testCollateralAmount = 100 * 1e18;
 
         // should revert if trying to remove more collateral than is available
-        vm.expectRevert("S:RC:NOT_ENOUGH_COLLATERAL");
-        _borrower.removeCollateral(_pool, testCollateralAmount, address(0), address(0));
+        vm.expectRevert("S:PC:NOT_ENOUGH_COLLATERAL");
+        _borrower.pullCollateral(_pool, testCollateralAmount, address(0), address(0));
 
         // borrower deposits 100 collateral
         vm.expectEmit(true, true, true, true);
-        emit AddCollateral(address(_borrower), testCollateralAmount);
-        _borrower.addCollateral(_pool, testCollateralAmount, address(0), address(0));
+        emit PledgeCollateral(address(_borrower), testCollateralAmount);
+        _borrower.pledgeCollateral(_pool, testCollateralAmount, address(0), address(0));
 
         // should be able to now remove collateral
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateral(address(_borrower), testCollateralAmount);
-        _borrower.removeCollateral(_pool, testCollateralAmount, address(0), address(0));
+        emit PullCollateral(address(_borrower), testCollateralAmount);
+        _borrower.pullCollateral(_pool, testCollateralAmount, address(0), address(0));
     }
 
     /**
-     *  @notice 1 lender, 1 bidder tests claimCollateral.
+     *  @notice 1 actor tests addCollateral and removeCollateral.
      */
-    function testClaimCollateral() external {
+    function testRemoveCollateral() external {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = _pool.indexToPrice(testIndex);
         _collateral.mint(address(_bidder), 100 * 1e18);
         _bidder.approveToken(_collateral, address(_pool), 100 * 1e18);
 
-        // lender adds initial quote to pool
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, testIndex);
-
-        // bidder purchases some of the initial quote
-        uint256 collateralToPurchaseWith = 3.321274866808485288 * 1e18;
+        // actor deposits collateral into a bucket
+        uint256 collateralToDeposit = 4 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_bidder), address(_pool), collateralToPurchaseWith);
+        emit Transfer(address(_bidder), address(_pool), collateralToDeposit);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_bidder), 10_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
-        emit Purchase(address(_bidder), priceAtTestIndex, 10_000 * 1e18, collateralToPurchaseWith);
-        _bidder.purchaseQuote(_pool, 10_000 * 1e18, testIndex);
+        emit AddCollateral(address(_bidder), priceAtTestIndex, collateralToDeposit);
+        _bidder.addCollateral(_pool, collateralToDeposit, testIndex);
 
         // check bucket state
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(testIndex);
-        assertEq(availableCollateral, collateralToPurchaseWith);
-        assertGt(availableCollateral, 0);
-        assertEq(lpAccumulator,       _pool.lpBalance(testIndex, address(_lender)));
-        assertGt(lpAccumulator,       0);
-
-        // check pool state and balances
-        assertEq(_collateral.balanceOf(address(_lender)), 0);
-        assertEq(_collateral.balanceOf(address(_pool)),   collateralToPurchaseWith);
-        assertEq(_quote.balanceOf(address(_pool)),        0);
-
-        // lender claims all available collateral
-        vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), address(_lender), availableCollateral);
-        vm.expectEmit(true, true, true, true);
-        emit ClaimCollateral(address(_lender), priceAtTestIndex, availableCollateral, lpAccumulator);
-        _lender.claimCollateral(_pool, availableCollateral, testIndex);
-
-        // check pool state and balances
-        assertEq(_collateral.balanceOf(address(_lender)), availableCollateral);
-        assertEq(_collateral.balanceOf(address(_pool)),   0);
-        assertEq(_quote.balanceOf(address(_pool)),        0);
+        assertEq(availableCollateral, collateralToDeposit);
+        assertEq(_pool.lpBalance(testIndex, address(_bidder)), 12_043.56808879152623138 * 1e27);
 
         // check bucket state
         (lpAccumulator, availableCollateral) = _pool.buckets(testIndex);
-        assertEq(availableCollateral, 0);
-        assertEq(lpAccumulator,       0);
-        assertEq(lpAccumulator,       _pool.lpBalance(testIndex, address(_lender)));
-    }
+        assertEq(availableCollateral, collateralToDeposit);
+        assertGt(availableCollateral, 0);
+        assertEq(_pool.lpBalance(testIndex, address(_bidder)), 12_043.568088791526231380000000000 * 1e27);
 
-    /**
-     *  @notice 1 lender, 1 bidder tests reverts in claimCollateral.
-     *          Reverts:
-     *              Attempts to claim collateral when there is none in the bucket.
-     *              Attempts to claim collateral when lpBalance is 0.
-     */
-    function testClaimCollateralRequireChecks() external {
-        // test setup
-        uint256 testIndex = 2550;
-        uint256 priceAtTestIndex = _pool.indexToPrice(testIndex);
-        _collateral.mint(address(_bidder), 100 * 1e18);
-        _bidder.approveToken(_collateral, address(_pool), 100 * 1e18);
-        
-        // lender adds initial quote to pool
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
+        // check pool state and balances
+        assertEq(_collateral.balanceOf(address(_lender)), 0);
+        assertEq(_collateral.balanceOf(address(_pool)), collateralToDeposit);
+        assertEq(_quote.balanceOf(address(_pool)),        0);
 
-        // should revert if no collateral is available in the bucket
-        vm.expectRevert("S:CC:AMT_GT_COLLAT");
-        _lender.claimCollateral(_pool, Maths.WAD, testIndex);
-
-        // bidder purchases some of the initial quote
-        uint256 collateralToPurchaseWith = 3.321274866808485288 * 1e18;
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_bidder), address(_pool), collateralToPurchaseWith);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_bidder), 10_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
-        emit Purchase(address(_bidder), priceAtTestIndex, 10_000 * 1e18, collateralToPurchaseWith);
-        _bidder.purchaseQuote(_pool, 10_000 * 1e18, testIndex);
-
-        (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(testIndex);
-
-        // should revert if attempting to claim more than lp balance allows
-        vm.expectRevert("S:CC:INSUF_LP_BAL");
-        _bidder.claimCollateral(_pool, availableCollateral, testIndex);
-
-        // should be able to claim collateral if properly specified
-        vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), address(_lender), availableCollateral);
-        vm.expectEmit(true, true, true, true);
-        emit ClaimCollateral(address(_lender), priceAtTestIndex, availableCollateral, lpAccumulator);
-        _lender.claimCollateral(_pool, availableCollateral, testIndex);
+        // actor withdraws their collateral
+        _bidder.removeCollateral(_pool, collateralToDeposit, testIndex);
     }
 
     // TODO: add collateralization, utilization and encumberance test? -> use hardcoded amounts in pure functions without creaitng whole pool flows
-
 }

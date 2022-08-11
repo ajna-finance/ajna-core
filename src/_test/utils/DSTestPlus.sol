@@ -11,7 +11,7 @@ abstract contract DSTestPlus is Test {
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
-    // prices
+    // FIXME: these prices are all wrong; the highest priced bucket now has the lowest index
     uint256 internal _p50159    = 50_159.593888626183666006 * 1e18;
     uint256 internal _p49910    = 49_910.043670274810022205 * 1e18;
     uint256 internal _p15000    = 15_000.520048194378317056 * 1e18;
@@ -64,6 +64,7 @@ abstract contract DSTestPlus is Test {
 
     // Pool events
     event AddCollateral(address indexed borrower_, uint256 amount_);
+    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event AddNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
@@ -71,9 +72,12 @@ abstract contract DSTestPlus is Test {
     event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_, uint256 lps_);
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
+    event PledgeCollateral(address indexed borrower_, uint256 amount_);
+    event PullCollateral(address indexed borrower_, uint256 amount_);
     event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
     event PurchaseWithNFTs(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256[] tokenIds_);
     event RemoveCollateral(address indexed borrower_, uint256 amount_);
+    event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_, uint256 lps_);
     event RemoveNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);

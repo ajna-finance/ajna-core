@@ -62,7 +62,7 @@ def test_borrow_repay_scaled(
 
         col_txes = []
         for i in range(10):
-            tx = scaled_pool.addCollateral(10 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+            tx = scaled_pool.pledgeCollateral(10 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
             col_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
@@ -114,7 +114,7 @@ def test_borrow_purchase_scaled(
         scaled_pool.addQuoteToken(100 * 10**18, 2560, {"from": lenders[0]})
         scaled_pool.addQuoteToken(100 * 10**18, 2570, {"from": lenders[0]})
         
-        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
 
         scaled_pool.borrow(110 * 10**18, 5000, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
         scaled_pool.borrow(110 * 10**18, 5000, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})

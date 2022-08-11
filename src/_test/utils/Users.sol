@@ -11,25 +11,37 @@ import { BucketMath } from "../../libraries/BucketMath.sol";
 
 contract UserWithCollateral {
 
+    function addCollateral(ERC20Pool pool_, uint256 amount_, uint256 index_) public {
+        pool_.addCollateral(amount_, index_);
+    }
+
     function approveAndDepositTokenAsCollateral(IERC20 token_, ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
         token_.approve(address(pool_), amount_);
-        pool_.addCollateral(amount_, oldPrev_, newPrev_);
+        pool_.pledgeCollateral(amount_, oldPrev_, newPrev_);
     }
 
     function approveToken(IERC20 token_, address spender_, uint256 amount_) public {
         token_.approve(spender_, amount_);
     }
 
-    function addCollateral(ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
-        pool_.addCollateral(amount_, oldPrev_, newPrev_);
+    function pledgeCollateral(ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
+        pool_.pledgeCollateral(amount_, oldPrev_, newPrev_);
     }
 
     function borrow(ERC20Pool pool_, uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) public {
         pool_.borrow(amount_, limitIndex_, oldPrev_, newPrev_);
     }
 
-    function removeCollateral(ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
-        pool_.removeCollateral(amount_, oldPrev_, newPrev_);
+    function pullCollateral(ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
+        pool_.pullCollateral(amount_, oldPrev_, newPrev_);
+    }
+
+    function removeCollateral(ERC20Pool pool_, uint256 amount_, uint256 index_) public {
+        pool_.removeCollateral(amount_, index_);
+    }
+
+    function removeQuoteToken(ERC20Pool pool_, uint256 amount_, uint256 index_) public {
+        pool_.removeQuoteToken(amount_, index_);
     }
 
     function repay(ERC20Pool pool_, uint256 amount_, address oldPrev_, address newPrev_) public {
@@ -50,16 +62,12 @@ contract UserWithQuoteToken {
         pool_.moveQuoteToken(amount_, fromIndex_, toIndex_);
     }
 
-    function purchaseQuote(ERC20Pool pool_, uint256 amount_, uint256 index_) public {
-        pool_.purchaseQuote(amount_, index_);
-    }
-
     function removeQuoteToken(ERC20Pool pool_, uint256 amount_, uint256 index_) public {
         pool_.removeQuoteToken(amount_, index_);
     }
 
-    function claimCollateral(ERC20Pool pool_, uint256 amount_, uint256 index_) public {
-        pool_.claimCollateral(amount_, index_);
+    function removeCollateral(ERC20Pool pool_, uint256 amount_, uint256 index_) public {
+        pool_.removeCollateral(amount_, index_);
     }
 
     function approveToken(IERC20 token_, address spender_, uint256 amount_) public {

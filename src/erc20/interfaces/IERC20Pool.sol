@@ -17,7 +17,7 @@ interface IERC20Pool is IScaledPool {
      *  @param  borrower_ `msg.sender`.
      *  @param  amount_   Amount of collateral locked in the pool.
      */
-    event AddCollateral(address indexed borrower_, uint256 amount_);
+    event PledgeCollateral(address indexed borrower_, uint256 amount_);
 
     /**
      *  @notice Emitted when borrower borrows quote tokens from pool.
@@ -28,29 +28,28 @@ interface IERC20Pool is IScaledPool {
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     /**
+     *  @notice Emitted when actor adds unencumbered collateral to a bucket.
+     *  @param  actor_  Recipient that added collateral.
+     *  @param  price_  Price at which collateral were added.
+     *  @param  amount_ Amount of collateral added to the pool.
+     */
+    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
+
+    /**
      *  @notice Emitted when lender claims unencumbered collateral.
      *  @param  claimer_ Recipient that claimed collateral.
      *  @param  price_   Price at which unencumbered collateral was claimed.
-     *  @param  amount_  The amount of Quote tokens transferred to the claimer.
+     *  @param  amount_  The amount of collateral transferred to the claimer.
      *  @param  lps_     The amount of LP tokens burned in the claim.
      */
-    event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
+    event RemoveCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
 
     /**
-     *  @notice Emitted when collateral is exchanged for quote tokens.
-     *  @param  bidder_     `msg.sender`.
-     *  @param  price_      Price at which collateral was exchanged for quote tokens.
-     *  @param  amount_     Amount of quote tokens purchased.
-     *  @param  collateral_ Amount of collateral exchanged for quote tokens.
-     */
-    event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
-
-    /**
-     *  @notice Emitted when borrower removes collateral from the pool.
+     *  @notice Emitted when borrower removes pledged collateral from the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  amount_   Amount of collateral removed from the pool.
      */
-    event RemoveCollateral(address indexed borrower_, uint256 amount_);
+    event PullCollateral(address indexed borrower_, uint256 amount_);
 
     /**
      *  @notice Emitted when borrower repays quote tokens to the pool.
@@ -106,7 +105,7 @@ interface IERC20Pool is IScaledPool {
      *  @param  oldPrev_ Previous borrower that came before placed loan (old)
      *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
      */
-    function addCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
+    function pledgeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by a borrower to open or expand a position.
@@ -124,7 +123,7 @@ interface IERC20Pool is IScaledPool {
      *  @param  oldPrev_ Previous borrower that came before placed loan (old)
      *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
      */
-    function removeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
+    function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
@@ -149,22 +148,18 @@ interface IERC20Pool is IScaledPool {
     /*******************************************/
 
     /**
+     *  @notice Deposit unencumbered collateral into a specified bucket.
+     *  @param  amount_ Amount of collateral to deposit.
+     *  @param  index_  The bucket index to which collateral will be deposited.
+     */
+    function addCollateral(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_);
+
+    /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
      *  @param  amount_ The amount of unencumbered collateral to claim.
      *  @param  index_  The index of the bucket from which unencumbered collateral will be claimed.
      */
-    function claimCollateral(uint256 amount_, uint256 index_) external;
-
-    /************************************/
-    /*** ERC20Pool External Functions ***/
-    /************************************/
-
-    /**
-     *  @notice Purchase amount of quote token from specified bucket price.
-     *  @param  amount_ Amount of quote tokens to purchase.
-     *  @param  index_  The bucket index from which quote tokens will be purchased.
-     */
-    function purchaseQuote(uint256 amount_, uint256 index_) external;
+    function removeCollateral(uint256 amount_, uint256 index_) external;
 
     /**********************/
     /*** View Functions ***/

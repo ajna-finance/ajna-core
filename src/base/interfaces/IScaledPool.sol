@@ -173,18 +173,18 @@ interface IScaledPool {
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
-     *  @param  lpbAmount_ The maximum amount of quote token to be moved by a lender.
+     *  @param  maxAmount_ The maximum amount of quote token to be moved by a lender.
      *  @param  fromIndex_ The bucket index from which the quote tokens will be removed.
      *  @param  toIndex_   The bucket index to which the quote tokens will be added.
      */
-    function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external;
+    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external;
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
-     *  @param  lpbAmount_  The amount of LP tokens to be removed by a lender.
+     *  @param  maxAmount_  The maximum amount of quote token to be removed by a lender.
      *  @param  index_      The bucket index from which quote tokens will be removed.
      */
-    function removeQuoteToken(uint256 lpbAmount_, uint256 index_) external;
+    function removeQuoteToken(uint256 maxAmount_, uint256 index_) external;
 
     /**********************/
     /*** View Functions ***/
@@ -202,7 +202,7 @@ interface IScaledPool {
     /**
      *  @notice Returns exchange rate of the bucket.
      *  @param  index_        The index of the bucket to calculate exchange rate for.
-     *  @return exchangeRate_ The exchange rate of the bucket, in WAD units.
+     *  @return exchangeRate_ The exchange rate of the bucket, in RAY units.
      */
     function exchangeRate(uint256 index_) external view returns (uint256 exchangeRate_);
 
