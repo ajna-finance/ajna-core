@@ -140,7 +140,7 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 5_000 * 1e18, BucketMath.MAX_PRICE);
-        _lender.removeQuoteToken(_pool, 5_000 * 1e27, 2549);
+        _lender.removeQuoteToken(_pool, 5_000 * 1e18, 2549);
 
         assertEq(_pool.lpBalance(2549, address(_lender)), 35_000 * 1e27);
 
@@ -160,24 +160,50 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         _lender.addQuoteToken(_pool, 10_000 * 1e18, 4550);
         _lender.addQuoteToken(_pool, 20_000 * 1e18, 4551);
 
-        vm.expectRevert("S:RQT:INSUF_LPS");
-        _lender.removeQuoteToken(_pool, 50_000 * 1e27, 4549);
-
         // add collateral and borrow all available quote in the higher priced original 3 buckets
         _lender.addQuoteToken(_pool, 30_000 * 1e18, 4990);
         _collateral.mint(address(_borrower), 3500000 * 1e18);
         _borrower.approveToken(_collateral, address(_pool), 3500000 * 1e18);
-        _borrower.addCollateral(_pool, 3500000 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 3500000 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 70000 * 1e18, 4551, address(0), address(0));
 
         // should revert if removing quote token from higher price buckets would drive lup below htp
         vm.expectRevert("S:RQT:BAD_LUP");
-        _lender.removeQuoteToken(_pool, 20_000 * 1e27, 4551);
+        _lender.removeQuoteToken(_pool, 20_000 * 1e18, 4551);
 
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(4990), 10_000 * 1e18, _pool.indexToPrice(4551));
-        _lender.removeQuoteToken(_pool, 10_000 * 1e27, 4990);
+        _lender.removeQuoteToken(_pool, 10_000 * 1e18, 4990);
     }
+
+    function testScaledPoolRemoveQuoteTokenWithDebt() external {
+        // lender adds initial quote token
+        _lender.addQuoteToken(_pool, 3_400 * 1e18, 1663);
+        _lender.addQuoteToken(_pool, 3_400 * 1e18, 1606);
+        uint256 lpb_before = _pool.lpBalance(1663, address(_lender));
+        uint256 exchangeRateBefore = _pool.exchangeRate(1663);
+        skip(3600);
+        assertEq(lpb_before, _pool.lpBalance(1663, address(_lender)));
+        assertEq(exchangeRateBefore, _pool.exchangeRate(1663));
+
+        // borrower takes a loan of 3000 quote token
+        _collateral.mint(address(_borrower), 100 * 1e18);
+        _borrower.approveToken(_collateral, address(_pool), 100 * 1e18);
+        _borrower.pledgeCollateral(_pool, 100 * 1e18, address(0), address(0));
+        uint256 limitPrice = _pool.priceToIndex(4_000 * 1e18);
+        assertGt(limitPrice, 1663);
+        _borrower.borrow(_pool, 3_000 * 1e18, limitPrice, address(0), address(0));
+        skip(3600);
+        assertEq(lpb_before, _pool.lpBalance(1663, address(_lender)));
+        assertEq(exchangeRateBefore, _pool.exchangeRate(1663));
+
+        // lender removes 3_400 quote token
+        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1663), 3_400 * 1e18, _pool.indexToPrice(1663));
+        _lender.removeQuoteToken(_pool, 3_400 * 1e18, 1663);
+    }
+
+    // TODO: Test similar to above, but with multiple lenders.
+    //      Ensure first lender may remove their liquidity after another interest accumulation occurs.
 
     function testScaledPoolMoveQuoteToken() external {
         _lender.addQuoteToken(_pool, 40_000 * 1e18, 2549);
@@ -188,21 +214,21 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.lpBalance(2552, address(_lender)), 0);
 
         vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(address(_lender), 2549, 2552, 5_000 * 1e27, BucketMath.MAX_PRICE);
+        emit MoveQuoteToken(address(_lender), 2549, 2552, 5_000 * 1e18, BucketMath.MAX_PRICE);
         _lender.moveQuoteToken(_pool, 5_000 * 1e18, 2549, 2552);
 
         assertEq(_pool.lpBalance(2549, address(_lender)), 35_000 * 1e27);
         assertEq(_pool.lpBalance(2552, address(_lender)), 5_000 * 1e27);
 
         vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(address(_lender), 2549, 2540, 5_000 * 1e27, BucketMath.MAX_PRICE);
+        emit MoveQuoteToken(address(_lender), 2549, 2540, 5_000 * 1e18, BucketMath.MAX_PRICE);
         _lender.moveQuoteToken(_pool, 5_000 * 1e18, 2549, 2540);
 
         assertEq(_pool.lpBalance(2549, address(_lender)), 30_000 * 1e27);
         assertEq(_pool.lpBalance(2540, address(_lender)), 5_000 * 1e27);
 
         vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(address(_lender), 2551, 2777, 15_000 * 1e27, BucketMath.MAX_PRICE);
+        emit MoveQuoteToken(address(_lender), 2551, 2777, 15_000 * 1e18, BucketMath.MAX_PRICE);
         _lender.moveQuoteToken(_pool, 15_000 * 1e18, 2551, 2777);
 
         assertEq(_pool.lpBalance(2551, address(_lender)), 5_000 * 1e27);
@@ -230,25 +256,11 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         vm.expectRevert("S:MQT:SAME_PRICE");
         _lender.moveQuoteToken(_pool, 5_000 * 1e18, 4549, 4549);
 
-        // bidder purchases some collateral
-        uint256 collateralToPurchaseWith = 71712.422545270036353445 * 1e18;
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_lender1), address(_pool), collateralToPurchaseWith);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_lender1), 10_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
-        emit Purchase(address(_lender1), _pool.indexToPrice(4551), 10_000 * 1e18, collateralToPurchaseWith);
-        _lender1.purchaseQuote(_pool, 10_000 * 1e18, 4551);
-
-        // should revert if moving quote tokens to from a bucket with available collateral
-        vm.expectRevert("S:MQT:AVAIL_COL");
-        _lender.moveQuoteToken(_pool, 5_000 * 1e18, 4551, 4549);
-
         // add collateral and borrow all available quote in the higher priced original 3 buckets, as well as some of the new lowest price bucket
         _lender.addQuoteToken(_pool, 30_000 * 1e18, 4651);
         _collateral.mint(address(_borrower), 1500000 * 1e18);
         _borrower.approveToken(_collateral, address(_pool), 1500000 * 1e18);
-        _borrower.addCollateral(_pool, 1500000 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 1500000 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 60000.1 * 1e18, 4651, address(0), address(0));
 
         // should revert if movement would drive lup below htp
@@ -257,8 +269,9 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
         // should be able to moveQuoteToken if properly specified
         vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(address(_lender), 4549, 4550, 10_000 * 1e27, _pool.indexToPrice(4651));
+        emit MoveQuoteToken(address(_lender), 4549, 4550, 10_000 * 1e18, _pool.indexToPrice(4551));
         _lender.moveQuoteToken(_pool, 10_000 * 1e18, 4549, 4550);
     }
 
+    // TODO: test moving quote token with debt on the book and skips to accumulate interest
 }

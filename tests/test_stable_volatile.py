@@ -152,7 +152,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
         print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral TP={threshold_price / 1e18:.1f}")
     assert collateral_to_deposit > 10**18
     # TODO: if debt is 0, contracts require passing old_prev and new_prev=0, which is awkward
-    pool.addCollateral(collateral_to_deposit, old_prev, new_prev, {"from": borrower})
+    pool.pledgeCollateral(collateral_to_deposit, old_prev, new_prev, {"from": borrower})
     test_utils.validate_queue(pool)
 
     # draw debt
@@ -182,7 +182,6 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, durati
     while chain.time() < end_time:
         if chain.time() - last_triggered[user_index] > get_time_between_interactions(user_index):
 
-            test_utils.summarize_pool(pool)
             # Draw debt, repay debt, or do nothing depending on interest rate
             utilization = pool.poolActualUtilization() / 10**18
             if interest_rate < 0.10 and utilization < MAX_UTILIZATION:
@@ -193,7 +192,6 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, durati
                 repay(borrowers[user_index], user_index, pool, test_utils)
             chain.sleep(14)
 
-            test_utils.summarize_pool(pool)
             # Add or remove liquidity
             utilization = pool.poolActualUtilization() / 10**18
             if utilization < MAX_UTILIZATION and len(buckets_deposited[user_index]) > 0:
@@ -270,7 +268,7 @@ def remove_quote_token(lender, lender_index, price, pool):
               f"exchange rate is {exchange_rate/1e27:.8f}")
         if not ensure_pool_is_funded(pool, claimable_quote * 2, "withdraw"):
             return
-        tx = pool.removeQuoteToken(lp_balance, price_index, {"from": lender})
+        tx = pool.removeQuoteToken(int(claimable_quote * 1.01), price_index, {"from": lender})
     else:
         print(f" lender {lender_index} has no claim to bucket {price / 10**18:.1f}")
 
@@ -308,7 +306,7 @@ def repay(borrower, borrower_index, pool, test_utils):
               f"and {collateral_encumbered/1e18:.1f} encumbered, "
               f"is withdrawing {collateral_deposited/1e18:.1f} collateral")
         assert collateral_to_withdraw > 0
-        tx = pool.removeCollateral(collateral_to_withdraw, old_prev, new_prev, {"from": borrower})
+        tx = pool.pullCollateral(collateral_to_withdraw, old_prev, new_prev, {"from": borrower})
         test_utils.validate_queue(pool)
     else:
         print(f" borrower {borrower_index} will not repay dusty {pending_debt/1e18:.1f} debt")
@@ -334,7 +332,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
         while chain.time() < end_time:
             # hit the pool an hour at a time, calculating interest and then sending transactions
             actor_id = draw_and_bid(lenders, borrowers, actor_id, pool1, chain, test_utils)
-            # test_utils.summarize_pool(pool1)
+            test_utils.summarize_pool(pool1)
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}\n")
 
     # Validate test ended with the pool in a meaningful state

@@ -14,8 +14,8 @@ def test_borrow_gas(
         for i in range(1643, 1663):
             scaled_pool.addQuoteToken(10_000 * 10**18, i, {"from": lenders[0]})
 
-        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
-        scaled_pool.addCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[1]})
+        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[1]})
 
         # borrower 0 draws 10_000 DAI from single bucket (LUP)
         tx1 = scaled_pool.borrow(

@@ -64,7 +64,7 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
         assertEq(_pool.interestRate(),       0.05 * 1e18);
         assertEq(_pool.interestRateUpdate(), 0);
 
-        _borrower.addCollateral(_pool, 100 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 100 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 46_000 * 1e18, 4300, address(0), address(0));
 
         assertEq(_pool.htp(), 460.442307692307692520 * 1e18);
@@ -110,7 +110,7 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
         skip(3600);
 
         // draw debt
-        _borrower.addCollateral(_pool, 50 * 1e18, address(0), address(0));
+        _borrower.pledgeCollateral(_pool, 50 * 1e18, address(0), address(0));
         _borrower.borrow(_pool, 15_000 * 1e18, 4300, address(0), address(0));
         assertEq(_pool.inflatorSnapshot(), 1.0 * 1e18);
         assertEq(_pool.pendingInflator(), 1.000005707778845707 * 1e18);
