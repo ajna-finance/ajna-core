@@ -90,7 +90,7 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
     function testAddCollateralSubset() external {
         // check initial token balances
         assertEq(_subsetPool.pledgedCollateral(), 0);
-        assertEq(_collateral.balanceOf(address(_borrower)), 50);
+        assertEq(_collateral.balanceOf(address(_borrower)), 52);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 0);
 
         uint256[] memory tokenIdsToAdd = new uint256[](3);
@@ -107,18 +107,23 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         emit Transfer(address(_borrower), address(_subsetPool), 5);
         vm.expectEmit(true, true, false, true);
         emit AddCollateralNFT(address(_borrower), tokenIdsToAdd);
-        // vm.prank(address(_borrower));
         _borrower.addCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
 
         // check token balances after add
         assertEq(_subsetPool.pledgedCollateral(), Maths.wad(3));
-        assertEq(_collateral.balanceOf(address(_borrower)), 47);
+        assertEq(_collateral.balanceOf(address(_borrower)), 49);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 3);
     }
 
-    // TODO: finish implementing: check revert not in subset
     function testAddCollateralNotInSubset() external {
+        uint256[] memory tokenIdsToAdd = new uint256[](3);
+        tokenIdsToAdd[0] = 2;
+        tokenIdsToAdd[1] = 4;
+        tokenIdsToAdd[2] = 6;
 
+        // should revert if borrower attempts to add tokens not in the pool subset
+        vm.expectRevert("P:ONLY_SUBSET");
+        _borrower.addCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
     }
 
     function testRemoveCollateral() external {

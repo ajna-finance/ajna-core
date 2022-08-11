@@ -13,4 +13,34 @@ import { UserWithNFTCollateral, UserWithQuoteTokenInNFTPool } from "../utils/Use
 
 contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
+    function setup() external {
+
+    }
+
+    function testBorrow() external {
+
+    }
+
+    function testBorrowWithInterestAccumulation() external {
+
+    }
+
+    function testBorrowLimitReached() external {
+
+    }
+
+    function testBorrowBorrowerUnderCollateralized() external {
+
+    }
+
+    function testBorrowPoolUnderCollateralized() external {
+        
+    }
+
+    function testRepay() external {
+
+    }
+
+    // TODO: add repay failure checks
+
 }

@@ -161,6 +161,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     }
 
     // TODO: check for reentrancy
+    // TODO: check for whole units of collateral
     function removeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
         uint256 curDebt = _accruePoolInterest();
 
@@ -170,7 +171,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // check collateralization for sufficient unenecumbered collateral
         uint256 curLup = _lup();
-        require(Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) >= tokenIds_.length, "S:RC:NOT_ENOUGH_COLLATERAL");
+        require(Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) >= Maths.wad(tokenIds_.length), "S:RC:NOT_ENOUGH_COLLATERAL");
 
         // update pool state
         pledgedCollateral -= Maths.wad(tokenIds_.length);
