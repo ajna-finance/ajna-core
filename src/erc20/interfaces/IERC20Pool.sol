@@ -79,6 +79,22 @@ interface IERC20Pool is IScaledPool {
      */
     function collateralScale() external view returns (uint256 collateralScale_);
 
+    /*************************/
+    /*** ERC20Pool Structs ***/
+    /*************************/
+
+    /**
+     *  @notice Struct holding borrower related info.
+     *  @param  debt             Borrower debt, WAD units.
+     *  @param  collateral       Collateral deposited by borrower, WAD units.
+     *  @param  inflatorSnapshot Current borrower inflator snapshot, WAD units.
+     */
+    struct Borrower {
+        uint256 debt;                // [WAD]
+        uint256 collateral;          // [WAD]
+        uint256 inflatorSnapshot;    // [WAD]
+    }
+
     /*********************************************/
     /*** ERC20Pool Borrower External Functions ***/
     /*********************************************/

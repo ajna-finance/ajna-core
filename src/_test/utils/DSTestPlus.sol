@@ -84,6 +84,9 @@ abstract contract DSTestPlus is Test {
     event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
 
+    // Pool deployer events
+    event PoolCreated(address pool_);
+
     // ERC20 events
     event Transfer(address indexed src, address indexed dst, uint256 wad);
 

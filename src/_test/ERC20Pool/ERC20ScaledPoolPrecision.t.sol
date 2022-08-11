@@ -22,7 +22,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
 
     address            internal _poolAddress;
     TokenWithNDecimals internal _collateral;
-    ERC20Pool         internal _pool;
+    ERC20Pool          internal _pool;
     TokenWithNDecimals internal _quote;
     UserWithCollateral internal _borrower;
     UserWithCollateral internal _borrower2;
@@ -31,17 +31,17 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
     UserWithQuoteToken internal _bidder;
 
     function init(uint256 collateralPrecisionDecimals_, uint256 quotePrecisionDecimals_) internal {
-        _collateral          = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
-        _quote               = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
+        _collateral = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
+        _quote      = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
 
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ERC20Pool(_poolAddress);
 
-        _borrower    = new UserWithCollateral();
-        _borrower2   = new UserWithCollateral();
-        _borrower3   = new UserWithCollateral();
-        _bidder      = new UserWithQuoteToken();
-        _lender      = new UserWithQuoteToken();
+        _borrower  = new UserWithCollateral();
+        _borrower2 = new UserWithCollateral();
+        _borrower3 = new UserWithCollateral();
+        _bidder    = new UserWithQuoteToken();
+        _lender    = new UserWithQuoteToken();
 
         _collateral.mint(address(_bidder), 150 * _collateralPrecision);
         _collateral.mint(address(_borrower), 150 * _collateralPrecision);
@@ -58,9 +58,9 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         _borrower3.approveToken(_collateral, address(_pool), 200 * _collateralPrecision);
         _borrower3.approveToken(_quote,      address(_pool), 200_000 * _quotePrecision);
 
-        _bidder.approveToken(_collateral,  address(_pool), 200_000 * _collateralPrecision);
+        _bidder.approveToken(_collateral, address(_pool), 200_000 * _collateralPrecision);
 
-        _lender.approveToken(_quote,  address(_pool), 200_000 * _quotePrecision);
+        _lender.approveToken(_quote, address(_pool), 200_000 * _quotePrecision);
     }
 
     function testAddRemoveQuotePrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
