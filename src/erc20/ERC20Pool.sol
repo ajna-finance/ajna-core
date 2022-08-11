@@ -222,21 +222,23 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 rate                = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs        = lpBalance[index_][msg.sender];
         uint256 claimableCollateral = Maths.rwdivw(Maths.rdiv(availableLPs, rate), price);
+        uint256 collateralToClaim   = Maths.min(maxAmount_, Maths.rwdivw(Maths.rdiv(availableLPs, rate), price));
 
         uint256 amount;
         uint256 lpRedemption;
-        if (maxAmount_ > claimableCollateral && bucket.availableCollateral >= claimableCollateral) {
+        if (collateralToClaim <= bucket.availableCollateral) {
             // lender wants to redeem all of their LPB for collateral, and the bucket has enough to offer
-            amount       = claimableCollateral;
+            amount       = collateralToClaim;
             lpRedemption = availableLPs;
+            bucket.availableCollateral -= amount;
         } else {
             // calculate how much collateral may be awarded to lender, and how much LPB to redeem
-            amount       = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
+            amount       = bucket.availableCollateral;
             lpRedemption = Maths.min(availableLPs, Maths.rdiv((amount * price / 1e9), rate));
+            bucket.availableCollateral = 0;
         }
 
-        // update bucket accounting
-        bucket.availableCollateral -= Maths.min(bucket.availableCollateral, amount);
+        // update bucket lpAccumulator
         bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpRedemption);
 
         // update lender accounting
