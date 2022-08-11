@@ -355,7 +355,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _lpTokenExchangeValue(uint256 lpTokens_, uint256 index_) internal view returns (uint256 collateralTokens_, uint256 quoteTokens_) {
-        require(BucketMath.isValidPrice(_indexToPrice(index_)), "S:LPTEV:INVALID_PRICE");
+        require(BucketMath.isValidIndex(_indexToBucketIndex(index_)), "S:LPTEV:INVALID_PRICE");
 
         Bucket memory bucket  = buckets[index_];
         uint256 bucketDeposit = _rangeSum(index_, index_);

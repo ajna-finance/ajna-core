@@ -447,12 +447,8 @@ contract PositionManagerTest is DSTestPlus {
         uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintIndex); // RAY
         assertEq(originalLPTokens, 10_000 * 1e27);
 
-        // remove 1/4 of the LP tokens
-        uint256 lpTokensToRemove = originalLPTokens / 4;
-        assertEq(lpTokensToRemove, 2_500 * 1e27);
-
         // decrease liquidity
-        (, uint256 quoteTokensRemoved) = decreaseLiquidity(tokenId, testAddress, address(_pool), mintIndex, mintPrice, lpTokensToRemove);
+        (, uint256 quoteTokensRemoved) = decreaseLiquidity(tokenId, testAddress, address(_pool), mintIndex, mintPrice, originalLPTokens);
 
         // check quote token removed
         assertEq(_pool.treeSum(), mintAmount - quoteTokensRemoved);
