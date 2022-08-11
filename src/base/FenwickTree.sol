@@ -7,6 +7,10 @@ import { IFenwickTree } from "./interfaces/IFenwickTree.sol";
 import { Maths } from "../libraries/Maths.sol";
 
 abstract contract FenwickTree is IFenwickTree {
+    
+   /**
+     *  @notice size of the FenwickTree.
+     */ 
     uint256 public constant SIZE = 8192;
 
     /**
@@ -29,14 +33,20 @@ abstract contract FenwickTree is IFenwickTree {
             i_ += _lsb(i_);
         }
     }
-
-
+ 
+    /**
+     *  @notice Scale values in the tree from the index provided, upwards.
+     *  @param  i_  The index to start scaling from.
+     *  @param  f_  The factor to scale the values by.
+    */    
     // TODO: add check to ensure scaling factor is at least a WAD? 
     function _mult(uint256 i_, uint256 f_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:M:INVALID_INDEX");
         require(f_ != 0, "FW:M:FACTOR_ZERO");
+        
+        // i == 13
 
-        i_ += 1;
+        i_ += 1; // 14
         uint256 sum;
         uint256 j;
         uint256 df = f_ - Maths.WAD;
@@ -46,10 +56,16 @@ abstract contract FenwickTree is IFenwickTree {
 
         while (i_ > 0) {
             scaledI =  scaling[i_];
+            
+            // store sum and scale value at index
             sum = scaledI != 0 ? sum + Maths.wmul(Maths.wmul(df, values[i_]), scaledI) : sum + Maths.wmul(df, values[i_]);
             scaling[i_] = scaledI != 0 ? Maths.wmul(f_, scaledI) : f_;
-            j = i_ + _lsb(i_);
-            i_ -= _lsb(i_);
+
+            // set top and bottom of update range?
+            j = i_ + _lsb(i_); // 16 -> 10000                                         
+            i_ -= _lsb(i_); // 12 
+
+            // 16 < 4 || 14 == 0 && 16 <= 8192 this should run but doesn't?
             while ((_lsb(j) < _lsb(i_)) || (i_ == 0 && j <= SIZE)) {
                 values[j] += sum;
                 scaledJ = scaling[j];
@@ -59,12 +75,17 @@ abstract contract FenwickTree is IFenwickTree {
         }
     }
 
+    /**
+     *  @notice increase a value in the FenwickTree at an index.
+     *  @param  i_  The index pointing to the value.
+     *  @param  x_  amount to increase the value by.
+    */    
     function _add(uint256 i_, uint256 x_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:A:INVALID_INDEX");
 
         i_ += 1;
         uint256 j = 8192; // 1 << 13
-        uint256 ii;
+        uint256 ii; // what does this var represent?
         uint256 sc = Maths.WAD;
 
         uint256 scaled;
@@ -81,6 +102,11 @@ abstract contract FenwickTree is IFenwickTree {
         }
     }
 
+    /**
+     *  @notice decrease a value in the FenwickTree at an index.
+     *  @param  i_  The index pointing to the value
+     *  @param  x_  amount to decrease the value by.
+    */    
     function _remove(uint256 i_, uint256 x_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:R:INVALID_INDEX");
 
@@ -92,7 +118,7 @@ abstract contract FenwickTree is IFenwickTree {
         uint256 scaled;
 
         while (j > 0) {
-            if (((i_ - 1) & j) != 0) {
+            if (((i_ - 1) & j) != 0) {  
                 ii += j;
             } else {
                 scaled = scaling[ii + j];
@@ -155,7 +181,6 @@ abstract contract FenwickTree is IFenwickTree {
         }
     }
 
-    // Least significant bit
     function _lsb(uint256 i_) internal pure returns (uint256) {
         if (i_ == 0) return 0;
         // "i & (-i)"
