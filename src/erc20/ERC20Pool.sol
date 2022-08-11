@@ -217,27 +217,27 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _accruePoolInterest();
 
         // determine amount of collateral to remove
-        Bucket storage bucket = buckets[index_];
-        uint256 price        = _indexToPrice(index_);
-        uint256 rate         = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 availableLPs = lpBalance[index_][msg.sender];
+        Bucket storage bucket       = buckets[index_];
+        uint256 price               = _indexToPrice(index_);
+        uint256 rate                = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 availableLPs        = lpBalance[index_][msg.sender];
         uint256 claimableCollateral = Maths.rwdivw(Maths.rdiv(availableLPs, rate), price);
 
         uint256 amount;
         uint256 lpRedemption;
         if (maxAmount_ > claimableCollateral && bucket.availableCollateral >= claimableCollateral) {
             // lender wants to redeem all of their LPB for collateral, and the bucket has enough to offer
-            amount = claimableCollateral;
+            amount       = claimableCollateral;
             lpRedemption = availableLPs;
         } else {
             // calculate how much collateral may be awarded to lender, and how much LPB to redeem
-            amount = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
+            amount       = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
             lpRedemption = Maths.min(availableLPs, Maths.rdiv((amount * price / 1e9), rate));
         }
 
         // update bucket accounting
-        bucket.availableCollateral    -= Maths.min(bucket.availableCollateral, amount);
-        bucket.lpAccumulator          -= Maths.min(bucket.lpAccumulator, lpRedemption);
+        bucket.availableCollateral -= Maths.min(bucket.availableCollateral, amount);
+        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpRedemption);
 
         // update lender accounting
         lpBalance[index_][msg.sender] -= lpRedemption;

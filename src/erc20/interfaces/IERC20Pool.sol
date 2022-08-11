@@ -39,13 +39,13 @@ interface IERC20Pool is IScaledPool {
      *  @notice Emitted when lender claims unencumbered collateral.
      *  @param  claimer_ Recipient that claimed collateral.
      *  @param  price_   Price at which unencumbered collateral was claimed.
-     *  @param  amount_  The amount of Quote tokens transferred to the claimer.
+     *  @param  amount_  The amount of collateral transferred to the claimer.
      *  @param  lps_     The amount of LP tokens burned in the claim.
      */
     event RemoveCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
 
     /**
-     *  @notice Emitted when borrower removes collateral from the pool.
+     *  @notice Emitted when borrower removes pledged collateral from the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  amount_   Amount of collateral removed from the pool.
      */

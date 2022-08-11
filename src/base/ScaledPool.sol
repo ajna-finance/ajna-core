@@ -91,31 +91,32 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
     }
 
-    // TODO: Take maxAmount_ to move instead of lpbAmount_
-    function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external override {
+    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
         uint256 availableLPs  = lpBalance[fromIndex_][msg.sender];
-        lpbAmount_           = Maths.wadToRay(lpbAmount_);
-        require(availableLPs != 0 && lpbAmount_ <= availableLPs, "S:MQT:INSUF_LPS");
-
-        Bucket storage fromBucket = buckets[fromIndex_];
-        require(fromBucket.availableCollateral == 0, "S:MQT:AVAIL_COL");
-
         uint256 curDebt = _accruePoolInterest();
 
-        uint256 rate             = _exchangeRate(fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
-        uint256 amount           = Maths.rmul(lpbAmount_, rate);
-        fromBucket.lpAccumulator -= lpbAmount_;
+        // determine amount of quote token to move
+        Bucket storage fromBucket   = buckets[fromIndex_];
+        uint256 rate                = _exchangeRate(fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
+        uint256 availableQuoteToken = _rangeSum(fromIndex_, fromIndex_);
+        uint256 claimableQuoteToken = Maths.rrdivw(availableLPs, rate);
+        uint256 amount              = Maths.min(maxAmount_, Maths.min(availableQuoteToken, claimableQuoteToken));
 
-        // update to bucket accounting
+        // calculate amount of LP required to move it
+        uint256 lpbAmount = Maths.wrdivr(amount, rate);
+
+        // update "from" bucket accounting
+        fromBucket.lpAccumulator -= lpbAmount;
+
+        // update "to" bucket accounting
         Bucket storage toBucket = buckets[toIndex_];
         rate                    = _exchangeRate(toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
-        uint256 lpbChange       = Maths.rdiv(amount, rate);
+        uint256 lpbChange       = Maths.wrdivr(amount, rate);
         toBucket.lpAccumulator  += lpbChange;
 
         // update FenwickTree
-        amount = Maths.rayToWad(amount);
         _remove(fromIndex_, amount);
         _add(toIndex_, amount);
 
@@ -124,12 +125,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         if (fromIndex_ < toIndex_) require(_htp() <= newLup, "S:MQT:LUP_BELOW_HTP");
 
         // update lender accounting
-        lpBalance[fromIndex_][msg.sender] -= lpbAmount_;
+        lpBalance[fromIndex_][msg.sender] -= lpbAmount;
         lpBalance[toIndex_][msg.sender]   += lpbChange;
 
         _updateInterestRate(curDebt, newLup);
 
-        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, lpbAmount_, newLup);
+        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
 
     function removeQuoteToken(uint256 maxAmount_, uint256 index_) external override {
@@ -137,9 +138,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 curDebt = _accruePoolInterest();
 
         // determine amount of quote token to remove
-        Bucket storage bucket = buckets[index_];
-        uint256 rate = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 availableLPs = lpBalance[index_][msg.sender];
+        Bucket storage bucket       = buckets[index_];
+        uint256 rate                = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 availableLPs        = lpBalance[index_][msg.sender];
         uint256 availableQuoteToken = _rangeSum(index_, index_);
         uint256 claimableQuoteToken = Maths.rrdivw(availableLPs, rate);
         uint256 amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, claimableQuoteToken));
@@ -148,7 +149,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 lpbAmount = Maths.wrdivr(amount, rate);
 
         // update bucket accounting
-        bucket.lpAccumulator  -= lpbAmount;
+        bucket.lpAccumulator -= lpbAmount;
 
         // update lender accounting
         lpBalance[index_][msg.sender] -= lpbAmount;

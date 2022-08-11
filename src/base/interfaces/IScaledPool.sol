@@ -173,11 +173,11 @@ interface IScaledPool {
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
-     *  @param  lpbAmount_ The maximum amount of quote token to be moved by a lender.
+     *  @param  maxAmount_ The maximum amount of quote token to be moved by a lender.
      *  @param  fromIndex_ The bucket index from which the quote tokens will be removed.
      *  @param  toIndex_   The bucket index to which the quote tokens will be added.
      */
-    function moveQuoteToken(uint256 lpbAmount_, uint256 fromIndex_, uint256 toIndex_) external;
+    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external;
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
