@@ -1,34 +1,33 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { CollateralToken, NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
-import { DSTestPlus }                                      from "../utils/DSTestPlus.sol";
+import { CollateralToken, NFTCollateralToken, QuoteToken } from "./utils/Tokens.sol";
+import { DSTestPlus }                                      from "./utils/DSTestPlus.sol";
 
-import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
+import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
 
-import { Maths } from "../../libraries/Maths.sol";
+import { Maths } from "../libraries/Maths.sol";
 
-import { ERC20Pool }       from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory} from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20Pool }       from "../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
 
-import { ERC20PositionManager } from "../../erc20/ERC20PositionManager.sol";
+import { PositionManager } from "../base/PositionManager.sol";
 
-import { IPositionManager }      from "../../base/interfaces/IPositionManager.sol";
-import { IERC20PositionManager } from "../../erc20/interfaces/IERC20PositionManager.sol";
+import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
 
-contract ERC20PositionManagerTest is DSTestPlus {
+contract PositionManagerTest is DSTestPlus {
 
-    CollateralToken      internal _collateral;
-    ERC20Pool            internal _pool;
-    ERC20PoolFactory     internal _factory;
-    ERC20PositionManager internal _positionManager;
-    QuoteToken           internal _quote;
+    CollateralToken  internal _collateral;
+    ERC20Pool        internal _pool;
+    ERC20PoolFactory internal _factory;
+    PositionManager  internal _positionManager;
+    QuoteToken       internal _quote;
 
     function setUp() public {
         _collateral      = new CollateralToken();
         _quote           = new QuoteToken();
         _factory         = new ERC20PoolFactory();
-        _positionManager = new ERC20PositionManager();
+        _positionManager = new PositionManager();
 
         address poolAddress = _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool = ERC20Pool(poolAddress);
@@ -85,7 +84,7 @@ contract ERC20PositionManagerTest is DSTestPlus {
     ) private returns (uint256 collateralTokensToBeRemoved, uint256 quoteTokensToBeRemoved) {
         (collateralTokensToBeRemoved, quoteTokensToBeRemoved) = _pool.getLPTokenExchangeValue(lpTokensToRemove_, index_);
 
-        IERC20PositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IERC20PositionManager.DecreaseLiquidityParams(
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
             tokenId_, recipient_, pool_, index_, lpTokensToRemove_
         );
 
@@ -553,6 +552,14 @@ contract ERC20PositionManagerTest is DSTestPlus {
     }
 
     /**
+     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity in an NFT Pool.
+     *          Lender reverts when attempting to interact with a pool the tokenId wasn't minted in
+     */
+    function testDecreaseLiquidityWithDebtNFTPool() external {
+        // TODO implement when ERC721 pool backported
+    }
+
+    /**
      *  @notice Tests minting an NFT, transfering NFT, increasing liquidity.
      *          Checks that old owner cannot increase liquidity.
      *          Old owner reverts: attempts to increase liquidity without permission.
@@ -599,7 +606,7 @@ contract ERC20PositionManagerTest is DSTestPlus {
         // check new owner can decreaseLiquidity
         uint256 lpTokensToAttempt = _positionManager.getLPTokens(tokenId, testBucketPrice);
 
-        IERC20PositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IERC20PositionManager.DecreaseLiquidityParams(
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
             tokenId, newOwner, address(_pool), testIndexPrice, lpTokensToAttempt
         );
 
