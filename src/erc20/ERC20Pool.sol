@@ -221,7 +221,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 price               = _indexToPrice(index_);
         uint256 rate                = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs        = lpBalance[index_][msg.sender];
-        uint256 claimableCollateral = Maths.rwdivw(Maths.rdiv(availableLPs, rate), price);
         uint256 collateralToClaim   = Maths.min(maxAmount_, Maths.rwdivw(Maths.rdiv(availableLPs, rate), price));
 
         uint256 amount;
