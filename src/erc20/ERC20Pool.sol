@@ -222,7 +222,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 price               = _indexToPrice(index_);
         uint256 rate                = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs        = lpBalance[index_][msg.sender];
-        uint256 claimableCollateral = Maths.rwdivw(Maths.rdiv(availableLPs, rate), price);
+        uint256 claimableCollateral = Maths.rwdivw(Maths.rmul(availableLPs, rate), price);
 
         uint256 amount;
         uint256 lpRedemption;
@@ -248,7 +248,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // move collateral from pool to lender
         collateral().safeTransfer(msg.sender, amount / collateralScale);
-        emit RemoveCollateral(msg.sender, price, amount, lpRedemption);
+        emit RemoveCollateral(msg.sender, price, amount);
     }
 
     /**********************/
