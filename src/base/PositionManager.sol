@@ -151,7 +151,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         
         // Call out to pool contract to add quote tokens
         uint256 lpTokensAdded = pool.addQuoteToken(params_.amount, params_.index);
-        // TODO: figure out how to test this case
         require(lpTokensAdded != 0, "PM:IL:NO_LP_TOKENS");
 
         // update position with newly added lp shares

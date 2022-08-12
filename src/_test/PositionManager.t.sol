@@ -28,9 +28,7 @@ contract PositionManagerTest is DSTestPlus {
         _quote           = new QuoteToken();
         _factory         = new ERC20PoolFactory();
         _positionManager = new PositionManager();
-
-        address poolAddress = _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _pool = ERC20Pool(poolAddress);
+        _pool            = ERC20Pool(_factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
     }
 
     /*************************/
@@ -348,6 +346,15 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(originalPositionOwner, testAddress);
         assert(originalLPTokens == 0);
+
+        // add no liquidity
+        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
+            tokenId, testAddress, address(_pool), 0, mintIndex
+        );
+
+        vm.prank(testAddress);
+        vm.expectRevert("PM:IL:NO_LP_TOKENS");
+        _positionManager.increaseLiquidity(increaseLiquidityParams);
 
         // add initial liquidity
         increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintIndex, mintPrice);
