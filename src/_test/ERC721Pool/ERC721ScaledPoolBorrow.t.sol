@@ -34,7 +34,11 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
     }
 
     function testBorrowPoolUnderCollateralized() external {
-        
+
+    }
+
+    function testGetBorrowerInfo() external {
+
     }
 
     function testRepay() external {

@@ -87,7 +87,7 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
     /*** ERC721 Subset Tests ***/
     /**************************************/
 
-    function testAddCollateralSubset() external {
+    function testPledgeCollateralSubset() external {
         // check initial token balances
         assertEq(_subsetPool.pledgedCollateral(), 0);
         assertEq(_collateral.balanceOf(address(_borrower)), 52);
@@ -106,8 +106,8 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_subsetPool), 5);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(address(_borrower), tokenIdsToAdd);
-        _borrower.addCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
+        emit PledgeCollateralNFT(address(_borrower), tokenIdsToAdd);
+        _borrower.pledgeCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
 
         // check token balances after add
         assertEq(_subsetPool.pledgedCollateral(), Maths.wad(3));
@@ -115,7 +115,7 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         assertEq(_collateral.balanceOf(address(_subsetPool)), 3);
     }
 
-    function testAddCollateralNotInSubset() external {
+    function testPledgeCollateralNotInSubset() external {
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 2;
         tokenIdsToAdd[1] = 4;
@@ -123,10 +123,10 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
 
         // should revert if borrower attempts to add tokens not in the pool subset
         vm.expectRevert("P:ONLY_SUBSET");
-        _borrower.addCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
+        _borrower.pledgeCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
     }
 
-    function testRemoveCollateral() external {
+    function testPullCollateral() external {
         // check initial token balances
         assertEq(_subsetPool.pledgedCollateral(), 0);
         assertEq(_collateral.balanceOf(address(_borrower)), 52);
@@ -145,8 +145,8 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_subsetPool), 5);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(address(_borrower), tokenIdsToAdd);
-        _borrower.addCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
+        emit PledgeCollateralNFT(address(_borrower), tokenIdsToAdd);
+        _borrower.pledgeCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
 
         // check token balances after add
         assertEq(_subsetPool.pledgedCollateral(), Maths.wad(3));
@@ -163,8 +163,8 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), address(_borrower), 5);
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateralNFT(address(_borrower), tokenIdsToRemove);
-        _borrower.removeCollateral(_subsetPool, tokenIdsToRemove, address(0), address(0));
+        emit PullCollateralNFT(address(_borrower), tokenIdsToRemove);
+        _borrower.pullCollateral(_subsetPool, tokenIdsToRemove, address(0), address(0));
 
         // check token balances after remove
         assertEq(_subsetPool.pledgedCollateral(), Maths.wad(1));
@@ -173,18 +173,18 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
     }
 
     // TODO: finish implementing
-    function testRemoveCollateralNotInPool() external {
+    function testPullCollateralNotInPool() external {
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _borrower.addCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
+        _borrower.pledgeCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
 
         // should revert if borrower attempts to remove collateral not in pool
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 51;
         vm.expectRevert("P:T_NOT_IN_P");
-        _borrower.removeCollateral(_subsetPool, tokenIdsToRemove, address(0), address(0));
+        _borrower.pullCollateral(_subsetPool, tokenIdsToRemove, address(0), address(0));
 
         // borrower should be able to remove collateral in the pool
         tokenIdsToRemove = new uint256[](3);
@@ -199,11 +199,11 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), address(_borrower), 5);
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateralNFT(address(_borrower), tokenIdsToRemove);
-        _borrower.removeCollateral(_subsetPool, tokenIdsToRemove, address(0), address(0));
+        emit PullCollateralNFT(address(_borrower), tokenIdsToRemove);
+        _borrower.pullCollateral(_subsetPool, tokenIdsToRemove, address(0), address(0));
     }
 
-    function testRemoveCollateralPartiallyEncumbered() external {
+    function testPullCollateralPartiallyEncumbered() external {
         // lender deposits 10000 Quote into 3 buckets
         _lender.addQuoteToken(_subsetPool, 10_000 * 1e18, 2550);
         _lender.addQuoteToken(_subsetPool, 10_000 * 1e18, 2551);
@@ -237,8 +237,8 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_subsetPool), 5);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(address(_borrower), tokenIdsToAdd);
-        _borrower.addCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
+        emit PledgeCollateralNFT(address(_borrower), tokenIdsToAdd);
+        _borrower.pledgeCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
 
         // TODO: determine how to handle checking both token types of Transfer
         // emit Transfer(address(_borrower), address(_subsetPool), 5);
@@ -273,8 +273,8 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), address(_borrower), 5);
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateralNFT(address(_borrower), tokenIdsToRemove);
-        _borrower.removeCollateral(_subsetPool, tokenIdsToRemove, address(0), address(0));
+        emit PullCollateralNFT(address(_borrower), tokenIdsToRemove);
+        _borrower.pullCollateral(_subsetPool, tokenIdsToRemove, address(0), address(0));
 
         // check token balances after remove
         assertEq(_subsetPool.pledgedCollateral(), Maths.wad(1));
@@ -294,7 +294,7 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
     }
 
     // TODO: finish implementing: check revert not enough collateral
-    function testRemoveOverlyEncumbered() external {
+    function testPullCollateralOverlyEncumbered() external {
 
     }
 

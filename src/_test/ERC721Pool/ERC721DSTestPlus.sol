@@ -9,10 +9,10 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
     // Pool events
-    event AddCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
+    event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
     event ClaimCollateralNFT(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_, uint256 lps_);
     event PurchaseWithNFTs(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256[] tokenIds_);
-    event RemoveCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
+    event PullCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
 
     // TODO: implement this for simplifying construction and maintenance of tests
     function assertPoolState() internal {

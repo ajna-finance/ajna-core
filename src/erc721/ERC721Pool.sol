@@ -78,11 +78,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function addCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
-        // update pool interest and debt
-        uint256 curDebt = _accruePoolInterest();
-        _updateInterestRate(curDebt, _lup());
-
+    function pledgeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
         NFTBorrower storage borrower = borrowers[msg.sender];
 
         // add tokenIds to the pool
@@ -105,6 +101,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             }
         }
 
+        // update pool state
+        uint256 curDebt = _accruePoolInterest();
+        _updateInterestRate(curDebt, _lup());
         pledgedCollateral += Maths.wad(tokenIds_.length);
 
         // accrue interest to borrower
@@ -114,7 +113,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
-        emit AddCollateralNFT(msg.sender, tokenIds_);
+        emit PledgeCollateralNFT(msg.sender, tokenIds_);
     }
 
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
@@ -162,7 +161,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
     // TODO: check for reentrancy
     // TODO: check for whole units of collateral
-    function removeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
+    function pullCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -171,7 +170,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // check collateralization for sufficient unenecumbered collateral
         uint256 curLup = _lup();
-        require(Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) >= Maths.wad(tokenIds_.length), "S:RC:NOT_ENOUGH_COLLATERAL");
+        require(Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) >= Maths.wad(tokenIds_.length), "S:PC:NOT_ENOUGH_COLLATERAL");
 
         // update pool state
         pledgedCollateral -= Maths.wad(tokenIds_.length);
@@ -199,7 +198,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
-        emit RemoveCollateralNFT(msg.sender, tokenIds_);
+        emit PullCollateralNFT(msg.sender, tokenIds_);
     }
 
     // TODO: finish implementing
@@ -210,24 +209,25 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*********************************/
 
     // TODO: finish implementing
-    function claimCollateral(uint256[] calldata tokenIds_, uint256 index_) external override {}
-
-    /*******************************/
-    /*** Pool External Functions ***/
-    /*******************************/
+    function addCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpbChange_) {}
 
     // TODO: finish implementing
-    function purchaseQuote(uint256 amount_, uint256 index_, uint256[] calldata tokenIds_) external override {}
-
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
-
-    // TODO: determine if any of these functions are needed
+    function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external override {}
 
     /**********************/
     /*** View Functions ***/
     /**********************/
+
+    function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256[] memory, uint256) {
+        uint256 pending_debt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
+
+        return (
+            borrowers[borrower_].debt,                         // accrued debt (WAD)
+            pending_debt,                                       // current debt, accrued and pending accrual (WAD)
+            borrowers[borrower_].collateralDeposited.values(), // deposited collateral including encumbered (WAD)
+            borrowers[borrower_].inflatorSnapshot              // used to calculate pending interest (WAD)
+        );
+    }
 
     function isTokenIdAllowed(uint256 tokenId_) external view override returns (bool) {
         return _tokenIdsAllowed.contains(tokenId_);

@@ -19,7 +19,7 @@ interface IERC721Pool is IScaledPool {
      *  @param  borrower_ `msg.sender`.
      *  @param  tokenIds_ Array of tokenIds to be added to the pool.
      */
-    event AddCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
+    event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
 
     /**
      *  @notice Emitted when borrower borrows quote tokens from pool.
@@ -34,7 +34,7 @@ interface IERC721Pool is IScaledPool {
      *  @param  borrower_ `msg.sender`.
      *  @param  tokenIds_ Array of tokenIds to be removed from the pool.
      */
-    event RemoveCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
+    event PullCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
 
 
     /**************************/
@@ -73,7 +73,7 @@ interface IERC721Pool is IScaledPool {
      *  @param  oldPrev_ Previous borrower that came before placed loan (old)
      *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
      */
-    function addCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
+    function pledgeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by a borrower to open or expand a position.
@@ -91,7 +91,7 @@ interface IERC721Pool is IScaledPool {
      *  @param  oldPrev_  Previous borrower that came before placed loan (old)
      *  @param  newPrev_  Previous borrower that now comes before placed loan (new)
      */
-    function removeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
+    function pullCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
@@ -106,27 +106,40 @@ interface IERC721Pool is IScaledPool {
     /*********************************/
 
     /**
-     *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
-     *  @param  tokenIds_ Array of unencumbered collateral to claim.
-     *  @param  index_    The index of the bucket from which unencumbered collateral will be claimed.
+     *  @notice Deposit unencumbered collateral into a specified bucket.
+     *  @param  tokenIds_ Array of collateral to deposit.
+     *  @param  index_  The bucket index to which collateral will be deposited.
      */
-    function claimCollateral(uint256[] calldata tokenIds_, uint256 index_) external;
-
-    /*********************************/
-    /*** Pool External Functions ***/
-    /*********************************/
+    function addCollateral(uint256[] calldata tokenIds_, uint256 index_) external returns (uint256 lpbChange_);
 
     /**
-     *  @notice Purchase amount of quote token from specified bucket price.
-     *  @param  amount_   Amount of quote tokens to purchase.
-     *  @param  index_    The bucket index from which quote tokens will be purchased.
-     *  @param  tokenIds_ Array of tokenIds to use as collateral for the purchase.
+     *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
+     *  @param  tokenIds_ Array of collateral to claim.
+     *  @param  index_  The index of the bucket from which unencumbered collateral will be claimed.
      */
-    function purchaseQuote(uint256 amount_, uint256 index_, uint256[] calldata tokenIds_) external;
+    function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external;
 
     /**********************/
     /*** View Functions ***/
     /**********************/
+
+    /**
+     *  @notice Get a borrower info struct for a given address.
+     *  @param  borrower_            The borrower address.
+     *  @return debt_                Borrower accrued debt (WAD)
+     *  @return pendingDebt_         Borrower current debt, accrued and pending accrual (WAD)
+     *  @return collateralDeposited_ Array of deposited collateral IDs including encumbered
+     *  @return inflatorSnapshot_    Inflator used to calculate pending interest (WAD)
+     */
+    function borrowerInfo(address borrower_)
+        external
+        view
+        returns (
+            uint256 debt_,
+            uint256 pendingDebt_,
+            uint256[] memory collateralDeposited_,
+            uint256 inflatorSnapshot_
+        );
 
     /**
      *  @notice Check if a token id is allowed as collateral in pool.
