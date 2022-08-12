@@ -248,7 +248,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // move collateral from pool to lender
         collateral().safeTransfer(msg.sender, amount / collateralScale);
-        emit RemoveCollateral(msg.sender, price, amount, lpRedemption);
+        emit RemoveCollateral(msg.sender, price, amount);
     }
 
     /**********************/
