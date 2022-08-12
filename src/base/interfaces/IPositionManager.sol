@@ -263,12 +263,4 @@ interface IPositionManager {
     */
     function getLPTokens(uint256 tokenId_, uint256 index_) external view returns (uint256 lpTokens_);
 
-    /**
-     *  @notice Called to determine the amount of quote and collateral tokens, in quote terms, represented by a given tokenId.
-     *  @param  tokenId_     Unique ID of token.
-     *  @param  index_       Index of price bucket to check the position value of.
-     *  @return quoteTokens_ Value of the LP tokens in the price bucket for this position, in quote token.
-    */
-    function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 index_) external view returns (uint256 quoteTokens_);
-
 }

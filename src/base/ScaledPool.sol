@@ -354,18 +354,19 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return lpAccumulator_ != 0 ? Maths.wrdivr(bucketSize, lpAccumulator_) : Maths.RAY;
     }
 
-    function _lpTokenExchangeValue(uint256 lpTokens_, uint256 index_) internal view returns (uint256 collateralTokens_, uint256 quoteTokens_) {
-        require(BucketMath.isValidIndex(_indexToBucketIndex(index_)), "S:LPTEV:INVALID_PRICE");
-
+    function _lpsToCollateral(uint256 lpTokens_, uint256 index_) internal view returns (uint256 claimableCollateral_) {
         Bucket memory bucket  = buckets[index_];
-        uint256 bucketDeposit = _rangeSum(index_, index_);
+        if (bucket.availableCollateral != 0) {
+            uint256 price         = _indexToPrice(index_);
+            uint256 rate          = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+            claimableCollateral_ = Maths.min(bucket.availableCollateral, Maths.rwdivw(Maths.rdiv(lpTokens_, rate), price));
+        }
+    }
 
-        // calculate lpTokens share of all outstanding lpTokens for the bucket
-        uint256 lenderShare = Maths.rdiv(lpTokens_, bucket.lpAccumulator);
-
-        // calculate the amount of collateral and quote tokens equivalent to the lenderShare
-        collateralTokens_ = Maths.radToWad(bucket.availableCollateral * lenderShare);
-        quoteTokens_      = Maths.radToWad(bucketDeposit * lenderShare);
+    function _lpsToQuoteTokens(uint256 lpTokens_, uint256 index_) internal view returns (uint256 claimableQuoteTokens_) {
+        Bucket memory bucket  = buckets[index_];
+        uint256 rate          = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+        claimableQuoteTokens_ = Maths.rayToWad(Maths.rmul(lpTokens_, rate));
     }
 
     function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
@@ -432,15 +433,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         );
     }
 
-    function getLpTokensFromQuoteTokens(uint256 quoteTokens, uint256 index_, address owner_) external view returns (uint256 lpTokens_) {
-        (, uint256 quoteOwned) = _lpTokenExchangeValue(lpBalance[index_][owner_], index_);
-
-        Bucket memory bucket = buckets[index_];
-        lpTokens_ = Maths.rdiv(Maths.wadToRay(Maths.min(quoteTokens, quoteOwned)), _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_));
+    function lpsToCollateral(uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
+        return _lpsToCollateral(lpTokens_, index_);
     }
 
-    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 index_) external view override returns (uint256, uint256) {
-        return _lpTokenExchangeValue(lpTokens_, index_);
+    function lpsToQuoteTokens(uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
+        return _lpsToQuoteTokens(lpTokens_, index_);
     }
 
     function pendingInflator() external view override returns (uint256) {

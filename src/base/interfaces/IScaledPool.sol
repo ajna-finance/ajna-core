@@ -336,20 +336,18 @@ interface IScaledPool {
     function quoteTokenAddress() external pure returns (address);
 
     /**
-     *  @notice Calculate the amount of collateral and quote tokens for a given amount of LP Tokens.
+     *  @notice Calculate the amount of collateral for a given amount of LP Tokens.
      *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
      *  @param  index_            The price bucket index for which the value should be calculated.
      *  @return collateralTokens_ The equivalent value of collateral tokens for the given LP Tokens, WAD units.
-     *  @return quoteTokens_      The equivalent value of quote tokens for the given LP Tokens, WAD units.
      */
-    function getLPTokenExchangeValue(uint256 lpTokens_, uint256 index_) external view returns (uint256 collateralTokens_, uint256 quoteTokens_);
+    function lpsToCollateral(uint256 lpTokens_, uint256 index_) external view returns (uint256 collateralTokens_);
 
     /**
-     *  @notice Calculate the amount of lpTokens equivalent to a given amount of quote tokens.
-     *  @param  quoteTokens_      The number of quote tokens to calculate LP tokens for, WAD units.
-     *  @param  index_            The price bucket index for which the value should be calculated.
-     *  @param  owner_            The address which owns the LP tokens.
-     *  @return lpTokens_         The equivalent value of LP tokens for the given quote Tokens, RAY units.
+     *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
+     *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
+     *  @param  index_       The price bucket index for which the value should be calculated.
+     *  @return quoteTokens_ The equivalent value of quote tokens for the given LP Tokens, WAD units.
      */
-    function getLpTokensFromQuoteTokens(uint256 quoteTokens_, uint256 index_, address owner_) external view returns (uint256 lpTokens_);
+    function lpsToQuoteTokens(uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteTokens_);
 }
