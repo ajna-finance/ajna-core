@@ -142,7 +142,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 rate                = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs        = lpBalance[index_][msg.sender];
         uint256 availableQuoteToken = _rangeSum(index_, index_);
-        uint256 claimableQuoteToken = Maths.rrdivw(availableLPs, rate);
+        uint256 claimableQuoteToken = Maths.rayToWad(Maths.rmul(availableLPs, rate));
         uint256 amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, claimableQuoteToken));
 
         // calculate amount of LP required to remove it

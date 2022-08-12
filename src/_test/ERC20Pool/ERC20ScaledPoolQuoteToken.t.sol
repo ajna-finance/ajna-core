@@ -178,13 +178,14 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
     function testScaledPoolRemoveQuoteTokenWithDebt() external {
         // lender adds initial quote token
-        _lender.addQuoteToken(_pool, 3_400 * 1e18, 1663);
         _lender.addQuoteToken(_pool, 3_400 * 1e18, 1606);
-        uint256 lpb_before = _pool.lpBalance(1663, address(_lender));
-        uint256 exchangeRateBefore = _pool.exchangeRate(1663);
+        _lender.addQuoteToken(_pool, 3_400 * 1e18, 1663);
+        uint256 lpb_before = _pool.lpBalance(1606, address(_lender));
+        uint256 exchangeRateBefore = _pool.exchangeRate(1606);
         skip(3600);
-        assertEq(lpb_before, _pool.lpBalance(1663, address(_lender)));
-        assertEq(exchangeRateBefore, _pool.exchangeRate(1663));
+        assertEq(lpb_before, _pool.lpBalance(1606, address(_lender)));
+        assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
+        uint256 lenderBalanceBefore = _quote.balanceOf(address(_lender));
 
         // borrower takes a loan of 3000 quote token
         _collateral.mint(address(_borrower), 100 * 1e18);
@@ -193,17 +194,25 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         uint256 limitPrice = _pool.priceToIndex(4_000 * 1e18);
         assertGt(limitPrice, 1663);
         _borrower.borrow(_pool, 3_000 * 1e18, limitPrice, address(0), address(0));
-        skip(3600);
-        assertEq(lpb_before, _pool.lpBalance(1663, address(_lender)));
-        assertEq(exchangeRateBefore, _pool.exchangeRate(1663));
+        skip(7200);
+        assertEq(lpb_before, _pool.lpBalance(1606, address(_lender)));
+        assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
 
-        // lender removes 3_400 quote token
-        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1663), 3_400 * 1e18, _pool.indexToPrice(1663));
-        _lender.removeQuoteToken(_pool, 3_400 * 1e18, 1663);
+        // lender removes all quote token, including interest, from the bucket
+        assertGt(_pool.indexToPrice(1606), _pool.htp());
+        uint256 quoteWithInterest = 3_400.023138863804135800 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), quoteWithInterest, _pool.indexToPrice(1663));
+        _lender.removeQuoteToken(_pool, 3_500 * 1e18, 1606);
+        assertEq(_quote.balanceOf(address(_lender)), lenderBalanceBefore + quoteWithInterest);
+        assertEq(_pool.lpBalance(1606, address(_lender)), 0);
+
+        // ensure bucket is empty
+        (uint256 quote, uint256 collateral, uint256 lpb, ) = _pool.bucketAt(1606);
+        assertEq(quote, 0);
+        assertEq(collateral, 0);
+        assertEq(lpb, 0);
     }
-
-    // TODO: Test similar to above, but with multiple lenders.
-    //      Ensure first lender may remove their liquidity after another interest accumulation occurs.
 
     function testScaledPoolMoveQuoteToken() external {
         _lender.addQuoteToken(_pool, 40_000 * 1e18, 2549);
