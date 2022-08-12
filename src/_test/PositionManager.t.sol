@@ -467,7 +467,7 @@ contract PositionManagerTest is DSTestPlus {
     /**
      *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity.
      */
-    function testDecreaseLiquidityWithDebt() external {
+    function testDecreaseLiquidityWithDebtRedeemCollateralAndQuoteTokens() external {
         address testLender  = generateAddress();
         address testLender2 = generateAddress();
         uint256 mintAmount  = 50_000 * 1e18;
@@ -515,7 +515,8 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_pool)),        25_000 * 1e18);
         assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
 
-        // bidder add collateral
+        // bidder add less collateral to bucket than lender can redeem.
+        // Lender will redeem all collateral from bucket and rest of LP tokens as quote tokens
         UserWithCollateral testBidder = new UserWithCollateral();
         mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
         testBidder.addCollateral(_pool, 1 * 1e18, mintIndex);
@@ -551,6 +552,182 @@ contract PositionManagerTest is DSTestPlus {
 
         assertEq(_quote.balanceOf(testLender),            46_989.107977802118442155 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),        18_010.892022197881557845 * 1e18);
+        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
+
+        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, _p10016);
+        assertEq(updatedLPTokens, 0);
+    }
+
+    function testDecreaseLiquidityWithDebtRedeemCollateralOnly() external {
+        address testLender  = generateAddress();
+        address testLender2 = generateAddress();
+        uint256 mintAmount  = 50_000 * 1e18;
+        uint256 mintIndex   = 2550;
+        uint256 mintPrice   = _p3010;
+
+        mintAndApproveQuoteTokens(testLender, mintAmount);
+        mintAndApproveQuoteTokens(testLender2, mintAmount);
+
+        uint256 tokenId = mintNFT(testLender, address(_pool));
+
+        // add liquidity that can later be decreased
+        increaseLiquidity(tokenId, testLender, address(_pool), mintAmount, mintIndex, _p3010);
+
+        // check position info
+        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintIndex);
+        assertEq(originalLPTokens, 50_000 * 1e27);
+        uint256 postAddPoolQuote = _pool.treeSum();
+        assertEq(postAddPoolQuote, 50_000 * 1e18);
+
+        // Borrow against the pool
+        UserWithCollateral testBorrower = new UserWithCollateral();
+        uint256 collateralToMint        = 5_000 * 1e18;
+        mintAndApproveCollateralTokens(testBorrower, collateralToMint);
+        assertEq(_collateral.balanceOf(address(testBorrower)), 5_000 * 1e18);
+
+        // add collateral and borrow against it
+        testBorrower.pledgeCollateral(_pool, collateralToMint, address(0), address(0));
+        testBorrower.borrow(_pool, 25_000 * 1e18, 3000, address(0), address(0));
+
+        // check pool state
+        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
+        assertEq(_pool.lup(), _p3010);
+
+        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
+        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
+
+        // check token balances
+        assertEq(_collateral.balanceOf(address(_pool)),        5_000 * 1e18);
+        assertEq(_collateral.balanceOf(testLender),            0);
+        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
+
+        assertEq(_quote.balanceOf(testLender),            0);
+        assertEq(_quote.balanceOf(address(_pool)),        25_000 * 1e18);
+        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
+
+        // bidder add more collateral to bucket than lender can redeem.
+        // Lender will redeem all LPs as collateral
+        UserWithCollateral testBidder = new UserWithCollateral();
+        mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
+        testBidder.addCollateral(_pool, 100 * 1e18, mintIndex);
+
+        // add additional quote tokens to enable reallocation decrease liquidity
+        vm.prank(address(testLender2));
+        _pool.addQuoteToken(40_000 * 1e18, mintIndex);
+
+        // lender removes their provided liquidity
+        uint256 lpTokensToRemove = originalLPTokens;
+
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
+            tokenId, testLender, address(_pool), mintIndex, lpTokensToRemove
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit DecreaseLiquidity(testLender, mintPrice, 16.606374334042426440 * 1e18, 0);
+        vm.prank(testLender);
+        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
+
+        // check pool state
+        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
+        assertEq(_pool.lup(), _p3010);
+
+        assertEq(_pool.treeSum(),      90_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
+        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
+
+        // check token balances
+        assertEq(_collateral.balanceOf(address(_pool)),        5_083.393625665957573560 * 1e18);
+        assertEq(_collateral.balanceOf(testLender),            16.606374334042426440 * 1e18);
+        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
+
+        assertEq(_quote.balanceOf(testLender),            0);
+        assertEq(_quote.balanceOf(address(_pool)),        65_000 * 1e18);
+        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
+
+        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, _p10016);
+        assertEq(updatedLPTokens, 0);
+    }
+
+    function testDecreaseLiquidityWithDebtRedeemQuoteTokensOnly() external {
+        address testLender  = generateAddress();
+        address testLender2 = generateAddress();
+        uint256 mintAmount  = 50_000 * 1e18;
+        uint256 mintIndex   = 2550;
+        uint256 mintPrice   = _p3010;
+
+        mintAndApproveQuoteTokens(testLender, mintAmount);
+        mintAndApproveQuoteTokens(testLender2, mintAmount);
+
+        uint256 tokenId = mintNFT(testLender, address(_pool));
+
+        // add liquidity that can later be decreased
+        increaseLiquidity(tokenId, testLender, address(_pool), mintAmount, mintIndex, _p3010);
+
+        // check position info
+        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintIndex);
+        assertEq(originalLPTokens, 50_000 * 1e27);
+        uint256 postAddPoolQuote = _pool.treeSum();
+        assertEq(postAddPoolQuote, 50_000 * 1e18);
+
+        // Borrow against the pool
+        UserWithCollateral testBorrower = new UserWithCollateral();
+        uint256 collateralToMint        = 5_000 * 1e18;
+        mintAndApproveCollateralTokens(testBorrower, collateralToMint);
+        assertEq(_collateral.balanceOf(address(testBorrower)), 5_000 * 1e18);
+
+        // add collateral and borrow against it
+        testBorrower.pledgeCollateral(_pool, collateralToMint, address(0), address(0));
+        testBorrower.borrow(_pool, 25_000 * 1e18, 3000, address(0), address(0));
+
+        // check pool state
+        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
+        assertEq(_pool.lup(), _p3010);
+
+        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
+        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
+
+        // check token balances
+        assertEq(_collateral.balanceOf(address(_pool)),        5_000 * 1e18);
+        assertEq(_collateral.balanceOf(testLender),            0);
+        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
+
+        assertEq(_quote.balanceOf(testLender),            0);
+        assertEq(_quote.balanceOf(address(_pool)),        25_000 * 1e18);
+        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
+
+        // add additional quote tokens to enable reallocation decrease liquidity
+        vm.prank(address(testLender2));
+        _pool.addQuoteToken(40_000 * 1e18, mintIndex);
+
+        // lender removes their provided liquidity
+        uint256 lpTokensToRemove = originalLPTokens;
+
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
+            tokenId, testLender, address(_pool), mintIndex, lpTokensToRemove
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit DecreaseLiquidity(testLender, mintPrice, 0, 50_000 * 1e18);
+        vm.prank(testLender);
+        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
+
+        // check pool state
+        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
+        assertEq(_pool.lup(), _p3010);
+
+        assertEq(_pool.treeSum(),      40_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
+        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
+
+        // check token balances
+        assertEq(_collateral.balanceOf(address(_pool)),        5_000 * 1e18);
+        assertEq(_collateral.balanceOf(testLender),            0 * 1e18);
+        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
+
+        assertEq(_quote.balanceOf(testLender),            50_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)),        15_000 * 1e18);
         assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
 
         uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, _p10016);

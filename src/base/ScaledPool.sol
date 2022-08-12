@@ -359,7 +359,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         if (bucket.availableCollateral != 0) {
             uint256 price         = _indexToPrice(index_);
             uint256 rate          = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
-            claimableCollateral_ = Maths.min(bucket.availableCollateral, Maths.rwdivw(Maths.rdiv(lpTokens_, rate), price));
+            claimableCollateral_ = Maths.min(bucket.availableCollateral, Maths.rwdivw(Maths.rmul(lpTokens_, rate), price));
         }
     }
 
