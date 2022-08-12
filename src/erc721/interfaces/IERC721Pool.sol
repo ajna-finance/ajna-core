@@ -36,6 +36,13 @@ interface IERC721Pool is IScaledPool {
      */
     event PullCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
 
+    /**
+     *  @notice Emitted when borrower repays quote tokens to the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  lup_      LUP after repay.
+     *  @param  amount_   Amount of quote tokens repayed to the pool.
+     */
+    event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     /**************************/
     /*** ERC721Pool Structs ***/

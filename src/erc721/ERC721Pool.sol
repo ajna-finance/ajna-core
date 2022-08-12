@@ -201,8 +201,52 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit PullCollateralNFT(msg.sender, tokenIds_);
     }
 
-    // TODO: finish implementing
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {}
+    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
+        require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
+
+        NFTBorrower storage borrower = borrowers[msg.sender];
+        require(borrower.debt != 0, "S:R:NO_DEBT");
+
+        uint256 curDebt = _accruePoolInterest();
+
+        // update borrower accounting
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        uint256 amount = Maths.min(borrower.debt, maxAmount_);
+        borrower.debt -= amount;
+
+        // update lender accounting
+        uint256 curLenderDebt = lenderDebt;
+        curLenderDebt -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curDebt), amount));
+
+        curDebt       -= amount;
+
+        // update loan queue
+        uint256 borrowersCount = totalBorrowers;
+        if (borrower.debt == 0) {
+            totalBorrowers = borrowersCount - 1;
+            _removeLoanQueue(msg.sender, oldPrev_);
+        } else {
+            if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
+            uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+            _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+        }
+
+        // update pool state
+        if (curDebt != 0) {
+            borrowerDebt = curDebt;
+            lenderDebt   = curLenderDebt;
+        } else {
+            borrowerDebt = 0;
+            lenderDebt   = 0;
+        }
+
+        uint256 newLup = _lup();
+        _updateInterestRate(curDebt, newLup);
+
+        // move amount to repay from sender to pool
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
+        emit Repay(msg.sender, newLup, amount);
+    }
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -228,6 +272,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             borrowers[borrower_].inflatorSnapshot              // used to calculate pending interest (WAD)
         );
     }
+
+    // TODO: finish implementing here and in ERC20 Pool following updates to lender external functions
+    // function bucketAt() {}
 
     function isTokenIdAllowed(uint256 tokenId_) external view override returns (bool) {
         return _tokenIdsAllowed.contains(tokenId_);
