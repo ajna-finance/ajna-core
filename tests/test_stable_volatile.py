@@ -251,10 +251,6 @@ def add_quote_token(lender, lender_index, pool):
     # try:
     tx = pool.addQuoteToken(quantity, deposit_index, {"from": lender})
     return deposit_price
-    # except VirtualMachineError as ex:
-    #     print(f" ERROR adding liquidity at {deposit_price / 10**18:.1f}\n{ex}")
-    #     print(TestUtils.dump_book(pool, MAX_BUCKET, MIN_BUCKET))
-    #     assert False
 
 
 def remove_quote_token(lender, lender_index, price, pool):
@@ -262,7 +258,7 @@ def remove_quote_token(lender, lender_index, price, pool):
     lp_balance = pool.lpBalance(price_index, lender)
     if lp_balance > 0:
         exchange_rate = pool.exchangeRate(price_index)
-        claimable_quote = lp_balance * 10**18 / exchange_rate
+        claimable_quote = lp_balance * exchange_rate / 10**36
         print(f" lender {lender_index} removing {lp_balance/1e27:.1f} lp "
               f"(~{claimable_quote / 10**18:.1f} quote) from bucket {price_index} ({price / 10**18:.1f}); "
               f"exchange rate is {exchange_rate/1e27:.8f}")
