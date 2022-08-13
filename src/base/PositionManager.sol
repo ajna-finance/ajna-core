@@ -78,22 +78,24 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // Pool interactions
         IERC20Pool pool = IERC20Pool(params_.pool);
+
         // calculate equivalent underlying collateral for given lpTokens
         uint256 collateralToRemove = pool.lpsToCollateral(lpTokensToUse, params_.index);
-
         if (collateralToRemove != 0) {
-            // claim any unencumbered collateral accrued to the price bucket
+            // remove collateral from price bucket and transfer to recipient
             lpTokensToUse -= pool.removeCollateral(collateralToRemove, params_.index);
-
-            // transfer claimed collateral to recipient
             ERC20(pool.collateralTokenAddress()).safeTransfer(params_.recipient, collateralToRemove);
         }
 
-        // calculate equivalent quote tokens for remaining lpTokens
-        uint256 quoteTokensToRemove = pool.lpsToQuoteTokens(lpTokensToUse, params_.index);
-        // remove and transfer quote tokens to recipient
-        uint256 quoteRemoved = pool.removeQuoteToken(quoteTokensToRemove, params_.index);
-        ERC20(pool.quoteTokenAddress()).safeTransfer(params_.recipient, quoteRemoved);
+        uint256 quoteRemoved;
+        if (lpTokensToUse != 0) {
+            // calculate equivalent quote tokens for remaining lpTokens
+            uint256 quoteTokensToRemove = pool.lpsToQuoteTokens(lpTokensToUse, params_.index);
+            // remove and transfer quote tokens to recipient
+            quoteRemoved = pool.removeQuoteToken(quoteTokensToRemove, params_.index);
+            ERC20(pool.quoteTokenAddress()).safeTransfer(params_.recipient, quoteRemoved);
+        }
+
         emit DecreaseLiquidity(params_.recipient, pool.indexToPrice(params_.index), collateralToRemove, quoteRemoved);
     }
 

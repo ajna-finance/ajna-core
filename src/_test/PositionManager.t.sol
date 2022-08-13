@@ -15,15 +15,14 @@ import { PositionManager } from "../base/PositionManager.sol";
 
 import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
 
-contract PositionManagerTest is DSTestPlus {
-
+abstract contract PositionManagerHelperContract is DSTestPlus {
     CollateralToken  internal _collateral;
     ERC20Pool        internal _pool;
     ERC20PoolFactory internal _factory;
     PositionManager  internal _positionManager;
     QuoteToken       internal _quote;
 
-    function setUp() public {
+    constructor() {
         _collateral      = new CollateralToken();
         _quote           = new QuoteToken();
         _factory         = new ERC20PoolFactory();
@@ -31,11 +30,7 @@ contract PositionManagerTest is DSTestPlus {
         _pool            = ERC20Pool(_factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
     }
 
-    /*************************/
-    /*** Utility Functions ***/
-    /*************************/
-
-    function mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) private {
+    function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
         _quote.mint(operator_, mintAmount_);
 
         vm.prank(operator_);
@@ -45,7 +40,7 @@ contract PositionManagerTest is DSTestPlus {
 
     }
 
-    function mintAndApproveCollateralTokens(UserWithCollateral operator_, uint256 mintAmount_)private{
+    function _mintAndApproveCollateralTokens(UserWithCollateral operator_, uint256 mintAmount_) internal{
         _collateral.mint(address(operator_), mintAmount_);
 
         operator_.approveToken(_collateral, address(_pool),            mintAmount_);
@@ -55,16 +50,16 @@ contract PositionManagerTest is DSTestPlus {
     /**
      *  @dev Abstract away NFT Minting logic for use by multiple tests.
      */
-    function mintNFT(address minter_, address pool_) private returns (uint256 tokenId) {
+    function _mintNFT(address minter_, address pool_) internal returns (uint256 tokenId) {
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(minter_, pool_);
 
         vm.prank(mintParams.recipient);
         return _positionManager.mint(mintParams);
     }
 
-    function increaseLiquidity(
+    function _increaseLiquidity(
         uint256 tokenId_, address recipient_, address pool_, uint256 amount_, uint256 index_, uint256 price_
-    ) private {
+    ) internal {
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
             tokenId_, recipient_, pool_, amount_, index_
         );
@@ -75,8 +70,8 @@ contract PositionManagerTest is DSTestPlus {
         vm.prank(recipient_);
         _positionManager.increaseLiquidity(increaseLiquidityParams);
     }
-
-    // -------------------- Tests --------------------
+}
+contract PositionManagerTest is PositionManagerHelperContract {
 
     /**
      *  @notice Tests base NFT minting functionality.
@@ -86,13 +81,13 @@ contract PositionManagerTest is DSTestPlus {
         uint256 mintPrice   = _p1004;
         address testAddress = generateAddress();
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
+        _mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         // test emitted Mint event
         vm.expectEmit(true, true, true, true);
         emit Mint(testAddress, address(_pool), 1);
 
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
 
         require(tokenId != 0, "tokenId nonce not incremented");
 
@@ -115,7 +110,7 @@ contract PositionManagerTest is DSTestPlus {
         address testAddress = generateAddress();
         uint256 mintAmount  = 10000 * 1e18;
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
+        _mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         // call pool contract directly to add quote tokens
         uint256[] memory indexes = new uint256[](3);
@@ -136,7 +131,7 @@ contract PositionManagerTest is DSTestPlus {
         _pool.addQuoteToken(3_000 * 1e18, indexes[2]);
 
         // mint an NFT to later memorialize existing positions into
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
 
         // construct memorialize params struct
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
@@ -180,8 +175,8 @@ contract PositionManagerTest is DSTestPlus {
         address testLender2 = generateAddress();
         uint256 mintAmount  = 10000 * 1e18;
 
-        mintAndApproveQuoteTokens(testLender1, mintAmount);
-        mintAndApproveQuoteTokens(testLender2, mintAmount);
+        _mintAndApproveQuoteTokens(testLender1, mintAmount);
+        _mintAndApproveQuoteTokens(testLender2, mintAmount);
 
         // call pool contract directly to add quote tokens
         uint256[] memory indexes = new uint256[](4);
@@ -209,8 +204,8 @@ contract PositionManagerTest is DSTestPlus {
         _pool.addQuoteToken(3_000 * 1e18, indexes[3]);
 
         // mint NFTs to later memorialize existing positions into
-        uint256 tokenId1 = mintNFT(testLender1, address(_pool));
-        uint256 tokenId2 = mintNFT(testLender2, address(_pool));
+        uint256 tokenId1 = _mintNFT(testLender1, address(_pool));
+        uint256 tokenId2 = _mintNFT(testLender2, address(_pool));
 
         // check lender, position manager,  and pool state
         assertEq(_pool.lpBalance(indexes[0], testLender1), 3_000 * 1e27);
@@ -324,7 +319,7 @@ contract PositionManagerTest is DSTestPlus {
         // check that contract can successfully receive the NFT
         vm.expectEmit(true, true, true, true);
         emit Mint(address(lender), address(_pool), 1);
-        mintNFT(address(lender), address(_pool));
+        _mintNFT(address(lender), address(_pool));
     }
 
     /**
@@ -336,9 +331,9 @@ contract PositionManagerTest is DSTestPlus {
         uint256 mintAmount  = 10000 * 1e18;
         uint256 mintIndex   = 2550;
         uint256 mintPrice   = _p3010;
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
+        _mintAndApproveQuoteTokens(testAddress, mintAmount);
 
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
 
         // check newly minted position with no liquidity added
         (, address originalPositionOwner, ) = _positionManager.positions(tokenId);
@@ -357,7 +352,7 @@ contract PositionManagerTest is DSTestPlus {
         _positionManager.increaseLiquidity(increaseLiquidityParams);
 
         // add initial liquidity
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintIndex, mintPrice);
+        _increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintIndex, mintPrice);
 
         // check liquidity was added successfully
         (, address updatedPositionOwner, ) = _positionManager.positions(tokenId);
@@ -368,7 +363,7 @@ contract PositionManagerTest is DSTestPlus {
         assert(updatedLPTokens != 0);
 
         // Add liquidity to the same price again
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintIndex, mintPrice);
+        _increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintIndex, mintPrice);
 
         uint256 positionUpdatedTwiceTokens = _positionManager.getLPTokens(tokenId, mintIndex);
 
@@ -376,7 +371,7 @@ contract PositionManagerTest is DSTestPlus {
         assert(positionUpdatedTwiceTokens > updatedLPTokens);
 
         // add liquidity to a different price, for same owner and tokenId
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 2, 2551, _p2995);
+        _increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 2, 2551, _p2995);
 
         assertEq(_pool.treeSum(), mintAmount);
     }
@@ -388,11 +383,11 @@ contract PositionManagerTest is DSTestPlus {
     function testIncreaseLiquidityPermissions() external {
         address recipient      = generateAddress();
         address externalCaller = generateAddress();
-        uint256 tokenId        = mintNFT(recipient, address(_pool));
+        uint256 tokenId        = _mintNFT(recipient, address(_pool));
         uint256 mintAmount     = 10000 * 1e18;
         uint256 mintIndex      = 2550;
 
-        mintAndApproveQuoteTokens(recipient, mintAmount);
+        _mintAndApproveQuoteTokens(recipient, mintAmount);
 
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
             tokenId, recipient, address(_pool), mintAmount / 4, mintIndex
@@ -415,13 +410,13 @@ contract PositionManagerTest is DSTestPlus {
         uint256 mintIndex   = 2550;
         uint256 mintPrice   = _p3010;
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
+        _mintAndApproveQuoteTokens(testAddress, mintAmount);
         uint256 testerQuoteBalance = _quote.balanceOf(testAddress);
 
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
 
         // add liquidity that can later be decreased
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintIndex, mintPrice);
+        _increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintIndex, mintPrice);
 
         // check initial pool balance
         uint256 postAddPoolQuote = _pool.treeSum();
@@ -465,284 +460,6 @@ contract PositionManagerTest is DSTestPlus {
     }
 
     /**
-     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity.
-     */
-    function testDecreaseLiquidityWithDebtRedeemCollateralAndQuoteTokens() external {
-        address testLender  = generateAddress();
-        address testLender2 = generateAddress();
-        uint256 mintAmount  = 50_000 * 1e18;
-        uint256 mintIndex   = 2550;
-        uint256 mintPrice   = _p3010;
-
-        mintAndApproveQuoteTokens(testLender, mintAmount);
-        mintAndApproveQuoteTokens(testLender2, mintAmount);
-
-        uint256 tokenId = mintNFT(testLender, address(_pool));
-
-        // add liquidity that can later be decreased
-        increaseLiquidity(tokenId, testLender, address(_pool), mintAmount, mintIndex, _p3010);
-
-        // check position info
-        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintIndex);
-        assertEq(originalLPTokens, 50_000 * 1e27);
-        uint256 postAddPoolQuote = _pool.treeSum();
-        assertEq(postAddPoolQuote, 50_000 * 1e18);
-
-        // Borrow against the pool
-        UserWithCollateral testBorrower = new UserWithCollateral();
-        uint256 collateralToMint        = 5_000 * 1e18;
-        mintAndApproveCollateralTokens(testBorrower, collateralToMint);
-        assertEq(_collateral.balanceOf(address(testBorrower)), 5_000 * 1e18);
-
-        // add collateral and borrow against it
-        testBorrower.pledgeCollateral(_pool, collateralToMint, address(0), address(0));
-        testBorrower.borrow(_pool, 25_000 * 1e18, 3000, address(0), address(0));
-
-        // check pool state
-        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
-        assertEq(_pool.lup(), _p3010);
-
-        assertEq(_pool.treeSum(),      50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
-
-        // check token balances
-        assertEq(_collateral.balanceOf(address(_pool)),        5_000 * 1e18);
-        assertEq(_collateral.balanceOf(testLender),            0);
-        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
-
-        assertEq(_quote.balanceOf(testLender),            0);
-        assertEq(_quote.balanceOf(address(_pool)),        25_000 * 1e18);
-        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
-
-        // bidder add less collateral to bucket than lender can redeem.
-        // Lender will redeem all collateral from bucket and rest of LP tokens as quote tokens
-        UserWithCollateral testBidder = new UserWithCollateral();
-        mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
-        testBidder.addCollateral(_pool, 1 * 1e18, mintIndex);
-
-        // add additional quote tokens to enable reallocation decrease liquidity
-        vm.prank(address(testLender2));
-        _pool.addQuoteToken(40_000 * 1e18, mintIndex);
-
-        // lender removes their provided liquidity
-        uint256 lpTokensToRemove = originalLPTokens;
-
-        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
-            tokenId, testLender, address(_pool), mintIndex, lpTokensToRemove
-        );
-
-        vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(testLender, mintPrice, 1 * 1e18, 46_989.107977802118442155 * 1e18);
-        vm.prank(testLender);
-        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
-
-        // check pool state
-        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
-        assertEq(_pool.lup(), _p3010);
-
-        assertEq(_pool.treeSum(),      43_010.892022197881557845 * 1e18);
-        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
-
-        // check token balances
-        assertEq(_collateral.balanceOf(address(_pool)),        5_000 * 1e18);
-        assertEq(_collateral.balanceOf(testLender),            1 * 1e18);
-        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
-
-        assertEq(_quote.balanceOf(testLender),            46_989.107977802118442155 * 1e18);
-        assertEq(_quote.balanceOf(address(_pool)),        18_010.892022197881557845 * 1e18);
-        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
-
-        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, _p10016);
-        assertEq(updatedLPTokens, 0);
-    }
-
-    function testDecreaseLiquidityWithDebtRedeemCollateralOnly() external {
-        address testLender  = generateAddress();
-        address testLender2 = generateAddress();
-        uint256 mintAmount  = 50_000 * 1e18;
-        uint256 mintIndex   = 2550;
-        uint256 mintPrice   = _p3010;
-
-        mintAndApproveQuoteTokens(testLender, mintAmount);
-        mintAndApproveQuoteTokens(testLender2, mintAmount);
-
-        uint256 tokenId = mintNFT(testLender, address(_pool));
-
-        // add liquidity that can later be decreased
-        increaseLiquidity(tokenId, testLender, address(_pool), mintAmount, mintIndex, _p3010);
-
-        // check position info
-        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintIndex);
-        assertEq(originalLPTokens, 50_000 * 1e27);
-        uint256 postAddPoolQuote = _pool.treeSum();
-        assertEq(postAddPoolQuote, 50_000 * 1e18);
-
-        // Borrow against the pool
-        UserWithCollateral testBorrower = new UserWithCollateral();
-        uint256 collateralToMint        = 5_000 * 1e18;
-        mintAndApproveCollateralTokens(testBorrower, collateralToMint);
-        assertEq(_collateral.balanceOf(address(testBorrower)), 5_000 * 1e18);
-
-        // add collateral and borrow against it
-        testBorrower.pledgeCollateral(_pool, collateralToMint, address(0), address(0));
-        testBorrower.borrow(_pool, 25_000 * 1e18, 3000, address(0), address(0));
-
-        // check pool state
-        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
-        assertEq(_pool.lup(), _p3010);
-
-        assertEq(_pool.treeSum(),      50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
-
-        // check token balances
-        assertEq(_collateral.balanceOf(address(_pool)),        5_000 * 1e18);
-        assertEq(_collateral.balanceOf(testLender),            0);
-        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
-
-        assertEq(_quote.balanceOf(testLender),            0);
-        assertEq(_quote.balanceOf(address(_pool)),        25_000 * 1e18);
-        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
-
-        // bidder add more collateral to bucket than lender can redeem.
-        // Lender will redeem all LPs as collateral
-        UserWithCollateral testBidder = new UserWithCollateral();
-        mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
-        testBidder.addCollateral(_pool, 100 * 1e18, mintIndex);
-
-        // add additional quote tokens to enable reallocation decrease liquidity
-        vm.prank(address(testLender2));
-        _pool.addQuoteToken(40_000 * 1e18, mintIndex);
-
-        // lender removes their provided liquidity
-        uint256 lpTokensToRemove = originalLPTokens;
-
-        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
-            tokenId, testLender, address(_pool), mintIndex, lpTokensToRemove
-        );
-
-        vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(testLender, mintPrice, 16.606374334042426440 * 1e18, 0);
-        vm.prank(testLender);
-        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
-
-        // check pool state
-        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
-        assertEq(_pool.lup(), _p3010);
-
-        assertEq(_pool.treeSum(),      90_000 * 1e18);
-        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
-
-        // check token balances
-        assertEq(_collateral.balanceOf(address(_pool)),        5_083.393625665957573560 * 1e18);
-        assertEq(_collateral.balanceOf(testLender),            16.606374334042426440 * 1e18);
-        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
-
-        assertEq(_quote.balanceOf(testLender),            0);
-        assertEq(_quote.balanceOf(address(_pool)),        65_000 * 1e18);
-        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
-
-        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, _p10016);
-        assertEq(updatedLPTokens, 0);
-    }
-
-    function testDecreaseLiquidityWithDebtRedeemQuoteTokensOnly() external {
-        address testLender  = generateAddress();
-        address testLender2 = generateAddress();
-        uint256 mintAmount  = 50_000 * 1e18;
-        uint256 mintIndex   = 2550;
-        uint256 mintPrice   = _p3010;
-
-        mintAndApproveQuoteTokens(testLender, mintAmount);
-        mintAndApproveQuoteTokens(testLender2, mintAmount);
-
-        uint256 tokenId = mintNFT(testLender, address(_pool));
-
-        // add liquidity that can later be decreased
-        increaseLiquidity(tokenId, testLender, address(_pool), mintAmount, mintIndex, _p3010);
-
-        // check position info
-        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintIndex);
-        assertEq(originalLPTokens, 50_000 * 1e27);
-        uint256 postAddPoolQuote = _pool.treeSum();
-        assertEq(postAddPoolQuote, 50_000 * 1e18);
-
-        // Borrow against the pool
-        UserWithCollateral testBorrower = new UserWithCollateral();
-        uint256 collateralToMint        = 5_000 * 1e18;
-        mintAndApproveCollateralTokens(testBorrower, collateralToMint);
-        assertEq(_collateral.balanceOf(address(testBorrower)), 5_000 * 1e18);
-
-        // add collateral and borrow against it
-        testBorrower.pledgeCollateral(_pool, collateralToMint, address(0), address(0));
-        testBorrower.borrow(_pool, 25_000 * 1e18, 3000, address(0), address(0));
-
-        // check pool state
-        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
-        assertEq(_pool.lup(), _p3010);
-
-        assertEq(_pool.treeSum(),      50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
-
-        // check token balances
-        assertEq(_collateral.balanceOf(address(_pool)),        5_000 * 1e18);
-        assertEq(_collateral.balanceOf(testLender),            0);
-        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
-
-        assertEq(_quote.balanceOf(testLender),            0);
-        assertEq(_quote.balanceOf(address(_pool)),        25_000 * 1e18);
-        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
-
-        // add additional quote tokens to enable reallocation decrease liquidity
-        vm.prank(address(testLender2));
-        _pool.addQuoteToken(40_000 * 1e18, mintIndex);
-
-        // lender removes their provided liquidity
-        uint256 lpTokensToRemove = originalLPTokens;
-
-        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
-            tokenId, testLender, address(_pool), mintIndex, lpTokensToRemove
-        );
-
-        vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(testLender, mintPrice, 0, 50_000 * 1e18);
-        vm.prank(testLender);
-        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
-
-        // check pool state
-        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
-        assertEq(_pool.lup(), _p3010);
-
-        assertEq(_pool.treeSum(),      40_000 * 1e18);
-        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
-
-        // check token balances
-        assertEq(_collateral.balanceOf(address(_pool)),        5_000 * 1e18);
-        assertEq(_collateral.balanceOf(testLender),            0 * 1e18);
-        assertEq(_collateral.balanceOf(address(testBorrower)), 0);
-
-        assertEq(_quote.balanceOf(testLender),            50_000 * 1e18);
-        assertEq(_quote.balanceOf(address(_pool)),        15_000 * 1e18);
-        assertEq(_quote.balanceOf(address(testBorrower)), 25_000 * 1e18);
-
-        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, _p10016);
-        assertEq(updatedLPTokens, 0);
-    }
-
-    /**
-     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity in an NFT Pool.
-     *          Lender reverts when attempting to interact with a pool the tokenId wasn't minted in
-     */
-    function testDecreaseLiquidityWithDebtNFTPool() external {
-        // TODO implement when ERC721 pool backported
-    }
-
-    /**
      *  @notice Tests minting an NFT, transfering NFT, increasing liquidity.
      *          Checks that old owner cannot increase liquidity.
      *          Old owner reverts: attempts to increase liquidity without permission.
@@ -753,7 +470,7 @@ contract PositionManagerTest is DSTestPlus {
         address testReceiver    = generateAddress();
         uint256 testIndexPrice  = 2550;
         uint256 testBucketPrice = _p3010;
-        uint256 tokenId         = mintNFT(testMinter, address(_pool));
+        uint256 tokenId         = _mintNFT(testMinter, address(_pool));
 
         // check owner
         (, address originalOwner, ) = _positionManager.positions(tokenId);
@@ -771,13 +488,13 @@ contract PositionManagerTest is DSTestPlus {
 
         // check new owner can increaseLiquidity
         uint256 mintAmount = 50_000 * 1e18;
-        mintAndApproveQuoteTokens(newOwner, mintAmount);
+        _mintAndApproveQuoteTokens(newOwner, mintAmount);
 
-        increaseLiquidity(tokenId, newOwner, address(_pool), mintAmount, testIndexPrice, testBucketPrice);
+        _increaseLiquidity(tokenId, newOwner, address(_pool), mintAmount, testIndexPrice, testBucketPrice);
 
         // check previous owner can no longer modify the NFT
         uint256 nextMintAmount = 50_000 * 1e18;
-        mintAndApproveQuoteTokens(originalOwner, nextMintAmount);
+        _mintAndApproveQuoteTokens(originalOwner, nextMintAmount);
 
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
             tokenId, originalOwner, address(_pool), mintAmount / 4, testIndexPrice
@@ -812,12 +529,12 @@ contract PositionManagerTest is DSTestPlus {
         uint256 mintIndex   = 2550;
         uint256 mintPrice   = _p3010;
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
+        _mintAndApproveQuoteTokens(testAddress, mintAmount);
 
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
 
         // add liquidity that can later be decreased
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintIndex, mintPrice);
+        _increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintIndex, mintPrice);
 
         // skip > 24h to avoid deposit removal penalty
         skip(3600 * 24 + 1);
@@ -864,12 +581,12 @@ contract PositionManagerTest is DSTestPlus {
     function testMoveLiquidityPermissions() external {
        // generate a new address
         address testAddress = generateAddress();
-        mintAndApproveQuoteTokens(testAddress, 10_000 * 1e18);
+        _mintAndApproveQuoteTokens(testAddress, 10_000 * 1e18);
 
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
 
         // add initial liquidity
-        increaseLiquidity(tokenId, testAddress, address(_pool), 10_000 * 1e18, 2550, _p3010);
+        _increaseLiquidity(tokenId, testAddress, address(_pool), 10_000 * 1e18, 2550, _p3010);
 
         // construct move liquidity params
         IPositionManager.MoveLiquidityParams memory moveLiquidityParams = IPositionManager.MoveLiquidityParams(
@@ -886,12 +603,12 @@ contract PositionManagerTest is DSTestPlus {
         address testAddress = generateAddress();
         uint256 mintIndex   = 2550;
         uint256 moveIndex   = 2551;
-        mintAndApproveQuoteTokens(testAddress, 10_000 * 1e18);
+        _mintAndApproveQuoteTokens(testAddress, 10_000 * 1e18);
 
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
 
         // add initial liquidity
-        increaseLiquidity(tokenId, testAddress, address(_pool), 2_500 * 1e18, mintIndex, _p3010);
+        _increaseLiquidity(tokenId, testAddress, address(_pool), 2_500 * 1e18, mintIndex, _p3010);
 
         // check pool state
         assertEq(_pool.lpBalance(mintIndex, testAddress),               0);
@@ -903,7 +620,7 @@ contract PositionManagerTest is DSTestPlus {
             testAddress, tokenId, address(_pool), mintIndex, moveIndex
         );
 
-        // move liquidity perfromed by owner
+        // move liquidity called by owner
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress, tokenId);
         vm.prank(testAddress);
@@ -914,4 +631,209 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(_pool.lpBalance(mintIndex, address(_positionManager)), 0);
         assertGt(_pool.lpBalance(moveIndex, address(_positionManager)), 0);
     }
+}
+
+contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperContract {
+
+    address internal _testLender;
+    address internal _testLender2;
+    uint256 internal _mintAmount;
+    uint256 internal _mintIndex;
+    uint256 internal _mintPrice;
+    uint256 internal _tokenId;
+
+    UserWithCollateral internal _testBorrower;
+
+    function setUp() public {
+        _testLender  = generateAddress();
+        _testLender2 = generateAddress();
+        _mintAmount  = 50_000 * 1e18;
+        _mintIndex   = 2550;
+        _mintPrice   = _p3010;
+
+        _mintAndApproveQuoteTokens(_testLender, _mintAmount);
+        _mintAndApproveQuoteTokens(_testLender2, _mintAmount);
+
+        _tokenId = _mintNFT(_testLender, address(_pool));
+
+        // add liquidity that can later be decreased
+        _increaseLiquidity(_tokenId, _testLender, address(_pool), _mintAmount, _mintIndex, _mintPrice);
+
+        // Borrow against the pool
+        _testBorrower            = new UserWithCollateral();
+        uint256 collateralToMint = 5_000 * 1e18;
+        _mintAndApproveCollateralTokens(_testBorrower, collateralToMint);
+
+        // add collateral and borrow against it
+        _testBorrower.pledgeCollateral(_pool, collateralToMint, address(0), address(0));
+        _testBorrower.borrow(_pool, 25_000 * 1e18, 3000, address(0), address(0));
+    }
+
+    modifier checkInitialState() {
+        // check position info
+        uint256 originalLPTokens = _positionManager.getLPTokens(_tokenId, _mintIndex);
+        assertEq(originalLPTokens, 50_000 * 1e27);
+
+        // check pool state
+        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
+        assertEq(_pool.lup(), _p3010);
+
+        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
+        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
+
+        // check token balances
+        assertEq(_collateral.balanceOf(address(_pool)),         5_000 * 1e18);
+        assertEq(_collateral.balanceOf(_testLender),            0);
+        assertEq(_collateral.balanceOf(address(_testBorrower)), 0);
+
+        assertEq(_quote.balanceOf(address(_pool)),         25_000 * 1e18);
+        assertEq(_quote.balanceOf(_testLender),            0);
+        assertEq(_quote.balanceOf(address(_testBorrower)), 25_000 * 1e18);
+        _;
+    }
+
+    /**
+     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity.
+     *  @notice Lender that removes liquidity will end up with both collateral and quote tokens.
+     */
+    function testDecreaseLiquidityWithDebtRedeemCollateralAndQuoteTokens() external checkInitialState {
+
+        // bidder add less collateral to bucket than lender can redeem.
+        // Lender will redeem all collateral from bucket and rest of LP tokens as quote tokens
+        UserWithCollateral testBidder = new UserWithCollateral();
+        _mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
+        testBidder.addCollateral(_pool, 1 * 1e18, _mintIndex);
+
+        // add additional quote tokens to enable reallocation decrease liquidity
+        vm.prank(address(_testLender2));
+        _pool.addQuoteToken(40_000 * 1e18, _mintIndex);
+
+        // lender removes their entire provided liquidity
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
+            _tokenId, _testLender, address(_pool), _mintIndex, 50_000 * 1e27
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit DecreaseLiquidity(_testLender, _mintPrice, 1 * 1e18, 46_989.107977802118442155 * 1e18);
+        vm.prank(_testLender);
+        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
+
+        // check pool state
+        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
+        assertEq(_pool.lup(), _p3010);
+
+        assertEq(_pool.treeSum(),      43_010.892022197881557845 * 1e18);
+        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
+        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
+
+        // check token balances
+        assertEq(_collateral.balanceOf(address(_pool)),         5_000 * 1e18);
+        assertEq(_collateral.balanceOf(_testLender),            1 * 1e18);
+        assertEq(_collateral.balanceOf(address(_testBorrower)), 0);
+
+        assertEq(_quote.balanceOf(address(_pool)),         18_010.892022197881557845 * 1e18);
+        assertEq(_quote.balanceOf(_testLender),            46_989.107977802118442155 * 1e18);
+        assertEq(_quote.balanceOf(address(_testBorrower)), 25_000 * 1e18);
+
+        uint256 updatedLPTokens = _positionManager.getLPTokens(_tokenId, _p10016);
+        assertEq(updatedLPTokens, 0);
+    }
+
+    /**
+     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity.
+     *  @notice Lender that removes liquidity will end up with collateral only.
+     */
+    function testDecreaseLiquidityWithDebtRedeemCollateralOnly() external checkInitialState {
+
+        // bidder add more collateral to bucket than lender can redeem.
+        // Lender will redeem all LPs as collateral
+        UserWithCollateral testBidder = new UserWithCollateral();
+        _mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
+        testBidder.addCollateral(_pool, 100 * 1e18, _mintIndex);
+
+        // add additional quote tokens to enable reallocation decrease liquidity
+        vm.prank(address(_testLender2));
+        _pool.addQuoteToken(40_000 * 1e18, _mintIndex);
+
+        // lender removes their entire provided liquidity
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
+            _tokenId, _testLender, address(_pool), _mintIndex, 50_000 * 1e27
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit DecreaseLiquidity(_testLender, _mintPrice, 16.606374334042426440 * 1e18, 0);
+        vm.prank(_testLender);
+        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
+
+        // check pool state
+        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
+        assertEq(_pool.lup(), _p3010);
+
+        assertEq(_pool.treeSum(),      90_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
+        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
+
+        // check token balances
+        assertEq(_collateral.balanceOf(address(_pool)),         5_083.393625665957573560 * 1e18);
+        assertEq(_collateral.balanceOf(_testLender),            16.606374334042426440 * 1e18);
+        assertEq(_collateral.balanceOf(address(_testBorrower)), 0);
+
+        assertEq(_quote.balanceOf(address(_pool)),         65_000 * 1e18);
+        assertEq(_quote.balanceOf(_testLender),            0);
+        assertEq(_quote.balanceOf(address(_testBorrower)), 25_000 * 1e18);
+
+        uint256 updatedLPTokens = _positionManager.getLPTokens(_tokenId, _p10016);
+        assertEq(updatedLPTokens, 0);
+    }
+
+    /**
+     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity.
+     *  @notice Lender that removes liquidity will end up with quote tokens only.
+     */
+    function testDecreaseLiquidityWithDebtRedeemQuoteTokensOnly() external checkInitialState {
+
+        // add additional quote tokens to enable reallocation decrease liquidity
+        vm.prank(address(_testLender2));
+        _pool.addQuoteToken(40_000 * 1e18, _mintIndex);
+
+        // lender removes their entire provided liquidity
+        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
+            _tokenId, _testLender, address(_pool), _mintIndex, 50_000 * 1e27
+        );
+
+        vm.expectEmit(true, true, true, true);
+        emit DecreaseLiquidity(_testLender, _mintPrice, 0, 50_000 * 1e18);
+        vm.prank(_testLender);
+        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
+
+        // check pool state
+        assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
+        assertEq(_pool.lup(), _p3010);
+
+        assertEq(_pool.treeSum(),      40_000 * 1e18);
+        assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
+        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
+
+        // check token balances
+        assertEq(_collateral.balanceOf(address(_pool)),         5_000 * 1e18);
+        assertEq(_collateral.balanceOf(_testLender),            0 * 1e18);
+        assertEq(_collateral.balanceOf(address(_testBorrower)), 0);
+
+        assertEq(_quote.balanceOf(address(_pool)),         15_000 * 1e18);
+        assertEq(_quote.balanceOf(_testLender),            50_000 * 1e18);
+        assertEq(_quote.balanceOf(address(_testBorrower)), 25_000 * 1e18);
+
+        uint256 updatedLPTokens = _positionManager.getLPTokens(_tokenId, _p10016);
+        assertEq(updatedLPTokens, 0);
+    }
+
+    /**
+     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity in an NFT Pool.
+     *          Lender reverts when attempting to interact with a pool the tokenId wasn't minted in
+     */
+    function testDecreaseLiquidityWithDebtNFTPool() external {
+        // TODO implement when ERC721 pool backported
+    }
+
 }
