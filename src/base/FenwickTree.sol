@@ -64,10 +64,10 @@ abstract contract FenwickTree is IFenwickTree {
             j = i_ + _lsb(i_);
             i_ -= _lsb(i_); 
 
-            // Execute while i is a range parent of j (zero is the highest parent)
+            // Execute while i is a range parent of j (zero is the highest parent).
             while ((_lsb(j) < _lsb(i_)) || (i_ == 0 && j <= SIZE)) {
 
-                // write sums to range parent 
+                // Write sums to range parent .
                 values[j] += sum;
                 scaledJ = scaling[j];
                 if (scaledJ != 0) sum = Maths.wmul(sum, scaledJ);
