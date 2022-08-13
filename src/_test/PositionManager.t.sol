@@ -861,19 +861,37 @@ contract PositionManagerTest is DSTestPlus {
         assertEq(burntPositionOwner, 0x0000000000000000000000000000000000000000);
     }
 
-    function testMoveLiquidity() external {
-        // generate a new address
+    function testMoveLiquidityPermissions() external {
+       // generate a new address
         address testAddress = generateAddress();
-        uint256 mintAmount  = 10000 * 1e18;
-        uint256 mintIndex   = 2550;
-        uint256 mintPrice   = _p3010;
-        uint256 moveIndex   = 2551;
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
+        mintAndApproveQuoteTokens(testAddress, 10_000 * 1e18);
 
         uint256 tokenId = mintNFT(testAddress, address(_pool));
 
         // add initial liquidity
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintIndex, mintPrice);
+        increaseLiquidity(tokenId, testAddress, address(_pool), 10_000 * 1e18, 2550, _p3010);
+
+        // construct move liquidity params
+        IPositionManager.MoveLiquidityParams memory moveLiquidityParams = IPositionManager.MoveLiquidityParams(
+            testAddress, tokenId, address(_pool), 2550, 2551
+        );
+
+        // move liquidity should fail because is not performed by owner
+        vm.expectRevert("PM:NO_AUTH");
+        _positionManager.moveLiquidity(moveLiquidityParams);
+    }
+
+    function testMoveLiquidity() external {
+        // generate a new address
+        address testAddress = generateAddress();
+        uint256 mintIndex   = 2550;
+        uint256 moveIndex   = 2551;
+        mintAndApproveQuoteTokens(testAddress, 10_000 * 1e18);
+
+        uint256 tokenId = mintNFT(testAddress, address(_pool));
+
+        // add initial liquidity
+        increaseLiquidity(tokenId, testAddress, address(_pool), 2_500 * 1e18, mintIndex, _p3010);
 
         // check pool state
         assertEq(_pool.lpBalance(mintIndex, testAddress),               0);
@@ -882,12 +900,13 @@ contract PositionManagerTest is DSTestPlus {
 
         // construct move liquidity params
         IPositionManager.MoveLiquidityParams memory moveLiquidityParams = IPositionManager.MoveLiquidityParams(
-            testAddress, tokenId, mintIndex, moveIndex
+            testAddress, tokenId, address(_pool), mintIndex, moveIndex
         );
 
-        // move liquidity
+        // move liquidity perfromed by owner
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress, tokenId);
+        vm.prank(testAddress);
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // check pool state

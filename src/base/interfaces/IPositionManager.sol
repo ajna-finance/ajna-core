@@ -172,12 +172,14 @@ interface IPositionManager {
      *  @notice Struct holding parameters for moving the liquidity of a position.
      *  @param  owner     The NFT owner address.
      *  @param  tokenId   The tokenId of the NFT.
+     *  @param  pool      The pool address to move quote tokens.
      *  @param  fromIndex The price bucket index from which liquidity should be moved.
      *  @param  toIndex   The price bucket index to which liquidity should be moved.
      */
     struct MoveLiquidityParams {
         address owner;
         uint256 tokenId;
+        address pool;
         uint256 fromIndex;
         uint256 toIndex;
     }
