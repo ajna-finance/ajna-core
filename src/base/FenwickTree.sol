@@ -7,7 +7,7 @@ import { IFenwickTree } from "./interfaces/IFenwickTree.sol";
 import { Maths } from "../libraries/Maths.sol";
 
 abstract contract FenwickTree is IFenwickTree {
-    
+ 
    /**
      *  @notice size of the FenwickTree.
      */ 
@@ -36,6 +36,7 @@ abstract contract FenwickTree is IFenwickTree {
  
     /**
      *  @notice Scale values in the tree from the index provided, upwards.
+     *  @dev    Starts at passed in node and increments through range parent nodes, and ends at 8192.
      *  @param  i_  The index to start scaling from.
      *  @param  f_  The factor to scale the values by.
     */    
@@ -43,13 +44,11 @@ abstract contract FenwickTree is IFenwickTree {
     function _mult(uint256 i_, uint256 f_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:M:INVALID_INDEX");
         require(f_ != 0, "FW:M:FACTOR_ZERO");
-        
-        // i == 13
 
-        i_ += 1; // 14
+        i_ += 1;
         uint256 sum;
         uint256 j;
-        uint256 df = f_ - Maths.WAD;
+        uint256 df = f_ - Maths.WAD; // need help naming this variable and or creating a comment
 
         uint256 scaledI;
         uint256 scaledJ;
@@ -57,19 +56,23 @@ abstract contract FenwickTree is IFenwickTree {
         while (i_ > 0) {
             scaledI =  scaling[i_];
             
-            // store sum and scale value at index
+            // Calc sum and scale value of current node i.
             sum = scaledI != 0 ? sum + Maths.wmul(Maths.wmul(df, values[i_]), scaledI) : sum + Maths.wmul(df, values[i_]);
             scaling[i_] = scaledI != 0 ? Maths.wmul(f_, scaledI) : f_;
 
-            // set top and bottom of update range?
-            j = i_ + _lsb(i_); // 16 -> 10000                                         
-            i_ -= _lsb(i_); // 12 
+            // Increase j and decrement current node i by one binary index.
+            j = i_ + _lsb(i_);
+            i_ -= _lsb(i_); 
 
-            // 16 < 4 || 14 == 0 && 16 <= 8192 this should run but doesn't?
+            // Execute while i is a range parent of j (zero is the highest parent)
             while ((_lsb(j) < _lsb(i_)) || (i_ == 0 && j <= SIZE)) {
+
+                // write sums to range parent 
                 values[j] += sum;
                 scaledJ = scaling[j];
                 if (scaledJ != 0) sum = Maths.wmul(sum, scaledJ);
+
+                // Increase j to point to next range parent.
                 j += _lsb(j);
             }
         }
@@ -77,22 +80,28 @@ abstract contract FenwickTree is IFenwickTree {
 
     /**
      *  @notice increase a value in the FenwickTree at an index.
+     *  @dev    Starts at tree root and decrements through range parent nodes until index, i_, is reached.
      *  @param  i_  The index pointing to the value.
      *  @param  x_  amount to increase the value by.
     */    
     function _add(uint256 i_, uint256 x_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:A:INVALID_INDEX");
 
-        i_ += 1;
-        uint256 j = 8192; // 1 << 13
-        uint256 ii; // what does this var represent?
+        i_ += 1; // why does this exist if we minus in l 95?
+        uint256 j = 8192;           // 1 << 13
+        uint256 ii;                 // binary index offset
         uint256 sc = Maths.WAD;
 
         uint256 scaled;
 
         while (j > 0) {
+            // If passed in node is in current range, updates are confined to range for remaining iterations.
             if (((i_ - 1) & j) != 0) {
+
+                // Increase binary index offset to point next node in range.
                 ii += j;
+            
+            // Update node effected by addition.
             } else {
                 scaled = scaling[ii + j];
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
@@ -103,48 +112,67 @@ abstract contract FenwickTree is IFenwickTree {
     }
 
     /**
-     *  @notice decrease a value in the FenwickTree at an index.
+     *  @notice Decrease a node in the FenwickTree at an index.
+     *  @dev    Starts at tree root and decrements through range parent nodes until index, i_, is reached.
      *  @param  i_  The index pointing to the value
-     *  @param  x_  amount to decrease the value by.
+     *  @param  x_  Amount to decrease the value by.
     */    
     function _remove(uint256 i_, uint256 x_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:R:INVALID_INDEX");
 
-        i_ += 1;
-        uint256 j = 8192; // 1 << 13
-        uint256 ii;
+        i_ += 1; // why does this exist if we minus in l 130?
+        uint256 j = 8192;          // 1 << 13
+        uint256 ii;                // Binary index offset
         uint256 sc = Maths.WAD;
 
         uint256 scaled;
 
         while (j > 0) {
+            // could 131 & 134 be turned into one line ->  ii = ii + (i_ & j);?
+            // if requested node is in current range, updates are confined to range for remaining iterations.
             if (((i_ - 1) & j) != 0) {  
+
+                // Increase binary index offset to point next node in range.
                 ii += j;
+                
+            // Update node effected by removal.
             } else {
                 scaled = scaling[ii + j];
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
                 values[ii + j] -= Maths.wdiv(x_, sc);
             }
+
             j = j >> 1;
         }
     }
 
     function _prefixSum(uint256 i_) internal view returns (uint256 s_) {
-        i_ += 1;
+        i_ += 1; // ?why do we increase by 1?
         uint256 sc = Maths.WAD;
-        uint256 j  = 8192; // 1 << 13
-        uint256 ii;
+        uint256 j  = 8192;         // 1 << 13
+        uint256 ii;                // Binary index offset
 
         uint256 scaled;
+        // Unsure of what this conditional does - ii + j <= SIZE?
+        // This only ever restricts us when we are at the highest bucket? 8192. Possibly cleaner with a require statement?
+        while (j > 0 && ii + j <= SIZE) { 
 
-        while (j > 0 && ii + j <= SIZE) {
             scaled = scaling[ii + j];
+
+            // If requested node is in current range, compute sum with running multiplier.
             if (i_ & j != 0) {
-                s_ = scaled != 0 ? s_ + Maths.wmul(Maths.wmul(sc, scaled), values[ii + j]) : s_ + Maths.wmul(sc, values[ii + j]);
+                if (scaled != 0) {
+                   s_ += Maths.wmul(Maths.wmul(sc, scaled), values[ii + j]);
+                } else {
+                   s_ += Maths.wmul(sc, values[ii + j]);
+                }
+            
+            // Increase running multiplier with range multiplier.
             } else {
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
             }
 
+            // Increase binary index offset to point next node in range.
             ii = ii + (i_ & j);
             j = j >> 1;
         }

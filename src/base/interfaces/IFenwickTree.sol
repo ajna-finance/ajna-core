@@ -47,7 +47,7 @@ interface IFenwickTree {
 
     /**
      *  @notice Returns the accumulated sum of a sequence of nodes up to a given node.
-     *  @dev Starts at the tree root and decremnts through nodes until the given index, i_, is reached.
+     *  @dev Starts at the tree root and decrements through nodes until the given index, i_, is reached.
      *  @param  i_  The final index in the sequence.
      *  @return s_  The sum of the sequence. 
      */
