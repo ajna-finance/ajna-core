@@ -76,7 +76,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         uint256 lpTokensUsed;
         if (collateralToRemove != 0) {
             // remove collateral from price bucket and transfer to recipient
-            lpTokensUsed  = pool.removeCollateral(collateralToRemove, params_.index);
+            lpTokensUsed = pool.removeCollateral(collateralToRemove, params_.index);
             ERC20(pool.collateralTokenAddress()).safeTransfer(params_.recipient, collateralToRemove);
         }
 
@@ -90,10 +90,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         }
 
         // Positions accounting
+        positions[params_.tokenId].lpTokens[params_.index] -= lpTokensUsed;
         if (curPos == lpTokensUsed) {
             positionPrices[params_.tokenId].remove(params_.index);
-        } else {
-            positions[params_.tokenId].lpTokens[params_.index] = curPos - lpTokensUsed;
         }
 
         emit DecreaseLiquidity(params_.recipient, pool.indexToPrice(params_.index));
@@ -204,6 +203,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     function getLPTokens(uint256 tokenId_, uint256 index_) external override view returns (uint256) {
         return positions[tokenId_].lpTokens[index_];
+    }
+
+    function isIndexInPosition(uint256 tokenId_, uint256 index_) external override view returns (bool) {
+        return positionPrices[tokenId_].contains(index_);
     }
 
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {

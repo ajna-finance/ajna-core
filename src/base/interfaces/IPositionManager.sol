@@ -261,4 +261,12 @@ interface IPositionManager {
     */
     function getLPTokens(uint256 tokenId_, uint256 index_) external view returns (uint256 lpTokens_);
 
+    /**
+     *  @notice Checks if a given tokenId has a given position price
+     *  @param  tokenId_          Unique ID of token.
+     *  @param  index_            Index of price bucket to check if in position prices.
+     *  @return priceInPostition_ True if tokenId has the position price
+    */
+    function isIndexInPosition(uint256 tokenId_, uint256 index_) external view returns (bool priceInPostition_);
+
 }

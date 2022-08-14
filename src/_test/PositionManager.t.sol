@@ -132,6 +132,9 @@ contract PositionManagerTest is PositionManagerHelperContract {
 
         // mint an NFT to later memorialize existing positions into
         uint256 tokenId = _mintNFT(testAddress, address(_pool));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2550));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2551));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2552));
 
         // construct memorialize params struct
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
@@ -157,13 +160,15 @@ contract PositionManagerTest is PositionManagerHelperContract {
 
         // check memorialization success
         uint256 positionAtPriceOneLPTokens = _positionManager.getLPTokens(tokenId, indexes[0]);
-
         assert(positionAtPriceOneLPTokens > 0);
 
         // check lp tokens at non added to price
         uint256 positionAtWrongPriceLPTokens = _positionManager.getLPTokens(tokenId, 4000000 * 1e18);
-
         assert(positionAtWrongPriceLPTokens == 0);
+
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2550));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2552));
     }
 
     /**
@@ -334,6 +339,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         uint256 tokenId = _mintNFT(testAddress, address(_pool));
+        
 
         // check newly minted position with no liquidity added
         (, address originalPositionOwner, ) = _positionManager.positions(tokenId);
@@ -341,6 +347,9 @@ contract PositionManagerTest is PositionManagerHelperContract {
 
         assertEq(originalPositionOwner, testAddress);
         assert(originalLPTokens == 0);
+
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2550));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2551));
 
         // add no liquidity
         IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
@@ -370,8 +379,12 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_pool.treeSum(), mintAmount / 2);
         assert(positionUpdatedTwiceTokens > updatedLPTokens);
 
+        assertTrue(_positionManager.isIndexInPosition(tokenId, mintIndex));
+
         // add liquidity to a different price, for same owner and tokenId
         _increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 2, 2551, _p2995);
+
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));
 
         assertEq(_pool.treeSum(), mintAmount);
     }
@@ -431,6 +444,8 @@ contract PositionManagerTest is PositionManagerHelperContract {
         uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintIndex); // RAY
         assertEq(originalLPTokens, 10_000 * 1e27);
 
+        assertTrue(_positionManager.isIndexInPosition(tokenId, mintIndex));
+
         // remove 1/4 of the LP tokens
         uint256 lpTokensToRemove = originalLPTokens / 4;
         assertEq(lpTokensToRemove, 2_500 * 1e27);
@@ -457,6 +472,8 @@ contract PositionManagerTest is PositionManagerHelperContract {
         // check lp tokens matches expectations
         uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, mintIndex);
         assertLt(updatedLPTokens, originalLPTokens);
+
+        assertTrue(_positionManager.isIndexInPosition(tokenId, mintIndex));
     }
 
     /**
@@ -552,6 +569,8 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(lpTokensToRemove, 10_000 * 10**27);
         assertEq(_pool.treeSum(), 10_000 * 1e18);
 
+        assertTrue(_positionManager.isIndexInPosition(tokenId, mintIndex));
+
         // decrease liquidity
         IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
             tokenId, testAddress, address(_pool), mintIndex, lpTokensToRemove
@@ -574,8 +593,9 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.burn(burnParams);
 
         (, address burntPositionOwner, ) = _positionManager.positions(tokenId);
-
         assertEq(burntPositionOwner, 0x0000000000000000000000000000000000000000);
+
+        assertFalse(_positionManager.isIndexInPosition(tokenId, mintIndex));
     }
 
     function testMoveLiquidityPermissions() external {
@@ -613,7 +633,10 @@ contract PositionManagerTest is PositionManagerHelperContract {
         // check pool state
         assertEq(_pool.lpBalance(mintIndex, testAddress),               0);
         assertGt(_pool.lpBalance(mintIndex, address(_positionManager)), 0);
-        assertEq(_pool.lpBalance(moveIndex, address(_positionManager)),      0);
+        assertEq(_pool.lpBalance(moveIndex, address(_positionManager)), 0);
+
+        assertTrue(_positionManager.isIndexInPosition(tokenId, mintIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, moveIndex));
 
         // construct move liquidity params
         IPositionManager.MoveLiquidityParams memory moveLiquidityParams = IPositionManager.MoveLiquidityParams(
@@ -630,6 +653,9 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_pool.lpBalance(mintIndex, testAddress),               0);
         assertEq(_pool.lpBalance(mintIndex, address(_positionManager)), 0);
         assertGt(_pool.lpBalance(moveIndex, address(_positionManager)), 0);
+
+        assertFalse(_positionManager.isIndexInPosition(tokenId, mintIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, moveIndex));
     }
 }
 
@@ -673,6 +699,8 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         // check position info
         uint256 originalLPTokens = _positionManager.getLPTokens(_tokenId, _mintIndex);
         assertEq(originalLPTokens, 50_000 * 1e27);
+
+        assertTrue(_positionManager.isIndexInPosition(_tokenId, _mintIndex));
 
         // check pool state
         assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
@@ -738,6 +766,8 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
 
         uint256 updatedLPTokens = _positionManager.getLPTokens(_tokenId, _p10016);
         assertEq(updatedLPTokens, 0);
+
+        assertFalse(_positionManager.isIndexInPosition(_tokenId, _mintIndex));
     }
 
     /**
@@ -785,6 +815,8 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
 
         uint256 updatedLPTokens = _positionManager.getLPTokens(_tokenId, _p10016);
         assertEq(updatedLPTokens, 0);
+
+        assertFalse(_positionManager.isIndexInPosition(_tokenId, _mintIndex));
     }
 
     /**
@@ -826,6 +858,8 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
 
         uint256 updatedLPTokens = _positionManager.getLPTokens(_tokenId, _p10016);
         assertEq(updatedLPTokens, 0);
+
+        assertFalse(_positionManager.isIndexInPosition(_tokenId, _mintIndex));
     }
 
     /**
