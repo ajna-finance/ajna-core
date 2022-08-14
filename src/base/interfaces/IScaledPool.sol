@@ -205,11 +205,11 @@ interface IScaledPool {
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
-     *  @param  maxAmount_ The maximum amount of quote token to be removed by a lender.
-     *  @param  index_     The bucket index from which quote tokens will be removed.
-     *  @return amount_    The amount of quote tokens actually removed by the lender.
+     *  @param  maxAmount_   The maximum amount of quote token to be removed by a lender.
+     *  @param  index_       The bucket index from which quote tokens will be removed.
+     *  @return lpAmount_    The amount of LP tokens used for removing quote tokens amount.
      */
-    function removeQuoteToken(uint256 maxAmount_, uint256 index_) external returns (uint256 amount_);
+    function removeQuoteToken(uint256 maxAmount_, uint256 index_) external returns (uint256 lpAmount_);
 
     /**
      *  @notice Called by lenders to transfers their LP tokens to a different address.
@@ -337,17 +337,17 @@ interface IScaledPool {
 
     /**
      *  @notice Calculate the amount of collateral for a given amount of LP Tokens.
-     *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
-     *  @param  index_            The price bucket index for which the value should be calculated.
-     *  @return collateralTokens_ The equivalent value of collateral tokens for the given LP Tokens, WAD units.
+     *  @param  lpTokens_            The number of lpTokens to calculate amounts for.
+     *  @param  index_               The price bucket index for which the value should be calculated.
+     *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
      */
-    function lpsToCollateral(uint256 lpTokens_, uint256 index_) external view returns (uint256 collateralTokens_);
+    function lpsToCollateral(uint256 lpTokens_, uint256 index_) external view returns (uint256 collateralAmount_);
 
     /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
      *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return quoteTokens_ The equivalent value of quote tokens for the given LP Tokens, WAD units.
+     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
      */
-    function lpsToQuoteTokens(uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteTokens_);
+    function lpsToQuoteTokens(uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteAmount_);
 }

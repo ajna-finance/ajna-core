@@ -22,19 +22,15 @@ interface IPositionManager {
      *  @notice Emitted when liquidity of the pool was increased.
      *  @param  lender_     Lender address.
      *  @param  price_      The price at quote tokens were added.
-     *  @param  collateral_ The amount of collateral removed from the pool.
-     *  @param  quote_      The amount of quote tokens removed from the pool.
      */
-    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 collateral_, uint256 quote_);
+    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_);
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
      *  @param  lender_     Lender address.
      *  @param  price_      The price at quote tokens were added.
-     *  @param  collateral_ The array of collateral tokenIds to be removed from the pool.
-     *  @param  quote_      The amount of quote tokens removed from the pool.
      */
-    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_, uint256[] collateral_, uint256 quote_);
+    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_);
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.

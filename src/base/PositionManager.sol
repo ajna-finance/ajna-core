@@ -65,85 +65,43 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) nonReentrant {
-        uint256 curPos        = positions[params_.tokenId].lpTokens[params_.index];
-        uint256 lpTokensToUse = params_.lpTokens;
-        require(lpTokensToUse <= curPos, "PM:DL:INSUF_LP_BAL");
-
-        // Positions accounting
-        if (curPos == lpTokensToUse) {
-            positionPrices[params_.tokenId].remove(params_.index);
-        } else {
-            positions[params_.tokenId].lpTokens[params_.index] = curPos - lpTokensToUse;
-        }
+        uint256 curPos = positions[params_.tokenId].lpTokens[params_.index];
+        require(params_.lpTokens <= curPos, "PM:DL:INSUF_LP_BAL");
 
         // Pool interactions
         IERC20Pool pool = IERC20Pool(params_.pool);
 
         // calculate equivalent underlying collateral for given lpTokens
-        uint256 collateralToRemove = pool.lpsToCollateral(lpTokensToUse, params_.index);
+        uint256 collateralToRemove = pool.lpsToCollateral(params_.lpTokens, params_.index);
+        uint256 lpTokensUsed;
         if (collateralToRemove != 0) {
             // remove collateral from price bucket and transfer to recipient
-            lpTokensToUse -= pool.removeCollateral(collateralToRemove, params_.index);
+            lpTokensUsed  = pool.removeCollateral(collateralToRemove, params_.index);
             ERC20(pool.collateralTokenAddress()).safeTransfer(params_.recipient, collateralToRemove);
         }
 
-        uint256 quoteRemoved;
-        if (lpTokensToUse != 0) {
+        uint256 remainingLpTokens = params_.lpTokens - lpTokensUsed;
+        if (remainingLpTokens != 0) {
             // calculate equivalent quote tokens for remaining lpTokens
-            uint256 quoteTokensToRemove = pool.lpsToQuoteTokens(lpTokensToUse, params_.index);
+            uint256 quoteTokensToRemove = pool.lpsToQuoteTokens(remainingLpTokens, params_.index);
             // remove and transfer quote tokens to recipient
-            quoteRemoved = pool.removeQuoteToken(quoteTokensToRemove, params_.index);
-            ERC20(pool.quoteTokenAddress()).safeTransfer(params_.recipient, quoteRemoved);
+            lpTokensUsed += pool.removeQuoteToken(quoteTokensToRemove, params_.index);
+            ERC20(pool.quoteTokenAddress()).safeTransfer(params_.recipient, quoteTokensToRemove);
         }
 
-        emit DecreaseLiquidity(params_.recipient, pool.indexToPrice(params_.index), collateralToRemove, quoteRemoved);
+        // Positions accounting
+        if (curPos == lpTokensUsed) {
+            positionPrices[params_.tokenId].remove(params_.index);
+        } else {
+            positions[params_.tokenId].lpTokens[params_.index] = curPos - lpTokensUsed;
+        }
+
+        emit DecreaseLiquidity(params_.recipient, pool.indexToPrice(params_.index));
     }
 
     function decreaseLiquidityNFT(DecreaseLiquidityNFTParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) nonReentrant {
+        // TODO implement when NFT Pool ported to scaled pool
         require(params_.lpTokens <= positions[params_.tokenId].lpTokens[params_.index], "PM:DL:INSUF_LP_BAL");
-
-        IERC721Pool pool = IERC721Pool(params_.pool);
-
-        // calculate equivalent underlying collateral for given lpTokens
-        uint256 collateralToRemove = pool.lpsToCollateral(params_.lpTokens, params_.index);
-
-        uint256[] memory tokensToRemove;
-        uint256 lpTokensClaimed;
-
-        // enable lenders to remove quote token from a bucket that no debt is added to
-        if (collateralToRemove != 0) {
-            // slice incoming tokens to only use as many as are required
-            uint256 indexToUse = Maths.wadToIntRoundingDown(collateralToRemove);
-            tokensToRemove = new uint256[](indexToUse);
-            tokensToRemove = params_.tokenIdsToRemove[:indexToUse];
-
-            // claim any unencumbered collateral accrued to the price bucket
-            lpTokensClaimed = pool.removeCollateral(tokensToRemove, params_.index);
-
-            // transfer claimed collateral to recipient
-            uint256 tokensToRemoveLength = tokensToRemove.length;
-            for (uint256 i = 0; i < tokensToRemoveLength; ) {
-                ERC721(pool.collateralTokenAddress()).safeTransferFrom(address(this), params_.recipient, tokensToRemove[i]);
-                unchecked {
-                    ++i;
-                }
-            }
-        } else {
-            tokensToRemove = new uint[](0);
-        }
-
-        // update position with newly removed lp tokens
-        positions[params_.tokenId].lpTokens[params_.index] -= (params_.lpTokens + lpTokensClaimed);
-
-        // update price set for liquidity removed
-        if (positions[params_.tokenId].lpTokens[params_.index] == 0) {
-            positionPrices[params_.tokenId].remove(params_.index);
-        }
-
-        // remove and transfer quote tokens to recipient
-        uint256 quoteRemoved = pool.removeQuoteToken(params_.lpTokens, params_.index);
-        ERC20(pool.quoteTokenAddress()).safeTransfer(params_.recipient, quoteRemoved);
-        emit DecreaseLiquidityNFT(params_.recipient, pool.indexToPrice(params_.index), tokensToRemove, quoteRemoved);
     }
 
     function increaseLiquidity(IncreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {

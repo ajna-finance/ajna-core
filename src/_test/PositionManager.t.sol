@@ -443,7 +443,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         );
 
         vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(testAddress, mintPrice, 0, 2_500 * 1e18);
+        emit DecreaseLiquidity(testAddress, mintPrice);
 
         // decrease liquidity and check change in balances
         vm.prank(testAddress);
@@ -512,7 +512,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         );
 
         vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(newOwner, testBucketPrice, 0, 50_000 * 1e18); //
+        emit DecreaseLiquidity(newOwner, testBucketPrice);
         vm.prank(newOwner);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
     }
@@ -558,7 +558,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         );
 
         vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(testAddress, mintPrice, 0, 10_000 * 1e18);
+        emit DecreaseLiquidity(testAddress, mintPrice);
 
         // decrease liquidity and check change in balances
         vm.prank(testAddress);
@@ -715,7 +715,7 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         );
 
         vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(_testLender, _mintPrice, 1 * 1e18, 46_989.107977802118442155 * 1e18);
+        emit DecreaseLiquidity(_testLender, _mintPrice);
         vm.prank(_testLender);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
 
@@ -762,7 +762,7 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         );
 
         vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(_testLender, _mintPrice, 16.606374334042426440 * 1e18, 0);
+        emit DecreaseLiquidity(_testLender, _mintPrice);
         vm.prank(_testLender);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
 
@@ -803,7 +803,7 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         );
 
         vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(_testLender, _mintPrice, 0, 50_000 * 1e18);
+        emit DecreaseLiquidity(_testLender, _mintPrice);
         vm.prank(_testLender);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
 

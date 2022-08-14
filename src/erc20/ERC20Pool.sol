@@ -214,7 +214,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
     }
 
-    function removeCollateral(uint256 maxAmount_, uint256 index_) external override returns (uint256 lpRedemption_) {
+    function removeCollateral(uint256 maxAmount_, uint256 index_) external override returns (uint256 lpAmount_) {
         _accruePoolInterest();
 
         // determine amount of collateral to remove
@@ -227,21 +227,21 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 amount;
         if (maxAmount_ > claimableCollateral && bucket.availableCollateral >= claimableCollateral) {
             // lender wants to redeem all of their LPB for collateral, and the bucket has enough to offer
-            amount        = claimableCollateral;
-            lpRedemption_ = availableLPs;
+            amount    = claimableCollateral;
+            lpAmount_ = availableLPs;
         } else {
             // calculate how much collateral may be awarded to lender, and how much LPB to redeem
-            amount        = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
-            lpRedemption_ = Maths.min(availableLPs, Maths.rdiv((amount * price / 1e9), rate));
+            amount    = Maths.min(maxAmount_, Maths.min(bucket.availableCollateral, claimableCollateral));
+            lpAmount_ = Maths.min(availableLPs, Maths.rdiv((amount * price / 1e9), rate));
         }
 
         // update bucket accounting
         bucket.availableCollateral -= Maths.min(bucket.availableCollateral, amount);
-        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpRedemption_);
+        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpAmount_);
         buckets[index_] = bucket;
 
         // update lender accounting
-        lpBalance[index_][msg.sender] -= lpRedemption_;
+        lpBalance[index_][msg.sender] -= lpAmount_;
 
         _updateInterestRate(borrowerDebt, _lup());
 
