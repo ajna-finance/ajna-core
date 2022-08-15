@@ -56,6 +56,10 @@ contract UserWithQuoteToken {
         pool_.addQuoteToken(amount_, index_);
     }
 
+    function approveNewPositionOwner(ERC20Pool pool_, address allowedNewOwner_) public {
+        pool_.approveNewPositionOwner(allowedNewOwner_);
+    }
+
     function moveQuoteToken(
         ERC20Pool pool_, uint256 amount_, uint256 fromIndex_, uint256 toIndex_
     ) public {
@@ -64,6 +68,10 @@ contract UserWithQuoteToken {
 
     function removeQuoteToken(ERC20Pool pool_, uint256 amount_, uint256 index_) public {
         pool_.removeQuoteToken(amount_, index_);
+    }
+
+    function transferLPTokens(ERC20Pool pool_, address owner_, address newOwner_, uint256[] calldata indexes_) public {
+        pool_.transferLPTokens(owner_, newOwner_, indexes_);
     }
 
     function removeCollateral(ERC20Pool pool_, uint256 amount_, uint256 index_) public {

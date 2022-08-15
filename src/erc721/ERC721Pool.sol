@@ -73,6 +73,14 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         }
     }
 
+    /*********************************/
+    /*** Lender External Functions ***/
+    /*********************************/
+
+    function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external returns (uint256 lpRedemption_) {
+        // TODO backport
+    }
+
     /**********************/
     /*** View Functions ***/
     /**********************/
