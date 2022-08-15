@@ -63,6 +63,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
      */
     mapping(uint256 => mapping(address => uint256)) public override lpBalance;
 
+    /** @dev Used for tracking LP token ownership address for transferLPTokens access control */
+    mapping(address => address) public override lpTokenOwnership;
+
     uint256 internal _poolInitializations = 0;
 
     /*********************************/
@@ -89,6 +92,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // move quote token amount from lender to pool
         quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
+    }
+
+    function approveNewPositionOwner(address allowedNewOwner_) external {
+        lpTokenOwnership[msg.sender] = allowedNewOwner_;
     }
 
     function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override {
@@ -133,7 +140,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
 
-    function removeQuoteToken(uint256 maxAmount_, uint256 index_) external override {
+    function removeQuoteToken(uint256 maxAmount_, uint256 index_) external override returns (uint256 lpAmount_) {
         // scale the tree, accumulating interest owed to lenders
         uint256 curDebt = _accruePoolInterest();
 
@@ -145,24 +152,23 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 claimableQuoteToken = Maths.rayToWad(Maths.rmul(availableLPs, rate));
 
         uint256 amount;
-        uint256 lpRedemption;
         if (maxAmount_ > claimableQuoteToken && availableQuoteToken >= claimableQuoteToken) {
             // lender wants to redeem all of their LPB for quote token, and the bucket has enough to offer
             amount = claimableQuoteToken;
-            lpRedemption = availableLPs;
+            lpAmount_ = availableLPs;
         } else {
             // calculate how much quote token may be awarded to lender, and how much LPB to redeem
             amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, claimableQuoteToken));
-            lpRedemption = Maths.wrdivr(amount, rate);
+            lpAmount_ = Maths.wrdivr(amount, rate);
         }
 
         // update bucket accounting
-        bucket.lpAccumulator -= lpRedemption;
+        bucket.lpAccumulator -= lpAmount_;
         buckets[index_] = bucket;
         _remove(index_, amount); // update FenwickTree
 
         // update lender accounting
-        lpBalance[index_][msg.sender] -= lpRedemption;
+        lpBalance[index_][msg.sender] -= lpAmount_;
 
         // update pool accounting
         uint256 newLup = _lup();
@@ -172,6 +178,37 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
+    }
+
+    function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external {
+        address allowedOwner = lpTokenOwnership[owner_];
+        require(allowedOwner != address(0) && newOwner_ == allowedOwner, "S:TLT:NOT_OWNER");
+
+        uint256 tokensTransferred;
+
+        uint256 indexesLength = indexes_.length;
+        uint256[] memory prices = new uint256[](indexesLength);
+
+        for (uint256 i = 0; i < indexesLength; ) {
+            require(BucketMath.isValidIndex(_indexToBucketIndex(indexes_[i])), "S:TLT:INVALID_INDEX");
+            prices[i] = _indexToPrice(indexes_[i]);
+
+            // calculate lp tokens to be moved in the given bucket
+            uint256 tokensToTransfer = lpBalance[indexes_[i]][owner_];
+
+            // move lp tokens to the new owners address
+            delete lpBalance[indexes_[i]][owner_];
+            lpBalance[indexes_[i]][newOwner_] += tokensToTransfer;
+
+            tokensTransferred += tokensToTransfer;
+
+            unchecked {
+                ++i;
+            }
+        }
+        delete lpTokenOwnership[owner_];
+
+        emit TransferLPTokens(owner_, newOwner_, prices, tokensTransferred);
     }
 
     /**************************/
@@ -296,8 +333,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return _findSum(lenderDebt + additionalDebt_);
     }
 
+    function _indexToBucketIndex(uint256 index_) internal pure returns (int256) {
+        return 7388 - int256(index_) - 3232;
+    }
+
     function _indexToPrice(uint256 index_) internal pure returns (uint256) {
-        return BucketMath.indexToPrice(7388 - int256(index_) - 3232);
+        return BucketMath.indexToPrice(_indexToBucketIndex(index_));
     }
 
     function _priceToIndex(uint256 price_) internal pure returns (uint256) {
@@ -318,6 +359,21 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 colValue   = Maths.wmul(_indexToPrice(index_), availableCollateral_);
         uint256 bucketSize = _rangeSum(index_, index_) + colValue;
         return lpAccumulator_ != 0 ? Maths.wrdivr(bucketSize, lpAccumulator_) : Maths.RAY;
+    }
+
+    function _lpsToCollateral(uint256 lpTokens_, uint256 index_) internal view returns (uint256 collateralAmount_) {
+        Bucket memory bucket  = buckets[index_];
+        if (bucket.availableCollateral != 0) {
+            uint256 price     = _indexToPrice(index_);
+            uint256 rate      = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+            collateralAmount_ = Maths.min(bucket.availableCollateral, Maths.rwdivw(Maths.rmul(lpTokens_, rate), price));
+        }
+    }
+
+    function _lpsToQuoteTokens(uint256 lpTokens_, uint256 index_) internal view returns (uint256 quoteAmount_) {
+        Bucket memory bucket  = buckets[index_];
+        uint256 rate          = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
+        quoteAmount_          = Maths.min(_rangeSum(index_, index_), Maths.rayToWad(Maths.rmul(lpTokens_, rate))); // TODO optimize to calculate bucket size only once
     }
 
     function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
@@ -384,6 +440,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         );
     }
 
+    function lpsToCollateral(uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
+        return _lpsToCollateral(lpTokens_, index_);
+    }
+
+    function lpsToQuoteTokens(uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
+        return _lpsToQuoteTokens(lpTokens_, index_);
+    }
+
     function pendingInflator() external view override returns (uint256) {
         return _pendingInflator();
     }
@@ -405,10 +469,18 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     /*** Helper Functions ***/
     /************************/
 
+    function collateralTokenAddress() external pure returns (address) {
+        return _getArgAddress(0);
+    }
+
     /**
      *  @dev Pure function used to facilitate accessing token via clone state.
      */
     function quoteToken() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0x14));
+    }
+
+    function quoteTokenAddress() external pure returns (address) {
+        return _getArgAddress(0x14);
     }
 }

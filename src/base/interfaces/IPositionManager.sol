@@ -22,19 +22,15 @@ interface IPositionManager {
      *  @notice Emitted when liquidity of the pool was increased.
      *  @param  lender_     Lender address.
      *  @param  price_      The price at quote tokens were added.
-     *  @param  collateral_ The amount of collateral removed from the pool.
-     *  @param  quote_      The amount of quote tokens removed from the pool.
      */
-    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 collateral_, uint256 quote_);
+    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_);
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
      *  @param  lender_     Lender address.
      *  @param  price_      The price at quote tokens were added.
-     *  @param  collateral_ The array of collateral tokenIds to be removed from the pool.
-     *  @param  quote_      The amount of quote tokens removed from the pool.
      */
-    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_, uint256[] collateral_, uint256 quote_);
+    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_);
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
@@ -73,13 +69,13 @@ interface IPositionManager {
      *  @notice Struct holding parameters for burning an NFT.
      *  @param  tokenId   The tokenId of the NFT to burn.
      *  @param  recipient The NFT owner address.
-     *  @param  price     The bucket price.
+     *  @param  index     The price bucket index.
      *  @param  pool      The pool address to burn the token from.
      */
     struct BurnParams {
         uint256 tokenId;
         address recipient;
-        uint256 price;
+        uint256 index;
         address pool;
     }
 
@@ -87,12 +83,12 @@ interface IPositionManager {
      *  @notice Struct holding parameters for constructing the NFT token URI.
      *  @param  tokenId The tokenId of the NFT.
      *  @param  pool    The pool address.
-     *  @param  prices  The array of price buckets with LP tokens to be tracked by the NFT.
+     *  @param  indexes The array of price buckets index with LP tokens to be tracked by the NFT.
      */
     struct ConstructTokenURIParams {
         uint256 tokenId;
         address pool;
-        uint256[] prices;
+        uint256[] indexes;
     }
 
     /**
@@ -100,14 +96,14 @@ interface IPositionManager {
      *  @param  tokenId   The tokenId of the NFT to burn.
      *  @param  recipient The NFT owner address.
      *  @param  pool      The pool address to remove quote tokens from.
-     *  @param  price     The bucket price from where liquidity should be removed.
+     *  @param  index     The price bucket index from where liquidity should be removed.
      *  @param  lpTokens  The number of LP tokens to use.
      */
     struct DecreaseLiquidityParams {
         uint256 tokenId;
         address recipient;
         address pool;
-        uint256 price;
+        uint256 index;
         uint256 lpTokens;
     }
 
@@ -116,7 +112,7 @@ interface IPositionManager {
      *  @param  tokenId   The tokenId of the NFT to burn.
      *  @param  recipient The NFT owner address.
      *  @param  pool      The pool address to remove quote tokens from.
-     *  @param  price     The bucket price from where liquidity should be removed.
+     *  @param  index     The price bucket index from where liquidity should be removed.
      *  @param  lpTokens  The number of LP tokens to use.
      *  @param  lpTokens  The number of LP tokens to use.
 
@@ -125,7 +121,7 @@ interface IPositionManager {
         uint256 tokenId;
         address recipient;
         address pool;
-        uint256 price;
+        uint256 index;
         uint256 lpTokens;
         uint256[] tokenIdsToRemove;
     }
@@ -136,26 +132,26 @@ interface IPositionManager {
      *  @param  recipient The NFT owner address.
      *  @param  pool      The pool address to deposit quote tokens.
      *  @param  amount    The amount of quote tokens to be added to the pool.
-     *  @param  price     The bucket price where liquidity should be added.
+     *  @param  index     The price bucket index where liquidity should be added.
      */
     struct IncreaseLiquidityParams {
         uint256 tokenId;
         address recipient;
         address pool;
         uint256 amount;
-        uint256 price;
+        uint256 index;
     }
 
     /**
      *  @notice Struct holding parameters for memorializing positions.
      *  @param  tokenId The tokenId of the NFT.
      *  @param  owner   The NFT owner address.
-     *  @param  prices  The array of price buckets with LP tokens to be tracked by a NFT.
+     *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
      */
     struct MemorializePositionsParams {
         uint256 tokenId;
         address owner;
-        uint256[] prices;
+        uint256[] indexes;
     }
 
     /**
@@ -172,14 +168,16 @@ interface IPositionManager {
      *  @notice Struct holding parameters for moving the liquidity of a position.
      *  @param  owner     The NFT owner address.
      *  @param  tokenId   The tokenId of the NFT.
-     *  @param  fromPrice The price from which liquidity should be moved.
-     *  @param  toPrice   The Price to which liquidity should be moved.
+     *  @param  pool      The pool address to move quote tokens.
+     *  @param  fromIndex The price bucket index from which liquidity should be moved.
+     *  @param  toIndex   The price bucket index to which liquidity should be moved.
      */
     struct MoveLiquidityParams {
         address owner;
         uint256 tokenId;
-        uint256 fromPrice;
-        uint256 toPrice;
+        address pool;
+        uint256 fromIndex;
+        uint256 toIndex;
     }
 
     /**
@@ -258,20 +256,17 @@ interface IPositionManager {
      *  @notice Returns the lpTokens accrued to a given tokenId, price pairing.
      *  @dev    Nested mappings aren't returned normally as part of the default getter for a mapping.
      *  @param  tokenId_  Unique ID of token.
-     *  @param  price_    Price of bucket to check LP balance of.
+     *  @param  index_    Index of price bucket to check LP balance of.
      *  @return lpTokens_ Balance of lpTokens in the price bucket for this position.
     */
-    function getLPTokens(uint256 tokenId_, uint256 price_) external view returns (uint256 lpTokens_);
+    function getLPTokens(uint256 tokenId_, uint256 index_) external view returns (uint256 lpTokens_);
 
     /**
-     *  @notice Called to determine the amount of quote and collateral tokens, in quote terms, represented by a given tokenId.
-     *  @param  tokenId_      Unique ID of token.
-     *  @param  price_        The price bucket to check the position value of.
-     *  @return quoteTokens_ Value fo the LP tokens in the price bucket for this position, in quote token.
+     *  @notice Checks if a given tokenId has a given position price
+     *  @param  tokenId_          Unique ID of token.
+     *  @param  index_            Index of price bucket to check if in position prices.
+     *  @return priceInPostition_ True if tokenId has the position price
     */
-    function getPositionValueInQuoteTokens(uint256 tokenId_, uint256 price_) external view returns (uint256 quoteTokens_);
-
-    // TODO: Not sure how to make an interface for a function that returns a struct with a mapping.
-    // function positions(uint256 tokenId_) external view returns ()
+    function isIndexInPosition(uint256 tokenId_, uint256 index_) external view returns (bool priceInPostition_);
 
 }
