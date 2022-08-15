@@ -145,22 +145,30 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 curDebt = _accruePoolInterest();
 
         // determine amount of quote token to remove
-        Bucket storage bucket       = buckets[index_];
+        Bucket memory bucket        = buckets[index_];
         uint256 rate                = _exchangeRate(bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs        = lpBalance[index_][msg.sender];
         uint256 availableQuoteToken = _rangeSum(index_, index_);
         uint256 claimableQuoteToken = Maths.rayToWad(Maths.rmul(availableLPs, rate));
-        uint256 amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, claimableQuoteToken));
 
-        // calculate amount of LP required to remove it
-        lpAmount_ = Maths.wrdivr(amount, rate);
+        uint256 amount;
+        if (maxAmount_ > claimableQuoteToken && availableQuoteToken >= claimableQuoteToken) {
+            // lender wants to redeem all of their LPB for quote token, and the bucket has enough to offer
+            amount = claimableQuoteToken;
+            lpAmount_ = availableLPs;
+        } else {
+            // calculate how much quote token may be awarded to lender, and how much LPB to redeem
+            amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, claimableQuoteToken));
+            lpAmount_ = Maths.wrdivr(amount, rate);
+        }
 
         // update bucket accounting
         bucket.lpAccumulator -= lpAmount_;
+        buckets[index_] = bucket;
+        _remove(index_, amount); // update FenwickTree
 
         // update lender accounting
         lpBalance[index_][msg.sender] -= lpAmount_;
-        _remove(index_, amount); // update FenwickTree
 
         // update pool accounting
         uint256 newLup = _lup();
