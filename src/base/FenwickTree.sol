@@ -147,7 +147,7 @@ abstract contract FenwickTree is IFenwickTree {
     }
 
     function _prefixSum(uint256 i_) internal view returns (uint256 s_) {
-        i_ += 1; // ?why do we increase by 1?
+        i_ += 1;                   // Translate from 0 -> 1 indexed array
         uint256 sc = Maths.WAD;
         uint256 j  = 8192;         // 1 << 13
         uint256 ii;                // Binary index offset
