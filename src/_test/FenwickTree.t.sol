@@ -130,33 +130,70 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(2500 * 1e18), 5);
     }
 
-    function testFenwickFuzzy(uint256 index_, uint256 amount_) external {
-        uint256 boundIndex   = bound(index_, 0, 8192);
-        uint256 boundAmount  = bound(amount_, 1, 9_000_000_000_000_000 * 1e18);
-        uint256 boundScaler  = bound(amount_, 1, 2 * 1e18);
+    function testFenwickFuzzyAdditions(uint256 indexes_, uint256 amount_) external {
+        uint256 boundIndex;
+        uint256 boundAmount = 10 * 1e18;
+
+        uint256 boundIndexes = bound(indexes_, 10, 4000);
+        uint256 boundIndexesDecrement = boundIndexes;
+
+        uint256 boundTotalAmount  = bound(amount_, 2 * 1e18, 9_000_000_000_000_000 * 1e18);
+        uint256 boundTotalAmountDecrement = boundTotalAmount;
 
         FenwickTreeInstance tree = new FenwickTreeInstance();
 
+        while (boundTotalAmountDecrement > 0 && boundIndexesDecrement > 0) {
+            boundIndex = bound(indexes_, 1, 8191);
+            //if (boundIndexes == 1) {
+            //    boundAmount = boundTotalAmountDecrement;
+            //} else {
+            //    //boundAmount = 10 * 1e18;
+            //    //boundAmount = bound(boundTotalAmountDecrement, 1 * 1e18, boundTotalAmountDecrement);
+            //}
+            tree.add(boundIndex, boundAmount);
+
+            //boundTotalAmountDecrement -= boundAmount;
+            boundIndexesDecrement -= 1;
+            emit log_uint(tree.treeSum());
+        }
+
         // check adds work as expected
-        tree.add(boundIndex, boundAmount);
-        assertEq(tree.treeSum(),             boundAmount);
-        assertEq(tree.prefixSum(boundIndex), boundAmount);
-
-        if (boundIndex != 0) {
-            assertEq(tree.get(boundIndex), boundAmount);
-        }
-        else {
-            // can't find the rangeSum of the 0 index due to integer underflow
-        }
-
-        // check scaling of the tree
-        // tree.mult(boundIndex, boundScaler);
-        // assertEq(tree.treeSum(),             boundAmount);
-
-        // TODO: dynamically add multiple indexes and check findSum
-        // uint256 nextIndex = boundIndex > 0 ? boundIndex : boundIndex + 1;
-        // assertEq(tree.get(boundIndex),      boundAmount);
-        // assertEq(tree.findSum(2500 * 1e18), 8);
+        // assertEq(tree.treeSum(),               9_000_000_000_000_000 * 1e18);
+        //emit log_string("outside");
+        //emit log_uint(boundIndexes);
+        //emit log_uint(boundAmount);
+        assertEq(tree.treeSum(),             Maths.wmul(boundIndexes * 1e18, boundAmount));
     }
+
+
+
+    //function testFenwickFuzzy(uint256 index_, uint256 amount_) external {
+    //    uint256 boundIndex   = bound(index_, 1, 8192);
+    //    uint256 boundAmount  = bound(amount_, 1, 9_000_000_000_000_000 * 1e18);
+    //    uint256 boundScaler  = bound(amount_, 1, 2 * 1e18);
+
+    //    FenwickTreeInstance tree = new FenwickTreeInstance();
+
+    //    // check adds work as expected
+    //    tree.add(boundIndex, boundAmount);
+    //    assertEq(tree.treeSum(),             boundAmount);
+    //    assertEq(tree.prefixSum(boundIndex), boundAmount);
+
+    //    if (boundIndex != 0) {
+    //        assertEq(tree.get(boundIndex), boundAmount);
+    //    }
+    //    else {
+    //        // can't find the rangeSum of the 0 index due to integer underflow
+    //    }
+
+    //    // check scaling of the tree
+    //    // tree.mult(boundIndex, boundScaler);
+    //    // assertEq(tree.treeSum(),             boundAmount);
+
+    //    // TODO: dynamically add multiple indexes and check findSum
+    //    // uint256 nextIndex = boundIndex > 0 ? boundIndex : boundIndex + 1;
+    //    // assertEq(tree.get(boundIndex),      boundAmount);
+    //    // assertEq(tree.findSum(2500 * 1e18), 8);
+    //}
 
 }
