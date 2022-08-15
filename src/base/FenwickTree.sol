@@ -48,7 +48,7 @@ abstract contract FenwickTree is IFenwickTree {
         i_ += 1;
         uint256 sum;
         uint256 j;
-        uint256 df = f_ - Maths.WAD; // need help naming this variable and or creating a comment
+        uint256 df = f_ - Maths.WAD;    // difference factor
 
         uint256 scaledI;
         uint256 scaledJ;
