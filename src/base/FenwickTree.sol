@@ -128,7 +128,6 @@ abstract contract FenwickTree is IFenwickTree {
         uint256 scaled;
 
         while (j > 0) {
-            // could 131 & 134 be turned into one line ->  ii = ii + (i_ & j);?
             // if requested node is in current range, updates are confined to range for remaining iterations.
             if (((i_ - 1) & j) != 0) {  
 
