@@ -256,7 +256,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     function addCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpbChange_) {}
 
     // TODO: finish implementing
-    function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external override {}
+    function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpAmount_) {}
 
     /**********************/
     /*** View Functions ***/
