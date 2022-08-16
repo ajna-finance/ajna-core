@@ -70,9 +70,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // Pool interactions
         IERC20Pool pool = IERC20Pool(params_.pool);
+        uint256 deposit = pool.depositAt(params_.index);
 
         // calculate equivalent underlying collateral for given lpTokens
-        uint256 collateralToRemove = pool.lpsToCollateral(params_.lpTokens, params_.index);
+        uint256 collateralToRemove = pool.lpsToCollateral(deposit, params_.lpTokens, params_.index);
         uint256 lpTokensUsed;
         if (collateralToRemove != 0) {
             // remove collateral from price bucket and transfer to recipient
@@ -83,7 +84,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         uint256 remainingLpTokens = params_.lpTokens - lpTokensUsed;
         if (remainingLpTokens != 0) {
             // calculate equivalent quote tokens for remaining lpTokens
-            uint256 quoteTokensToRemove = pool.lpsToQuoteTokens(remainingLpTokens, params_.index);
+            uint256 quoteTokensToRemove = pool.lpsToQuoteTokens(deposit, remainingLpTokens, params_.index);
             // remove and transfer quote tokens to recipient
             lpTokensUsed += pool.removeQuoteToken(quoteTokensToRemove, params_.index);
             ERC20(pool.quoteTokenAddress()).safeTransfer(params_.recipient, quoteTokensToRemove);
@@ -168,7 +169,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IScaledPool pool = IScaledPool(params_.pool);
 
         uint256 maxQuote = pool.lpsToQuoteTokens(
-            positions[params_.tokenId].lpTokens[params_.fromIndex], params_.fromIndex
+            pool.depositAt(params_.fromIndex),  positions[params_.tokenId].lpTokens[params_.fromIndex], params_.fromIndex
         );
         pool.moveQuoteToken(maxQuote, params_.fromIndex, params_.toIndex);
 
