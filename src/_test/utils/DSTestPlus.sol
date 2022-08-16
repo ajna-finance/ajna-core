@@ -96,6 +96,12 @@ abstract contract DSTestPlus is Test {
         _nonce++;
     }
 
+    function random(uint256 cap) internal returns (uint256) {
+        uint randomnumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % cap;
+        _nonce++;
+        return randomnumber;
+    }
+
     function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
         difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
     }

@@ -130,39 +130,37 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(2500 * 1e18), 5);
     }
 
-    function testFenwickFuzzyAdditions(uint256 indexes_, uint256 amount_) external {
+    function testFenwickFuzzyAdditions(uint256 insertions_, uint256 amount_) external {
         uint256 boundIndex;
-        uint256 boundAmount = 10 * 1e18;
+        uint256 boundAmount;
 
-        uint256 boundIndexes = bound(indexes_, 10, 4000);
-        uint256 boundIndexesDecrement = boundIndexes;
+        // Calculate total index insertions 
+        uint256 boundInsertions = bound(insertions_, 1, 4000);
+        uint256 boundInsertionsDecrement = boundInsertions;
 
-        uint256 boundTotalAmount  = bound(amount_, 2 * 1e18, 9_000_000_000_000_000 * 1e18);
+        // calculate Random Total amount to insert
+        uint256 boundTotalAmount = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
         uint256 boundTotalAmountDecrement = boundTotalAmount;
 
         FenwickTreeInstance tree = new FenwickTreeInstance();
 
-        while (boundTotalAmountDecrement > 0 && boundIndexesDecrement > 0) {
-            boundIndex = bound(indexes_, 1, 8191);
-            //if (boundIndexes == 1) {
-            //    boundAmount = boundTotalAmountDecrement;
-            //} else {
-            //    //boundAmount = 10 * 1e18;
-            //    //boundAmount = bound(boundTotalAmountDecrement, 1 * 1e18, boundTotalAmountDecrement);
-            //}
+        while (boundTotalAmountDecrement > 0 && boundInsertionsDecrement > 0) {
+
+            // select random index to perform insertion
+            boundIndex = random(8191);
+            if (boundInsertionsDecrement == 1) {
+                boundAmount = boundTotalAmountDecrement;
+            } else {
+                // Random subset amount to insert
+                boundAmount = boundTotalAmountDecrement != 1 ? random(boundTotalAmountDecrement) : 1;
+            }
             tree.add(boundIndex, boundAmount);
 
-            //boundTotalAmountDecrement -= boundAmount;
-            boundIndexesDecrement -= 1;
-            emit log_uint(tree.treeSum());
+            boundTotalAmountDecrement -= boundAmount;
+            boundInsertionsDecrement -= 1;
         }
 
-        // check adds work as expected
-        // assertEq(tree.treeSum(),               9_000_000_000_000_000 * 1e18);
-        //emit log_string("outside");
-        //emit log_uint(boundIndexes);
-        //emit log_uint(boundAmount);
-        assertEq(tree.treeSum(),             Maths.wmul(boundIndexes * 1e18, boundAmount));
+        assertEq(tree.treeSum(),       boundTotalAmount);
     }
 
 
