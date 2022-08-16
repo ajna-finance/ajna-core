@@ -284,12 +284,11 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
 
         // lender claims newly available collateral from bucket
-        uint256 lpRedemption = Maths.wrdivr(Maths.wmul(availableCollateral, _pool.indexToPrice(2549)), _pool.exchangeRate(2549));
         vm.expectEmit(true, true, true, true);
         emit Transfer(address(_pool), address(_lender), adjustedCollateralReq);
         vm.expectEmit(true, true, true, true);
-        emit ClaimCollateral(address(_lender), _pool.indexToPrice(2549), availableCollateral, lpRedemption);
-//        _lender.claimCollateral(_pool, availableCollateral, 2549);
+        emit RemoveCollateral(address(_lender), _pool.indexToPrice(2549), availableCollateral);
+       _lender.removeCollateral(_pool, availableCollateral, 2549);
 
         // check bucket state
         (uint256 lpAccumulatorStateTwo, uint256 availableCollateralStateTwo) = _pool.buckets(2549);

@@ -243,7 +243,6 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         // TODO: determine how to handle checking both token types of Transfer
         // emit Transfer(address(_borrower), address(_subsetPool), 5);
         // vm.expectEmit(true, true, false, true);
-        uint256 borrowAmount = 3_000 * 1e18;
         emit Borrow(address(_borrower), _subsetPool.indexToPrice(2550), 3_000 * 1e18);
         _borrower.borrow(_subsetPool, 3_000 * 1e18, 2551, address(0), address(0));
 

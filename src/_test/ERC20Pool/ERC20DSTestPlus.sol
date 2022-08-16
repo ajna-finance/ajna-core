@@ -12,9 +12,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     // Pool events
     event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event PledgeCollateral(address indexed borrower_, uint256 amount_);
-    event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
     event PullCollateral(address indexed borrower_, uint256 amount_);
-    event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_, uint256 lps_);
+    event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
