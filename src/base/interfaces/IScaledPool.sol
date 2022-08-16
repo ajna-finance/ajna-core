@@ -70,6 +70,12 @@ interface IScaledPool {
     function buckets(uint256 index_) external view returns (uint256 lpAccumulator, uint256 availableCollateral);
 
     /**
+     *  @notice Returns the `SIZE` constant, equivalent to the maximum number of price indices in the pool.
+     *  @return Number of price buckets in the pool, a constant.
+     */
+    function bucketCount() external view returns (uint256);
+
+    /**
      *  @notice Returns the `borrowerDebt` state variable.
      *  @return borrowerDebt_ Total amount of borrower debt in pool.
      */
@@ -116,6 +122,12 @@ interface IScaledPool {
      *  @return lenderDebt_ Total amount of lender debt in pool.
      */
     function lenderDebt() external view returns (uint256 lenderDebt_);
+
+    /**
+     *  @notice Returns the amount of quote token in the book down to the specified bucket index.
+     *  @return quoteToken_ Amount of quote token (deposit + interest), regardless of pool debt.
+     */
+    function liquidityToPrice(uint256 index_) external view returns (uint256 quoteToken_);
 
     /**
      *  @notice Returns the `lupColEma` state variable.
@@ -359,4 +371,10 @@ interface IScaledPool {
      *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
      */
     function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteAmount_);
+
+    /**
+     *  @notice Returns the total amount of quote token (depsoit + accumulated interest) in the pool,
+     *          regardless of pool debt.
+     */
+    function poolSize() external view returns (uint256);
 }

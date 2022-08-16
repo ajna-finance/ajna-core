@@ -2,11 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import { IFenwickTree } from "./interfaces/IFenwickTree.sol";
-
 import { Maths } from "../libraries/Maths.sol";
 
-abstract contract FenwickTree is IFenwickTree {
+abstract contract FenwickTree {
     uint256 public constant SIZE = 8192;
 
     /**
