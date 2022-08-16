@@ -293,6 +293,13 @@ interface IScaledPool {
         );
 
     /**
+     *  @notice Get a bucket deposit for a given index.
+     *  @param  index_   The index of the bucket to retrieve deposit for.
+     *  @return deposit_ Quote tokens deposit at specified index (WAD).
+     */
+    function depositAt(uint256 index_) external view returns (uint256 deposit_);
+
+    /**
      *  @notice Returns the total encumbered collateral resulting from a given amount of debt at a specified price.
      *  @param  debt_        Amount of debt for corresponding collateral encumbrance.
      *  @param  price_       Price to use for calculating the collateral encumbrance, in WAD units.
@@ -337,17 +344,19 @@ interface IScaledPool {
 
     /**
      *  @notice Calculate the amount of collateral for a given amount of LP Tokens.
-     *  @param  lpTokens_            The number of lpTokens to calculate amounts for.
-     *  @param  index_               The price bucket index for which the value should be calculated.
+     *  @param  deposit_          The amount of quote tokens available at this bucket index.
+     *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
+     *  @param  index_            The price bucket index for which the value should be calculated.
      *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
      */
-    function lpsToCollateral(uint256 lpTokens_, uint256 index_) external view returns (uint256 collateralAmount_);
+    function lpsToCollateral(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view returns (uint256 collateralAmount_);
 
     /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
+     *  @param  deposit_     The amount of quote tokens available at this bucket index.
      *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
      *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
      */
-    function lpsToQuoteTokens(uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteAmount_);
+    function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteAmount_);
 }
