@@ -10,9 +10,9 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
  */
 interface IERC721Pool is IScaledPool {
 
-    /************************/
-    /*** ERC20Pool Events ***/
-    /************************/
+    /*************************/
+    /*** ERC721Pool Events ***/
+    /*************************/
 
     /**
      *  @notice Emitted when borrower locks collateral in the pool.
@@ -115,16 +115,17 @@ interface IERC721Pool is IScaledPool {
     /**
      *  @notice Deposit unencumbered collateral into a specified bucket.
      *  @param  tokenIds_ Array of collateral to deposit.
-     *  @param  index_  The bucket index to which collateral will be deposited.
+     *  @param  index_    The bucket index to which collateral will be deposited.
      */
     function addCollateral(uint256[] calldata tokenIds_, uint256 index_) external returns (uint256 lpbChange_);
 
     /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
      *  @param  tokenIds_ Array of collateral to claim.
-     *  @param  index_  The index of the bucket from which unencumbered collateral will be claimed.
+     *  @param  index_    The index of the bucket from which unencumbered collateral will be claimed.
+     *  @return lpAmount_ The amount of LP tokens used for removing collateral amount.
      */
-    function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external;
+    function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external returns (uint256 lpAmount_);
 
     /**********************/
     /*** View Functions ***/
