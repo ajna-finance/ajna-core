@@ -70,6 +70,12 @@ interface IScaledPool {
     function buckets(uint256 index_) external view returns (uint256 lpAccumulator, uint256 availableCollateral);
 
     /**
+     *  @notice Returns the `SIZE` constant, equivalent to the maximum number of price indices in the pool.
+     *  @return Number of price buckets in the pool, a constant.
+     */
+    function bucketCount() external view returns (uint256);
+
+    /**
      *  @notice Returns the `borrowerDebt` state variable.
      *  @return borrowerDebt_ Total amount of borrower debt in pool.
      */
@@ -116,6 +122,12 @@ interface IScaledPool {
      *  @return lenderDebt_ Total amount of lender debt in pool.
      */
     function lenderDebt() external view returns (uint256 lenderDebt_);
+
+    /**
+     *  @notice Returns the amount of quote token in the book down to the specified bucket index.
+     *  @return quoteToken_ Amount of quote token (deposit + interest), regardless of pool debt.
+     */
+    function liquidityToPrice(uint256 index_) external view returns (uint256 quoteToken_);
 
     /**
      *  @notice Returns the `lupColEma` state variable.
@@ -293,6 +305,13 @@ interface IScaledPool {
         );
 
     /**
+     *  @notice Get a bucket deposit for a given index.
+     *  @param  index_   The index of the bucket to retrieve deposit for.
+     *  @return deposit_ Quote tokens deposit at specified index (WAD).
+     */
+    function depositAt(uint256 index_) external view returns (uint256 deposit_);
+
+    /**
      *  @notice Returns the total encumbered collateral resulting from a given amount of debt at a specified price.
      *  @param  debt_        Amount of debt for corresponding collateral encumbrance.
      *  @param  price_       Price to use for calculating the collateral encumbrance, in WAD units.
@@ -337,17 +356,25 @@ interface IScaledPool {
 
     /**
      *  @notice Calculate the amount of collateral for a given amount of LP Tokens.
-     *  @param  lpTokens_            The number of lpTokens to calculate amounts for.
-     *  @param  index_               The price bucket index for which the value should be calculated.
+     *  @param  deposit_          The amount of quote tokens available at this bucket index.
+     *  @param  lpTokens_         The number of lpTokens to calculate amounts for.
+     *  @param  index_            The price bucket index for which the value should be calculated.
      *  @return collateralAmount_ The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
      */
-    function lpsToCollateral(uint256 lpTokens_, uint256 index_) external view returns (uint256 collateralAmount_);
+    function lpsToCollateral(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view returns (uint256 collateralAmount_);
 
     /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
+     *  @param  deposit_     The amount of quote tokens available at this bucket index.
      *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
      *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
      */
-    function lpsToQuoteTokens(uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteAmount_);
+    function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteAmount_);
+
+    /**
+     *  @notice Returns the total amount of quote token (depsoit + accumulated interest) in the pool,
+     *          regardless of pool debt.
+     */
+    function poolSize() external view returns (uint256);
 }

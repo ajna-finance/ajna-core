@@ -316,7 +316,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
     assert pool1.quoteToken() == DAI_ADDRESS
     assert len(lenders) == NUM_ACTORS
     assert len(borrowers) == NUM_ACTORS
-    assert pool1.treeSum() > 2_700_000 * 10**18
+    assert pool1.poolSize() > 2_700_000 * 10**18
     assert pool1.poolActualUtilization() > 0.50 * 10**18
     test_utils.validate_pool(pool1)
 

@@ -122,7 +122,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_subsetPool.htp(), 0);
         assertEq(_subsetPool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_subsetPool.treeSum(),               30_000 * 1e18);
+        assertEq(_subsetPool.poolSize(),              30_000 * 1e18);
         assertEq(_subsetPool.borrowerDebt(),          0);
         assertEq(_subsetPool.lenderDebt(),            0);
         assertEq(_subsetPool.poolTargetUtilization(), 1 * 1e18);
@@ -159,7 +159,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_subsetPool.htp(), 1_000.961538461538462000 * 1e18);
         assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2550));
 
-        assertEq(_subsetPool.treeSum(),               30_000 * 1e18);
+        assertEq(_subsetPool.poolSize(),              30_000 * 1e18);
         assertEq(_subsetPool.borrowerDebt(),          3_002.88461538461538600 * 1e18);
         assertEq(_subsetPool.lenderDebt(),            borrowAmount);
         assertEq(_subsetPool.poolTargetUtilization(), 1 * 1e18);
@@ -200,7 +200,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2550));
 
         // check utilization changes make sense
-        assertEq(_subsetPool.treeSum(),               30_003.704723414134980000 * 1e18);
+        assertEq(_subsetPool.poolSize(),              30_003.704723414134980000 * 1e18);
         assertEq(_subsetPool.borrowerDebt(),          1507.000974733654242290 * 1e18);
         assertEq(_subsetPool.lenderDebt(),            1_503.492337444756410000 * 1e18);
         assertEq(_subsetPool.poolTargetUtilization(), .166838815387959167 * 1e18);
@@ -248,7 +248,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
         // TODO: check target utilization
         // check utilization changes make sense
-        assertEq(_subsetPool.treeSum(),               30_005.377906382528563727 * 1e18);
+        assertEq(_subsetPool.poolSize(),              30_005.377906382528563727 * 1e18);
         assertEq(_subsetPool.borrowerDebt(),          0);
         assertEq(_subsetPool.lenderDebt(),            0);
         assertEq(_subsetPool.poolTargetUtilization(), .000000452724663788 * 1e18);

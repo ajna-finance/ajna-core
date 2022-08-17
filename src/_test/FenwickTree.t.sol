@@ -15,6 +15,26 @@ contract FenwickTreeInstance is FenwickTree {
     function mult(uint256 i_, uint256 f_) public {
         _mult(i_, f_);
     }
+
+    function treeSum() external view returns (uint256) {
+        return _treeSum();
+    }
+
+    function get(uint256 i_) external view returns (uint256 m_) {
+        return _rangeSum(i_, i_);
+    }
+
+    function scale(uint256 i_) external view returns (uint256 a_) {
+        return _scale(i_);
+    }
+
+    function findSum(uint256 x_) external view returns (uint256 m_) {
+        return _findSum(x_);
+    }
+
+    function prefixSum(uint256 i_) external view returns (uint256 s_) {
+        return _prefixSum(i_);
+    }
 }
 
 contract FenwickTreeTest is DSTestPlus {

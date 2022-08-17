@@ -221,8 +221,8 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         assertEq(_subsetPool.htp(), 0);
         assertEq(_subsetPool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_subsetPool.treeSum(),                         30_000 * 1e18);
-        assertEq(_subsetPool.exchangeRate(2550),                     1 * 1e27);
+        assertEq(_subsetPool.poolSize(),         30_000 * 1e18);
+        assertEq(_subsetPool.exchangeRate(2550), 1 * 1e27);
 
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
@@ -258,8 +258,8 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         assertEq(_subsetPool.htp(), 1000.961538461538462000 * 1e18);
         assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2550));
 
-        assertEq(_subsetPool.treeSum(),                         30_000 * 1e18);
-        assertEq(_subsetPool.exchangeRate(2550),                     1 * 1e27);
+        assertEq(_subsetPool.poolSize(),         30_000 * 1e18);
+        assertEq(_subsetPool.exchangeRate(2550), 1 * 1e27);
 
         // remove some unencumbered collateral
         uint256[] memory tokenIdsToRemove = new uint256[](2);
@@ -287,8 +287,8 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
         assertEq(_subsetPool.htp(), 3002.884615384615386000 * 1e18);
         assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2550));
 
-        assertEq(_subsetPool.treeSum(),                         30_000 * 1e18);
-        assertEq(_subsetPool.exchangeRate(2550),                     1 * 1e27);
+        assertEq(_subsetPool.poolSize(),         30_000 * 1e18);
+        assertEq(_subsetPool.exchangeRate(2550), 1 * 1e27);
 
     }
 
