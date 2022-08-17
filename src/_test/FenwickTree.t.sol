@@ -8,15 +8,30 @@ import { Maths } from "../libraries/Maths.sol";
 
 contract FenwickTreeInstance is FenwickTree, DSTestPlus {
 
+    uint256[] public inserts;
+
     function add(uint256 i_, uint256 x_) public {
         _add(i_, x_);
+    }
+
+    function remove(uint256 i_, uint256 x_) public {
+        _remove(i_, x_);
     }
 
     function mult(uint256 i_, uint256 f_) public {
         _mult(i_, f_);
     }
 
-    function fillFenwickFuzzy(uint256 insertions_, uint256 amount_) external {
+    function numInserts() public returns (uint256){
+        return inserts.length;
+    }
+
+    function fillFenwickFuzzy(
+        uint256 insertions_,
+        uint256 amount_,
+        bool trackInserts)
+        external {
+
         uint256 i;
         uint256 amount;
 
@@ -38,10 +53,12 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
             // Update values
             add(i, amount);
             totalAmountDec  -=  amount;
-            insertsDec   -=  1;
+            insertsDec      -=  1;
 
             // Verify tree sum
             assertEq(_treeSum(), totalAmount - totalAmountDec);
+
+            if (trackInserts)  inserts.push(i);
         }
 
         assertEq(_treeSum(), totalAmount);
@@ -169,7 +186,7 @@ contract FenwickTreeTest is DSTestPlus {
         ) external {
 
         FenwickTreeInstance tree = new FenwickTreeInstance();
-        tree.fillFenwickFuzzy(insertions_, totalAmount_);
+        tree.fillFenwickFuzzy(insertions_, totalAmount_, false);
 
         uint256 scaleIndex = bound(scaleIndex_, 2, 8191);
         uint256 subIndex = randomInRange(0, scaleIndex - 1);
@@ -187,34 +204,26 @@ contract FenwickTreeTest is DSTestPlus {
     }
 
 
+    // TODO: check random parent to verify sum post removal
+    function testFenwickFuzzyRemoval(
+        uint256 insertions_,
+        uint256 totalAmount_
+        ) external {
 
-    //function testFenwickFuzzy(uint256 index_, uint256 amount_) external {
-    //    uint256 boundIndex   = bound(index_, 1, 8192);
-    //    uint256 boundAmount  = bound(amount_, 1, 9_000_000_000_000_000 * 1e18);
-    //    uint256 boundScaler  = bound(amount_, 1, 2 * 1e18);
+        FenwickTreeInstance tree = new FenwickTreeInstance();
+        tree.fillFenwickFuzzy(insertions_, totalAmount_, true);
 
-    //    FenwickTreeInstance tree = new FenwickTreeInstance();
+        uint256 removalIndex = tree.inserts(randomInRange(0, tree.numInserts()));
+        uint256 removalAmount = tree.get(removalIndex); 
+        uint256 preRemovalIndexSum = tree.prefixSum(removalIndex); 
+        uint256 preRemovalTreeSum = tree.treeSum(); 
 
-    //    // check adds work as expected
-    //    tree.add(boundIndex, boundAmount);
-    //    assertEq(tree.treeSum(),             boundAmount);
-    //    assertEq(tree.prefixSum(boundIndex), boundAmount);
+        tree.remove(removalIndex, removalAmount);
 
-    //    if (boundIndex != 0) {
-    //        assertEq(tree.get(boundIndex), boundAmount);
-    //    }
-    //    else {
-    //        // can't find the rangeSum of the 0 index due to integer underflow
-    //    }
+        uint256 postRemovalIndexSum = tree.prefixSum(removalIndex); 
 
-    //    // check scaling of the tree
-    //    // tree.mult(boundIndex, boundScaler);
-    //    // assertEq(tree.treeSum(),             boundAmount);
-
-    //    // TODO: dynamically add multiple indexes and check findSum
-    //    // uint256 nextIndex = boundIndex > 0 ? boundIndex : boundIndex + 1;
-    //    // assertEq(tree.get(boundIndex),      boundAmount);
-    //    // assertEq(tree.findSum(2500 * 1e18), 8);
-    //}
+        assertEq(preRemovalIndexSum - removalAmount, postRemovalIndexSum);
+        assertEq(preRemovalTreeSum - removalAmount, tree.treeSum());
+    }
 
 }

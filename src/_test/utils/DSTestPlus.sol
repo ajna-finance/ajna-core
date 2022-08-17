@@ -98,14 +98,17 @@ abstract contract DSTestPlus is Test {
         _nonce++;
     }
 
-    function randomInRange(uint256 min, uint256 max) public view returns (uint256) {
+    function randomInRange(uint256 min, uint256 max) public returns (uint256) {
         return randomInRange(min, max, false);
     }
 
-    function randomInRange(uint256 min, uint256 max, bool nonZero) public view returns (uint256) {
+    // TODO: makesure min actually works...
+    function randomInRange(uint256 min, uint256 max, bool nonZero) public returns (uint256) {
         if      (max == 0 && nonZero) return 1;
         else if (max == min)           return max;
-        else                           return uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % (max - min) + min;
+        uint256 rand = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % max;
+        _nonce++;
+        return rand;
     }
 
     function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
