@@ -187,9 +187,4 @@ abstract contract FenwickTree {
     function prefixSum(uint256 i_) external view returns (uint256 s_) {
         return _prefixSum(i_);
     }
-
-    function lsb(uint256 i_) external pure returns (uint256) {
-        // "i & (-i)"
-        return _lsb(i_);
-    }
 }

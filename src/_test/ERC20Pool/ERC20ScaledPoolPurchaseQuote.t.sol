@@ -124,9 +124,9 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
 
         // check bucket state
         (lpAccumulator, availableCollateral) = _pool.buckets(testIndex);
-        assertEq(lpAccumulator,        0);
-        assertEq(availableCollateral,  0);
-        assertEq(_pool.get(testIndex), 0);
+        assertEq(lpAccumulator,              0);
+        assertEq(availableCollateral,        0);
+        assertEq(_pool.depositAt(testIndex), 0);
     }
 
     /**
@@ -194,8 +194,8 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
 
         // check bucket state
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(2550);
-        assertEq(availableCollateral,  0);
-        assertEq(lpAccumulator,        0);
-        assertEq(_pool.get(2550), 0);
+        assertEq(availableCollateral,   0);
+        assertEq(lpAccumulator,         0);
+        assertEq(_pool.depositAt(2550), 0);
     }
 }
