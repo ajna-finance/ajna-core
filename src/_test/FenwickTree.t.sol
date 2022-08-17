@@ -22,7 +22,7 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         _mult(i_, f_);
     }
 
-    function numInserts() public returns (uint256){
+    function numInserts() public returns (uint256) {
         return inserts.length;
     }
 
@@ -62,6 +62,26 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         }
 
         assertEq(_treeSum(), totalAmount);
+    }
+
+    function treeSum() external view returns (uint256) {
+        return _treeSum();
+    }
+
+    function get(uint256 i_) external view returns (uint256 m_) {
+        return _rangeSum(i_, i_);
+    }
+
+    function scale(uint256 i_) external view returns (uint256 a_) {
+        return _scale(i_);
+    }
+
+    function findSum(uint256 x_) external view returns (uint256 m_) {
+        return _findSum(x_);
+    }
+
+    function prefixSum(uint256 i_) external view returns (uint256 s_) {
+        return _prefixSum(i_);
     }
 }
 

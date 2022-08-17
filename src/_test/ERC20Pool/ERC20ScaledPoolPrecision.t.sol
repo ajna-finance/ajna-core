@@ -89,7 +89,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.treeSum(),                         150_000 * _quotePoolPrecision);
+        assertEq(_pool.poolSize(),                        150_000 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
         assertEq(_pool.exchangeRate(2549),                     1 * _lpPoolPrecision);
 
@@ -103,7 +103,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 25_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(2549), 25_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
-        _lender.removeQuoteToken(_pool, 25_000 * _lpPoolPrecision, 2549);
+        _lender.removeQuoteToken(_pool, 25_000 * _quotePoolPrecision, 2549);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   125_000 * _quotePrecision);
@@ -113,7 +113,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.treeSum(),                         125_000 * _quotePoolPrecision);
+        assertEq(_pool.poolSize(),                        125_000 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 25_000 * _lpPoolPrecision);
         assertEq(_pool.exchangeRate(2549),                     1 * _lpPoolPrecision);
 
@@ -141,8 +141,8 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 50 * _collateralPrecision);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateral(address(_borrower), 50 * _collateralPoolPrecision);
-        _borrower.addCollateral(_pool, 50 * _collateralPoolPrecision, address(0), address(0));
+        emit PledgeCollateral(address(_borrower), 50 * _collateralPoolPrecision);
+        _borrower.pledgeCollateral(_pool, 50 * _collateralPoolPrecision, address(0), address(0));
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -155,7 +155,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
         assertEq(address(_pool.loanQueueHead()), address(0));
 
-        assertEq(_pool.treeSum(),                         150_000 * _quotePoolPrecision);
+        assertEq(_pool.poolSize(),                        150_000 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
         assertEq(_pool.exchangeRate(2549),                     1 * _lpPoolPrecision);
 
@@ -182,7 +182,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.pledgedCollateral(), col);
         assertEq(_pool.lenderDebt(),        10_000 * _quotePoolPrecision);
 
-        assertEq(_pool.treeSum(),                         150_000 * _quotePoolPrecision);
+        assertEq(_pool.poolSize(),                        150_000 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
         assertEq(_pool.exchangeRate(2549),                     1 * _lpPoolPrecision);
 
@@ -208,7 +208,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.borrowerDebt(),      debt);
         assertEq(_pool.pledgedCollateral(), col);
 
-        assertEq(_pool.treeSum(),                         150_000 * _quotePoolPrecision);
+        assertEq(_pool.poolSize(),                        150_000 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
         assertEq(_pool.exchangeRate(2549),                     1 * _lpPoolPrecision);
 
@@ -217,8 +217,8 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_borrower), unencumberedCollateral / _pool.collateralScale());
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateral(address(_borrower), unencumberedCollateral);
-        _borrower.removeCollateral(_pool, unencumberedCollateral, address(0), address(0));
+        emit PullCollateral(address(_borrower), unencumberedCollateral);
+        _borrower.pullCollateral(_pool, unencumberedCollateral, address(0), address(0));
 
         //  FIXME: check balances
         // assertEq(_collateral.balanceOf(address(_pool)),   1.7 * _collateralPrecision);
@@ -236,7 +236,8 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.pledgedCollateral(), col); 
     }
 
-    function testPurchaseClaimPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
+    // TODO: Rework this test to do something useful, now that the purchase feature has been eliminated.
+    function skip_testPurchaseClaimPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
@@ -260,7 +261,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_pool), address(_bidder), 500 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
         emit Purchase(address(_bidder), _pool.indexToPrice(2549), quoteToPurchase, collateralRequired);
-        _bidder.purchaseQuote(_pool, quoteToPurchase, 2549);
+//        _bidder.purchaseQuote(_pool, quoteToPurchase, 2549);
 
         // check bucket state
         (uint256 lpAccumulatorStateOne, uint256 availableCollateral) = _pool.buckets(2549);
@@ -279,7 +280,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.treeSum(),                         149_500 * _quotePoolPrecision);
+        assertEq(_pool.poolSize(),                        149_500 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
 
         // lender claims newly available collateral from bucket
@@ -288,7 +289,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), adjustedCollateralReq);
         vm.expectEmit(true, true, true, true);
         emit ClaimCollateral(address(_lender), _pool.indexToPrice(2549), availableCollateral, lpRedemption);
-        _lender.claimCollateral(_pool, availableCollateral, 2549);
+//        _lender.claimCollateral(_pool, availableCollateral, 2549);
 
         // check bucket state
         (uint256 lpAccumulatorStateTwo, uint256 availableCollateralStateTwo) = _pool.buckets(2549);
@@ -305,8 +306,8 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_bidder)), 500 * _quotePrecision);
 
         // check pool state
-        assertEq(_pool.htp(),     0);
-        assertEq(_pool.lup(),     BucketMath.MAX_PRICE);
-        assertEq(_pool.treeSum(), 149_500 * _quotePoolPrecision);   
+        assertEq(_pool.htp(),      0);
+        assertEq(_pool.lup(),      BucketMath.MAX_PRICE);
+        assertEq(_pool.poolSize(), 149_500 * _quotePoolPrecision);
     }
 }

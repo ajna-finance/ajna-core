@@ -13,7 +13,6 @@ abstract contract DSTestPlus is Test {
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
-    // prices
     uint256 internal _p50159    = 50_159.593888626183666006 * 1e18;
     uint256 internal _p49910    = 49_910.043670274810022205 * 1e18;
     uint256 internal _p15000    = 15_000.520048194378317056 * 1e18;
@@ -25,6 +24,9 @@ abstract contract DSTestPlus is Test {
     uint256 internal _p3514     = 3_514.334495390401848927 * 1e18;
     uint256 internal _p3010     = 3_010.892022197881557845 * 1e18;
     uint256 internal _p3002     = 3_002.895231777120270013 * 1e18;
+    uint256 internal _p2995     = 2_995.912459898389633881 * 1e18;
+    uint256 internal _p2981     = 2_981.007422784467321543 * 1e18;
+    uint256 internal _p2966     = 2_966.176540084047110076 * 1e18;
     uint256 internal _p2850     = 2_850.155149230026939621 * 1e18;
     uint256 internal _p2835     = 2_835.975272865698470386 * 1e18;
     uint256 internal _p2821     = 2_821.865943149948749647 * 1e18;
@@ -57,8 +59,8 @@ abstract contract DSTestPlus is Test {
 
     // PositionManager events
     event Burn(address indexed lender_, uint256 indexed price_);
-    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 collateral_, uint256 quote_);
-    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_, uint256[] collateral_, uint256 quote_);
+    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_);
+    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_);
     event IncreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 amount_);
     event MemorializePosition(address indexed lender_, uint256 tokenId_);
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
@@ -66,6 +68,7 @@ abstract contract DSTestPlus is Test {
 
     // Pool events
     event AddCollateral(address indexed borrower_, uint256 amount_);
+    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event AddNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
@@ -73,9 +76,12 @@ abstract contract DSTestPlus is Test {
     event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_, uint256 lps_);
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
+    event PledgeCollateral(address indexed borrower_, uint256 amount_);
+    event PullCollateral(address indexed borrower_, uint256 amount_);
     event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
     event PurchaseWithNFTs(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256[] tokenIds_);
     event RemoveCollateral(address indexed borrower_, uint256 amount_);
+    event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event RemoveNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
