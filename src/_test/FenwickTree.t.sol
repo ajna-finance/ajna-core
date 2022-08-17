@@ -10,6 +10,10 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
 
     uint256[] public inserts;
 
+    function numInserts() public view returns (uint256) {
+        return inserts.length;
+    }
+
     function add(uint256 i_, uint256 x_) public {
         _add(i_, x_);
     }
@@ -22,10 +26,7 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         _mult(i_, f_);
     }
 
-    function numInserts() public returns (uint256) {
-        return inserts.length;
-    }
-
+    // Also sufficently tests additions to the tree
     function fillFenwickFuzzy(
         uint256 insertions_,
         uint256 amount_,
@@ -45,7 +46,7 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         while (totalAmountDec > 0 && insertsDec > 0) {
 
             // Insert at random index
-            i = randomInRange(0, 8191);
+            i = 1;
 
             // If last iteration, insert remaining
             amount = insertsDec == 1 ? totalAmountDec : randomInRange(1, totalAmountDec, true);
@@ -206,7 +207,7 @@ contract FenwickTreeTest is DSTestPlus {
         ) external {
 
         FenwickTreeInstance tree = new FenwickTreeInstance();
-        tree.fillFenwickFuzzy(insertions_, totalAmount_, false);
+        tree.fillFenwickFuzzy(insertions_, totalAmount_, true);
 
         uint256 scaleIndex = bound(scaleIndex_, 2, 8191);
         uint256 subIndex = randomInRange(0, scaleIndex - 1);
@@ -233,7 +234,7 @@ contract FenwickTreeTest is DSTestPlus {
         FenwickTreeInstance tree = new FenwickTreeInstance();
         tree.fillFenwickFuzzy(insertions_, totalAmount_, true);
 
-        uint256 removalIndex = tree.inserts(randomInRange(0, tree.numInserts()));
+        uint256 removalIndex = tree.inserts(randomInRange(0, tree.numInserts() - 1));
         uint256 removalAmount = tree.get(removalIndex); 
         uint256 preRemovalIndexSum = tree.prefixSum(removalIndex); 
         uint256 preRemovalTreeSum = tree.treeSum(); 

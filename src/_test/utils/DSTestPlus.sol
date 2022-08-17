@@ -112,7 +112,7 @@ abstract contract DSTestPlus is Test {
     function randomInRange(uint256 min, uint256 max, bool nonZero) public returns (uint256) {
         if      (max == 0 && nonZero) return 1;
         else if (max == min)           return max;
-        uint256 rand = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % max;
+        uint256 rand = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % (max - min + 1) + min;
         _nonce++;
         return rand;
     }
