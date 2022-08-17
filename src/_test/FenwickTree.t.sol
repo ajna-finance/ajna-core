@@ -8,6 +8,9 @@ import { Maths } from "../libraries/Maths.sol";
 
 contract FenwickTreeInstance is FenwickTree, DSTestPlus {
 
+    /**
+     *  @notice used to track fuzzing test insertions.
+     */
     uint256[] public inserts;
 
     function numInserts() public view returns (uint256) {
@@ -26,7 +29,9 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         _mult(i_, f_);
     }
 
-    // Also sufficently tests additions to the tree
+    /**
+     *  @notice fills fenwick tree with fuzzed values and tests additions.
+     */
     function fillFenwickFuzzy(
         uint256 insertions_,
         uint256 amount_,
@@ -87,7 +92,10 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
 }
 
 contract FenwickTreeTest is DSTestPlus {
-
+    
+    /**
+     *  @notice Tests additions to tree.
+     */
     function testFenwickUnscaled() external {
         FenwickTreeInstance tree = new FenwickTreeInstance();
         tree.add(11, 300 * 1e18);
@@ -114,7 +122,9 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(500 * 1e18), 11);
         assertEq(tree.findSum(700 * 1e18), 8191);
     }
-
+    /**
+     *  @notice Tests additions and scaling values in the tree.
+     */
    function testFenwickScaled() external {
         FenwickTreeInstance tree = new FenwickTreeInstance();
         tree.add(5, 100 * 1e18);
@@ -145,60 +155,9 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(1_000 * 1e18), 8191);
     }
 
-    function testFenwickScaledSum() external {
-        FenwickTreeInstance tree = new FenwickTreeInstance();
-        tree.add(5, 100 * 1e18);
-        assertEq(tree.prefixSum(5),   100 * 1e18);
-        assertEq(tree.prefixSum(6), 100 * 1e18);
-        assertEq(tree.prefixSum(8), 100 * 1e18);
-        assertEq(tree.prefixSum(8191), 100 * 1e18);
-
-        tree.add(13, 200 * 1e18);
-        tree.add(14, 200 * 1e18);
-
-        assertEq(tree.prefixSum(5),   100 * 1e18);
-        assertEq(tree.prefixSum(13), 300 * 1e18);
-        assertEq(tree.prefixSum(14), 500 * 1e18);
-        assertEq(tree.prefixSum(8191), 500 * 1e18);
-
-        tree.mult(13, 2 * 1e18);
-
-        assertEq(tree.prefixSum(5),   200 * 1e18);
-        assertEq(tree.prefixSum(13), 600 * 1e18);
-        assertEq(tree.prefixSum(14), 800 * 1e18);
-        assertEq(tree.prefixSum(8191), 800 * 1e18);
-    }
-
-    function testFenwickUnscaledAddMult() external {
-        FenwickTreeInstance tree = new FenwickTreeInstance();
-        tree.add(7, 2 * 1e18);
-        assertEq(tree.prefixSum(8191), 2 * 1e18);
-
-        tree.add(8, 3.5 * 1e18);
-        assertEq(tree.prefixSum(8191), 5.5 * 1e18);
-
-        tree.add(15, 4 * 1e18);
-        assertEq(tree.prefixSum(14), 5.5 * 1e18);
-
-        tree.mult(13, 1.5 * 1e18);
-        assertEq(tree.prefixSum(8191), 12.25 * 1e18);
-    }
-
-    function testFenwickFirstBorrow() external {
-        FenwickTreeInstance tree = new FenwickTreeInstance();
-        tree.add(8, 6000 * 1e18);
-        assertEq(tree.treeSum(),            6000 * 1e18);
-        assertEq(tree.findSum(2500 * 1e18), 8);
-
-        tree.add(4, 2000 * 1e18);
-        assertEq(tree.treeSum(),            8000 * 1e18);
-        assertEq(tree.findSum(2500 * 1e18), 8);
-
-        tree.add(5, 10000 * 1e18);
-        assertEq(tree.treeSum(),            18_000 * 1e18);
-        assertEq(tree.findSum(2500 * 1e18), 5);
-    }
-
+    /**
+     *  @notice Fuzz tests additions and scaling values.
+     */
     function testFenwickFuzzyScaling(
         uint256 insertions_,
         uint256 totalAmount_,
@@ -225,6 +184,9 @@ contract FenwickTreeTest is DSTestPlus {
     }
 
 
+    /**
+     *  @notice Fuzz tests additions and value removals.
+     */
     // TODO: check random parent to verify sum post removal
     function testFenwickFuzzyRemoval(
         uint256 insertions_,
