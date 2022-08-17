@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
+//import { FenwickTree } from "../FenwickTree.t.sol";
+import { FenwickTree } from "../../base/FenwickTree.sol";
 import { ERC20 }  from "@solmate/tokens/ERC20.sol";
 import { Maths }  from "../../libraries/Maths.sol";
 import { Test }   from "@std/Test.sol";
@@ -96,10 +98,14 @@ abstract contract DSTestPlus is Test {
         _nonce++;
     }
 
-    function random(uint256 cap) internal returns (uint256) {
-        uint randomnumber = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % cap;
-        _nonce++;
-        return randomnumber;
+    function randomInRange(uint256 min, uint256 max) public view returns (uint256) {
+        return randomInRange(min, max, false);
+    }
+
+    function randomInRange(uint256 min, uint256 max, bool nonZero) public view returns (uint256) {
+        if      (max == 0 && nonZero) return 1;
+        else if (max == min)           return max;
+        else                           return uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % (max - min) + min;
     }
 
     function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {

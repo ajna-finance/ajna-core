@@ -6,7 +6,7 @@ import { DSTestPlus }  from "./utils/DSTestPlus.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
-contract FenwickTreeInstance is FenwickTree {
+contract FenwickTreeInstance is FenwickTree, DSTestPlus {
 
     function add(uint256 i_, uint256 x_) public {
         _add(i_, x_);
@@ -14,6 +14,37 @@ contract FenwickTreeInstance is FenwickTree {
 
     function mult(uint256 i_, uint256 f_) public {
         _mult(i_, f_);
+    }
+
+    function fillFenwickFuzzy(uint256 insertions_, uint256 amount_) external {
+        uint256 i;
+        uint256 amount;
+
+        // Calculate total insertions 
+        uint256 insertsDec = bound(insertions_, 1, 4000);
+
+        // Calculate total amount to insert
+        uint256 totalAmount = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
+        uint256 totalAmountDec = totalAmount;
+
+        while (totalAmountDec > 0 && insertsDec > 0) {
+
+            // Insert at random index
+            i = randomInRange(0, 8191);
+
+            // If last iteration, insert remaining
+            amount = insertsDec == 1 ? totalAmountDec : randomInRange(1, totalAmountDec, true);
+
+            // Update values
+            add(i, amount);
+            totalAmountDec  -=  amount;
+            insertsDec   -=  1;
+
+            // Verify tree sum
+            assertEq(_treeSum(), totalAmount - totalAmountDec);
+        }
+
+        assertEq(_treeSum(), totalAmount);
     }
 }
 
@@ -130,37 +161,29 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(2500 * 1e18), 5);
     }
 
-    function testFenwickFuzzyAdditions(uint256 insertions_, uint256 amount_) external {
-        uint256 boundIndex;
-        uint256 boundAmount;
-
-        // Calculate total index insertions 
-        uint256 boundInsertions = bound(insertions_, 1, 4000);
-        uint256 boundInsertionsDecrement = boundInsertions;
-
-        // calculate Random Total amount to insert
-        uint256 boundTotalAmount = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
-        uint256 boundTotalAmountDecrement = boundTotalAmount;
+    function testFenwickFuzzyScaling(
+        uint256 insertions_,
+        uint256 totalAmount_,
+        uint256 scaleIndex_,
+        uint256 factor_
+        ) external {
 
         FenwickTreeInstance tree = new FenwickTreeInstance();
+        tree.fillFenwickFuzzy(insertions_, totalAmount_);
 
-        while (boundTotalAmountDecrement > 0 && boundInsertionsDecrement > 0) {
+        uint256 scaleIndex = bound(scaleIndex_, 2, 8191);
+        uint256 subIndex = randomInRange(0, scaleIndex - 1);
+        uint256 factor = bound(factor_, 1 * 1e18, 5 * 1e18);
 
-            // select random index to perform insertion
-            boundIndex = random(8191);
-            if (boundInsertionsDecrement == 1) {
-                boundAmount = boundTotalAmountDecrement;
-            } else {
-                // Random subset amount to insert
-                boundAmount = boundTotalAmountDecrement != 1 ? random(boundTotalAmountDecrement) : 1;
-            }
-            tree.add(boundIndex, boundAmount);
+        uint256 scaleIndexSum = tree.prefixSum(scaleIndex);
+        uint256 subIndexSum = tree.prefixSum(subIndex);
+        uint256 unScaledSum = tree.treeSum() - scaleIndexSum;
 
-            boundTotalAmountDecrement -= boundAmount;
-            boundInsertionsDecrement -= 1;
-        }
+        tree.mult(scaleIndex, factor);
 
-        assertEq(tree.treeSum(),       boundTotalAmount);
+        assertEq(Maths.wmul(scaleIndexSum, factor), tree.prefixSum(scaleIndex));
+        assertEq(Maths.wmul(subIndexSum, factor), tree.prefixSum(subIndex));
+        assertEq(Maths.wmul(scaleIndexSum, factor), (tree.treeSum() - unScaledSum));
     }
 
 
