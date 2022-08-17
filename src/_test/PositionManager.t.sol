@@ -232,7 +232,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(indexes[0], tokenId2), 0);
         assertEq(_positionManager.getLPTokens(indexes[3], tokenId2), 0);
 
-        assertEq(_pool.treeSum(), 15_000 * 1e18);
+        assertEq(_pool.poolSize(), 15_000 * 1e18);
 
         // construct memorialize lender 1 params struct
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
@@ -265,7 +265,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[1]), 3_000 * 1e27);
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[2]), 3_000 * 1e27);
 
-        assertEq(_pool.treeSum(), 15_000 * 1e18);
+        assertEq(_pool.poolSize(), 15_000 * 1e18);
 
         // allow position manager to take ownership of lender 2's position
         vm.prank(testLender2);
@@ -306,7 +306,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(tokenId2, indexes[0]), 3_000 * 1e27);
         assertEq(_positionManager.getLPTokens(tokenId2, indexes[3]), 3_000 * 1e27);
 
-        assertEq(_pool.treeSum(), 15_000 * 1e18);
+        assertEq(_pool.poolSize(), 15_000 * 1e18);
     }
 
     function testMemorializeMultipleAndModifyLiquidity() external {
@@ -367,7 +367,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         (, address updatedPositionOwner, ) = _positionManager.positions(tokenId);
         uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, mintIndex);
 
-        assertEq(_pool.treeSum(), mintAmount / 4);
+        assertEq(_pool.poolSize(), mintAmount / 4);
         assertEq(updatedPositionOwner, testAddress);
         assert(updatedLPTokens != 0);
 
@@ -376,7 +376,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
 
         uint256 positionUpdatedTwiceTokens = _positionManager.getLPTokens(tokenId, mintIndex);
 
-        assertEq(_pool.treeSum(), mintAmount / 2);
+        assertEq(_pool.poolSize(), mintAmount / 2);
         assert(positionUpdatedTwiceTokens > updatedLPTokens);
 
         assertTrue(_positionManager.isIndexInPosition(tokenId, mintIndex));
@@ -386,7 +386,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
 
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));
 
-        assertEq(_pool.treeSum(), mintAmount);
+        assertEq(_pool.poolSize(), mintAmount);
     }
 
     /**
@@ -432,10 +432,10 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintIndex, mintPrice);
 
         // check initial pool balance
-        uint256 postAddPoolQuote = _pool.treeSum();
+        uint256 postAddPoolQuote = _pool.poolSize();
 
         assertEq(_quote.balanceOf(testAddress), testerQuoteBalance - mintAmount);
-        assertEq(_pool.treeSum(), mintAmount);
+        assertEq(_pool.poolSize(), mintAmount);
 
         // skip > 24h to avoid deposit removal penalty
         skip(3600 * 24 + 1);
@@ -450,7 +450,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         uint256 lpTokensToRemove = originalLPTokens / 4;
         assertEq(lpTokensToRemove, 2_500 * 1e27);
 
-        assertEq(_pool.treeSum(), 10_000 * 1e18);
+        assertEq(_pool.poolSize(), 10_000 * 1e18);
 
         // decrease liquidity
         IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
@@ -465,9 +465,9 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
 
         // check quote token removed
-        assertEq(_pool.treeSum(), 7_500 * 1e18);
-        assertGt(postAddPoolQuote, _pool.treeSum());
-        assertEq(_quote.balanceOf(testAddress), testerQuoteBalance - _pool.treeSum());
+        assertEq(_pool.poolSize(), 7_500 * 1e18);
+        assertGt(postAddPoolQuote, _pool.poolSize());
+        assertEq(_quote.balanceOf(testAddress), testerQuoteBalance - _pool.poolSize());
 
         // check lp tokens matches expectations
         uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, mintIndex);
@@ -567,7 +567,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         // remove all lp tokens
         uint256 lpTokensToRemove = _positionManager.getLPTokens(tokenId, mintIndex);
         assertEq(lpTokensToRemove, 10_000 * 10**27);
-        assertEq(_pool.treeSum(), 10_000 * 1e18);
+        assertEq(_pool.poolSize(), 10_000 * 1e18);
 
         assertTrue(_positionManager.isIndexInPosition(tokenId, mintIndex));
 
@@ -582,7 +582,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         // decrease liquidity and check change in balances
         vm.prank(testAddress);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
-        assertEq(_pool.treeSum(), 0);
+        assertEq(_pool.poolSize(), 0);
 
         // should emit Burn
         vm.expectEmit(true, true, true, true);
@@ -706,7 +706,7 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.poolSize(),     50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
         assertEq(_pool.lenderDebt(),   25_000 * 1e18);
 
@@ -751,7 +751,7 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.treeSum(),      43_010.892022197881557845 * 1e18);
+        assertEq(_pool.poolSize(),     43_010.892022197881557845 * 1e18);
         assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
         assertEq(_pool.lenderDebt(),   25_000 * 1e18);
 
@@ -800,7 +800,7 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.treeSum(),      90_000 * 1e18);
+        assertEq(_pool.poolSize(),     90_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
         assertEq(_pool.lenderDebt(),   25_000 * 1e18);
 
@@ -843,7 +843,7 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         assertEq(_pool.htp(), 5.004807692307692310 * 1e18);
         assertEq(_pool.lup(), _p3010);
 
-        assertEq(_pool.treeSum(),      40_000 * 1e18);
+        assertEq(_pool.poolSize(),     40_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
         assertEq(_pool.lenderDebt(),   25_000 * 1e18);
 

@@ -62,7 +62,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.treeSum(),      30_000 * 1e18);
+        assertEq(_pool.poolSize(),     30_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 0);
         assertEq(_pool.lenderDebt(),   0);
 
@@ -89,7 +89,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         assertEq(_pool.htp(), 210.201923076923077020 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
 
-        assertEq(_pool.treeSum(),           30_000 * 1e18);
+        assertEq(_pool.poolSize(),          30_000 * 1e18);
         assertEq(_pool.borrowerDebt(),      21_020.192307692307702000 * 1e18);
         assertEq(_pool.lenderDebt(),        21_000 * 1e18);
         assertEq(_pool.pledgedCollateral(), 100 * 1e18);
@@ -139,7 +139,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         assertEq(_pool.htp(), 2_989.185764499773229142 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
 
-        assertEq(_pool.treeSum(),           30_025.933063898944800000 * 1e18);
+        assertEq(_pool.poolSize(),          30_025.933063898944800000 * 1e18);
         assertEq(_pool.borrowerDebt(),      21_049.006823135579696033 * 1e18);
         assertEq(_pool.lenderDebt(),        21_000 * 1e18);
         assertEq(_pool.pledgedCollateral(), _pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()));

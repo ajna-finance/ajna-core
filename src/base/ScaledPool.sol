@@ -432,15 +432,23 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function bucketAt(uint256 index_) external view override returns (uint256, uint256, uint256, uint256) {
         return (
-            this.get(index_),                    // quote token in bucket, deposit + interest (WAD)
+            _rangeSum(index_, index_),           // quote token in bucket, deposit + interest (WAD)
             buckets[index_].availableCollateral, // unencumbered collateral in bucket (WAD)
             buckets[index_].lpAccumulator,       // outstanding LP balance (WAD)
-            this.scale(index_)                   // lender interest multiplier (WAD)
+            _scale(index_)                       // lender interest multiplier (WAD)
         );
+    }
+
+    function bucketCount() external view returns (uint256) {
+        return this.SIZE();
     }
 
     function depositAt(uint256 index_) external view override returns (uint256 deposit_) {
         deposit_ = _rangeSum(index_, index_);
+    }
+
+    function liquidityToPrice(uint256 index_) external view returns (uint256 quoteToken_) {
+        quoteToken_ = _prefixSum(index_);
     }
 
     function lpsToCollateral(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
@@ -466,6 +474,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     function poolMinDebtAmount() external view returns (uint256) {
         if (borrowerDebt != 0) return _poolMinDebtAmount(borrowerDebt);
         return 0;
+    }
+
+    function poolSize() external view returns (uint256) {
+        return _treeSum();
     }
 
     /************************/

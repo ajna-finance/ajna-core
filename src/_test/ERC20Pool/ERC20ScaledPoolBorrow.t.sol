@@ -68,7 +68,7 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.treeSum(),               50_000 * 1e18);
+        assertEq(_pool.poolSize(),              50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),          0);
         assertEq(_pool.lenderDebt(),            0);
         assertEq(_pool.poolActualUtilization(), 0);
@@ -93,7 +93,7 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.htp(), 210.201923076923077020 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
 
-        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.poolSize(),     50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 21_020.192307692307702000 * 1e18);
         assertEq(_pool.lenderDebt(),   21_000 * 1e18);
         assertEq(_pool.poolTargetUtilization(), 1 * 1e18);
@@ -138,7 +138,7 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.htp(), 400.384615384615384800 * 1e18);
         assertEq(_pool.lup(), 2_966.176540084047110076 * 1e18);
 
-        assertEq(_pool.treeSum(),           50_000 * 1e18);
+        assertEq(_pool.poolSize(),          50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),      40_038.461538461538480000 * 1e18);
         assertEq(_pool.lenderDebt(),        40_000 * 1e18);
         assertEq(_pool.poolMinDebtAmount(), 4_003.846153846153848 * 1e18);
@@ -157,7 +157,7 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.htp(), 300.384615384615384800 * 1e18);
         assertEq(_pool.lup(), 2_966.176540084047110076 * 1e18);
 
-        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.poolSize(),     50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 30_038.461538461538480000 * 1e18);
         assertEq(_pool.lenderDebt(),   30_009.606147934678200000 * 1e18);
 
@@ -176,7 +176,7 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.treeSum(),      50_000 * 1e18);
+        assertEq(_pool.poolSize(),     50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 0);
         assertEq(_pool.lenderDebt(),   0);
 
