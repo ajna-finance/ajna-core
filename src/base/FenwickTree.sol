@@ -2,11 +2,9 @@
 
 pragma solidity 0.8.14;
 
-import { IFenwickTree } from "./interfaces/IFenwickTree.sol";
-
 import { Maths } from "../libraries/Maths.sol";
 
-abstract contract FenwickTree is IFenwickTree {
+abstract contract FenwickTree {
     uint256 public constant SIZE = 8192;
 
     /**
@@ -168,30 +166,5 @@ abstract contract FenwickTree is IFenwickTree {
 
     function _treeSum() internal view returns (uint256) {
         return values[SIZE];
-    }
-
-    function treeSum() external view returns (uint256) {
-        return _treeSum();
-    }
-
-    function get(uint256 i_) external view returns (uint256 m_) {
-        return _rangeSum(i_, i_);
-    }
-
-    function scale(uint256 i_) external view returns (uint256 a_) {
-        return _scale(i_);
-    }
-
-    function findSum(uint256 x_) external view returns (uint256 m_) {
-        return _findSum(x_);
-    }
-
-    function prefixSum(uint256 i_) external view returns (uint256 s_) {
-        return _prefixSum(i_);
-    }
-
-    function lsb(uint256 i_) external pure returns (uint256) {
-        // "i & (-i)"
-        return _lsb(i_);
     }
 }
