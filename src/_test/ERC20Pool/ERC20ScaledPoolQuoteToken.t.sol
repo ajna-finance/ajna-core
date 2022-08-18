@@ -198,6 +198,12 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertEq(lpb_before, _pool.lpBalance(1606, address(_lender)));
         assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
 
+        // ensure lender with no LP cannot remove anything
+        assertEq(0, _pool.lpBalance(1606, address(_lender1)));
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender1), _pool.indexToPrice(1606), 0, _pool.lup());
+        _lender1.removeQuoteToken(_pool, 3_500 * 1e18, 1606);
+
         // lender removes all quote token, including interest, from the bucket
         assertGt(_pool.indexToPrice(1606), _pool.htp());
         uint256 quoteWithInterest = 3_400.023138863804135800 * 1e18;
