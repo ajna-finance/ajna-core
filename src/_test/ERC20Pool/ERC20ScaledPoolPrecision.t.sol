@@ -4,13 +4,11 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { BucketMath }        from "../../libraries/BucketMath.sol";
-import { Maths }             from "../../libraries/Maths.sol";
+import { BucketMath } from "../../libraries/BucketMath.sol";
+import { Maths }      from "../../libraries/Maths.sol";
 
-import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
-import { TokenWithNDecimals }                     from "../utils/Tokens.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
-
+import { DSTestPlus }         from "../utils/DSTestPlus.sol";
+import { TokenWithNDecimals } from "../utils/Tokens.sol";
 
 contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
 
@@ -20,47 +18,51 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
     uint256 internal _collateralPrecision;
     uint256 internal _quotePrecision;
 
-    address            internal _poolAddress;
+    address internal _borrower;
+    address internal _borrower2;
+    address internal _borrower3;
+    address internal _lender;
+    address internal _bidder;
+
     TokenWithNDecimals internal _collateral;
-    ERC20Pool          internal _pool;
     TokenWithNDecimals internal _quote;
-    UserWithCollateral internal _borrower;
-    UserWithCollateral internal _borrower2;
-    UserWithCollateral internal _borrower3;
-    UserWithQuoteToken internal _lender;
-    UserWithQuoteToken internal _bidder;
+    ERC20Pool          internal _pool;
 
     function init(uint256 collateralPrecisionDecimals_, uint256 quotePrecisionDecimals_) internal {
         _collateral = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
         _quote      = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
+        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
 
-        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _pool        = ERC20Pool(_poolAddress);
+        _borrower  = makeAddr("borrower");
+        _borrower2 = makeAddr("borrower2");
+        _borrower3 = makeAddr("borrower2");
+        _lender    = makeAddr("lender");
+        _bidder    = makeAddr("bidder");
 
-        _borrower  = new UserWithCollateral();
-        _borrower2 = new UserWithCollateral();
-        _borrower3 = new UserWithCollateral();
-        _bidder    = new UserWithQuoteToken();
-        _lender    = new UserWithQuoteToken();
+        deal(address(_collateral), _bidder,  150 * _collateralPrecision);
+        deal(address(_collateral), _borrower, 150 * _collateralPrecision);
+        deal(address(_collateral), _borrower2, 200 * _collateralPrecision);
+        deal(address(_collateral), _borrower3, 200 * _collateralPrecision);
 
-        _collateral.mint(address(_bidder), 150 * _collateralPrecision);
-        _collateral.mint(address(_borrower), 150 * _collateralPrecision);
-        _collateral.mint(address(_borrower2), 200 * _collateralPrecision);
-        _collateral.mint(address(_borrower3), 200 * _collateralPrecision);
-        _quote.mint(address(_lender), 200_000 * _quotePrecision);
+        deal(address(_quote), _lender,  200_000 * _quotePrecision);
 
-        _borrower.approveToken(_collateral, address(_pool), 150 * _collateralPrecision);
-        _borrower.approveToken(_quote,      address(_pool), 200_000 * _quotePrecision);
+        vm.startPrank(_borrower);
+        _collateral.approve(address(_pool), 150 * _collateralPrecision);
+        _quote.approve(address(_pool), 200_000 * _quotePrecision);
 
-        _borrower2.approveToken(_collateral, address(_pool), 200 * _collateralPrecision);
-        _borrower2.approveToken(_quote,      address(_pool), 200_000 * _quotePrecision);
+        changePrank(_borrower2);
+        _collateral.approve(address(_pool), 200 * _collateralPrecision);
+        _quote.approve(address(_pool), 200_000 * _quotePrecision);
 
-        _borrower3.approveToken(_collateral, address(_pool), 200 * _collateralPrecision);
-        _borrower3.approveToken(_quote,      address(_pool), 200_000 * _quotePrecision);
+        changePrank(_borrower3);
+        _collateral.approve(address(_pool), 200 * _collateralPrecision);
+        _quote.approve(address(_pool), 200_000 * _quotePrecision);
 
-        _bidder.approveToken(_collateral, address(_pool), 200_000 * _collateralPrecision);
+        changePrank(_bidder);
+        _collateral.approve(address(_pool), 200_000 * _collateralPrecision);
 
-        _lender.approveToken(_quote, address(_pool), 200_000 * _quotePrecision);
+        changePrank(_lender);
+        _quote.approve(address(_pool), 200_000 * _quotePrecision);
     }
 
     function testAddRemoveQuotePrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
@@ -73,13 +75,13 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         init(boundColPrecision, boundQuotePrecision);
 
         // deposit 50_000 quote tokens into each of 3 buckets
-        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2549);
-        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2550);
+        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2549);
+        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2550);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_lender), address(_pool), 50_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(address(_lender), _pool.indexToPrice(2551), 50_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
-        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2551);
+        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2551);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   150_000 * _quotePrecision);
@@ -103,7 +105,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), 25_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(2549), 25_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
-        _lender.removeQuoteToken(_pool, 25_000 * _quotePoolPrecision, 2549);
+        _pool.removeQuoteToken(25_000 * _quotePoolPrecision, 2549);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   125_000 * _quotePrecision);
@@ -133,16 +135,17 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         init(boundColPrecision, boundQuotePrecision);
 
         // deposit 50_000 quote tokens into each of 3 buckets
-        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2549);
-        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2550);
-        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2551);
+        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2549);
+        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2550);
+        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2551);
 
         // borrowers adds collateral
+        changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 50 * _collateralPrecision);
         vm.expectEmit(true, true, false, true);
         emit PledgeCollateral(address(_borrower), 50 * _collateralPoolPrecision);
-        _borrower.pledgeCollateral(_pool, 50 * _collateralPoolPrecision, address(0), address(0));
+        _pool.pledgeCollateral(50 * _collateralPoolPrecision, address(0), address(0));
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -164,7 +167,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower), 10_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _pool.indexToPrice(2549), 10_000 * _quotePoolPrecision);
-        _borrower.borrow(_pool, 10_000 * _quotePoolPrecision, 3000, address(0), address(0));
+        _pool.borrow(10_000 * _quotePoolPrecision, 3000, address(0), address(0));
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -191,7 +194,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_borrower), address(_pool), 5_000 * _quotePrecision);
         vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), _pool.indexToPrice(2549), 5_000 * _quotePoolPrecision);
-        _borrower.repay(_pool, 5_000 * _quotePoolPrecision, address(0), address(0));
+        _pool.repay(5_000 * _quotePoolPrecision, address(0), address(0));
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -218,7 +221,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower), unencumberedCollateral / _pool.collateralScale());
         vm.expectEmit(true, true, false, true);
         emit PullCollateral(address(_borrower), unencumberedCollateral);
-        _borrower.pullCollateral(_pool, unencumberedCollateral, address(0), address(0));
+        _pool.pullCollateral(unencumberedCollateral, address(0), address(0));
 
         //  FIXME: check balances
         // assertEq(_collateral.balanceOf(address(_pool)),   1.7 * _collateralPrecision);
@@ -247,11 +250,12 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         init(boundColPrecision, boundQuotePrecision);
 
         // deposit 50_000 quote tokens into each of 3 buckets
-        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2549);
-        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2550);
-        _lender.addQuoteToken(_pool, 50_000 * _quotePoolPrecision, 2551);
+        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2549);
+        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2550);
+        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2551);
 
         // bidder purchases quote with collateral
+        changePrank(_bidder);
         uint256 quoteToPurchase = 500 * _quotePoolPrecision;
         uint256 collateralRequired = Maths.wdiv(quoteToPurchase, _pool.indexToPrice(2549));
         uint256 adjustedCollateralReq = collateralRequired / _pool.collateralScale();
@@ -284,6 +288,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);
 
         // lender claims newly available collateral from bucket
+        changePrank(_lender);
         uint256 lpRedemption = Maths.wrdivr(Maths.wmul(availableCollateral, _pool.indexToPrice(2549)), _pool.exchangeRate(2549));
         vm.expectEmit(true, true, true, true);
         emit Transfer(address(_pool), address(_lender), adjustedCollateralReq);

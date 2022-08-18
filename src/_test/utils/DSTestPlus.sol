@@ -96,12 +96,6 @@ abstract contract DSTestPlus is Test {
         assertEq(address(erc1_), address(erc2_));
     }
 
-    function generateAddress() internal returns (address addr) {
-        // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
-        _nonce++;
-    }
-
     function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
         difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
     }

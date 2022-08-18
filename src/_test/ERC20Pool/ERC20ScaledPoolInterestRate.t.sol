@@ -6,66 +6,71 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 
-import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
-import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
+import { DSTestPlus }                  from "../utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
 
 contract ERC20ScaledInterestRateTest is DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
-    address            internal _poolAddress;
-    CollateralToken    internal _collateral;
-    ERC20Pool          internal _pool;
-    QuoteToken         internal _quote;
-    UserWithCollateral internal _borrower;
-    UserWithCollateral internal _borrower2;
-    UserWithQuoteToken internal _lender;
-    UserWithQuoteToken internal _lender1;
+    address internal _borrower;
+    address internal _borrower2;
+    address internal _lender;
+    address internal _lender1;
+
+    CollateralToken internal _collateral;
+    QuoteToken      internal _quote;
+    ERC20Pool       internal _pool;
 
     function setUp() external {
         _collateral  = new CollateralToken();
         _quote       = new QuoteToken();
-        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _pool        = ERC20Pool(_poolAddress);
+        _pool        = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
 
-        _borrower   = new UserWithCollateral();
-        _borrower2  = new UserWithCollateral();
-        _lender     = new UserWithQuoteToken();
-        _lender1    = new UserWithQuoteToken();
+        _borrower  = makeAddr("borrower");
+        _borrower2 = makeAddr("borrower2");
+        _lender    = makeAddr("lender");
+        _lender1   = makeAddr("_lender1");
 
-        _collateral.mint(address(_borrower), 10_000 * 1e18);
-        _collateral.mint(address(_borrower2), 200 * 1e18);
+        deal(address(_collateral), _borrower,  10_000 * 1e18);
+        deal(address(_collateral), _borrower2, 200 * 1e18);
 
-        _quote.mint(address(_lender), 200_000 * 1e18);
-        _quote.mint(address(_lender1), 200_000 * 1e18);
+        deal(address(_quote), _lender,  200_000 * 1e18);
+        deal(address(_quote), _lender1, 200_000 * 1e18);
 
-        _borrower.approveToken(_collateral, address(_pool), 10_000 * 1e18);
-        _borrower.approveToken(_quote,      address(_pool), 200_000 * 1e18);
+        vm.startPrank(_borrower);
+        _collateral.approve(address(_pool), 10_000 * 1e18);
+        _quote.approve(address(_pool), 200_000 * 1e18);
 
-        _borrower2.approveToken(_collateral, address(_pool), 10_000 * 1e18);
-        _borrower2.approveToken(_quote,      address(_pool), 200_000 * 1e18);
+        changePrank(_borrower2);
+        _collateral.approve(address(_pool), 10_000 * 1e18);
+        _quote.approve(address(_pool), 200_000 * 1e18);
 
-        _lender.approveToken(_quote,  address(_pool), 200_000 * 1e18);
-        _lender1.approveToken(_quote, address(_pool), 200_000 * 1e18);
+        changePrank(_lender);
+        _quote.approve(address(_pool), 200_000 * 1e18);
+
+        changePrank(_lender1);
+        _quote.approve(address(_pool), 200_000 * 1e18);
     }
 
     function testScaledPoolInterestRateIncreaseDecrease() external {
         assertEq(_pool.interestRate(),       0.05 * 1e18);
         assertEq(_pool.interestRateUpdate(), 0);
 
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
-        _lender.addQuoteToken(_pool, 20_000 * 1e18, 2551);
-        _lender.addQuoteToken(_pool, 20_000 * 1e18, 2552);
-        _lender.addQuoteToken(_pool, 50_000 * 1e18, 3900);
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, 4200);
+        changePrank(_lender);
+        _pool.addQuoteToken(10_000 * 1e18, 2550);
+        _pool.addQuoteToken(20_000 * 1e18, 2551);
+        _pool.addQuoteToken(20_000 * 1e18, 2552);
+        _pool.addQuoteToken(50_000 * 1e18, 3900);
+        _pool.addQuoteToken(10_000 * 1e18, 4200);
         skip(864000);
 
         assertEq(_pool.interestRate(),       0.05 * 1e18);
         assertEq(_pool.interestRateUpdate(), 0);
 
-        _borrower.pledgeCollateral(_pool, 100 * 1e18, address(0), address(0));
-        _borrower.borrow(_pool, 46_000 * 1e18, 4300, address(0), address(0));
+        changePrank(_borrower);
+        _pool.pledgeCollateral(100 * 1e18, address(0), address(0));
+        _pool.borrow(46_000 * 1e18, 4300, address(0), address(0));
 
         assertEq(_pool.htp(), 460.442307692307692520 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
@@ -78,12 +83,14 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
         assertEq(_pool.interestRateUpdate(), 864000);
 
         // repay entire loan
-        _quote.mint(address(_borrower), 200 * 1e18);
-        _borrower.repay(_pool, 46_200 * 1e18, address(0), address(0));
+        deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
+        _pool.repay(46_200 * 1e18, address(0), address(0));
+
+        skip(864000);
 
         // enforce rate update - decrease
-        skip(864000);
-        _lender.addQuoteToken(_pool, 100 * 1e18, 5);
+        changePrank(_lender);
+        _pool.addQuoteToken(100 * 1e18, 5);
 
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
@@ -104,14 +111,16 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
 
     function testPendingInflator() external {
         // add liquidity
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2550);
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, 2552);
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, 4200);
+        changePrank(_lender);
+        _pool.addQuoteToken(10_000 * 1e18, 2550);
+        _pool.addQuoteToken(10_000 * 1e18, 2552);
+        _pool.addQuoteToken(10_000 * 1e18, 4200);
         skip(3600);
 
         // draw debt
-        _borrower.pledgeCollateral(_pool, 50 * 1e18, address(0), address(0));
-        _borrower.borrow(_pool, 15_000 * 1e18, 4300, address(0), address(0));
+        changePrank(_borrower);
+        _pool.pledgeCollateral(50 * 1e18, address(0), address(0));
+        _pool.borrow(15_000 * 1e18, 4300, address(0), address(0));
         assertEq(_pool.inflatorSnapshot(), 1.0 * 1e18);
         assertEq(_pool.pendingInflator(), 1.000005707778845707 * 1e18);
         vm.warp(block.timestamp+3600);

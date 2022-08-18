@@ -4,8 +4,6 @@ pragma solidity 0.8.14;
 import { CollateralToken, NFTCollateralToken, QuoteToken } from "./utils/Tokens.sol";
 import { DSTestPlus }                                      from "./utils/DSTestPlus.sol";
 
-import { UserWithCollateral, UserWithQuoteToken } from "./utils/Users.sol";
-
 import { Maths } from "../libraries/Maths.sol";
 
 import { ERC20Pool }       from "../erc20/ERC20Pool.sol";
@@ -40,11 +38,11 @@ abstract contract PositionManagerHelperContract is DSTestPlus {
 
     }
 
-    function _mintAndApproveCollateralTokens(UserWithCollateral operator_, uint256 mintAmount_) internal{
-        _collateral.mint(address(operator_), mintAmount_);
+    function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal{
+        deal(address(_collateral), address(operator_), mintAmount_);
 
-        operator_.approveToken(_collateral, address(_pool),            mintAmount_);
-        operator_.approveToken(_collateral, address(_positionManager), mintAmount_);
+        _collateral.approve(address(_pool),            mintAmount_);
+        _collateral.approve(address(_positionManager), mintAmount_);
     }
 
     /**
@@ -79,7 +77,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
     function testMint() external {
         uint256 mintAmount  = 50 * 1e18;
         uint256 mintPrice   = _p1004;
-        address testAddress = generateAddress();
+        address testAddress = makeAddr("testAddress");
 
         _mintAndApproveQuoteTokens(testAddress, mintAmount);
 
@@ -107,7 +105,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
      *              Attempts to set position owner when not owner of the LP tokens
      */
     function testMemorializePositions() external {
-        address testAddress = generateAddress();
+        address testAddress = makeAddr("testAddress");
         uint256 mintAmount  = 10000 * 1e18;
 
         _mintAndApproveQuoteTokens(testAddress, mintAmount);
@@ -176,8 +174,8 @@ contract PositionManagerTest is PositionManagerHelperContract {
      *          LP tokens are checked to verify ownership of position.
      */
     function testMemorializeMultiple() external {
-        address testLender1 = generateAddress();
-        address testLender2 = generateAddress();
+        address testLender1 = makeAddr("testLender1");
+        address testLender2 = makeAddr("testLender2");
         uint256 mintAmount  = 10000 * 1e18;
 
         _mintAndApproveQuoteTokens(testLender1, mintAmount);
@@ -318,7 +316,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
      */
     function testMintToContract() external {
         // TODO to be reviewed
-        address lender = generateAddress();
+        address lender = makeAddr("lender");
         _quote.mint(address(lender), 200_000 * 1e18);
 
         // check that contract can successfully receive the NFT
@@ -332,7 +330,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
      */
     function testIncreaseLiquidity() external {
         // generate a new address
-        address testAddress = generateAddress();
+        address testAddress = makeAddr("testAddress");
         uint256 mintAmount  = 10000 * 1e18;
         uint256 mintIndex   = 2550;
         uint256 mintPrice   = _p3010;
@@ -394,8 +392,8 @@ contract PositionManagerTest is PositionManagerHelperContract {
      *          Recipient reverts: attempts to increase liquidity when not permited.
      */
     function testIncreaseLiquidityPermissions() external {
-        address recipient      = generateAddress();
-        address externalCaller = generateAddress();
+        address recipient      = makeAddr("recipient");
+        address externalCaller = makeAddr("externalCaller");
         uint256 tokenId        = _mintNFT(recipient, address(_pool));
         uint256 mintAmount     = 10000 * 1e18;
         uint256 mintIndex      = 2550;
@@ -418,7 +416,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
      */
     function testDecreaseLiquidityNoDebt() external {
         // generate a new address and set test params
-        address testAddress = generateAddress();
+        address testAddress = makeAddr("testAddress");
         uint256 mintAmount  = 10_000 * 1e18;
         uint256 mintIndex   = 2550;
         uint256 mintPrice   = _p3010;
@@ -483,8 +481,8 @@ contract PositionManagerTest is PositionManagerHelperContract {
      */
     function testNFTTransfer() external {
         // generate addresses and set test params
-        address testMinter      = generateAddress();
-        address testReceiver    = generateAddress();
+        address testMinter      = makeAddr("testMinter");
+        address testReceiver    = makeAddr("testReceiver");
         uint256 testIndexPrice  = 2550;
         uint256 testBucketPrice = _p3010;
         uint256 tokenId         = _mintNFT(testMinter, address(_pool));
@@ -541,7 +539,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
      */
     function testBurn() external {
         // generate a new address and set test params
-        address testAddress = generateAddress();
+        address testAddress = makeAddr("testAddress");
         uint256 mintAmount  = 10000 * 1e18;
         uint256 mintIndex   = 2550;
         uint256 mintPrice   = _p3010;
@@ -600,7 +598,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
 
     function testMoveLiquidityPermissions() external {
        // generate a new address
-        address testAddress = generateAddress();
+        address testAddress = makeAddr("testAddress");
         _mintAndApproveQuoteTokens(testAddress, 10_000 * 1e18);
 
         uint256 tokenId = _mintNFT(testAddress, address(_pool));
@@ -620,7 +618,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
 
     function testMoveLiquidity() external {
         // generate a new address
-        address testAddress = generateAddress();
+        address testAddress = makeAddr("testAddress");
         uint256 mintIndex   = 2550;
         uint256 moveIndex   = 2551;
         _mintAndApproveQuoteTokens(testAddress, 10_000 * 1e18);
@@ -668,11 +666,11 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
     uint256 internal _mintPrice;
     uint256 internal _tokenId;
 
-    UserWithCollateral internal _testBorrower;
+    address internal _testBorrower;
 
     function setUp() public {
-        _testLender  = generateAddress();
-        _testLender2 = generateAddress();
+        _testLender  = makeAddr("testLender");
+        _testLender2 = makeAddr("testLender2");
         _mintAmount  = 50_000 * 1e18;
         _mintIndex   = 2550;
         _mintPrice   = _p3010;
@@ -686,13 +684,14 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         _increaseLiquidity(_tokenId, _testLender, address(_pool), _mintAmount, _mintIndex, _mintPrice);
 
         // Borrow against the pool
-        _testBorrower            = new UserWithCollateral();
+        _testBorrower            = makeAddr("borrower");
         uint256 collateralToMint = 5_000 * 1e18;
+        vm.startPrank(_testBorrower);
         _mintAndApproveCollateralTokens(_testBorrower, collateralToMint);
 
         // add collateral and borrow against it
-        _testBorrower.pledgeCollateral(_pool, collateralToMint, address(0), address(0));
-        _testBorrower.borrow(_pool, 25_000 * 1e18, 3000, address(0), address(0));
+        _pool.pledgeCollateral(collateralToMint, address(0), address(0));
+        _pool.borrow(25_000 * 1e18, 3000, address(0), address(0));
     }
 
     modifier checkInitialState() {
@@ -729,22 +728,23 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
 
         // bidder add less collateral to bucket than lender can redeem.
         // Lender will redeem all collateral from bucket and rest of LP tokens as quote tokens
-        UserWithCollateral testBidder = new UserWithCollateral();
+        address testBidder = makeAddr("bidder");
+        changePrank(testBidder);
         _mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
-        testBidder.addCollateral(_pool, 1 * 1e18, _mintIndex);
+        _pool.addCollateral(1 * 1e18, _mintIndex);
 
         // add additional quote tokens to enable reallocation decrease liquidity
-        vm.prank(address(_testLender2));
+        changePrank(_testLender2);
         _pool.addQuoteToken(40_000 * 1e18, _mintIndex);
 
         // lender removes their entire provided liquidity
+        changePrank(_testLender);
         IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
             _tokenId, _testLender, address(_pool), _mintIndex, 50_000 * 1e27
         );
 
         vm.expectEmit(true, true, true, true);
         emit DecreaseLiquidity(_testLender, _mintPrice);
-        vm.prank(_testLender);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
 
         // check pool state
@@ -778,22 +778,23 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
 
         // bidder add more collateral to bucket than lender can redeem.
         // Lender will redeem all LPs as collateral
-        UserWithCollateral testBidder = new UserWithCollateral();
+        address testBidder = makeAddr("bidder");
+        changePrank(testBidder);
         _mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
-        testBidder.addCollateral(_pool, 100 * 1e18, _mintIndex);
+        _pool.addCollateral(100 * 1e18, _mintIndex);
 
         // add additional quote tokens to enable reallocation decrease liquidity
-        vm.prank(address(_testLender2));
+        changePrank(address(_testLender2));
         _pool.addQuoteToken(40_000 * 1e18, _mintIndex);
 
         // lender removes their entire provided liquidity
+        changePrank(address(_testLender));
         IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
             _tokenId, _testLender, address(_pool), _mintIndex, 50_000 * 1e27
         );
 
         vm.expectEmit(true, true, true, true);
         emit DecreaseLiquidity(_testLender, _mintPrice);
-        vm.prank(_testLender);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
 
         // check pool state
@@ -826,17 +827,17 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
     function testDecreaseLiquidityWithDebtRedeemQuoteTokensOnly() external checkInitialState {
 
         // add additional quote tokens to enable reallocation decrease liquidity
-        vm.prank(address(_testLender2));
+        changePrank(_testLender2);
         _pool.addQuoteToken(40_000 * 1e18, _mintIndex);
 
         // lender removes their entire provided liquidity
+        changePrank(_testLender);
         IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
             _tokenId, _testLender, address(_pool), _mintIndex, 50_000 * 1e27
         );
 
         vm.expectEmit(true, true, true, true);
         emit DecreaseLiquidity(_testLender, _mintPrice);
-        vm.prank(_testLender);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
 
         // check pool state

@@ -7,56 +7,66 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
-import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
-import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
+import { DSTestPlus }                  from "../utils/DSTestPlus.sol";
+import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
 
 contract ERC20ScaledCollateralTest is DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
-    address            internal _poolAddress;
-    CollateralToken    internal _collateral;
-    ERC20Pool          internal _pool;
-    QuoteToken         internal _quote;
-    UserWithCollateral internal _borrower;
-    UserWithCollateral internal _borrower2;
-    UserWithQuoteToken internal _lender;
-    UserWithCollateral internal _bidder;
+    address internal _borrower;
+    address internal _borrower2;
+    address internal _lender;
+    address internal _bidder;
+
+    CollateralToken internal _collateral;
+    QuoteToken      internal _quote;
+    ERC20Pool       internal _pool;
 
     function setUp() external {
-        _collateral  = new CollateralToken();
-        _quote       = new QuoteToken();
-        _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _pool        = ERC20Pool(_poolAddress);
+        _collateral = new CollateralToken();
+        _quote      = new QuoteToken();
+        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
 
-        _borrower   = new UserWithCollateral();
-        _bidder     = new UserWithCollateral();
-        _lender     = new UserWithQuoteToken();
+        _borrower  = makeAddr("borrower");
+        _borrower2 = makeAddr("borrower2");
+        _lender    = makeAddr("lender");
+        _bidder    = makeAddr("bidder");
 
-        _collateral.mint(address(_borrower), 150 * 1e18);
-        _quote.mint(address(_bidder), 200_000 * 1e18);
-        _quote.mint(address(_lender), 200_000 * 1e18);
+        deal(address(_collateral), _borrower,  150 * 1e18);
+        deal(address(_collateral), _borrower2, 100 * 1e18);
 
-        _borrower.approveToken(_collateral, address(_pool), 150 * 1e18);
-        _borrower.approveToken(_quote,      address(_pool), 200_000 * 1e18);
+        deal(address(_quote), _lender,  200_000 * 1e18);
+        deal(address(_quote), _bidder, 200_000 * 1e18);
 
-        _bidder.approveToken(_quote,  address(_pool), 200_000 * 1e18);
-        _lender.approveToken(_quote,  address(_pool), 200_000 * 1e18);
+        vm.startPrank(_borrower);
+        _collateral.approve(address(_pool), 100 * 1e18);
+        _quote.approve(address(_pool), 200_000 * 1e18);
+
+        changePrank(_borrower2);
+        _collateral.approve(address(_pool), 200 * 1e18);
+        _quote.approve(address(_pool), 200_000 * 1e18);
+
+        changePrank(_lender);
+        _quote.approve(address(_pool), 200_000 * 1e18);
+
+        changePrank(_bidder);
+        _quote.approve(address(_pool), 200_000 * 1e18);
     }
 
     /**
      *  @notice With 1 lender and 1 borrower test pledgeCollateral, borrow, and pullCollateral.
      */
     function testAddPullCollateral() external {
-        uint256 depositPriceHighest = 2550;
-        uint256 depositPriceHigh    = 2551;
-        uint256 depositPriceMed     = 2552;
+        uint256 depositIndexHighest = 2550;
+        uint256 depositIndexHigh    = 2551;
+        uint256 depositIndexMed     = 2552;
 
         // lender deposits 10000 Quote into 3 buckets
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, depositPriceHighest);
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, depositPriceHigh);
-        _lender.addQuoteToken(_pool, 10_000 * 1e18, depositPriceMed);
+        changePrank(_lender);
+        _pool.addQuoteToken(10_000 * 1e18, depositIndexHighest);
+        _pool.addQuoteToken(10_000 * 1e18, depositIndexHigh);
+        _pool.addQuoteToken(10_000 * 1e18, depositIndexMed);
 
         // check initial pool state
         assertEq(_pool.htp(), 0);
@@ -70,9 +80,10 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         assertEq(_collateral.balanceOf(address(_borrower)), 150 * 1e18);
 
         // borrower deposits 100 collateral
+        changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
         emit PledgeCollateral(address(_borrower), 100 * 1e18);
-        _borrower.pledgeCollateral(_pool, 100 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(100 * 1e18, address(0), address(0));
 
         // check pool state collateral accounting updated successfully
         assertEq(_pool.pledgedCollateral(), 100 * 1e18);
@@ -83,7 +94,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), 2_981.007422784467321543 * 1e18, 21_000 * 1e18);
-        _borrower.borrow(_pool, 21_000 * 1e18, 3000, address(0), address(0));
+        _pool.borrow(21_000 * 1e18, 3000, address(0), address(0));
 
         // check pool state
         assertEq(_pool.htp(), 210.201923076923077020 * 1e18);
@@ -115,7 +126,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         // remove some of the collateral
         vm.expectEmit(true, true, false, true);
         emit PullCollateral(address(_borrower), 50 * 1e18);
-        _borrower.pullCollateral(_pool, 50 * 1e18, address(0), address(0));
+        _pool.pullCollateral(50 * 1e18, address(0), address(0));
 
         // check borrower state
         (borrowerDebt, , borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
@@ -133,7 +144,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         uint256 unencumberedCollateral = borrowerCollateral - _pool.encumberedCollateral(borrowerDebt, _pool.lup());
         vm.expectEmit(true, true, false, true);
         emit PullCollateral(address(_borrower), unencumberedCollateral);
-        _borrower.pullCollateral(_pool, unencumberedCollateral, address(0), address(0));
+        _pool.pullCollateral(unencumberedCollateral, address(0), address(0));
 
         // check pool state
         assertEq(_pool.htp(), 2_989.185764499773229142 * 1e18);
@@ -168,19 +179,20 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
     function testPullCollateralRequireEnoughCollateral() external {
         uint256 testCollateralAmount = 100 * 1e18;
 
+        changePrank(_borrower);
         // should revert if trying to remove more collateral than is available
         vm.expectRevert("S:PC:NOT_ENOUGH_COLLATERAL");
-        _borrower.pullCollateral(_pool, testCollateralAmount, address(0), address(0));
+        _pool.pullCollateral(testCollateralAmount, address(0), address(0));
 
         // borrower deposits 100 collateral
         vm.expectEmit(true, true, true, true);
         emit PledgeCollateral(address(_borrower), testCollateralAmount);
-        _borrower.pledgeCollateral(_pool, testCollateralAmount, address(0), address(0));
+        _pool.pledgeCollateral(testCollateralAmount, address(0), address(0));
 
         // should be able to now remove collateral
         vm.expectEmit(true, true, true, true);
         emit PullCollateral(address(_borrower), testCollateralAmount);
-        _borrower.pullCollateral(_pool, testCollateralAmount, address(0), address(0));
+        _pool.pullCollateral(testCollateralAmount, address(0), address(0));
     }
 
     /**
@@ -190,8 +202,10 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = _pool.indexToPrice(testIndex);
-        _collateral.mint(address(_bidder), 100 * 1e18);
-        _bidder.approveToken(_collateral, address(_pool), 100 * 1e18);
+        deal(address(_collateral), _bidder,  100 * 1e18);
+
+        changePrank(_bidder);
+        _collateral.approve(address(_pool), 100 * 1e18);
 
         // actor deposits collateral into a bucket
         uint256 collateralToDeposit = 4 * 1e18;
@@ -199,7 +213,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         emit Transfer(address(_bidder), address(_pool), collateralToDeposit);
         vm.expectEmit(true, true, false, true);
         emit AddCollateral(address(_bidder), priceAtTestIndex, collateralToDeposit);
-        _bidder.addCollateral(_pool, collateralToDeposit, testIndex);
+        _pool.addCollateral(collateralToDeposit, testIndex);
 
         // check bucket state
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(testIndex);
@@ -218,7 +232,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_pool)),        0);
 
         // actor withdraws their collateral
-        _bidder.removeCollateral(_pool, collateralToDeposit, testIndex);
+        _pool.removeCollateral(collateralToDeposit, testIndex);
     }
 
     // TODO: add collateralization, utilization and encumberance test? -> use hardcoded amounts in pure functions without creaitng whole pool flows
