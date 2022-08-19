@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
-//import { FenwickTree } from "../FenwickTree.t.sol";
-import { FenwickTree } from "../../base/FenwickTree.sol";
 import { ERC20 }  from "@solmate/tokens/ERC20.sol";
 import { Maths }  from "../../libraries/Maths.sol";
 import { Test }   from "@std/Test.sol";
