@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
-import { Maths }  from "../../libraries/Maths.sol";
-import { Test }   from "@std/Test.sol";
-import { Vm }     from "@std/Vm.sol";
+import { Maths } from "../../libraries/Maths.sol";
+
+import { Test } from "@std/Test.sol";
+import { Vm }   from "@std/Vm.sol";
 
 abstract contract DSTestPlus is Test {
 
@@ -74,12 +75,6 @@ abstract contract DSTestPlus is Test {
 
     // Pool deployer events
     event PoolCreated(address pool_);
-
-    function generateAddress() internal returns (address addr) {
-        // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
-        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
-        _nonce++;
-    }
 
     function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
         difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);

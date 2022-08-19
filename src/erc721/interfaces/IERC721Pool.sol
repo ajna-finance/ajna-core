@@ -121,7 +121,7 @@ interface IERC721Pool is IScaledPool {
 
     /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
-     *  @param  tokenIds_ Array of collateral to claim.
+     *  @param  tokenIds_ NFT token ids to be removed from the pool.
      *  @param  index_    The index of the bucket from which unencumbered collateral will be claimed.
      *  @return lpAmount_ The amount of LP tokens used for removing collateral amount.
      */

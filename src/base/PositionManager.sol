@@ -70,7 +70,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // Pool interactions
         IERC20Pool pool = IERC20Pool(params_.pool);
-
         uint256 deposit = pool.depositAt(params_.index);
 
         // calculate equivalent underlying collateral for given lpTokens

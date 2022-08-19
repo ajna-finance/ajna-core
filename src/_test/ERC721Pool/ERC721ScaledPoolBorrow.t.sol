@@ -7,41 +7,43 @@ import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
-import { ERC721DSTestPlus }                             from "./ERC721DSTestPlus.sol";
-import { NFTCollateralToken, QuoteToken }            from "../utils/Tokens.sol";
-import { UserWithNFTCollateral, UserWithQuoteTokenInNFTPool } from "../utils/Users.sol";
+import { ERC721DSTestPlus }               from "./ERC721DSTestPlus.sol";
+import { NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
 
 contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
-    address                     internal _collectionPoolAddress;
-    address                     internal _subsetPoolAddress;
-    NFTCollateralToken          internal _collateral;
-    ERC721Pool                  internal _collectionPool;
-    ERC721Pool                  internal _subsetPool;
-    QuoteToken                  internal _quote;
-    UserWithNFTCollateral       internal _borrower;
-    UserWithNFTCollateral       internal _borrower2;
-    UserWithNFTCollateral       internal _borrower3;
-    UserWithQuoteTokenInNFTPool internal _lender;
-    UserWithQuoteTokenInNFTPool internal _lender2;
+    address internal _borrower;
+    address internal _borrower2;
+    address internal _borrower3;
+    address internal _lender;
+    address internal _lender2;
+
+    address internal _collectionPoolAddress;
+    address internal _subsetPoolAddress;
+
+    NFTCollateralToken internal _collateral;
+    QuoteToken         internal _quote;
+    ERC721Pool         internal _collectionPool;
+    ERC721Pool         internal _subsetPool;
 
     function setUp() external {
-        // deploy token and user contracts; mint tokens
-        _collateral  = new NFTCollateralToken();
-        _quote       = new QuoteToken();
+        // deploy token and user contracts; mint and set balances
+        _collateral = new NFTCollateralToken();
+        _quote      = new QuoteToken();
 
-        _borrower   = new UserWithNFTCollateral();
-        _borrower2  = new UserWithNFTCollateral();
-        _borrower3  = new UserWithNFTCollateral();
-        _lender     = new UserWithQuoteTokenInNFTPool();
-        _lender2    = new UserWithQuoteTokenInNFTPool();
+        _borrower  = makeAddr("borrower");
+        _borrower2 = makeAddr("borrower2");
+        _borrower3 = makeAddr("borrower3");
+        _lender    = makeAddr("lender");
+        _lender2   = makeAddr("lender2");
 
-        _collateral.mint(address(_borrower), 52);
+        _collateral.mint(address(_borrower),  52);
         _collateral.mint(address(_borrower2), 10);
         _collateral.mint(address(_borrower3), 13);
-        _quote.mint(address(_lender), 200_000 * 1e18);
+
+        deal(address(_quote), _lender, 200_000 * 1e18);
 
         /*******************************/
         /*** Setup NFT Collection State ***/
@@ -50,14 +52,20 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         _collectionPoolAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _collectionPool        = ERC721Pool(_collectionPoolAddress);
 
-        _borrower.approveCollection(_collateral, address(_collectionPool));
-        _borrower2.approveCollection(_collateral, address(_collectionPool));
-        _borrower3.approveCollection(_collateral, address(_collectionPool));
+        vm.startPrank(_borrower);
+        _collateral.setApprovalForAll(address(_collectionPool), true);
+        _quote.approve(address(_collectionPool), 200_000 * 1e18);
 
-        _borrower.approveQuoteToken(_quote, address(_collectionPool), 200_000 * 1e18);
-        _borrower2.approveQuoteToken(_quote, address(_collectionPool), 200_000 * 1e18);
-        _borrower3.approveQuoteToken(_quote,   address(_collectionPool), 200_000 * 1e18);
-        _lender.approveToken(_quote,   address(_collectionPool), 200_000 * 1e18);
+        changePrank(_borrower2);
+        _collateral.setApprovalForAll(address(_collectionPool), true);
+        _quote.approve(address(_collectionPool), 200_000 * 1e18);
+
+        changePrank(_borrower3);
+        _collateral.setApprovalForAll(address(_collectionPool), true);
+        _quote.approve(address(_collectionPool), 200_000 * 1e18);
+
+        changePrank(_lender);
+        _quote.approve(address(_collectionPool), 200_000 * 1e18);
 
         /*******************************/
         /*** Setup NFT Subset State ***/
@@ -74,14 +82,20 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         _subsetPoolAddress = new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), subsetTokenIds, 0.05 * 10**18);
         _subsetPool        = ERC721Pool(_subsetPoolAddress);
 
-        _borrower.approveCollection(_collateral, address(_subsetPool));
-        _borrower2.approveCollection(_collateral, address(_subsetPool));
-        _borrower3.approveCollection(_collateral, address(_subsetPool));
+        changePrank(_borrower);
+        _collateral.setApprovalForAll(address(_subsetPool), true);
+        _quote.approve(address(_subsetPool), 200_000 * 1e18);
 
-        _borrower.approveQuoteToken(_quote, address(_subsetPool), 200_000 * 1e18);
-        _borrower2.approveQuoteToken(_quote,   address(_subsetPool), 200_000 * 1e18);
-        _borrower3.approveQuoteToken(_quote,   address(_subsetPool), 200_000 * 1e18);
-        _lender.approveToken(_quote,   address(_subsetPool), 200_000 * 1e18);
+        changePrank(_borrower2);
+        _collateral.setApprovalForAll(address(_subsetPool), true);
+        _quote.approve(address(_subsetPool), 200_000 * 1e18);
+
+        changePrank(_borrower3);
+        _collateral.setApprovalForAll(address(_subsetPool), true);
+        _quote.approve(address(_subsetPool), 200_000 * 1e18);
+
+        changePrank(_lender);
+        _quote.approve(address(_subsetPool), 200_000 * 1e18);
     }
 
     /**************************************/
@@ -106,9 +120,9 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
     function testBorrowAndRepay() external {
         // lender deposits 10000 Quote into 3 buckets
-        _lender.addQuoteToken(_subsetPool, 10_000 * 1e18, 2550);
-        _lender.addQuoteToken(_subsetPool, 10_000 * 1e18, 2551);
-        _lender.addQuoteToken(_subsetPool, 10_000 * 1e18, 2552);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2550);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2551);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2552);
 
         // check initial token balances
         assertEq(_subsetPool.pledgedCollateral(), 0);
@@ -136,16 +150,17 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(availableCollateral, 0);
 
         // borrower deposits three NFTs into the subset pool
+        changePrank(_borrower);
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _borrower.pledgeCollateral(_subsetPool, tokenIdsToAdd, address(0), address(0));
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
 
         // borrower borrows from the pool
         uint256 borrowAmount = 3_000 * 1e18;
         emit Borrow(address(_borrower), _subsetPool.indexToPrice(2550), borrowAmount);
-        _borrower.borrow(_subsetPool, borrowAmount, 2551, address(0), address(0));
+        _subsetPool.borrow(borrowAmount, 2551, address(0), address(0));
 
         // check token balances after borrow
         assertEq(_subsetPool.pledgedCollateral(), Maths.wad(3));
@@ -185,7 +200,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
         // borrower partially repays half their loan
         emit Repay(address(_borrower), _subsetPool.indexToPrice(2550), borrowAmount / 2);
-        _borrower.repay(_subsetPool, borrowAmount / 2, address(0), address(0));
+        _subsetPool.repay(borrowAmount / 2, address(0), address(0));
 
         // check token balances after partial repay
         assertEq(_subsetPool.pledgedCollateral(), Maths.wad(3));
@@ -228,11 +243,11 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         (, pendingDebt, , ) = _subsetPool.borrowerInfo(address(_borrower));
 
         // mint additional quote to allow borrower to repay their loan plus interest
-        _quote.mint(address(_borrower), 1_000 * 1e18);
+        deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 1_000 * 1e18);
 
         // borrower repays their remaining loan balance
         emit Repay(address(_borrower), _subsetPool.indexToPrice(2550), pendingDebt);
-        _borrower.repay(_subsetPool, pendingDebt, address(0), address(0));
+        _subsetPool.repay(pendingDebt, address(0), address(0));
 
         // check token balances after fully repay
         assertEq(_subsetPool.pledgedCollateral(), Maths.wad(3));

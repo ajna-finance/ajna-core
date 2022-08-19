@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
-import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
+import { DSTestPlus } from "../utils/DSTestPlus.sol";
 
 abstract contract ERC721DSTestPlus is DSTestPlus {
 
