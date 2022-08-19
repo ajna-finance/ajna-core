@@ -23,26 +23,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
     uint256 public override collateralScale;
 
-    /******************/
-    /*** Structures ***/
-    /******************/
-
-    /**
-     *  @notice Struct holding parameters for redeeming LP for collateral.
-     *  @param  bucket   The bucket in which LP is being redeemed.
-     *  @param  lpAmount Amount of LP being exchanged for collateral.
-     *  @param  amount   Collateral amount being withdrawn.
-     *  @param  price    Bucket price.
-     *  @param  index    Bucket index.
-     */
-    struct RedeemLPForCollateralParams {
-        Bucket bucket;
-        uint256 lpAmount;
-        uint256 amount;
-        uint256 price;
-        uint256 index;
-    }
-
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
@@ -252,10 +232,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             lpAmount_ = Maths.wrdivr(Maths.wmul(amount, price), rate);
         } // else user is redeeming all of their LPs
 
-        RedeemLPForCollateralParams memory redeemParams = RedeemLPForCollateralParams(
-            bucket, lpAmount_, amount, price, index_
-        );
-        _redeemLPForCollateral(redeemParams);
+        _redeemLPForCollateral(bucket, lpAmount_, amount, price, index_);
     }
 
     function removeCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
@@ -271,27 +248,30 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         lpAmount_ = Maths.rdiv((amount_ * price / 1e9), rate);
         require(availableLPs != 0 && lpAmount_ <= availableLPs, "S:RC:INSUF_LPS");
 
-        RedeemLPForCollateralParams memory redeemParams = RedeemLPForCollateralParams(
-            bucket, lpAmount_, amount_, price, index_
-        );
-        _redeemLPForCollateral(redeemParams);
+        _redeemLPForCollateral(bucket, lpAmount_, amount_, price, index_);
     }
 
     // TODO: move to appropriate location in file
-    function _redeemLPForCollateral(RedeemLPForCollateralParams memory params_) internal {
+    function _redeemLPForCollateral(
+        Bucket memory bucket,
+        uint256 lpAmount_,
+        uint256 amount_,
+        uint256 price_,
+        uint256 index_
+    ) internal {
         // update bucket accounting
-        params_.bucket.availableCollateral -= Maths.min(params_.bucket.availableCollateral, params_.amount);
-        params_.bucket.lpAccumulator       -= Maths.min(params_.bucket.lpAccumulator, params_.lpAmount);
-        buckets[params_.index] = params_.bucket;
+        bucket.availableCollateral -= Maths.min(bucket.availableCollateral, amount_);
+        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpAmount_);
+        buckets[index_] = bucket;
 
         // update lender accounting
-        lpBalance[params_.index][msg.sender] -= params_.lpAmount;
+        lpBalance[index_][msg.sender] -= lpAmount_;
 
         _updateInterestRate(borrowerDebt, _lup());
 
         // move collateral from pool to lender
-        collateral().safeTransfer(msg.sender, params_.amount / collateralScale);
-        emit RemoveCollateral(msg.sender, params_.price, params_.amount);
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+        emit RemoveCollateral(msg.sender, price_, amount_);
     }
 
     /**********************/
