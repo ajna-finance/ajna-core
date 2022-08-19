@@ -161,7 +161,7 @@ contract FenwickTreeTest is DSTestPlus {
     /**
      *  @notice Fuzz tests additions and scaling values.
      */
-    // TODO: Solve for discrepency of 1 that exists between manually scaling vs scaling using Fenwick (Ether can have the +1 discrep, its situational)
+    // TODO: Solve for discrepency of 2 that exists between manually scaling vs scaling using Fenwick (Ether can have the +1 discrep, its situational)
     function testFenwickFuzzyScaling(
         uint256 insertions_,
         uint256 totalAmount_,
@@ -187,13 +187,13 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 subMax = Maths.max(Maths.wmul(subIndexSum, factor), tree.prefixSum(subIndex));
         uint256 subMin = Maths.min(Maths.wmul(subIndexSum, factor), tree.prefixSum(subIndex));
 
-        // 1 >= scaling discrepency
+        // 2 >= scaling discrepency
         assertGe(2, max - min);
         assertGe(2, subMax - subMin);
     }
 
 
-    // TODO: Example test, proving 1 discrepency between manual and Fenwicktree scaling
+    // TODO: Example test, proving 2 discrepency between manual and Fenwicktree scaling
     function skipFenwickScaleDiscrepency() external {
         FenwickTreeInstance tree = new FenwickTreeInstance();
         tree.add(940, 4851907156358493181925719484768560);
