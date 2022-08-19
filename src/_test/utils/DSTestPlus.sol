@@ -108,7 +108,6 @@ abstract contract DSTestPlus is Test {
         return randomInRange(min, max, false);
     }
 
-    // TODO: makesure min actually works...
     function randomInRange(uint256 min, uint256 max, bool nonZero) public returns (uint256) {
         if      (max == 0 && nonZero) return 1;
         else if (max == min)           return max;

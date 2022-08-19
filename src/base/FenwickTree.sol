@@ -19,6 +19,7 @@ abstract contract FenwickTree {
      */
     uint256[8193] internal scaling; // scaling
 
+
     function _scale(uint256 i_) internal view returns (uint256 a_) {
         require(i_ >= 0 && i_ < SIZE, "FW:S:INVALID_INDEX");
 
@@ -142,6 +143,11 @@ abstract contract FenwickTree {
         }
     }
 
+    /**
+     *  @notice Get prefix sum of all indexes less than provided index.
+     *  @dev    Starts at tree root and decrements through range parent nodes summing from index i_'s range to index 0.
+     *  @param  i_  The index to receive the prefix sum
+    */    
     function _prefixSum(uint256 i_) internal view returns (uint256 s_) {
         i_ += 1;                   // Translate from 0 -> 1 indexed array
         uint256 sc = Maths.WAD;
@@ -174,6 +180,14 @@ abstract contract FenwickTree {
         }
     }
 
+
+
+
+    /**
+     *  @notice Returns the sum of a given range.
+     *  @param  start_  start of range to sum.
+     *  @param  stop_   end of range to sum.
+    */
     function _rangeSum(uint256 start_, uint256 stop_) internal view returns (uint256) {
         require(start_ >= 0 && start_ < SIZE,      "FW:R:INVALID_START");
         require(stop_ >= start_ && stop_ <= SIZE,  "FW:R:INVALID_STOP");
@@ -205,6 +219,11 @@ abstract contract FenwickTree {
         }
     }
 
+    /**
+     *  @notice Get least significant bit (LSB) of intiger, i_.
+     *  @dev    Used primarily to decrement the binary index in loops, iterating over range parents.
+     *  @param  i_  The integer with which to return the LSB.
+    */    
     function _lsb(uint256 i_) internal pure returns (uint256) {
         if (i_ == 0) return 0;
         // "i & (-i)"
