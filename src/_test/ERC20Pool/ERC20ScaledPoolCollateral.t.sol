@@ -232,7 +232,12 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_pool)),        0);
 
         // actor withdraws their collateral
-        _pool.removeCollateral(collateralToDeposit, testIndex);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_bidder), collateralToDeposit);
+        vm.expectEmit(true, true, true, true);
+        emit RemoveCollateral(address(_bidder), priceAtTestIndex, collateralToDeposit);
+        uint256 lpRedeemed = _pool.removeCollateral(collateralToDeposit, testIndex);
+        assertEq(lpRedeemed, 12_043.56808879152623138 * 1e27);
     }
 
     // TODO: add collateralization, utilization and encumberance test? -> use hardcoded amounts in pure functions without creaitng whole pool flows

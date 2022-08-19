@@ -112,7 +112,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         emit Transfer(address(_pool), address(_lender), lpValueInCollateral);
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_lender), priceAtTestIndex, lpValueInCollateral);
-        _pool.removeCollateral(availableCollateral, testIndex);
+        _pool.removeAllCollateral(testIndex);
         assertEq(_collateral.balanceOf(address(_lender)), lpValueInCollateral);
         assertEq(_pool.lpBalance(testIndex, address(_lender)), 0);
 
@@ -122,7 +122,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         emit Transfer(address(_pool), address(_bidder), 0.678725133191514712 * 1e18);
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_bidder), priceAtTestIndex, 0.678725133191514712 * 1e18);
-        _pool.removeCollateral(collateralToPurchaseWith, testIndex);
+        _pool.removeAllCollateral(testIndex);
         assertEq(_pool.lpBalance(testIndex, address(_bidder)), 0);
 
         // check pool balances
@@ -186,7 +186,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         uint256 expectedCollateral = 0.066544137733669793 * 1e18;
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_bidder), p2550, expectedCollateral);
-        _pool.removeCollateral(collateralToPurchaseWith, 2550);
+        _pool.removeAllCollateral(2550);
         collateralRemoved += expectedCollateral;
         assertEq(_pool.lpBalance(2550, address(_bidder)), 0);
         skip(7200);
@@ -196,7 +196,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         expectedCollateral = 1.992893012338599629 * 1e18;
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_lender), p2550, expectedCollateral);
-        _pool.removeCollateral(4 * 1e18, 2550);
+        _pool.removeAllCollateral(2550);
         collateralRemoved += expectedCollateral;
         assertEq(_pool.lpBalance(2550, address(_lender)), 0);
         skip(3600);
@@ -206,7 +206,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         expectedCollateral = 1.328595341559066420 * 1e18;
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_lender1), p2550, expectedCollateral);
-        _pool.removeCollateral(4 * 1e18, 2550);
+        _pool.removeAllCollateral(2550);
         collateralRemoved += expectedCollateral;
         assertEq(_pool.lpBalance(2550, address(_lender1)), 0);
         assertEq(collateralRemoved, collateralToPurchaseWith);
