@@ -145,7 +145,8 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 5_000 * 1e18, BucketMath.MAX_PRICE);
-        _pool.removeQuoteToken(5_000 * 1e18, 2549);
+        uint256 lpRedeemed = _pool.removeQuoteToken(5_000 * 1e18, 2549);
+        assertEq(lpRedeemed, 5_000 * 1e27);
 
         assertEq(_pool.lpBalance(2549, address(_lender)), 35_000 * 1e27);
 
@@ -212,9 +213,8 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         // ensure lender with no LP cannot remove anything
         changePrank(_lender1);
         assertEq(0, _pool.lpBalance(1606, address(_lender1)));
-        vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_lender1), _pool.indexToPrice(1606), 0, _pool.lup());
-        _pool.removeQuoteToken(3_500 * 1e18, 1606);
+        vm.expectRevert("S:RAQT:NO_CLAIM");
+        _pool.removeAllQuoteToken(1606);
 
         // lender removes all quote token, including interest, from the bucket
         changePrank(_lender);
@@ -222,7 +222,7 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         uint256 quoteWithInterest = 3_400.023138863804135800 * 1e18;
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), quoteWithInterest, _pool.indexToPrice(1663));
-        _pool.removeQuoteToken(3_500 * 1e18, 1606);
+        _pool.removeAllQuoteToken(1606);
         assertEq(_quote.balanceOf(address(_lender)), lenderBalanceBefore + quoteWithInterest);
         assertEq(_pool.lpBalance(1606, address(_lender)), 0);
 

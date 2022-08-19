@@ -179,7 +179,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         emit Transfer(address(_pool), address(_bidder), amountWithInterest);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_bidder), p2550, amountWithInterest, _pool.indexToPrice(2552));
-        _pool.removeQuoteToken(amountToPurchase, 2550);
+        _pool.removeAllQuoteToken(2550);
         assertEq(_quote.balanceOf(address(_bidder)), amountWithInterest);
         // bidder withdraws unused collateral
         uint256 collateralRemoved = 0;

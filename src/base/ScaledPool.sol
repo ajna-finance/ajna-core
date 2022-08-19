@@ -140,28 +140,52 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
 
-    function removeQuoteToken(uint256 maxAmount_, uint256 index_) external override returns (uint256 lpAmount_) {
+    event Debug(string where, uint256 what);
+
+    function removeAllQuoteToken(uint256 index_) external returns (uint256 lpAmount_) {
         // scale the tree, accumulating interest owed to lenders
-        uint256 curDebt = _accruePoolInterest();
+        _accruePoolInterest();
+
+        Bucket memory bucket        = buckets[index_];
+        uint256 availableQuoteToken = _rangeSum(index_, index_);
+        uint256 rate                = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
+        lpAmount_                   = lpBalance[index_][msg.sender];
+        uint256 amount              = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
+
+        emit Debug("removeAllQuoteToken amount", amount);
+
+        require(availableQuoteToken > 0, "S:RAQT:NO_QT");
+        require(amount > 0,              "S:RAQT:NO_CLAIM");
+
+        if (amount > availableQuoteToken) {
+            // user is owed more quote token than is available in the bucket
+            amount = availableQuoteToken;
+            lpAmount_ = Maths.wrdivr(amount, rate);
+        } // else user is redeeming all of their LPs
+
+        _redeemLPForQuoteToken(bucket, lpAmount_, amount, index_);
+    }
+
+    function removeQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
+        // scale the tree, accumulating interest owed to lenders
+        _accruePoolInterest();
 
         // determine amount of quote token to remove
         Bucket memory bucket        = buckets[index_];
         uint256 availableQuoteToken = _rangeSum(index_, index_);
         uint256 rate                = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs        = lpBalance[index_][msg.sender];
-        uint256 claimableQuoteToken = Maths.rayToWad(Maths.rmul(availableLPs, rate));
 
-        uint256 amount;
-        if (maxAmount_ > claimableQuoteToken && availableQuoteToken >= claimableQuoteToken) {
-            // lender wants to redeem all of their LPB for quote token, and the bucket has enough to offer
-            amount = claimableQuoteToken;
-            lpAmount_ = availableLPs;
-        } else {
-            // calculate how much quote token may be awarded to lender, and how much LPB to redeem
-            amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, claimableQuoteToken));
-            lpAmount_ = Maths.wrdivr(amount, rate);
-        }
+        // ensure user can actually remove that much
+        require(amount_ <= availableQuoteToken, "S:RQT:INSUF_QT");
+        lpAmount_ = Maths.wrdivr(amount_, rate);
+        require(availableLPs != 0 && lpAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
 
+        _redeemLPForQuoteToken(bucket, lpAmount_, amount_, index_);
+    }
+
+    // TODO: move to appropriate location in file
+    function _redeemLPForQuoteToken(Bucket memory bucket, uint256 lpAmount_, uint256 amount, uint256 index_) internal {
         // update bucket accounting
         bucket.lpAccumulator -= lpAmount_;
         buckets[index_] = bucket;
@@ -173,7 +197,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // update pool accounting
         uint256 newLup = _lup();
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
-        _updateInterestRate(curDebt, newLup);
+        _updateInterestRate(borrowerDebt, newLup);
 
         // move quote token amount from pool to lender
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
