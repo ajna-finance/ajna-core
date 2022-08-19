@@ -43,7 +43,6 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
 
         // Calculate total insertions 
         uint256 insertsDec = bound(insertions_, 1, 8000);
-        //uint256 insertsDec = 2;
 
         // Calculate total amount to insert
         uint256 totalAmount = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
@@ -156,6 +155,9 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(900 * 1e18),   11);
         assertEq(tree.findSum(1_000 * 1e18), 8191);
     }
+
+
+
 
 
     /**

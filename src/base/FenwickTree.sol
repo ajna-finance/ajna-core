@@ -5,6 +5,10 @@ pragma solidity 0.8.14;
 import { Maths } from "../libraries/Maths.sol";
 
 abstract contract FenwickTree {
+
+    event log_name_uint(string key, uint256 val);
+    event log_name_bool(string key, bool val);
+
     /**
      *  @notice size of the FenwickTree.
      */
@@ -45,30 +49,29 @@ abstract contract FenwickTree {
 
         i_ += 1;
         uint256 sum;
-        uint256 j;
-        uint256 df = f_ - Maths.WAD;    // difference factor
+        uint256 j;                      // Tracks range parents of starting node, i_
+        uint256 df = f_ - Maths.WAD;    // Difference factor
 
         uint256 scaledI;
-        uint256 scaledJ;
 
         while (i_ > 0) {
             scaledI =  scaling[i_];
             
-            // Calc sum and scale value of current node i.
+            // Calc sum, will only be stored in range parents of starting node, i_
             sum = scaledI != 0 ? sum + Maths.wmul(Maths.wmul(df, values[i_]), scaledI) : sum + Maths.wmul(df, values[i_]);
+
+            // Apply scaling to all range parents less then starting node, i_
             scaling[i_] = scaledI != 0 ? Maths.wmul(f_, scaledI) : f_;
 
             // Increase j and decrement current node i by one binary index.
-            j = i_ + _lsb(i_);
-            i_ -= _lsb(i_); 
+            j = i_ + _lsb(i_); 
+            i_ -= _lsb(i_);
 
             // Execute while i is a range parent of j (zero is the highest parent).
             while ((_lsb(j) < _lsb(i_)) || (i_ == 0 && j <= SIZE)) {
 
-                // Write sums to range parent .
+                // Sum > 0 only when j is a range parent of starting node, i_.
                 values[j] += sum;
-                scaledJ = scaling[j];
-                if (scaledJ != 0) sum = Maths.wmul(sum, scaledJ);
 
                 // Increase j to point to next range parent.
                 j += _lsb(j);
@@ -85,16 +88,15 @@ abstract contract FenwickTree {
     function _add(uint256 i_, uint256 x_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:A:INVALID_INDEX");
 
-        i_ += 1; // why does this exist if we minus in l 95?
-        uint256 j = 8192;           // 1 << 13
-        uint256 ii;                 // binary index offset
+        uint256 j = 8192;           // Binary index, 1 << 13
+        uint256 ii;                 // Binary index offset
         uint256 sc = Maths.WAD;
 
         uint256 scaled;
 
         while (j > 0) {
             // If passed in node is in current range, updates are confined to range for remaining iterations.
-            if (((i_ - 1) & j) != 0) {
+            if ((i_ & j) != 0) {
 
                 // Increase binary index offset to point next node in range.
                 ii += j;
@@ -118,8 +120,7 @@ abstract contract FenwickTree {
     function _remove(uint256 i_, uint256 x_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:R:INVALID_INDEX");
 
-        i_ += 1; // why does this exist if we minus in l 130?
-        uint256 j = 8192;          // 1 << 13
+        uint256 j = 8192;          // Binary index, 1 << 13
         uint256 ii;                // Binary index offset
         uint256 sc = Maths.WAD;
 
@@ -127,7 +128,7 @@ abstract contract FenwickTree {
 
         while (j > 0) {
             // if requested node is in current range, updates are confined to range for remaining iterations.
-            if (((i_ - 1) & j) != 0) {  
+            if ((i_ & j) != 0) {  
 
                 // Increase binary index offset to point next node in range.
                 ii += j;
@@ -151,7 +152,7 @@ abstract contract FenwickTree {
     function _prefixSum(uint256 i_) internal view returns (uint256 s_) {
         i_ += 1;                   // Translate from 0 -> 1 indexed array
         uint256 sc = Maths.WAD;
-        uint256 j  = 8192;         // 1 << 13
+        uint256 j  = 8192;         // Binary index, 1 << 13
         uint256 ii;                // Binary index offset
 
         uint256 scaled;
