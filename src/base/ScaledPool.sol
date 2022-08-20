@@ -140,7 +140,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
 
-    function removeAllQuoteToken(uint256 index_) external returns (uint256 lpAmount_) {
+    function removeAllQuoteToken(uint256 index_) external returns (uint256 amount_, uint256 lpAmount_) {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
@@ -148,18 +148,18 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 availableQuoteToken = _rangeSum(index_, index_);
         uint256 rate                = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpAmount_                   = lpBalance[index_][msg.sender];
-        uint256 amount              = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
+        amount_                     = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
 
         require(availableQuoteToken != 0, "S:RAQT:NO_QT");
-        require(amount != 0,              "S:RAQT:NO_CLAIM");
+        require(amount_ != 0,             "S:RAQT:NO_CLAIM");
 
-        if (amount > availableQuoteToken) {
+        if (amount_ > availableQuoteToken) {
             // user is owed more quote token than is available in the bucket
-            amount = availableQuoteToken;
-            lpAmount_ = Maths.wrdivr(amount, rate);
+            amount_ = availableQuoteToken;
+            lpAmount_ = Maths.wrdivr(amount_, rate);
         } // else user is redeeming all of their LPs
 
-        _redeemLPForQuoteToken(bucket, lpAmount_, amount, index_);
+        _redeemLPForQuoteToken(bucket, lpAmount_, amount_, index_);
     }
 
     function removeQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
@@ -177,26 +177,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         require(availableLPs != 0 && lpAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
 
         _redeemLPForQuoteToken(bucket, lpAmount_, amount_, index_);
-    }
-
-    // TODO: move to appropriate location in file
-    function _redeemLPForQuoteToken(Bucket memory bucket, uint256 lpAmount_, uint256 amount, uint256 index_) internal {
-        // update bucket accounting
-        bucket.lpAccumulator -= lpAmount_;
-        buckets[index_] = bucket;
-        _remove(index_, amount); // update FenwickTree
-
-        // update lender accounting
-        lpBalance[index_][msg.sender] -= lpAmount_;
-
-        // update pool accounting
-        uint256 newLup = _lup();
-        require(_htp() <= newLup, "S:RQT:BAD_LUP");
-        _updateInterestRate(borrowerDebt, newLup);
-
-        // move quote token amount from pool to lender
-        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
-        emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
     }
 
     function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external {
@@ -270,6 +250,25 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
             newDebt_ = Maths.wmul(borrowerDebt_, Maths.wdiv(poolInflator_, borrowerInflator_));
         }
         newInflator_ = poolInflator_;
+    }
+
+    function _redeemLPForQuoteToken(Bucket memory bucket, uint256 lpAmount_, uint256 amount, uint256 index_) internal {
+        // update bucket accounting
+        bucket.lpAccumulator -= lpAmount_;
+        buckets[index_] = bucket;
+        _remove(index_, amount); // update FenwickTree
+
+        // update lender accounting
+        lpBalance[index_][msg.sender] -= lpAmount_;
+
+        // update pool accounting
+        uint256 newLup = _lup();
+        require(_htp() <= newLup, "S:RQT:BAD_LUP");
+        _updateInterestRate(borrowerDebt, newLup);
+
+        // move quote token amount from pool to lender
+        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
+        emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
     }
 
     function _updateInterestRate(uint256 curDebt_, uint256 lup_) internal {

@@ -156,9 +156,10 @@ interface IERC20Pool is IScaledPool {
     /**
      *  @notice Called by lenders to redeem the maximum amount of LP for unencumbered collateral.
      *  @param  index_    The bucket index from which unencumbered collateral will be removed.
+     *  @return amount_   The amount of collateral removed.
      *  @return lpAmount_ The amount of LP used for removing collateral.
      */
-    function removeAllCollateral(uint256 index_) external returns (uint256 lpAmount_);
+    function removeAllCollateral(uint256 index_) external returns (uint256 amount_, uint256 lpAmount_);
 
     /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.

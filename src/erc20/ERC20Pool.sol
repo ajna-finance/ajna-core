@@ -214,25 +214,25 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
     }
 
-    function removeAllCollateral(uint256 index_) external override returns (uint256 lpAmount_) {
+    function removeAllCollateral(uint256 index_) external override returns (uint256 amount_, uint256 lpAmount_) {
         _accruePoolInterest();
 
         Bucket memory bucket = buckets[index_];
         uint256 price        = _indexToPrice(index_);
         uint256 rate         = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpAmount_            = lpBalance[index_][msg.sender];
-        uint256 amount       = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
+        amount_              = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
 
         require(bucket.availableCollateral != 0, "S:RAC:NO_COL");
-        require(amount != 0,                     "S:RAC:NO_CLAIM");
+        require(amount_ != 0,                    "S:RAC:NO_CLAIM");
 
-        if (amount > bucket.availableCollateral) {
+        if (amount_ > bucket.availableCollateral) {
             // user is owed more collateral than is available in the bucket
-            amount = bucket.availableCollateral;
-            lpAmount_ = Maths.wrdivr(Maths.wmul(amount, price), rate);
+            amount_ = bucket.availableCollateral;
+            lpAmount_ = Maths.wrdivr(Maths.wmul(amount_, price), rate);
         } // else user is redeeming all of their LPs
 
-        _redeemLPForCollateral(bucket, lpAmount_, amount, price, index_);
+        _redeemLPForCollateral(bucket, lpAmount_, amount_, price, index_);
     }
 
     function removeCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
@@ -251,7 +251,10 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _redeemLPForCollateral(bucket, lpAmount_, amount_, price, index_);
     }
 
-    // TODO: move to appropriate location in file
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
+
     function _redeemLPForCollateral(
         Bucket memory bucket,
         uint256 lpAmount_,

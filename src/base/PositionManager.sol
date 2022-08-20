@@ -66,19 +66,21 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) nonReentrant {
         uint256 curPos = positions[params_.tokenId].lpTokens[params_.index];
-        require(params_.lpTokens <= curPos, "PM:DL:INSUF_LP_BAL");
+        require(params_.lpTokens != 0 && params_.lpTokens <= curPos, "PM:DL:INSUF_LP_BAL");
 
         // Pool interactions
         IERC20Pool pool = IERC20Pool(params_.pool);
         uint256 deposit = pool.depositAt(params_.index);
 
         // calculate equivalent underlying collateral for given lpTokens
-        uint256 collateralToRemove = pool.lpsToCollateral(deposit, params_.lpTokens, params_.index);
+        (, uint256 availableCollateral, ,) = pool.bucketAt(params_.index);
+        uint256 collateralToRemove;
         uint256 lpTokensUsed;
-        if (collateralToRemove != 0) {
-            // remove collateral from price bucket and transfer to recipient
-            lpTokensUsed = pool.removeCollateral(collateralToRemove, params_.index);
-            ERC20(pool.collateralTokenAddress()).safeTransfer(params_.recipient, collateralToRemove);
+        if (availableCollateral != 0) {
+            (collateralToRemove, lpTokensUsed) = pool.removeAllCollateral(params_.index);
+            if (collateralToRemove != 0) {
+                ERC20(pool.collateralTokenAddress()).safeTransfer(params_.recipient, collateralToRemove);
+            }
         }
 
         uint256 remainingLpTokens = params_.lpTokens - lpTokensUsed;

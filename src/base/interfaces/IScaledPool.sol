@@ -218,9 +218,10 @@ interface IScaledPool {
     /**
      *  @notice Called by lenders to redeem the maximum amount of LP for quote token.
      *  @param  index_       The bucket index from which quote tokens will be removed.
+     *  @return amount_      The amount of quote token removed.
      *  @return lpAmount_    The amount of LP used for removing quote tokens.
      */
-    function removeAllQuoteToken(uint256 index_) external returns (uint256 lpAmount_);
+    function removeAllQuoteToken(uint256 index_) external returns (uint256 amount_, uint256 lpAmount_);
 
     /**
      *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
