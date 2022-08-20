@@ -378,15 +378,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return lpAccumulator_ != 0 ? Maths.wrdivr(bucketSize, lpAccumulator_) : Maths.RAY;
     }
 
-    function _lpsToCollateral(uint256 deposit_, uint256 lpTokens_, uint256 index_) internal view returns (uint256 collateralAmount_) {
-        Bucket memory bucket  = buckets[index_];
-        if (bucket.availableCollateral != 0) {
-            uint256 price     = _indexToPrice(index_);
-            uint256 rate      = _exchangeRate(deposit_, bucket.availableCollateral, bucket.lpAccumulator, index_);
-            collateralAmount_ = Maths.min(bucket.availableCollateral, Maths.rwdivw(Maths.rmul(lpTokens_, rate), price));
-        }
-    }
-
     function _lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) internal view returns (uint256 quoteAmount_) {
         Bucket memory bucket  = buckets[index_];
         uint256 rate          = _exchangeRate(deposit_, bucket.availableCollateral, bucket.lpAccumulator, index_);
@@ -467,10 +458,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function liquidityToPrice(uint256 index_) external view returns (uint256 quoteToken_) {
         quoteToken_ = _prefixSum(index_);
-    }
-
-    function lpsToCollateral(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
-        return _lpsToCollateral(deposit_, lpTokens_, index_);
     }
 
     function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
