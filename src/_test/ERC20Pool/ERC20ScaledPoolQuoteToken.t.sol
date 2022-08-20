@@ -152,6 +152,13 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
         assertEq(_quote.balanceOf(address(_pool)),   65_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 135_000 * 1e18);
+
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 35_000 * 1e18, BucketMath.MAX_PRICE);
+        uint256 removed;
+        (removed, lpRedeemed) = _pool.removeAllQuoteToken(2549);
+        assertEq(removed, 35_000 * 1e18);
+        assertEq(lpRedeemed, 35_000 * 1e27);
     }
 
     /**
@@ -176,10 +183,30 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         _pool.pledgeCollateral(3_500_000 * 1e18, address(0), address(0));
         _pool.borrow(70_000 * 1e18, 4551, address(0), address(0));
 
-        // should revert if removing quote token from higher price buckets would drive lup below htp
+        // ensure lender cannot withdraw from a bucket with no deposit
+        changePrank(_lender1);
+        vm.expectRevert("S:RAQT:NO_QT");
+        _pool.removeAllQuoteToken(1776);
+        // ensure lender with no LP cannot remove anything
+        assertEq(0, _pool.lpBalance(4550, address(_lender1)));
+        vm.expectRevert("S:RAQT:NO_CLAIM");
+        _pool.removeAllQuoteToken(4550);
+
+        // should revert if insufficient quote token
         changePrank(_lender);
+        vm.expectRevert("S:RQT:INSUF_QT");
+        _pool.removeQuoteToken(20_000 * 1e18, 4550);
+
+        // should revert if removing quote token from higher price buckets would drive lup below htp
         vm.expectRevert("S:RQT:BAD_LUP");
         _pool.removeQuoteToken(20_000 * 1e18, 4551);
+
+        // should revert if bucket has enough quote token, but lender has insufficient LP
+        changePrank(_lender1);
+        _pool.addQuoteToken(20_000 * 1e18, 4550);
+        changePrank(_lender);
+        vm.expectRevert("S:RQT:INSUF_LPS");
+        _pool.removeQuoteToken(15_000 * 1e18, 4550);
 
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(4990), 10_000 * 1e18, _pool.indexToPrice(4551));
@@ -210,20 +237,24 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertEq(lpb_before, _pool.lpBalance(1606, address(_lender)));
         assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
 
-        // ensure lender with no LP cannot remove anything
-        changePrank(_lender1);
-        assertEq(0, _pool.lpBalance(1606, address(_lender1)));
-        vm.expectRevert("S:RAQT:NO_CLAIM");
-        _pool.removeAllQuoteToken(1606);
+        // lender makes a partial withdrawal
+        changePrank(_lender);
+        uint256 expectedWithdrawal = 1_700 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), expectedWithdrawal, _pool.indexToPrice(1663));
+        uint lpRedeemed = _pool.removeQuoteToken(1_700 * 1e18, 1606);
+        assertEq(lpRedeemed, 1_699.988430646833722457777450974 * 1e27);
 
         // lender removes all quote token, including interest, from the bucket
-        changePrank(_lender);
         assertGt(_pool.indexToPrice(1606), _pool.htp());
-        uint256 quoteWithInterest = 3_400.023138863804135800 * 1e18;
+        expectedWithdrawal = 1_700.023138863804135800 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), quoteWithInterest, _pool.indexToPrice(1663));
-        _pool.removeAllQuoteToken(1606);
-        assertEq(_quote.balanceOf(address(_lender)), lenderBalanceBefore + quoteWithInterest);
+        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), expectedWithdrawal, _pool.indexToPrice(1663));
+        uint256 removed;
+        (removed, lpRedeemed) = _pool.removeAllQuoteToken(1606);
+        assertEq(removed, expectedWithdrawal);
+        assertEq(lpRedeemed, 1_700.011569353166277542222549026 * 1e27);
+        assertEq(_quote.balanceOf(address(_lender)), lenderBalanceBefore + 1_700 * 1e18 + expectedWithdrawal);
         assertEq(_pool.lpBalance(1606, address(_lender)), 0);
 
         // ensure bucket is empty
