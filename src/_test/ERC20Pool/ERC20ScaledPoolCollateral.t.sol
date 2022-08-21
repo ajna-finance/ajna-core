@@ -219,25 +219,60 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(testIndex);
         assertEq(availableCollateral, collateralToDeposit);
         assertEq(_pool.lpBalance(testIndex, address(_bidder)), 12_043.56808879152623138 * 1e27);
-
-        // check bucket state
-        (lpAccumulator, availableCollateral) = _pool.buckets(testIndex);
-        assertEq(availableCollateral, collateralToDeposit);
-        assertGt(availableCollateral, 0);
-        assertEq(_pool.lpBalance(testIndex, address(_bidder)), 12_043.568088791526231380000000000 * 1e27);
+        assertEq(lpAccumulator, _pool.lpBalance(testIndex, address(_bidder)));
 
         // check pool state and balances
         assertEq(_collateral.balanceOf(address(_lender)), 0);
         assertEq(_collateral.balanceOf(address(_pool)), collateralToDeposit);
         assertEq(_quote.balanceOf(address(_pool)),        0);
 
-        // actor withdraws their collateral
+        // actor withdraws some of their collateral
+        uint256 collateralToWithdraw = 1.53 * 1e18;
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), address(_bidder), collateralToDeposit);
+        emit Transfer(address(_pool), address(_bidder), collateralToWithdraw);
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateral(address(_bidder), priceAtTestIndex, collateralToDeposit);
-        uint256 lpRedeemed = _pool.removeCollateral(collateralToDeposit, testIndex);
-        assertEq(lpRedeemed, 12_043.56808879152623138 * 1e27);
+        emit RemoveCollateral(address(_bidder), priceAtTestIndex, collateralToWithdraw);
+        uint256 lpRedeemed = _pool.removeCollateral(collateralToWithdraw, testIndex);
+        assertEq(lpRedeemed, 4_606.664793962758783502850000000 * 1e27);
+
+        // actor withdraws remainder of their _collateral
+        collateralToWithdraw = 2.47 * 1e18;
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_bidder), collateralToWithdraw);
+        vm.expectEmit(true, true, true, true);
+        emit RemoveCollateral(address(_bidder), priceAtTestIndex, collateralToWithdraw);
+        uint256 collateralRemoved;
+        (collateralRemoved, lpRedeemed) = _pool.removeAllCollateral(testIndex);
+        assertEq(collateralRemoved, collateralToWithdraw);
+        assertEq(lpRedeemed, 7_436.90329482876744787715 * 1e27);
+    }
+
+    function testRemoveCollateralRequireChecks() external {
+        uint256 testIndex = 6348;
+
+        // should revert if no collateral in the bucket
+        changePrank(_lender);
+        vm.expectRevert("S:RAC:NO_COL");
+        _pool.removeAllCollateral(testIndex);
+        vm.expectRevert("S:RC:INSUF_COL");
+        _pool.removeCollateral(3.50 * 1e18, testIndex);
+
+        // another actor deposits some collateral
+        deal(address(_collateral), _bidder,  100 * 1e18);
+        changePrank(_bidder);
+        _collateral.approve(address(_pool), 100 * 1e18);
+        _pool.addCollateral(0.65 * 1e18, testIndex);
+
+        // should revert if insufficient collateral in the bucket
+        changePrank(_lender);
+        vm.expectRevert("S:RC:INSUF_COL");
+        _pool.removeCollateral(1.25 * 1e18, testIndex);
+
+        // should revert if actor does not have LP
+        vm.expectRevert("S:RAC:NO_CLAIM");
+        _pool.removeAllCollateral(testIndex);
+        vm.expectRevert("S:RC:INSUF_LPS");
+        _pool.removeCollateral(0.32 * 1e18, testIndex);
     }
 
     // TODO: add collateralization, utilization and encumberance test? -> use hardcoded amounts in pure functions without creaitng whole pool flows
