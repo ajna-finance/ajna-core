@@ -236,7 +236,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     function removeCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
-        Bucket memory bucket        = buckets[index_];
+        Bucket memory bucket = buckets[index_];
         require(amount_ <= bucket.availableCollateral, "S:RC:INSUF_COL");
 
         _accruePoolInterest();
