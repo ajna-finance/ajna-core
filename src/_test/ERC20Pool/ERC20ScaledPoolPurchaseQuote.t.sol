@@ -152,7 +152,6 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         changePrank(_lender1);
         _pool.addQuoteToken(4_000 * 1e18, 2550);
         _pool.addQuoteToken(5_000 * 1e18, 2552);
-
         skip(3600);
 
         // borrower draws debt

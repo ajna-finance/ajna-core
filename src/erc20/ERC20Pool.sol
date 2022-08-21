@@ -215,16 +215,16 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     function removeAllCollateral(uint256 index_) external override returns (uint256 amount_, uint256 lpAmount_) {
+        Bucket memory bucket = buckets[index_];
+        require(bucket.availableCollateral != 0, "S:RAC:NO_COL");
+
         _accruePoolInterest();
 
-        Bucket memory bucket = buckets[index_];
-        uint256 price        = _indexToPrice(index_);
-        uint256 rate         = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
-        lpAmount_            = lpBalance[index_][msg.sender];
-        amount_              = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
-
-        require(bucket.availableCollateral != 0, "S:RAC:NO_COL");
-        require(amount_ != 0,                    "S:RAC:NO_CLAIM");
+        uint256 price = _indexToPrice(index_);
+        uint256 rate  = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        lpAmount_     = lpBalance[index_][msg.sender];
+        amount_       = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
+        require(amount_ != 0, "S:RAC:NO_CLAIM");
 
         if (amount_ > bucket.availableCollateral) {
             // user is owed more collateral than is available in the bucket
@@ -236,15 +236,16 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     function removeCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
+        Bucket memory bucket        = buckets[index_];
+        require(amount_ <= bucket.availableCollateral, "S:RC:INSUF_COL");
+
         _accruePoolInterest();
 
-        Bucket memory bucket        = buckets[index_];
-        uint256 price               = _indexToPrice(index_);
-        uint256 rate                = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 availableLPs        = lpBalance[index_][msg.sender];
+        uint256 price        = _indexToPrice(index_);
+        uint256 rate         = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 availableLPs = lpBalance[index_][msg.sender];
 
         // ensure user can actually remove that much
-        require(amount_ <= bucket.availableCollateral, "S:RC:INSUF_COL");
         lpAmount_ = Maths.rdiv((amount_ * price / 1e9), rate);
         require(availableLPs != 0 && lpAmount_ <= availableLPs, "S:RC:INSUF_LPS");
 

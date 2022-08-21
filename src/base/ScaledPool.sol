@@ -144,18 +144,18 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
-        Bucket memory bucket        = buckets[index_];
         uint256 availableQuoteToken = _rangeSum(index_, index_);
-        uint256 rate                = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
-        lpAmount_                   = lpBalance[index_][msg.sender];
-        amount_                     = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
-
         require(availableQuoteToken != 0, "S:RAQT:NO_QT");
-        require(amount_ != 0,             "S:RAQT:NO_CLAIM");
+
+        Bucket memory bucket = buckets[index_];
+        uint256 rate         = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
+        lpAmount_            = lpBalance[index_][msg.sender];
+        amount_              = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
+        require(amount_ != 0, "S:RAQT:NO_CLAIM");
 
         if (amount_ > availableQuoteToken) {
             // user is owed more quote token than is available in the bucket
-            amount_ = availableQuoteToken;
+            amount_   = availableQuoteToken;
             lpAmount_ = Maths.wrdivr(amount_, rate);
         } // else user is redeeming all of their LPs
 
@@ -253,17 +253,16 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _redeemLPForQuoteToken(Bucket memory bucket, uint256 lpAmount_, uint256 amount, uint256 index_) internal {
-        // update bucket accounting
-        bucket.lpAccumulator -= lpAmount_;
-        buckets[index_] = bucket;
-        _remove(index_, amount); // update FenwickTree
+        _remove(index_, amount);  // update FenwickTree
 
-        // update lender accounting
-        lpBalance[index_][msg.sender] -= lpAmount_;
-
-        // update pool accounting
         uint256 newLup = _lup();
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
+
+        bucket.lpAccumulator -= lpAmount_;
+        lpBalance[index_][msg.sender] -= lpAmount_;
+
+        buckets[index_] = bucket; // persist bucket changes
+
         _updateInterestRate(borrowerDebt, newLup);
 
         // move quote token amount from pool to lender

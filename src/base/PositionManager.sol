@@ -66,7 +66,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) nonReentrant {
         uint256 curPos = positions[params_.tokenId].lpTokens[params_.index];
-        require(params_.lpTokens != 0 && params_.lpTokens <= curPos, "PM:DL:INSUF_LP_BAL");
+        require(params_.lpTokens <= curPos, "PM:DL:INSUF_LP_BAL");
 
         // Pool interactions
         IERC20Pool pool = IERC20Pool(params_.pool);
