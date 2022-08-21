@@ -98,28 +98,125 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         _quote.approve(address(_subsetPool), 200_000 * 1e18);
     }
 
-    /**************************************/
+    /***************************/
     /*** ERC721 Subset Tests ***/
-    /**************************************/
+    /***************************/
 
-    function testMultipleBorrowWithInterestAccumulation() external {
+    // TODO: skip block number ahead as well
+    function testBorrowerInterestAccumulation() external {
+        changePrank(_lender);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2550);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2551);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2552);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2553);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2554);
+
+        skip(864000);
+
+        // borrower adds collateral and borrows initial amount
+        changePrank(_borrower);
+        uint256[] memory tokenIdsToAdd = new uint256[](3);
+        tokenIdsToAdd[0] = 1;
+        tokenIdsToAdd[1] = 3;
+        tokenIdsToAdd[2] = 5;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
+        _subsetPool.borrow(5_000 * 1e18, 2551, address(0), address(0));
+
+        assertEq(_subsetPool.borrowerDebt(), 5_004.807692307692310000 * 1e18);
+        (uint256 debt, uint256 pendingDebt, uint256[] memory col, uint256 inflator) = _subsetPool.borrowerInfo(address(_borrower));
+        assertEq(debt,        5_004.807692307692310000 * 1e18);
+        assertEq(pendingDebt, 5_010.981808339947401080 * 1e18);
+        assertEq(col.length,  3);
+        assertEq(inflator,    1 * 1e18);
+
+        // borrower pledge additional collateral after some time has passed
+        skip(864000);
+        tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 51;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
+        assertEq(_subsetPool.borrowerDebt(), 5_017.163540990287215539 * 1e18);
+        (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
+        assertEq(debt,        5_017.163540990287215539 * 1e18);
+        assertEq(pendingDebt, 5_017.163540990287215539 * 1e18);
+        assertEq(col.length,  4);
+        assertEq(inflator,    1.002468795894312911 * 1e18);
+
+        // borrower pulls some of their collateral after some time has passed
+        skip(864000);
+        uint256[] memory tokenIdsToRemove = new uint256[](1);
+        tokenIdsToRemove[0] = 1;
+        _subsetPool.pullCollateral(tokenIdsToRemove, address(0), address(0));
+        assertEq(_subsetPool.borrowerDebt(), 5_022.733620349293441850 * 1e18);
+        (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
+        assertEq(debt,        5_022.733620349293441850 * 1e18);
+        assertEq(pendingDebt, 5_022.733620349293441850 * 1e18);
+        assertEq(col.length,  3);
+        assertEq(inflator,    1.003581741625987546 * 1e18);
+
+        // borrower borrows some additional quote after some time has passed
+        skip(864000);
+        _subsetPool.borrow(1_000 * 1e18, 3000, address(0), address(0));
+        assertEq(_subsetPool.borrowerDebt(), 6_028.452940372539936903 * 1e18);
+        (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
+        assertEq(debt,        6_028.452940372539936903 * 1e18);
+        assertEq(pendingDebt, 6_028.452940372539936903 * 1e18);
+        assertEq(col.length,  3);
+        assertEq(inflator,    1.004584449181064656 * 1e18);
+
+        // mint additional quote to borrower to enable repayment
+        deal(address(_quote), _borrower, 20_000 * 1e18);
+
+        // borrower repays their loan after some additional time
+        skip(864000);
+        (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
+        _subsetPool.repay(pendingDebt, address(0), address(0));
+        assertEq(_subsetPool.borrowerDebt(), 0);
+        (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
+        assertEq(debt,        0);
+        assertEq(pendingDebt, 0);
+        assertEq(col.length,  3);
+        assertEq(inflator,    1.005487742520903760 * 1e18);
+
+    }
+
+    // TODO: finish implementing
+    function testMultipleBorrowerInterestAccumulation() external {
 
     }
 
     function testBorrowLimitReached() external {
+        // lender deposits 10000 Quote into 3 buckets
+        changePrank(_lender);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2550);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2551);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2552);
 
+        // borrower deposits three NFTs into the subset pool
+        changePrank(_borrower);
+        uint256[] memory tokenIdsToAdd = new uint256[](3);
+        tokenIdsToAdd[0] = 1;
+        tokenIdsToAdd[1] = 3;
+        tokenIdsToAdd[2] = 5;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
+
+        // should revert if insufficient quote available before limit price
+        vm.expectRevert("S:B:LIMIT_REACHED");
+        _subsetPool.borrow(21_000 * 1e18, 2551, address(0), address(0));
     }
 
+    // TODO: finish implementing
     function testBorrowBorrowerUnderCollateralized() external {
 
     }
 
+    // TODO: finish implementing
     function testBorrowPoolUnderCollateralized() external {
 
     }
 
     function testBorrowAndRepay() external {
         // lender deposits 10000 Quote into 3 buckets
+        changePrank(_lender);
         _subsetPool.addQuoteToken(10_000 * 1e18, 2550);
         _subsetPool.addQuoteToken(10_000 * 1e18, 2551);
         _subsetPool.addQuoteToken(10_000 * 1e18, 2552);
