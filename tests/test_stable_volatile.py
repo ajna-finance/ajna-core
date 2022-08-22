@@ -85,7 +85,7 @@ def add_initial_liquidity(lenders, pool, scaled_pool_utils):
 
 
 def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
-    target_debt = (pool.treeSum() - pool.borrowerDebt()) * target_utilization
+    target_debt = (pool.poolSize() - pool.borrowerDebt()) * target_utilization
     for borrower_index in range(0, len(borrowers) - 1):
         # determine amount we want to borrow and how much collateral should be deposited
         borrower = borrowers[borrower_index]
@@ -226,7 +226,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, durati
 def draw_debt(borrower, borrower_index, pool, test_utils, collateralization=1.1):
     # Draw debt based on added liquidity
     borrow_amount = get_cumulative_bucket_deposit(pool, (borrower_index % 4) + 1)
-    pool_quote_on_deposit = pool.treeSum() - pool.borrowerDebt()
+    pool_quote_on_deposit = pool.poolSize() - pool.borrowerDebt()
     borrow_amount = min(pool_quote_on_deposit / 2, borrow_amount)
     collateral_to_deposit = borrow_amount / pool.lup() * collateralization * 10**18
     print(f" borrower {borrower_index} borrowing {borrow_amount / 10**18:.1f} "
@@ -259,12 +259,11 @@ def remove_quote_token(lender, lender_index, price, pool):
     if lp_balance > 0:
         exchange_rate = pool.exchangeRate(price_index)
         claimable_quote = lp_balance * exchange_rate / 10**36
-        print(f" lender {lender_index} removing {lp_balance/1e27:.1f} lp "
-              f"(~{claimable_quote / 10**18:.1f} quote) from bucket {price_index} ({price / 10**18:.1f}); "
-              f"exchange rate is {exchange_rate/1e27:.8f}")
+        print(f" lender {lender_index} removing {claimable_quote / 10**18:.1f} quote"
+              f" from bucket {price_index} ({price / 10**18:.1f}); exchange rate is {exchange_rate/1e27:.8f}")
         if not ensure_pool_is_funded(pool, claimable_quote * 2, "withdraw"):
             return
-        tx = pool.removeQuoteToken(int(claimable_quote * 1.01), price_index, {"from": lender})
+        tx = pool.removeAllQuoteToken(price_index, {"from": lender})
     else:
         print(f" lender {lender_index} has no claim to bucket {price / 10**18:.1f}")
 
@@ -324,7 +323,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
     start_time = chain.time()
     end_time = start_time + SECONDS_PER_DAY * 3
     actor_id = 0
-    with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay']):
+    with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeAllQuoteToken', 'repay']):
         while chain.time() < end_time:
             # hit the pool an hour at a time, calculating interest and then sending transactions
             actor_id = draw_and_bid(lenders, borrowers, actor_id, pool1, chain, test_utils)

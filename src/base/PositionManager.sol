@@ -73,12 +73,14 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         uint256 deposit = pool.depositAt(params_.index);
 
         // calculate equivalent underlying collateral for given lpTokens
-        uint256 collateralToRemove = pool.lpsToCollateral(deposit, params_.lpTokens, params_.index);
+        (, uint256 availableCollateral, ,) = pool.bucketAt(params_.index);
+        uint256 collateralToRemove;
         uint256 lpTokensUsed;
-        if (collateralToRemove != 0) {
-            // remove collateral from price bucket and transfer to recipient
-            lpTokensUsed = pool.removeCollateral(collateralToRemove, params_.index);
-            ERC20(pool.collateralTokenAddress()).safeTransfer(params_.recipient, collateralToRemove);
+        if (availableCollateral != 0) {
+            (collateralToRemove, lpTokensUsed) = pool.removeAllCollateral(params_.index);
+            if (collateralToRemove != 0) {
+                ERC20(pool.collateralTokenAddress()).safeTransfer(params_.recipient, collateralToRemove);
+            }
         }
 
         uint256 remainingLpTokens = params_.lpTokens - lpTokensUsed;
