@@ -6,9 +6,6 @@ import { Maths } from "../libraries/Maths.sol";
 
 abstract contract FenwickTree {
 
-    event log_name_uint(string key, uint256 val);
-    event log_name_bool(string key, bool val);
-
     /**
      *  @notice size of the FenwickTree.
      */
