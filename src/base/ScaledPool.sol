@@ -59,9 +59,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     mapping(uint256 => Bucket) public override buckets;
 
     /**
-     *  @dev deposit index -> lender address -> lender lp [RAY]
+     *  @dev deposit index -> lender address -> lender lp [RAY] and deposit timestamp
      */
-    mapping(uint256 => mapping(address => uint256)) public override lpBalance;
+    mapping(uint256 => mapping(address => BucketLender)) public override bucketLenders;
 
     /** @dev Used for tracking LP token ownership address for transferLPTokens access control */
     mapping(address => address) public override lpTokenOwnership;
@@ -76,13 +76,15 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     function addQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
         uint256 curDebt = _accruePoolInterest();
 
+        // TODO: Read structs as memory
         Bucket storage bucket = buckets[index_];
         uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
-
         lpbChange_           = Maths.rdiv(Maths.wadToRay(amount_), rate);
         bucket.lpAccumulator += lpbChange_;
 
-        lpBalance[index_][msg.sender] += lpbChange_;
+        BucketLender storage bucketLender = bucketLenders[index_][msg.sender];
+        bucketLender.lpBalance            += lpbChange_;
+        bucketLender.lastQuoteDeposit     = block.timestamp;
 
         _add(index_, amount_);
 
@@ -101,8 +103,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
-        uint256 availableLPs  = lpBalance[fromIndex_][msg.sender];
-        uint256 curDebt = _accruePoolInterest();
+        BucketLender storage fromBucketLender = bucketLenders[fromIndex_][msg.sender];
+        uint256 availableLPs        = fromBucketLender.lpBalance;
+        uint256 curDebt             = _accruePoolInterest();
 
         // determine amount of quote token to move
         Bucket storage fromBucket   = buckets[fromIndex_];
@@ -131,9 +134,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 newLup = _lup();
         if (fromIndex_ < toIndex_) require(_htp() <= newLup, "S:MQT:LUP_BELOW_HTP");
 
+        // TODO: impose penalty if quote moved from above the PTP to below the PTP
+
         // update lender accounting
-        lpBalance[fromIndex_][msg.sender] -= lpbAmount;
-        lpBalance[toIndex_][msg.sender]   += lpbChange;
+        BucketLender storage toBucketLender   = bucketLenders[toIndex_][msg.sender];
+        fromBucketLender.lpBalance            -= lpbAmount;
+        toBucketLender.lpBalance              += lpbChange;
+        bucketLenders[fromIndex_][msg.sender] = fromBucketLender;
+        bucketLenders[toIndex_][msg.sender]   = toBucketLender;
 
         _updateInterestRate(curDebt, newLup);
 
@@ -148,10 +156,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         require(availableQuoteToken != 0, "S:RAQT:NO_QT");
 
         Bucket memory bucket = buckets[index_];
+        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         uint256 rate         = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
-        lpAmount_            = lpBalance[index_][msg.sender];
+        lpAmount_            = bucketLender.lpBalance;
         amount_              = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
         require(amount_ != 0, "S:RAQT:NO_CLAIM");
+
+        // TODO: impose penalty if quote withdrawn above the PTP
 
         if (amount_ > availableQuoteToken) {
             // user is owed more quote token than is available in the bucket
@@ -159,24 +170,27 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
             lpAmount_ = Maths.wrdivr(amount_, rate);
         } // else user is redeeming all of their LPs
 
-        _redeemLPForQuoteToken(bucket, lpAmount_, amount_, index_);
+        _redeemLPForQuoteToken(bucket, bucketLender, lpAmount_, amount_, index_);
     }
 
     function removeQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
-        Bucket memory bucket        = buckets[index_];
-        uint256 availableQuoteToken = _rangeSum(index_, index_);
-        uint256 rate                = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 availableLPs        = lpBalance[index_][msg.sender];
+        Bucket memory bucket             = buckets[index_];
+        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
+        uint256 availableQuoteToken      = _rangeSum(index_, index_);
+        uint256 rate                     = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 availableLPs             = bucketLender.lpBalance;
+
+        // TODO: impose penalty if quote withdrawn above the PTP
 
         // ensure user can actually remove that much
         require(amount_ <= availableQuoteToken, "S:RQT:INSUF_QT");
         lpAmount_ = Maths.wrdivr(amount_, rate);
         require(availableLPs != 0 && lpAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
 
-        _redeemLPForQuoteToken(bucket, lpAmount_, amount_, index_);
+        _redeemLPForQuoteToken(bucket, bucketLender, lpAmount_, amount_, index_);
     }
 
     function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external {
@@ -193,11 +207,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
             prices[i] = _indexToPrice(indexes_[i]);
 
             // calculate lp tokens to be moved in the given bucket
-            uint256 tokensToTransfer = lpBalance[indexes_[i]][owner_];
+            uint256 tokensToTransfer = bucketLenders[i][msg.sender].lpBalance;
+
+            // TODO: transfer the deposit timestamp as well?
 
             // move lp tokens to the new owners address
-            delete lpBalance[indexes_[i]][owner_];
-            lpBalance[indexes_[i]][newOwner_] += tokensToTransfer;
+            delete bucketLenders[indexes_[i]][owner_];
+            bucketLenders[indexes_[i]][newOwner_].lpBalance += tokensToTransfer;
 
             tokensTransferred += tokensToTransfer;
 
@@ -252,16 +268,24 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         newInflator_ = poolInflator_;
     }
 
-    function _redeemLPForQuoteToken(Bucket memory bucket, uint256 lpAmount_, uint256 amount, uint256 index_) internal {
+    function _redeemLPForQuoteToken(
+        Bucket memory bucket,
+        BucketLender memory bucketLender,
+        uint256 lpAmount_,
+        uint256 amount,
+        uint256 index_
+    ) internal {
         _remove(index_, amount);  // update FenwickTree
 
         uint256 newLup = _lup();
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
 
         bucket.lpAccumulator -= lpAmount_;
-        lpBalance[index_][msg.sender] -= lpAmount_;
+        bucketLender.lpBalance -= lpAmount_;
 
-        buckets[index_] = bucket; // persist bucket changes
+        // persist bucket changes
+        buckets[index_] = bucket;
+        bucketLenders[index_][msg.sender] = bucketLender;
 
         _updateInterestRate(borrowerDebt, newLup);
 
@@ -344,6 +368,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
             return Maths.wmul(loans[loanQueueHead].thresholdPrice, inflatorSnapshot);
         }
         return 0;
+    }
+
+    function _ptp() internal view returns (uint256) {
+        return Maths.wdiv(borrowerDebt, pledgedCollateral);
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
