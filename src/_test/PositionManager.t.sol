@@ -792,7 +792,6 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
         IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
             _tokenId, _testLender, address(_pool), _mintIndex, 50_000 * 1e27
         );
-
         vm.expectEmit(true, true, true, true);
         emit DecreaseLiquidity(_testLender, _mintPrice);
         _positionManager.decreaseLiquidity(decreaseLiquidityParams);
