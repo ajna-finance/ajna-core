@@ -109,11 +109,16 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
 
         // check LPs
-        assertEq(_pool.lpBalance(depositIndexHighest, address(_lender)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexHigh, address(_lender)),    10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexMed, address(_lender)),     10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexLow, address(_lender)),     10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexLowest, address(_lender)),  10_000 * 1e27);
+        (uint256 lpBalance, ) = _pool.bucketLenders(depositIndexHighest, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexHigh, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexMed, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexLow, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexLowest, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
 
         // check buckets
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(depositIndexHighest);

@@ -71,9 +71,10 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.poolSize(),                        10_000 * 1e18);
-        assertEq(_pool.lpBalance(2550, address(_lender)), 10_000 * 1e27);
-        assertEq(_pool.exchangeRate(2550),                     1 * 1e27);
+        (uint256 lpBalance, ) = _pool.bucketLenders(2550, address(_lender));
+        assertEq(_pool.poolSize(),         10_000 * 1e18);
+        assertEq(lpBalance,                10_000 * 1e27);
+        assertEq(_pool.exchangeRate(2550), 1 * 1e27);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   10_000 * 1e18);
@@ -94,8 +95,9 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.poolSize(),                        30_000 * 1e18);
-        assertEq(_pool.lpBalance(2551, address(_lender)), 20_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2551, address(_lender));
+        assertEq(_pool.poolSize(), 30_000 * 1e18);
+        assertEq(lpBalance,        20_000 * 1e27);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   30_000 * 1e18);
@@ -116,8 +118,9 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.poolSize(),                        70_000 * 1e18);
-        assertEq(_pool.lpBalance(2549, address(_lender)), 40_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2549, address(_lender));
+        assertEq(_pool.poolSize(), 70_000 * 1e18);
+        assertEq(lpBalance,        40_000 * 1e27);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   70_000 * 1e18);
@@ -138,7 +141,8 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         _pool.addQuoteToken(10_000 * 1e18, 2550);
         _pool.addQuoteToken(20_000 * 1e18, 2551);
 
-        assertEq(_pool.lpBalance(2549, address(_lender)), 40_000 * 1e27);
+        (uint256 lpBalance, ) = _pool.bucketLenders(2549, address(_lender));
+        assertEq(lpBalance, 40_000 * 1e27);
 
         assertEq(_quote.balanceOf(address(_pool)),   70_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 130_000 * 1e18);
@@ -148,7 +152,8 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         uint256 lpRedeemed = _pool.removeQuoteToken(5_000 * 1e18, 2549);
         assertEq(lpRedeemed, 5_000 * 1e27);
 
-        assertEq(_pool.lpBalance(2549, address(_lender)), 35_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2549, address(_lender));
+        assertEq(lpBalance, 35_000 * 1e27);
 
         assertEq(_quote.balanceOf(address(_pool)),   65_000 * 1e18);
         assertEq(_quote.balanceOf(address(_lender)), 135_000 * 1e18);
@@ -188,7 +193,8 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         vm.expectRevert("S:RAQT:NO_QT");
         _pool.removeAllQuoteToken(1776);
         // ensure lender with no LP cannot remove anything
-        assertEq(0, _pool.lpBalance(4550, address(_lender1)));
+        (uint256 lpBalance, ) = _pool.bucketLenders(4550, address(_lender1));
+        assertEq(0, lpBalance);
         vm.expectRevert("S:RAQT:NO_CLAIM");
         _pool.removeAllQuoteToken(4550);
 
@@ -218,10 +224,12 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         changePrank(_lender);
         _pool.addQuoteToken(3_400 * 1e18, 1606);
         _pool.addQuoteToken(3_400 * 1e18, 1663);
-        uint256 lpb_before = _pool.lpBalance(1606, address(_lender));
+        (uint256 lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
+        uint256 lpb_before = lpBalance;
         uint256 exchangeRateBefore = _pool.exchangeRate(1606);
         skip(3600);
-        assertEq(lpb_before, _pool.lpBalance(1606, address(_lender)));
+        (lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
+        assertEq(lpb_before, lpBalance);
         assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
         uint256 lenderBalanceBefore = _quote.balanceOf(address(_lender));
 
@@ -234,7 +242,8 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertGt(limitPrice, 1663);
         _pool.borrow(3_000 * 1e18, limitPrice, address(0), address(0));
         skip(7200);
-        assertEq(lpb_before, _pool.lpBalance(1606, address(_lender)));
+        (lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
+        assertEq(lpb_before, lpBalance);
         assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
 
         // lender makes a partial withdrawal
@@ -255,7 +264,8 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertEq(removed, expectedWithdrawal);
         assertEq(lpRedeemed, 1_700.011569353166277542222549026 * 1e27);
         assertEq(_quote.balanceOf(address(_lender)), lenderBalanceBefore + 1_700 * 1e18 + expectedWithdrawal);
-        assertEq(_pool.lpBalance(1606, address(_lender)), 0);
+        (lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
+        assertEq(lpBalance, 0);
 
         // ensure bucket is empty
         (uint256 quote, uint256 collateral, uint256 lpb, ) = _pool.bucketAt(1606);
@@ -270,29 +280,37 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         _pool.addQuoteToken(10_000 * 1e18, 2550);
         _pool.addQuoteToken(20_000 * 1e18, 2551);
 
-        assertEq(_pool.lpBalance(2549, address(_lender)), 40_000 * 1e27);
-        assertEq(_pool.lpBalance(2552, address(_lender)), 0);
+        (uint256 lpBalance, ) = _pool.bucketLenders(2549, address(_lender));
+        assertEq(lpBalance, 40_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2552, address(_lender));
+        assertEq(lpBalance, 0);
 
         vm.expectEmit(true, true, false, true);
         emit MoveQuoteToken(address(_lender), 2549, 2552, 5_000 * 1e18, BucketMath.MAX_PRICE);
         _pool.moveQuoteToken(5_000 * 1e18, 2549, 2552);
 
-        assertEq(_pool.lpBalance(2549, address(_lender)), 35_000 * 1e27);
-        assertEq(_pool.lpBalance(2552, address(_lender)), 5_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2549, address(_lender));
+        assertEq(lpBalance, 35_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2552, address(_lender));
+        assertEq(lpBalance, 5_000 * 1e27);
 
         vm.expectEmit(true, true, false, true);
         emit MoveQuoteToken(address(_lender), 2549, 2540, 5_000 * 1e18, BucketMath.MAX_PRICE);
         _pool.moveQuoteToken(5_000 * 1e18, 2549, 2540);
 
-        assertEq(_pool.lpBalance(2549, address(_lender)), 30_000 * 1e27);
-        assertEq(_pool.lpBalance(2540, address(_lender)), 5_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2549, address(_lender));
+        assertEq(lpBalance, 30_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2540, address(_lender));
+        assertEq(lpBalance, 5_000 * 1e27);
 
         vm.expectEmit(true, true, false, true);
         emit MoveQuoteToken(address(_lender), 2551, 2777, 15_000 * 1e18, BucketMath.MAX_PRICE);
         _pool.moveQuoteToken(15_000 * 1e18, 2551, 2777);
 
-        assertEq(_pool.lpBalance(2551, address(_lender)), 5_000 * 1e27);
-        assertEq(_pool.lpBalance(2777, address(_lender)), 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2551, address(_lender));
+        assertEq(lpBalance, 5_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2777, address(_lender));
+        assertEq(lpBalance, 15_000 * 1e27);
     }
 
     /**

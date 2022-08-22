@@ -141,13 +141,19 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         _pool.addQuoteToken(30_000 * 1e18, indexes[2]);
 
         // check lenders lp balance
-        assertEq(_pool.lpBalance(indexes[0], address(_lender1)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[1], address(_lender1)), 20_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[2], address(_lender1)), 30_000 * 1e27);
+        (uint256 lpBalance, ) = _pool.bucketLenders(indexes[0], address(_lender1));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_lender1));
+        assertEq(lpBalance, 20_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_lender1));
+        assertEq(lpBalance, 30_000 * 1e27);
 
-        assertEq(_pool.lpBalance(indexes[0], address(_lender2)), 0);
-        assertEq(_pool.lpBalance(indexes[1], address(_lender2)), 0);
-        assertEq(_pool.lpBalance(indexes[2], address(_lender2)), 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_lender2));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_lender2));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_lender2));
+        assertEq(lpBalance, 0);
 
         // set allowed owner to lender2 address
         _pool.approveNewPositionOwner(address(_lender2));
@@ -163,13 +169,19 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         assertEq(_pool.lpTokenOwnership(address(_lender1)), address(0));
 
         // check lenders lp balance
-        assertEq(_pool.lpBalance(indexes[0], address(_lender1)), 0);
-        assertEq(_pool.lpBalance(indexes[1], address(_lender1)), 0);
-        assertEq(_pool.lpBalance(indexes[2], address(_lender1)), 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_lender1));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_lender1));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_lender1));
+        assertEq(lpBalance, 0);
 
-        assertEq(_pool.lpBalance(indexes[0], address(_lender2)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[1], address(_lender2)), 20_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[2], address(_lender2)), 30_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_lender2));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_lender2));
+        assertEq(lpBalance, 20_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_lender2));
+        assertEq(lpBalance, 30_000 * 1e27);
     }
 
     function testTransferLPTokensForTwoIndexes() external {
@@ -192,13 +204,19 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         _pool.addQuoteToken(30_000 * 1e18, depositIndexes[2]);
 
         // check lenders lp balance
-        assertEq(_pool.lpBalance(depositIndexes[0], address(_lender1)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexes[1], address(_lender1)), 20_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexes[2], address(_lender1)), 30_000 * 1e27);
+        (uint256 lpBalance, ) = _pool.bucketLenders(depositIndexes[0], address(_lender1));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[1], address(_lender1));
+        assertEq(lpBalance, 20_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[2], address(_lender1));
+        assertEq(lpBalance, 30_000 * 1e27);
 
-        assertEq(_pool.lpBalance(depositIndexes[0], address(_lender2)), 0);
-        assertEq(_pool.lpBalance(depositIndexes[1], address(_lender2)), 0);
-        assertEq(_pool.lpBalance(depositIndexes[2], address(_lender2)), 0);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[0], address(_lender2));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[1], address(_lender2));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[2], address(_lender2));
+        assertEq(lpBalance, 0);
 
         // set allowed owner to lender2 address
         _pool.approveNewPositionOwner(address(_lender2));
@@ -214,13 +232,19 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         assertEq(_pool.lpTokenOwnership(address(_lender1)), address(0));
 
         // check lenders lp balance
-        assertEq(_pool.lpBalance(depositIndexes[0], address(_lender1)), 0);
-        assertEq(_pool.lpBalance(depositIndexes[1], address(_lender1)), 20_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexes[2], address(_lender1)), 0);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[0], address(_lender1));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[1], address(_lender1));
+        assertEq(lpBalance, 20_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[2], address(_lender1));
+        assertEq(lpBalance, 0);
 
-        assertEq(_pool.lpBalance(depositIndexes[0], address(_lender2)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexes[1], address(_lender2)), 0);
-        assertEq(_pool.lpBalance(depositIndexes[2], address(_lender2)), 30_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[0], address(_lender2));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[1], address(_lender2));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexes[2], address(_lender2));
+        assertEq(lpBalance, 30_000 * 1e27);
     }
 
     function testTransferLPTokensToLenderWithLPTokens() external {
@@ -245,13 +269,19 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         _pool.addQuoteToken(15_000 * 1e18, indexes[2]);
 
         // check lenders lp balance
-        assertEq(_pool.lpBalance(indexes[0], address(_lender1)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[1], address(_lender1)), 20_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[2], address(_lender1)), 30_000 * 1e27);
+        (uint256 lpBalance, ) = _pool.bucketLenders(indexes[0], address(_lender1));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_lender1));
+        assertEq(lpBalance, 20_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_lender1));
+        assertEq(lpBalance, 30_000 * 1e27);
 
-        assertEq(_pool.lpBalance(indexes[0], address(_lender2)), 5_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[1], address(_lender2)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[2], address(_lender2)), 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_lender2));
+        assertEq(lpBalance, 5_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_lender2));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_lender2));
+        assertEq(lpBalance, 15_000 * 1e27);
 
         // set allowed owner to lender2 address
         changePrank(_lender1);
@@ -268,13 +298,19 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         assertEq(_pool.lpTokenOwnership(address(_lender1)), address(0));
 
         // check lenders lp balance
-        assertEq(_pool.lpBalance(indexes[0], address(_lender1)), 0);
-        assertEq(_pool.lpBalance(indexes[1], address(_lender1)), 0);
-        assertEq(_pool.lpBalance(indexes[2], address(_lender1)), 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_lender1));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_lender1));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_lender1));
+        assertEq(lpBalance, 0);
 
-        assertEq(_pool.lpBalance(indexes[0], address(_lender2)), 15_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[1], address(_lender2)), 30_000 * 1e27);
-        assertEq(_pool.lpBalance(indexes[2], address(_lender2)), 45_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_lender2));
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_lender2));
+        assertEq(lpBalance, 30_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_lender2));
+        assertEq(lpBalance, 45_000 * 1e27);
     }
 
 }

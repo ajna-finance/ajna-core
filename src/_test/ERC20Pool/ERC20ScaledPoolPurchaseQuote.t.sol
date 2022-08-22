@@ -81,8 +81,10 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         // check bucket state
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(testIndex);
         assertEq(availableCollateral, collateralToPurchaseWith);
-        assertEq(_pool.lpBalance(testIndex, address(_lender)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(testIndex, address(_bidder)), 12_043.56808879152623138 * 1e27);
+        (uint256 lpBalance, ) = _pool.bucketLenders(testIndex, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndex, address(_bidder));
+        assertEq(lpBalance, 12_043.56808879152623138 * 1e27);
 
         // bidder uses their LP to purchase all quote token in the bucket
         vm.expectEmit(true, true, false, true);
@@ -96,8 +98,10 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         (lpAccumulator, availableCollateral) = _pool.buckets(testIndex);
         assertEq(availableCollateral, collateralToPurchaseWith);
         assertGt(availableCollateral, 0);
-        assertEq(_pool.lpBalance(testIndex, address(_lender)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(testIndex, address(_bidder)), 2_043.56808879152623138 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndex, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndex, address(_bidder));
+        assertEq(lpBalance, 2_043.56808879152623138 * 1e27);
 
         // check pool state and balances
         assertEq(_collateral.balanceOf(address(_lender)), 0);
@@ -114,7 +118,8 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         emit RemoveCollateral(address(_lender), priceAtTestIndex, lpValueInCollateral);
         _pool.removeAllCollateral(testIndex);
         assertEq(_collateral.balanceOf(address(_lender)), lpValueInCollateral);
-        assertEq(_pool.lpBalance(testIndex, address(_lender)), 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndex, address(_lender));
+        assertEq(lpBalance, 0);
 
         // bidder removes their _collateral
         changePrank(_bidder);
@@ -123,7 +128,8 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_bidder), priceAtTestIndex, 0.678725133191514712 * 1e18);
         _pool.removeAllCollateral(testIndex);
-        assertEq(_pool.lpBalance(testIndex, address(_bidder)), 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndex, address(_bidder));
+        assertEq(lpBalance, 0);
 
         // check pool balances
         assertEq(_collateral.balanceOf(address(_pool)), 0);
@@ -187,7 +193,8 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         emit RemoveCollateral(address(_bidder), p2550, expectedCollateral);
         _pool.removeAllCollateral(2550);
         collateralRemoved += expectedCollateral;
-        assertEq(_pool.lpBalance(2550, address(_bidder)), 0);
+        (uint256 lpBalance, ) = _pool.bucketLenders(2550, address(_bidder));
+        assertEq(lpBalance, 0);
         skip(7200);
 
         // lender exchanges their LP for collateral
@@ -197,7 +204,8 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         emit RemoveCollateral(address(_lender), p2550, expectedCollateral);
         _pool.removeAllCollateral(2550);
         collateralRemoved += expectedCollateral;
-        assertEq(_pool.lpBalance(2550, address(_lender)), 0);
+        (lpBalance, ) = _pool.bucketLenders(2550, address(_lender));
+        assertEq(lpBalance, 0);
         skip(3600);
 
         // lender1 exchanges their LP for collateral
@@ -207,7 +215,8 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         emit RemoveCollateral(address(_lender1), p2550, expectedCollateral);
         _pool.removeAllCollateral(2550);
         collateralRemoved += expectedCollateral;
-        assertEq(_pool.lpBalance(2550, address(_lender1)), 0);
+        (lpBalance, ) = _pool.bucketLenders(2550, address(_lender1));
+        assertEq(lpBalance, 0);
         assertEq(collateralRemoved, collateralToPurchaseWith);
 
         // check pool balances

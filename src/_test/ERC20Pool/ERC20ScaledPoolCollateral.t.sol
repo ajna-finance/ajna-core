@@ -218,8 +218,9 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         // check bucket state
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(testIndex);
         assertEq(availableCollateral, collateralToDeposit);
-        assertEq(_pool.lpBalance(testIndex, address(_bidder)), 12_043.56808879152623138 * 1e27);
-        assertEq(lpAccumulator, _pool.lpBalance(testIndex, address(_bidder)));
+        (uint256 lpBalance, ) = _pool.bucketLenders(testIndex, address(_bidder));
+        assertEq(lpBalance, 12_043.56808879152623138 * 1e27);
+        assertEq(lpAccumulator, lpBalance);
 
         // check pool state and balances
         assertEq(_collateral.balanceOf(address(_lender)), 0);

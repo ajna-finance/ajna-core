@@ -140,8 +140,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         BucketLender storage toBucketLender   = bucketLenders[toIndex_][msg.sender];
         fromBucketLender.lpBalance            -= lpbAmount;
         toBucketLender.lpBalance              += lpbChange;
-        bucketLenders[fromIndex_][msg.sender] = fromBucketLender;
-        bucketLenders[toIndex_][msg.sender]   = toBucketLender;
+        // TODO: load to memory, avoiding "stack too deep" error
+//        bucketLenders[fromIndex_][msg.sender] = fromBucketLender;
+//        bucketLenders[toIndex_][msg.sender]   = toBucketLender;
 
         _updateInterestRate(curDebt, newLup);
 
@@ -207,7 +208,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
             prices[i] = _indexToPrice(indexes_[i]);
 
             // calculate lp tokens to be moved in the given bucket
-            uint256 tokensToTransfer = bucketLenders[i][msg.sender].lpBalance;
+            uint256 tokensToTransfer = bucketLenders[indexes_[i]][owner_].lpBalance;
 
             // TODO: transfer the deposit timestamp as well?
 
