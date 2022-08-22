@@ -64,8 +64,9 @@ abstract contract FenwickTree {
             scaling[i_] = scaledI != 0 ? Maths.wmul(f_, scaledI) : f_;
 
             // Increase j and decrement current node i by one binary index.
-            j = i_ + _lsb(i_); 
-            i_ -= _lsb(i_);
+            uint256 lsbI = _lsb(i_);
+            j = i_ + lsbI;
+            i_ -= lsbI;
 
             // Execute while i is a range parent of j (zero is the highest parent).
             while ((_lsb(j) < _lsb(i_)) || (i_ == 0 && j <= SIZE)) {
@@ -221,18 +222,16 @@ abstract contract FenwickTree {
     }
 
     /**
-     *  @notice Get least significant bit (LSB) of intiger, i_.
+     *  @notice Get least significant bit (LSB) of integer, i_.
      *  @dev    Used primarily to decrement the binary index in loops, iterating over range parents.
-     *  @param  i_  The integer with which to return the LSB.
+     *  @param  i_   The integer with which to return the LSB.
+     *  @return lsb_ The least significant bit (LSB) of i_.
     */    
-    function _lsb(uint256 i_) internal pure returns (uint256) {
-        if (i_ == 0) return 0;
-        // "i & (-i)"
-        return
-            i_ &
-            ((i_ ^
-                0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff) +
-                1);
+    function _lsb(uint256 i_) internal pure returns (uint256 lsb_) {
+        if (i_ != 0) {
+            // "i & (-i)"
+            lsb_ = i_ & ((i_ ^ 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff) + 1);
+        }
     }
 
     function _treeSum() internal view returns (uint256) {
