@@ -17,7 +17,7 @@ abstract contract FenwickTree {
     uint256[8193] internal scaling; // scaling
 
     function _scale(uint256 i_) internal view returns (uint256 a_) {
-        require(i_ >= 0 && i_ < SIZE, "FW:S:INVALID_INDEX");
+        require(i_ < SIZE, "FW:S:INVALID_INDEX");
 
         a_ = Maths.WAD;
         uint256 scaled;
@@ -31,8 +31,8 @@ abstract contract FenwickTree {
 
     // TODO: add check to ensure scaling factor is at least a WAD? 
     function _mult(uint256 i_, uint256 f_) internal {
-        require(i_ >= 0 && i_ < SIZE, "FW:M:INVALID_INDEX");
-        require(f_ != 0, "FW:M:FACTOR_ZERO");
+        require(i_ < SIZE, "FW:M:INVALID_INDEX");
+        require(f_ != 0,   "FW:M:FACTOR_ZERO");
 
         i_ += 1;
         uint256 sum;
@@ -58,7 +58,7 @@ abstract contract FenwickTree {
     }
 
     function _add(uint256 i_, uint256 x_) internal {
-        require(i_ >= 0 && i_ < SIZE, "FW:A:INVALID_INDEX");
+        require(i_ < SIZE, "FW:A:INVALID_INDEX");
 
         i_ += 1;
         uint256 j = 8192; // 1 << 13
@@ -80,7 +80,7 @@ abstract contract FenwickTree {
     }
 
     function _remove(uint256 i_, uint256 x_) internal {
-        require(i_ >= 0 && i_ < SIZE, "FW:R:INVALID_INDEX");
+        require(i_ < SIZE, "FW:R:INVALID_INDEX");
 
         i_ += 1;
         uint256 j = 8192; // 1 << 13
@@ -123,7 +123,7 @@ abstract contract FenwickTree {
     }
 
     function _rangeSum(uint256 start_, uint256 stop_) internal view returns (uint256) {
-        require(start_ >= 0 && start_ < SIZE,      "FW:R:INVALID_START");
+        require(start_ < SIZE, "FW:R:INVALID_START");
         require(stop_ >= start_ && stop_ <= SIZE,  "FW:R:INVALID_STOP");
         return _prefixSum(stop_) - _prefixSum(start_ - 1);
     }
