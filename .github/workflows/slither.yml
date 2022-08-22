@@ -24,6 +24,12 @@ jobs:
         continue-on-error: true
         id: base-analyzer
 
+      - name: Analyze libraries
+        run: |
+          slither src/libraries/.
+        continue-on-error: true
+        id: libraries-analyzer
+
       - name: Analyze ERC20 Pool
         run: |
           slither src/erc20/.
