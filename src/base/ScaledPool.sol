@@ -66,7 +66,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     /** @dev Used for tracking LP token ownership address for transferLPTokens access control */
     mapping(address => address) public override lpTokenOwnership;
 
-    uint256 internal _poolInitializations = 0;
+    uint256 internal poolInitializations = 0;
 
     /*********************************/
     /*** Lender External Functions ***/

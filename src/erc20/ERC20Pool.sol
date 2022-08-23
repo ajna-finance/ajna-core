@@ -28,7 +28,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /****************************/
 
     function initialize(uint256 rate_) external {
-        require(_poolInitializations == 0, "P:INITIALIZED");
+        require(poolInitializations == 0, "P:INITIALIZED");
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
@@ -40,7 +40,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         minFee                     = 0.0005 * 10**18;
 
         // increment initializations count to ensure these values can't be updated
-        _poolInitializations += 1;
+        poolInitializations += 1;
     }
 
     /***********************************/
