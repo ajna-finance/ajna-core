@@ -50,6 +50,7 @@ abstract contract FenwickTree {
             j = i_ + lsbI;
             i_ -= lsbI;
             uint256 lsbJ = _lsb(j);
+            //slither-disable-next-line incorrect-equality
             while ((lsbJ < _lsb(i_)) || (i_ == 0 && j <= SIZE)) {
                 values[j] += sum;
                 scaledJ = scaling[j];
