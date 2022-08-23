@@ -25,8 +25,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     uint256 public constant SECONDS_PER_YEAR    = 3_600 * 24 * 365;
     uint256 public constant SECONDS_PER_HALFDAY = 43_200;
 
-    uint256 public constant RATE_INCREASE_COEFFICIENT = 1.1 * 10**18;
-    uint256 public constant RATE_DECREASE_COEFFICIENT = 0.9 * 10**18;
+    uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
+    uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
     // lambda used for the EMAs calculated as exp(-1/7 * ln2)
     uint256 public constant LAMBDA_EMA                = 0.905723664263906671 * 10**18;
     uint256 public constant EMA_RATE_FACTOR           = 10**18 - LAMBDA_EMA;
@@ -66,7 +66,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     /** @dev Used for tracking LP token ownership address for transferLPTokens access control */
     mapping(address => address) public override lpTokenOwnership;
 
-    uint256 internal _poolInitializations = 0;
+    uint256 internal poolInitializations = 0;
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -91,8 +91,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move quote token amount from lender to pool
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
     }
 
     function approveNewPositionOwner(address allowedNewOwner_) external {
@@ -305,8 +305,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _updateInterestRate(borrowerDebt, newLup);
 
         // move quote token amount from pool to lender
-        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
+        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
     }
 
     function _updateInterestRate(uint256 curDebt_, uint256 lup_) internal {
@@ -330,9 +330,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
                 int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
 
                 if (decreaseFactor < increaseFactor - 10**18) {
-                    interestRate = Maths.wmul(interestRate, RATE_INCREASE_COEFFICIENT);
+                    interestRate = Maths.wmul(interestRate, INCREASE_COEFFICIENT);
                 } else if (decreaseFactor > 10**18 - increaseFactor) {
-                    interestRate = Maths.wmul(interestRate, RATE_DECREASE_COEFFICIENT);
+                    interestRate = Maths.wmul(interestRate, DECREASE_COEFFICIENT);
                 }
 
                 interestRateUpdate = block.timestamp;
@@ -432,7 +432,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
-        uint256 rate = (interestRate / SECONDS_PER_YEAR) * elapsed_;
+        uint256 rate = (interestRate * elapsed_) / SECONDS_PER_YEAR;
         return PRBMathUD60x18.exp(rate);
     }
 
@@ -441,7 +441,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return Maths.wmul(inflatorSnapshot, _pendingInterestFactor(elapsed));
     }
 
-    function _threshold_price(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256) {
+    function _thresholdPrice(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256) {
         if (collateral_ != 0) return Maths.wdiv(Maths.wmul(inflator_, debt_), collateral_);
         return 0;
     }

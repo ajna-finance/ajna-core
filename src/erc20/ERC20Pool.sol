@@ -28,7 +28,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /****************************/
 
     function initialize(uint256 rate_) external {
-        require(_poolInitializations == 0, "P:INITIALIZED");
+        require(poolInitializations == 0, "P:INITIALIZED");
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
@@ -40,7 +40,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         minFee                     = 0.0005 * 10**18;
 
         // increment initializations count to ensure these values can't be updated
-        _poolInitializations += 1;
+        poolInitializations += 1;
     }
 
     /***********************************/
@@ -56,7 +56,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrower.collateral += amount_;
 
         // update loan queue
-        uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         borrowers[msg.sender] = borrower;
@@ -66,8 +66,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(curDebt, _lup());
 
         // move collateral from sender to pool
-        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit PledgeCollateral(msg.sender, amount_);
+        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
@@ -100,15 +100,15 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         lenderDebt   += amount_;
 
         // update loan queue
-        uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRate(curDebt, newLup);
 
         // move borrowed amount from pool to sender
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, newLup, amount_);
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
     }
 
     function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
@@ -123,7 +123,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrower.collateral -= amount_;
 
         // update loan queue
-        uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         // update pool state
@@ -131,8 +131,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(curDebt, curLup);
 
         // move collateral from pool to sender
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
         emit PullCollateral(msg.sender, amount_);
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
     function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
@@ -161,7 +161,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             _removeLoanQueue(msg.sender, oldPrev_);
         } else {
             if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
-            uint256 thresholdPrice = _threshold_price(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+            uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
             _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
         }
         borrowers[msg.sender] = borrower;
@@ -179,8 +179,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move amount to repay from sender to pool
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, newLup, amount);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 
     /*********************************/
@@ -210,8 +210,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(borrowerDebt, _lup());
 
         // move required collateral from sender to pool
-        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
+        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
     function removeAllCollateral(uint256 index_) external override returns (uint256 amount_, uint256 lpAmount_) {
@@ -278,8 +278,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(borrowerDebt, _lup());
 
         // move collateral from pool to lender
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
         emit RemoveCollateral(msg.sender, price_, amount_);
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
     /**********************/
@@ -287,11 +287,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /**********************/
 
     function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
-        uint256 pending_debt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
+        uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
 
         return (
             borrowers[borrower_].debt,            // accrued debt (WAD)
-            pending_debt,                         // current debt, accrued and pending accrual (WAD)
+            pendingDebt,                          // current debt, accrued and pending accrual (WAD)
             borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
             borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
         );

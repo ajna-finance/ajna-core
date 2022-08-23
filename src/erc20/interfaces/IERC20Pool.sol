@@ -65,12 +65,12 @@ interface IERC20Pool is IScaledPool {
     /**
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
-     *  @param  borrower_        Address of the borrower.
-     *  @return debt             Amount of debt that the borrower has, in quote token.
-     *  @return collateral       Amount of collateral that the borrower has deposited, in collateral token.
-     *  @return inflatorSnapshot Snapshot of inflator value used to track interest on loans.
+     *  @param  borrower_  Address of the borrower.
+     *  @return debt       Amount of debt that the borrower has, in quote token.
+     *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
+     *  @return inflator   Snapshot of inflator value used to track interest on loans.
      */
-    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 inflatorSnapshot);
+    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 inflator);
 
     /**
      *  @notice Returns the `collateralScale` state variable.

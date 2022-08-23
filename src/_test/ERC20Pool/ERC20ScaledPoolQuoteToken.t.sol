@@ -64,9 +64,9 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         // test 10_000 DAI deposit at price of 1 MKR = 3_010.892022197881557845 DAI
         changePrank(_lender);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_lender), address(_pool), 10_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(address(_lender), _p3010, 10_000 * 1e18, BucketMath.MAX_PRICE);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_lender), address(_pool), 10_000 * 1e18);
         _pool.addQuoteToken(10_000 * 1e18, 2550);
 
         assertEq(_pool.htp(), 0);
@@ -88,9 +88,9 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
         // test 20_000 DAI deposit at price of 1 MKR = 2_995.912459898389633881 DAI
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_lender), address(_pool), 20_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(address(_lender), 2_995.912459898389633881 * 1e18, 20_000 * 1e18, BucketMath.MAX_PRICE);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_lender), address(_pool), 20_000 * 1e18);
         _pool.addQuoteToken(20_000 * 1e18, 2551);
 
         assertEq(_pool.htp(), 0);
@@ -111,9 +111,9 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
         // test 40_000 DAI deposit at price of 1 MKR = 3_025.946482308870940904 DAI
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_lender), address(_pool), 40_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(address(_lender), 3_025.946482308870940904 * 1e18, 40_000 * 1e18, BucketMath.MAX_PRICE);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_lender), address(_pool), 40_000 * 1e18);
         _pool.addQuoteToken(40_000 * 1e18, 2549);
 
         assertEq(_pool.htp(), 0);
@@ -258,18 +258,18 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), expectedWithdrawal1, _pool.indexToPrice(1663));
         uint lpRedeemed = _pool.removeQuoteToken(1_700 * 1e18, 1606);
-        assertEq(lpRedeemed, 1_699.988430646833722457777450974 * 1e27);
+        assertEq(lpRedeemed, 1_699.988430646832348876473462074 * 1e27);
 
         // lender removes all quote token, including interest, from the bucket
         skip(1 days);
         assertGt(_pool.indexToPrice(1606), _pool.htp());
-        uint256 expectedWithdrawal2 = 1_700.146556206950492732 * 1e18;
+        uint256 expectedWithdrawal2 = 1_700.146556206967894132 * 1e18;
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), expectedWithdrawal2, _pool.indexToPrice(1663));
         uint256 removed;
         (removed, lpRedeemed) = _pool.removeAllQuoteToken(1606);
         assertEq(removed, expectedWithdrawal2);
-        assertEq(lpRedeemed, 1_700.011569353166277542222549026 * 1e27);
+        assertEq(lpRedeemed, 1_700.011569353167651123526537926 * 1e27);
         assertEq(_quote.balanceOf(address(_lender)), lenderBalanceBefore + expectedWithdrawal1 + expectedWithdrawal2);
         (lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
         assertEq(lpBalance, 0);

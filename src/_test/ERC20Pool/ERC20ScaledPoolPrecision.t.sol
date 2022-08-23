@@ -78,9 +78,9 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2549);
         _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2550);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_lender), address(_pool), 50_000 * _quotePrecision);
-        vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(address(_lender), _pool.indexToPrice(2551), 50_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_lender), address(_pool), 50_000 * _quotePrecision);
         _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2551);
 
         // check balances
@@ -103,9 +103,9 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
 
         // lender removes some quote token from highest priced bucket
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_lender), 25_000 * _quotePrecision);
-        vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(2549), 25_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_lender), 25_000 * _quotePrecision);
         _pool.removeQuoteToken(25_000 * _quotePoolPrecision, 2549);
 
         // check balances
@@ -144,9 +144,9 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         // borrowers adds collateral
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_borrower), address(_pool), 50 * _collateralPrecision);
-        vm.expectEmit(true, true, false, true);
         emit PledgeCollateral(address(_borrower), 50 * _collateralPoolPrecision);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_borrower), address(_pool), 50 * _collateralPrecision);
         _pool.pledgeCollateral(50 * _collateralPoolPrecision, address(0), address(0));
 
         // check balances
@@ -167,9 +167,9 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
 
         // borrower borrows
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_borrower), 10_000 * _quotePrecision);
-        vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _pool.indexToPrice(2549), 10_000 * _quotePoolPrecision);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower), 10_000 * _quotePrecision);
         _pool.borrow(10_000 * _quotePoolPrecision, 3000, address(0), address(0));
 
         // check balances
@@ -195,9 +195,9 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
 
         // borrower repays half of loan
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_borrower), address(_pool), 5_000 * _quotePrecision);
-        vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), _pool.indexToPrice(2549), 5_000 * _quotePoolPrecision);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_borrower), address(_pool), 5_000 * _quotePrecision);
         _pool.repay(5_000 * _quotePoolPrecision, address(0), address(0));
 
         // check balances
@@ -223,9 +223,9 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         // remove all of the remaining unencumbered collateral
         uint256 unencumberedCollateral = col - _pool.encumberedCollateral(debt, _pool.lup());
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_borrower), unencumberedCollateral / _pool.collateralScale());
-        vm.expectEmit(true, true, false, true);
         emit PullCollateral(address(_borrower), unencumberedCollateral);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower), unencumberedCollateral / _pool.collateralScale());
         _pool.pullCollateral(unencumberedCollateral, address(0), address(0));
 
         //  FIXME: check balances
@@ -265,11 +265,11 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         uint256 collateralRequired = Maths.wdiv(quoteToPurchase, _pool.indexToPrice(2549));
         uint256 adjustedCollateralReq = collateralRequired / _pool.collateralScale();
         vm.expectEmit(true, true, false, true);
+        emit Purchase(address(_bidder), _pool.indexToPrice(2549), quoteToPurchase, collateralRequired);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(_bidder), address(_pool), adjustedCollateralReq);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_bidder), 500 * _quotePrecision);
-        vm.expectEmit(true, true, false, true);
-        emit Purchase(address(_bidder), _pool.indexToPrice(2549), quoteToPurchase, collateralRequired);
 //        _bidder.purchaseQuote(_pool, quoteToPurchase, 2549);
 
         // check bucket state
@@ -298,9 +298,9 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         changePrank(_lender);
         uint256 lpRedemption = Maths.wrdivr(Maths.wmul(availableCollateral, _pool.indexToPrice(2549)), _pool.exchangeRate(2549));
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), address(_lender), adjustedCollateralReq);
-        vm.expectEmit(true, true, true, true);
         emit ClaimCollateral(address(_lender), _pool.indexToPrice(2549), availableCollateral, lpRedemption);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_lender), adjustedCollateralReq);
 //        _lender.claimCollateral(_pool, availableCollateral, 2549);
 
         // check bucket state
