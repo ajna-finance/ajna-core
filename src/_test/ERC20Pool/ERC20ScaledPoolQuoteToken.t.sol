@@ -222,7 +222,7 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
     function testScaledPoolRemoveQuoteTokenWithDebt() external {
         // lender adds initial quote token
-        skip(60);  // prevent deposit from having a zero timestamp
+        skip(1 minutes);  // prevent deposit from having a zero timestamp
         changePrank(_lender);
         _pool.addQuoteToken(3_400 * 1e18, 1606);
         _pool.addQuoteToken(3_400 * 1e18, 1663);
@@ -230,7 +230,7 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         uint256 lpb_before = lpBalance;
         assertEq(lastQuoteDeposit, 60);
         uint256 exchangeRateBefore = _pool.exchangeRate(1606);
-        skip(3540);
+        skip(59 minutes);
         (lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
         assertEq(lpb_before, lpBalance);
         assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
@@ -244,7 +244,7 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         uint256 limitPrice = _pool.priceToIndex(4_000 * 1e18);
         assertGt(limitPrice, 1663);
         _pool.borrow(3_000 * 1e18, limitPrice, address(0), address(0));
-        skip(7200);
+        skip(2 hours);
         (lpBalance, lastQuoteDeposit) = _pool.bucketLenders(1606, address(_lender));
         assertEq(lpb_before, lpBalance);
         assertEq(lastQuoteDeposit, 60);
@@ -361,5 +361,53 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         _pool.moveQuoteToken(10_000 * 1e18, 4549, 4550);
     }
 
-    // TODO: test moving quote token with debt on the book and skips to accumulate interest
+    function testMoveQuoteTokenWithDebt() external {
+        // lender makes an initial deposit
+        skip(1 hours);
+        changePrank(_lender);
+        assertEq(_pool.priceToIndex(600 * 1e18), 2873);
+        _pool.addQuoteToken(10_000 * 1e18, 2873);
+
+        // borrower draws debt, establishing a pool threshold price
+        skip(2 hours);
+        changePrank(_borrower);
+        _pool.pledgeCollateral(10 * 1e18, address(0), address(0));
+        _pool.borrow(5_000 * 1e18, 3000, address(0), address(0));
+        uint256 ptp = Maths.wdiv(_pool.borrowerDebt(), 10 * 1e18);
+        assertEq(ptp, 500.480769230769231 * 1e18);
+
+        // lender moves some liquidity below the pool threshold price; penalty should be assessed
+        skip(16 hours);
+        changePrank(_lender);
+        assertEq(_pool.priceToIndex(400 * 1e18), 2954);
+        uint256 moved = 2_497.596153846153845000 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit MoveQuoteToken(address(_lender), 2873, 2954, moved, _pool.lup());
+        _pool.moveQuoteToken(2500 * 1e18, 2873, 2954);
+
+        // another lender provides liquidity to prevent LUP from moving
+        skip(1 hours);
+        changePrank(_lender1);
+        _pool.addQuoteToken(1_000 * 1e18, 2873);
+
+        // lender moves more liquidity; no penalty assessed as sufficient time has passed
+        skip(12 hours);
+        changePrank(_lender);
+        moved = 2500 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit MoveQuoteToken(address(_lender), 2873, 2954, moved, _pool.lup());
+        _pool.moveQuoteToken(moved, 2873, 2954);
+
+        // after a week, another lender funds the pool
+        skip(7 days);
+        changePrank(_lender1);
+        _pool.addQuoteToken(9_000 * 1e18, 2873);
+
+        // lender removes all their quote, with interest
+        skip(1 hours);
+        changePrank(_lender);
+        _pool.removeAllQuoteToken(2873);
+        _pool.removeAllQuoteToken(2954);
+        assertGt(_quote.balanceOf(address(_lender)), 200_000 * 1e18);
+    }
 }
