@@ -8,5 +8,5 @@
       "@prb-math=lib/prb-math/",
       "@base64-sol=lib/base64/"
     ],
-    "detectors_to_exclude": "solc-version"
+    "detectors_to_exclude": "solc-version,timestamp"
   }
