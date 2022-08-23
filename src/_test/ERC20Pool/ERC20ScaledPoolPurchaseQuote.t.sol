@@ -73,9 +73,9 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         changePrank(_bidder);
         uint256 collateralToPurchaseWith = 4 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_bidder), address(_pool), collateralToPurchaseWith);
-        vm.expectEmit(true, true, false, true);
         emit AddCollateral(address(_bidder), priceAtTestIndex, collateralToPurchaseWith);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_bidder), address(_pool), collateralToPurchaseWith);
         _pool.addCollateral(collateralToPurchaseWith, testIndex);
 
         // check bucket state
@@ -86,9 +86,9 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
 
         // bidder uses their LP to purchase all quote token in the bucket
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_bidder), 10_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_bidder), priceAtTestIndex, 10_000 * 1e18, _pool.lup());
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_bidder), 10_000 * 1e18);
         _pool.removeQuoteToken(10_000 * 1e18, testIndex);
         assertEq(_quote.balanceOf(address(_bidder)), 10_000 * 1e18);
 
@@ -109,9 +109,9 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         changePrank(_lender);
         uint256 lpValueInCollateral = 3.321274866808485288 * 1e18;
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), address(_lender), lpValueInCollateral);
-        vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_lender), priceAtTestIndex, lpValueInCollateral);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_lender), lpValueInCollateral);
         _pool.removeAllCollateral(testIndex);
         assertEq(_collateral.balanceOf(address(_lender)), lpValueInCollateral);
         assertEq(_pool.lpBalance(testIndex, address(_lender)), 0);
@@ -119,9 +119,9 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         // bidder removes their _collateral
         changePrank(_bidder);
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), address(_bidder), 0.678725133191514712 * 1e18);
-        vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_bidder), priceAtTestIndex, 0.678725133191514712 * 1e18);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_bidder), 0.678725133191514712 * 1e18);
         _pool.removeAllCollateral(testIndex);
         assertEq(_pool.lpBalance(testIndex, address(_bidder)), 0);
 
@@ -169,43 +169,46 @@ contract ERC20ScaledPurchaseQuoteTokenTest is DSTestPlus {
         changePrank(_bidder);
         uint256 amountToPurchase = 10_100 * 1e18;
         assertGt(_quote.balanceOf(address(_pool)), amountToPurchase);
-        uint256 amountWithInterest = 10_000.642786573656600000 * 1e18;
+        uint256 amountWithInterest = 10_000.642786573732910000 * 1e18;
         // adding extra collateral to account for interest accumulation
         uint256 collateralToPurchaseWith = Maths.wmul(Maths.wdiv(amountToPurchase, p2550), 1.01 * 1e18);
         assertEq(collateralToPurchaseWith, 3.388032491631335842 * 1e18);
         _pool.addCollateral(collateralToPurchaseWith, 2550);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_bidder), amountWithInterest);
-        vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_bidder), p2550, amountWithInterest, _pool.indexToPrice(2552));
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_bidder), amountWithInterest);
         _pool.removeAllQuoteToken(2550);
         assertEq(_quote.balanceOf(address(_bidder)), amountWithInterest);
         // bidder withdraws unused collateral
         uint256 collateralRemoved = 0;
-        uint256 expectedCollateral = 0.066544137733669793 * 1e18;
+        uint256 expectedCollateral = 0.066544137733644449 * 1e18;
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_bidder), p2550, expectedCollateral);
-        _pool.removeAllCollateral(2550);
+        (uint256 amount, ) = _pool.removeAllCollateral(2550);
+        assertEq(amount, expectedCollateral);
         collateralRemoved += expectedCollateral;
         assertEq(_pool.lpBalance(2550, address(_bidder)), 0);
         skip(7200);
 
         // lender exchanges their LP for collateral
         changePrank(_lender);
-        expectedCollateral = 1.992893012338599629 * 1e18;
+        expectedCollateral = 1.992893012338614836 * 1e18;
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_lender), p2550, expectedCollateral);
-        _pool.removeAllCollateral(2550);
+        (amount, ) = _pool.removeAllCollateral(2550);
+        assertEq(amount, expectedCollateral);
         collateralRemoved += expectedCollateral;
         assertEq(_pool.lpBalance(2550, address(_lender)), 0);
         skip(3600);
 
         // lender1 exchanges their LP for collateral
         changePrank(_lender1);
-        expectedCollateral = 1.328595341559066420 * 1e18;
+        expectedCollateral = 1.328595341559076557 * 1e18;
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_lender1), p2550, expectedCollateral);
-        _pool.removeAllCollateral(2550);
+        (amount, ) = _pool.removeAllCollateral(2550);
+        assertEq(amount, expectedCollateral);
         collateralRemoved += expectedCollateral;
         assertEq(_pool.lpBalance(2550, address(_lender1)), 0);
         assertEq(collateralRemoved, collateralToPurchaseWith);

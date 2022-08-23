@@ -384,7 +384,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
-        uint256 rate = (interestRate / SECONDS_PER_YEAR) * elapsed_;
+        uint256 rate = (interestRate * elapsed_) / SECONDS_PER_YEAR;
         return PRBMathUD60x18.exp(rate);
     }
 

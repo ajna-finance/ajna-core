@@ -91,9 +91,9 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
 
         // get a 21_000 Quote loan
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), 2_981.007422784467321543 * 1e18, 21_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
         _pool.borrow(21_000 * 1e18, 3000, address(0), address(0));
 
         // check pool state
@@ -147,15 +147,15 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         _pool.pullCollateral(unencumberedCollateral, address(0), address(0));
 
         // check pool state
-        assertEq(_pool.htp(), 2_989.185764499773229142 * 1e18);
+        assertEq(_pool.htp(), 2_989.185764500745498129 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
 
-        assertEq(_pool.poolSize(),          30_025.933063898944800000 * 1e18);
-        assertEq(_pool.borrowerDebt(),      21_049.006823135579696033 * 1e18);
+        assertEq(_pool.poolSize(),          30_025.933063902025680000 * 1e18);
+        assertEq(_pool.borrowerDebt(),      21_049.006823139002918431 * 1e18);
         assertEq(_pool.lenderDebt(),        21_000 * 1e18);
         assertEq(_pool.pledgedCollateral(), _pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()));
 
-        assertEq(_pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()), 7.061038044472344858 * 1e18);
+        assertEq(_pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()), 7.061038044473493202 * 1e18);
         assertEq(_pool.encumberedCollateral(_pool.lenderDebt(), _pool.lup()),   7.044598359431304627 * 1e18);
 
         // check borrower state
@@ -166,7 +166,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
             _pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()),
             _pool.encumberedCollateral(borrowerDebt, _pool.lup())
         );
-        assertEq(_collateral.balanceOf(address(_borrower)), 142.938961955527655142 * 1e18);
+        assertEq(_collateral.balanceOf(address(_borrower)), 142.938961955526506798 * 1e18);
 
         assertEq(_pool.borrowerCollateralization(borrowerDebt, borrowerCollateral, _pool.lup()), _pool.poolCollateralization());
     }
@@ -210,9 +210,9 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         // actor deposits collateral into a bucket
         uint256 collateralToDeposit = 4 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_bidder), address(_pool), collateralToDeposit);
-        vm.expectEmit(true, true, false, true);
         emit AddCollateral(address(_bidder), priceAtTestIndex, collateralToDeposit);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_bidder), address(_pool), collateralToDeposit);
         _pool.addCollateral(collateralToDeposit, testIndex);
 
         // check bucket state
@@ -229,18 +229,18 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         // actor withdraws some of their collateral
         uint256 collateralToWithdraw = 1.53 * 1e18;
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), address(_bidder), collateralToWithdraw);
-        vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_bidder), priceAtTestIndex, collateralToWithdraw);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_bidder), collateralToWithdraw);
         uint256 lpRedeemed = _pool.removeCollateral(collateralToWithdraw, testIndex);
         assertEq(lpRedeemed, 4_606.664793962758783502850000000 * 1e27);
 
         // actor withdraws remainder of their _collateral
         collateralToWithdraw = 2.47 * 1e18;
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), address(_bidder), collateralToWithdraw);
-        vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_bidder), priceAtTestIndex, collateralToWithdraw);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), address(_bidder), collateralToWithdraw);
         uint256 collateralRemoved;
         (collateralRemoved, lpRedeemed) = _pool.removeAllCollateral(testIndex);
         assertEq(collateralRemoved, collateralToWithdraw);
