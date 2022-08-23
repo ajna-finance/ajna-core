@@ -90,8 +90,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move quote token amount from lender to pool
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
     }
 
     function approveNewPositionOwner(address allowedNewOwner_) external {
@@ -266,8 +266,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _updateInterestRate(borrowerDebt, newLup);
 
         // move quote token amount from pool to lender
-        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
         emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
+        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
     }
 
     function _updateInterestRate(uint256 curDebt_, uint256 lup_) internal {

@@ -66,8 +66,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(curDebt, _lup());
 
         // move collateral from sender to pool
-        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit PledgeCollateral(msg.sender, amount_);
+        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
@@ -108,8 +108,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move borrowed amount from pool to sender
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, newLup, amount_);
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
     }
 
     function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
@@ -132,8 +132,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(curDebt, curLup);
 
         // move collateral from pool to sender
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
         emit PullCollateral(msg.sender, amount_);
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
     function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
@@ -180,8 +180,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move amount to repay from sender to pool
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, newLup, amount);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 
     /*********************************/
@@ -210,8 +210,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(borrowerDebt, _lup());
 
         // move required collateral from sender to pool
-        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
+        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
     function removeAllCollateral(uint256 index_) external override returns (uint256 amount_, uint256 lpAmount_) {
@@ -274,8 +274,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(borrowerDebt, _lup());
 
         // move collateral from pool to lender
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
         emit RemoveCollateral(msg.sender, price_, amount_);
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
     /**********************/
