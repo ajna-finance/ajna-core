@@ -156,6 +156,25 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(1_000 * 1e18), 8191);
     }
 
+   function testFenwickScaledPtDose() external {
+        FenwickTreeInstance tree = new FenwickTreeInstance();
+        tree.add(5, 100 * 1e18);
+        tree.add(9, 200 * 1e18);
+
+        assertEq(tree.prefixSum(9), 300 * 1e18);
+
+        tree.mult(15, 1.1 * 1e18);
+
+        assertEq(tree.treeSum(), 330 * 1e18);
+        assertEq(tree.prefixSum(5), 110 * 1e18);
+        assertEq(tree.prefixSum(9), 330 * 1e18);
+
+        tree.add(9, 200 * 1e18);
+
+        assertEq(tree.prefixSum(9), 550 * 1e18);
+
+    }
+
 
 
 
