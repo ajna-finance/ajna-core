@@ -156,33 +156,9 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(1_000 * 1e18), 8191);
     }
 
-   function skipFenwickScaledPtDose() external {
-        FenwickTreeInstance tree = new FenwickTreeInstance();
-        tree.add(5, 100 * 1e18);
-        tree.add(9, 200 * 1e18);
-
-        assertEq(tree.prefixSum(9), 300 * 1e18);
-
-        tree.mult(15, 1.1 * 1e18);
-
-        assertEq(tree.treeSum(), 330 * 1e18);
-        assertEq(tree.prefixSum(5), 110 * 1e18);
-        assertEq(tree.prefixSum(9), 330 * 1e18);
-
-        tree.add(9, 200 * 1e18);
-
-        assertEq(tree.prefixSum(9), 550 * 1e18);
-
-    }
-
-
-
-
-
     /**
      *  @notice Fuzz tests additions and scaling values.
      */
-    // TODO: Solve for discrepency of 2 that exists between manually scaling vs scaling using Fenwick (Ether can have the +1 discrep, its situational)
     function testFenwickFuzzyScaling(
         uint256 insertions_,
         uint256 totalAmount_,
@@ -211,33 +187,6 @@ contract FenwickTreeTest is DSTestPlus {
         // 2 >= scaling discrepency
         assertGe(2, max - min);
         assertGe(2, subMax - subMin);
-    }
-
-
-    // TODO: Example test, proving 2 discrepency between manual and Fenwicktree scaling
-    function skipFenwickScaleDiscrepency() external {
-        FenwickTreeInstance tree = new FenwickTreeInstance();
-        tree.add(940, 4851907156358493181925719484768560);
-        tree.add(2438, 243756386860307790422414450962622); 
-        uint256 preSum = tree.prefixSum(2438);
-
-        uint256 factor = 3256129172657468442;
-        uint256 scaleIndex = 2438;
-
-        emit log_named_uint("940 mult manual", Maths.wmul(4851907156358493181925719484768560, factor));
-        emit log_named_uint("2438 mult manual", Maths.wmul(243756386860307790422414450962622, factor));
-        emit log_named_uint("comb mult manual", Maths.wmul(243756386860307790422414450962622 + 4851907156358493181925719484768560, factor));
-
-        emit log_named_uint("Presum", preSum);
-
-        tree.mult(scaleIndex, factor);
-
-        emit log_named_uint("mult result", Maths.wmul(preSum, factor));
-        emit log_named_uint("Postsum", tree.prefixSum(scaleIndex));
-
-        assertEq(tree.prefixSum(940), Maths.wmul(4851907156358493181925719484768560, factor));
-        assertEq(tree.prefixSum(2438), Maths.wmul(243756386860307790422414450962622 + 4851907156358493181925719484768560, factor));
-        assertEq(Maths.wmul(preSum, factor), tree.treeSum());
     }
 
     /**
