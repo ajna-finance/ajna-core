@@ -50,6 +50,7 @@ abstract contract FenwickTree {
         uint256 df = f_ - Maths.WAD;    // Difference factor
 
         uint256 scaledI;
+        uint256 scaledJ;
 
         while (i_ > 0) {
             scaledI =  scaling[i_];
@@ -69,6 +70,8 @@ abstract contract FenwickTree {
 
                 // Sum > 0 only when j is a range parent of starting node, i_.
                 values[j] += sum;
+                scaledJ = scaling[j];
+                if (scaledJ != 0) sum = Maths.wmul(sum, scaledJ);
 
                 // Increase j to point to next range parent.
                 j += _lsb(j);
