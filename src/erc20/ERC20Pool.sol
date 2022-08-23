@@ -283,11 +283,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /**********************/
 
     function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
-        uint256 pending_debt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
+        uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
 
         return (
             borrowers[borrower_].debt,            // accrued debt (WAD)
-            pending_debt,                         // current debt, accrued and pending accrual (WAD)
+            pendingDebt,                          // current debt, accrued and pending accrual (WAD)
             borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
             borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
         );
