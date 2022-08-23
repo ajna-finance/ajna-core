@@ -5,6 +5,7 @@ import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
+import { Maths }      from "../../libraries/Maths.sol";
 
 import { DSTestPlus }                  from "../utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
@@ -221,13 +222,15 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
     function testScaledPoolRemoveQuoteTokenWithDebt() external {
         // lender adds initial quote token
+        skip(60);  // prevent deposit from having a zero timestamp
         changePrank(_lender);
         _pool.addQuoteToken(3_400 * 1e18, 1606);
         _pool.addQuoteToken(3_400 * 1e18, 1663);
-        (uint256 lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
+        (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.bucketLenders(1606, address(_lender));
         uint256 lpb_before = lpBalance;
+        assertEq(lastQuoteDeposit, 60);
         uint256 exchangeRateBefore = _pool.exchangeRate(1606);
-        skip(3600);
+        skip(3540);
         (lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
         assertEq(lpb_before, lpBalance);
         assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
@@ -242,28 +245,32 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         assertGt(limitPrice, 1663);
         _pool.borrow(3_000 * 1e18, limitPrice, address(0), address(0));
         skip(7200);
-        (lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
+        (lpBalance, lastQuoteDeposit) = _pool.bucketLenders(1606, address(_lender));
         assertEq(lpb_before, lpBalance);
+        assertEq(lastQuoteDeposit, 60);
         assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
 
-        // lender makes a partial withdrawal
+        // lender makes a partial withdrawal, paying an early withdrawal penalty
         changePrank(_lender);
-        uint256 expectedWithdrawal = 1_700 * 1e18;
+        uint256 penalty = Maths.WAD - Maths.wdiv(_pool.interestRate(), _pool.WAD_WEEKS_PER_YEAR());
+        assertLt(penalty, Maths.WAD);
+        uint256 expectedWithdrawal1 = Maths.wmul(1_700 * 1e18, penalty);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), expectedWithdrawal, _pool.indexToPrice(1663));
+        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), expectedWithdrawal1, _pool.indexToPrice(1663));
         uint lpRedeemed = _pool.removeQuoteToken(1_700 * 1e18, 1606);
         assertEq(lpRedeemed, 1_699.988430646833722457777450974 * 1e27);
 
         // lender removes all quote token, including interest, from the bucket
+        skip(1 days);
         assertGt(_pool.indexToPrice(1606), _pool.htp());
-        expectedWithdrawal = 1_700.023138863804135800 * 1e18;
+        uint256 expectedWithdrawal2 = 1_700.146556206950492732 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), expectedWithdrawal, _pool.indexToPrice(1663));
+        emit RemoveQuoteToken(address(_lender), _pool.indexToPrice(1606), expectedWithdrawal2, _pool.indexToPrice(1663));
         uint256 removed;
         (removed, lpRedeemed) = _pool.removeAllQuoteToken(1606);
-        assertEq(removed, expectedWithdrawal);
+        assertEq(removed, expectedWithdrawal2);
         assertEq(lpRedeemed, 1_700.011569353166277542222549026 * 1e27);
-        assertEq(_quote.balanceOf(address(_lender)), lenderBalanceBefore + 1_700 * 1e18 + expectedWithdrawal);
+        assertEq(_quote.balanceOf(address(_lender)), lenderBalanceBefore + expectedWithdrawal1 + expectedWithdrawal2);
         (lpBalance, ) = _pool.bucketLenders(1606, address(_lender));
         assertEq(lpBalance, 0);
 

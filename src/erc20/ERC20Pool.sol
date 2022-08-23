@@ -83,9 +83,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
 
-        uint256 feeRate = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee) + Maths.WAD;
-        uint256 debt    = Maths.wmul(amount_, feeRate);
-        borrower.debt   += debt;
+        uint256 debt  = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
+        borrower.debt += debt;
 
         uint256 newLup = _indexToPrice(lupId);
         require(_borrowerCollateralization(borrower.debt, borrower.collateral, newLup) >= Maths.WAD, "S:B:BUNDER_COLLAT");

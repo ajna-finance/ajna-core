@@ -76,7 +76,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     function addQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
         uint256 curDebt = _accruePoolInterest();
 
-        // TODO: Read structs as memory
         Bucket storage bucket = buckets[index_];
         uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpbChange_           = Maths.rdiv(Maths.wadToRay(amount_), rate);
@@ -119,30 +118,31 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // update "from" bucket accounting
         fromBucket.lpAccumulator -= lpbAmount;
+        _remove(fromIndex_, amount);
+
+        // FIXME: stack too deep
+        // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
+//        uint256 ptp = Maths.wdiv(borrowerDebt, pledgedCollateral);  // FIXME: protect against divide-by-zero
+//        bool earlyWithdrawal = fromBucketLender.lastQuoteDeposit != 0 && block.timestamp - fromBucketLender.lastQuoteDeposit < 1 days;
+//        if (earlyWithdrawal && _indexToPrice(fromIndex_) > ptp && _indexToPrice(toIndex_) < ptp) {
+//            amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
+//        }
 
         // update "to" bucket accounting
         Bucket storage toBucket = buckets[toIndex_];
         rate                    = _exchangeRate(_rangeSum(toIndex_, toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
         uint256 lpbChange       = Maths.wrdivr(amount, rate);
         toBucket.lpAccumulator  += lpbChange;
-
-        // update FenwickTree
-        _remove(fromIndex_, amount);
         _add(toIndex_, amount);
 
         // move lup if necessary and check loan book's htp against new lup
         uint256 newLup = _lup();
         if (fromIndex_ < toIndex_) require(_htp() <= newLup, "S:MQT:LUP_BELOW_HTP");
 
-        // TODO: impose penalty if quote moved from above the PTP to below the PTP
-
         // update lender accounting
         BucketLender storage toBucketLender   = bucketLenders[toIndex_][msg.sender];
         fromBucketLender.lpBalance            -= lpbAmount;
         toBucketLender.lpBalance              += lpbChange;
-        // TODO: load to memory, avoiding "stack too deep" error
-//        bucketLenders[fromIndex_][msg.sender] = fromBucketLender;
-//        bucketLenders[toIndex_][msg.sender]   = toBucketLender;
 
         _updateInterestRate(curDebt, newLup);
 
@@ -163,8 +163,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         amount_              = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
         require(amount_ != 0, "S:RAQT:NO_CLAIM");
 
-        // TODO: impose penalty if quote withdrawn above the PTP
-
         if (amount_ > availableQuoteToken) {
             // user is owed more quote token than is available in the bucket
             amount_   = availableQuoteToken;
@@ -183,8 +181,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 availableQuoteToken      = _rangeSum(index_, index_);
         uint256 rate                     = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs             = bucketLender.lpBalance;
-
-        // TODO: impose penalty if quote withdrawn above the PTP
 
         // ensure user can actually remove that much
         require(amount_ <= availableQuoteToken, "S:RQT:INSUF_QT");
@@ -287,6 +283,15 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // persist bucket changes
         buckets[index_] = bucket;
         bucketLenders[index_][msg.sender] = bucketLender;
+
+        // apply early withdrawal penalty if quote token is withdrawn above the PTP
+        if (pledgedCollateral > 0) {
+            uint256 ptp = Maths.wdiv(borrowerDebt, pledgedCollateral);
+            bool earlyWithdrawal = bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days;
+            if (earlyWithdrawal && _indexToPrice(index_) > ptp) {
+                amount = Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
+            }
+        }
 
         _updateInterestRate(borrowerDebt, newLup);
 
@@ -397,6 +402,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function _lup() internal view returns (uint256) {
         return _indexToPrice(_lupIndex(0));
+    }
+
+    function _calculateFeeRate() internal view returns (uint256 feeRate_) {
+        // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
+        feeRate_ = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
     }
 
     // We should either pass the _rangeSum as an argument, or have this method return it alongside the rate.
