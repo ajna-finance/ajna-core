@@ -28,10 +28,10 @@ contract ERC20PoolFactory is IPoolFactory, PoolDeployer {
         bytes memory data = abi.encodePacked(collateral_, quote_);
 
         ERC20Pool pool = ERC20Pool(address(implementation).clone(data));
-        pool.initialize(interestRate_);
         pool_ = address(pool);
-
         deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
+
+        pool.initialize(interestRate_);
     }
 }

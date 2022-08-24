@@ -47,7 +47,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /****************************/
 
     function initialize(uint256 rate_) external {
-        require(_poolInitializations == 0, "P:INITIALIZED");
+        require(poolInitializations == 0, "P:INITIALIZED");
 
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
@@ -59,7 +59,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         minFee                     = 0.0005 * 10**18;
 
         // increment initializations count to ensure these values can't be updated
-        _poolInitializations += 1;
+        poolInitializations += 1;
     }
 
     function initializeSubset(uint256[] memory tokenIds_, uint256 rate_) external override {
@@ -110,7 +110,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
         // update loan queue
-        uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         emit PledgeCollateralNFT(msg.sender, tokenIds_);
@@ -149,7 +149,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         lenderDebt   += amount_;
 
         // update loan queue
-        uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         _updateInterestRate(curDebt, newLup);
@@ -195,7 +195,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         }
 
         // update loan queue
-        uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         emit PullCollateralNFT(msg.sender, tokenIds_);
@@ -227,7 +227,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             _removeLoanQueue(msg.sender, oldPrev_);
         } else {
             if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
-            uint256 thresholdPrice = _threshold_price(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+            uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
             _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
         }
 

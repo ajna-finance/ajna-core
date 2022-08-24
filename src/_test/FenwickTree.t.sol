@@ -12,6 +12,10 @@ contract FenwickTreeInstance is FenwickTree {
         _add(i_, x_);
     }
 
+    function remove(uint256 i_, uint256 x_) public {
+        _remove(i_, x_);
+    }
+
     function mult(uint256 i_, uint256 f_) public {
         _mult(i_, f_);
     }
@@ -93,6 +97,19 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(400 * 1e18),   9);
         assertEq(tree.findSum(500 * 1e18),   9);
         assertEq(tree.findSum(900 * 1e18),   11);
+        assertEq(tree.findSum(1_000 * 1e18), 8191);
+
+        tree.remove(11, 300 * 1e18);
+
+        assertEq(tree.treeSum(), 612 * 1e18);
+
+        assertEq(tree.findSum(10 * 1e18),    5);
+        assertEq(tree.findSum(100 * 1e18),   5);
+        assertEq(tree.findSum(200 * 1e18),   9);
+        assertEq(tree.findSum(350 * 1e18),   9);
+        assertEq(tree.findSum(400 * 1e18),   9);
+        assertEq(tree.findSum(500 * 1e18),   9);
+        assertEq(tree.findSum(900 * 1e18),   8191);
         assertEq(tree.findSum(1_000 * 1e18), 8191);
     }
 
