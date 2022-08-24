@@ -334,8 +334,6 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         );
     }
 
-    // TODO: finish implementing here and in ERC20 Pool following updates to lender external functions
-    // function bucketAt() {}
 
     function isTokenIdAllowed(uint256 tokenId_) external view override returns (bool) {
         return _tokenIdsAllowed.contains(tokenId_);
