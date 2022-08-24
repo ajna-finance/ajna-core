@@ -122,7 +122,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertFalse(_positionManager.isIndexInPosition(tokenId, 2552));
 
         // construct memorialize params struct
-        IPositionManager.PositionsParams memory memorializeParams = IPositionManager.PositionsParams(
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId, testAddress, indexes
         );
 
@@ -220,7 +220,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_pool.poolSize(), 15_000 * 1e18);
 
         // construct memorialize lender 1 params struct
-        IPositionManager.PositionsParams memory memorializeParams = IPositionManager.PositionsParams(
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId1, testLender1, indexes
         );
 
@@ -264,7 +264,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         prices = new uint256[](2);
         prices[0] = _p3010;
         prices[1] = _p2966;
-        memorializeParams = IPositionManager.PositionsParams(
+        memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId2, testLender2, newIndexes
         );
 
@@ -338,7 +338,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         // allow position manager to take ownership of the position of testMinter
         _pool.approveNewPositionOwner(address(_positionManager));
         // memorialize positions of testMinter
-        IPositionManager.PositionsParams memory memorializeParams = IPositionManager.PositionsParams(
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId, testMinter, indexes
         );
         _positionManager.memorializePositions(memorializeParams);
@@ -425,7 +425,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         // allow position manager to take ownership of the position of testMinter
         _pool.approveNewPositionOwner(address(_positionManager));
         // memorialize positions of testMinter
-        IPositionManager.PositionsParams memory memorializeParams = IPositionManager.PositionsParams(
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId, testMinter, indexes
         );
         _positionManager.memorializePositions(memorializeParams);
@@ -440,6 +440,18 @@ contract PositionManagerTest is PositionManagerHelperContract {
         changePrank(notOwner);
         vm.expectRevert("PM:NO_AUTH");
         _positionManager.burn(burnParams);
+
+        // redeem positions of testMinter
+        changePrank(testMinter);
+        IPositionManager.RedeemPositionsParams memory reedemParams = IPositionManager.RedeemPositionsParams(
+            testMinter, tokenId, address(_pool), indexes
+        );
+        _positionManager.reedemPositions(reedemParams);
+
+        _positionManager.burn(burnParams);
+
+        vm.expectRevert("ERC721: invalid token ID");
+        _positionManager.ownerOf(tokenId);
     }
 
     function testMoveLiquidityPermissions() external {
@@ -511,7 +523,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _pool.approveNewPositionOwner(address(_positionManager));
 
         // memorialize positions of testAddress1
-        IPositionManager.PositionsParams memory memorializeParams = IPositionManager.PositionsParams(
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId1, testAddress1, indexes
         );
         vm.prank(testAddress1);
@@ -569,7 +581,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _pool.approveNewPositionOwner(address(_positionManager));
 
         // memorialize positions of testAddress2
-        memorializeParams = IPositionManager.PositionsParams(
+        memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId2, testAddress2, indexes
         );
         vm.prank(testAddress2);

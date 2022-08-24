@@ -101,7 +101,7 @@ interface IPositionManager {
      *  @param  owner   The NFT owner address.
      *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
      */
-    struct PositionsParams {
+    struct MemorializePositionsParams {
         uint256 tokenId;
         address owner;
         uint256[] indexes;
@@ -133,6 +133,20 @@ interface IPositionManager {
         uint256 toIndex;
     }
 
+    /**
+     *  @notice Struct holding parameters for tracking positions.
+     *  @param  tokenId The tokenId of the NFT.
+     *  @param  owner   The NFT owner address.
+     *  @param  pool    The pool address to reedem positions.
+     *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
+     */
+    struct RedeemPositionsParams {
+        address owner;
+        uint256 tokenId;
+        address pool;
+        uint256[] indexes;
+    }
+
     /************************/
     /*** Lender Functions ***/
     /************************/
@@ -152,7 +166,7 @@ interface IPositionManager {
      *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
      *  @param  params_ Calldata struct supplying inputs required to conduct the memorialization.
      */
-    function memorializePositions(PositionsParams calldata params_) external;
+    function memorializePositions(MemorializePositionsParams calldata params_) external;
 
     /**
      *  @notice Called by lenders to add quote tokens and receive a representative NFT.
@@ -175,7 +189,7 @@ interface IPositionManager {
      *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
      *  @param  params_ Calldata struct supplying inputs required to conduct the redeem.
      */
-    function reedemPositions(PositionsParams calldata params_) external;
+    function reedemPositions(RedeemPositionsParams calldata params_) external;
 
 
     /**********************/

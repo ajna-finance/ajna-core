@@ -69,7 +69,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     /// TODO: (X) indexes can be memorialized at a time
-    function memorializePositions(PositionsParams calldata params_) external override {
+    function memorializePositions(MemorializePositionsParams calldata params_) external override {
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
         IScaledPool pool      = IScaledPool(poolKey[params_.tokenId]);
@@ -128,7 +128,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         lps[params_.tokenId][params_.toIndex]   += lpbChange;
     }
 
-    function reedemPositions(PositionsParams calldata params_) external override {
+    function reedemPositions(RedeemPositionsParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
         IScaledPool pool      = IScaledPool(poolKey[params_.tokenId]);
@@ -148,6 +148,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // update pool lp token accounting and transfer ownership of lp tokens from PositionManager contract
         emit RedeemPosition(params_.owner, params_.tokenId);
+        pool.approveNewPositionOwner(params_.owner);
         pool.transferLPTokens(address(this), params_.owner, params_.indexes);
     }
 
