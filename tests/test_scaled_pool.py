@@ -99,38 +99,3 @@ def test_borrow_repay_scaled(
             print("==================================")
             for i in range(len(repay_txes)):
                 print(f"Transaction: {i} | {test_utils.get_usage(repay_txes[i].gas_used)}")
-
-@pytest.mark.skip
-def test_borrow_purchase_scaled(
-    lenders,
-    borrowers,
-    scaled_pool,
-    capsys,
-    test_utils
-):
-    with test_utils.GasWatcher(["borrow"]):
-
-        scaled_pool.addQuoteToken(100 * 10**18, 2550, {"from": lenders[0]})
-        scaled_pool.addQuoteToken(100 * 10**18, 2560, {"from": lenders[0]})
-        scaled_pool.addQuoteToken(100 * 10**18, 2570, {"from": lenders[0]})
-        
-        scaled_pool.pledgeCollateral(100 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
-
-        scaled_pool.borrow(110 * 10**18, 5000, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
-        scaled_pool.borrow(110 * 10**18, 5000, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
-        scaled_pool.borrow(50 * 10**18, 5000, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
-
-        purchase_txes = []
-        tx = scaled_pool.purchaseQuote(100 * 10**18, 2550, {"from": borrowers[1]})
-        purchase_txes.append(tx)
-        tx = scaled_pool.purchaseQuote(100 * 10**18, 2560, {"from": borrowers[1]})
-        purchase_txes.append(tx)
-        tx = scaled_pool.purchaseQuote(70 * 10**18, 2570, {"from": borrowers[1]})
-        purchase_txes.append(tx)
-        with capsys.disabled():
-            print("\n==================================")
-            print(f"Gas estimations({inspect.stack()[0][3]})(purchase in scaled pool):")
-            print("==================================")
-            for i in range(len(purchase_txes)):
-                print(f"Transaction: {i} | {test_utils.get_usage(purchase_txes[i].gas_used)}")
-
