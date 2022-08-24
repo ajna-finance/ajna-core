@@ -213,7 +213,7 @@ interface IScaledPool {
      *  @param  fromIndex_ The bucket index from which the quote tokens will be removed.
      *  @param  toIndex_   The bucket index to which the quote tokens will be added.
      */
-    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external;
+    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmount_, uint256 lpbChange_);
 
     /**
      *  @notice Called by lenders to redeem the maximum amount of LP for quote token.

@@ -61,7 +61,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function burn(BurnParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
         require(positionPrices[params_.tokenId].length() == 0, "PM:B:LIQ_NOT_REMOVED");
 
-        emit Burn(msg.sender, IScaledPool(params_.pool).indexToPrice(params_.index));
+        emit Burn(msg.sender, params_.tokenId);
         delete nonces[params_.tokenId];
         delete poolKey[params_.tokenId];
 
@@ -114,19 +114,18 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             pool.depositAt(params_.fromIndex),  lps[params_.tokenId][params_.fromIndex], params_.fromIndex
         );
 
-        // move quote tokens in pool
-        pool.moveQuoteToken(maxQuote, params_.fromIndex, params_.toIndex);
-
-        // update tracked LPs
-        lps[params_.tokenId][params_.fromIndex] = pool.lpBalance(params_.fromIndex, params_.owner);
-        lps[params_.tokenId][params_.toIndex]   = pool.lpBalance(params_.toIndex,   params_.owner);
-
         // update prices set at which a position has liquidity
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
         require(positionPrice.remove(params_.fromIndex), "PM:MV:REMOVE_FAIL");
-        require(positionPrice.add(params_.toIndex),      "PM:MV:ADD_FAIL");
+        if (!positionPrice.contains(params_.toIndex)) require(positionPrice.add(params_.toIndex), "PM:MV:ADD_FAIL");
 
+        // move quote tokens in pool
         emit MoveLiquidity(params_.owner, params_.tokenId);
+        (uint256 lpbAmount, uint256 lpbChange) = pool.moveQuoteToken(maxQuote, params_.fromIndex, params_.toIndex);
+
+        // update tracked LPs
+        lps[params_.tokenId][params_.fromIndex] -= lpbAmount;
+        lps[params_.tokenId][params_.toIndex]   += lpbChange;
     }
 
     function reedemPositions(PositionsParams calldata params_) external override {

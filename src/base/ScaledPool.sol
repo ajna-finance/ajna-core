@@ -98,7 +98,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         lpTokenOwnership[msg.sender] = allowedNewOwner_;
     }
 
-    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override {
+    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmount_, uint256 lpbChange_) {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
         uint256 availableLPs  = lpBalance[fromIndex_][msg.sender];
@@ -112,16 +112,16 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 amount              = Maths.min(maxAmount_, Maths.min(availableQuoteToken, claimableQuoteToken));
 
         // calculate amount of LP required to move it
-        uint256 lpbAmount = Maths.wrdivr(amount, rate);
+        lpbAmount_ = Maths.wrdivr(amount, rate);
 
         // update "from" bucket accounting
-        fromBucket.lpAccumulator -= lpbAmount;
+        fromBucket.lpAccumulator -= lpbAmount_;
 
         // update "to" bucket accounting
         Bucket storage toBucket = buckets[toIndex_];
         rate                    = _exchangeRate(_rangeSum(toIndex_, toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
-        uint256 lpbChange       = Maths.wrdivr(amount, rate);
-        toBucket.lpAccumulator  += lpbChange;
+        lpbChange_              = Maths.wrdivr(amount, rate);
+        toBucket.lpAccumulator  += lpbChange_;
 
         // update FenwickTree
         _remove(fromIndex_, amount);
@@ -132,8 +132,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         if (fromIndex_ < toIndex_) require(_htp() <= newLup, "S:MQT:LUP_BELOW_HTP");
 
         // update lender accounting
-        lpBalance[fromIndex_][msg.sender] -= lpbAmount;
-        lpBalance[toIndex_][msg.sender]   += lpbChange;
+        lpBalance[fromIndex_][msg.sender] -= lpbAmount_;
+        lpBalance[toIndex_][msg.sender]   += lpbChange_;
 
         _updateInterestRate(curDebt, newLup);
 

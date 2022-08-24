@@ -13,10 +13,10 @@ interface IPositionManager {
 
     /**
      *  @notice Emitted when an existing NFT was burned.
-     *  @param  lender_ Lender address.
-     *  @param  price_  The bucket price corresponding to NFT that was burned.
+     *  @param  lender_  Lender address.
+     *  @param  tokenId_ The token id of the NFT that was burned.
      */
-    event Burn(address indexed lender_, uint256 indexed price_);
+    event Burn(address indexed lender_, uint256 indexed tokenId_);
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
@@ -75,13 +75,11 @@ interface IPositionManager {
      *  @notice Struct holding parameters for burning an NFT.
      *  @param  tokenId   The tokenId of the NFT to burn.
      *  @param  recipient The NFT owner address.
-     *  @param  index     The price bucket index.
      *  @param  pool      The pool address to burn the token from.
      */
     struct BurnParams {
         uint256 tokenId;
         address recipient;
-        uint256 index;
         address pool;
     }
 
