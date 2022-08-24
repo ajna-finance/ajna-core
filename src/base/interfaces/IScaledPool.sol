@@ -128,12 +128,6 @@ interface IScaledPool {
     function lenderInterestFactor() external view returns (uint256 lenderInterestFactor_);
 
     /**
-     *  @notice Returns the `lenderDebt` state variable.
-     *  @return lenderDebt_ Total amount of lender debt in pool.
-     */
-    function lenderDebt() external view returns (uint256 lenderDebt_);
-
-    /**
      *  @notice Returns the amount of quote token in the book down to the specified bucket index.
      *  @return quoteToken_ Amount of quote token (deposit + interest), regardless of pool debt.
      */

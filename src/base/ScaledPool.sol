@@ -42,7 +42,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     uint256 public override interestRate;               // [WAD]
     uint256 public override interestRateUpdate;         // [SEC]
 
-    uint256 public override lenderDebt;
     uint256 public override borrowerDebt;
 
     uint256 public override totalBorrowers;
@@ -383,7 +382,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
-        return _findSum(lenderDebt + additionalDebt_);
+        return _findSum(borrowerDebt + additionalDebt_);
     }
 
     function _indexToBucketIndex(uint256 index_) internal pure returns (int256) {

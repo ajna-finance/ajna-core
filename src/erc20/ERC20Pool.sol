@@ -97,7 +97,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update actor accounting
         borrowerDebt = curDebt;
-        lenderDebt   += amount_;
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
@@ -147,11 +146,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 amount = Maths.min(borrower.debt, maxAmount_);
         borrower.debt -= amount;
-
-        // update lender accounting
-        uint256 curLenderDebt = lenderDebt;
-        curLenderDebt -= Maths.min(curLenderDebt, Maths.wmul(Maths.wdiv(curLenderDebt, curDebt), amount));
-
         curDebt       -= amount;
 
         // update loan queue
@@ -167,13 +161,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrowers[msg.sender] = borrower;
 
         // update pool state
-        if (curDebt != 0) {
-            borrowerDebt = curDebt;
-            lenderDebt   = curLenderDebt;
-        } else {
-            borrowerDebt = 0;
-            lenderDebt   = 0;
-        }
+        borrowerDebt = curDebt;
 
         uint256 newLup = _lup();
         _updateInterestRate(curDebt, newLup);
