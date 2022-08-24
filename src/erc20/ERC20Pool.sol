@@ -162,11 +162,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrowers[msg.sender] = borrower;
 
         // update pool state
-        if (curDebt != 0) {
-            borrowerDebt = curDebt;
-        } else {
-            borrowerDebt = 0;
-        }
+        borrowerDebt = curDebt;
 
         uint256 newLup = _lup();
         _updateInterestRate(curDebt, newLup);
