@@ -61,6 +61,12 @@ interface IPositionManager {
      */
     event MoveLiquidity(address indexed lender_, uint256 tokenId_);
 
+    /**
+     *  @notice Emitted when existing positions were redeemed for a given NFT.
+     *  @param  tokenId_ The tokenId of the NFT.
+     */
+    event RedeemPosition(address indexed lender_, uint256 tokenId_);
+
     /***************/
     /*** Structs ***/
     /***************/
@@ -92,63 +98,12 @@ interface IPositionManager {
     }
 
     /**
-     *  @notice Struct holding parameters for decreasing liquidity.
-     *  @param  tokenId   The tokenId of the NFT to burn.
-     *  @param  recipient The NFT owner address.
-     *  @param  pool      The pool address to remove quote tokens from.
-     *  @param  index     The price bucket index from where liquidity should be removed.
-     *  @param  lpTokens  The number of LP tokens to use.
-     */
-    struct DecreaseLiquidityParams {
-        uint256 tokenId;
-        address recipient;
-        address pool;
-        uint256 index;
-        uint256 lpTokens;
-    }
-
-    /**
-     *  @notice Struct holding parameters for decreasing liquidity.
-     *  @param  tokenId   The tokenId of the NFT to burn.
-     *  @param  recipient The NFT owner address.
-     *  @param  pool      The pool address to remove quote tokens from.
-     *  @param  index     The price bucket index from where liquidity should be removed.
-     *  @param  lpTokens  The number of LP tokens to use.
-     *  @param  lpTokens  The number of LP tokens to use.
-
-     */
-    struct DecreaseLiquidityNFTParams {
-        uint256 tokenId;
-        address recipient;
-        address pool;
-        uint256 index;
-        uint256 lpTokens;
-        uint256[] tokenIdsToRemove;
-    }
-
-    /**
-     *  @notice Struct holding parameters for increasing liquidity.
-     *  @param  tokenId   The tokenId of the NFT tracking liquidity.
-     *  @param  recipient The NFT owner address.
-     *  @param  pool      The pool address to deposit quote tokens.
-     *  @param  amount    The amount of quote tokens to be added to the pool.
-     *  @param  index     The price bucket index where liquidity should be added.
-     */
-    struct IncreaseLiquidityParams {
-        uint256 tokenId;
-        address recipient;
-        address pool;
-        uint256 amount;
-        uint256 index;
-    }
-
-    /**
-     *  @notice Struct holding parameters for memorializing positions.
+     *  @notice Struct holding parameters for tracking positions.
      *  @param  tokenId The tokenId of the NFT.
      *  @param  owner   The NFT owner address.
      *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
      */
-    struct MemorializePositionsParams {
+    struct PositionsParams {
         uint256 tokenId;
         address owner;
         uint256[] indexes;
@@ -180,19 +135,6 @@ interface IPositionManager {
         uint256 toIndex;
     }
 
-    /**
-     *  @notice Struct holding position info.
-     *  @param  nonce    Nonce used for permits.
-     *  @param  owner    Address of owner of the position.
-     *  @param  lpTokens Mapping of price to lpTokens for the owner.
-     */
-    struct Position {
-        uint96 nonce;
-        address owner;
-        address pool;
-        mapping(uint256 => uint256) lpTokens;
-    }
-
     /************************/
     /*** Lender Functions ***/
     /************************/
@@ -205,26 +147,6 @@ interface IPositionManager {
     function burn(BurnParams calldata params_) external payable;
 
     /**
-     *  @notice Called by lenders to remove liquidity from an existing position.
-     *  @dev    Called to operate on an ERC20 type pool.
-     *  @param  params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
-     */
-    function decreaseLiquidity(DecreaseLiquidityParams calldata params_) external payable;
-
-    /**
-     *  @notice Called by lenders to remove liquidity from an existing position.
-     *  @dev    Called to operate on an ERC721 type pool.
-     *  @param  params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
-     */
-    function decreaseLiquidityNFT(DecreaseLiquidityNFTParams calldata params_) external payable;
-
-    /**
-     *  @notice Called by lenders to add liquidity to an existing position.
-     *  @param  params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
-     */
-    function increaseLiquidity(IncreaseLiquidityParams calldata params_) external payable;
-
-    /**
      *  @notice Called to memorialize existing positions with a given NFT.
      *  @dev    The array of price is expected to be constructed off chain by scanning events for that lender.
      *  @dev    The NFT must have already been created, and only TODO: (X) prices can be memorialized at a time.
@@ -232,7 +154,7 @@ interface IPositionManager {
      *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
      *  @param  params_ Calldata struct supplying inputs required to conduct the memorialization.
      */
-    function memorializePositions(MemorializePositionsParams calldata params_) external;
+    function memorializePositions(PositionsParams calldata params_) external;
 
     /**
      *  @notice Called by lenders to add quote tokens and receive a representative NFT.
@@ -246,6 +168,16 @@ interface IPositionManager {
      *  @param  params_  Calldata struct supplying inputs required to move liquidity tokens.
      */
     function moveLiquidity(MoveLiquidityParams calldata params_) external;
+
+    /**
+     *  @notice Called to reedem existing positions with a given NFT.
+     *  @dev    The array of price is expected to be constructed off chain by scanning events for that lender.
+     *  @dev    The NFT must have already been created, and only TODO: (X) prices can be redeemed at a time.
+     *  @dev    An additional call is made to the pool to transfer the LP tokens Position Manager to owner.
+     *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
+     *  @param  params_ Calldata struct supplying inputs required to conduct the redeem.
+     */
+    function reedemPositions(PositionsParams calldata params_) external;
 
 
     /**********************/
