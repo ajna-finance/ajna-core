@@ -25,14 +25,14 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** State Variables ***/
     /***********************/
 
-    /// @dev Set of tokenIds that are currently being used as collateral
-    EnumerableSet.UintSet internal _collateralTokenIdsAdded;
+    /// @dev Set of tokenIds that are currently being used as collateral in the pool
+    EnumerableSet.UintSet internal _poolCollateralTokenIds;
 
     /**
      *  @notice Mapping of price to Set of NFT Token Ids that have been deposited into the bucket
-     *  @dev price [WAD] -> collateralDeposited
+     *  @dev price index -> _bucketCollateralTokenIds
      */
-    mapping(uint256 => EnumerableSet.UintSet) internal _collateralDeposited;
+    mapping(uint256 => EnumerableSet.UintSet) internal _bucketCollateralTokenIds;
 
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
@@ -88,7 +88,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             }
 
             // update pool state
-            _collateralTokenIdsAdded.add(tokenIds_[i]);
+            _poolCollateralTokenIds.add(tokenIds_[i]);
 
             // update borrower accounting
             borrower.collateralDeposited.add(tokenIds_[i]);
@@ -181,7 +181,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             require(collateral().ownerOf(tokenIds_[i]) == address(this), "P:T_NOT_IN_P");
 
             // pool level accounting
-            _collateralTokenIdsAdded.remove(tokenIds_[i]);
+            _poolCollateralTokenIds.remove(tokenIds_[i]);
 
             // borrower accounting
             borrower.collateralDeposited.remove(tokenIds_[i]);
@@ -252,11 +252,72 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Lender External Functions ***/
     /*********************************/
 
-    // TODO: finish implementing
-    function addCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpbChange_) {}
+    // TODO: does pool state need to be updated with collateral deposited as well?
+    function addCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpbChange_) {
+        _accruePoolInterest();
+
+        Bucket memory bucket = buckets[index_];
+        // Calculate exchange rate before new collateral has been accounted for.
+        // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
+        uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+
+        uint256 tokensToAdd   = Maths.wad(tokenIds_.length);
+        uint256 quoteValue    = Maths.wmul(tokensToAdd, _indexToPrice(index_));
+        lpbChange_           = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
+        bucket.lpAccumulator += lpbChange_;
+
+        lpBalance[index_][msg.sender] += lpbChange_;
+
+        bucket.availableCollateral += tokensToAdd;
+        buckets[index_] = bucket;
+
+        _updateInterestRate(borrowerDebt, _lup());
+
+        // move required collateral from sender to pool
+        for (uint i; i < tokenIds_.length;) {
+            if (_tokenIdsAllowed.length() != 0) {
+                require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
+            }
+
+            // update bucket state
+            _bucketCollateralTokenIds[index_].add(tokenIds_[i]);
+
+            // move collateral from sender to pool
+            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
+
+        emit AddCollateralNFT(msg.sender, _indexToPrice(index_), tokenIds_);
+    }
 
     // TODO: finish implementing
-    function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpAmount_) {}
+    // TODO: check for reentrancy
+    function removeAllCollateral(uint256 index_) external override returns (uint256[] memory tokenIds_, uint256 lpAmount_) {
+
+    }
+
+    // TODO: finish implementing
+    // TODO: check for reentrancy
+    function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpAmount_) {
+
+    }
+
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
+
+    function _redeemLPForCollateral(
+        Bucket memory bucket,
+        uint256 lpAmount_,
+        uint256 amount_,
+        uint256 price_,
+        uint256 index_
+    ) internal {
+
+    }
 
     /**********************/
     /*** View Functions ***/
@@ -273,8 +334,6 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         );
     }
 
-    // TODO: finish implementing here and in ERC20 Pool following updates to lender external functions
-    // function bucketAt() {}
 
     function isTokenIdAllowed(uint256 tokenId_) external view override returns (bool) {
         return _tokenIdsAllowed.contains(tokenId_);
