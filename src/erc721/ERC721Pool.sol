@@ -131,8 +131,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
 
-        uint256 feeRate = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee) + Maths.WAD;
-        uint256 debt    = Maths.wmul(amount_, feeRate);
+        uint256 debt    = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
         borrower.debt   += debt;
 
         // pool accounting
@@ -244,6 +243,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _accruePoolInterest();
 
         Bucket memory bucket = buckets[index_];
+        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         // Calculate exchange rate before new collateral has been accounted for.
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
         uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
@@ -252,11 +252,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 quoteValue    = Maths.wmul(tokensToAdd, _indexToPrice(index_));
         lpbChange_           = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
         bucket.lpAccumulator += lpbChange_;
-
-        lpBalance[index_][msg.sender] += lpbChange_;
+        bucketLender.lpBalance += lpbChange_;
 
         bucket.availableCollateral += tokensToAdd;
         buckets[index_] = bucket;
+        bucketLenders[index_][msg.sender] = bucketLender;
 
         _updateInterestRate(borrowerDebt, _lup());
 

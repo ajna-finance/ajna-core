@@ -125,7 +125,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_subsetPool.borrowerDebt(), 5_004.807692307692310000 * 1e18);
         (uint256 debt, uint256 pendingDebt, uint256[] memory col, uint256 inflator) = _subsetPool.borrowerInfo(address(_borrower));
         assertEq(debt,        5_004.807692307692310000 * 1e18);
-        assertEq(pendingDebt, 5_010.981808339947401080 * 1e18);
+        assertEq(pendingDebt, 5_010.981808341113791532 * 1e18);
         assertEq(col.length,  3);
         assertEq(inflator,    1 * 1e18);
 
@@ -134,34 +134,34 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 51;
         _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
-        assertEq(_subsetPool.borrowerDebt(), 5_017.163540990287215539 * 1e18);
+        assertEq(_subsetPool.borrowerDebt(), 5_017.163540992622874208 * 1e18);
         (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
-        assertEq(debt,        5_017.163540990287215539 * 1e18);
-        assertEq(pendingDebt, 5_017.163540990287215539 * 1e18);
+        assertEq(debt,        5_017.163540992622874208 * 1e18);
+        assertEq(pendingDebt, 5_017.163540992622874208 * 1e18);
         assertEq(col.length,  4);
-        assertEq(inflator,    1.002468795894312911 * 1e18);
+        assertEq(inflator,    1.002468795894779594 * 1e18);
 
         // borrower pulls some of their collateral after some time has passed
         skip(864000);
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 1;
         _subsetPool.pullCollateral(tokenIdsToRemove, address(0), address(0));
-        assertEq(_subsetPool.borrowerDebt(), 5_022.733620349293441850 * 1e18);
+        assertEq(_subsetPool.borrowerDebt(), 5_022.733620353117867729 * 1e18);
         (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
-        assertEq(debt,        5_022.733620349293441850 * 1e18);
-        assertEq(pendingDebt, 5_022.733620349293441850 * 1e18);
+        assertEq(debt,        5_022.733620353117867729 * 1e18);
+        assertEq(pendingDebt, 5_022.733620353117867729 * 1e18);
         assertEq(col.length,  3);
-        assertEq(inflator,    1.003581741625987546 * 1e18);
+        assertEq(inflator,    1.003581741626751696 * 1e18);
 
         // borrower borrows some additional quote after some time has passed
         skip(864000);
         _subsetPool.borrow(1_000 * 1e18, 3000, address(0), address(0));
-        assertEq(_subsetPool.borrowerDebt(), 6_028.452940372539936903 * 1e18);
+        assertEq(_subsetPool.borrowerDebt(), 6_028.452940379879069654 * 1e18);
         (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
-        assertEq(debt,        6_028.452940372539936903 * 1e18);
-        assertEq(pendingDebt, 6_028.452940372539936903 * 1e18);
+        assertEq(debt,        6_028.452940379879069654 * 1e18);
+        assertEq(pendingDebt, 6_028.452940379879069654 * 1e18);
         assertEq(col.length,  3);
-        assertEq(inflator,    1.004584449181064656 * 1e18);
+        assertEq(inflator,    1.004584449182531072 * 1e18);
 
         // mint additional quote to borrower to enable repayment
         deal(address(_quote), _borrower, 20_000 * 1e18);
@@ -175,7 +175,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(col.length,  3);
-        assertEq(inflator,    1.005487742520903760 * 1e18);
+        assertEq(inflator,    1.005487742522395296 * 1e18);
 
     }
 
@@ -235,7 +235,6 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
         assertEq(_subsetPool.poolSize(),              30_000 * 1e18);
         assertEq(_subsetPool.borrowerDebt(),          0);
-        assertEq(_subsetPool.lenderDebt(),            0);
         assertEq(_subsetPool.poolTargetUtilization(), 1 * 1e18);
         assertEq(_subsetPool.poolActualUtilization(), 0);
         assertEq(_subsetPool.poolMinDebtAmount(),     0);
@@ -273,7 +272,6 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
         assertEq(_subsetPool.poolSize(),              30_000 * 1e18);
         assertEq(_subsetPool.borrowerDebt(),          3_002.88461538461538600 * 1e18);
-        assertEq(_subsetPool.lenderDebt(),            borrowAmount);
         assertEq(_subsetPool.poolTargetUtilization(), 1 * 1e18);
         assertEq(_subsetPool.poolActualUtilization(), .100096153846153846 * 1e18);
         assertEq(_subsetPool.poolMinDebtAmount(),     300.288461538461538600 * 1e18);
@@ -308,18 +306,17 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_quote.balanceOf(address(_borrower)), borrowAmount / 2);
 
         // check pool state after partial repay
-        assertEq(_subsetPool.htp(), 503.711801848228267897 * 1e18);
+        assertEq(_subsetPool.htp(), 503.711801848555564077 * 1e18);
         assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2550));
 
         // check utilization changes make sense
-        assertEq(_subsetPool.poolSize(),              30_003.704723414134980000 * 1e18);
-        assertEq(_subsetPool.borrowerDebt(),          1507.000974733654242290 * 1e18);
-        assertEq(_subsetPool.lenderDebt(),            1_503.492337444756410000 * 1e18);
-        assertEq(_subsetPool.poolTargetUtilization(), .166838815387959167 * 1e18);
-        assertEq(_subsetPool.poolActualUtilization(), .050227163232866662 * 1e18);
-        assertEq(_subsetPool.poolMinDebtAmount(),     150.700097473365424229 * 1e18);
+        assertEq(_subsetPool.poolSize(),              30_003.704723414575110000 * 1e18);
+        assertEq(_subsetPool.borrowerDebt(),          1507.000974734143274062 * 1e18);
+        assertEq(_subsetPool.poolTargetUtilization(), .166838815388013307 * 1e18);
+        assertEq(_subsetPool.poolActualUtilization(), .050227163232882224 * 1e18);
+        assertEq(_subsetPool.poolMinDebtAmount(),     150.700097473414327406 * 1e18);
         assertEq(_subsetPool.poolMinDebtAmount(),     _subsetPool.borrowerDebt() / 10);
-        assertEq(_subsetPool.exchangeRate(2550),      1.000123490780471166000000000 * 1e27);
+        assertEq(_subsetPool.exchangeRate(2550),      1.000123490780485837000000000 * 1e27);
 
         // check bucket state after partial repay
         (lpAccumulator, availableCollateral) = _subsetPool.buckets(2550);
@@ -328,10 +325,10 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
         // check borrower info after partial repay
         (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
-        assertEq(debt,        1_507.000974733654242290 * 1e18);
-        assertEq(pendingDebt, 1_507.000974733654242290 * 1e18);
+        assertEq(debt,        1_507.000974734143274062 * 1e18);
+        assertEq(pendingDebt, 1_507.000974734143274062 * 1e18);
         assertEq(col.length,  3);
-        assertEq(inflator,    1.001370801704450980 * 1e18);
+        assertEq(inflator,    1.001370801704613834 * 1e18);
 
         // pass time to allow additional interest to accumulate
         skip(864000);
@@ -351,8 +348,8 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_collateral.balanceOf(address(_borrower)), 49);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 3);
 
-        assertEq(_quote.balanceOf(address(_subsetPool)),   30_008.860066920758216978 * 1e18);
-        assertEq(_quote.balanceOf(address(_borrower)), 991.139933079241783022 * 1e18);
+        assertEq(_quote.balanceOf(address(_subsetPool)),   30_008.860066921599064643 * 1e18);
+        assertEq(_quote.balanceOf(address(_borrower)), 991.139933078400935357 * 1e18);
 
         // check pool state after fully repay
         assertEq(_subsetPool.htp(), 0);
@@ -360,13 +357,12 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
         // TODO: check target utilization
         // check utilization changes make sense
-        assertEq(_subsetPool.poolSize(),              30_005.377906382528563727 * 1e18);
+        assertEq(_subsetPool.poolSize(),              30_005.377906383285317363 * 1e18);
         assertEq(_subsetPool.borrowerDebt(),          0);
-        assertEq(_subsetPool.lenderDebt(),            0);
         assertEq(_subsetPool.poolTargetUtilization(), .000000452724663788 * 1e18);
         assertEq(_subsetPool.poolActualUtilization(), 0);
         assertEq(_subsetPool.poolMinDebtAmount(),     0);
-        assertEq(_subsetPool.exchangeRate(2550),      1.000179263546084285000000000 * 1e27);
+        assertEq(_subsetPool.exchangeRate(2550),      1.000179263546109511000000000 * 1e27);
 
         // check bucket state after fully repay
         (lpAccumulator, availableCollateral) = _subsetPool.buckets(2550);
@@ -379,7 +375,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(col.length,  3);
-        assertEq(inflator,    1.002606129793188157 * 1e18);
+        assertEq(inflator,    1.002606129793584586 * 1e18);
     }
 
     // TODO: add repay failure checks

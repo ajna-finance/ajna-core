@@ -329,7 +329,6 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
 
         // check collateralization after pledge
         assertEq(_subsetPool.encumberedCollateral(_subsetPool.borrowerDebt(), _subsetPool.lup()), 0);
-        assertEq(_subsetPool.encumberedCollateral(_subsetPool.lenderDebt(), _subsetPool.lup()),   0);
 
         // borrower borrows some quote
         vm.expectEmit(true, true, false, true);
@@ -338,7 +337,6 @@ contract ERC721ScaledCollateralTest is ERC721DSTestPlus {
 
         // check collateralization after borrow
         assertEq(_subsetPool.encumberedCollateral(_subsetPool.borrowerDebt(), _subsetPool.lup()), 2.992021560300836411 * 1e18);
-        assertEq(_subsetPool.encumberedCollateral(_subsetPool.lenderDebt(), _subsetPool.lup()),   2.989147380127636759 * 1e18);
 
         // should revert if borrower attempts to pull more collateral than is unencumbered
         uint256[] memory tokenIdsToRemove = new uint256[](2);
