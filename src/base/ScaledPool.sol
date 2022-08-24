@@ -103,8 +103,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
         BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
-        uint256 availableLPs        = bucketLender.lpBalance;
-        uint256 curDebt             = _accruePoolInterest();
+        uint256 availableLPs              = bucketLender.lpBalance;
+        uint256 curDebt                   = _accruePoolInterest();
 
         // determine amount of quote token to move
         Bucket storage fromBucket   = buckets[fromIndex_];
@@ -120,10 +120,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _remove(fromIndex_, amount);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        if (pledgedCollateral > 0) {
-            uint256 ptp = Maths.wdiv(borrowerDebt, pledgedCollateral);
-            bool earlyWithdrawal = bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days;
-            if (earlyWithdrawal && _indexToPrice(fromIndex_) > ptp && _indexToPrice(toIndex_) < ptp) {
+        uint256 col = pledgedCollateral;
+        if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
+            uint256 ptp = Maths.wdiv(borrowerDebt, col);
+            if (_indexToPrice(fromIndex_) > ptp && _indexToPrice(toIndex_) < ptp) {
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
             }
         }
@@ -279,7 +279,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 newLup = _lup();
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
 
-        bucket.lpAccumulator -= lpAmount_;
+        bucket.lpAccumulator   -= lpAmount_;
         bucketLender.lpBalance -= lpAmount_;
 
         // persist bucket changes
@@ -287,11 +287,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         bucketLenders[index_][msg.sender] = bucketLender;
 
         // apply early withdrawal penalty if quote token is withdrawn above the PTP
-        if (pledgedCollateral > 0) {
-            uint256 ptp = Maths.wdiv(borrowerDebt, pledgedCollateral);
-            bool earlyWithdrawal = bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days;
-            if (earlyWithdrawal && _indexToPrice(index_) > ptp) {
-                amount = Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
+        uint256 col = pledgedCollateral;
+        if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
+            uint256 ptp = Maths.wdiv(borrowerDebt, col);
+            if (_indexToPrice(index_) > ptp) {
+                amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
             }
         }
 
