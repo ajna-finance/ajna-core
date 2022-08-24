@@ -255,7 +255,7 @@ def add_quote_token(lender, lender_index, pool):
 
 def remove_quote_token(lender, lender_index, price, pool):
     price_index = pool.priceToIndex(price)
-    lp_balance = pool.lpBalance(price_index, lender)
+    (lp_balance, _) = pool.bucketLenders(price_index, lender)
     if lp_balance > 0:
         exchange_rate = pool.exchangeRate(price_index)
         claimable_quote = lp_balance * exchange_rate / 10**36
