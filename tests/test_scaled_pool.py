@@ -1,7 +1,6 @@
 import brownie
 import pytest
 import inspect
-from decimal import *
 from brownie import Contract
 from conftest import ZRO_ADD
 
