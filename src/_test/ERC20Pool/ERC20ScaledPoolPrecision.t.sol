@@ -183,7 +183,6 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
 
         assertEq(_pool.borrowerDebt(),      debt);
         assertEq(_pool.pledgedCollateral(), col);
-        assertEq(_pool.lenderDebt(),        10_000 * _quotePoolPrecision);
 
         assertEq(_pool.poolSize(),                        150_000 * _quotePoolPrecision);
         assertEq(_pool.lpBalance(2549, address(_lender)), 50_000 * _lpPoolPrecision);

@@ -707,7 +707,6 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
 
         assertEq(_pool.poolSize(),     50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
 
         // check token balances
         assertEq(_collateral.balanceOf(address(_pool)),         5_000 * 1e18);
@@ -753,7 +752,6 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
 
         assertEq(_pool.poolSize(),     43_010.892022197881557845 * 1e18);
         assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
 
         // check token balances
         assertEq(_collateral.balanceOf(address(_pool)),         5_000 * 1e18);
@@ -802,7 +800,6 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
 
         assertEq(_pool.poolSize(),     90_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
 
         // check token balances
         assertEq(_collateral.balanceOf(address(_pool)),         5_083.393625665957573560 * 1e18);
@@ -845,7 +842,6 @@ contract PositionManagerDecreaseLiquidityWithDebtTest is PositionManagerHelperCo
 
         assertEq(_pool.poolSize(),     40_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 25_024.038461538461550000 * 1e18);
-        assertEq(_pool.lenderDebt(),   25_000 * 1e18);
 
         // check token balances
         assertEq(_collateral.balanceOf(address(_pool)),         5_000 * 1e18);

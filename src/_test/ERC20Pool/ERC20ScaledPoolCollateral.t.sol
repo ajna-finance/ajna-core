@@ -74,7 +74,6 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
 
         assertEq(_pool.poolSize(),     30_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 0);
-        assertEq(_pool.lenderDebt(),   0);
 
         assertEq(_pool.pledgedCollateral(),   0);
         assertEq(_collateral.balanceOf(address(_borrower)), 150 * 1e18);
@@ -102,11 +101,9 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
 
         assertEq(_pool.poolSize(),          30_000 * 1e18);
         assertEq(_pool.borrowerDebt(),      21_020.192307692307702000 * 1e18);
-        assertEq(_pool.lenderDebt(),        21_000 * 1e18);
         assertEq(_pool.pledgedCollateral(), 100 * 1e18);
 
         assertEq(_pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()), 7.051372011699988577 * 1e18);
-        assertEq(_pool.encumberedCollateral(_pool.lenderDebt(), _pool.lup()),   7.044598359431304627 * 1e18);
 
         // check borrower state
         (uint256 borrowerDebt, , uint256 borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
@@ -152,11 +149,9 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
 
         assertEq(_pool.poolSize(),          30_025.933063902025680000 * 1e18);
         assertEq(_pool.borrowerDebt(),      21_049.006823139002918431 * 1e18);
-        assertEq(_pool.lenderDebt(),        21_000 * 1e18);
         assertEq(_pool.pledgedCollateral(), _pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()));
 
         assertEq(_pool.encumberedCollateral(_pool.borrowerDebt(), _pool.lup()), 7.061038044473493202 * 1e18);
-        assertEq(_pool.encumberedCollateral(_pool.lenderDebt(), _pool.lup()),   7.044598359431304627 * 1e18);
 
         // check borrower state
         (borrowerDebt, , borrowerCollateral, ) = _pool.borrowerInfo(address(_borrower));
