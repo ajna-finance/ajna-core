@@ -99,8 +99,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         lpTokenOwnership[msg.sender] = allowedNewOwner_;
     }
 
-    event Debug(string where, uint256 what);
-
     function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
@@ -111,12 +109,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // determine amount of quote token to move
         Bucket storage fromBucket   = buckets[fromIndex_];
         uint256 availableQuoteToken = _rangeSum(fromIndex_, fromIndex_);
-        emit Debug("moveQuoteToken availableQuoteToken", availableQuoteToken);
         uint256 rate                = _exchangeRate(availableQuoteToken, fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
-        emit Debug("moveQuoteToken availableLPs", availableLPs);
-        emit Debug("moveQuoteToken rate", rate);
         uint256 amount              = Maths.min(maxAmount_, Maths.min(availableQuoteToken, Maths.rrdivw(availableLPs, rate)));
-        emit Debug("moveQuoteToken amount", amount);
 
         // calculate amount of LP required to move it
         uint256 lpbAmount = Maths.wrdivr(amount, rate);
@@ -128,11 +122,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         if (pledgedCollateral > 0) {
             uint256 ptp = Maths.wdiv(borrowerDebt, pledgedCollateral);
-            emit Debug("moveQuoteToken PTP", ptp);
             bool earlyWithdrawal = bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days;
-            emit Debug("moveQuoteToken earlyWithdrawal", earlyWithdrawal ? 1 : 0);
             if (earlyWithdrawal && _indexToPrice(fromIndex_) > ptp && _indexToPrice(toIndex_) < ptp) {
-                emit Debug("moveQuoteToken penalty", Maths.wmul(amount, _calculateFeeRate()));
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
             }
         }
