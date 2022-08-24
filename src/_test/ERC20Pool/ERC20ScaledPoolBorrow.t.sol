@@ -89,9 +89,9 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
 
         // get a 21_000 DAI loan
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), 2_981.007422784467321543 * 1e18, 21_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower), 21_000 * 1e18);
         _pool.borrow(21_000 * 1e18, 3000, address(0), address(0));
 
         assertEq(_pool.htp(), 210.201923076923077020 * 1e18);
@@ -134,9 +134,9 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
 
         // borrow 19_000 DAI
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_borrower), 19_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), 2_966.176540084047110076 * 1e18, 19_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower), 19_000 * 1e18);
         _pool.borrow(19_000 * 1e18, 3500, address(0), address(0));
 
         assertEq(_pool.htp(), 400.384615384615384800 * 1e18);
@@ -153,9 +153,9 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
 
         // repay partial
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_borrower), address(_pool), 10_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), 2_966.176540084047110076 * 1e18, 10_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_borrower), address(_pool), 10_000 * 1e18);
         _pool.repay(10_000 * 1e18, address(0), address(0));
 
         assertEq(_pool.htp(), 300.384615384615384800 * 1e18);
@@ -172,9 +172,9 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 40 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_borrower), address(_pool), 30_038.461538461538480000 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), BucketMath.MAX_PRICE, 30_038.461538461538480000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_borrower), address(_pool), 30_038.461538461538480000 * 1e18);
         _pool.repay(30_040 * 1e18, address(0), address(0));
 
         assertEq(_pool.htp(), 0);
@@ -213,53 +213,53 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
         assertEq(_pool.borrowerDebt(), 21_020.192307692307702000 * 1e18);
         (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(address(_borrower));
         assertEq(debt,        21_020.192307692307702000 * 1e18);
-        assertEq(pendingDebt, 21_051.890446233188505554 * 1e18);
+        assertEq(pendingDebt, 21_051.890446235135648008 * 1e18);
         assertEq(col,         50 * 1e18);
         assertEq(inflator,    1 * 1e18);
 
         skip(864000);
         _pool.pledgeCollateral(10 * 1e18, address(0), address(0));
-        assertEq(_pool.borrowerDebt(), 21_083.636385097313216749 * 1e18);
+        assertEq(_pool.borrowerDebt(), 21_083.636385101213387311 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
-        assertEq(debt,        21_083.636385097313216749 * 1e18);
-        assertEq(pendingDebt, 21_083.636385097313216749 * 1e18);
+        assertEq(debt,        21_083.636385101213387311 * 1e18);
+        assertEq(pendingDebt, 21_083.636385101213387311 * 1e18);
         assertEq(col,         60 * 1e18);
-        assertEq(inflator,    1.003018244385032969 * 1e18);
+        assertEq(inflator,    1.003018244385218513 * 1e18);
 
         skip(864000);
         _pool.pullCollateral(10 * 1e18, address(0), address(0));
-        assertEq(_pool.borrowerDebt(), 21_118.612213256345042351 * 1e18);
+        assertEq(_pool.borrowerDebt(), 21_118.612213260575675180 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
-        assertEq(debt,        21_118.612213256345042351 * 1e18);
-        assertEq(pendingDebt, 21_118.612213256345042351 * 1e18);
+        assertEq(debt,        21_118.612213260575675180 * 1e18);
+        assertEq(pendingDebt, 21_118.612213260575675180 * 1e18);
         assertEq(col,         50 * 1e18);
-        assertEq(inflator,    1.004682160092703849 * 1e18);
+        assertEq(inflator,    1.004682160092905114 * 1e18);
 
         skip(864000);
         _pool.borrow(0, 3000, address(0), address(0));
-        assertEq(_pool.borrowerDebt(), 21_157.152642997118010824 * 1e18);
+        assertEq(_pool.borrowerDebt(), 21_157.152643010853298669 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
-        assertEq(debt,        21_157.152642997118010824 * 1e18);
-        assertEq(pendingDebt, 21_157.152642997118010824 * 1e18);
+        assertEq(debt,        21_157.152643010853298669 * 1e18);
+        assertEq(pendingDebt, 21_157.152643010853298669 * 1e18);
         assertEq(col,         50 * 1e18);
-        assertEq(inflator,    1.006515655675266581 * 1e18);
+        assertEq(inflator,    1.006515655675920014 * 1e18);
 
         skip(864000);
         _pool.repay(0, address(0), address(0));
-        assertEq(_pool.borrowerDebt(), 21_199.628356880380570924 * 1e18);
+        assertEq(_pool.borrowerDebt(), 21_199.628356897284446170 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
-        assertEq(debt,        21_199.628356880380570924 * 1e18);
-        assertEq(pendingDebt, 21_199.628356880380570924 * 1e18);
+        assertEq(debt,        21_199.628356897284446170 * 1e18);
+        assertEq(pendingDebt, 21_199.628356897284446170 * 1e18);
         assertEq(col,         50 * 1e18);
-        assertEq(inflator,    1.008536365726892447 * 1e18);
+        assertEq(inflator,    1.008536365727696620 * 1e18);
 
         skip(864000);
-        assertEq(_pool.borrowerDebt(), 21_199.628356880380570924 * 1e18);
+        assertEq(_pool.borrowerDebt(), 21_199.628356897284446170 * 1e18);
         (debt, pendingDebt, col, inflator) = _pool.borrowerInfo(address(_borrower));
-        assertEq(debt,        21_199.628356880380570924 * 1e18);
-        assertEq(pendingDebt, 21_246.450141911768550258 * 1e18);
+        assertEq(debt,        21_199.628356897284446170 * 1e18);
+        assertEq(pendingDebt, 21_246.450141935843879765 * 1e18);
         assertEq(col,         50 * 1e18);
-        assertEq(inflator,    1.008536365726892447 * 1e18);
+        assertEq(inflator,    1.008536365727696620 * 1e18);
     }
 
     /**
@@ -308,9 +308,9 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
 
         // should be able to borrow if properly specified
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), address(_borrower2), 10 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower2), 2_995.912459898389633881 * 1e18, 10 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), address(_borrower2), 10 * 1e18);
         _pool.borrow(10 * 1e18, 3000, address(0), address(0));
     }
 
@@ -357,9 +357,9 @@ contract ERC20ScaledBorrowTest is DSTestPlus {
 
         // should be able to repay loan if properly specified
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_borrower), address(_pool), 0.0001 * 1e18);
-        vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), _pool.lup(), 0.0001 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_borrower), address(_pool), 0.0001 * 1e18);
         _pool.repay(0.0001 * 1e18, address(_borrower2), address(_borrower2));
     }
 

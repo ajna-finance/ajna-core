@@ -95,7 +95,7 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_pool.poolSize(),     110_162.490615980593600000 * 1e18);
+        assertEq(_pool.poolSize(),     110_162.490615984432250000 * 1e18);
         assertEq(_pool.borrowerDebt(), 0);
         assertEq(_pool.lenderDebt(),   0);
 
@@ -103,7 +103,7 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(col,         100 * 1e18);
-        assertEq(inflator,    1.001507985182860621 * 1e18);
+        assertEq(inflator,    1.001507985182953253 * 1e18);
 
         assertEq(_pool.interestRate(),       0.055 * 1e18); // FIXME here it should decrease
         assertEq(_pool.interestRateUpdate(), 864000);
@@ -122,12 +122,12 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
         _pool.pledgeCollateral(50 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 4300, address(0), address(0));
         assertEq(_pool.inflatorSnapshot(), 1.0 * 1e18);
-        assertEq(_pool.pendingInflator(), 1.000005707778845707 * 1e18);
+        assertEq(_pool.pendingInflator(), 1.000005707778846384 * 1e18);
         vm.warp(block.timestamp+3600);
 
         // ensure pendingInflator increases as time passes
         assertEq(_pool.inflatorSnapshot(), 1.0 * 1e18);
-        assertEq(_pool.pendingInflator(), 1.000011415590270154 * 1e18);
+        assertEq(_pool.pendingInflator(), 1.000011415590271509 * 1e18);
     }
 
     // TODO: add test related to pool utilization changes
