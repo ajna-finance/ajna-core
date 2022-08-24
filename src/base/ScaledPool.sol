@@ -213,15 +213,17 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
             prices[i] = _indexToPrice(indexes_[i]);
 
             // calculate lp tokens to be moved in the given bucket
-            uint256 tokensToTransfer = bucketLenders[indexes_[i]][owner_].lpBalance;
-
-            // TODO: transfer the deposit timestamp as well?
+            BucketLender memory bucketLenderOwner = bucketLenders[indexes_[i]][owner_];
+            BucketLender memory bucketLenderNewOwner = bucketLenders[indexes_[i]][newOwner_];
+            uint256 balanceToTransfer = bucketLenderOwner.lpBalance;
 
             // move lp tokens to the new owners address
+            bucketLenderNewOwner.lpBalance += balanceToTransfer;
+            bucketLenderNewOwner.lastQuoteDeposit = Maths.max(bucketLenderOwner.lastQuoteDeposit, bucketLenderNewOwner.lastQuoteDeposit);
+            bucketLenders[indexes_[i]][newOwner_] = bucketLenderNewOwner;
             delete bucketLenders[indexes_[i]][owner_];
-            bucketLenders[indexes_[i]][newOwner_].lpBalance += tokensToTransfer;
 
-            tokensTransferred += tokensToTransfer;
+            tokensTransferred += balanceToTransfer;
 
             unchecked {
                 ++i;
