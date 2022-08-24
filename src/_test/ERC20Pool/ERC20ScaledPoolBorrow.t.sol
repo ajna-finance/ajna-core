@@ -73,7 +73,6 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         assertEq(_pool.poolSize(),              50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),          0);
-        assertEq(_pool.lenderDebt(),            0);
         assertEq(_pool.poolActualUtilization(), 0);
         assertEq(_pool.poolMinDebtAmount(),     0);
 
@@ -99,7 +98,6 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         assertEq(_pool.poolSize(),     50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 21_020.192307692307702000 * 1e18);
-        assertEq(_pool.lenderDebt(),   21_000 * 1e18);
         assertEq(_pool.poolTargetUtilization(), 1 * 1e18);
         assertEq(_pool.poolActualUtilization(), 0.420403846153846154 * 1e18);
         assertEq(_pool.poolMinDebtAmount(),     2_102.0192307692307702 * 1e18);
@@ -109,11 +107,16 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
         assertEq(_quote.balanceOf(address(_lender)), 150_000 * 1e18);
 
         // check LPs
-        assertEq(_pool.lpBalance(depositIndexHighest, address(_lender)), 10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexHigh, address(_lender)),    10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexMed, address(_lender)),     10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexLow, address(_lender)),     10_000 * 1e27);
-        assertEq(_pool.lpBalance(depositIndexLowest, address(_lender)),  10_000 * 1e27);
+        (uint256 lpBalance, ) = _pool.bucketLenders(depositIndexHighest, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexHigh, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexMed, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexLow, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(depositIndexLowest, address(_lender));
+        assertEq(lpBalance, 10_000 * 1e27);
 
         // check buckets
         (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(depositIndexHighest);
@@ -134,17 +137,16 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         // borrow 19_000 DAI
         vm.expectEmit(true, true, false, true);
-        emit Borrow(address(_borrower), 2_966.176540084047110076 * 1e18, 19_000 * 1e18);
+        emit Borrow(address(_borrower), 2_951.419442869698640451 * 1e18, 19_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), address(_borrower), 19_000 * 1e18);
         _pool.borrow(19_000 * 1e18, 3500, address(0), address(0));
 
         assertEq(_pool.htp(), 400.384615384615384800 * 1e18);
-        assertEq(_pool.lup(), 2_966.176540084047110076 * 1e18);
+        assertEq(_pool.lup(), 2_951.419442869698640451 * 1e18);
 
         assertEq(_pool.poolSize(),          50_000 * 1e18);
         assertEq(_pool.borrowerDebt(),      40_038.461538461538480000 * 1e18);
-        assertEq(_pool.lenderDebt(),        40_000 * 1e18);
         assertEq(_pool.poolMinDebtAmount(), 4_003.846153846153848 * 1e18);
 
         // check balances
@@ -163,7 +165,6 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         assertEq(_pool.poolSize(),     50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 30_038.461538461538480000 * 1e18);
-        assertEq(_pool.lenderDebt(),   30_009.606147934678200000 * 1e18);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   20_000 * 1e18);
@@ -182,7 +183,6 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         assertEq(_pool.poolSize(),     50_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 0);
-        assertEq(_pool.lenderDebt(),   0);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   50_038.461538461538480000 * 1e18);

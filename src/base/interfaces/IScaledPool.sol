@@ -61,7 +61,7 @@ interface IScaledPool {
     /***********************/
 
     /**
-     *  @notice Mapping of buckets indexes to {Borrower} structs.
+     *  @notice Mapping of buckets indexes to {Bucket} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  index_        Bucket index.
      *  @return lpAccumulator       Amount of LPs accumulated in current bucket.
@@ -74,6 +74,16 @@ interface IScaledPool {
      *  @return Number of price buckets in the pool, a constant.
      */
     function bucketCount() external view returns (uint256);
+
+    /**
+     *  @notice Mapping of buckets indexes and owner addresses to {BucketLender} structs.
+     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
+     *  @param  index_           Bucket index.
+     *  @param  lp_              Address of the liquidity provider.
+     *  @return lpBalance        Amount of LPs owner has in current bucket.
+     *  @return lastQuoteDeposit Time the user last deposited quote token.
+     */
+    function bucketLenders(uint256 index_, address lp_) external view returns (uint256 lpBalance, uint256 lastQuoteDeposit);
 
     /**
      *  @notice Returns the `borrowerDebt` state variable.
@@ -118,12 +128,6 @@ interface IScaledPool {
     function lenderInterestFactor() external view returns (uint256 lenderInterestFactor_);
 
     /**
-     *  @notice Returns the `lenderDebt` state variable.
-     *  @return lenderDebt_ Total amount of lender debt in pool.
-     */
-    function lenderDebt() external view returns (uint256 lenderDebt_);
-
-    /**
      *  @notice Returns the amount of quote token in the book down to the specified bucket index.
      *  @return quoteToken_ Amount of quote token (deposit + interest), regardless of pool debt.
      */
@@ -134,14 +138,6 @@ interface IScaledPool {
      *  @return lupColEma_ Exponential LUP * pledged collateral moving average.
      */
     function lupColEma() external view returns (uint256 lupColEma_);
-
-    /**
-     *  @notice Nested mapping of lender's LP token balance at different price buckets.
-     *  @param  depositIndex_ Index of the deposit / bucket.
-     *  @param  lp_           Address of the LP.
-     *  @return balance_      LP token balance of the lender at the queried deposit index.
-     */
-    function lpBalance(uint256 depositIndex_, address lp_) external view returns (uint256 balance_);
 
     /**
      *  @notice Nested mapping of LP token ownership address for transferLPTokens access control.
@@ -186,6 +182,11 @@ interface IScaledPool {
     struct Bucket {
         uint256 lpAccumulator;       // [RAY]
         uint256 availableCollateral; // [WAD]
+    }
+
+    struct BucketLender {
+        uint256 lpBalance;           // [RAY]
+        uint256 lastQuoteDeposit;    // timestamp
     }
 
     /*********************************/
