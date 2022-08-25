@@ -63,6 +63,7 @@ abstract contract DSTestPlus is Test {
     event MemorializePosition(address indexed lender_, uint256 tokenId_);
     event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
     event MoveLiquidity(address indexed owner_, uint256 tokenId_);
+    event RedeemPosition(address indexed lender_, uint256 tokenId_);
 
     // Pool events
     event AddCollateral(address indexed borrower_, uint256 amount_);

@@ -75,12 +75,12 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IScaledPool pool      = IScaledPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
+            // record price at which a position has added liquidity
+            require(positionPrice.add(params_.indexes[i]), "PM:ME:ADD_FAIL");
+
             // update PositionManager accounting
             (uint256 lpBalance, ) = pool.bucketLenders(params_.indexes[i], params_.owner);
             lps[params_.tokenId][params_.indexes[i]] = lpBalance;
-
-            // record price at which a position has added liquidity
-            require(positionPrice.add(params_.indexes[i]), "PM:ME:ADD_FAIL");
 
             // increment call counter in gas efficient way by skipping safemath checks
             unchecked {
@@ -132,13 +132,13 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IScaledPool pool      = IScaledPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
+            // remove price at which a position has added liquidity
+            require(positionPrice.remove(params_.indexes[i]), "PM:R:REMOVE_FAIL");
+
             pool.approveLpOwnership(params_.owner, params_.indexes[i], lps[params_.tokenId][params_.indexes[i]]);
 
             // update PositionManager accounting
             delete lps[params_.tokenId][params_.indexes[i]];
-
-            // remove price at which a position has added liquidity
-            require(positionPrice.remove(params_.indexes[i]), "PM:R:REMOVE_FAIL");
 
             // increment call counter in gas efficient way by skipping safemath checks
             unchecked {
