@@ -152,15 +152,16 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
+        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
+        lpAmount_ = bucketLender.lpBalance;
+        require(lpAmount_ != 0, "S:RAQT:NO_CLAIM");
+
         uint256 availableQuoteToken = _rangeSum(index_, index_);
         require(availableQuoteToken != 0, "S:RAQT:NO_QT");
 
         Bucket memory bucket = buckets[index_];
-        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         uint256 rate         = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
-        lpAmount_            = bucketLender.lpBalance;
         amount_              = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
-        require(amount_ != 0, "S:RAQT:NO_CLAIM");
 
         if (amount_ > availableQuoteToken) {
             // user is owed more quote token than is available in the bucket
@@ -175,16 +176,15 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
-        Bucket memory bucket             = buckets[index_];
-        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
-        uint256 availableQuoteToken      = _rangeSum(index_, index_);
-        uint256 rate                     = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 availableLPs             = bucketLender.lpBalance;
-
-        // ensure user can actually remove that much
+        uint256 availableQuoteToken = _rangeSum(index_, index_);
         require(amount_ <= availableQuoteToken, "S:RQT:INSUF_QT");
-        lpAmount_ = Maths.wrdivr(amount_, rate);
-        require(availableLPs != 0 && lpAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
+
+        Bucket memory bucket = buckets[index_];
+        uint256 rate         = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
+        lpAmount_            = Maths.wrdivr(amount_, rate);
+
+        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
+        require(bucketLender.lpBalance != 0 && lpAmount_ <= bucketLender.lpBalance, "S:RQT:INSUF_LPS");
 
         _redeemLPForQuoteToken(bucket, bucketLender, lpAmount_, amount_, index_);
     }
