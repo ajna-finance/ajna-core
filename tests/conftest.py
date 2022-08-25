@@ -171,7 +171,7 @@ class TestUtils:
 
     @staticmethod
     def get_usage(gas) -> str:
-        in_eth = gas * 50 * 10e-9
+        in_eth = gas * 50 * 1e-9
         in_fiat = in_eth * 1700
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
     
