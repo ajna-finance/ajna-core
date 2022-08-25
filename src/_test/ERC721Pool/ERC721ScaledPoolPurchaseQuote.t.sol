@@ -142,13 +142,12 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         emit AddCollateralNFT(address(_bidder), priceAtTestIndex, tokenIdsToAdd);
         uint256 lpBalanceChange = _subsetPool.addCollateral(tokenIdsToAdd, testIndex);
 
-        // FIXME: finish implementing
         // check bucket state
         (quote, collateral, lpb, ) = _subsetPool.bucketAt(2550);
         assertEq(quote,      10_000 * 1e18);
         assertEq(collateral, Maths.wad(3));
-        // assertEq(lpb,        0);
-        // assertEq(lpb,        lpBalanceChange);
+        (uint256 lpBalance, ) = _subsetPool.bucketLenders(testIndex, address(_bidder));
+        assertEq(lpBalance, lpBalanceChange);
 
         // check pool state
         assertEq(_collateral.balanceOf(address(_bidder)),       10);
@@ -157,12 +156,29 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_quote.balanceOf(address(_subsetPool)),        10_000 * 1e18);
         assertEq(_quote.balanceOf(address(_bidder)),            0);
 
+        // bidder removes quote token from bucket
+        uint256 qtToRemove = Maths.wmul(priceAtTestIndex, 3 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_bidder), priceAtTestIndex, qtToRemove, _subsetPool.lup());
+        _subsetPool.removeAllQuoteToken(testIndex);
+        assertEq(_quote.balanceOf(address(_bidder)), qtToRemove);
+        (lpBalance, ) = _subsetPool.bucketLenders(testIndex, address(_bidder));
+        assertEq(lpBalance, 0);
+
         // lender removes some collateral from bucket
+        changePrank(_lender);
+        uint256[] memory tokenIdsToRemove = new uint256[](2);
+        tokenIdsToRemove[0] = 65;
+        tokenIdsToRemove[1] = 70;
+        vm.expectEmit(true, true, false, true);
+        emit RemoveCollateralNFT(address(_lender), priceAtTestIndex, tokenIdsToRemove);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_subsetPool), address(_lender), tokenIdsToRemove[0]);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_subsetPool), address(_lender), tokenIdsToRemove[1]);
+        _subsetPool.removeCollateral(tokenIdsToRemove, testIndex);
 
-
-        // lender removes all collateral from bucket
-
-
+        // TODO: lender removes all collateral from bucket
     }
 
 }
