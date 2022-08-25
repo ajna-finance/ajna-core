@@ -160,6 +160,166 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertTrue(_positionManager.isIndexInPosition(tokenId, 2552));
     }
 
+    function testRememorializePositions() external {
+        address testAddress = makeAddr("testAddress");
+        uint256 mintAmount  = 50_000 * 1e18;
+
+        _mintAndApproveQuoteTokens(testAddress, mintAmount);
+
+        // call pool contract directly to add quote tokens
+        uint256[] memory indexes = new uint256[](3);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        indexes[2] = 2552;
+
+        uint256[] memory prices = new uint256[](3);
+        prices[0] = _p3010;
+        prices[1] = _p2995;
+        prices[2] = _p2981;
+
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[0]);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[1]);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[2]);
+
+        // mint an NFT to later memorialize existing positions into
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
+
+        // check pool state
+        (uint256 lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 0);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 0);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[1]));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[2]));
+
+        // construct memorialize params struct
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId, testAddress, indexes
+        );
+        // allow position manager to take ownership of the position
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[1], 3_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[2], 3_000 * 1e27);
+
+        // memorialize quote tokens into minted NFT
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress, tokenId);
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testAddress, address(_positionManager), prices, 9_000 * 1e27);
+        vm.prank(testAddress);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 3_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
+
+        // add more liquidity
+        vm.prank(testAddress);
+        _pool.addQuoteToken(1_000 * 1e18, indexes[0]);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(2_000 * 1e18, indexes[1]);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[2]);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        assertEq(lpBalance, 1_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        assertEq(lpBalance, 2_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 3_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
+
+        // allow position manager to take ownership of the new LPs
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 1_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[1], 2_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[2], 3_000 * 1e27);
+
+        // rememorialize quote tokens into minted NFT
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress, tokenId);
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testAddress, address(_positionManager), prices, 6_000 * 1e27);
+        vm.prank(testAddress);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 4_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 5_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 6_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 4_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 5_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 6_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
+    }
+
     /**
      *  @notice Tests attachment of multiple previously created position to already existing NFTs.
      *          LP tokens are checked to verify ownership of position.

@@ -76,11 +76,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // record price at which a position has added liquidity
-            require(positionPrice.add(params_.indexes[i]), "PM:ME:ADD_FAIL");
+            if (!positionPrice.contains(params_.indexes[i])) require(positionPrice.add(params_.indexes[i]), "PM:ME:ADD_FAIL");
 
             // update PositionManager accounting
             (uint256 lpBalance, ) = pool.bucketLenders(params_.indexes[i], params_.owner);
-            lps[params_.tokenId][params_.indexes[i]] = lpBalance;
+            lps[params_.tokenId][params_.indexes[i]] += lpBalance;
 
             // increment call counter in gas efficient way by skipping safemath checks
             unchecked {
