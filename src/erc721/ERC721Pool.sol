@@ -276,41 +276,6 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit AddCollateralNFT(msg.sender, _indexToPrice(index_), tokenIds_);
     }
 
-    // // TODO: finish implementing
-    // // TODO: check for reentrancy
-    // function removeAllCollateral(uint256 index_) external override returns (uint256[] calldata tokenIds_, uint256 lpAmount_) {
-    //     Bucket memory bucket = buckets[index_];
-    //     require(bucket.availableCollateral != 0, "S:RAC:NO_COL");
-
-    //     _accruePoolInterest();
-
-    //     // FIXME: check removing whole units of collateral for the NFT pool
-    //     BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
-    //     uint256 price   = _indexToPrice(index_);
-    //     uint256 rate    = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
-    //     lpAmount_      = bucketLender.lpBalance;
-    //     uint256 amount_ = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
-    //     require(amount_ >= Maths.WAD, "S:RAC:NO_CLAIM"); // check sufficient claim to at least one whole NFT
-
-    //     if (amount_ > bucket.availableCollateral) {
-    //         // user is owed more collateral than is available in the bucket
-    //         amount_   = bucket.availableCollateral;
-    //         lpAmount_ = Maths.wrdivr(Maths.wmul(amount_, price), rate);
-    //     } // else user is redeeming all of their LPs
-
-    //     // FIXME: finish calculating amount of tokens required, and splice the tokenIds list to first required amounts similar to 8.1 implementation
-    //     uint256  numNFTsToRemove = Maths.wadToIntRoundingDown(amount_);
-
-    //     // slice bucket tokens to only use as many as are available for removal
-    //     // TODO: values() is an expensive operation -> may be better to pass in extra arg listing every tokenId possible to claim?
-    //     uint256[] calldata tokenIds_1 = new uint256[](numNFTsToRemove);
-    //     tokenIds_1 = _bucketCollateralTokenIds.values()[:numNFTsToRemove];
-
-    //     _redeemLPForCollateral(bucket, bucketLender, lpAmount_, tokenIds_, price, index_);
-    // }
-    function removeAllCollateral(uint256 index_) external override returns (uint256[] memory tokenIds_, uint256 lpAmount_) {}
-
-
     // TODO: finish implementing
     // TODO: check for reentrancy
     function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpAmount_) {
@@ -329,22 +294,6 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 nftsAvailableForClaiming = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
         require(availableLPs != 0 && lpAmount_ <= availableLPs && Maths.wad(tokenIds_.length) >= nftsAvailableForClaiming, "S:RC:INSUF_LPS");
 
-        _redeemLPForCollateral(bucket, bucketLender, lpAmount_, tokenIds_, price, index_);
-    }
-
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
-
-    // TODO: If we eliminate removeAllCollateral, could move this logic into removeCollateral and eliminate the method.
-    function _redeemLPForCollateral(
-        Bucket memory bucket,
-        BucketLender memory bucketLender,
-        uint256 lpAmount_,
-        uint256[] calldata tokenIds_,
-        uint256 price_,
-        uint256 index_
-    ) internal {
         // update bucket accounting
         bucket.availableCollateral -= Maths.wad(tokenIds_.length);
         bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpAmount_);
@@ -356,7 +305,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         _updateInterestRate(borrowerDebt, _lup());
 
-        emit RemoveCollateralNFT(msg.sender, price_, tokenIds_);
+        emit RemoveCollateralNFT(msg.sender, price, tokenIds_);
 
         // move collateral from pool to lender
         for (uint i; i < tokenIds_.length;) {

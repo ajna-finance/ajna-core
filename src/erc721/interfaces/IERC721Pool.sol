@@ -136,14 +136,6 @@ interface IERC721Pool is IScaledPool {
     function addCollateral(uint256[] calldata tokenIds_, uint256 index_) external returns (uint256 lpbChange_);
 
     /**
-     *  @notice Called by lenders to redeem the maximum amount of LP for unencumbered collateral.
-     *  @param  index_    The bucket index from which unencumbered collateral will be removed.
-     *  @return tokenIds_ The tokenIds removed.
-     *  @return lpAmount_ The amount of LP used for removing collateral.
-     */
-    function removeAllCollateral(uint256 index_) external returns (uint256[] memory tokenIds_, uint256 lpAmount_);
-
-    /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
      *  @param  tokenIds_ NFT token ids to be removed from the pool.
      *  @param  index_    The index of the bucket from which unencumbered collateral will be claimed.
