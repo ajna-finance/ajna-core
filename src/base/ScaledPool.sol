@@ -121,7 +121,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         uint256 col = pledgedCollateral;
         if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
-            uint256 ptp = Maths.wdiv(borrowerDebt, col);
+            uint256 ptp = Maths.wdiv(curDebt, col);
             if (_indexToPrice(fromIndex_) > ptp && _indexToPrice(toIndex_) < ptp) {
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
             }
@@ -286,15 +286,16 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         bucketLenders[index_][msg.sender] = bucketLender;
 
         // apply early withdrawal penalty if quote token is withdrawn above the PTP
-        uint256 col = pledgedCollateral;
+        uint256 col  = pledgedCollateral;
+        uint256 debt = borrowerDebt;
         if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
-            uint256 ptp = Maths.wdiv(borrowerDebt, col);
+            uint256 ptp = Maths.wdiv(debt, col);
             if (_indexToPrice(index_) > ptp) {
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
             }
         }
 
-        _updateInterestRate(borrowerDebt, newLup);
+        _updateInterestRate(debt, newLup);
 
         // move quote token amount from pool to lender
         emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
