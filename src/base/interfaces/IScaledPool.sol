@@ -140,13 +140,6 @@ interface IScaledPool {
     function lupColEma() external view returns (uint256 lupColEma_);
 
     /**
-     *  @notice Nested mapping of LP token ownership address for transferLPTokens access control.
-     *  @param  owner_           Address of the LP owner.
-     *  @return allowedNewOwner_ Address of the newly allowed LP token owner.
-     */
-    function lpTokenOwnership(address owner_) external view returns (address allowedNewOwner_);
-
-    /**
      *  @notice Returns the `minFee` state variable.
      *  @return minFee_ TODO
      */
@@ -202,11 +195,13 @@ interface IScaledPool {
     function addQuoteToken(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_);
 
     /**
-     *  @notice Called by lenders to approve a new owner of their LP tokens.
+     *  @notice Called by lenders to approve transfer of LP tokens to a new owner.
      *  @dev    Intended for use by the PositionManager contract.
      *  @param  allowedNewOwner_ The new owner of the LP tokens.
+     *  @param  index_           The index of the bucket from where LPs tokens are transferred.
+     *  @param  amount_          The amount of LP tokens approved to transfer.
      */
-    function approveNewPositionOwner(address allowedNewOwner_) external;
+    function approveLpOwnership(address allowedNewOwner_, uint256 index_, uint256 amount_) external;
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.

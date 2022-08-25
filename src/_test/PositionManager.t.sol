@@ -127,13 +127,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert("S:TLT:NOT_OWNER");
+        vm.expectRevert("S:TLT:NO_ALLOWANCE");
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 
         // allow position manager to take ownership of the position
         vm.prank(testAddress);
-        _pool.approveNewPositionOwner(address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[1], 3_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[2], 3_000 * 1e27);
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
@@ -229,19 +233,32 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_pool.poolSize(), 15_000 * 1e18);
 
         // construct memorialize lender 1 params struct
+        uint256[] memory lender1Indexes = new uint256[](3);
+        lender1Indexes[0] = 2550;
+        lender1Indexes[1] = 2551;
+        lender1Indexes[2] = 2552;
+
+        uint256[] memory lender1Prices = new uint256[](3);
+        lender1Prices[0] = _p3010;
+        lender1Prices[1] = _p2995;
+        lender1Prices[2] = _p2981;
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId1, testLender1, indexes
+            tokenId1, testLender1, lender1Indexes
         );
 
         // allow position manager to take ownership of lender 1's position
         vm.prank(testLender1);
-        _pool.approveNewPositionOwner(address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+        vm.prank(testLender1);
+        _pool.approveLpOwnership(address(_positionManager), indexes[1], 3_000 * 1e27);
+        vm.prank(testLender1);
+        _pool.approveLpOwnership(address(_positionManager), indexes[2], 3_000 * 1e27);
 
         // memorialize lender 1 quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender1, tokenId1);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testLender1, address(_positionManager), prices, 9_000 * 1e27);
+        emit TransferLPTokens(testLender1, address(_positionManager), lender1Prices, 9_000 * 1e27);
         vm.prank(testLender1);
         _positionManager.memorializePositions(memorializeParams);
 
@@ -270,7 +287,9 @@ contract PositionManagerTest is PositionManagerHelperContract {
 
         // allow position manager to take ownership of lender 2's position
         vm.prank(testLender2);
-        _pool.approveNewPositionOwner(address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+        vm.prank(testLender2);
+        _pool.approveLpOwnership(address(_positionManager), indexes[3], 3_000 * 1e27);
 
         // memorialize lender 2 quote tokens into minted NFT
         uint256[] memory newIndexes = new uint256[](2);
@@ -358,7 +377,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = testIndexPrice;
         // allow position manager to take ownership of the position of testMinter
-        _pool.approveNewPositionOwner(address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
         // memorialize positions of testMinter
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId, testMinter, indexes
@@ -449,7 +468,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = testIndexPrice;
         // allow position manager to take ownership of the position of testMinter
-        _pool.approveNewPositionOwner(address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
         // memorialize positions of testMinter
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId, testMinter, indexes
@@ -546,15 +565,13 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
 
-        uint256[] memory indexes = new uint256[](2);
-        indexes[0] = mintIndex;
-        indexes[1] = moveIndex;
-
         // allow position manager to take ownership of the position of testAddress1
         vm.prank(testAddress1);
-        _pool.approveNewPositionOwner(address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), mintIndex, 2_500 * 1e27);
 
         // memorialize positions of testAddress1
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = mintIndex;
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId1, testAddress1, indexes
         );
@@ -581,7 +598,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 0);
         assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 0);
         assertTrue(_positionManager.isIndexInPosition(tokenId1, mintIndex));
-        assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
         assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
 
@@ -622,7 +639,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
 
         // allow position manager to take ownership of the position of testAddress2
         vm.prank(testAddress2);
-        _pool.approveNewPositionOwner(address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), mintIndex, 5_500 * 1e27);
 
         // memorialize positions of testAddress2
         memorializeParams = IPositionManager.MemorializePositionsParams(
@@ -653,7 +670,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
         assertTrue(_positionManager.isIndexInPosition(tokenId2, mintIndex));
-        assertTrue(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
 
         // construct move liquidity params
         moveLiquidityParams = IPositionManager.MoveLiquidityParams(

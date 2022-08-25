@@ -63,7 +63,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     mapping(uint256 => mapping(address => BucketLender)) public override bucketLenders;
 
     /** @dev Used for tracking LP token ownership address for transferLPTokens access control */
-    mapping(address => address) public override lpTokenOwnership;
+    mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances;
 
     uint256 internal poolInitializations = 0;
 
@@ -94,8 +94,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
     }
 
-    function approveNewPositionOwner(address allowedNewOwner_) external {
-        lpTokenOwnership[msg.sender] = allowedNewOwner_;
+    function approveLpOwnership(address allowedNewOwner_, uint256 index_, uint256 amount_) external {
+        _lpTokenAllowances[msg.sender][allowedNewOwner_][index_] = amount_;
     }
 
     function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmount_, uint256 lpbChange_) {
@@ -190,9 +190,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external {
-        address allowedOwner = lpTokenOwnership[owner_];
-        require(allowedOwner != address(0) && newOwner_ == allowedOwner, "S:TLT:NOT_OWNER");
-
         uint256 tokensTransferred;
 
         uint256 indexesLength = indexes_.length;
@@ -200,17 +197,22 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         for (uint256 i = 0; i < indexesLength; ) {
             require(BucketMath.isValidIndex(_indexToBucketIndex(indexes_[i])), "S:TLT:INVALID_INDEX");
+
+            BucketLender memory bucketLenderOwner = bucketLenders[indexes_[i]][owner_];
+            uint256 balanceToTransfer             = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
+            require(balanceToTransfer != 0 && balanceToTransfer == bucketLenderOwner.lpBalance, "S:TLT:NO_ALLOWANCE");
+
+            delete _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
+
             prices[i] = _indexToPrice(indexes_[i]);
 
-            // calculate lp tokens to be moved in the given bucket
-            BucketLender memory bucketLenderOwner = bucketLenders[indexes_[i]][owner_];
+            // move lp tokens to the new owner address
             BucketLender memory bucketLenderNewOwner = bucketLenders[indexes_[i]][newOwner_];
-            uint256 balanceToTransfer = bucketLenderOwner.lpBalance;
+            bucketLenderNewOwner.lpBalance           += balanceToTransfer;
+            bucketLenderNewOwner.lastQuoteDeposit    = Maths.max(bucketLenderOwner.lastQuoteDeposit, bucketLenderNewOwner.lastQuoteDeposit);
+            bucketLenders[indexes_[i]][newOwner_]  = bucketLenderNewOwner;
 
-            // move lp tokens to the new owners address
-            bucketLenderNewOwner.lpBalance += balanceToTransfer;
-            bucketLenderNewOwner.lastQuoteDeposit = Maths.max(bucketLenderOwner.lastQuoteDeposit, bucketLenderNewOwner.lastQuoteDeposit);
-            bucketLenders[indexes_[i]][newOwner_] = bucketLenderNewOwner;
+            // delete owner lp balance for this bucket
             delete bucketLenders[indexes_[i]][owner_];
 
             tokensTransferred += balanceToTransfer;
@@ -219,7 +221,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
                 ++i;
             }
         }
-        delete lpTokenOwnership[owner_];
 
         emit TransferLPTokens(owner_, newOwner_, prices, tokensTransferred);
     }

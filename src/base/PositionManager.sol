@@ -132,6 +132,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IScaledPool pool      = IScaledPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
+            pool.approveLpOwnership(params_.owner, params_.indexes[i], lps[params_.tokenId][params_.indexes[i]]);
+
             // update PositionManager accounting
             delete lps[params_.tokenId][params_.indexes[i]];
 
@@ -146,7 +148,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // update pool lp token accounting and transfer ownership of lp tokens from PositionManager contract
         emit RedeemPosition(params_.owner, params_.tokenId);
-        pool.approveNewPositionOwner(params_.owner);
         pool.transferLPTokens(address(this), params_.owner, params_.indexes);
     }
 
