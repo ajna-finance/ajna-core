@@ -100,8 +100,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         _quote.approve(address(_subsetPool), 200_000 * 1e18);
     }
 
-    // TODO: finish implementing
-    function testSubsetAddRemoveCollateral() external {
+    function testSubsetPurchaseQuote() external {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = _subsetPool.indexToPrice(testIndex);
@@ -164,21 +163,35 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_quote.balanceOf(address(_bidder)), qtToRemove);
         (lpBalance, ) = _subsetPool.bucketLenders(testIndex, address(_bidder));
         assertEq(lpBalance, 0);
+        (quote, collateral, , ) = _subsetPool.bucketAt(testIndex);
+        assertEq(quote,      10_000 * 1e18 - qtToRemove);
+        assertEq(collateral, 3 * 1e18);
 
-        // lender removes some collateral from bucket
+        // lender removes all collateral from bucket
         changePrank(_lender);
         uint256[] memory tokenIdsToRemove = new uint256[](2);
-        tokenIdsToRemove[0] = 65;
-        tokenIdsToRemove[1] = 70;
+        tokenIdsToRemove = tokenIdsToAdd;
         vm.expectEmit(true, true, false, true);
         emit RemoveCollateralNFT(address(_lender), priceAtTestIndex, tokenIdsToRemove);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), address(_lender), tokenIdsToRemove[0]);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), address(_lender), tokenIdsToRemove[1]);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_subsetPool), address(_lender), tokenIdsToRemove[2]);
         _subsetPool.removeCollateral(tokenIdsToRemove, testIndex);
+        (quote, collateral, , ) = _subsetPool.bucketAt(testIndex);
+        assertEq(quote,      967.323933406355326465 * 1e18);
+        assertEq(collateral, 0);
 
-        // TODO: lender removes all collateral from bucket
+        // lender removes remaining quote token to empty the bucket
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_lender), priceAtTestIndex, quote, _subsetPool.lup());
+        _subsetPool.removeAllQuoteToken(testIndex);
+        (quote, collateral, lpb, ) = _subsetPool.bucketAt(2550);
+        assertEq(quote,      0);
+        assertEq(collateral, 0);
+        assertEq(lpb,        0);
     }
 
 }
