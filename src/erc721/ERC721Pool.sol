@@ -28,11 +28,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /// @dev Set of tokenIds that are currently being used as collateral in the pool
     EnumerableSet.UintSet internal _poolCollateralTokenIds;
 
-    /**
-     *  @notice Mapping of price to Set of NFT Token Ids that have been deposited into the bucket
-     *  @dev price index -> _bucketCollateralTokenIds
-     */
-    mapping(uint256 => EnumerableSet.UintSet) internal _bucketCollateralTokenIds;
+    /// @dev Set of NFT Token Ids that have been deposited into any bucket
+    EnumerableSet.UintSet internal _bucketCollateralTokenIds;
 
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
@@ -266,8 +263,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
                 require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
             }
 
-            // update bucket state
-            _bucketCollateralTokenIds[index_].add(tokenIds_[i]);
+            _bucketCollateralTokenIds.add(tokenIds_[i]);
 
             // move collateral from sender to pool
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
@@ -308,7 +304,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     //     // slice bucket tokens to only use as many as are available for removal
     //     // TODO: values() is an expensive operation -> may be better to pass in extra arg listing every tokenId possible to claim?
     //     uint256[] calldata tokenIds_1 = new uint256[](numNFTsToRemove);
-    //     tokenIds_1 = _bucketCollateralTokenIds[index_].values()[:numNFTsToRemove];
+    //     tokenIds_1 = _bucketCollateralTokenIds.values()[:numNFTsToRemove];
 
     //     _redeemLPForCollateral(bucket, bucketLender, lpAmount_, tokenIds_, price, index_);
     // }
@@ -340,6 +336,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Internal Functions ***/
     /**************************/
 
+    // TODO: If we eliminate removeAllCollateral, could move this logic into removeCollateral and eliminate the method.
     function _redeemLPForCollateral(
         Bucket memory bucket,
         BucketLender memory bucketLender,
@@ -363,7 +360,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // move collateral from pool to lender
         for (uint i; i < tokenIds_.length;) {
-            require(_bucketCollateralTokenIds[index_].contains(tokenIds_[i]), "S:RC:T_NOT_IN_B");
+            require(_bucketCollateralTokenIds.contains(tokenIds_[i]), "S:RC:T_NOT_IN_B");
 
             collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
 
