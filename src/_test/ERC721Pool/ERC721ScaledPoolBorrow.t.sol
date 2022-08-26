@@ -204,14 +204,34 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         _subsetPool.borrow(21_000 * 1e18, 2551, address(0), address(0));
     }
 
-    // TODO: finish implementing
     function testBorrowBorrowerUnderCollateralized() external {
+        // add initial quote to the pool
+        changePrank(_lender);
+        assertEq(_subsetPool.indexToPrice(3575), 18.133510183516748631 * 1e18);
+        _subsetPool.addQuoteToken(1_000 * 1e18, 3575);
 
+        // borrower pledges some collateral
+        changePrank(_borrower);
+        uint256[] memory tokenIdsToAdd = new uint256[](2);
+        tokenIdsToAdd[0] = 5;
+        tokenIdsToAdd[1] = 3;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
+
+        // should revert if borrower did not deposit enough collateral
+        vm.expectRevert("S:B:BUNDER_COLLAT");
+        _subsetPool.borrow(40 * 1e18, 4000, address(0), address(0));
     }
 
-    // TODO: finish implementing
     function testBorrowPoolUnderCollateralized() external {
+        // add initial quote to the pool
+        changePrank(_lender);
+        assertEq(_subsetPool.indexToPrice(3232), 100.332368143282009890 * 1e18);
+        _subsetPool.addQuoteToken(1_000 * 1e18, 3232);
 
+        // should revert if borrow would result in pool under collateralization
+        changePrank(_borrower);
+        vm.expectRevert("S:B:PUNDER_COLLAT");
+        _subsetPool.borrow(500 * 1e18, 4000, address(0), address(0));
     }
 
     function testBorrowAndRepay() external {
@@ -255,6 +275,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
         // borrower borrows from the pool
         uint256 borrowAmount = 3_000 * 1e18;
+        vm.expectEmit(true, true, false, true);
         emit Borrow(address(_borrower), _subsetPool.indexToPrice(2550), borrowAmount);
         _subsetPool.borrow(borrowAmount, 2551, address(0), address(0));
 
@@ -291,9 +312,10 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(inflator,    1 * 1e18);
 
         // pass time to allow interest to accumulate
-        skip(864000);
+        skip(10 days);
 
         // borrower partially repays half their loan
+        vm.expectEmit(true, true, false, true);
         emit Repay(address(_borrower), _subsetPool.indexToPrice(2550), borrowAmount / 2);
         _subsetPool.repay(borrowAmount / 2, address(0), address(0));
 
@@ -302,8 +324,8 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_collateral.balanceOf(address(_borrower)), 49);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 3);
 
-        assertEq(_quote.balanceOf(address(_subsetPool)),   28_500 * 1e18);
-        assertEq(_quote.balanceOf(address(_borrower)), borrowAmount / 2);
+        assertEq(_quote.balanceOf(address(_subsetPool)), 28_500 * 1e18);
+        assertEq(_quote.balanceOf(address(_borrower)),   borrowAmount / 2);
 
         // check pool state after partial repay
         assertEq(_subsetPool.htp(), 503.711801848555564077 * 1e18);
@@ -331,7 +353,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(inflator,    1.001370801704613834 * 1e18);
 
         // pass time to allow additional interest to accumulate
-        skip(864000);
+        skip(10 days);
 
         // find pending debt after interest accumulation
         (, pendingDebt, , ) = _subsetPool.borrowerInfo(address(_borrower));
@@ -340,7 +362,8 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 1_000 * 1e18);
 
         // borrower repays their remaining loan balance
-        emit Repay(address(_borrower), _subsetPool.indexToPrice(2550), pendingDebt);
+        vm.expectEmit(true, true, false, true);
+        emit Repay(address(_borrower), BucketMath.MAX_PRICE, pendingDebt);
         _subsetPool.repay(pendingDebt, address(0), address(0));
 
         // check token balances after fully repay
@@ -348,17 +371,28 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(_collateral.balanceOf(address(_borrower)), 49);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 3);
 
-        assertEq(_quote.balanceOf(address(_subsetPool)),   30_008.860066921599064643 * 1e18);
-        assertEq(_quote.balanceOf(address(_borrower)), 991.139933078400935357 * 1e18);
+        assertEq(_quote.balanceOf(address(_subsetPool)), 30_008.860066921599064643 * 1e18);
+        assertEq(_quote.balanceOf(address(_borrower)),   991.139933078400935357 * 1e18);
 
         // check pool state after fully repay
         assertEq(_subsetPool.htp(), 0);
         assertEq(_subsetPool.lup(), BucketMath.MAX_PRICE);
 
-        // TODO: check target utilization
+        // borrower pulls collateral
+        uint256[] memory tokenIdsToRemove = tokenIdsToAdd;
+        vm.expectEmit(true, true, false, true);
+        emit PullCollateralNFT(address(_borrower), tokenIdsToRemove);
+        _subsetPool.pullCollateral(tokenIdsToRemove, address(0), address(0));
+        assertEq(_subsetPool.pledgedCollateral(), 0);
+        assertEq(_collateral.balanceOf(address(_borrower)), 52);
+        assertEq(_collateral.balanceOf(address(_subsetPool)), 0);
+
         // check utilization changes make sense
         assertEq(_subsetPool.poolSize(),              30_005.377906383285317363 * 1e18);
         assertEq(_subsetPool.borrowerDebt(),          0);
+        // TODO: LUP=MAX_PRICE is causing a technically correct yet undesirable target utilization
+        assertEq(_subsetPool.debtEma(),               116.548760023014994270 * 1e18);
+        assertEq(_subsetPool.lupColEma(),             257_438_503.676217090117659874 * 1e18);
         assertEq(_subsetPool.poolTargetUtilization(), .000000452724663788 * 1e18);
         assertEq(_subsetPool.poolActualUtilization(), 0);
         assertEq(_subsetPool.poolMinDebtAmount(),     0);
@@ -374,10 +408,54 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
-        assertEq(col.length,  3);
+        assertEq(col.length,  0);
         assertEq(inflator,    1.002606129793584586 * 1e18);
     }
 
-    // TODO: add repay failure checks
+    function testScaledPoolRepayRequireChecks() external {
+        // add initial quote to the pool
+        changePrank(_lender);
+        assertEq(_subsetPool.indexToPrice(2550), 3_010.892022197881557845 * 1e18);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2550);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2551);
 
+        // should revert if borrower has insufficient quote to repay desired amount
+        changePrank(_borrower);
+        vm.expectRevert("S:R:INSUF_BAL");
+        _subsetPool.repay(10_000 * 1e18, address(0), address(0));
+
+        // should revert if borrower has no debt
+        deal(address(_quote), _borrower, _quote.balanceOf(_borrower) + 10_000 * 1e18);
+        vm.expectRevert("S:R:NO_DEBT");
+        _subsetPool.repay(10_000 * 1e18, address(0), address(0));
+
+        // borrower 1 borrows 1000 quote from the pool
+        uint256[] memory tokenIdsToAdd = new uint256[](3);
+        tokenIdsToAdd[0] = 1;
+        tokenIdsToAdd[1] = 3;
+        tokenIdsToAdd[2] = 5;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
+        _subsetPool.borrow(1_000 * 1e18, 3000, address(0), address(0));
+
+        assertEq(address(_borrower), _subsetPool.loanQueueHead());
+
+        // borrower 2 borrows 3k quote from the pool and becomes new queue HEAD
+        changePrank(_borrower2);
+        tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 53;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(_borrower));
+        _subsetPool.borrow(3_000 * 1e18, 3000, address(0), address(0));
+
+        assertEq(address(_borrower2), _subsetPool.loanQueueHead());
+
+        // should revert if amount left after repay is less than the average debt
+        changePrank(_borrower);
+        vm.expectRevert("R:B:AMT_LT_AVG_DEBT");
+        _subsetPool.repay(900 * 1e18, address(0), address(0));
+
+        // should be able to repay loan if properly specified
+        vm.expectEmit(true, true, false, true);
+        emit Repay(address(_borrower), _subsetPool.lup(), 1_000.961538461538462000 * 1e18);
+        _subsetPool.repay(1_100 * 1e18, address(_borrower2), address(_borrower2));
+    }
 }
