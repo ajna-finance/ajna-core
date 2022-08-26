@@ -103,11 +103,6 @@ contract PositionManagerTest is PositionManagerHelperContract {
         indexes[1] = 2551;
         indexes[2] = 2552;
 
-        uint256[] memory prices = new uint256[](3);
-        prices[0] = _p3010;
-        prices[1] = _p2995;
-        prices[2] = _p2981;
-
         vm.prank(testAddress);
         _pool.addQuoteToken(3_000 * 1e18, indexes[0]);
         vm.prank(testAddress);
@@ -143,7 +138,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testAddress, address(_positionManager), prices, 9_000 * 1e27);
+        emit TransferLPTokens(testAddress, address(_positionManager), indexes, 9_000 * 1e27);
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 
@@ -171,11 +166,6 @@ contract PositionManagerTest is PositionManagerHelperContract {
         indexes[0] = 2550;
         indexes[1] = 2551;
         indexes[2] = 2552;
-
-        uint256[] memory prices = new uint256[](3);
-        prices[0] = _p3010;
-        prices[1] = _p2995;
-        prices[2] = _p2981;
 
         vm.prank(testAddress);
         _pool.addQuoteToken(3_000 * 1e18, indexes[0]);
@@ -225,7 +215,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testAddress, address(_positionManager), prices, 9_000 * 1e27);
+        emit TransferLPTokens(testAddress, address(_positionManager), indexes, 9_000 * 1e27);
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 
@@ -293,7 +283,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testAddress, address(_positionManager), prices, 6_000 * 1e27);
+        emit TransferLPTokens(testAddress, address(_positionManager), indexes, 6_000 * 1e27);
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 
@@ -338,12 +328,6 @@ contract PositionManagerTest is PositionManagerHelperContract {
         indexes[1] = 2551;
         indexes[2] = 2552;
         indexes[3] = 2553;
-
-        uint256[] memory prices = new uint256[](4);
-        prices[0] = _p3010;
-        prices[1] = _p2995;
-        prices[2] = _p2981;
-        prices[3] = _p2966;
 
         vm.prank(testLender1);
         _pool.addQuoteToken(3_000 * 1e18, indexes[0]);
@@ -398,10 +382,6 @@ contract PositionManagerTest is PositionManagerHelperContract {
         lender1Indexes[1] = 2551;
         lender1Indexes[2] = 2552;
 
-        uint256[] memory lender1Prices = new uint256[](3);
-        lender1Prices[0] = _p3010;
-        lender1Prices[1] = _p2995;
-        lender1Prices[2] = _p2981;
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId1, testLender1, lender1Indexes
         );
@@ -418,7 +398,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender1, tokenId1);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testLender1, address(_positionManager), lender1Prices, 9_000 * 1e27);
+        emit TransferLPTokens(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e27);
         vm.prank(testLender1);
         _positionManager.memorializePositions(memorializeParams);
 
@@ -456,9 +436,6 @@ contract PositionManagerTest is PositionManagerHelperContract {
         newIndexes[0] = 2550;
         newIndexes[1] = 2553;
 
-        prices = new uint256[](2);
-        prices[0] = _p3010;
-        prices[1] = _p2966;
         memorializeParams = IPositionManager.MemorializePositionsParams(
             tokenId2, testLender2, newIndexes
         );
@@ -466,7 +443,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender2, tokenId2);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testLender2, address(_positionManager), prices, 6_000 * 1e27);
+        emit TransferLPTokens(testLender2, address(_positionManager), newIndexes, 6_000 * 1e27);
         vm.prank(testLender2);
         _positionManager.memorializePositions(memorializeParams);
 
@@ -1044,15 +1021,13 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.reedemPositions(reedemParams);
 
         // redeem from new owner
-        uint256[] memory prices = new uint256[](1);
-        prices[0] = _p3010;
         reedemParams = IPositionManager.RedeemPositionsParams(
             testReceiver, tokenId, address(_pool), indexes
         );
         vm.expectEmit(true, true, true, true);
         emit RedeemPosition(testReceiver, tokenId);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(address(_positionManager), testReceiver, prices, 15_000 * 1e27);
+        emit TransferLPTokens(address(_positionManager), testReceiver, indexes, 15_000 * 1e27);
         changePrank(testReceiver);
         _positionManager.reedemPositions(reedemParams);
 

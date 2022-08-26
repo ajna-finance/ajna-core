@@ -99,9 +99,6 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
 
-        // approve spending of quote tokens if it hasn't occured already
-        ERC20 quoteToken = ERC20(IScaledPool(params_.pool).quoteTokenAddress());
-        require(quoteToken.approve(params_.pool, type(uint256).max), "PM:M:NOT_APPROVED");
         emit Mint(params_.recipient, params_.pool, tokenId_);
     }
 

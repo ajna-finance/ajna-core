@@ -44,10 +44,10 @@ interface IScaledPool {
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner_    The original owner address of the position.
      *  @param  newOwner_ The new owner address of the position.
-     *  @param  prices_    Array of price buckets at which LP tokens were moved.
+     *  @param  indexes_  Array of price bucket indexes at which LP tokens were transferred.
      *  @param  lpTokens_ Amount of LP tokens transferred.
      */
-    event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
+    event TransferLPTokens(address owner_, address newOwner_, uint256[] indexes_, uint256 lpTokens_);
 
     /**
      *  @notice Emitted when pool interest rate is updated.
@@ -205,11 +205,13 @@ interface IScaledPool {
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
-     *  @param  maxAmount_ The maximum amount of quote token to be moved by a lender.
-     *  @param  fromIndex_ The bucket index from which the quote tokens will be removed.
-     *  @param  toIndex_   The bucket index to which the quote tokens will be added.
+     *  @param  maxAmount_     The maximum amount of quote token to be moved by a lender.
+     *  @param  fromIndex_     The bucket index from which the quote tokens will be removed.
+     *  @param  toIndex_       The bucket index to which the quote tokens will be added.
+     *  @return lpbAmountFrom_ The amount of LPs moved out from bucket.
+     *  @return lpbAmountTo_   The amount of LPs moved to destination bucket.
      */
-    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmount_, uint256 lpbChange_);
+    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_);
 
     /**
      *  @notice Called by lenders to redeem the maximum amount of LP for quote token.

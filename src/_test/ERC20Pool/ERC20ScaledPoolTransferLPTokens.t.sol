@@ -121,11 +121,6 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         indexes[1] = 2551;
         indexes[2] = 2552;
 
-        uint256[] memory prices = new uint256[](3);
-        prices[0] = _p3010;
-        prices[1] = _p2995;
-        prices[2] = _p2981;
-
         skip(1 hours);
         changePrank(_lender1);
         _pool.addQuoteToken(10_000 * 1e18, indexes[0]);
@@ -156,7 +151,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         // transfer LP tokens for all indexes
         changePrank(_lender);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(address(_lender1), address(_lender2), prices, 60_000 * 1e27);
+        emit TransferLPTokens(address(_lender1), address(_lender2), indexes, 60_000 * 1e27);
         _pool.transferLPTokens(address(_lender1), address(_lender2), indexes);
 
         // check that old token ownership was removed - a new transfer should fail
@@ -190,10 +185,6 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         transferIndexes[0] = 2550;
         transferIndexes[1] = 2552;
 
-        uint256[] memory prices = new uint256[](2);
-        prices[0] = _p3010;
-        prices[1] = _p2981;
-
         changePrank(_lender1);
         _pool.addQuoteToken(10_000 * 1e18, depositIndexes[0]);
         _pool.addQuoteToken(20_000 * 1e18, depositIndexes[1]);
@@ -221,7 +212,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         // transfer LP tokens for 2 indexes
         changePrank(_lender);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(address(_lender1), address(_lender2), prices, 40_000 * 1e27);
+        emit TransferLPTokens(address(_lender1), address(_lender2), transferIndexes, 40_000 * 1e27);
         _pool.transferLPTokens(address(_lender1), address(_lender2), transferIndexes);
 
         // check that old token ownership was removed - transfer with same indexes should fail
@@ -249,11 +240,6 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         indexes[0] = 2550;
         indexes[1] = 2551;
         indexes[2] = 2552;
-
-        uint256[] memory prices = new uint256[](3);
-        prices[0] = _p3010;
-        prices[1] = _p2995;
-        prices[2] = _p2981;
 
         skip(1 hours);
         changePrank(_lender1);
@@ -293,7 +279,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
         // transfer LP tokens for all indexes
         changePrank(_lender);
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(address(_lender1), address(_lender2), prices, 60_000 * 1e27);
+        emit TransferLPTokens(address(_lender1), address(_lender2), indexes, 60_000 * 1e27);
         _pool.transferLPTokens(address(_lender1), address(_lender2), indexes);
 
         // check that old token ownership was removed - transfer with same indexes should fail
