@@ -61,10 +61,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function burn(BurnParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
         require(positionPrices[params_.tokenId].length() == 0, "PM:B:LIQ_NOT_REMOVED");
 
-        emit Burn(msg.sender, params_.tokenId);
         delete nonces[params_.tokenId];
         delete poolKey[params_.tokenId];
 
+        emit Burn(msg.sender, params_.tokenId);
         _burn(params_.tokenId);
     }
 
@@ -94,12 +94,13 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
-        _safeMint(params_.recipient, (tokenId_ = _nextId++));
+        tokenId_ = _nextId++;
 
         // record which pool the tokenId was minted in
         poolKey[tokenId_] = params_.pool;
 
         emit Mint(params_.recipient, params_.pool, tokenId_);
+        _safeMint(params_.recipient, tokenId_);
     }
 
     function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
