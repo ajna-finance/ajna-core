@@ -44,6 +44,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         _collateral.mint(address(_bidder), 13);
 
         deal(address(_quote), _lender, 200_000 * 1e18);
+        deal(address(_quote), _lender2, 200_000 * 1e18);
 
         /*******************************/
         /*** Setup NFT Collection State ***/
@@ -67,11 +68,14 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         changePrank(_lender);
         _quote.approve(address(_collectionPool), 200_000 * 1e18);
 
+        changePrank(_lender2);
+        _quote.approve(address(_collectionPool), 200_000 * 1e18);
+
         /*******************************/
         /*** Setup NFT Subset State ***/
         /*******************************/
 
-        uint256[] memory subsetTokenIds = new uint256[](8);
+        uint256[] memory subsetTokenIds = new uint256[](9);
         subsetTokenIds[0] = 1;
         subsetTokenIds[1] = 3;
         subsetTokenIds[2] = 5;
@@ -80,6 +84,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         subsetTokenIds[5] = 65;
         subsetTokenIds[6] = 70;
         subsetTokenIds[7] = 73;
+        subsetTokenIds[8] = 74;
 
         _subsetPoolAddress = new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), subsetTokenIds, 0.05 * 10**18);
         _subsetPool        = ERC721Pool(_subsetPoolAddress);
@@ -98,6 +103,9 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
         changePrank(_lender);
         _quote.approve(address(_subsetPool), 200_000 * 1e18);
+
+        changePrank(_lender2);
+        _quote.approve(address(_subsetPool), 200_000 * 1e18);        
     }
 
     function testSubsetPurchaseQuote() external {
@@ -124,7 +132,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         _subsetPool.addQuoteToken(10_000 * 1e18, testIndex);
 
         // check bucket state
-        (quote, collateral, lpb, ) = _subsetPool.bucketAt(2550);
+        (quote, collateral, lpb, ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      10_000 * 1e18);
         assertEq(collateral, 0);
         assertEq(lpb,        10_000 * 1e27);
@@ -142,7 +150,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         uint256 lpBalanceChange = _subsetPool.addCollateral(tokenIdsToAdd, testIndex);
 
         // check bucket state
-        (quote, collateral, lpb, ) = _subsetPool.bucketAt(2550);
+        (quote, collateral, lpb, ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      10_000 * 1e18);
         assertEq(collateral, Maths.wad(3));
         (uint256 lpBalance, ) = _subsetPool.bucketLenders(testIndex, address(_bidder));
@@ -188,10 +196,124 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(address(_lender), priceAtTestIndex, quote, _subsetPool.lup());
         _subsetPool.removeAllQuoteToken(testIndex);
-        (quote, collateral, lpb, ) = _subsetPool.bucketAt(2550);
+        (quote, collateral, lpb, ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      0);
         assertEq(collateral, 0);
         assertEq(lpb,        0);
+    }
+
+    /**
+     *  @notice 2 lenders, 1 borrower, 1 bidder tests purchasing quote token with collateral.
+     *          Reverts:
+     *              Attempts to remove more collateral than available in bucket.
+     *              Attempts to remove more collateral than available given lp balance.
+     *              Attempts to remove collateral not in the bucket.
+     */
+    function testSubsetPurchaseQuoteWithDebt() external {
+        // lenders add liquidity
+        changePrank(_lender);
+        _subsetPool.addQuoteToken(20_000 * 1e18, 2350);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2351);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2352);
+
+        changePrank(_lender2);
+        _subsetPool.addQuoteToken(4_000 * 1e18, 2350);
+        _subsetPool.addQuoteToken(5_000 * 1e18, 2352);
+        skip(3600);
+
+        // borrower draws debt
+        changePrank(_borrower);
+        uint256[] memory tokenIdsToAdd = new uint256[](4);
+        tokenIdsToAdd[0] = 1;
+        tokenIdsToAdd[1] = 3;
+        tokenIdsToAdd[2] = 5;
+        tokenIdsToAdd[3] = 51;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
+        _subsetPool.borrow(24_000 * 1e18, 2351, address(0), address(0));
+        assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2351));
+        skip(86400);
+
+        // check bucket state
+        (uint256 quote, uint256 collateral, uint256 lpb, ) = _subsetPool.bucketAt(2350);
+        assertEq(quote,      24_000 * 1e18);
+        assertEq(collateral, 0);
+        assertEq(lpb,        24_000 * 1e27);
+
+        // bidder purchases all quote from the highest bucket
+        changePrank(_bidder);
+        tokenIdsToAdd = new uint256[](4);
+        tokenIdsToAdd[0] = 65;
+        tokenIdsToAdd[1] = 70;
+        tokenIdsToAdd[2] = 73;
+        tokenIdsToAdd[3] = 74;
+        uint256 amountToPurchase = 10_100 * 1e18;
+        assertGt(_quote.balanceOf(address(_subsetPool)), amountToPurchase);
+        uint256 amountWithInterest = 24_001.511204352939432000 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_bidder), address(_subsetPool), tokenIdsToAdd[0]);
+        vm.expectEmit(true, true, false, true);
+        emit AddCollateralNFT(address(_bidder), _subsetPool.indexToPrice(2350), tokenIdsToAdd);        
+        _subsetPool.addCollateral(tokenIdsToAdd, 2350);
+        
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(address(_bidder), _subsetPool.indexToPrice(2350), amountWithInterest, _subsetPool.indexToPrice(2352));
+        _subsetPool.removeAllQuoteToken(2350);
+        assertEq(_quote.balanceOf(address(_bidder)), amountWithInterest);
+
+        // check bucket state
+        (quote, collateral, lpb, ) = _subsetPool.bucketAt(2350);
+        assertEq(quote,      0);
+        assertEq(collateral, Maths.wad(4));
+        assertEq(lpb,        32_654.284956525291224787239818564 * 1e27);
+
+        // bidder withdraws unused collateral
+        uint256[] memory tokenIdsToRemove = new uint256[](1);
+        tokenIdsToRemove[0] = 65;
+        vm.expectEmit(true, true, true, true);
+        emit RemoveCollateralNFT(address(_bidder), _subsetPool.indexToPrice(2350), tokenIdsToRemove);
+        (uint256 amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
+        (uint256 lpBalance, ) = _subsetPool.bucketLenders(2350, address(_bidder));
+        assertEq(lpBalance, 490.713717393968418590429863923 * 1e27);
+        skip(7200);
+
+        // should revert if lender attempts to remove more collateral than available in the bucket
+        changePrank(_lender);
+        tokenIdsToRemove = new uint256[](4);
+        tokenIdsToRemove[0] = 1;
+        tokenIdsToRemove[1] = 3;
+        tokenIdsToRemove[2] = 5;
+        tokenIdsToRemove[3] = 51;
+        vm.expectRevert("S:RC:INSUF_COL");
+        (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
+
+        // should revert if lender attempts to remove collateral not available in the bucket
+        tokenIdsToRemove = new uint256[](1);
+        tokenIdsToRemove[0] = 1;
+        vm.expectRevert("S:RC:T_NOT_IN_B");
+        (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
+
+        // lender exchanges their lp for collateral
+        tokenIdsToRemove = new uint256[](1);
+        tokenIdsToRemove[0] = 73;
+        vm.expectEmit(true, true, true, true);
+        emit RemoveCollateralNFT(address(_lender), _subsetPool.indexToPrice(2350), tokenIdsToRemove);
+        (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
+        (lpBalance, ) = _subsetPool.bucketLenders(2350, address(_lender));
+        assertEq(lpBalance, 11_836.428760868677193803190045359 * 1e27);
+        skip(3600);
+
+        // check bucket state
+        (quote, collateral, lpb, ) = _subsetPool.bucketAt(2350);
+        assertEq(quote,      0);
+        assertEq(collateral, Maths.wad(2));
+        assertEq(lpb,        16_327.142478262645612393619909282 * 1e27);
+
+        // should revert if lender2 attempts to remove more collateral than lp is available for
+        changePrank(_lender2);
+        tokenIdsToRemove = new uint256[](1);
+        tokenIdsToRemove[0] = 74;
+        vm.expectRevert("S:RC:INSUF_LPS");
+        (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
     }
 
 }
