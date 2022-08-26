@@ -935,7 +935,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
             testMinter, tokenId, address(_pool), indexes
         );
 
-        // should fail if trying to redeem from different address but owner
+        // should fail if trying to redeem empty position
         changePrank(testMinter);
         vm.expectRevert("PM:R:REMOVE_FAIL");
         _positionManager.reedemPositions(reedemParams);
