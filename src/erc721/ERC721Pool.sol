@@ -28,11 +28,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /// @dev Set of tokenIds that are currently being used as collateral in the pool
     EnumerableSet.UintSet internal _poolCollateralTokenIds;
 
-    /**
-     *  @notice Mapping of price to Set of NFT Token Ids that have been deposited into the bucket
-     *  @dev price index -> _bucketCollateralTokenIds
-     */
-    mapping(uint256 => EnumerableSet.UintSet) internal _bucketCollateralTokenIds;
+    /// @dev Set of NFT Token Ids that have been deposited into any bucket
+    EnumerableSet.UintSet internal _bucketCollateralTokenIds;
 
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
@@ -266,8 +263,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
                 require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
             }
 
-            // update bucket state
-            _bucketCollateralTokenIds[index_].add(tokenIds_[i]);
+            _bucketCollateralTokenIds.add(tokenIds_[i]);
 
             // move collateral from sender to pool
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
@@ -282,28 +278,45 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
     // TODO: finish implementing
     // TODO: check for reentrancy
-    function removeAllCollateral(uint256 index_) external override returns (uint256[] memory tokenIds_, uint256 lpAmount_) {
-
-    }
-
-    // TODO: finish implementing
-    // TODO: check for reentrancy
     function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpAmount_) {
+        Bucket memory bucket = buckets[index_];
+        require(Maths.wad(tokenIds_.length) <= bucket.availableCollateral, "S:RC:INSUF_COL");
 
-    }
+        _accruePoolInterest();
 
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
+        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
+        uint256 price        = _indexToPrice(index_);
+        uint256 rate         = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 availableLPs = bucketLender.lpBalance;
 
-    function _redeemLPForCollateral(
-        Bucket memory bucket,
-        uint256 lpAmount_,
-        uint256 amount_,
-        uint256 price_,
-        uint256 index_
-    ) internal {
+        // ensure user can actually remove that much
+        lpAmount_ = Maths.rdiv((Maths.wad(tokenIds_.length) * price / 1e9), rate);
+        uint256 nftsAvailableForClaiming = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
+        require(availableLPs != 0 && lpAmount_ <= availableLPs && Maths.wad(tokenIds_.length) >= nftsAvailableForClaiming, "S:RC:INSUF_LPS");
 
+        // update bucket accounting
+        bucket.availableCollateral -= Maths.wad(tokenIds_.length);
+        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpAmount_);
+        buckets[index_] = bucket;
+
+        // update lender accounting
+        bucketLender.lpBalance -= lpAmount_;
+        bucketLenders[index_][msg.sender] = bucketLender;
+
+        _updateInterestRate(borrowerDebt, _lup());
+
+        emit RemoveCollateralNFT(msg.sender, price, tokenIds_);
+
+        // move collateral from pool to lender
+        for (uint i; i < tokenIds_.length;) {
+            require(_bucketCollateralTokenIds.contains(tokenIds_[i]), "S:RC:T_NOT_IN_B");
+
+            collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /**********************/

@@ -45,6 +45,14 @@ interface IERC721Pool is IScaledPool {
     event PullCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
 
     /**
+     *  @notice Emitted when lender claims unencumbered collateral.
+     *  @param  claimer_  Recipient that claimed collateral.
+     *  @param  price_    Price at which unencumbered collateral was claimed.
+     *  @param  tokenIds_ Array of tokenIds to be removed from the pool.
+     */
+    event RemoveCollateralNFT(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_);
+
+    /**
      *  @notice Emitted when borrower repays quote tokens to the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  lup_      LUP after repay.
@@ -126,14 +134,6 @@ interface IERC721Pool is IScaledPool {
      *  @param  index_    The bucket index to which collateral will be deposited.
      */
     function addCollateral(uint256[] calldata tokenIds_, uint256 index_) external returns (uint256 lpbChange_);
-
-    /**
-     *  @notice Called by lenders to redeem the maximum amount of LP for unencumbered collateral.
-     *  @param  index_    The bucket index from which unencumbered collateral will be removed.
-     *  @return tokenIds_ The tokenIds removed.
-     *  @return lpAmount_ The amount of LP used for removing collateral.
-     */
-    function removeAllCollateral(uint256 index_) external returns (uint256[] memory tokenIds_, uint256 lpAmount_);
 
     /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.

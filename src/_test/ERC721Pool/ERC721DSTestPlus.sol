@@ -13,6 +13,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
     event PurchaseWithNFTs(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256[] tokenIds_);
     event PullCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
+    event RemoveCollateralNFT(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     // TODO: implement this for simplifying construction and maintenance of tests
