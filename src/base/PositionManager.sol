@@ -116,11 +116,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // move quote tokens in pool
         emit MoveLiquidity(params_.owner, params_.tokenId);
-        (uint256 lpbAmount, uint256 lpbChange) = pool.moveQuoteToken(maxQuote, params_.fromIndex, params_.toIndex);
+        (uint256 lpbAmountFrom, uint256 lpbAmountTo) = pool.moveQuoteToken(maxQuote, params_.fromIndex, params_.toIndex);
 
         // update tracked LPs
-        lps[params_.tokenId][params_.fromIndex] -= lpbAmount;
-        lps[params_.tokenId][params_.toIndex]   += lpbChange;
+        lps[params_.tokenId][params_.fromIndex] -= lpbAmountFrom;
+        lps[params_.tokenId][params_.toIndex]   += lpbAmountTo;
     }
 
     function reedemPositions(RedeemPositionsParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
