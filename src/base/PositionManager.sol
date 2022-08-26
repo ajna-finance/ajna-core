@@ -132,10 +132,11 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             // remove price at which a position has added liquidity
             require(positionPrice.remove(params_.indexes[i]), "PM:R:REMOVE_FAIL");
 
-            pool.approveLpOwnership(params_.owner, params_.indexes[i], lps[params_.tokenId][params_.indexes[i]]);
-
             // update PositionManager accounting
+            uint256 lpAmount = lps[params_.tokenId][params_.indexes[i]];
             delete lps[params_.tokenId][params_.indexes[i]];
+
+            pool.approveLpOwnership(params_.owner, params_.indexes[i], lpAmount);
 
             // increment call counter in gas efficient way by skipping safemath checks
             unchecked {
