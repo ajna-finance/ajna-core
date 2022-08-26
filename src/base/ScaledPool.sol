@@ -156,12 +156,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         lpAmount_ = bucketLender.lpBalance;
         require(lpAmount_ != 0, "S:RAQT:NO_CLAIM");
 
+        Bucket memory bucket        = buckets[index_];
         uint256 availableQuoteToken = _rangeSum(index_, index_);
-        require(availableQuoteToken != 0, "S:RAQT:NO_QT");
-
-        Bucket memory bucket = buckets[index_];
-        uint256 rate         = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
-        amount_              = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
+        uint256 rate                = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
+        amount_                     = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
 
         if (amount_ > availableQuoteToken) {
             // user is owed more quote token than is available in the bucket
@@ -370,10 +368,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function _htp() internal view returns (uint256 htp_) {
         if (loanQueueHead != address(0)) htp_ = Maths.wmul(loans[loanQueueHead].thresholdPrice, inflatorSnapshot);
-    }
-
-    function _ptp() internal view returns (uint256) {
-        return Maths.wdiv(borrowerDebt, pledgedCollateral);
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
