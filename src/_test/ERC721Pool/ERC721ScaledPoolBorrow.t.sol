@@ -179,9 +179,66 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
     }
 
-    // TODO: finish implementing
     function testMultipleBorrowerInterestAccumulation() external {
+        // lender deposits 10000 Quote into 3 buckets
+        changePrank(_lender);
+        assertEq(_subsetPool.indexToPrice(2550), 3_010.892022197881557845 * 1e18);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2550);
+        assertEq(_subsetPool.indexToPrice(2551), 2_995.912459898389633881 * 1e18);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2551);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 2552);
+        skip(2 hours);
 
+        // borrower pledges three NFTs and takes out a loan with TP around 2666
+        changePrank(_borrower);
+        uint256[] memory tokenIdsToAdd = new uint256[](3);
+        tokenIdsToAdd[0] = 1;
+        tokenIdsToAdd[1] = 3;
+        tokenIdsToAdd[2] = 5;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
+        uint256 borrowAmount = 8_000 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(address(_borrower), _subsetPool.indexToPrice(2550), borrowAmount);
+        _subsetPool.borrow(borrowAmount, 2551, address(0), address(0));
+        skip(4 hours);
+
+        // borrower 2 pledges one NFT and takes out a loan with TP around 2750
+        changePrank(_borrower2);
+        tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 53;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(_borrower));
+        borrowAmount = 2_750 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(address(_borrower2), _subsetPool.indexToPrice(2551), borrowAmount);
+        _subsetPool.borrow(borrowAmount, 3000, address(0), address(0));
+        skip(4 hours);
+
+        // borrower 3 pledges one NFT and takes out a loan with TP around 2500
+        changePrank(_borrower3);
+        tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 73;
+        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(_borrower));
+        borrowAmount = 2_500 * 1e18;
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(address(_borrower3), _subsetPool.indexToPrice(2551), borrowAmount);
+        _subsetPool.borrow(borrowAmount, 3000, address(0), address(_borrower));
+        skip(4 hours);
+
+        // trigger an interest accumulation
+        changePrank(_lender);
+        _subsetPool.addQuoteToken(1 * 1e18, 2550);
+
+        // check pool and borrower debt to confirm interest has accumulated
+        assertEq(_subsetPool.borrowerDebt(), 13_263.563121817930264782 * 1e18);
+        (uint256 debt, uint256 pendingDebt, , ) = _subsetPool.borrowerInfo(address(_borrower));
+        assertEq(debt,        8_007.692307692307696000 * 1e18);
+        assertEq(pendingDebt, 8_007.692307692307696000 * 1e18);
+        (debt, pendingDebt, , ) = _subsetPool.borrowerInfo(address(_borrower2));
+        assertEq(debt,        2_752.644230769230770500 * 1e18);
+        assertEq(pendingDebt, 2_752.644230769230770500 * 1e18);
+        (debt, pendingDebt, , ) = _subsetPool.borrowerInfo(address(_borrower3));
+        assertEq(debt,        2_502.403846153846155000 * 1e18);
+        assertEq(pendingDebt, 2_502.403846153846155000 * 1e18);
     }
 
     function testBorrowLimitReached() external {
@@ -403,13 +460,11 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(lpAccumulator,       10_000 * 1e27);
         assertEq(availableCollateral, 0);
 
-        // TODO: check should the inflator reset?
         // check borrower info after fully repay
         (debt, pendingDebt, col, inflator) = _subsetPool.borrowerInfo(address(_borrower));
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(col.length,  0);
-        assertEq(inflator,    1.002606129793584586 * 1e18);
     }
 
     function testScaledPoolRepayRequireChecks() external {
