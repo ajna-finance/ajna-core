@@ -18,6 +18,7 @@ import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     event GeorgeEvent(uint256 lupIndex);
+    event GeorgeEvent2(int256 lupIndex);
     using SafeERC20      for ERC20;
 
     int256  public constant INDEX_OFFSET = 3232;
@@ -275,6 +276,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _remove(index_, amount);  // update FenwickTree
 
         emit GeorgeEvent( _findSum(borrowerDebt));
+        emit GeorgeEvent2( _indexToBucketIndex(_findSum(borrowerDebt)));
         uint256 newLup = _lup();
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
 
