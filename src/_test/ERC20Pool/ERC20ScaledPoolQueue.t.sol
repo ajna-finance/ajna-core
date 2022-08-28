@@ -86,7 +86,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testAddLoanToQueue() public {
         // borrow max possible from hdp
         changePrank(_borrower);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(50_000 * 1e18, 2551, address(0), address(0));
 
         // check queue head was set correctly
@@ -103,7 +103,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testBorrowerSelfRefLoanQueue() public {
         // borrow and insert into the Queue
         changePrank(_borrower);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(50_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
@@ -125,7 +125,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testMoveLoanInQueue() public {
         // *borrower(HEAD)*
         changePrank(_borrower);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -134,7 +134,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
 
         // *borrower2(HEAD)* -> borrower
         changePrank(_borrower2);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower2, 51 * 1e18, address(0), address(0));
         _pool.borrow(20_000 * 1e18, 2551, address(0), address(0));
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -143,7 +143,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
 
         // borrower2(HEAD) -> borrower -> *borrower3*
         changePrank(_borrower3);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower3, 51 * 1e18, address(0), address(0));
         _pool.borrow(10_000 * 1e18, 2551,  address(0), address(_borrower));
 
         (thresholdPrice, next) = _pool.loans(address(_borrower3));
@@ -152,7 +152,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
 
         // borrower2(HEAD) -> borrower3 -> *borrower*
         changePrank(_borrower);
-        _pool.repay(10_000 * 1e18, address(_borrower2), address(_borrower3));
+        _pool.repay(_borrower, 10_000 * 1e18, address(_borrower2), address(_borrower3));
 
         (thresholdPrice, next) = _pool.loans(address(_borrower));
         assertEq(address(next), address(0));
@@ -165,7 +165,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
    function testMoveToBottom() public {
         // borrower deposits some collateral and draws debt
         changePrank(_borrower);
-        _pool.pledgeCollateral(40 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 40 * 1e18, address(0), address(0));
         _pool.borrow(30_000 * 1e18, 2551, address(0), address(0));
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -173,14 +173,14 @@ contract ERC20ScaledQueueTest is DSTestPlus {
 
         // borrower2 deposits slightly less collateral and draws the same debt, producing a higher TP
         changePrank(_borrower2);
-        _pool.pledgeCollateral(39 * 1e18, address(0), address(_borrower));
+        _pool.pledgeCollateral(_borrower2, 39 * 1e18, address(0), address(_borrower));
         _pool.borrow(30_000 * 1e18, 2551, address(0), address(0));
         assertEq(address(_pool.loanQueueHead()), address(_borrower2));
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
         assertEq(thresholdPrice, 769.970414201183432308 * 1e18);
 
         // borrower2 deposits some collateral, reducing their TP, pushing it to the end of the queue
-        _pool.pledgeCollateral(42 * 1e18, address(0), address(_borrower));
+        _pool.pledgeCollateral(_borrower2, 42 * 1e18, address(0), address(_borrower));
         assertEq(address(_pool.loanQueueHead()), address(_borrower));
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
         assertEq(thresholdPrice, 370.726495726495726667 * 1e18);
@@ -208,7 +208,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testMoveLoanToHeadInQueue() public {
          // borrower becomes head
         changePrank(_borrower);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -217,7 +217,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
 
         // borrower2 replaces borrower as head
         changePrank(_borrower2);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower2, 51 * 1e18, address(0), address(0));
         _pool.borrow(20_000 * 1e18, 2551, address(0), address(0));
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -239,28 +239,28 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testMoveToSameLocation() public {
         // borrower deposits some collateral and draws debt
         changePrank(_borrower);
-        _pool.pledgeCollateral(40 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 40 * 1e18, address(0), address(0));
         _pool.borrow(30_000 * 1e18, 2551, address(0), address(0));
         (uint256 thresholdPrice, ) = _pool.loans(address(_borrower));
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
 
         // borrower2 draws slightly more debt producing a higher TP
         changePrank(_borrower2);
-        _pool.pledgeCollateral(40 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower2, 40 * 1e18, address(0), address(0));
         _pool.borrow(31_000 * 1e18, 2551, address(0), address(0));
         (thresholdPrice, ) = _pool.loans(address(_borrower2));
         assertEq(thresholdPrice, 775.745192307692308050 * 1e18);
 
         // borrower3 draws slightly more debt producing a higher TP
         changePrank(_borrower3);
-        _pool.pledgeCollateral(40 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower3, 40 * 1e18, address(0), address(0));
         _pool.borrow(32_000 * 1e18, 2551, address(0), address(0));
         (thresholdPrice, ) = _pool.loans(address(_borrower3));
         assertEq(thresholdPrice, 800.769230769230769600 * 1e18);
 
         // borrower2 adds collateral, decreasing their TP, but maintaining their same position in queue
         changePrank(_borrower2);
-        _pool.pledgeCollateral(0.1 * 1e18, address(_borrower3), address(_borrower3));
+        _pool.pledgeCollateral(_borrower2, 0.1 * 1e18, address(_borrower3), address(_borrower3));
         (thresholdPrice, ) = _pool.loans(address(_borrower2));
         assertEq(thresholdPrice, 773.810665643583349676 * 1e18);
 
@@ -285,7 +285,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testRemoveLoanInQueue() public {
         // *borrower(HEAD)*
         changePrank(_borrower);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
@@ -294,7 +294,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
 
         // *borrower2(HEAD)* -> borrower
         changePrank(_borrower2);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower2, 51 * 1e18, address(0), address(0));
         _pool.borrow(20_000 * 1e18, 2551, address(0), address(0));
 
         (thresholdPrice, next) = _pool.loans(address(_borrower2));
@@ -305,7 +305,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
 
         // borrower2(HEAD)
         changePrank(_borrower);
-        _pool.repay(pendingDebt, address(_borrower2), address(0));
+        _pool.repay(_borrower, pendingDebt, address(_borrower2), address(0));
 
         // check that borrower 1 has been removed from the queue, and queue head was updated to borrower 2
         (thresholdPrice, next) = _pool.loans(address(_borrower));
@@ -325,7 +325,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testUpdateLoanQueuePledgeCollateral() public {
         // borrower 1 borrows and becomes initial HEAD
         changePrank(_borrower);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
         // check queue head and threshold price were set correctly
@@ -335,7 +335,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         assertEq(address(_borrower), address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
 
-        _pool.pledgeCollateral(11 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 11 * 1e18, address(0), address(0));
 
         (debt, , collateral, ) = _pool.borrowerInfo(address(_borrower));
         (thresholdPrice, next) = _pool.loans(address(_borrower));
@@ -351,7 +351,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testUpdateLoanQueuePullCollateral() public {
         // *borrower(HEAD)*
         changePrank(_borrower);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
@@ -377,14 +377,14 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testWrongOrder() public {
         // borrower deposits some collateral and draws debt
         changePrank(_borrower);
-        _pool.pledgeCollateral(40 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 40 * 1e18, address(0), address(0));
         _pool.borrow(30_000 * 1e18, 2551, address(0), address(0));
         (uint256 thresholdPrice, ) = _pool.loans(address(_borrower));
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
 
         // borrower2 successfully deposits slightly less collateral
         changePrank(_borrower2);
-        _pool.pledgeCollateral(39.9 * 1e18, address(0), address(_borrower));
+        _pool.pledgeCollateral(_borrower2, 39.9 * 1e18, address(0), address(_borrower));
 
         // borrower2 draws the same debt, producing a higher TP, but supplies the wrong order
         vm.expectRevert("B:U:QUE_WRNG_ORD_P");
@@ -397,7 +397,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
     function testGetHighestThresholdPrice() public {
         // borrow and insert into the Queue
         changePrank(_borrower);
-        _pool.pledgeCollateral(51 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(50_000 * 1e18, 2551, address(0), address(0));
 
         (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));

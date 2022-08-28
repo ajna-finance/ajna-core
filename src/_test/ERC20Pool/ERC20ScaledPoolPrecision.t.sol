@@ -147,7 +147,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         emit PledgeCollateral(address(_borrower), 50 * _collateralPoolPrecision);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 50 * _collateralPrecision);
-        _pool.pledgeCollateral(50 * _collateralPoolPrecision, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 50 * _collateralPoolPrecision, address(0), address(0));
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -197,7 +197,7 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         emit Repay(address(_borrower), _pool.indexToPrice(2549), 5_000 * _quotePoolPrecision);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_borrower), address(_pool), 5_000 * _quotePrecision);
-        _pool.repay(5_000 * _quotePoolPrecision, address(0), address(0));
+        _pool.repay(_borrower, 5_000 * _quotePoolPrecision, address(0), address(0));
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);

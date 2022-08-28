@@ -82,7 +82,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
         emit PledgeCollateral(address(_borrower), 100 * 1e18);
-        _pool.pledgeCollateral(100 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 100 * 1e18, address(0), address(0));
 
         // check pool state collateral accounting updated successfully
         assertEq(_pool.pledgedCollateral(), 100 * 1e18);
@@ -182,7 +182,7 @@ contract ERC20ScaledCollateralTest is DSTestPlus {
         // borrower deposits 100 collateral
         vm.expectEmit(true, true, true, true);
         emit PledgeCollateral(address(_borrower), testCollateralAmount);
-        _pool.pledgeCollateral(testCollateralAmount, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, testCollateralAmount, address(0), address(0));
 
         // should be able to now remove collateral
         vm.expectEmit(true, true, true, true);
