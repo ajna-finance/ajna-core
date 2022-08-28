@@ -97,7 +97,7 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
         assertEq(_pool.poolSize(),     110_162.490615984432250000 * 1e18);
         assertEq(_pool.borrowerDebt(), 0);
 
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(address(_borrower));
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(_borrower);
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(col,         100 * 1e18);

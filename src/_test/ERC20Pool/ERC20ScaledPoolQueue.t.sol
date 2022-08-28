@@ -90,9 +90,9 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         _pool.borrow(50_000 * 1e18, 2551, address(0), address(0));
 
         // check queue head was set correctly
-        (, address next) = _pool.loans(address(_borrower));
+        (, address next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        assertEq(_borrower,     address(_pool.loanQueueHead()));
     }
 
     /**
@@ -106,17 +106,17 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(50_000 * 1e18, 2551, address(0), address(0));
 
-        (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
+        (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(_borrower);
 
         // check queue head and threshold price were set correctly
-        (, address next) = _pool.loans(address(_borrower));
+        (, address next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        assertEq(_borrower, address(_pool.loanQueueHead()));
         assertEq(Maths.wdiv(debt, collateral), _pool.htp());
 
         // should revert if the borrower references themself and not the correct queue ordering
         vm.expectRevert("B:U:PNT_SELF_REF");
-        _pool.borrow(50_000 * 1e18, 2551, address(0), address(_borrower));
+        _pool.borrow(50_000 * 1e18, 2551, address(0), _borrower);
     }
 
     /**
@@ -128,35 +128,35 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
-        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        (uint256 thresholdPrice, address next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        assertEq(_borrower, address(_pool.loanQueueHead()));
 
         // *borrower2(HEAD)* -> borrower
         changePrank(_borrower2);
         _pool.pledgeCollateral(_borrower2, 51 * 1e18, address(0), address(0));
         _pool.borrow(20_000 * 1e18, 2551, address(0), address(0));
 
-        (thresholdPrice, next) = _pool.loans(address(_borrower2));
-        assertEq(address(next), address(_borrower));
-        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
+        (thresholdPrice, next) = _pool.loans(_borrower2);
+        assertEq(address(next), _borrower);
+        assertEq(_borrower2,    address(_pool.loanQueueHead()));
 
         // borrower2(HEAD) -> borrower -> *borrower3*
         changePrank(_borrower3);
         _pool.pledgeCollateral(_borrower3, 51 * 1e18, address(0), address(0));
-        _pool.borrow(10_000 * 1e18, 2551,  address(0), address(_borrower));
+        _pool.borrow(10_000 * 1e18, 2551,  address(0), _borrower);
 
-        (thresholdPrice, next) = _pool.loans(address(_borrower3));
+        (thresholdPrice, next) = _pool.loans(_borrower3);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
+        assertEq(_borrower2, address(_pool.loanQueueHead()));
 
         // borrower2(HEAD) -> borrower3 -> *borrower*
         changePrank(_borrower);
-        _pool.repay(_borrower, 10_000 * 1e18, address(_borrower2), address(_borrower3));
+        _pool.repay(_borrower, 10_000 * 1e18, _borrower2, _borrower3);
 
-        (thresholdPrice, next) = _pool.loans(address(_borrower));
+        (thresholdPrice, next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower2), address(_pool.loanQueueHead())); 
+        assertEq(_borrower2, address(_pool.loanQueueHead())); 
     }
 
     /**
@@ -167,39 +167,39 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         changePrank(_borrower);
         _pool.pledgeCollateral(_borrower, 40 * 1e18, address(0), address(0));
         _pool.borrow(30_000 * 1e18, 2551, address(0), address(0));
-        assertEq(address(_pool.loanQueueHead()), address(_borrower));
-        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        assertEq(address(_pool.loanQueueHead()), _borrower);
+        (uint256 thresholdPrice, address next) = _pool.loans(_borrower);
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
 
         // borrower2 deposits slightly less collateral and draws the same debt, producing a higher TP
         changePrank(_borrower2);
-        _pool.pledgeCollateral(_borrower2, 39 * 1e18, address(0), address(_borrower));
+        _pool.pledgeCollateral(_borrower2, 39 * 1e18, address(0), _borrower);
         _pool.borrow(30_000 * 1e18, 2551, address(0), address(0));
-        assertEq(address(_pool.loanQueueHead()), address(_borrower2));
-        (thresholdPrice, next) = _pool.loans(address(_borrower2));
+        assertEq(address(_pool.loanQueueHead()), _borrower2);
+        (thresholdPrice, next) = _pool.loans(_borrower2);
         assertEq(thresholdPrice, 769.970414201183432308 * 1e18);
 
         // borrower2 deposits some collateral, reducing their TP, pushing it to the end of the queue
-        _pool.pledgeCollateral(_borrower2, 42 * 1e18, address(0), address(_borrower));
-        assertEq(address(_pool.loanQueueHead()), address(_borrower));
-        (thresholdPrice, next) = _pool.loans(address(_borrower2));
+        _pool.pledgeCollateral(_borrower2, 42 * 1e18, address(0), _borrower);
+        assertEq(address(_pool.loanQueueHead()), _borrower);
+        (thresholdPrice, next) = _pool.loans(_borrower2);
         assertEq(thresholdPrice, 370.726495726495726667 * 1e18);
         assertEq(next, address(0));
 
         // borrower2 draws more debt, but should still be at the end of queue; should revert passing wrong oldPrev
         vm.expectRevert("B:U:OLDPREV_WRNG");
-        _pool.borrow(30_000 * 1e18, 2551, address(0), address(_borrower));
+        _pool.borrow(30_000 * 1e18, 2551, address(0), _borrower);
 
-        _pool.borrow(30_000 * 1e18, 2551, address(_borrower), address(_borrower));
-        assertEq(address(_pool.loanQueueHead()), address(_borrower));
-        (thresholdPrice, next) = _pool.loans(address(_borrower2));
+        _pool.borrow(30_000 * 1e18, 2551, _borrower, _borrower);
+        assertEq(address(_pool.loanQueueHead()), _borrower);
+        (thresholdPrice, next) = _pool.loans(_borrower2);
         assertEq(thresholdPrice, 741.452991452991453333 * 1e18);
         assertEq(next, address(0));
 
         // confirm rest of queue is in the correct order
-        (thresholdPrice, next) = _pool.loans(address(_borrower));
+        (thresholdPrice, next) = _pool.loans(_borrower);
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
-        assertEq(next, address(_borrower2));
+        assertEq(next, _borrower2);
     }
 
     /**
@@ -211,26 +211,26 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
-        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        (uint256 thresholdPrice, address next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        assertEq(_borrower,     address(_pool.loanQueueHead()));
 
         // borrower2 replaces borrower as head
         changePrank(_borrower2);
         _pool.pledgeCollateral(_borrower2, 51 * 1e18, address(0), address(0));
         _pool.borrow(20_000 * 1e18, 2551, address(0), address(0));
 
-        (thresholdPrice, next) = _pool.loans(address(_borrower2));
-        assertEq(address(next), address(_borrower));
-        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
+        (thresholdPrice, next) = _pool.loans(_borrower2);
+        assertEq(address(next), _borrower);
+        assertEq(_borrower2, address(_pool.loanQueueHead()));
 
         // borrower replaces borrower2 as head
         changePrank(_borrower);
-        _pool.borrow(10_000 * 1e18, 2551, address(_borrower2), address(0));
+        _pool.borrow(10_000 * 1e18, 2551, _borrower2, address(0));
 
-        (thresholdPrice, next) = _pool.loans(address(_borrower));
-        assertEq(address(next), address(_borrower2));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        (thresholdPrice, next) = _pool.loans(_borrower);
+        assertEq(address(next), _borrower2);
+        assertEq(_borrower,     address(_pool.loanQueueHead()));
     }
 
     /**
@@ -241,39 +241,39 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         changePrank(_borrower);
         _pool.pledgeCollateral(_borrower, 40 * 1e18, address(0), address(0));
         _pool.borrow(30_000 * 1e18, 2551, address(0), address(0));
-        (uint256 thresholdPrice, ) = _pool.loans(address(_borrower));
+        (uint256 thresholdPrice, ) = _pool.loans(_borrower);
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
 
         // borrower2 draws slightly more debt producing a higher TP
         changePrank(_borrower2);
         _pool.pledgeCollateral(_borrower2, 40 * 1e18, address(0), address(0));
         _pool.borrow(31_000 * 1e18, 2551, address(0), address(0));
-        (thresholdPrice, ) = _pool.loans(address(_borrower2));
+        (thresholdPrice, ) = _pool.loans(_borrower2);
         assertEq(thresholdPrice, 775.745192307692308050 * 1e18);
 
         // borrower3 draws slightly more debt producing a higher TP
         changePrank(_borrower3);
         _pool.pledgeCollateral(_borrower3, 40 * 1e18, address(0), address(0));
         _pool.borrow(32_000 * 1e18, 2551, address(0), address(0));
-        (thresholdPrice, ) = _pool.loans(address(_borrower3));
+        (thresholdPrice, ) = _pool.loans(_borrower3);
         assertEq(thresholdPrice, 800.769230769230769600 * 1e18);
 
         // borrower2 adds collateral, decreasing their TP, but maintaining their same position in queue
         changePrank(_borrower2);
-        _pool.pledgeCollateral(_borrower2, 0.1 * 1e18, address(_borrower3), address(_borrower3));
-        (thresholdPrice, ) = _pool.loans(address(_borrower2));
+        _pool.pledgeCollateral(_borrower2, 0.1 * 1e18, _borrower3, _borrower3);
+        (thresholdPrice, ) = _pool.loans(_borrower2);
         assertEq(thresholdPrice, 773.810665643583349676 * 1e18);
 
         // confirm queue is in the correct order
-        assertEq(address(_pool.loanQueueHead()), address(_borrower3));
+        assertEq(address(_pool.loanQueueHead()), _borrower3);
 
-        (, address next) = _pool.loans(address(_borrower3));
-        assertEq(next, address(_borrower2));
+        (, address next) = _pool.loans(_borrower3);
+        assertEq(next, _borrower2);
 
-        (, next) = _pool.loans(address(_borrower2));
-        assertEq(next, address(_borrower));
+        (, next) = _pool.loans(_borrower2);
+        assertEq(next, _borrower);
 
-        (, next) = _pool.loans(address(_borrower));
+        (, next) = _pool.loans(_borrower);
         assertEq(next, address(0));
     }
 
@@ -288,32 +288,32 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
-        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        (uint256 thresholdPrice, address next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        assertEq(_borrower,     address(_pool.loanQueueHead()));
 
         // *borrower2(HEAD)* -> borrower
         changePrank(_borrower2);
         _pool.pledgeCollateral(_borrower2, 51 * 1e18, address(0), address(0));
         _pool.borrow(20_000 * 1e18, 2551, address(0), address(0));
 
-        (thresholdPrice, next) = _pool.loans(address(_borrower2));
-        assertEq(address(next), address(_borrower));
-        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
+        (thresholdPrice, next) = _pool.loans(_borrower2);
+        assertEq(address(next), _borrower);
+        assertEq(_borrower2, address(_pool.loanQueueHead()));
 
-        ( , uint256 pendingDebt, , ) = _pool.borrowerInfo(address(_borrower));
+        ( , uint256 pendingDebt, , ) = _pool.borrowerInfo(_borrower);
 
         // borrower2(HEAD)
         changePrank(_borrower);
-        _pool.repay(_borrower, pendingDebt, address(_borrower2), address(0));
+        _pool.repay(_borrower, pendingDebt, _borrower2, address(0));
 
         // check that borrower 1 has been removed from the queue, and queue head was updated to borrower 2
-        (thresholdPrice, next) = _pool.loans(address(_borrower));
+        (thresholdPrice, next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
         assertEq(thresholdPrice, 0);
-        assertEq(address(_borrower2), address(_pool.loanQueueHead()));
+        assertEq(_borrower2, address(_pool.loanQueueHead()));
 
-        (, next) = _pool.loans(address(_borrower2));
+        (, next) = _pool.loans(_borrower2);
         assertEq(address(next), address(0));
     }
 
@@ -329,18 +329,18 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
         // check queue head and threshold price were set correctly
-        (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
-        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
-        assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(_borrower);
+        (uint256 thresholdPrice, address next) = _pool.loans(_borrower);
+        assertEq(address(next),  address(0));
+        assertEq(_borrower,      address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
 
         _pool.pledgeCollateral(_borrower, 11 * 1e18, address(0), address(0));
 
-        (debt, , collateral, ) = _pool.borrowerInfo(address(_borrower));
-        (thresholdPrice, next) = _pool.loans(address(_borrower));
-        assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        (debt, , collateral, ) = _pool.borrowerInfo(_borrower);
+        (thresholdPrice, next) = _pool.loans(_borrower);
+        assertEq(address(next),  address(0));
+        assertEq(_borrower,      address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
     }
 
@@ -354,18 +354,18 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
 
-        (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
-        (uint256 thresholdPrice, address next) = _pool.loans(address(_borrower));
+        (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(_borrower);
+        (uint256 thresholdPrice, address next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        assertEq(_borrower, address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
 
         _pool.pullCollateral(11 * 1e18, address(0), address(0));
 
-        (debt, , collateral, ) = _pool.borrowerInfo(address(_borrower));
-        (thresholdPrice, next) = _pool.loans(address(_borrower));
+        (debt, , collateral, ) = _pool.borrowerInfo(_borrower);
+        (thresholdPrice, next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        assertEq(_borrower, address(_pool.loanQueueHead()));
         assertEq(thresholdPrice, Maths.wdiv(debt, collateral));
     }
 
@@ -379,16 +379,16 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         changePrank(_borrower);
         _pool.pledgeCollateral(_borrower, 40 * 1e18, address(0), address(0));
         _pool.borrow(30_000 * 1e18, 2551, address(0), address(0));
-        (uint256 thresholdPrice, ) = _pool.loans(address(_borrower));
+        (uint256 thresholdPrice, ) = _pool.loans(_borrower);
         assertEq(thresholdPrice, 750.721153846153846500 * 1e18);
 
         // borrower2 successfully deposits slightly less collateral
         changePrank(_borrower2);
-        _pool.pledgeCollateral(_borrower2, 39.9 * 1e18, address(0), address(_borrower));
+        _pool.pledgeCollateral(_borrower2, 39.9 * 1e18, address(0), _borrower);
 
         // borrower2 draws the same debt, producing a higher TP, but supplies the wrong order
         vm.expectRevert("B:U:QUE_WRNG_ORD_P");
-        _pool.borrow(30_000 * 1e18, 2551, address(0), address(_borrower));
+        _pool.borrow(30_000 * 1e18, 2551, address(0), _borrower);
     }
 
     /**
@@ -400,12 +400,12 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
         _pool.borrow(50_000 * 1e18, 2551, address(0), address(0));
 
-        (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(address(_borrower));
+        (uint256 debt, , uint256 collateral, ) = _pool.borrowerInfo(_borrower);
 
         // check queue head and threshold price were set correctly
-        (, address next) = _pool.loans(address(_borrower));
+        (, address next) = _pool.loans(_borrower);
         assertEq(address(next), address(0));
-        assertEq(address(_borrower), address(_pool.loanQueueHead()));
+        assertEq(_borrower, address(_pool.loanQueueHead()));
         assertEq(Maths.wdiv(debt, collateral), _pool.htp());
     }
 
