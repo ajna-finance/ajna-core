@@ -69,7 +69,7 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
         assertEq(_pool.interestRateUpdate(), 0);
 
         changePrank(_borrower);
-        _pool.pledgeCollateral(100 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 100 * 1e18, address(0), address(0));
         _pool.borrow(46_000 * 1e18, 4300, address(0), address(0));
 
         assertEq(_pool.htp(), 460.442307692307692520 * 1e18);
@@ -83,7 +83,7 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
 
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
-        _pool.repay(46_200 * 1e18, address(0), address(0));
+        _pool.repay(_borrower, 46_200 * 1e18, address(0), address(0));
 
         skip(864000);
 
@@ -97,7 +97,7 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
         assertEq(_pool.poolSize(),     110_162.490615984432250000 * 1e18);
         assertEq(_pool.borrowerDebt(), 0);
 
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(address(_borrower));
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(_borrower);
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(col,         100 * 1e18);
@@ -117,7 +117,7 @@ contract ERC20ScaledInterestRateTest is DSTestPlus {
 
         // draw debt
         changePrank(_borrower);
-        _pool.pledgeCollateral(50 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 50 * 1e18, address(0), address(0));
         _pool.borrow(15_000 * 1e18, 4300, address(0), address(0));
         assertEq(_pool.inflatorSnapshot(), 1.0 * 1e18);
         assertEq(_pool.pendingInflator(), 1.000005707778846384 * 1e18);
