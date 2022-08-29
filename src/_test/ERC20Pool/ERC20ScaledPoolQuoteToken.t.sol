@@ -184,7 +184,7 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         _pool.borrow(10_000 * 1e18, 4551, address(0), address(0));
 
         changePrank(_lender);
-        vm.expectRevert("BM:ITP:OOB");
+        vm.expectRevert("S:RQT:BAD_LUP");
         _pool.removeAllQuoteToken(4550);
     }
 

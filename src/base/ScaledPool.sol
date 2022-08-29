@@ -17,8 +17,6 @@ import { Maths }          from "../libraries/Maths.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
-    event GeorgeEvent(uint256 lupIndex);
-    event GeorgeEvent2(int256 lupIndex);
     using SafeERC20      for ERC20;
 
     int256  public constant INDEX_OFFSET = 3232;
@@ -275,8 +273,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     ) internal {
         _remove(index_, amount);  // update FenwickTree
 
-        emit GeorgeEvent( _findSum(borrowerDebt));
-        emit GeorgeEvent2( _indexToBucketIndex(_findSum(borrowerDebt)));
         uint256 newLup = _lup();
         require(_htp() <= newLup, "S:RQT:BAD_LUP");
 
@@ -378,8 +374,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return _findSum(borrowerDebt + additionalDebt_);
     }
 
-    function _indexToBucketIndex(uint256 index_) internal pure returns (int256) {
-        return 7388 - int256(index_) - 3232;
+    /**
+     *  @dev Fenwick index to bucket index conversion
+     *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
+     *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
+     *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
+     */
+    function _indexToBucketIndex(uint256 index_) internal pure returns (int256 bucketIndex_) {
+        bucketIndex_ = (index_ != 8191) ? 4156 - int256(index_) : BucketMath.MIN_PRICE_INDEX;
     }
 
     function _indexToPrice(uint256 index_) internal pure returns (uint256) {
