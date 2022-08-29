@@ -47,26 +47,26 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
+    function pledgeCollateral(address borrower_, uint256 amount_, address oldPrev_, address newPrev_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
-        Borrower memory borrower = borrowers[msg.sender];
+        Borrower memory borrower = borrowers[borrower_];
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         borrower.collateral += amount_;
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+        if (borrower.debt != 0) _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
 
-        borrowers[msg.sender] = borrower;
+        borrowers[borrower_] = borrower;
 
         // update pool state
         pledgedCollateral += amount_;
         _updateInterestRate(curDebt, _lup());
 
         // move collateral from sender to pool
-        emit PledgeCollateral(msg.sender, amount_);
+        emit PledgeCollateral(borrower_, amount_);
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
@@ -134,10 +134,10 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
+    function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
         require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
 
-        Borrower memory borrower = borrowers[msg.sender];
+        Borrower memory borrower = borrowers[borrower_];
         require(borrower.debt != 0, "S:R:NO_DEBT");
 
         uint256 curDebt = _accruePoolInterest();
@@ -152,13 +152,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 borrowersCount = totalBorrowers;
         if (borrower.debt == 0) {
             totalBorrowers = borrowersCount - 1;
-            _removeLoanQueue(msg.sender, oldPrev_);
+            _removeLoanQueue(borrower_, oldPrev_);
         } else {
             if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
             uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-            _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+            _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
         }
-        borrowers[msg.sender] = borrower;
+        borrowers[borrower_] = borrower;
 
         // update pool state
         borrowerDebt = curDebt;
@@ -167,7 +167,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move amount to repay from sender to pool
-        emit Repay(msg.sender, newLup, amount);
+        emit Repay(borrower_, newLup, amount);
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 
