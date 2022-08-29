@@ -1,10 +1,13 @@
 import pytest
 from sdk import *
-from brownie import test, network, PositionManager
+from brownie import test, network, Contract, ERC20PoolFactory, ERC20Pool
 from brownie.exceptions import VirtualMachineError
 from brownie.network.state import TxHistory
 from brownie.utils import color
 
+ZRO_ADD = '0x0000000000000000000000000000000000000000' 
+MIN_PRICE = 99836282890
+MAX_PRICE = 1_004_968_987606512354182109771
 
 @pytest.fixture(autouse=True)
 def get_capsys(capsys):
@@ -19,8 +22,6 @@ def ajna_protocol() -> AjnaProtocol:
         .add_token(MKR_ADDRESS, MKR_RESERVE_ADDRESS)
         .add_token(WETH_ADDRESS, WETH_RESERVE_ADDRESS)
         .add_token(DAI_ADDRESS, DAI_RESERVE_ADDRESS)
-        .deploy_pool(MKR_ADDRESS, DAI_ADDRESS)
-        .deploy_pool(WETH_ADDRESS, DAI_ADDRESS)
     )
 
     ajna_protocol = AjnaProtocol()
@@ -51,39 +52,26 @@ def weth(ajna_protocol):
     return ajna_protocol.get_token(WETH_ADDRESS).get_contract()
 
 
-# TODO: convert to deploying all necessary libraries "libraries(deployer)"
 @pytest.fixture
-def bucket_math(ajna_protocol):
-    return ajna_protocol.bucket_math
-
-
-@pytest.fixture
-def mkr_dai_pool(ajna_protocol):
-    return ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_contract()
+def scaled_pool(deployer):
+    scaled_factory = ERC20PoolFactory.deploy({"from": deployer})
+    scaled_factory.deployPool(MKR_ADDRESS, DAI_ADDRESS, 0.05 * 1e18, {"from": deployer})
+    return ERC20Pool.at(
+        scaled_factory.deployedPools("2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2", MKR_ADDRESS, DAI_ADDRESS)
+        )
 
 
 @pytest.fixture
-def position_manager(deployer):
-    position_manager = PositionManager.deploy({"from": deployer})
-    yield position_manager
-
-
-@pytest.fixture
-def weth_dai_pool(ajna_protocol):
-    return ajna_protocol.get_pool(WETH_ADDRESS, DAI_ADDRESS).get_contract()
-
-
-@pytest.fixture
-def lenders(ajna_protocol, mkr_dai_pool):
+def lenders(ajna_protocol, scaled_pool):
     amount = 200_000 * 10**18  # 200,000 DAI for each lender
-    token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_quote_token()
+    dai_client = ajna_protocol.get_token(scaled_pool.quoteToken())
 
     lenders = []
     for _ in range(10):
         lender = ajna_protocol.add_lender()
 
-        token.top_up(lender, amount)
-        token.approve_max(mkr_dai_pool, lender)
+        dai_client.top_up(lender, amount)
+        dai_client.approve_max(scaled_pool, lender)
 
         lenders.append(lender)
 
@@ -91,22 +79,91 @@ def lenders(ajna_protocol, mkr_dai_pool):
 
 
 @pytest.fixture
-def borrowers(ajna_protocol, mkr_dai_pool):
+def borrowers(ajna_protocol, scaled_pool):
     amount = 100 * 10**18  # 100 MKR for each borrower
-    dai_token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_quote_token()
-    mkr_token = ajna_protocol.get_pool(MKR_ADDRESS, DAI_ADDRESS).get_collateral_token()
+    dai_client = ajna_protocol.get_token(scaled_pool.quoteToken())
+    mkr_client = ajna_protocol.get_token(scaled_pool.collateral())
 
     borrowers = []
     for _ in range(10):
         borrower = ajna_protocol.add_borrower()
 
-        mkr_token.top_up(borrower, amount)
-        mkr_token.approve_max(mkr_dai_pool, borrower)
-        dai_token.approve_max(mkr_dai_pool, borrower)
+        mkr_client.top_up(borrower, amount)
+        mkr_client.approve_max(scaled_pool, borrower)
+        dai_client.approve_max(scaled_pool, borrower)
 
         borrowers.append(borrower)
 
     return borrowers
+
+
+class ScaledPoolUtils:
+    def __init__(self, ajna_protocol: AjnaProtocol):
+        self.bucket_math = ajna_protocol.bucket_math
+
+    @staticmethod
+    def find_loan_queue_params(pool, borrower, threshold_price, debug=False):
+        class Loan:
+            def __init__(self, borrower, loan_info):
+                self.borrower = borrower
+                self.tp = loan_info[0]
+                self.next = loan_info[1]
+
+        assert isinstance(borrower, str)
+        assert isinstance(threshold_price, int)
+
+        if pool.loanQueueHead != ZRO_ADD:
+            if debug:
+                print(f"  looking for borrower {borrower[:6]} and TP {threshold_price / 1e18:.18f}")
+            old_previous_borrower = ZRO_ADD
+            node = Loan(pool.loanQueueHead(), pool.loanInfo(pool.loanQueueHead()))
+
+            if node.tp >= threshold_price and node.borrower != borrower:
+                new_previous_borrower = node.borrower
+            else:
+                new_previous_borrower = ZRO_ADD
+
+            while node.borrower != ZRO_ADD:
+                if debug:
+                    print(f"   {node.borrower[:6]} at TP {node.tp / 1e18:.18f}, next is {node.next[:6]}")
+                if node.next == borrower:
+                    old_previous_borrower = node.borrower
+                if node.tp > threshold_price and node.borrower != borrower:
+                    new_previous_borrower = node.borrower
+                node = Loan(node.next, pool.loanInfo(node.next))
+
+            if debug:
+                print(f"  returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
+
+            # validation
+            assert old_previous_borrower != borrower
+            assert new_previous_borrower != borrower
+            _, check_old_prev_next = pool.loanInfo(old_previous_borrower)
+            assert (old_previous_borrower == ZRO_ADD or check_old_prev_next == borrower)
+            return old_previous_borrower, new_previous_borrower
+        else:
+            return ZRO_ADD, ZRO_ADD
+
+    @staticmethod
+    def get_origination_fee(pool: ERC20Pool, amount):
+        fee_rate = max(pool.interestRate() / 52, 0.0005 * 10**18)
+        assert fee_rate >= (0.0005 * 10**18)
+        assert fee_rate < (100 * 10**18)
+        return fee_rate * amount / 10**18
+
+    @staticmethod
+    def price_to_index_safe(pool, price):
+        if price < MIN_PRICE:
+            return pool.priceToIndex(MIN_PRICE)
+        elif price > MAX_PRICE:
+            return pool.priceToIndex(MAX_PRICE)
+        else:
+            return pool.priceToIndex(price)
+
+
+@pytest.fixture
+def scaled_pool_utils(ajna_protocol):
+    return ScaledPoolUtils(ajna_protocol)
 
 
 class TestUtils:
@@ -114,9 +171,11 @@ class TestUtils:
 
     @staticmethod
     def get_usage(gas) -> str:
-        in_eth = gas * 100 * 10e-9
-        in_fiat = in_eth * 3000
+        in_eth = gas * 50 * 1e-9
+        in_fiat = in_eth * 1700
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
+    
+
 
     class GasWatcher(object):
         _cache = {}
@@ -240,70 +299,56 @@ class TestUtils:
             )
 
     @staticmethod
-    def validate_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=4156):
-        calc_lup = None
-        calc_hpb = None
-        partially_utilized_buckets = []
-        cached_buckets = {}
-        for i in range(max_bucket_index - 1, min_bucket_index, -1):
-            (_, _, _, on_deposit, debt, _, _, _) = pool.bucketAt(bucket_math.indexToPrice(i))
-            cached_buckets[i] = (on_deposit, debt)
-            if not calc_hpb and (on_deposit or debt):
-                calc_hpb = i
-            if debt:
-                calc_lup = i
-            if on_deposit and debt:
-                partially_utilized_buckets.append(i)
+    def validate_pool(pool):
+        # if pool is collateralized...
+        if pool.lupIndex() > ScaledPoolUtils.price_to_index_safe(pool, pool.htp()):
+            # ...ensure debt is less than the size of the pool
+            assert pool.borrowerDebt <= pool.poolSize()
+            # ...ensure borrowers owe more than lenders are owed
+            assert pool.borrowerDebt() >= pool.lenderDebt()
 
-        # Ensure utilization is not fragmented
-        for i in range(max_bucket_index - 1, min_bucket_index, -1):
-            (on_deposit, debt) = cached_buckets[i]
-            if calc_hpb and calc_lup and calc_lup < i < calc_hpb:
-                assert on_deposit == 0  # If there's deposit between LUP and HPB, utilization is fragmented
+        # if there are no borrowers in the pool, ensure there is no debt
+        if pool.totalBorrowers() == 0:
+            assert pool.borrowerDebt() == 0
 
-        # Confirm price pointers are correct
-        assert bucket_math.indexToPrice(calc_hpb) == pool.hpb()
-        assert bucket_math.indexToPrice(calc_lup) == pool.lup()
-
-        # Ensure multiple buckets are not partially utilized
-        assert len(partially_utilized_buckets) <= 1
-        # Ensure price pointers make sense
-        assert calc_lup <= calc_hpb
+        # totalBorrowers should be decremented as borrowers repay debt
+        if pool.totalBorrowers() > 0:
+            assert pool.borrowerDebt() > 0
 
     @staticmethod
-    def validate_debt(pool, borrowers, bucket_math, min_bucket_index=-3232, print_error=False):
-        def pe(lhs_name, lhs_value, rhs_name, rhs_value):
-            error = lhs_value - rhs_value
-            print(f"{lhs_name:>8} vs {rhs_name:<8} error: {error/1e18:>{24}.18f}")
+    def validate_queue(pool):
+        found_borrowers = set()
+        assert len(found_borrowers) == 0
 
-        borrower_debt_pending = 0
-        for borrower in borrowers:
-            (_, pending_debt, _, _, _, _, _) = pool.getBorrowerInfo(borrower.address)
-            borrower_debt_pending += pending_debt
+        borrower = pool.loanQueueHead()
+        tp, next_borrower = pool.loanInfo(borrower)
+        last_tp = tp
+        while next_borrower != ZRO_ADD:
+            # catch duplicate borrowers
+            assert borrower not in found_borrowers
+            found_borrowers.add(borrower)
 
-        bucket_debt_pending = 0
-        hpb_index = bucket_math.priceToIndex(pool.hpb())
-        for i in range(hpb_index, min_bucket_index, -1):
-            price = bucket_math.indexToPrice(i)
-            (_, _, _, _, debt, inflator, _, _) = pool.bucketAt(price)
-            bucket_debt_pending += debt + pool.getPendingBucketInterest(price)
-            assert 0 <= inflator / 1e27 < 2
+            # iterate
+            borrower = next_borrower
+            tp, next_borrower = pool.loanInfo(borrower)
+            # print(f"DEBUG: validate_queue on borrower {borrower} with TP {tp/1e18:.8f}")
 
-        pool_debt_pending = pool.totalDebt() + pool.getPendingPoolInterest()
-
-        if print_error:
-            pe("bucket", bucket_debt_pending, "borrower", borrower_debt_pending)
-            pe("bucket", bucket_debt_pending, "pool", pool_debt_pending)
-            pe("borrower", borrower_debt_pending, "pool", pool_debt_pending)
-
-        # TODO: Get these to tie out to WAD (or RAD) precision.
-        # assert (bucket_debt_pending - borrower_debt_pending) / 1e18 == 0
-        # assert (bucket_debt_pending - pool_debt_pending) / 1e18 == 0
-        # assert (borrower_debt_pending - pool_debt_pending) / 1e18 == 0
+            # catch missorted threshold prices
+            assert last_tp >= tp
+            last_tp = tp
 
     @staticmethod
-    def dump_book(pool, bucket_math, min_bucket_index=-3232, max_bucket_index=6926,
-                  with_headers=True, csv=False) -> str:
+    def dump_book(pool, min_bucket_index, max_bucket_index, with_headers=True, csv=False) -> str:
+        """
+        :param pool:             pool contract for which report shall be generated
+        :param min_bucket_index: highest-priced bucket from which to iterate downward in price
+        :param max_bucket_index: lowest-priced bucket
+        :param with_headers:     print column headings
+        :param csv:              export as CSV for importing into a spreadsheet
+        :return:                 multi-line string
+        """
+        assert min_bucket_index < max_bucket_index
+
         # formatting shortcuts
         w = 15
         def j(text):
@@ -317,44 +362,67 @@ class TestUtils:
         def fy(ray):
             return f"{ny(ray):>{w}.3f}"
 
-        hpb = pool.hpb()
-        lup = pool.lup()
+        lup_index = pool.lupIndex()
+        htp_index = ScaledPoolUtils.price_to_index_safe(pool, pool.htp())
 
         lines = []
         if with_headers:
             if csv:
-                lines.append("Price,Pointer,Deposit,Debt,Collateral,LP Outstanding,Inflator")
+                lines.append("Index,Price,Pointer,Quote,Collateral,LP Outstanding,Scale")
             else:
-                lines.append(j('Price') + j('Pointer') + j('Deposit') + j('Debt') + j('Collateral')
-                             + j('LPOutstndg') + j('Inflator'))
-        for i in range(max_bucket_index, min_bucket_index, -1):
-            price = bucket_math.indexToPrice(i)
+                lines.append(j('Index') + j('Price') + j('Pointer') + j('Quote') + j('Collateral')
+                             + j('LP Outstanding') + j('Scale'))
+        for i in range(min_bucket_index, max_bucket_index):
+            price = pool.indexToPrice(i)
             pointer = ""
-            if price == hpb:
-                pointer += "HPB"
-            if price == lup:
+            if i == lup_index:
                 pointer += "LUP"
+            if i == htp_index:
+                pointer += "HTP"
             try:
                 (
-                    _,
-                    _,
-                    _,
-                    bucket_deposit,
-                    bucket_debt,
-                    bucket_inflator,
-                    bucket_lp,
+                    bucket_quote,
                     bucket_collateral,
-                ) = pool.bucketAt(price)
+                    bucket_lpAccumulator,
+                    bucket_scale
+                ) = pool.bucketAt(i)
             except VirtualMachineError as ex:
                 lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
                 continue
             if csv:
-                lines.append(','.join([nw(price), pointer, nw(bucket_deposit), nw(bucket_debt), nw(bucket_collateral),
-                                       ny(bucket_lp), ny(bucket_inflator)]))
+                lines.append(','.join([j(str(i)), nw(price), pointer, nw(bucket_quote), nw(bucket_collateral),
+                                       ny(bucket_lpAccumulator), nw(bucket_scale)]))
             else:
-                lines.append(''.join([fw(price), j(pointer), fw(bucket_deposit), fw(bucket_debt), fw(bucket_collateral),
-                                      fy(bucket_lp), f"{ny(bucket_inflator):>{w}.9f}"]))
+                lines.append(''.join([j(str(i)), fw(price), j(pointer), fw(bucket_quote), fw(bucket_collateral),
+                                      fy(bucket_lpAccumulator), f"{nw(bucket_scale):>{w}.9f}"]))
         return '\n'.join(lines)
+
+    @staticmethod
+    def summarize_pool(pool):
+        print(f"actual utlzn:   {pool.poolActualUtilization()/1e18:>12.1%}  "
+              f"target utlzn: {pool.poolTargetUtilization()/1e18:>10.1%}   "
+              f"collateralization: {pool.poolCollateralization()/1e18:>7.1%}  "
+              f"borrowerDebt: {pool.borrowerDebt()/1e18:>12.1f}  "
+              f"lenderDebt: {pool.lenderDebt()/1e18:>12.1f}  "
+              f"pendingInf: {pool.pendingInflator()/1e18:>20.18f}")
+
+        contract_quote_balance = Contract(pool.quoteToken()).balanceOf(pool)
+        reserves = contract_quote_balance + pool.borrowerDebt() - pool.poolSize()
+        pledged_collateral = pool.pledgedCollateral()
+        if pledged_collateral > 0:
+            ptp = pool.borrowerDebt() * 10 ** 18 / pledged_collateral
+            ptp_index = pool.priceToIndex(ptp)
+            ru = pool.depositAt(ptp_index)
+        else:
+            ptp = 0
+            ru = 0
+        print(f"contract q bal: {contract_quote_balance/1e18:>12.1f}  "
+              f"reserves:   {reserves/1e18:>12.1f}   "
+              f"pledged collaterl: {pool.pledgedCollateral()/1e18:>7.1f}  "
+              f"ptp: {ptp/1e18:>10.3f}  "
+              f"ru: {ru/1e18:>12.1f}  "
+              f"sum: {pool.poolSize()/1e18:>12.1f}  "
+              f"rate:     {pool.interestRate()/1e18:>10.6f}")
 
 
 @pytest.fixture

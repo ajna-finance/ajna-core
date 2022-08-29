@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.14;
 
 import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
@@ -47,5 +46,13 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
 
         deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
+    }
+
+    /*********************************/
+    /*** Pool Creation Functions ***/
+    /*********************************/
+
+    function getNFTSubsetHash(uint256[] memory tokenIds_) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(tokenIds_));
     }
 }

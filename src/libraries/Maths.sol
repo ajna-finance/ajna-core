@@ -54,6 +54,16 @@ library Maths {
         return (x * 1e27 + y / 2) / y;
     }
 
+    /** @notice Divides a RAY by another RAY and returns a WAD */
+    function rrdivw(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * 1e18 + y / 2) / y;
+    }
+
+    /** @notice Divides a RAY by a WAD and returns a WAD */
+    function rwdivw(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * 1e9 + y / 2) / y;
+    }
+
     function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
         z = n % 2 != 0 ? x : 10**27;
 
@@ -62,6 +72,18 @@ library Maths {
 
             if (n % 2 != 0) {
                 z = rmul(z, x);
+            }
+        }
+    }
+
+    function wpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
+        z = n % 2 != 0 ? x : 10**18;
+
+        for (n /= 2; n != 0; n /= 2) {
+            x = wmul(x, x);
+
+            if (n % 2 != 0) {
+                z = wmul(z, x);
             }
         }
     }

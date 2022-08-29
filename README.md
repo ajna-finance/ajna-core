@@ -28,6 +28,7 @@ make all
 make test
 ```
 
+
 ## Brownie integration
 
 `eth-brownie` 1.18.1+ and `ganache` 7.0+ is required.
@@ -58,7 +59,21 @@ To drop into the console upon test failure:
 brownie test --interactive
 ```
 
-From there, use `chain.undo` to roll back the most recent transaction.
-Copy/paste the failed transaction prefixed with `tx = ` and you can interact 
-with the transaction receipt as desired.
+From there, you can pull the last transaction using `tx=history[-1]`, followed by `tx.events` to debug.
 
+
+## Run Slither Analyzer
+
+- Install Slither
+```bash
+pip install slither-analyzer
+```
+- Make sure the default `solc` version is set to the same version as contracts (currently 0.8.14). This can be done by installing and using `solc-select`:
+```bash
+pip install solc-select && solc-select install 0.8.14 && solc-select use 0.8.14
+```
+- Run `analyze`
+
+```bash
+make analyze
+```

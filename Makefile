@@ -20,3 +20,6 @@ coverage   :; forge coverage
 
 # Generate Gas Snapshots
 snapshot :; forge clean && forge snapshot --optimize --optimize-runs 1000000 
+
+analyze:
+		slither src/base/. ; slither src/libraries/. ; slither src/erc20/. ; slither src/erc721/.

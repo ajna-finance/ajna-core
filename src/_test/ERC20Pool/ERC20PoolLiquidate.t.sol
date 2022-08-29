@@ -6,11 +6,8 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { Maths } from "../../libraries/Maths.sol";
 
-import { IPool } from "../../base/interfaces/IPool.sol";
-
 import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
 contract ERC20PoolLiquidateTest is DSTestPlus {
 
@@ -18,9 +15,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
     CollateralToken    internal _collateral;
     ERC20Pool          internal _pool;
     QuoteToken         internal _quote;
-    UserWithCollateral internal _borrower;
-    UserWithCollateral internal _borrower2;
-    UserWithQuoteToken internal _lender;
+    address            internal _borrower;
+    address            internal _borrower2;
+    address            internal _lender;
 
     function skip_setUp() external {
         _collateral  = new CollateralToken();
@@ -28,9 +25,9 @@ contract ERC20PoolLiquidateTest is DSTestPlus {
         _poolAddress = new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         _pool        = ERC20Pool(_poolAddress);
 
-        _borrower   = new UserWithCollateral();
-        _borrower2  = new UserWithCollateral();
-        _lender     = new UserWithQuoteToken();
+        _borrower   = makeAddr("borrower");
+        _borrower2  = makeAddr("borrower2");
+        _lender     = makeAddr("lender");
 
         _collateral.mint(address(_borrower), 2 * 1e18);
         _collateral.mint(address(_borrower2), 200 * 1e18);

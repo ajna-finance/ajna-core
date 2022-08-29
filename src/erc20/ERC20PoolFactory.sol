@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
+import { IPoolFactory } from "../base/interfaces/IPoolFactory.sol";
 
 import { ERC20Pool } from "./ERC20Pool.sol";
 
 import { PoolDeployer } from "../base/PoolDeployer.sol";
 
-import { IPoolFactory } from "../base/interfaces/IPoolFactory.sol";
+import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
 
 contract ERC20PoolFactory is IPoolFactory, PoolDeployer {
 
@@ -22,17 +22,16 @@ contract ERC20PoolFactory is IPoolFactory, PoolDeployer {
         implementation = new ERC20Pool();
     }
 
-    /** @inheritdoc IPoolFactory*/
     function deployPool(
         address collateral_, address quote_, uint256 interestRate_
-    ) external canDeploy(ERC20_NON_SUBSET_HASH, collateral_, quote_, interestRate_) override returns (address pool_) {
+    ) external canDeploy(ERC20_NON_SUBSET_HASH, collateral_, quote_, interestRate_) returns (address pool_) {
         bytes memory data = abi.encodePacked(collateral_, quote_);
 
         ERC20Pool pool = ERC20Pool(address(implementation).clone(data));
-        pool.initialize(interestRate_);
         pool_ = address(pool);
-
         deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
+
+        pool.initialize(interestRate_);
     }
 }

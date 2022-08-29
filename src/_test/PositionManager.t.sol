@@ -4,43 +4,32 @@ pragma solidity 0.8.14;
 import { CollateralToken, NFTCollateralToken, QuoteToken } from "./utils/Tokens.sol";
 import { DSTestPlus }                                      from "./utils/DSTestPlus.sol";
 
-import { UserWithCollateral, UserWithNFTCollateral, UserWithQuoteToken, UserWithQuoteTokenInNFTPool } from "./utils/Users.sol";
-
 import { Maths } from "../libraries/Maths.sol";
 
-import { ERC20Pool }         from "../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory}   from "../erc20/ERC20PoolFactory.sol";
-import { ERC721Pool }        from "../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory } from "../erc721/ERC721PoolFactory.sol";
+import { ERC20Pool }       from "../erc20/ERC20Pool.sol";
+import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
 
 import { PositionManager } from "../base/PositionManager.sol";
 
 import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
 
-contract PositionManagerTest is DSTestPlus {
-
+abstract contract PositionManagerHelperContract is DSTestPlus {
     CollateralToken  internal _collateral;
     ERC20Pool        internal _pool;
     ERC20PoolFactory internal _factory;
     PositionManager  internal _positionManager;
     QuoteToken       internal _quote;
 
-    function setUp() public {
+    constructor() {
         _collateral      = new CollateralToken();
         _quote           = new QuoteToken();
         _factory         = new ERC20PoolFactory();
         _positionManager = new PositionManager();
-
-        address poolAddress = _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _pool = ERC20Pool(poolAddress);
+        _pool            = ERC20Pool(_factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
     }
 
-    /*************************/
-    /*** Utility Functions ***/
-    /*************************/
-
-    function mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) private {
-        _quote.mint(operator_, mintAmount_);
+    function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_quote), address(operator_), mintAmount_);
 
         vm.prank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
@@ -49,56 +38,25 @@ contract PositionManagerTest is DSTestPlus {
 
     }
 
-    function mintAndApproveCollateralTokens(UserWithCollateral operator_, uint256 mintAmount_)private{
-        _collateral.mint(address(operator_), mintAmount_ * 1e18);
+    function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal{
+        deal(address(_collateral), address(operator_), mintAmount_);
 
-        operator_.approveToken(_collateral, address(_pool),            mintAmount_);
-        operator_.approveToken(_collateral, address(_positionManager), mintAmount_);
+        _collateral.approve(address(_pool),            mintAmount_);
+        _collateral.approve(address(_positionManager), mintAmount_);
     }
 
     /**
      *  @dev Abstract away NFT Minting logic for use by multiple tests.
      */
-    function mintNFT(address minter_, address pool_) private returns (uint256 tokenId) {
+    function _mintNFT(address minter_, address pool_) internal returns (uint256 tokenId) {
         IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(minter_, pool_);
 
         vm.prank(mintParams.recipient);
         return _positionManager.mint(mintParams);
     }
+}
 
-    function increaseLiquidity(
-        uint256 tokenId_, address recipient_, address pool_, uint256 amount_, uint256 price_
-    ) private {
-        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId_, recipient_, pool_, amount_, price_
-        );
-
-        vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(recipient_, price_, amount_);
-
-        vm.prank(recipient_);
-        _positionManager.increaseLiquidity(increaseLiquidityParams);
-    }
-
-    // TODO: remove the return value and calc this exchange value separately
-    function decreaseLiquidity(
-        uint256 tokenId_, address recipient_, address pool_, uint256 price_, uint256 lpTokensToRemove_
-    ) private returns (uint256 collateralTokensToBeRemoved, uint256 quoteTokensToBeRemoved) {
-        (collateralTokensToBeRemoved, quoteTokensToBeRemoved) = _pool.getLPTokenExchangeValue(lpTokensToRemove_, price_);
-
-        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
-            tokenId_, recipient_, pool_, price_, lpTokensToRemove_
-        );
-
-        vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(recipient_, price_, collateralTokensToBeRemoved, quoteTokensToBeRemoved);
-
-        // decrease liquidity and check change in balances
-        vm.prank(recipient_);
-        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
-    }
-
-    // -------------------- Tests --------------------
+contract PositionManagerTest is PositionManagerHelperContract {
 
     /**
      *  @notice Tests base NFT minting functionality.
@@ -106,21 +64,21 @@ contract PositionManagerTest is DSTestPlus {
     function testMint() external {
         uint256 mintAmount  = 50 * 1e18;
         uint256 mintPrice   = _p1004;
-        address testAddress = _generateAddress();
+        address testAddress = makeAddr("testAddress");
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
+        _mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         // test emitted Mint event
         vm.expectEmit(true, true, true, true);
         emit Mint(testAddress, address(_pool), 1);
 
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
 
         require(tokenId != 0, "tokenId nonce not incremented");
 
         // check position info
-        (, address owner, ) = _positionManager.positions(tokenId);
-        uint256 lpTokens    = _positionManager.getLPTokens(tokenId, mintPrice);
+        address owner    = _positionManager.ownerOf(tokenId);
+        uint256 lpTokens = _positionManager.getLPTokens(tokenId, mintPrice);
 
         assertEq(owner, testAddress);
         assert(lpTokens == 0);
@@ -134,65 +92,222 @@ contract PositionManagerTest is DSTestPlus {
      *              Attempts to set position owner when not owner of the LP tokens
      */
     function testMemorializePositions() external {
-        address testAddress = _generateAddress();
+        address testAddress = makeAddr("testAddress");
         uint256 mintAmount  = 10000 * 1e18;
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
+        _mintAndApproveQuoteTokens(testAddress, mintAmount);
 
         // call pool contract directly to add quote tokens
-        uint256 priceOne   = _p4000;
-        uint256 priceTwo   = _p3010;
-        uint256 priceThree = _p1004;
+        uint256[] memory indexes = new uint256[](3);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        indexes[2] = 2552;
 
         vm.prank(testAddress);
-        _pool.addQuoteToken(3_000 * 1e18, priceOne);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[0]);
         vm.prank(testAddress);
-        _pool.addQuoteToken(3_000 * 1e18, priceTwo);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[1]);
         vm.prank(testAddress);
-        _pool.addQuoteToken(3_000 * 1e18, priceThree);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[2]);
 
         // mint an NFT to later memorialize existing positions into
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2550));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2551));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, 2552));
 
         // construct memorialize params struct
-        uint256[] memory prices = new uint256[](3);
-        prices[0] = priceOne;
-        prices[1] = priceTwo;
-        prices[2] = priceThree;
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId, testAddress, address(_pool), prices
+            tokenId, testAddress, indexes
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert("P:TLT:NOT_OWNER");
+        vm.expectRevert("S:TLT:NO_ALLOWANCE");
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 
-        // set position ownership should revert if not called by owner
-        vm.expectRevert("P:ANPO:NOT_OWNER");
-        _pool.approveNewPositionOwner(testAddress, address(_positionManager));
-
         // allow position manager to take ownership of the position
         vm.prank(testAddress);
-        _pool.approveNewPositionOwner(testAddress, address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[1], 3_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[2], 3_000 * 1e27);
 
         // memorialize quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testAddress, address(_positionManager), prices, 9_000 * 1e27);
-        vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testAddress, tokenId);
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testAddress, address(_positionManager), indexes, 9_000 * 1e27);
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 
         // check memorialization success
-        uint256 positionAtPriceOneLPTokens = _positionManager.getLPTokens(tokenId, priceOne);
-
+        uint256 positionAtPriceOneLPTokens = _positionManager.getLPTokens(tokenId, indexes[0]);
         assert(positionAtPriceOneLPTokens > 0);
 
         // check lp tokens at non added to price
         uint256 positionAtWrongPriceLPTokens = _positionManager.getLPTokens(tokenId, 4000000 * 1e18);
-
         assert(positionAtWrongPriceLPTokens == 0);
+
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2550));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2551));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, 2552));
+    }
+
+    function testRememorializePositions() external {
+        address testAddress = makeAddr("testAddress");
+        uint256 mintAmount  = 50_000 * 1e18;
+
+        _mintAndApproveQuoteTokens(testAddress, mintAmount);
+
+        // call pool contract directly to add quote tokens
+        uint256[] memory indexes = new uint256[](3);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        indexes[2] = 2552;
+
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[0]);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[1]);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[2]);
+
+        // mint an NFT to later memorialize existing positions into
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
+
+        // check pool state
+        (uint256 lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 0);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 0);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[0]));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[1]));
+        assertFalse(_positionManager.isIndexInPosition(tokenId, indexes[2]));
+
+        // construct memorialize params struct
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId, testAddress, indexes
+        );
+        // allow position manager to take ownership of the position
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[1], 3_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[2], 3_000 * 1e27);
+
+        // memorialize quote tokens into minted NFT
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress, tokenId);
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testAddress, address(_positionManager), indexes, 9_000 * 1e27);
+        vm.prank(testAddress);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 3_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
+
+        // add more liquidity
+        vm.prank(testAddress);
+        _pool.addQuoteToken(1_000 * 1e18, indexes[0]);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(2_000 * 1e18, indexes[1]);
+        vm.prank(testAddress);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[2]);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        assertEq(lpBalance, 1_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        assertEq(lpBalance, 2_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 3_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
+
+        // allow position manager to take ownership of the new LPs
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 1_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[1], 2_000 * 1e27);
+        vm.prank(testAddress);
+        _pool.approveLpOwnership(address(_positionManager), indexes[2], 3_000 * 1e27);
+
+        // rememorialize quote tokens into minted NFT
+        vm.expectEmit(true, true, true, true);
+        emit MemorializePosition(testAddress, tokenId);
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testAddress, address(_positionManager), indexes, 6_000 * 1e27);
+        vm.prank(testAddress);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 4_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 5_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 6_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[0]), 4_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[1]), 5_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId, indexes[2]), 6_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[0]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[1]));
+        assertTrue(_positionManager.isIndexInPosition(tokenId, indexes[2]));
     }
 
     /**
@@ -200,576 +315,860 @@ contract PositionManagerTest is DSTestPlus {
      *          LP tokens are checked to verify ownership of position.
      */
     function testMemorializeMultiple() external {
-        address testLender1 = _generateAddress();
-        address testLender2 = _generateAddress();
+        address testLender1 = makeAddr("testLender1");
+        address testLender2 = makeAddr("testLender2");
         uint256 mintAmount  = 10000 * 1e18;
 
-        mintAndApproveQuoteTokens(testLender1, mintAmount);
-        mintAndApproveQuoteTokens(testLender2, mintAmount);
+        _mintAndApproveQuoteTokens(testLender1, mintAmount);
+        _mintAndApproveQuoteTokens(testLender2, mintAmount);
 
         // call pool contract directly to add quote tokens
-        uint256 priceOne   = _p4000;
-        uint256 priceTwo   = _p3010;
-        uint256 priceThree = _p1004;
-        uint256 priceFour  = _p1_05;
+        uint256[] memory indexes = new uint256[](4);
+        indexes[0] = 2550;
+        indexes[1] = 2551;
+        indexes[2] = 2552;
+        indexes[3] = 2553;
 
         vm.prank(testLender1);
-        _pool.addQuoteToken(3_000 * 1e18, priceOne);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[0]);
         vm.prank(testLender1);
-        _pool.addQuoteToken(3_000 * 1e18, priceTwo);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[1]);
         vm.prank(testLender1);
-        _pool.addQuoteToken(3_000 * 1e18, priceThree);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[2]);
 
         vm.prank(testLender2);
-        _pool.addQuoteToken(3_000 * 1e18, priceOne);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[0]);
         vm.prank(testLender2);
-        _pool.addQuoteToken(3_000 * 1e18, priceFour);
+        _pool.addQuoteToken(3_000 * 1e18, indexes[3]);
 
         // mint NFTs to later memorialize existing positions into
-        uint256 tokenId1 = mintNFT(testLender1, address(_pool));
-        uint256 tokenId2 = mintNFT(testLender2, address(_pool));
+        uint256 tokenId1 = _mintNFT(testLender1, address(_pool));
+        uint256 tokenId2 = _mintNFT(testLender2, address(_pool));
 
-        // check lender, position manager,  and pool state
-        assertEq(_pool.lpBalance(testLender1, priceOne),   3_000 * 1e27);
-        assertEq(_pool.lpBalance(testLender1, priceTwo),   3_000 * 1e27);
-        assertEq(_pool.lpBalance(testLender1, priceThree), 3_000 * 1e27);
+        // check lender, position manager, and pool state
+        (uint256 lpBalance, ) = _pool.bucketLenders(indexes[0], testLender1);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], testLender1);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], testLender1);
+        assertEq(lpBalance, 3_000 * 1e27);
 
-        assertEq(_pool.lpBalance(testLender2, priceOne),  3_000 * 1e27);
-        assertEq(_pool.lpBalance(testLender2, priceFour), 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], testLender2);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[3], testLender2);
+        assertEq(lpBalance, 3_000 * 1e27);
 
-        assertEq(_pool.lpBalance(address(_positionManager), priceOne),   0);
-        assertEq(_pool.lpBalance(address(_positionManager), priceTwo),   0);
-        assertEq(_pool.lpBalance(address(_positionManager), priceThree), 0);
-        assertEq(_pool.lpBalance(address(_positionManager), priceFour),  0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[3], address(_positionManager));
+        assertEq(lpBalance, 0);
 
-        assertEq(_positionManager.getLPTokens(tokenId1, priceOne),   0);
-        assertEq(_positionManager.getLPTokens(tokenId1, priceTwo),   0);
-        assertEq(_positionManager.getLPTokens(tokenId1, priceThree), 0);
+        assertEq(_positionManager.getLPTokens(indexes[0], tokenId1), 0);
+        assertEq(_positionManager.getLPTokens(indexes[1], tokenId1), 0);
+        assertEq(_positionManager.getLPTokens(indexes[2], tokenId1), 0);
 
-        assertEq(_positionManager.getLPTokens(tokenId2, priceOne),   0);
-        assertEq(_positionManager.getLPTokens(tokenId2, priceFour),  0);
+        assertEq(_positionManager.getLPTokens(indexes[0], tokenId2), 0);
+        assertEq(_positionManager.getLPTokens(indexes[3], tokenId2), 0);
 
-        assertEq(_pool.totalQuoteToken(), 15_000 * 1e18);
+        assertEq(_pool.poolSize(), 15_000 * 1e18);
 
         // construct memorialize lender 1 params struct
-        uint256[] memory prices = new uint256[](3);
-        prices[0] = priceOne;
-        prices[1] = priceTwo;
-        prices[2] = priceThree;
+        uint256[] memory lender1Indexes = new uint256[](3);
+        lender1Indexes[0] = 2550;
+        lender1Indexes[1] = 2551;
+        lender1Indexes[2] = 2552;
+
         IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId1, testLender1, address(_pool), prices
+            tokenId1, testLender1, lender1Indexes
         );
-
-        // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert("P:TLT:NOT_OWNER");
-        vm.prank(testLender1);
-        _positionManager.memorializePositions(memorializeParams);
-
-        // set position ownership should revert if not called by owner
-        vm.expectRevert("P:ANPO:NOT_OWNER");
-        _pool.approveNewPositionOwner(testLender1, address(_positionManager));
 
         // allow position manager to take ownership of lender 1's position
         vm.prank(testLender1);
-        _pool.approveNewPositionOwner(testLender1, address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+        vm.prank(testLender1);
+        _pool.approveLpOwnership(address(_positionManager), indexes[1], 3_000 * 1e27);
+        vm.prank(testLender1);
+        _pool.approveLpOwnership(address(_positionManager), indexes[2], 3_000 * 1e27);
 
         // memorialize lender 1 quote tokens into minted NFT
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testLender1, address(_positionManager), prices, 9_000 * 1e27);
-        vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender1, tokenId1);
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testLender1, address(_positionManager), lender1Indexes, 9_000 * 1e27);
         vm.prank(testLender1);
         _positionManager.memorializePositions(memorializeParams);
 
         // check lender, position manager,  and pool state
-        assertEq(_pool.lpBalance(testLender1, priceOne),   0);
-        assertEq(_pool.lpBalance(testLender1, priceTwo),   0);
-        assertEq(_pool.lpBalance(testLender1, priceThree), 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(testLender1));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(testLender1));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(testLender1));
+        assertEq(lpBalance, 0);
 
-        assertEq(_pool.lpBalance(address(_positionManager), priceOne),   3_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_positionManager), priceTwo),   3_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_positionManager), priceThree), 3_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_positionManager), priceFour),  0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[3], address(_positionManager));
+        assertEq(lpBalance, 0);
 
-        assertEq(_positionManager.getLPTokens(tokenId1, priceOne),   3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId1, priceTwo),   3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId1, priceThree), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, indexes[2]), 3_000 * 1e27);
 
-        assertEq(_pool.totalQuoteToken(), 15_000 * 1e18);
+        assertEq(_pool.poolSize(), 15_000 * 1e18);
 
         // allow position manager to take ownership of lender 2's position
         vm.prank(testLender2);
-        _pool.approveNewPositionOwner(testLender2, address(_positionManager));
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
+        vm.prank(testLender2);
+        _pool.approveLpOwnership(address(_positionManager), indexes[3], 3_000 * 1e27);
 
         // memorialize lender 2 quote tokens into minted NFT
-        prices = new uint256[](2);
-        prices[0] = priceOne;
-        prices[1] = priceFour;
+        uint256[] memory newIndexes = new uint256[](2);
+        newIndexes[0] = 2550;
+        newIndexes[1] = 2553;
+
         memorializeParams = IPositionManager.MemorializePositionsParams(
-            tokenId2, testLender2, address(_pool), prices
+            tokenId2, testLender2, newIndexes
         );
 
         vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(testLender2, address(_positionManager), prices, 6_000 * 1e27);
-        vm.expectEmit(true, true, true, true);
         emit MemorializePosition(testLender2, tokenId2);
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(testLender2, address(_positionManager), newIndexes, 6_000 * 1e27);
         vm.prank(testLender2);
         _positionManager.memorializePositions(memorializeParams);
 
         // check lender, position manager,  and pool state
-        assertEq(_pool.lpBalance(testLender2, priceOne),  0);
-        assertEq(_pool.lpBalance(testLender2, priceFour), 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], testLender2);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(indexes[3], testLender2);
+        assertEq(lpBalance, 0);
 
-        assertEq(_pool.lpBalance(address(_positionManager), priceOne),   6_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_positionManager), priceTwo),   3_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_positionManager), priceThree), 3_000 * 1e27);
-        assertEq(_pool.lpBalance(address(_positionManager), priceFour),  3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        assertEq(lpBalance, 6_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(indexes[3], address(_positionManager));
+        assertEq(lpBalance, 3_000 * 1e27);
 
-        assertEq(_positionManager.getLPTokens(tokenId1, priceOne),   3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId1, priceTwo),   3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId1, priceThree), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, indexes[1]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, indexes[2]), 3_000 * 1e27);
 
-        assertEq(_positionManager.getLPTokens(tokenId2, priceOne),   3_000 * 1e27);
-        assertEq(_positionManager.getLPTokens(tokenId2, priceFour),  3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId2, indexes[0]), 3_000 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId2, indexes[3]), 3_000 * 1e27);
 
-        assertEq(_pool.totalQuoteToken(), 15_000 * 1e18);
+        assertEq(_pool.poolSize(), 15_000 * 1e18);
     }
 
     function testMemorializeMultipleAndModifyLiquidity() external {
-
+        // TODO implement
     }
-
 
     /**
      *  @notice Tests a contract minting an NFT.
      */
     function testMintToContract() external {
-        UserWithQuoteToken lender = new UserWithQuoteToken();
+        // TODO to be reviewed
+        address lender = makeAddr("lender");
         _quote.mint(address(lender), 200_000 * 1e18);
-        lender.approveToken(_quote, address(_pool), 200_000 * 1e18);
 
         // check that contract can successfully receive the NFT
         vm.expectEmit(true, true, true, true);
         emit Mint(address(lender), address(_pool), 1);
-
-        mintNFT(address(lender), address(_pool));
+        _mintNFT(address(lender), address(_pool));
     }
 
     /**
-     *  @notice Tests minting an NFT, increasing liquidity at two different prices.
+     *  @notice Tests minting an NFT, transfering NFT by approve, memorialize and redeem positions.
+     *          Checks that old owner cannot redeem positions.
+     *          Old owner reverts: attempts to redeem positions without permission.
      */
-    function testIncreaseLiquidity() external {
-        // generate a new address
-        address testAddress = _generateAddress();
-        uint256 mintAmount  = 10000 * 1e18;
-        uint256 mintPrice   = _p1004;
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
-
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
-
-        // check newly minted position with no liquidity added
-        (, address originalPositionOwner, ) = _positionManager.positions(tokenId);
-        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintPrice);
-
-        assertEq(originalPositionOwner, testAddress);
-        assert(originalLPTokens == 0);
-
-        // add initial liquidity
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintPrice);
-
-        // check liquidity was added successfully
-        (, address updatedPositionOwner, ) = _positionManager.positions(tokenId);
-        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, mintPrice);
-
-        assertEq(_pool.totalQuoteToken(), mintAmount / 4);
-        assertEq(updatedPositionOwner,   testAddress);
-        assert(updatedLPTokens != 0);
-
-        // Add liquidity to the same price again
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 4, mintPrice);
-
-        uint256 positionUpdatedTwiceTokens = _positionManager.getLPTokens(tokenId, mintPrice);
-
-        assertEq(_pool.totalQuoteToken(), mintAmount / 2);
-        assert(positionUpdatedTwiceTokens > updatedLPTokens);
-
-        // add liquidity to a different price, for same owner and tokenId
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount / 2, _p50159);
-
-        assertEq(_pool.totalQuoteToken(), mintAmount);
-    }
-
-    /**
-     *  @notice Tests minting an NFT and failing to increase liquidity for invalid recipient.
-     *          Recipient reverts: attempts to increase liquidity when not permited.
-     */
-    function testIncreaseLiquidityPermissions() external {
-        address recipient      = _generateAddress();
-        address externalCaller = _generateAddress();
-        uint256 tokenId        = mintNFT(recipient, address(_pool));
-        uint256 mintAmount     = 10000 * 1e18;
-        uint256 mintPrice      = 1000 * 10**18;
-
-        mintAndApproveQuoteTokens(recipient, mintAmount);
-
-        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId, recipient, address(_pool), mintAmount / 4, mintPrice
-        );
-
-        // should revert if called by a non-recipient address
-        vm.prank(externalCaller);
-        vm.expectRevert("PM:NO_AUTH");
-
-        _positionManager.increaseLiquidity(increaseLiquidityParams);
-    }
-
-    /**
-     *  @notice Tests minting an NFT, increasing liquidity and decreasing liquidity.
-     */
-    function testDecreaseLiquidityNoDebt() external {
-        // generate a new address and set test params
-        address testAddress = _generateAddress();
-        uint256 mintAmount  = 10_000 * 1e18;
-        uint256 mintPrice   = _p1004;
-
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
-        uint256 testerQuoteBalance = _quote.balanceOf(testAddress);
-
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
-
-        // add liquidity that can later be decreased
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintPrice);
-
-        // check initial pool balance
-        uint256 postAddPoolQuote = _pool.totalQuoteToken();
-        assertEq(_pool.hpb(), mintPrice);
-
-        assertEq(_quote.balanceOf(testAddress), testerQuoteBalance - mintAmount);
-        assertEq(_pool.totalQuoteToken(), mintAmount);
-
-        // skip > 24h to avoid deposit removal penalty
-        skip(3600 * 24 + 1);
-
-        // find number of lp tokens received
-        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, mintPrice); // RAY
-        assertEq(originalLPTokens, 10_000 * 1e27);
-
-        // remove 1/4 of the LP tokens
-        uint256 lpTokensToRemove = originalLPTokens / 4;
-        assertEq(lpTokensToRemove, 2_500 * 1e27);
-
-        // decrease liquidity
-        (, uint256 quoteTokensRemoved) = decreaseLiquidity(tokenId, testAddress, address(_pool), mintPrice, lpTokensToRemove);
-
-        // check quote token removed
-        assertEq(_pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
-        assertGt(postAddPoolQuote, _pool.totalQuoteToken());
-        assertEq(_quote.balanceOf(testAddress), testerQuoteBalance - _pool.totalQuoteToken());
-
-        // check lp tokens matches expectations
-        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, mintPrice);
-        assertLt(updatedLPTokens, originalLPTokens);
-    }
-
-    /**
-     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity.
-     */
-    function testDecreaseLiquidityWithDebt() external {
-        // generate a new address and set test params
-        address testLender      = _generateAddress();
-        uint256 mintAmount      = 50_000 * 1e18;
-
-        mintAndApproveQuoteTokens(testLender, mintAmount);
-
-        uint256 tokenId = mintNFT(testLender, address(_pool));
-
-        // add liquidity that can later be decreased
-        increaseLiquidity(tokenId, testLender, address(_pool), mintAmount, _p10016);
-
-        // check position info
-        uint256 originalLPTokens = _positionManager.getLPTokens(tokenId, _p10016);
-        uint256 postAddPoolQuote = _pool.totalQuoteToken();
-
-        // Borrow against the pool
-        UserWithCollateral testBorrower = new UserWithCollateral();
-        uint256 collateralToMint        = 5000 * 1e18;
-        mintAndApproveCollateralTokens(testBorrower, collateralToMint);
-
-        // add collateral and borrow against it
-        testBorrower.addCollateral(_pool, collateralToMint);
-        testBorrower.borrow(_pool, 2_500 * 1e18, _p10016);
-
-        // check pool state
-        assertEq(_pool.lup(),       _p10016);
-        assertEq(_pool.hpb(),       _p10016);
-        assertEq(_pool.totalDebt(), 2_500.000961538461538462 * 1e18);
-
-        // check token balances
-        assertEq(_collateral.balanceOf(address(_pool)), collateralToMint);
-        assertEq(_collateral.balanceOf(testLender),     0);
-        assertEq(_quote.balanceOf(testLender),          0);
-        assertEq(_quote.balanceOf(address(_pool)),      mintAmount - 2_500 * 1e18);
-
-        // bidder purchases quote tokens with newly minted collateral
-        UserWithCollateral testBidder = new UserWithCollateral();
-        mintAndApproveCollateralTokens(testBidder, 50_000 * 1e18);
-        testBidder.purchaseBid(_pool, 1 * 1e18, _p10016);
-
-        // lender removes a portion of their provided liquidity
-        uint256 lpTokensToRemove = originalLPTokens / 4;
-        (uint256 collateralTokensToBeRemoved, ) = _pool.getLPTokenExchangeValue(lpTokensToRemove, _p10016);
-
-        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
-            tokenId, testLender, address(_pool), _p10016, lpTokensToRemove
-        );
-
-        vm.expectEmit(true, true, true, true);
-        emit ClaimCollateral(address(_positionManager), _p10016, 0.000024958813990230 * 1e18, 0.249999995192305152765920139 * 1e27);
-        vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(testLender, _p10016, 0.000024958813990230 * 1e18, 12_487.250490144230769231 * 1e18);
-        vm.prank(testLender);
-        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
-
-        // check token balances
-        assertGt(postAddPoolQuote, _pool.totalQuoteToken());
-
-        uint256 updatedLPTokens = _positionManager.getLPTokens(tokenId, _p10016);
-        assertTrue(updatedLPTokens < originalLPTokens);
-
-        assertEq(_collateral.balanceOf(testLender),                collateralTokensToBeRemoved);
-        assertLt(_collateral.balanceOf(testLender),                collateralToMint);
-        assertEq(_collateral.balanceOf(address(_positionManager)), 0);
-
-        assertEq(_quote.balanceOf(testLender),                12_487.250490144230769231 * 1e18);
-        assertEq(_quote.balanceOf(address(_positionManager)), 0);
-        assertEq(_quote.balanceOf(address(_pool)),            35_011.749509855769230769 * 1e18);
-
-    }
-
-    /**
-     *  @notice Tests minting an NFT, increasing liquidity, borrowing, purchasing then decreasing liquidity in an NFT Pool.
-     *          Lender reverts when attempting to interact with a pool the tokenId wasn't minted in
-     */
-    function testDecreaseLiquidityWithDebtNFTPool() external {
-        // deploy NFT pool and user contracts
-        NFTCollateralToken _erc721Collateral  = new NFTCollateralToken();
-        ERC721PoolFactory _erc721Factory      = new ERC721PoolFactory();
-        address _NFTCollectionPoolAddress     = _erc721Factory.deployPool(address(_erc721Collateral), address(_quote), 0.05 * 10**18);
-        ERC721Pool _NFTCollectionPool         = ERC721Pool(_NFTCollectionPoolAddress);
-
-        UserWithQuoteTokenInNFTPool testLender = new UserWithQuoteTokenInNFTPool();
-        UserWithNFTCollateral testBorrower     = new UserWithNFTCollateral();
-        UserWithNFTCollateral testBidder       = new UserWithNFTCollateral();
-
-        // mint test tokens
-        _quote.mint(address(testBidder), 600_000 * 1e18);
-        _quote.mint(address(testLender), 600_000 * 1e18);
-
-        _erc721Collateral.mint(address(testBorrower), 60);
-        _erc721Collateral.mint(address(testBidder), 5);
-
-        // run token approvals for NFT Collection Pool
-        testLender.approveToken(_quote, _NFTCollectionPoolAddress, 200_000 * 1e18);
-        testLender.approveToken(_quote, address(_positionManager), 200_000 * 1e18);
-        testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 63);
-        testBidder.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 65);
-        testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 1);
-        testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 3);
-        testBorrower.approveToken(_erc721Collateral, _NFTCollectionPoolAddress, 5);
-
-        // mint position NFT
-        IPositionManager.MintParams memory mintParams = IPositionManager.MintParams(address(testLender), _NFTCollectionPoolAddress);
-        vm.prank(mintParams.recipient);
-        uint256 tokenId = _positionManager.mint(mintParams);
-
-        // should revert if adding liquidity to the wrong pool
-        vm.expectRevert("PM:W_POOL");
-        vm.prank(address(testLender));
-        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId, address(testLender), address(_pool), 80_000 * 1e18, _p10016
-        );
-        _positionManager.increaseLiquidity(increaseLiquidityParams);
-
-        // add liquidity that can later be decreased
-        vm.prank(address(testLender));
-        vm.expectEmit(true, true, true, true);
-        emit IncreaseLiquidity(address(testLender), _p10016, 50_000 * 1e18);
-        increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId, address(testLender), _NFTCollectionPoolAddress, 50_000 * 1e18, _p10016
-        );
-        _positionManager.increaseLiquidity(increaseLiquidityParams);
-
-        assertEq(_quote.balanceOf(address(_positionManager)),          0);
-        assertEq(_quote.balanceOf(address(_NFTCollectionPoolAddress)), 50_000 * 1e18);
-
-        // borrower adds initial collateral to the pool to borrow against
-        uint256[] memory collateralToAdd = new uint256[](3);
-        collateralToAdd[0] = 1;
-        collateralToAdd[1] = 3;
-        collateralToAdd[2] = 5;
-        vm.prank((address(testBorrower)));
-        testBorrower.addCollateralMultiple(_NFTCollectionPool, collateralToAdd);
-
-        // borrow against the pool
-        vm.expectEmit(true, true, false, true);
-        emit Borrow(address(testBorrower), _p10016, 30_000 * 1e18);
-        testBorrower.borrow(_NFTCollectionPool, 30_000 * 1e18, _p10016);
-
-        // purchase bid from the pool
-        uint256[] memory tokensToBuy = new uint256[](2);
-        tokensToBuy[0] = 63;
-        tokensToBuy[1] = 65;
-        vm.expectEmit(true, true, false, true);
-        emit PurchaseWithNFTs(address(testBidder), _p10016, 20_000 * 1e18, tokensToBuy);
-        vm.prank((address(testBidder)));
-        testBidder.purchaseBid(_NFTCollectionPool, 20_000 * 1e18, _p10016, tokensToBuy);
-
-        // add additional quote tokens to enable claiming
-        vm.prank(address(testBidder));
-        _quote.approve(address(_NFTCollectionPool), type(uint256).max);
-        vm.prank(address(testBidder));
-        _NFTCollectionPool.addQuoteToken(50_000 * 1e18, _p10016);
-
-        // decrease liquidity via the NFT specific method
-        uint256[] memory tokenIdsToRemove = new uint256[](2);
-        tokenIdsToRemove[0] = 63;
-        tokenIdsToRemove[1] = 65;
-        IPositionManager.DecreaseLiquidityNFTParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityNFTParams(
-            tokenId, address(testLender), _NFTCollectionPoolAddress, _p10016, _positionManager.getLPTokens(tokenId, _p10016), tokenIdsToRemove
-        );
-
-        uint256[] memory claimedTokens = new uint256[](1);
-        claimedTokens[0] = 63;
-        vm.expectEmit(true, true, false, true);
-        emit ClaimNFTCollateral(address(_positionManager), _p10016, claimedTokens, 10009.894230256636224099811892602 * 1e27);
-        vm.expectEmit(true, true, false, true);
-        emit DecreaseLiquidityNFT(address(testLender), _p10016, claimedTokens, 39_973.184583540486612233 * 1e18);
-        vm.prank((address(testLender)));
-        _positionManager.decreaseLiquidityNFT(decreaseLiquidityParams);
-
-        // check pool state
-        assertEq(_NFTCollectionPool.lup(), _p10016);
-        assertEq(_NFTCollectionPool.hpb(), _p10016);
-
-        // check colateral balances
-        assertEq(_NFTCollectionPool.getCollateralDeposited().length,       4);
-        assertEq(_NFTCollectionPool.getCollateralDeposited()[0],           1);
-        assertEq(_NFTCollectionPool.getCollateralDeposited()[1],           3);
-        assertEq(_NFTCollectionPool.getCollateralDeposited()[2],           5);
-
-        assertEq(_erc721Collateral.balanceOf(address(_NFTCollectionPool)), 4);
-        assertEq(_erc721Collateral.balanceOf(address(_positionManager)),   0);
-        assertEq(_erc721Collateral.balanceOf(address(testLender)),         1);
-
-    }
-
-    /**
-     *  @notice Tests minting an NFT, transfering NFT, increasing liquidity.
-     *          Checks that old owner cannot increase liquidity.
-     *          Old owner reverts: attempts to increase liquidity without permission.
-     */
-    function testNFTTransfer() external {
+    function testNFTTransferByApprove() external {
         // generate addresses and set test params
-        address testMinter      = _generateAddress();
-        address testReceiver    = _generateAddress();
-        uint256 testBucketPrice = _p10016;
-        uint256 tokenId         = mintNFT(testMinter, address(_pool));
+        address testMinter     = makeAddr("testMinter");
+        address testReceiver   = makeAddr("testReceiver");
+        uint256 testIndexPrice = 2550;
+        uint256 tokenId        = _mintNFT(testMinter, address(_pool));
 
         // check owner
-        (, address originalOwner, ) = _positionManager.positions(tokenId);
-        assertEq(originalOwner, testMinter);
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // add initial liquidity
+        uint256 mintAmount = 50_000 * 1e18;
+        _mintAndApproveQuoteTokens(testMinter, mintAmount);
+        vm.startPrank(testMinter);
+        _pool.addQuoteToken(15_000 * 1e18, testIndexPrice);
+
+        // check pool state
+        (uint256 lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // memorialize positions
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = testIndexPrice;
+        // allow position manager to take ownership of the position of testMinter
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
+        // memorialize positions of testMinter
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId, testMinter, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 15_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 15_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // approve and transfer NFT to different address
-        vm.prank(testMinter);
         _positionManager.approve(address(this), tokenId);
         _positionManager.safeTransferFrom(testMinter, testReceiver, tokenId);
 
         // check owner
-        (, address newOwner, ) = _positionManager.positions(tokenId);
-        assertEq(newOwner, testReceiver);
-        assert(newOwner != originalOwner);
+        assertEq(_positionManager.ownerOf(tokenId), testReceiver);
 
-        // check new owner can increaseLiquidity
-        uint256 mintAmount = 50_000 * 1e18;
-        mintAndApproveQuoteTokens(newOwner, mintAmount);
-
-        increaseLiquidity(tokenId, newOwner, address(_pool), mintAmount, testBucketPrice);
-
-        // check previous owner can no longer modify the NFT
-        uint256 nextMintAmount = 50_000 * 1e18;
-        mintAndApproveQuoteTokens(originalOwner, nextMintAmount);
-
-        IPositionManager.IncreaseLiquidityParams memory increaseLiquidityParams = IPositionManager.IncreaseLiquidityParams(
-            tokenId, originalOwner, address(_pool), mintAmount / 4, testBucketPrice
+        // check old owner cannot redeem positions
+        // construct redeem liquidity params
+        IPositionManager.RedeemPositionsParams memory reedemParams = IPositionManager.RedeemPositionsParams(
+            testReceiver, tokenId, address(_pool), indexes
         );
-
+        // redeem liquidity called by old owner
         vm.expectRevert("PM:NO_AUTH");
-        _positionManager.increaseLiquidity(increaseLiquidityParams);
+        _positionManager.reedemPositions(reedemParams);
 
-        // check new owner can decreaseLiquidity
-        uint256 lpTokensToAttempt = _positionManager.getLPTokens(tokenId, testBucketPrice);
+        // check new owner can redeem positions
+        changePrank(testReceiver);
+        _positionManager.reedemPositions(reedemParams);
 
-        IPositionManager.DecreaseLiquidityParams memory decreaseLiquidityParams = IPositionManager.DecreaseLiquidityParams(
-            tokenId, newOwner, address(_pool), testBucketPrice, lpTokensToAttempt
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+    }
+
+    /**
+     *  @notice Tests minting an NFT, transfering NFT by permit, memorialize and redeem positions.
+     *          Checks that old owner cannot redeem positions.
+     *          Old owner reverts: attempts to redeem positions without permission.
+     */
+    function testNFTTransferByPermit() external {
+        // generate addresses and set test params
+        (address testMinter, uint256 minterPrivateKey) = makeAddrAndKey("testMinter");
+
+        address testReceiver   = makeAddr("testReceiver");
+        uint256 testIndexPrice = 2550;
+        uint256 tokenId        = _mintNFT(testMinter, address(_pool));
+
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // add initial liquidity
+        uint256 mintAmount = 50_000 * 1e18;
+        _mintAndApproveQuoteTokens(testMinter, mintAmount);
+        vm.startPrank(testMinter);
+        _pool.addQuoteToken(15_000 * 1e18, testIndexPrice);
+
+        // check pool state
+        (uint256 lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // memorialize positions
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = testIndexPrice;
+        // allow position manager to take ownership of the position of testMinter
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
+        // memorialize positions of testMinter
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId, testMinter, indexes
         );
+        _positionManager.memorializePositions(memorializeParams);
 
-        vm.expectEmit(true, true, true, true);
-        emit DecreaseLiquidity(newOwner, testBucketPrice, 0, 49_950 * 1e18);
-        vm.prank(newOwner);
-        _positionManager.decreaseLiquidity(decreaseLiquidityParams);
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 15_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 15_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // approve and transfer NFT by permit to different address
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+            minterPrivateKey,
+            keccak256(
+                abi.encodePacked(
+                    "\x19\x01",
+                    _positionManager.DOMAIN_SEPARATOR(),
+                    keccak256(
+                        abi.encode(
+                            _positionManager.PERMIT_TYPEHASH(),
+                            testReceiver,
+                            tokenId,
+                            0,
+                            1 days
+                        )
+                    )
+                )
+            )
+        );
+        _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, 1 days, v, r, s );
+
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testReceiver);
+
+        // check old owner cannot redeem positions
+        // construct redeem liquidity params
+        IPositionManager.RedeemPositionsParams memory reedemParams = IPositionManager.RedeemPositionsParams(
+            testReceiver, tokenId, address(_pool), indexes
+        );
+        // redeem liquidity called by old owner
+        vm.expectRevert("PM:NO_AUTH");
+        _positionManager.reedemPositions(reedemParams);
+
+        // check new owner can redeem positions
+        changePrank(testReceiver);
+        _positionManager.reedemPositions(reedemParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
     }
 
     /**
      *  @notice Tests NFT position can & can't be burned based on liquidity attached to it.
-     *          Checks that old owner cannot increase liquidity.
+     *          Checks that old owner cannot move positions.
      *          Owner reverts: attempts to burn NFT with liquidity.
      */
-    function testBurn() external {
+    function testBurnNFTWithoutPositions() external {
         // generate a new address and set test params
-        address testAddress = _generateAddress();
-        uint256 mintAmount  = 10000 * 1e18;
-        uint256 mintPrice   = _p1004;
+        address testAddress = makeAddr("testAddress");
 
-        mintAndApproveQuoteTokens(testAddress, mintAmount);
-
-        uint256 tokenId = mintNFT(testAddress, address(_pool));
-
-        // add liquidity that can later be decreased
-        increaseLiquidity(tokenId, testAddress, address(_pool), mintAmount, mintPrice);
-
-        // skip > 24h to avoid deposit removal penalty
-        skip(3600 * 24 + 1);
-
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
+        assertEq(_positionManager.ownerOf(tokenId), testAddress);
         // construct BurnParams
-        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, testAddress, mintPrice, address(_pool));
-
-        // should revert if liquidity not removed
-        vm.expectRevert("PM:B:LIQ_NOT_REMOVED");
-        vm.prank(testAddress);
-        _positionManager.burn(burnParams);
-
-        // remove all lp tokens
-        uint256 lpTokensToRemove = _positionManager.getLPTokens(tokenId, mintPrice);
-
-        assertEq(lpTokensToRemove, 10_000 * 10**27);
-
-        // decrease liquidity
-        (, uint256 quoteTokensRemoved) = decreaseLiquidity(tokenId, testAddress, address(_pool), mintPrice, lpTokensToRemove);
-        assertEq(_pool.totalQuoteToken(), mintAmount - quoteTokensRemoved);
-
-        // should emit Burn
-        vm.expectEmit(true, true, true, true);
-        emit Burn(testAddress, mintPrice);
-
+        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, testAddress, address(_pool));
         // burn and check state changes
         vm.prank(testAddress);
         _positionManager.burn(burnParams);
 
-        (, address burntPositionOwner, ) = _positionManager.positions(tokenId);
-
-        assertEq(burntPositionOwner, 0x0000000000000000000000000000000000000000);
+        vm.expectRevert("ERC721: invalid token ID");
+        _positionManager.ownerOf(tokenId);
     }
 
-    function testGetPositionValueInQuoteTokens() external {}
+    /**
+     *  @notice Tests NFT position can & can't be burned based on liquidity attached to it.
+     *          Checks that old owner cannot move positions.
+     *          Owner reverts: attempts to burn NFT with liquidity.
+     */
+    function testBurnNFTWithPositions() external {
+        address testMinter     = makeAddr("testMinter");
+        address notOwner       = makeAddr("notOwner");
+        uint256 testIndexPrice = 2550;
+        uint256 tokenId        = _mintNFT(testMinter, address(_pool));
+
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // add initial liquidity
+        uint256 mintAmount = 50_000 * 1e18;
+        _mintAndApproveQuoteTokens(testMinter, mintAmount);
+        vm.startPrank(testMinter);
+        _pool.addQuoteToken(15_000 * 1e18, testIndexPrice);
+        // memorialize positions
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = testIndexPrice;
+        // allow position manager to take ownership of the position of testMinter
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
+        // memorialize positions of testMinter
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId, testMinter, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // construct BurnParams
+        IPositionManager.BurnParams memory burnParams = IPositionManager.BurnParams(tokenId, testMinter, address(_pool));
+        // check that NFT cannot be burnt if it tracks postions
+        vm.expectRevert("PM:B:LIQ_NOT_REMOVED");
+        _positionManager.burn(burnParams);
+
+        // check that NFT cannot be burnt if not owner
+        changePrank(notOwner);
+        vm.expectRevert("PM:NO_AUTH");
+        _positionManager.burn(burnParams);
+
+        // redeem positions of testMinter
+        changePrank(testMinter);
+        IPositionManager.RedeemPositionsParams memory reedemParams = IPositionManager.RedeemPositionsParams(
+            testMinter, tokenId, address(_pool), indexes
+        );
+        _positionManager.reedemPositions(reedemParams);
+
+        _positionManager.burn(burnParams);
+
+        vm.expectRevert("ERC721: invalid token ID");
+        _positionManager.ownerOf(tokenId);
+    }
+
+    function testMoveLiquidityPermissions() external {
+        // generate a new address
+        address testAddress = makeAddr("testAddress");
+        _mintAndApproveQuoteTokens(testAddress, 10_000 * 1e18);
+
+        // add initial liquidity
+        vm.prank(testAddress);
+        _pool.addQuoteToken(10_000 * 1e18, 2550);
+
+        // mint position NFT
+        uint256 tokenId = _mintNFT(testAddress, address(_pool));
+
+        // construct move liquidity params
+        IPositionManager.MoveLiquidityParams memory moveLiquidityParams = IPositionManager.MoveLiquidityParams(
+            testAddress, tokenId, address(_pool), 2550, 2551
+        );
+
+        // move liquidity should fail because is not performed by owner
+        vm.expectRevert("PM:NO_AUTH");
+        _positionManager.moveLiquidity(moveLiquidityParams);
+    }
+
+    function testMoveLiquidity() external {
+        // generate a new address
+        address testAddress1 = makeAddr("testAddress1");
+        address testAddress2 = makeAddr("testAddress2");
+        uint256 mintIndex    = 2550;
+        uint256 moveIndex    = 2551;
+        _mintAndApproveQuoteTokens(testAddress1, 10_000 * 1e18);
+        _mintAndApproveQuoteTokens(testAddress2, 10_000 * 1e18);
+
+        // add initial liquidity
+        vm.prank(testAddress1);
+        _pool.addQuoteToken(2_500 * 1e18, mintIndex);
+        vm.prank(testAddress2);
+        _pool.addQuoteToken(5_500 * 1e18, mintIndex);
+
+        uint256 tokenId1 = _mintNFT(testAddress1, address(_pool));
+        uint256 tokenId2 = _mintNFT(testAddress2, address(_pool));
+        assertEq(_positionManager.ownerOf(tokenId1), testAddress1);
+        assertEq(_positionManager.ownerOf(tokenId2), testAddress2);
+
+        // check pool state
+        (uint256 lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        assertEq(lpBalance, 2_500 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        assertEq(lpBalance, 5_500 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId1, moveIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+
+        // allow position manager to take ownership of the position of testAddress1
+        vm.prank(testAddress1);
+        _pool.approveLpOwnership(address(_positionManager), mintIndex, 2_500 * 1e27);
+
+        // memorialize positions of testAddress1
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = mintIndex;
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId1, testAddress1, indexes
+        );
+        vm.prank(testAddress1);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        assertEq(lpBalance, 5_500 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        assertEq(lpBalance, 2_500 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 2_500 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 0);
+        assertTrue(_positionManager.isIndexInPosition(tokenId1, mintIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId1, moveIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+
+        // construct move liquidity params
+        IPositionManager.MoveLiquidityParams memory moveLiquidityParams = IPositionManager.MoveLiquidityParams(
+            testAddress1, tokenId1, address(_pool), mintIndex, moveIndex
+        );
+
+        // move liquidity called by testAddress1 owner
+        vm.expectEmit(true, true, true, true);
+        emit MoveLiquidity(testAddress1, tokenId1);
+        vm.prank(address(testAddress1));
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        assertEq(lpBalance, 5_500 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        assertEq(lpBalance, 2_500 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 2_500 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+
+        // allow position manager to take ownership of the position of testAddress2
+        vm.prank(testAddress2);
+        _pool.approveLpOwnership(address(_positionManager), mintIndex, 5_500 * 1e27);
+
+        // memorialize positions of testAddress2
+        memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId2, testAddress2, indexes
+        );
+        vm.prank(testAddress2);
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        assertEq(lpBalance, 5_500 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        assertEq(lpBalance, 2_500 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 2_500 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 5_500 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId2, mintIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+
+        // construct move liquidity params
+        moveLiquidityParams = IPositionManager.MoveLiquidityParams(
+            testAddress2, tokenId2, address(_pool), mintIndex, moveIndex
+        );
+
+        // move liquidity called by testAddress2 owner
+        vm.expectEmit(true, true, true, true);
+        emit MoveLiquidity(testAddress2, tokenId2);
+        vm.prank(address(testAddress2));
+        _positionManager.moveLiquidity(moveLiquidityParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        assertEq(lpBalance, 8_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId1, mintIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId1, moveIndex), 2_500 * 1e27);
+        assertEq(_positionManager.getLPTokens(tokenId2, mintIndex), 0);
+        assertEq(_positionManager.getLPTokens(tokenId2, moveIndex), 5_500 * 1e27);
+        assertFalse(_positionManager.isIndexInPosition(tokenId1, mintIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId1, moveIndex));
+        assertFalse(_positionManager.isIndexInPosition(tokenId2, mintIndex));
+        assertTrue(_positionManager.isIndexInPosition(tokenId2, moveIndex));
+    }
+
+    function testRedeemPositions() external {
+        address testMinter     = makeAddr("testMinter");
+        address notOwner       = makeAddr("notOwner");
+        uint256 testIndexPrice = 2550;
+        uint256 tokenId        = _mintNFT(testMinter, address(_pool));
+
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // add initial liquidity
+        uint256 mintAmount = 50_000 * 1e18;
+        _mintAndApproveQuoteTokens(testMinter, mintAmount);
+        vm.startPrank(testMinter);
+        _pool.addQuoteToken(15_000 * 1e18, testIndexPrice);
+
+        // check pool state
+        (uint256 lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // memorialize positions
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = testIndexPrice;
+        // allow position manager to take ownership of the position of testMinter
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
+        // memorialize positions of testMinter
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId, testMinter, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 15_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 15_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // redeem positions of testMinter
+        IPositionManager.RedeemPositionsParams memory reedemParams = IPositionManager.RedeemPositionsParams(
+            testMinter, tokenId, address(_pool), indexes
+        );
+
+        // should fail if trying to redeem from different address but owner
+        changePrank(notOwner);
+        vm.expectRevert("PM:NO_AUTH");
+        _positionManager.reedemPositions(reedemParams);
+
+        // redeem from owner
+        vm.expectEmit(true, true, true, true);
+        emit RedeemPosition(testMinter, tokenId);
+        changePrank(testMinter);
+        _positionManager.reedemPositions(reedemParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // should fail if trying to redeem one more time
+        vm.expectRevert("PM:R:REMOVE_FAIL");
+        _positionManager.reedemPositions(reedemParams);
+    }
+
+    function testRedeemEmptyPositions() external {
+        address testMinter = makeAddr("testMinter");
+        uint256 tokenId    = _mintNFT(testMinter, address(_pool));
+
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // redeem positions of testMinter
+        uint256[] memory indexes = new uint256[](1);
+        IPositionManager.RedeemPositionsParams memory reedemParams = IPositionManager.RedeemPositionsParams(
+            testMinter, tokenId, address(_pool), indexes
+        );
+
+        // should fail if trying to redeem empty position
+        changePrank(testMinter);
+        vm.expectRevert("PM:R:REMOVE_FAIL");
+        _positionManager.reedemPositions(reedemParams);
+    }
+
+    function testRedeemPositionsByNewNFTOwner() external {
+        address testMinter     = makeAddr("testMinter");
+        address testReceiver   = makeAddr("testReceiver");
+        uint256 testIndexPrice = 2550;
+        uint256 tokenId        = _mintNFT(testMinter, address(_pool));
+
+        // check owner
+        assertEq(_positionManager.ownerOf(tokenId), testMinter);
+
+        // add initial liquidity
+        uint256 mintAmount = 50_000 * 1e18;
+        _mintAndApproveQuoteTokens(testMinter, mintAmount);
+        _mintAndApproveQuoteTokens(testReceiver, mintAmount);
+
+        vm.startPrank(testReceiver);
+        _pool.addQuoteToken(25_000 * 1e18, testIndexPrice);
+        _pool.addQuoteToken(15_000 * 1e18, 2551);
+        changePrank(testMinter);
+        _pool.addQuoteToken(15_000 * 1e18, testIndexPrice);
+
+        // check pool state
+        (uint256 lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        assertEq(lpBalance, 25_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2551, testReceiver);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // memorialize positions
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = testIndexPrice;
+        // allow position manager to take ownership of the position of testMinter
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
+        // memorialize positions of testMinter
+        IPositionManager.MemorializePositionsParams memory memorializeParams = IPositionManager.MemorializePositionsParams(
+            tokenId, testMinter, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        assertEq(lpBalance, 25_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2551, testReceiver);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 15_000 * 1e27);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 15_000 * 1e27);
+        assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+
+        // approve and transfer NFT to different address
+        _positionManager.approve(address(this), tokenId);
+        _positionManager.safeTransferFrom(testMinter, testReceiver, tokenId);
+
+        // check new owner
+        assertEq(_positionManager.ownerOf(tokenId), testReceiver);
+
+        IPositionManager.RedeemPositionsParams memory reedemParams = IPositionManager.RedeemPositionsParams(
+            testMinter, tokenId, address(_pool), indexes
+        );
+
+        // check old owner cannot redeem positions
+        vm.expectRevert("PM:NO_AUTH");
+        _positionManager.reedemPositions(reedemParams);
+
+        // check position manager cannot redeem positions
+        changePrank(address(_positionManager));
+        vm.expectRevert("PM:NO_AUTH");
+        _positionManager.reedemPositions(reedemParams);
+
+        // redeem from new owner
+        reedemParams = IPositionManager.RedeemPositionsParams(
+            testReceiver, tokenId, address(_pool), indexes
+        );
+        vm.expectEmit(true, true, true, true);
+        emit RedeemPosition(testReceiver, tokenId);
+        vm.expectEmit(true, true, true, true);
+        emit TransferLPTokens(address(_positionManager), testReceiver, indexes, 15_000 * 1e27);
+        changePrank(testReceiver);
+        _positionManager.reedemPositions(reedemParams);
+
+        // check pool state
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        assertEq(lpBalance, 0);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        assertEq(lpBalance, 40_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(2551, testReceiver);
+        assertEq(lpBalance, 15_000 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        assertEq(lpBalance, 0);
+
+        // check position manager state
+        assertEq(_positionManager.getLPTokens(tokenId, testIndexPrice), 0);
+        assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
+    }
 
 }

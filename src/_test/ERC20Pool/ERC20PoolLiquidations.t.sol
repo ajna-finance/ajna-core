@@ -6,17 +6,14 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { Maths } from "../../libraries/Maths.sol";
 
-import { IPool } from "../../base/interfaces/IPool.sol";
-
 import { DSTestPlus }                             from "../utils/DSTestPlus.sol";
 import { CollateralToken, QuoteToken }            from "../utils/Tokens.sol";
-import { UserWithCollateral, UserWithQuoteToken } from "../utils/Users.sol";
 
 contract ERC20PoolKickSuccessTest is DSTestPlus {
 
-    address BORROWER1 = _generateAddress();
-    address BORROWER2 = _generateAddress();
-    address LENDER    = _generateAddress();
+    address internal _borrower;
+    address internal _borrower2;
+    address internal _lender;
 
     uint256 HPB        = _p49910;
     uint256 LEND_PRICE = _p10016;
@@ -29,30 +26,33 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
     function setUp() external {
         collateralToken = new CollateralToken();
         quoteToken      = new QuoteToken();
-
         pool = ERC20Pool(new ERC20PoolFactory().deployPool(address(collateralToken), address(quoteToken), 0.05e18));
 
-        quoteToken.mint(LENDER, 20_000e18);
+        _borrower  = makeAddr("borrower");
+        _borrower2 = makeAddr("borrower2");
+        _lender    = makeAddr("lender");
+
+        deal(address(_quote), _lender,  20_000 * 1e18);
 
         // Lender adds quote token in two price buckets
-        vm.startPrank(LENDER);
+        vm.startPrank(_lender);
         quoteToken.approve(address(pool), 20_000e18);
         pool.addQuoteToken(10_000e18, HPB);
         pool.addQuoteToken(10_000e18, LEND_PRICE);
         vm.stopPrank();
 
-        collateralToken.mint(BORROWER1, 1e18);
-        collateralToken.mint(BORROWER2, 1e18);
+        deal(address(_collateral), _borrower,  1 * 1e18);
+        deal(address(_collateral), _borrower2, 1 * 1e18);
 
         // Borrower adds collateral token and borrows at HPB
-        vm.startPrank(BORROWER1);
+        vm.startPrank(_borrower);
         collateralToken.approve(address(pool), 10_000e18);
         pool.addCollateral(1e18);
         pool.borrow(10_000e18, HPB);
         vm.stopPrank();
 
         // Borrower adds collateral token and borrows at LEND_PRICE
-        vm.startPrank(BORROWER2);
+        vm.startPrank(_borrower2);
         collateralToken.approve(address(pool), 10_000e18);
         pool.addCollateral(1e18);
         pool.borrow(10_000e18, LEND_PRICE);
