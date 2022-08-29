@@ -44,10 +44,10 @@ interface IScaledPool {
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner_    The original owner address of the position.
      *  @param  newOwner_ The new owner address of the position.
-     *  @param  prices_    Array of price buckets at which LP tokens were moved.
+     *  @param  indexes_  Array of price bucket indexes at which LP tokens were transferred.
      *  @param  lpTokens_ Amount of LP tokens transferred.
      */
-    event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
+    event TransferLPTokens(address owner_, address newOwner_, uint256[] indexes_, uint256 lpTokens_);
 
     /**
      *  @notice Emitted when pool interest rate is updated.
@@ -140,13 +140,6 @@ interface IScaledPool {
     function lupColEma() external view returns (uint256 lupColEma_);
 
     /**
-     *  @notice Nested mapping of LP token ownership address for transferLPTokens access control.
-     *  @param  owner_           Address of the LP owner.
-     *  @return allowedNewOwner_ Address of the newly allowed LP token owner.
-     */
-    function lpTokenOwnership(address owner_) external view returns (address allowedNewOwner_);
-
-    /**
      *  @notice Returns the `minFee` state variable.
      *  @return minFee_ TODO
      */
@@ -202,19 +195,23 @@ interface IScaledPool {
     function addQuoteToken(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_);
 
     /**
-     *  @notice Called by lenders to approve a new owner of their LP tokens.
+     *  @notice Called by lenders to approve transfer of LP tokens to a new owner.
      *  @dev    Intended for use by the PositionManager contract.
      *  @param  allowedNewOwner_ The new owner of the LP tokens.
+     *  @param  index_           The index of the bucket from where LPs tokens are transferred.
+     *  @param  amount_          The amount of LP tokens approved to transfer.
      */
-    function approveNewPositionOwner(address allowedNewOwner_) external;
+    function approveLpOwnership(address allowedNewOwner_, uint256 index_, uint256 amount_) external;
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
-     *  @param  maxAmount_ The maximum amount of quote token to be moved by a lender.
-     *  @param  fromIndex_ The bucket index from which the quote tokens will be removed.
-     *  @param  toIndex_   The bucket index to which the quote tokens will be added.
+     *  @param  maxAmount_     The maximum amount of quote token to be moved by a lender.
+     *  @param  fromIndex_     The bucket index from which the quote tokens will be removed.
+     *  @param  toIndex_       The bucket index to which the quote tokens will be added.
+     *  @return lpbAmountFrom_ The amount of LPs moved out from bucket.
+     *  @return lpbAmountTo_   The amount of LPs moved to destination bucket.
      */
-    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external;
+    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_);
 
     /**
      *  @notice Called by lenders to redeem the maximum amount of LP for quote token.

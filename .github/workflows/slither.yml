@@ -18,9 +18,9 @@ jobs:
           pip install slither-analyzer
         id: slither
 
-      - name: Analyze base contracts
+      - name: Analyze Position Manager
         run: |
-          slither src/base/.
+          slither src/base/PositionManager.sol
         continue-on-error: true
         id: base-analyzer
 
