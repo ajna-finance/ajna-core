@@ -152,7 +152,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
         print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral TP={threshold_price / 1e18:.1f}")
     assert collateral_to_deposit > 10**18
     # TODO: if debt is 0, contracts require passing old_prev and new_prev=0, which is awkward
-    pool.pledgeCollateral(collateral_to_deposit, old_prev, new_prev, {"from": borrower})
+    pool.pledgeCollateral(borrower, collateral_to_deposit, old_prev, new_prev, {"from": borrower})
     test_utils.validate_queue(pool)
 
     # draw debt
@@ -291,7 +291,7 @@ def repay(borrower, borrower_index, pool, test_utils):
         repay_amount = int(repay_amount * 1.01)
         print(f" borrower {borrower_index} repaying {repay_amount/1e18:.1f} of {pending_debt/1e18:.1f} debt")
         old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, 0)
-        pool.repay(repay_amount, old_prev, new_prev, {"from": borrower})
+        pool.repay(borrower, repay_amount, old_prev, new_prev, {"from": borrower})
 
         # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
         (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower)

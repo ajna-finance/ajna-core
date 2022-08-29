@@ -61,7 +61,7 @@ def test_borrow_repay_scaled(
 
         col_txes = []
         for i in range(10):
-            tx = scaled_pool.pledgeCollateral(10 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+            tx = scaled_pool.pledgeCollateral(borrowers[0], 10 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
             col_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
@@ -86,11 +86,11 @@ def test_borrow_repay_scaled(
                 print(f"Transaction: {i} | {test_utils.get_usage(txes[i].gas_used)}")
 
         repay_txes = []
-        tx = scaled_pool.repay(110 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx = scaled_pool.repay(borrowers[0], 110 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
         repay_txes.append(tx)
-        tx = scaled_pool.repay(110 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx = scaled_pool.repay(borrowers[0], 110 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
         repay_txes.append(tx)
-        tx = scaled_pool.repay(50 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx = scaled_pool.repay(borrowers[0], 50 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
         repay_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
