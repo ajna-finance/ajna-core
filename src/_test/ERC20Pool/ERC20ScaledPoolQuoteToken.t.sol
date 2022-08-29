@@ -180,7 +180,7 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
         changePrank(_borrower);
         deal(address(_collateral), _borrower,  _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         _collateral.approve(address(_pool), 3_500_000 * 1e18);
-        _pool.pledgeCollateral(3_500_000 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 3_500_000 * 1e18, address(0), address(0));
         _pool.borrow(10_000 * 1e18, 4551, address(0), address(0));
 
         changePrank(_lender);
