@@ -88,7 +88,7 @@ abstract contract FenwickTree {
     function _add(uint256 i_, uint256 x_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:A:INVALID_INDEX");
 
-        uint256 j = 8192;           // Binary index, 1 << 13
+        uint256 j = SIZE;           // Binary index, 1 << 13
         uint256 ii;                 // Binary index offset
         uint256 sc = Maths.WAD;
 
@@ -120,7 +120,7 @@ abstract contract FenwickTree {
     function _remove(uint256 i_, uint256 x_) internal {
         require(i_ >= 0 && i_ < SIZE, "FW:R:INVALID_INDEX");
 
-        uint256 j = 8192;          // Binary index, 1 << 13
+        uint256 j = SIZE;          // Binary index, 1 << 13
         uint256 ii;                // Binary index offset
         uint256 sc = Maths.WAD;
 
@@ -152,7 +152,7 @@ abstract contract FenwickTree {
     function _prefixSum(uint256 i_) internal view returns (uint256 s_) {
         i_ += 1;                   // Translate from 0 -> 1 indexed array
         uint256 sc = Maths.WAD;
-        uint256 j  = 8192;         // Binary index, 1 << 13
+        uint256 j  = SIZE;         // Binary index, 1 << 13
         uint256 ii;                // Binary index offset
 
         uint256 scaled;
