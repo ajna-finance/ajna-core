@@ -14,9 +14,6 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
-import { console } from "@std/console.sol";
-
-
 contract ERC721Pool is IERC721Pool, ScaledPool {
     using SafeERC20     for ERC20;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -80,19 +77,12 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // add tokenIds to the pool
         for (uint256 i = 0; i < tokenIds_.length;) {
-            if (_tokenIdsAllowed.length() != 0) {
-                require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
-            }
+            if (_tokenIdsAllowed.length() != 0)                       require(_tokenIdsAllowed.contains(tokenIds_[i]),        "P:ONLY_SUBSET");
+            if (!_poolCollateralTokenIds.contains(tokenIds_[i]))      require(_poolCollateralTokenIds.add(tokenIds_[i]),      "P:ADD_PC_FAIL"); // update pool state
+            if (!borrower.collateralDeposited.contains(tokenIds_[i])) require(borrower.collateralDeposited.add(tokenIds_[i]), "P:ADD_CD_FAIL"); // update borrower accounting
 
-            // update pool state
-            if (!_poolCollateralTokenIds.contains(tokenIds_[i])) require(_poolCollateralTokenIds.add(tokenIds_[i]), "P:ADD_PC_FAIL");
-
-            // update borrower accounting
-            if (!borrower.collateralDeposited.contains(tokenIds_[i])) require(borrower.collateralDeposited.add(tokenIds_[i]), "P:ADD_CD_FAIL");
-
-            // move collateral from sender to pool
             //slither-disable-next-line calls-loop
-            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]); // move collateral from sender to pool
 
             unchecked {
                 ++i;
@@ -129,8 +119,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
 
-        uint256 debt    = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
-        borrower.debt   += debt;
+        uint256 debt  = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
+        borrower.debt += debt;
 
         // pool accounting
         uint256 newLup = _indexToPrice(lupId);
@@ -176,16 +166,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         for (uint256 i = 0; i < tokenIds_.length;) {
             //slither-disable-next-line calls-loop
             require(collateral().ownerOf(tokenIds_[i]) == address(this), "P:T_NOT_IN_P");
+            require(_poolCollateralTokenIds.remove(tokenIds_[i]),        "P:RM_PC_FAIL"); // pool level accounting
+            require(borrower.collateralDeposited.remove(tokenIds_[i]),   "P:RM_CD_FAIL"); // borrower accounting
 
-            // pool level accounting
-            require(_poolCollateralTokenIds.remove(tokenIds_[i]), "P:RM_PC_FAIL");
-
-            // borrower accounting
-            require(borrower.collateralDeposited.remove(tokenIds_[i]), "P:RM_CD_FAIL");
-
-            // move collateral from pool to sender
             //slither-disable-next-line calls-loop
-            collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
+            collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]); // move collateral from pool to sender
 
             unchecked {
                 ++i;
@@ -248,13 +233,13 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
         uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
 
-        uint256 tokensToAdd   = Maths.wad(tokenIds_.length);
-        uint256 quoteValue    = Maths.wmul(tokensToAdd, _indexToPrice(index_));
-        lpbChange_           = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
-        bucket.lpAccumulator += lpbChange_;
-        bucketLender.lpBalance += lpbChange_;
-
+        uint256 tokensToAdd        = Maths.wad(tokenIds_.length);
+        uint256 quoteValue         = Maths.wmul(tokensToAdd, _indexToPrice(index_));
+        lpbChange_                 = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
+        bucket.lpAccumulator       += lpbChange_;
+        bucketLender.lpBalance     += lpbChange_;
         bucket.availableCollateral += tokensToAdd;
+
         buckets[index_] = bucket;
         bucketLenders[index_][msg.sender] = bucketLender;
 
@@ -262,15 +247,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // move required collateral from sender to pool
         for (uint256 i = 0; i < tokenIds_.length;) {
-            if (_tokenIdsAllowed.length() != 0) {
-                require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
-            }
-
+            if (_tokenIdsAllowed.length() != 0)                     require(_tokenIdsAllowed.contains(tokenIds_[i]),     "P:ONLY_SUBSET");
             if (!_bucketCollateralTokenIds.contains(tokenIds_[i])) require(_bucketCollateralTokenIds.add(tokenIds_[i]), "P:ADD_BC_FAIL");
 
-            // move collateral from sender to pool
             //slither-disable-next-line calls-loop
-            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]); // move collateral from sender to pool
 
             unchecked {
                 ++i;
