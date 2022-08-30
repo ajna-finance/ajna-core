@@ -45,8 +45,6 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _getPoolAddresses() internal returns (address[] memory) {
-        emit log_address(address(_collectionPool));
-        emit log_address(address(_subsetPool));
         address[] memory _poolAddresses = new address[](2);
         _poolAddresses[0] = address(_collectionPool);
         _poolAddresses[1] = address(_subsetPool);

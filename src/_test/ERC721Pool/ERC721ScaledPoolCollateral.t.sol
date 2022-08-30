@@ -176,6 +176,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralPartiallyEncumbered() external {
+        vm.startPrank(_lender);
         // lender deposits 10000 Quote into 3 buckets
         _subsetPool.addQuoteToken(10_000 * 1e18, 2550);
         _subsetPool.addQuoteToken(10_000 * 1e18, 2551);
@@ -266,6 +267,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
     }
 
     function testPullCollateralOverlyEncumbered() external {
+        vm.startPrank(_lender);
         // lender deposits 10000 Quote into 3 buckets
         _subsetPool.addQuoteToken(10_000 * 1e18, 2550);
         _subsetPool.addQuoteToken(10_000 * 1e18, 2551);
