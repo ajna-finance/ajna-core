@@ -26,18 +26,18 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /***********************/
 
     /// @dev Set of tokenIds that are currently being used as collateral in the pool
-    EnumerableSet.UintSet internal _poolCollateralTokenIds;
+    EnumerableSet.UintSet private _poolCollateralTokenIds;
 
     /// @dev Set of NFT Token Ids that have been deposited into any bucket
-    EnumerableSet.UintSet internal _bucketCollateralTokenIds;
+    EnumerableSet.UintSet private _bucketCollateralTokenIds;
 
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
-    EnumerableSet.UintSet internal _tokenIdsAllowed;
+    EnumerableSet.UintSet private _tokenIdsAllowed;
 
     /// @dev Internal visibility is required as it contains a nested struct
     // borrowers book: borrower address -> NFTBorrower
-    mapping(address => NFTBorrower) internal borrowers;
+    mapping(address => NFTBorrower) private borrowers;
 
     /****************************/
     /*** Initialize Functions ***/
@@ -63,8 +63,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         this.initialize(rate_);
 
         // add subset of tokenIds allowed in the pool
-        for (uint256 id; id < tokenIds_.length;) {
-            _tokenIdsAllowed.add(tokenIds_[id]);
+        for (uint256 id = 0; id < tokenIds_.length;) {
+            require(_tokenIdsAllowed.add(tokenIds_[id]), "P:INIT_ERR");
             unchecked {
                 ++id;
             }
@@ -79,16 +79,16 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         NFTBorrower storage borrower = borrowers[msg.sender];
 
         // add tokenIds to the pool
-        for (uint i; i < tokenIds_.length;) {
+        for (uint256 i = 0; i < tokenIds_.length;) {
             if (_tokenIdsAllowed.length() != 0) {
                 require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
             }
 
             // update pool state
-            _poolCollateralTokenIds.add(tokenIds_[i]);
+            if (!_poolCollateralTokenIds.contains(tokenIds_[i])) require(_poolCollateralTokenIds.add(tokenIds_[i]), "P:ADD_PC_FAIL");
 
             // update borrower accounting
-            borrower.collateralDeposited.add(tokenIds_[i]);
+            if (!borrower.collateralDeposited.contains(tokenIds_[i])) require(borrower.collateralDeposited.add(tokenIds_[i]), "P:ADD_CD_FAIL");
 
             // move collateral from sender to pool
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
@@ -150,8 +150,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move borrowed amount from pool to sender
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, newLup, amount_);
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
     }
 
     // TODO: check for reentrancy
@@ -172,14 +172,14 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _updateInterestRate(curDebt, curLup);
 
         // remove tokenIds and transfer to caller
-        for (uint i; i < tokenIds_.length;) {
+        for (uint256 i = 0; i < tokenIds_.length;) {
             require(collateral().ownerOf(tokenIds_[i]) == address(this), "P:T_NOT_IN_P");
 
             // pool level accounting
-            _poolCollateralTokenIds.remove(tokenIds_[i]);
+            require(_poolCollateralTokenIds.remove(tokenIds_[i]), "P:RM_PC_FAIL");
 
             // borrower accounting
-            borrower.collateralDeposited.remove(tokenIds_[i]);
+            require(borrower.collateralDeposited.remove(tokenIds_[i]), "P:RM_CD_FAIL");
 
             // move collateral from pool to sender
             collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
@@ -227,8 +227,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move amount to repay from sender to pool
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
         emit Repay(msg.sender, newLup, amount);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 
     /*********************************/
@@ -258,12 +258,12 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _updateInterestRate(borrowerDebt, _lup());
 
         // move required collateral from sender to pool
-        for (uint i; i < tokenIds_.length;) {
+        for (uint256 i = 0; i < tokenIds_.length;) {
             if (_tokenIdsAllowed.length() != 0) {
                 require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
             }
 
-            _bucketCollateralTokenIds.add(tokenIds_[i]);
+            if (!_bucketCollateralTokenIds.contains(tokenIds_[i])) require(_bucketCollateralTokenIds.add(tokenIds_[i]), "P:ADD_BC_FAIL");
 
             // move collateral from sender to pool
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
@@ -308,7 +308,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit RemoveCollateralNFT(msg.sender, price, tokenIds_);
 
         // move collateral from pool to lender
-        for (uint i; i < tokenIds_.length;) {
+        for (uint256 i = 0; i < tokenIds_.length;) {
             require(_bucketCollateralTokenIds.contains(tokenIds_[i]), "S:RC:T_NOT_IN_B");
 
             collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
@@ -324,11 +324,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /**********************/
 
     function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256[] memory, uint256) {
-        uint256 pending_debt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
+        uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
 
         return (
             borrowers[borrower_].debt,                         // accrued debt (WAD)
-            pending_debt,                                       // current debt, accrued and pending accrual (WAD)
+            pendingDebt,                                       // current debt, accrued and pending accrual (WAD)
             borrowers[borrower_].collateralDeposited.values(), // deposited collateral including encumbered (WAD)
             borrowers[borrower_].inflatorSnapshot              // used to calculate pending interest (WAD)
         );
