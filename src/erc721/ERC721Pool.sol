@@ -75,8 +75,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
-        NFTBorrower storage borrower = borrowers[msg.sender];
+    function pledgeCollateral(address borrower_, uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
+        NFTBorrower storage borrower = borrowers[borrower_];
 
         // add tokenIds to the pool
         for (uint256 i = 0; i < tokenIds_.length;) {
@@ -108,9 +108,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+        if (borrower.debt != 0) _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
 
-        emit PledgeCollateralNFT(msg.sender, tokenIds_);
+        emit PledgeCollateralNFT(borrower_, tokenIds_);
     }
 
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
@@ -196,10 +196,10 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit PullCollateralNFT(msg.sender, tokenIds_);
     }
 
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
+    function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
         require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
 
-        NFTBorrower storage borrower = borrowers[msg.sender];
+        NFTBorrower storage borrower = borrowers[borrower_];
         require(borrower.debt != 0, "S:R:NO_DEBT");
 
         uint256 curDebt = _accruePoolInterest();
@@ -214,11 +214,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 borrowersCount = totalBorrowers;
         if (borrower.debt == 0) {
             totalBorrowers = borrowersCount - 1;
-            _removeLoanQueue(msg.sender, oldPrev_);
+            _removeLoanQueue(borrower_, oldPrev_);
         } else {
             if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
             uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
-            _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+            _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
         }
 
         // update pool state
@@ -227,7 +227,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move amount to repay from sender to pool
-        emit Repay(msg.sender, newLup, amount);
+        emit Repay(borrower_, newLup, amount);
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 

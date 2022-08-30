@@ -228,7 +228,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
         tokenIdsToAdd[3] = 51;
-        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
+        _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd, address(0), address(0));
         _subsetPool.borrow(24_000 * 1e18, 2351, address(0), address(0));
         assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2351));
         skip(86400);
