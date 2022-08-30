@@ -40,51 +40,10 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         address[] memory _poolAddresses = _getPoolAddresses();
 
-        // emit log_address(_poolAddresses[0]);
-
         _mintAndApproveQuoteTokens(_poolAddresses, _lender, 200_000 * 1e18);
 
         _mintAndApproveCollateralTokens(_poolAddresses, _borrower, 52);
         _mintAndApproveCollateralTokens(_poolAddresses, _bidder, 10);
-
-        // _collateral.mint(address(_borrower),  52);
-        // _collateral.mint(address(_bidder), 10);
-
-        // // deal(address(_quote), _lender, 200_000 * 1e18);
-
-
-        // /*******************************/
-        // /*** Setup NFT Collection State ***/
-        // /*******************************/
-
-
-        // vm.startPrank(_borrower);
-        // _collateral.setApprovalForAll(address(_collectionPool), true);
-        // _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        // changePrank(_bidder);
-        // _collateral.setApprovalForAll(address(_collectionPool), true);
-        // _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        // changePrank(_lender);
-        // _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        // /*******************************/
-        // /*** Setup NFT Subset State ***/
-        // /*******************************/
-
-
-
-        // changePrank(_borrower);
-        // _collateral.setApprovalForAll(address(_subsetPool), true);
-        // _quote.approve(address(_subsetPool), 200_000 * 1e18);
-
-        // changePrank(_bidder);
-        // _collateral.setApprovalForAll(address(_subsetPool), true);
-        // _quote.approve(address(_subsetPool), 200_000 * 1e18);
-
-        // changePrank(_lender);
-        // _quote.approve(address(_subsetPool), 200_000 * 1e18);
     }
 
     /*******************************/

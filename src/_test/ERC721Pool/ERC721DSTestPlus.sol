@@ -54,10 +54,10 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _mintAndApproveQuoteTokens(address[] memory pools_, address operator_, uint256 mintAmount_) internal {
-        _quote.mint(operator_, mintAmount_);
+        deal(address(_quote), operator_, mintAmount_);
 
-        vm.prank(operator_);
         for (uint i; i < pools_.length;) {
+            vm.prank(operator_);
             _quote.approve(address(pools_[i]), type(uint256).max);
             unchecked {
                 ++i;
@@ -66,12 +66,10 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _mintAndApproveCollateralTokens(address[] memory pools_, address operator_, uint256 mintAmount_) internal {
-        _collateral.mint(address(operator_), mintAmount_);
+        _collateral.mint(operator_, mintAmount_);
 
-        vm.prank(operator_);
         for (uint i; i < pools_.length;) {
-            emit log_string("approving");
-            emit log_address(address(pools_[i]));
+            vm.prank(operator_);
             _collateral.setApprovalForAll(address(pools_[i]), true);
             unchecked {
                 ++i;
@@ -95,5 +93,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         emit PledgeCollateralNFT(address(borrower_), tokenIdsToAdd_);
         pool_.pledgeCollateral(tokenIdsToAdd_, address(0), address(0));
     }
+
+    // TODO: implement _pullCollateral()
 
 }
