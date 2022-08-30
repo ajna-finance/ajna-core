@@ -91,6 +91,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             if (!borrower.collateralDeposited.contains(tokenIds_[i])) require(borrower.collateralDeposited.add(tokenIds_[i]), "P:ADD_CD_FAIL");
 
             // move collateral from sender to pool
+            //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
 
             unchecked {
@@ -173,6 +174,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // remove tokenIds and transfer to caller
         for (uint256 i = 0; i < tokenIds_.length;) {
+            //slither-disable-next-line calls-loop
             require(collateral().ownerOf(tokenIds_[i]) == address(this), "P:T_NOT_IN_P");
 
             // pool level accounting
@@ -182,6 +184,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             require(borrower.collateralDeposited.remove(tokenIds_[i]), "P:RM_CD_FAIL");
 
             // move collateral from pool to sender
+            //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
 
             unchecked {
@@ -266,6 +269,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             if (!_bucketCollateralTokenIds.contains(tokenIds_[i])) require(_bucketCollateralTokenIds.add(tokenIds_[i]), "P:ADD_BC_FAIL");
 
             // move collateral from sender to pool
+            //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
 
             unchecked {
@@ -311,6 +315,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         for (uint256 i = 0; i < tokenIds_.length;) {
             require(_bucketCollateralTokenIds.contains(tokenIds_[i]), "S:RC:T_NOT_IN_B");
 
+            //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
 
             unchecked {
