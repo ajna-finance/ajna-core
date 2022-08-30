@@ -51,6 +51,11 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         return _poolAddresses;
     }
 
+    // TODO: finish implementing
+    function _approveQuoteMultipleUserMultiplePool() internal {
+
+    }
+
     function _mintAndApproveQuoteTokens(address[] memory pools_, address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
 
