@@ -32,7 +32,7 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
 
-        deal(address(_quote), _lender,  20_000 * 1e18);
+        deal(address(quoteToken), _lender,  20_000 * 1e18);
 
         // Lender adds quote token in two price buckets
         vm.startPrank(_lender);
@@ -41,21 +41,21 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
         pool.addQuoteToken(10_000e18, LEND_PRICE);
         vm.stopPrank();
 
-        deal(address(_collateral), _borrower,  1 * 1e18);
-        deal(address(_collateral), _borrower2, 1 * 1e18);
+        deal(address(collateralToken), _borrower,  1 * 1e18);
+        deal(address(collateralToken), _borrower2, 1 * 1e18);
 
         // Borrower adds collateral token and borrows at HPB
         vm.startPrank(_borrower);
         collateralToken.approve(address(pool), 10_000e18);
-        pool.addCollateral(1e18);
-        pool.borrow(10_000e18, HPB);
+        pool.pledgeCollateral(_borrower, 1e18, address(0), address(0));
+        pool.borrow(10_000e18, HPB, address(0), address(0));
         vm.stopPrank();
 
         // Borrower adds collateral token and borrows at LEND_PRICE
         vm.startPrank(_borrower2);
         collateralToken.approve(address(pool), 10_000e18);
-        pool.addCollateral(1e18);
-        pool.borrow(10_000e18, LEND_PRICE);
+        pool.pledgeCollateral(_borrower2, 1e18, address(0), address(0));
+        pool.borrow(10_000e18, LEND_PRICE, address(0), address(0));
         vm.stopPrank();
 
         // Warp to make borrower undercollateralized
@@ -72,19 +72,17 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
             uint256 borrowerDebt,
             uint256 borrowerPendingDebt,
             uint256 collateralDeposited,
-            uint256 collateralEncumbered,
-            uint256 collateralization,
-            uint256 borrowerInflator,
-        ) = pool.getBorrowerInfo(BORROWER2);
+            uint256 borrowerInflator
+        ) = pool.borrowerInfo(_borrower2);
 
         assertEq(borrowerDebt,         10_000.000961538461538462e18);
         assertEq(borrowerPendingDebt,  10_020.570034074975048523e18);
-        assertEq(collateralDeposited,  1e18);
-        assertEq(collateralEncumbered, 1.000406174226210512866526239e27);
-        assertEq(collateralization,    0.999593990684309122e18);
+        assertEq(pool.encumberedCollateral(borrowerDebt, pool.lup()), 1.0004061742262105e18);
+        assertEq(pool.borrowerCollateralization(borrowerDebt, collateralDeposited, pool.lup()), 0.999593990684309122e18);
+
         assertEq(borrowerInflator,     1e27);
 
-        ( uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt ) = pool.liquidations(BORROWER2);
+        ( uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt ) = pool.liquidations(_borrower2);
 
         assertEq(kickTime,            0);
         assertEq(referencePrice,      0);
@@ -94,7 +92,7 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
         /*** Kick ***/
         /************/
 
-        pool.kick(BORROWER2, borrowerDebt);
+        pool.kick(_borrower2, borrowerDebt);
 
         /***********************/
         /*** Post-kick state ***/
@@ -104,44 +102,38 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
             borrowerDebt,
             borrowerPendingDebt,
             collateralDeposited,
-            collateralEncumbered,
-            collateralization,
-            borrowerInflator,
-        ) = pool.getBorrowerInfo(BORROWER2);
+            borrowerInflator
+        ) = pool.borrowerInfo(_borrower2);
 
         assertEq(borrowerDebt,         10_020.570034074975048523e18);      // Updated to reflect debt
         assertEq(borrowerPendingDebt,  10_020.570034074975048523e18);      // Pending debt is unchanged
         assertEq(collateralDeposited,  1e18);                              // Unchanged
-        assertEq(collateralEncumbered, 1.000406174226210512866526239e27);  // Unencumbered collateral is unchanged because based off pending debt
-        assertEq(collateralization,    0.999593990684309122e18);           // Unchanged because based off pending debt
+        assertEq(pool.encumberedCollateral(borrowerDebt, pool.lup()), 1.0004061742262105e18);  // Unencumbered collateral is unchanged because based off pending debt
+        assertEq(pool.borrowerCollateralization(borrowerDebt, collateralDeposited, pool.lup()), 0.999593990684309122e18);  // Unchanged because based off pending debt
         assertEq(borrowerInflator,     1.002056907055871826403044480e27);  // Inflator is updated to reflect new debt
 
-        ( kickTime, referencePrice, remainingCollateral, remainingDebt ) = pool.liquidations(BORROWER2);
+        ( kickTime, referencePrice, remainingCollateral, remainingDebt ) = pool.liquidations(_borrower2);
 
         assertEq(kickTime,            block.timestamp);
         assertEq(referencePrice,      HPB);
         assertEq(remainingCollateral, 1e18);
-
-
     }
 
+    // TODO: move to DSTestPlus?
     function _logBorrowerInfo(address borrower_) internal {
         (
             uint256 borrowerDebt,
             uint256 borrowerPendingDebt,
             uint256 collateralDeposited,
-            uint256 collateralEncumbered,
-            uint256 collateralization,
-            uint256 borrowerInflator,
+            uint256 borrowerInflator
 
-        ) = pool.getBorrowerInfo(address(borrower_));
+        ) = pool.borrowerInfo(address(borrower_));
 
         emit log_named_uint("borrowerDebt        ", borrowerDebt);
         emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
         emit log_named_uint("collateralDeposited ", collateralDeposited);
-        emit log_named_uint("collateralEncumbered", collateralEncumbered);
-        emit log_named_uint("collateralization   ", collateralization);
+        emit log_named_uint("collateralEncumbered", pool.encumberedCollateral(borrowerDebt, pool.lup()));
+        emit log_named_uint("collateralization   ", pool.borrowerCollateralization(borrowerDebt, collateralDeposited, pool.lup()));
         emit log_named_uint("borrowerInflator    ", borrowerInflator);
     }
-
 }

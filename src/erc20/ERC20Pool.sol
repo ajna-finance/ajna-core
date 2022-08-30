@@ -38,11 +38,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Inititalize Functions ***/
     /*****************************/
 
-    /****************************/
-    /*** Initialize Functions ***/
-    /****************************/
-
-    function initialize(uint256 rate_) external {
+    function initialize(uint256 rate_) external override {
         require(poolInitializations == 0, "P:INITIALIZED");
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
@@ -149,8 +145,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
-        _repayDebt(msg.sender, maxAmount_, oldPrev_, newPrev_);
+    function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
+        _repayDebt(borrower_, maxAmount_, oldPrev_, newPrev_);
     }
 
     /*********************************/
@@ -228,31 +224,32 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Pool External Functions ***/
     /*******************************/
 
+    // TODO: Remove
+    function liquidate(address borrower_) external {}
+
     function kick(address borrower_, uint256 debtToLiquidate_) external {
-        (uint256 curDebt, uint256 curInflator) = _accruePoolInterest(borrowerDebt, inflatorSnapshot);
-
-        _accrueBorrowerInterest(borrower_.debt, borrower_.inflatorSnapshot, curInflator);
-
-        _updateInterestRateAndEMAs(curDebt);
+        (uint256 curDebt) = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[borrower_];
-
         require(borrower.debt != 0, "P:K:NO_DEBT");
 
+        _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();
+        _updateInterestRateAndEMAs(curDebt, lup);
+
         require(
-            _borrowerCollateralization(borrower.debt, borrower.collateralDeposited, lup) <= Maths.WAD,
-            "P:K:BORROWER_OK"
+            _borrowerCollateralization(borrower.debt, borrower.collateral, lup) <= Maths.WAD,
+            "P:K:_borrower_OK"
         );
 
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),
-            referencePrice:      uint128(lup),  // TODO: should be HPB?
-            remainingCollateral: borrower.collateralDeposited,
+            referencePrice:      uint128(hpb()),
+            remainingCollateral: borrower.collateral,
             remainingDebt:       debtToLiquidate_
         });
 
-        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateralDeposited;
+        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
 
 
@@ -295,7 +292,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         );
 
         require(
-            _borrowerCollateralization(borrower.debt, borrower.collateralDeposited, _lup()) <= Maths.WAD,
+            _borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) <= Maths.WAD,
             "P:L:BORROWER_OK"
         );
 

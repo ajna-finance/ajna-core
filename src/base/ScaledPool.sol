@@ -503,6 +503,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return _lupIndex(0);
     }
 
+    function hpb() public view returns (uint256) {  // TODO: override
+        // TODO: implement by finding first index in tree with 1 wei (smallest possible deposit)
+        return 0;
+    }
+
     function htp() external view returns (uint256) {
         return _htp();
     }
