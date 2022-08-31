@@ -223,13 +223,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*******************************/
 
     // TODO: Remove
-    function liquidate(address borrower_) external {}
-
-    function kick(address borrower_, uint256 debtToLiquidate_) external {
+    function liquidate(address borrower_) external {
         (uint256 curDebt) = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[borrower_];
-        require(borrower.debt != 0, "P:K:NO_DEBT");
+        require(borrower.debt != 0, "P:L:NO_DEBT");
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();
@@ -244,13 +242,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             kickTime:            uint128(block.timestamp),
             referencePrice:      uint128(_hpbIndex()),
             remainingCollateral: borrower.collateral,
-            remainingDebt:       debtToLiquidate_
+            remainingDebt:       borrower.debt
         });
 
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
 
-        require(lup < thresholdPrice, "P:K:LUP_GT_THRESHOLD");
+        require(lup < thresholdPrice, "P:L:LUP_GT_THRESHOLD");
 
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
         // TODO: Account for repossessed collateral

@@ -55,14 +55,14 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
         vm.startPrank(_borrower2);
         collateralToken.approve(address(pool), 10_000e18);
         pool.pledgeCollateral(_borrower2, 1e18, address(0), address(0));
-        pool.borrow(10_000e18, LEND_PRICE, address(0), address(0));  // FIXME: reverts with S:B:LIMIT_REACHED
+        pool.borrow(10_000e18, LEND_PRICE, address(0), address(0));
         vm.stopPrank();
 
         // Warp to make borrower undercollateralized
         vm.warp(START + 15 days);
     }
 
-    function test_kick() external {
+    function test_liquidate() external {
 
         /**********************/
         /*** Pre-kick state ***/
@@ -91,7 +91,7 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
         /*** Kick ***/
         /************/
 
-        pool.kick(_borrower2, borrowerDebt);
+        pool.liquidate(_borrower2);
 
         /***********************/
         /*** Post-kick state ***/
