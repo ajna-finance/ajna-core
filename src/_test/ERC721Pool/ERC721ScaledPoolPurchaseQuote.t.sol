@@ -7,12 +7,10 @@ import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
-import { ERC721DSTestPlus }               from "./ERC721DSTestPlus.sol";
+import { ERC721HelperContract }           from "./ERC721DSTestPlus.sol";
 import { NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
 
-contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
-
-    uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
+contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -20,61 +18,17 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
     address internal _lender;
     address internal _lender2;
 
-    address internal _collectionPoolAddress;
-    address internal _subsetPoolAddress;
-
-    NFTCollateralToken internal _collateral;
-    QuoteToken         internal _quote;
-    ERC721Pool         internal _collectionPool;
-    ERC721Pool         internal _subsetPool;
-
     function setUp() external {
-        // deploy token and user contracts; mint and set balances
-        _collateral = new NFTCollateralToken();
-        _quote      = new QuoteToken();
-
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _bidder    = makeAddr("bidder");
         _lender    = makeAddr("lender");
         _lender2   = makeAddr("lender2");
 
-        _collateral.mint(address(_borrower),  52);
-        _collateral.mint(address(_borrower2), 10);
-        _collateral.mint(address(_bidder), 13);
+        // deploy collection pool
+        _collectionPool = _deployCollectionPool();
 
-        deal(address(_quote), _lender, 200_000 * 1e18);
-        deal(address(_quote), _lender2, 200_000 * 1e18);
-
-        /*******************************/
-        /*** Setup NFT Collection State ***/
-        /*******************************/
-
-        _collectionPoolAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _collectionPool        = ERC721Pool(_collectionPoolAddress);
-
-        vm.startPrank(_borrower);
-        _collateral.setApprovalForAll(address(_collectionPool), true);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        changePrank(_borrower2);
-        _collateral.setApprovalForAll(address(_collectionPool), true);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        changePrank(_bidder);
-        _collateral.setApprovalForAll(address(_collectionPool), true);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        changePrank(_lender);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        changePrank(_lender2);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        /*******************************/
-        /*** Setup NFT Subset State ***/
-        /*******************************/
-
+        // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](9);
         subsetTokenIds[0] = 1;
         subsetTokenIds[1] = 3;
@@ -85,27 +39,16 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         subsetTokenIds[6] = 70;
         subsetTokenIds[7] = 73;
         subsetTokenIds[8] = 74;
+        _subsetPool = _deploySubsetPool(subsetTokenIds);
 
-        _subsetPoolAddress = new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), subsetTokenIds, 0.05 * 10**18);
-        _subsetPool        = ERC721Pool(_subsetPoolAddress);
+        address[] memory _poolAddresses = _getPoolAddresses();
 
-        changePrank(_borrower);
-        _collateral.setApprovalForAll(address(_subsetPool), true);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);
+        _mintAndApproveQuoteTokens(_poolAddresses, _lender, 200_000 * 1e18);
+        _mintAndApproveQuoteTokens(_poolAddresses, _lender2, 200_000 * 1e18);
 
-        changePrank(_borrower2);
-        _collateral.setApprovalForAll(address(_subsetPool), true);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);
-
-        changePrank(_bidder);
-        _collateral.setApprovalForAll(address(_subsetPool), true);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);
-
-        changePrank(_lender);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);
-
-        changePrank(_lender2);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);        
+        _mintAndApproveCollateralTokens(_poolAddresses, _borrower, 52);
+        _mintAndApproveCollateralTokens(_poolAddresses, _borrower2, 10);
+        _mintAndApproveCollateralTokens(_poolAddresses, _bidder, 13);   
     }
 
     function testSubsetPurchaseQuote() external {
@@ -121,11 +64,11 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertEq(lpb,        0);
 
         // check pool state
-        assertEq(_collateral.balanceOf(address(_bidder)),       13);
-        assertEq(_collateral.balanceOf(address(_lender)),       0);
-        assertEq(_collateral.balanceOf(address(_subsetPool)),   0);
-        assertEq(_quote.balanceOf(address(_subsetPool)),        0);
-        assertEq(_quote.balanceOf(address(_bidder)),            0);
+        assertEq(_collateral.balanceOf(_bidder),              13);
+        assertEq(_collateral.balanceOf(_lender),              0);
+        assertEq(_collateral.balanceOf(address(_subsetPool)), 0);
+        assertEq(_quote.balanceOf(address(_subsetPool)),      0);
+        assertEq(_quote.balanceOf(_bidder),                   0);
 
         // lender adds initial quote to pool
         changePrank(_lender);
@@ -144,32 +87,32 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         tokenIdsToAdd[1] = 70;
         tokenIdsToAdd[2] = 73;
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_bidder), address(_subsetPool), tokenIdsToAdd[0]);
+        emit Transfer(_bidder, address(_subsetPool), tokenIdsToAdd[0]);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(address(_bidder), priceAtTestIndex, tokenIdsToAdd);
+        emit AddCollateralNFT(_bidder, priceAtTestIndex, tokenIdsToAdd);
         uint256 lpBalanceChange = _subsetPool.addCollateral(tokenIdsToAdd, testIndex);
 
         // check bucket state
         (quote, collateral, lpb, ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      10_000 * 1e18);
         assertEq(collateral, Maths.wad(3));
-        (uint256 lpBalance, ) = _subsetPool.bucketLenders(testIndex, address(_bidder));
+        (uint256 lpBalance, ) = _subsetPool.bucketLenders(testIndex, _bidder);
         assertEq(lpBalance, lpBalanceChange);
 
         // check pool state
-        assertEq(_collateral.balanceOf(address(_bidder)),       10);
-        assertEq(_collateral.balanceOf(address(_lender)),       0);
-        assertEq(_collateral.balanceOf(address(_subsetPool)),   3);
-        assertEq(_quote.balanceOf(address(_subsetPool)),        10_000 * 1e18);
-        assertEq(_quote.balanceOf(address(_bidder)),            0);
+        assertEq(_collateral.balanceOf(_bidder),              10);
+        assertEq(_collateral.balanceOf(_lender),              0);
+        assertEq(_collateral.balanceOf(address(_subsetPool)), 3);
+        assertEq(_quote.balanceOf(address(_subsetPool)),      10_000 * 1e18);
+        assertEq(_quote.balanceOf(_bidder),                   0);
 
         // bidder removes quote token from bucket
         uint256 qtToRemove = Maths.wmul(priceAtTestIndex, 3 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_bidder), priceAtTestIndex, qtToRemove, _subsetPool.lup());
+        emit RemoveQuoteToken(_bidder, priceAtTestIndex, qtToRemove, _subsetPool.lup());
         _subsetPool.removeAllQuoteToken(testIndex);
-        assertEq(_quote.balanceOf(address(_bidder)), qtToRemove);
-        (lpBalance, ) = _subsetPool.bucketLenders(testIndex, address(_bidder));
+        assertEq(_quote.balanceOf(_bidder), qtToRemove);
+        (lpBalance, ) = _subsetPool.bucketLenders(testIndex, _bidder);
         assertEq(lpBalance, 0);
         (quote, collateral, , ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      10_000 * 1e18 - qtToRemove);
@@ -180,13 +123,13 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         uint256[] memory tokenIdsToRemove = new uint256[](2);
         tokenIdsToRemove = tokenIdsToAdd;
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateralNFT(address(_lender), priceAtTestIndex, tokenIdsToRemove);
+        emit RemoveCollateralNFT(_lender, priceAtTestIndex, tokenIdsToRemove);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_subsetPool), address(_lender), tokenIdsToRemove[0]);
+        emit Transfer(address(_subsetPool), _lender, tokenIdsToRemove[0]);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_subsetPool), address(_lender), tokenIdsToRemove[1]);
+        emit Transfer(address(_subsetPool), _lender, tokenIdsToRemove[1]);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_subsetPool), address(_lender), tokenIdsToRemove[2]);
+        emit Transfer(address(_subsetPool), _lender, tokenIdsToRemove[2]);
         _subsetPool.removeCollateral(tokenIdsToRemove, testIndex);
         (quote, collateral, , ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      967.323933406355326465 * 1e18);
@@ -194,7 +137,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
 
         // lender removes remaining quote token to empty the bucket
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_lender), priceAtTestIndex, quote, _subsetPool.lup());
+        emit RemoveQuoteToken(_lender, priceAtTestIndex, quote, _subsetPool.lup());
         _subsetPool.removeAllQuoteToken(testIndex);
         (quote, collateral, lpb, ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      0);
@@ -228,7 +171,7 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
         tokenIdsToAdd[3] = 51;
-        _subsetPool.pledgeCollateral(tokenIdsToAdd, address(0), address(0));
+        _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd, address(0), address(0));
         _subsetPool.borrow(24_000 * 1e18, 2351, address(0), address(0));
         assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2351));
         skip(86400);
@@ -250,15 +193,15 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         assertGt(_quote.balanceOf(address(_subsetPool)), amountToPurchase);
         uint256 amountWithInterest = 24_001.511204352939432000 * 1e18;
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_bidder), address(_subsetPool), tokenIdsToAdd[0]);
+        emit Transfer(_bidder, address(_subsetPool), tokenIdsToAdd[0]);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(address(_bidder), _subsetPool.indexToPrice(2350), tokenIdsToAdd);        
+        emit AddCollateralNFT(_bidder, _subsetPool.indexToPrice(2350), tokenIdsToAdd);        
         _subsetPool.addCollateral(tokenIdsToAdd, 2350);
         
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(address(_bidder), _subsetPool.indexToPrice(2350), amountWithInterest, _subsetPool.indexToPrice(2352));
+        emit RemoveQuoteToken(_bidder, _subsetPool.indexToPrice(2350), amountWithInterest, _subsetPool.indexToPrice(2352));
         _subsetPool.removeAllQuoteToken(2350);
-        assertEq(_quote.balanceOf(address(_bidder)), amountWithInterest);
+        assertEq(_quote.balanceOf(_bidder), amountWithInterest);
 
         // check bucket state
         (quote, collateral, lpb, ) = _subsetPool.bucketAt(2350);
@@ -270,9 +213,9 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 65;
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateralNFT(address(_bidder), _subsetPool.indexToPrice(2350), tokenIdsToRemove);
+        emit RemoveCollateralNFT(_bidder, _subsetPool.indexToPrice(2350), tokenIdsToRemove);
         (uint256 amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
-        (uint256 lpBalance, ) = _subsetPool.bucketLenders(2350, address(_bidder));
+        (uint256 lpBalance, ) = _subsetPool.bucketLenders(2350, _bidder);
         assertEq(lpBalance, 490.713717393968418590429863923 * 1e27);
         skip(7200);
 
@@ -296,9 +239,9 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 73;
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateralNFT(address(_lender), _subsetPool.indexToPrice(2350), tokenIdsToRemove);
+        emit RemoveCollateralNFT(_lender, _subsetPool.indexToPrice(2350), tokenIdsToRemove);
         (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
-        (lpBalance, ) = _subsetPool.bucketLenders(2350, address(_lender));
+        (lpBalance, ) = _subsetPool.bucketLenders(2350, _lender);
         assertEq(lpBalance, 11_836.428760868677193803190045359 * 1e27);
         skip(3600);
 
