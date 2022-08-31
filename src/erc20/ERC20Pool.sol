@@ -233,15 +233,15 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         Borrower memory borrower = borrowers[borrower_];
         require(borrower.debt != 0, "P:K:NO_DEBT");
 
-        _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
-
         require(  // TODO: to kick, collateralization should be < 1 not <= 1
             _borrowerCollateralization(borrower.debt, borrower.collateral, lup) <= Maths.WAD,
             "P:K:BORROWER_OK"
         );
 
+        borrowers[borrower_] = borrower;
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),
             referencePrice:      uint128(hpb()),
