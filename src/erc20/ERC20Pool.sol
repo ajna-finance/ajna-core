@@ -234,7 +234,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRateAndEMAs(curDebt, lup);
         require(  // TODO: to kick, collateralization should be < 1 not <= 1
             _borrowerCollateralization(borrower.debt, borrower.collateral, lup) <= Maths.WAD,
-            "P:K:BORROWER_OK"
+            "P:L:BORROWER_OK"
         );
 
         borrowers[borrower_] = borrower;
