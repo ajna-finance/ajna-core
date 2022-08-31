@@ -317,6 +317,31 @@ contract ERC20ScaledQueueTest is DSTestPlus {
         assertEq(address(next), address(0));
     }
 
+    function testRemoveLoanInQueueWithWrongOldPrev() public {
+        // *borrower(HEAD)*
+        changePrank(_borrower);
+        _pool.pledgeCollateral(_borrower, 51 * 1e18, address(0), address(0));
+        _pool.borrow(15_000 * 1e18, 2551, address(0), address(0));
+
+        (uint256 thresholdPrice, address next) = _pool.loans(_borrower);
+        assertEq(address(next), address(0));
+        assertEq(_borrower,     address(_pool.loanQueueHead()));
+
+        // *borrower2(HEAD)* -> borrower
+        changePrank(_borrower2);
+        _pool.pledgeCollateral(_borrower2, 51 * 1e18, address(0), address(0));
+        _pool.borrow(20_000 * 1e18, 2551, address(0), address(0));
+
+        (thresholdPrice, next) = _pool.loans(_borrower2);
+        assertEq(address(next), _borrower);
+        assertEq(_borrower2, address(_pool.loanQueueHead()));
+
+        // repay entire loan with wrong old prev address
+        changePrank(_borrower);
+        vm.expectRevert("B:R:OLDPREV_WRNG");
+        _pool.repay(_borrower, 15_100 * 1e18, _borrower3, address(0));
+    }
+
     // TODO: test with multiple borrowers and update of threshold prices causing queue reordering
     /**
      *  @notice With 1 lender and 1 borrower test adding collateral, borrowing, and adding additional collateral. 
