@@ -302,54 +302,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
     }
 
-    // TODO: Determine if this is still relevant.  If so, calculate HPB and update accordingly.
-//    /**
-//     *  @notice Liquidate a given position's collateral
-//     *  @param  debt_               The amount of debt to cover, WAD
-//     *  @param  collateral_         The amount of collateral deposited, WAD
-//     *  @param  inflator_           The current pool inflator rate, RAY
-//     *  @return requiredCollateral_ The amount of collateral to be liquidated
-//     */
-//    // TODO: Should we be repossessing collateral at the HPB price? Or at the LUP price always?
-//    function _repossessCollateral(
-//        uint256 debt_, uint256 collateral_, uint256 inflator_
-//    ) internal returns (uint256 requiredCollateral_) {
-//        uint256 curPrice = hpb;
-//
-//        while (true) {
-//            Bucket storage bucket   = _buckets[curPrice];
-//            uint256 curDebt         = _accumulateBucketInterest(bucket.debt, bucket.inflatorSnapshot, inflator_);
-//            bucket.inflatorSnapshot = inflator_;
-//
-//            uint256 bucketDebtToPurchase     = Maths.min(debt_, curDebt);
-//            uint256 bucketRequiredCollateral = Maths.min(Maths.wdiv(debt_, bucket.price), collateral_);
-//
-//            debt_               -= bucketDebtToPurchase;
-//            collateral_         -= bucketRequiredCollateral;
-//            requiredCollateral_ += bucketRequiredCollateral;
-//
-//            // Bucket accounting
-//            curDebt           -= bucketDebtToPurchase;
-//            bucket.collateral += bucketRequiredCollateral;
-//
-//            // Forgive the debt when borrower has no remaining collateral but still has debt
-//            if (debt_ != 0 && collateral_ == 0) {
-//                bucket.debt = 0;
-//                break;
-//            }
-//
-//            bucket.debt = curDebt;
-//
-//            if (debt_ == 0) break; // Stop if all debt reconciliated
-//
-//            curPrice = bucket.down;
-//        }
-//
-//        // HPB and LUP management
-//        uint256 newHpb = getHpb();
-//        if (hpb != newHpb) hpb = newHpb;
-//    }
-
     function _updateInterestRateAndEMAs(uint256 curDebt_, uint256 lup_) internal {
         if (block.timestamp - interestRateUpdate > 12 hours) {
             // Update EMAs for pool price and LUP

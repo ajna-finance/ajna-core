@@ -245,7 +245,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         });
 
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
-        uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
+        // TODO: Uncomment when needed
+//        uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
 
         require(lup < thresholdPrice, "P:L:LUP_GT_THRESHOLD");
 
