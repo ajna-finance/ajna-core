@@ -143,7 +143,6 @@ abstract contract FenwickTree {
 
         uint256 j  = i_;
         uint256 k  = 1;
-        uint256 sc = Maths.WAD;
 
         i_ += 1;
         s_ = values[i_];
@@ -151,13 +150,13 @@ abstract contract FenwickTree {
         uint256 scaled;
         while (j & k != 0) {
             scaled = scaling[j];
-            s_ = scaled != 0 ? s_ - Maths.wmul(Maths.wmul(sc, scaled), values[j]) : s_ - values[j];
+            s_ = scaled != 0 ? s_ - Maths.wmul(scaled, values[j]) : s_ - values[j];
             j  = j - k;
             k  = k << 1;
         }
         while (i_ <= SIZE) {
             scaled = scaling[i_];
-            if (scaled != 0) s_ = Maths.wmul(Maths.wmul(sc, scaled), s_);
+            if (scaled != 0) s_ = Maths.wmul(scaled, s_);
             i_ += _lsb(i_);
         }
     }
