@@ -14,8 +14,6 @@ import { Maths } from "../libraries/Maths.sol";
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
 
-    event log_named_uint(string key, uint256 val);
-
     struct LiquidationInfo {
         uint128 kickTime;
         uint128 referencePrice;
@@ -34,11 +32,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
     uint256 public override collateralScale;
 
-    /*****************************/
-    /*** Inititalize Functions ***/
-    /*****************************/
+    /****************************/
+    /*** Initialize Functions ***/
+    /****************************/
 
-    function initialize(uint256 rate_) external override {
+    function initialize(uint256 rate_) external {
         require(poolInitializations == 0, "P:INITIALIZED");
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
@@ -162,7 +160,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         // Calculate exchange rate before new collateral has been accounted for.
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
-        uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
 
         uint256 quoteValue     = Maths.wmul(amount_, _indexToPrice(index_));
         lpbChange_             = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
@@ -188,7 +186,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         uint256 price = _indexToPrice(index_);
-        uint256 rate  = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate  = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpAmount_     = bucketLender.lpBalance;
         amount_       = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
         require(amount_ != 0, "S:RAC:NO_CLAIM");
@@ -210,7 +208,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         uint256 price        = _indexToPrice(index_);
-        uint256 rate         = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate         = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs = bucketLender.lpBalance;
 
         // ensure user can actually remove that much
@@ -251,7 +249,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
-        
+
         require(lup < thresholdPrice, "P:K:LUP_GT_THRESHOLD");
 
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
@@ -260,24 +258,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Post the liquidation bond
         // Repossess the borrowers collateral, initialize the auction cooldown timer
     }
-
-
-    // Need a condition in the take funciton for the cooldown period
-    // If the loan is under collateralized for a certain amount of time, then we're allowd to start the auction
-    // Refer to docs
-    // "Cooldown" function before liquidations can actually occur
-    // Time between kick and take
-    // Leave debt on the books
-    // Lender needs to be "locked" - cannot move/remove quote token
-    // Total debt must accounted for until it is covered by the collateral liquidation
-    // Specify an amount to liquidate
-    // When the collateral gets liquidated for quote token, remove the corresponding debt from (which bucket)
-    // Reduce total debt by same amount
-    // Set aside quote token for the kicker
-    // How to reward/penalize kicker (depends on NP)?
-    // Quote token that is recovered from each take should be deposited into the LUP bucket
-    // Max time for auction (review doc)
-    // With bad debt remaining in the book after an auction, it is wiped from the top of the book, incurring a loss for the LPs
 
     // TODO: Add reentrancy guard
     function take(address borrower_, uint256 collateralToLiquidate_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external {
@@ -314,6 +294,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         _repayDebt(borrower_, quoteTokenReturnAmount, oldPrev_, newPrev_);
     }
+
 
     /**************************/
     /*** Internal Functions ***/
@@ -394,6 +375,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
         );
     }
+
 
     function _getQuoteTokenReturnAmount(uint256 kickTime_, uint256 referencePrice_, uint256 collateralForLiquidation_) internal view returns (uint256 price_) {
         uint256 hoursSinceKick = (block.timestamp - kickTime_) / 1 hours;

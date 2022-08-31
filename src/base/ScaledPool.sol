@@ -81,7 +81,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 curDebt = _accruePoolInterest();
 
         Bucket storage bucket = buckets[index_];
-        uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpbChange_           = Maths.rdiv(Maths.wadToRay(amount_), rate);
         bucket.lpAccumulator += lpbChange_;
 
@@ -112,7 +112,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // determine amount of quote token to move
         Bucket storage fromBucket   = buckets[fromIndex_];
-        uint256 availableQuoteToken = _rangeSum(fromIndex_, fromIndex_);
+        uint256 availableQuoteToken = _valueAt(fromIndex_);
         uint256 rate                = _exchangeRate(availableQuoteToken, fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
         uint256 amount              = Maths.min(maxAmount_, Maths.min(availableQuoteToken, Maths.rrdivw(availableLPs, rate)));
 
@@ -126,7 +126,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         uint256 col = pledgedCollateral;
         if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
-            uint256 ptp = Maths.wdiv(borrowerDebt, col);
+            uint256 ptp = Maths.wdiv(curDebt, col);
             if (_indexToPrice(fromIndex_) > ptp && _indexToPrice(toIndex_) < ptp) {
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
             }
@@ -134,7 +134,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // update "to" bucket accounting
         Bucket storage toBucket = buckets[toIndex_];
-        rate                    = _exchangeRate(_rangeSum(toIndex_, toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
+        rate                    = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
         lpbAmountTo_            = Maths.wrdivr(amount, rate);
         toBucket.lpAccumulator  += lpbAmountTo_;
         _add(toIndex_, amount);
@@ -157,15 +157,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
-        uint256 availableQuoteToken = _rangeSum(index_, index_);
-        require(availableQuoteToken != 0, "S:RAQT:NO_QT");
-
-        Bucket memory bucket = buckets[index_];
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
-        uint256 rate         = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
-        lpAmount_            = bucketLender.lpBalance;
-        amount_              = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
-        require(amount_ != 0, "S:RAQT:NO_CLAIM");
+        lpAmount_ = bucketLender.lpBalance;
+        require(lpAmount_ != 0, "S:RAQT:NO_CLAIM");
+
+        Bucket memory bucket        = buckets[index_];
+        uint256 availableQuoteToken = _valueAt(index_);
+        uint256 rate                = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
+        amount_                     = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
 
         if (amount_ > availableQuoteToken) {
             // user is owed more quote token than is available in the bucket
@@ -180,16 +179,15 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
-        Bucket memory bucket             = buckets[index_];
-        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
-        uint256 availableQuoteToken      = _rangeSum(index_, index_);
-        uint256 rate                     = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 availableLPs             = bucketLender.lpBalance;
-
-        // ensure user can actually remove that much
+        uint256 availableQuoteToken = _valueAt(index_);
         require(amount_ <= availableQuoteToken, "S:RQT:INSUF_QT");
-        lpAmount_ = Maths.wrdivr(amount_, rate);
-        require(availableLPs != 0 && lpAmount_ <= availableLPs, "S:RQT:INSUF_LPS");
+
+        Bucket memory bucket = buckets[index_];
+        uint256 rate         = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
+        lpAmount_            = Maths.wrdivr(amount_, rate);
+
+        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
+        require(bucketLender.lpBalance != 0 && lpAmount_ <= bucketLender.lpBalance, "S:RQT:INSUF_LPS");
 
         _redeemLPForQuoteToken(bucket, bucketLender, lpAmount_, amount_, index_);
     }
@@ -288,15 +286,16 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         bucketLenders[index_][msg.sender] = bucketLender;
 
         // apply early withdrawal penalty if quote token is withdrawn above the PTP
-        uint256 col = pledgedCollateral;
+        uint256 col  = pledgedCollateral;
+        uint256 debt = borrowerDebt;
         if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
-            uint256 ptp = Maths.wdiv(borrowerDebt, col);
+            uint256 ptp = Maths.wdiv(debt, col);
             if (_indexToPrice(index_) > ptp) {
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
             }
         }
 
-        _updateInterestRateAndEMAs(borrowerDebt, newLup);
+        _updateInterestRateAndEMAs(debt, newLup);
 
         // move quote token amount from pool to lender
         emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
@@ -399,21 +398,18 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function _poolCollateralizationAtPrice(
         uint256 borrowerDebt_, uint256 additionalDebt_, uint256 collateral_, uint256 price_
-    ) internal pure returns (uint256 collateralization_) {
+    ) internal pure returns (uint256) {
         uint256 encumbered = _encumberedCollateral(borrowerDebt_ + additionalDebt_, price_);
-        collateralization_ = encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
     }
 
-    function _poolCollateralization(uint256 borrowerDebt_, uint256 pledgedCollateral_, uint256 lup_) internal pure returns (uint256 collateralization_) {
+    function _poolCollateralization(uint256 borrowerDebt_, uint256 pledgedCollateral_, uint256 lup_) internal pure returns (uint256) {
         uint256 encumbered = _encumberedCollateral(borrowerDebt_, lup_);
-        collateralization_ = encumbered != 0 ? Maths.wdiv(pledgedCollateral_, encumbered) : Maths.WAD;
+        return encumbered != 0 ? Maths.wdiv(pledgedCollateral_, encumbered) : Maths.WAD;
     }
 
     function _poolTargetUtilization(uint256 debtEma_, uint256 lupColEma_) internal pure returns (uint256) {
-        if (debtEma_ != 0 && lupColEma_ != 0) {
-            return Maths.wdiv(debtEma_, lupColEma_);
-        }
-        return Maths.WAD;
+        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
     }
 
     function _poolActualUtilization(uint256 borrowerDebt_, uint256 pledgedCollateral_) internal view returns (uint256 utilization_) {
@@ -423,23 +419,26 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         }
     }
 
-    function _htp() internal view returns (uint256) {
-        if (loanQueueHead != address(0)) {
-            return Maths.wmul(loans[loanQueueHead].thresholdPrice, inflatorSnapshot);
-        }
-        return 0;
-    }
-
-    function _ptp() internal view returns (uint256) {
-        return Maths.wdiv(borrowerDebt, pledgedCollateral);
+    function _htp() internal view returns (uint256 htp_) {
+        if (loanQueueHead != address(0)) htp_ = Maths.wmul(loans[loanQueueHead].thresholdPrice, inflatorSnapshot);
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
         return _findSum(borrowerDebt + additionalDebt_);
     }
 
-    function _indexToBucketIndex(uint256 index_) internal pure returns (int256) {
-        return 7388 - int256(index_) - 3232;
+    function _ptp() internal view returns (uint256) {
+        return Maths.wdiv(borrowerDebt, pledgedCollateral);
+    }
+
+    /**
+     *  @dev Fenwick index to bucket index conversion
+     *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
+     *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
+     *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
+     */
+    function _indexToBucketIndex(uint256 index_) internal pure returns (int256 bucketIndex_) {
+        bucketIndex_ = (index_ != 8191) ? 4156 - int256(index_) : BucketMath.MIN_PRICE_INDEX;
     }
 
     function _indexToPrice(uint256 index_) internal pure returns (uint256) {
@@ -458,9 +457,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return _indexToPrice(_lupIndex(0));
     }
 
-    function _calculateFeeRate() internal view returns (uint256 feeRate_) {
+    function _calculateFeeRate() internal view returns (uint256) {
         // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
-        feeRate_ = Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
+        return Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
     }
 
     // We should either pass the _rangeSum as an argument, or have this method return it alongside the rate.
@@ -471,24 +470,21 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) internal view returns (uint256 quoteAmount_) {
-        Bucket memory bucket  = buckets[index_];
-        uint256 rate          = _exchangeRate(deposit_, bucket.availableCollateral, bucket.lpAccumulator, index_);
-        quoteAmount_          = Maths.min(deposit_, Maths.rayToWad(Maths.rmul(lpTokens_, rate))); // TODO optimize to calculate bucket size only once
+        Bucket memory bucket = buckets[index_];
+        uint256 rate         = _exchangeRate(deposit_, bucket.availableCollateral, bucket.lpAccumulator, index_);
+        quoteAmount_         = Maths.min(deposit_, Maths.rayToWad(Maths.rmul(lpTokens_, rate))); // TODO optimize to calculate bucket size only once
     }
 
     function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
-        uint256 rate = (interestRate * elapsed_) / 365 days;
-        return PRBMathUD60x18.exp(rate);
+        return PRBMathUD60x18.exp((interestRate * elapsed_) / 365 days);
     }
 
     function _pendingInflator() internal view returns (uint256) {
-        uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
-        return Maths.wmul(inflatorSnapshot, _pendingInterestFactor(elapsed));
+        return Maths.wmul(inflatorSnapshot, _pendingInterestFactor(block.timestamp - lastInflatorSnapshotUpdate));
     }
 
-    function _thresholdPrice(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256) {
-        if (collateral_ != 0) return Maths.wdiv(Maths.wmul(inflator_, debt_), collateral_);
-        return 0;
+    function _thresholdPrice(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256 tp_) {
+        if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wmul(inflator_, debt_), collateral_);
     }
 
     /**************************/
@@ -538,7 +534,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function bucketAt(uint256 index_) external view override returns (uint256, uint256, uint256, uint256) {
         return (
-            _rangeSum(index_, index_),           // quote token in bucket, deposit + interest (WAD)
+            _valueAt(index_),           // quote token in bucket, deposit + interest (WAD)
             buckets[index_].availableCollateral, // unencumbered collateral in bucket (WAD)
             buckets[index_].lpAccumulator,       // outstanding LP balance (WAD)
             _scale(index_)                       // lender interest multiplier (WAD)
@@ -549,12 +545,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return this.SIZE();
     }
 
-    function depositAt(uint256 index_) external view override returns (uint256 deposit_) {
-        deposit_ = _rangeSum(index_, index_);
+    function depositAt(uint256 index_) external view override returns (uint256) {
+        return _valueAt(index_);
     }
 
-    function liquidityToPrice(uint256 index_) external view returns (uint256 quoteToken_) {
-        quoteToken_ = _prefixSum(index_);
+    function liquidityToPrice(uint256 index_) external view returns (uint256) {
+        return _prefixSum(index_);
     }
 
     function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
@@ -566,7 +562,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function exchangeRate(uint256 index_) external view override returns (uint256) {
-        return _exchangeRate(_rangeSum(index_, index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
+        return _exchangeRate(_valueAt(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
     }
 
     function encumberedCollateral(uint256 debt_, uint256 price_) external pure override returns (uint256) {

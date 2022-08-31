@@ -138,6 +138,29 @@ abstract contract FenwickTree {
         return _prefixSum(stop_) - _prefixSum(start_ - 1);
     }
 
+    function _valueAt(uint256 i_) internal view returns (uint256 s_) {
+        require(i_ < SIZE, "FW:V:INVALID_INDEX");
+
+        uint256 j  = i_;
+        uint256 k  = 1;
+
+        i_ += 1;
+        s_ = values[i_];
+
+        uint256 scaled;
+        while (j & k != 0) {
+            scaled = scaling[j];
+            s_ = scaled != 0 ? s_ - Maths.wmul(scaled, values[j]) : s_ - values[j];
+            j  = j - k;
+            k  = k << 1;
+        }
+        while (i_ <= SIZE) {
+            scaled = scaling[i_];
+            if (scaled != 0) s_ = Maths.wmul(scaled, s_);
+            i_ += _lsb(i_);
+        }
+    }
+
     // TODO: rename this to findIndexOfSum
     // TODO: should this revert if failed to find a value past a given index instead of SIZE?
     function _findSum(uint256 x_) internal view returns (uint256 m_) {

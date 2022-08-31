@@ -170,6 +170,27 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
     /**
      *  @notice 1 lender tests reverts in removeQuoteToken.
      *          Reverts:
+     *              Attempts to remove more quote tokens than available in bucket.
+     */
+    function testScaledPoolRemoveQuoteTokenNotAvailable() external {
+        // lender adds initial quote token
+        changePrank(_lender);
+        _pool.addQuoteToken(10_000 * 1e18, 4550);
+
+        changePrank(_borrower);
+        deal(address(_collateral), _borrower,  _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
+        _collateral.approve(address(_pool), 3_500_000 * 1e18);
+        _pool.pledgeCollateral(_borrower, 3_500_000 * 1e18, address(0), address(0));
+        _pool.borrow(10_000 * 1e18, 4551, address(0), address(0));
+
+        changePrank(_lender);
+        vm.expectRevert("S:RQT:BAD_LUP");
+        _pool.removeAllQuoteToken(4550);
+    }
+
+    /**
+     *  @notice 1 lender tests reverts in removeQuoteToken.
+     *          Reverts:
      *              Attempts to remove more quote tokens than available from lpBalance.
      *              Attempts to remove quote token when doing so would drive lup below htp.
      */
@@ -191,8 +212,6 @@ contract ERC20ScaledQuoteTokenTest is DSTestPlus {
 
         // ensure lender cannot withdraw from a bucket with no deposit
         changePrank(_lender1);
-        vm.expectRevert("S:RAQT:NO_QT");
-        _pool.removeAllQuoteToken(1776);
         // ensure lender with no LP cannot remove anything
         (uint256 lpBalance, ) = _pool.bucketLenders(4550, _lender1);
         assertEq(0, lpBalance);

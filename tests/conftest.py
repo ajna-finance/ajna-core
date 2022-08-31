@@ -5,7 +5,7 @@ from brownie.exceptions import VirtualMachineError
 from brownie.network.state import TxHistory
 from brownie.utils import color
 
-ZRO_ADD = '0x0000000000000000000000000000000000000000' 
+ZRO_ADD = '0x0000000000000000000000000000000000000000'
 MIN_PRICE = 99836282890
 MAX_PRICE = 1_004_968_987606512354182109771
 
@@ -174,7 +174,7 @@ class TestUtils:
         in_eth = gas * 50 * 1e-9
         in_fiat = in_eth * 1700
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
-    
+
 
 
     class GasWatcher(object):
@@ -304,8 +304,6 @@ class TestUtils:
         if pool.lupIndex() > ScaledPoolUtils.price_to_index_safe(pool, pool.htp()):
             # ...ensure debt is less than the size of the pool
             assert pool.borrowerDebt <= pool.poolSize()
-            # ...ensure borrowers owe more than lenders are owed
-            assert pool.borrowerDebt() >= pool.lenderDebt()
 
         # if there are no borrowers in the pool, ensure there is no debt
         if pool.totalBorrowers() == 0:
@@ -403,7 +401,6 @@ class TestUtils:
               f"target utlzn: {pool.poolTargetUtilization()/1e18:>10.1%}   "
               f"collateralization: {pool.poolCollateralization()/1e18:>7.1%}  "
               f"borrowerDebt: {pool.borrowerDebt()/1e18:>12.1f}  "
-              f"lenderDebt: {pool.lenderDebt()/1e18:>12.1f}  "
               f"pendingInf: {pool.pendingInflator()/1e18:>20.18f}")
 
         contract_quote_balance = Contract(pool.quoteToken()).balanceOf(pool)
