@@ -242,7 +242,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrowers[borrower_] = borrower;
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),
-            referencePrice:      uint128(hpb()),
+            referencePrice:      uint128(_hpbIndex()),
             remainingCollateral: borrower.collateral,
             remainingDebt:       debtToLiquidate_
         });

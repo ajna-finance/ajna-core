@@ -259,6 +259,12 @@ interface IScaledPool {
     function exchangeRate(uint256 index_) external view returns (uint256 exchangeRate_);
 
     /**
+     *  @notice Returns the Highest Price Bucket (HPB).
+     *  @return hpb_ The price value of the current HPB bucket, in WAD units.
+     */
+    function hpb() external view returns (uint256 hpb_);
+
+    /**
      *  @notice Returns the Lowest Utilized Price (LUP).
      *  @return lup_ The price value of the current LUP bucket, in WAD units.
      */

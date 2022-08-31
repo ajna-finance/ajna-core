@@ -114,7 +114,7 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
         ( kickTime, referencePrice, remainingCollateral, remainingDebt ) = pool.liquidations(_borrower2);
 
         assertEq(kickTime,            block.timestamp);
-//        assertEq(referencePrice,      HPB);  // TODO: awaiting implementation
+        assertEq(referencePrice,      HPB);
         assertEq(remainingCollateral, 1e18);
     }
 
