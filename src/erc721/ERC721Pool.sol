@@ -14,9 +14,6 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 
 import { Maths } from "../libraries/Maths.sol";
 
-import { console } from "@std/console.sol";
-
-
 contract ERC721Pool is IERC721Pool, ScaledPool {
     using SafeERC20     for ERC20;
     using EnumerableSet for EnumerableSet.UintSet;
@@ -26,18 +23,18 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /***********************/
 
     /// @dev Set of tokenIds that are currently being used as collateral in the pool
-    EnumerableSet.UintSet internal _poolCollateralTokenIds;
+    EnumerableSet.UintSet private _poolCollateralTokenIds;
 
     /// @dev Set of NFT Token Ids that have been deposited into any bucket
-    EnumerableSet.UintSet internal _bucketCollateralTokenIds;
+    EnumerableSet.UintSet private _bucketCollateralTokenIds;
 
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
-    EnumerableSet.UintSet internal _tokenIdsAllowed;
+    EnumerableSet.UintSet private _tokenIdsAllowed;
 
     /// @dev Internal visibility is required as it contains a nested struct
     // borrowers book: borrower address -> NFTBorrower
-    mapping(address => NFTBorrower) internal borrowers;
+    mapping(address => NFTBorrower) private borrowers;
 
     /****************************/
     /*** Initialize Functions ***/
@@ -63,8 +60,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         this.initialize(rate_);
 
         // add subset of tokenIds allowed in the pool
-        for (uint256 id; id < tokenIds_.length;) {
-            _tokenIdsAllowed.add(tokenIds_[id]);
+        for (uint256 id = 0; id < tokenIds_.length;) {
+            require(_tokenIdsAllowed.add(tokenIds_[id]), "P:INIT_ERR");
             unchecked {
                 ++id;
             }
@@ -75,23 +72,18 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
-        NFTBorrower storage borrower = borrowers[msg.sender];
+    function pledgeCollateral(address borrower_, uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external override {
+        NFTBorrower storage borrower = borrowers[borrower_];
 
         // add tokenIds to the pool
-        for (uint i; i < tokenIds_.length;) {
-            if (_tokenIdsAllowed.length() != 0) {
-                require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
-            }
+        for (uint256 i = 0; i < tokenIds_.length;) {
+            if (_tokenIdsAllowed.length() != 0) require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
 
-            // update pool state
-            _poolCollateralTokenIds.add(tokenIds_[i]);
+            require(_poolCollateralTokenIds.add(tokenIds_[i]),      "P:ADD_PC_FAIL"); // update pool state
+            require(borrower.collateralDeposited.add(tokenIds_[i]), "P:ADD_CD_FAIL"); // update borrower accounting
 
-            // update borrower accounting
-            borrower.collateralDeposited.add(tokenIds_[i]);
-
-            // move collateral from sender to pool
-            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+            //slither-disable-next-line calls-loop
+            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]); // move collateral from sender to pool
 
             unchecked {
                 ++i;
@@ -108,9 +100,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+        if (borrower.debt != 0) _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
 
-        emit PledgeCollateralNFT(msg.sender, tokenIds_);
+        emit PledgeCollateralNFT(borrower_, tokenIds_);
     }
 
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
@@ -128,8 +120,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
 
-        uint256 debt    = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
-        borrower.debt   += debt;
+        uint256 debt  = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
+        borrower.debt += debt;
 
         // pool accounting
         uint256 newLup = _indexToPrice(lupId);
@@ -150,8 +142,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move borrowed amount from pool to sender
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         emit Borrow(msg.sender, newLup, amount_);
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
     }
 
     // TODO: check for reentrancy
@@ -172,17 +164,14 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _updateInterestRate(curDebt, curLup);
 
         // remove tokenIds and transfer to caller
-        for (uint i; i < tokenIds_.length;) {
+        for (uint256 i = 0; i < tokenIds_.length;) {
+            //slither-disable-next-line calls-loop
             require(collateral().ownerOf(tokenIds_[i]) == address(this), "P:T_NOT_IN_P");
+            require(_poolCollateralTokenIds.remove(tokenIds_[i]),        "P:RM_PC_FAIL"); // pool level accounting
+            require(borrower.collateralDeposited.remove(tokenIds_[i]),   "P:RM_CD_FAIL"); // borrower accounting
 
-            // pool level accounting
-            _poolCollateralTokenIds.remove(tokenIds_[i]);
-
-            // borrower accounting
-            borrower.collateralDeposited.remove(tokenIds_[i]);
-
-            // move collateral from pool to sender
-            collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
+            //slither-disable-next-line calls-loop
+            collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]); // move collateral from pool to sender
 
             unchecked {
                 ++i;
@@ -196,10 +185,10 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit PullCollateralNFT(msg.sender, tokenIds_);
     }
 
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
+    function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
         require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
 
-        NFTBorrower storage borrower = borrowers[msg.sender];
+        NFTBorrower storage borrower = borrowers[borrower_];
         require(borrower.debt != 0, "S:R:NO_DEBT");
 
         uint256 curDebt = _accruePoolInterest();
@@ -214,11 +203,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 borrowersCount = totalBorrowers;
         if (borrower.debt == 0) {
             totalBorrowers = borrowersCount - 1;
-            _removeLoanQueue(msg.sender, oldPrev_);
+            _removeLoanQueue(borrower_, oldPrev_);
         } else {
             if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
             uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
-            _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+            _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
         }
 
         // update pool state
@@ -227,8 +216,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _updateInterestRate(curDebt, newLup);
 
         // move amount to repay from sender to pool
+        emit Repay(borrower_, newLup, amount);
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
-        emit Repay(msg.sender, newLup, amount);
     }
 
     /*********************************/
@@ -245,28 +234,26 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
         uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
 
-        uint256 tokensToAdd   = Maths.wad(tokenIds_.length);
-        uint256 quoteValue    = Maths.wmul(tokensToAdd, _indexToPrice(index_));
-        lpbChange_           = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
-        bucket.lpAccumulator += lpbChange_;
-        bucketLender.lpBalance += lpbChange_;
-
+        uint256 tokensToAdd        = Maths.wad(tokenIds_.length);
+        uint256 quoteValue         = Maths.wmul(tokensToAdd, _indexToPrice(index_));
+        lpbChange_                 = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
+        bucket.lpAccumulator       += lpbChange_;
+        bucketLender.lpBalance     += lpbChange_;
         bucket.availableCollateral += tokensToAdd;
+
         buckets[index_] = bucket;
         bucketLenders[index_][msg.sender] = bucketLender;
 
         _updateInterestRate(borrowerDebt, _lup());
 
         // move required collateral from sender to pool
-        for (uint i; i < tokenIds_.length;) {
-            if (_tokenIdsAllowed.length() != 0) {
-                require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
-            }
+        for (uint256 i = 0; i < tokenIds_.length;) {
+            if (_tokenIdsAllowed.length() != 0) require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
 
-            _bucketCollateralTokenIds.add(tokenIds_[i]);
+            require(_bucketCollateralTokenIds.add(tokenIds_[i]), "P:ADD_BC_FAIL");
 
-            // move collateral from sender to pool
-            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]);
+            //slither-disable-next-line calls-loop
+            collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]); // move collateral from sender to pool
 
             unchecked {
                 ++i;
@@ -308,9 +295,10 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit RemoveCollateralNFT(msg.sender, price, tokenIds_);
 
         // move collateral from pool to lender
-        for (uint i; i < tokenIds_.length;) {
+        for (uint256 i = 0; i < tokenIds_.length;) {
             require(_bucketCollateralTokenIds.contains(tokenIds_[i]), "S:RC:T_NOT_IN_B");
 
+            //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
 
             unchecked {
@@ -324,11 +312,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /**********************/
 
     function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256[] memory, uint256) {
-        uint256 pending_debt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
+        uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
 
         return (
             borrowers[borrower_].debt,                         // accrued debt (WAD)
-            pending_debt,                                       // current debt, accrued and pending accrual (WAD)
+            pendingDebt,                                       // current debt, accrued and pending accrual (WAD)
             borrowers[borrower_].collateralDeposited.values(), // deposited collateral including encumbered (WAD)
             borrowers[borrower_].inflatorSnapshot              // used to calculate pending interest (WAD)
         );

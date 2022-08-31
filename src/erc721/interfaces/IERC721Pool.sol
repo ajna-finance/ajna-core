@@ -92,11 +92,12 @@ interface IERC721Pool is IScaledPool {
 
     /**
      *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ The address of borrower to pledge collateral for.
      *  @param  tokenIds_ Array of tokenIds to be added to the pool.
-     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
-     *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
+     *  @param  oldPrev_  Previous borrower that came before placed loan (old)
+     *  @param  newPrev_  Previous borrower that now comes before placed loan (new)
      */
-    function pledgeCollateral(uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
+    function pledgeCollateral(address borrower_, uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by a borrower to open or expand a position.
@@ -118,11 +119,12 @@ interface IERC721Pool is IScaledPool {
 
     /**
      *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
+     *  @param  borrower_  The address of borrower to repay quote token amount for.
      *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
      *  @param  oldPrev_   Previous borrower that came before placed loan (old)
      *  @param  newPrev_   Previous borrower that now comes before placed loan (new)
      */
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external;
+    function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external;
 
     /*********************************/
     /*** Lender External Functions ***/
