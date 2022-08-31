@@ -6,10 +6,10 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 
-import { DSTestPlus }                  from "../utils/DSTestPlus.sol";
+import { ERC20DSTestPlus }             from "./ERC20DSTestPlus.sol";
 import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
 
-contract ERC20ScaledPoolTransferLPTokensTest is DSTestPlus {
+contract ERC20ScaledPoolTransferLPTokensTest is ERC20DSTestPlus {
 
     address internal _lender;
     address internal _lender1;

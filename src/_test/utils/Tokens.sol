@@ -14,25 +14,9 @@ contract CollateralToken is ERC20 {
 
 }
 
-contract CollateralTokenWith6Decimals is CollateralToken {
+contract QuoteToken is ERC20 {
 
-    function decimals() public view virtual override returns (uint8) {
-        return 6;
-    }
-
-}
-
-contract TokenWithNDecimals is ERC20 {
-
-    uint8 _decimals;
-
-    constructor(string memory name_, string memory symbol_, uint8 decimals_) ERC20(name_, symbol_) {
-        _decimals = decimals_;
-    }
-
-    function decimals() public view virtual override returns (uint8) {
-        return _decimals;
-    }
+    constructor() ERC20("Quote", "Q") {}
 
     function mint(address to_, uint256 amount_) public {
         _mint(to_, amount_);
@@ -54,9 +38,17 @@ contract NFTCollateralToken is ERC721 {
     }
 }
 
-contract QuoteToken is ERC20 {
+contract TokenWithNDecimals is ERC20 {
 
-    constructor() ERC20("Quote", "Q") {}
+    uint8 _decimals;
+
+    constructor(string memory name_, string memory symbol_, uint8 decimals_) ERC20(name_, symbol_) {
+        _decimals = decimals_;
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return _decimals;
+    }
 
     function mint(address to_, uint256 amount_) public {
         _mint(to_, amount_);
@@ -64,10 +56,3 @@ contract QuoteToken is ERC20 {
 
 }
 
-contract QuoteTokenWith6Decimals is QuoteToken {
-
-    function decimals() public view virtual override returns (uint8) {
-        return 6;
-    }
-
-}

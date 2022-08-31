@@ -7,10 +7,10 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
-import { DSTestPlus }         from "../utils/DSTestPlus.sol";
+import { ERC20DSTestPlus }    from "./ERC20DSTestPlus.sol";
 import { TokenWithNDecimals } from "../utils/Tokens.sol";
 
-contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
+contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
 
     uint256 internal _lpPoolPrecision         = 10**27;
     uint256 internal _quotePoolPrecision      = 10**18;
@@ -263,13 +263,13 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
         uint256 quoteToPurchase = 500 * _quotePoolPrecision;
         uint256 collateralRequired = Maths.wdiv(quoteToPurchase, _pool.indexToPrice(2549));
         uint256 adjustedCollateralReq = collateralRequired / _pool.collateralScale();
-        vm.expectEmit(true, true, false, true);
-        emit Purchase(_bidder, _pool.indexToPrice(2549), quoteToPurchase, collateralRequired);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(_bidder, address(_pool), adjustedCollateralReq);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), _bidder, 500 * _quotePrecision);
-//        _bidder.purchaseQuote(_pool, quoteToPurchase, 2549);
+    //     vm.expectEmit(true, true, false, true);
+    //     emit Transfer(address(_bidder), address(_pool), adjustedCollateralReq);
+    //     vm.expectEmit(true, true, false, true);
+    //     emit Transfer(address(_pool), address(_bidder), 500 * _quotePrecision);
+    //     vm.expectEmit(true, true, false, true);
+    //     emit Purchase(address(_bidder), _pool.indexToPrice(2549), quoteToPurchase, collateralRequired);
+    //    _bidder.purchaseQuote(_pool, quoteToPurchase, 2549);
 
         // check bucket state
         (uint256 lpAccumulatorStateOne, uint256 availableCollateral) = _pool.buckets(2549);
@@ -295,12 +295,11 @@ contract ERC20ScaledPoolPrecisionTest is DSTestPlus {
 
         // lender claims newly available collateral from bucket
         changePrank(_lender);
-        uint256 lpRedemption = Maths.wrdivr(Maths.wmul(availableCollateral, _pool.indexToPrice(2549)), _pool.exchangeRate(2549));
         vm.expectEmit(true, true, true, true);
-        emit ClaimCollateral(_lender, _pool.indexToPrice(2549), availableCollateral, lpRedemption);
+        emit Transfer(address(_pool), address(_lender), adjustedCollateralReq);
         vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), _lender, adjustedCollateralReq);
-//        _lender.claimCollateral(_pool, availableCollateral, 2549);
+        emit RemoveCollateral(address(_lender), _pool.indexToPrice(2549), availableCollateral);
+       _pool.removeCollateral(availableCollateral, 2549);
 
         // check bucket state
         (uint256 lpAccumulatorStateTwo, uint256 availableCollateralStateTwo) = _pool.buckets(2549);

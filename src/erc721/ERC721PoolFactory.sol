@@ -28,11 +28,11 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         bytes memory data = abi.encodePacked(collateral_, quote_);
 
         ERC721Pool pool = ERC721Pool(address(implementation).clone(data));
-        pool.initialize(interestRate_);
         pool_ = address(pool);
-
         deployedPools[ERC721_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
+
+        pool.initialize(interestRate_);
     }
 
     function deploySubsetPool(
@@ -41,11 +41,11 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         bytes memory data = abi.encodePacked(collateral_, quote_, tokenIds_);
 
         ERC721Pool pool = ERC721Pool(address(implementation).clone(data));
-        pool.initializeSubset(tokenIds_, interestRate_);
         pool_ = address(pool);
-
         deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
+
+        pool.initializeSubset(tokenIds_, interestRate_);
     }
 
     /*********************************/

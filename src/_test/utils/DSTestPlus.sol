@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
-import { ERC20 }  from "@solmate/tokens/ERC20.sol";
-import { Maths }  from "../../libraries/Maths.sol";
-import { Test }   from "@std/Test.sol";
-import { Vm }     from "@std/Vm.sol";
+import { Maths } from "../../libraries/Maths.sol";
+
+import { Test } from "@std/Test.sol";
+import { Vm }   from "@std/Vm.sol";
 
 abstract contract DSTestPlus is Test {
 
@@ -66,36 +66,16 @@ abstract contract DSTestPlus is Test {
     event RedeemPosition(address indexed lender_, uint256 tokenId_);
 
     // Pool events
-    event AddCollateral(address indexed borrower_, uint256 amount_);
-    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
-    event AddNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
-    event ClaimCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_, uint256 lps_);
-    event ClaimNFTCollateral(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_, uint256 lps_);
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
-    event PledgeCollateral(address indexed borrower_, uint256 amount_);
-    event PullCollateral(address indexed borrower_, uint256 amount_);
-    event Purchase(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256 collateral_);
-    event PurchaseWithNFTs(address indexed bidder_, uint256 indexed price_, uint256 amount_, uint256[] tokenIds_);
-    event RemoveCollateral(address indexed borrower_, uint256 amount_);
-    event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
-    event RemoveNFTCollateral(address indexed borrower_, uint256[] tokenIds_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
-    event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
     event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
 
     // Pool deployer events
     event PoolCreated(address pool_);
-
-    // ERC20 events
-    event Transfer(address indexed src, address indexed dst, uint256 wad);
-
-    function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
-        assertEq(address(erc1_), address(erc2_));
-    }
 
     function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
         difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
