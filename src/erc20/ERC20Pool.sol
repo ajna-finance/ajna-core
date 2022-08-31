@@ -237,9 +237,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        require(
+        require(  // TODO: to kick, collateralization should be < 1 not <= 1
             _borrowerCollateralization(borrower.debt, borrower.collateral, lup) <= Maths.WAD,
-            "P:K:_borrower_OK"
+            "P:K:BORROWER_OK"
         );
 
         liquidations[borrower_] = LiquidationInfo({
@@ -251,8 +251,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
-
-
+        
         require(lup < thresholdPrice, "P:K:LUP_GT_THRESHOLD");
 
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)

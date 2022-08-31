@@ -15,8 +15,8 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
     address internal _borrower2;
     address internal _lender;
 
-    uint256 HPB        = _p49910;
-    uint256 LEND_PRICE = _p10016;
+    uint256 HPB        = 1987;  // _p49910
+    uint256 LEND_PRICE = 2309;  // _p10016
     uint256 START      = block.timestamp;
 
     CollateralToken collateralToken;
@@ -32,13 +32,13 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
 
-        deal(address(quoteToken), _lender,  20_000 * 1e18);
+        deal(address(quoteToken), _lender,  21_000 * 1e18);
 
         // Lender adds quote token in two price buckets
         vm.startPrank(_lender);
-        quoteToken.approve(address(pool), 20_000e18);
+        quoteToken.approve(address(pool), 21_000e18);
         pool.addQuoteToken(10_000e18, HPB);
-        pool.addQuoteToken(10_000e18, LEND_PRICE);
+        pool.addQuoteToken(11_000e18, LEND_PRICE);
         vm.stopPrank();
 
         deal(address(collateralToken), _borrower,  1 * 1e18);
@@ -55,7 +55,7 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
         vm.startPrank(_borrower2);
         collateralToken.approve(address(pool), 10_000e18);
         pool.pledgeCollateral(_borrower2, 1e18, address(0), address(0));
-        pool.borrow(10_000e18, LEND_PRICE, address(0), address(0));
+        pool.borrow(10_000e18, LEND_PRICE, address(0), address(0));  // FIXME: reverts with S:B:LIMIT_REACHED
         vm.stopPrank();
 
         // Warp to make borrower undercollateralized
@@ -75,12 +75,11 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
             uint256 borrowerInflator
         ) = pool.borrowerInfo(_borrower2);
 
-        assertEq(borrowerDebt,         10_000.000961538461538462e18);
-        assertEq(borrowerPendingDebt,  10_020.570034074975048523e18);
-        assertEq(pool.encumberedCollateral(borrowerDebt, pool.lup()), 1.0004061742262105e18);
-        assertEq(pool.borrowerCollateralization(borrowerDebt, collateralDeposited, pool.lup()), 0.999593990684309122e18);
-
-        assertEq(borrowerInflator,     1e27);
+        assertEq(borrowerDebt,         10_009.615384615384620000 * 1e18);
+        assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);
+        assertEq(pool.encumberedCollateral(borrowerPendingDebt, pool.lup()), 1.001368006956135433 * 1e18);
+        assertEq(pool.borrowerCollateralization(borrowerPendingDebt, collateralDeposited, pool.lup()), 0.998633861930247030 * 1e18);
+        assertEq(borrowerInflator,     1e18);
 
         ( uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt ) = pool.liquidations(_borrower2);
 
