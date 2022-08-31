@@ -97,7 +97,7 @@ abstract contract Queue is IQueue {
      *  @param  oldPrev_         Previous borrower that came before placed loan (old).
      */
     function _removeLoanQueue(address borrower_, address oldPrev_) internal {
-        require(oldPrev_ == address(0) || loans[oldPrev_].next == borrower_, "B:R:QUE_WRNG");
+        require(oldPrev_ == address(0) || loans[oldPrev_].next == borrower_, "B:R:OLDPREV_WRNG");
         if (loanQueueHead == borrower_) loanQueueHead = loans[borrower_].next;
 
         loans[oldPrev_].next = loans[borrower_].next;

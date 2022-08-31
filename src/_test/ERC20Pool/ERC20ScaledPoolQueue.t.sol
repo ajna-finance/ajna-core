@@ -338,7 +338,7 @@ contract ERC20ScaledQueueTest is DSTestPlus {
 
         // repay entire loan with wrong old prev address
         changePrank(_borrower);
-        vm.expectRevert("B:R:QUE_WRNG");
+        vm.expectRevert("B:R:OLDPREV_WRNG");
         _pool.repay(_borrower, 15_100 * 1e18, _borrower3, address(0));
     }
 
