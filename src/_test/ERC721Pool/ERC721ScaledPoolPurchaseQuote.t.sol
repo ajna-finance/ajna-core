@@ -7,12 +7,10 @@ import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
-import { ERC721DSTestPlus }               from "./ERC721DSTestPlus.sol";
+import { ERC721HelperContract }           from "./ERC721DSTestPlus.sol";
 import { NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
 
-contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
-
-    uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
+contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -20,61 +18,17 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
     address internal _lender;
     address internal _lender2;
 
-    address internal _collectionPoolAddress;
-    address internal _subsetPoolAddress;
-
-    NFTCollateralToken internal _collateral;
-    QuoteToken         internal _quote;
-    ERC721Pool         internal _collectionPool;
-    ERC721Pool         internal _subsetPool;
-
     function setUp() external {
-        // deploy token and user contracts; mint and set balances
-        _collateral = new NFTCollateralToken();
-        _quote      = new QuoteToken();
-
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _bidder    = makeAddr("bidder");
         _lender    = makeAddr("lender");
         _lender2   = makeAddr("lender2");
 
-        _collateral.mint(_borrower,  52);
-        _collateral.mint(_borrower2, 10);
-        _collateral.mint(_bidder, 13);
+        // deploy collection pool
+        _collectionPool = _deployCollectionPool();
 
-        deal(address(_quote), _lender, 200_000 * 1e18);
-        deal(address(_quote), _lender2, 200_000 * 1e18);
-
-        /*******************************/
-        /*** Setup NFT Collection State ***/
-        /*******************************/
-
-        _collectionPoolAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
-        _collectionPool        = ERC721Pool(_collectionPoolAddress);
-
-        vm.startPrank(_borrower);
-        _collateral.setApprovalForAll(address(_collectionPool), true);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        changePrank(_borrower2);
-        _collateral.setApprovalForAll(address(_collectionPool), true);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        changePrank(_bidder);
-        _collateral.setApprovalForAll(address(_collectionPool), true);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        changePrank(_lender);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        changePrank(_lender2);
-        _quote.approve(address(_collectionPool), 200_000 * 1e18);
-
-        /*******************************/
-        /*** Setup NFT Subset State ***/
-        /*******************************/
-
+        // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](9);
         subsetTokenIds[0] = 1;
         subsetTokenIds[1] = 3;
@@ -85,27 +39,16 @@ contract ERC721ScaledBorrowTest is ERC721DSTestPlus {
         subsetTokenIds[6] = 70;
         subsetTokenIds[7] = 73;
         subsetTokenIds[8] = 74;
+        _subsetPool = _deploySubsetPool(subsetTokenIds);
 
-        _subsetPoolAddress = new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), subsetTokenIds, 0.05 * 10**18);
-        _subsetPool        = ERC721Pool(_subsetPoolAddress);
+        address[] memory _poolAddresses = _getPoolAddresses();
 
-        changePrank(_borrower);
-        _collateral.setApprovalForAll(address(_subsetPool), true);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);
+        _mintAndApproveQuoteTokens(_poolAddresses, _lender, 200_000 * 1e18);
+        _mintAndApproveQuoteTokens(_poolAddresses, _lender2, 200_000 * 1e18);
 
-        changePrank(_borrower2);
-        _collateral.setApprovalForAll(address(_subsetPool), true);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);
-
-        changePrank(_bidder);
-        _collateral.setApprovalForAll(address(_subsetPool), true);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);
-
-        changePrank(_lender);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);
-
-        changePrank(_lender2);
-        _quote.approve(address(_subsetPool), 200_000 * 1e18);        
+        _mintAndApproveCollateralTokens(_poolAddresses, _borrower, 52);
+        _mintAndApproveCollateralTokens(_poolAddresses, _borrower2, 10);
+        _mintAndApproveCollateralTokens(_poolAddresses, _bidder, 13);   
     }
 
     function testSubsetPurchaseQuote() external {
