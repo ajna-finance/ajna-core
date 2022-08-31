@@ -77,9 +77,10 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // add tokenIds to the pool
         for (uint256 i = 0; i < tokenIds_.length;) {
-            if (_tokenIdsAllowed.length() != 0)                       require(_tokenIdsAllowed.contains(tokenIds_[i]),        "P:ONLY_SUBSET");
-            if (!_poolCollateralTokenIds.contains(tokenIds_[i]))      require(_poolCollateralTokenIds.add(tokenIds_[i]),      "P:ADD_PC_FAIL"); // update pool state
-            if (!borrower.collateralDeposited.contains(tokenIds_[i])) require(borrower.collateralDeposited.add(tokenIds_[i]), "P:ADD_CD_FAIL"); // update borrower accounting
+            if (_tokenIdsAllowed.length() != 0) require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
+
+            require(_poolCollateralTokenIds.add(tokenIds_[i]),      "P:ADD_PC_FAIL"); // update pool state
+            require(borrower.collateralDeposited.add(tokenIds_[i]), "P:ADD_CD_FAIL"); // update borrower accounting
 
             //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]); // move collateral from sender to pool
@@ -247,8 +248,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // move required collateral from sender to pool
         for (uint256 i = 0; i < tokenIds_.length;) {
-            if (_tokenIdsAllowed.length() != 0)                     require(_tokenIdsAllowed.contains(tokenIds_[i]),     "P:ONLY_SUBSET");
-            if (!_bucketCollateralTokenIds.contains(tokenIds_[i])) require(_bucketCollateralTokenIds.add(tokenIds_[i]), "P:ADD_BC_FAIL");
+            if (_tokenIdsAllowed.length() != 0) require(_tokenIdsAllowed.contains(tokenIds_[i]), "P:ONLY_SUBSET");
+
+            require(_bucketCollateralTokenIds.add(tokenIds_[i]), "P:ADD_BC_FAIL");
 
             //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]); // move collateral from sender to pool
