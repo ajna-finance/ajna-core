@@ -79,7 +79,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         uint256 curDebt = _accruePoolInterest();
 
         Bucket storage bucket = buckets[index_];
-        uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpbChange_           = Maths.rdiv(Maths.wadToRay(amount_), rate);
         bucket.lpAccumulator += lpbChange_;
 
@@ -110,7 +110,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // determine amount of quote token to move
         Bucket storage fromBucket   = buckets[fromIndex_];
-        uint256 availableQuoteToken = _rangeSum(fromIndex_, fromIndex_);
+        uint256 availableQuoteToken = _valueAt(fromIndex_);
         uint256 rate                = _exchangeRate(availableQuoteToken, fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
         uint256 amount              = Maths.min(maxAmount_, Maths.min(availableQuoteToken, Maths.rrdivw(availableLPs, rate)));
 
@@ -132,7 +132,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // update "to" bucket accounting
         Bucket storage toBucket = buckets[toIndex_];
-        rate                    = _exchangeRate(_rangeSum(toIndex_, toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
+        rate                    = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
         lpbAmountTo_            = Maths.wrdivr(amount, rate);
         toBucket.lpAccumulator  += lpbAmountTo_;
         _add(toIndex_, amount);
@@ -160,7 +160,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         require(lpAmount_ != 0, "S:RAQT:NO_CLAIM");
 
         Bucket memory bucket        = buckets[index_];
-        uint256 availableQuoteToken = _rangeSum(index_, index_);
+        uint256 availableQuoteToken = _valueAt(index_);
         uint256 rate                = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
         amount_                     = Maths.rayToWad(Maths.rmul(lpAmount_, rate));
 
@@ -177,7 +177,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
-        uint256 availableQuoteToken = _rangeSum(index_, index_);
+        uint256 availableQuoteToken = _valueAt(index_);
         require(amount_ <= availableQuoteToken, "S:RQT:INSUF_QT");
 
         Bucket memory bucket = buckets[index_];
@@ -472,7 +472,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function bucketAt(uint256 index_) external view override returns (uint256, uint256, uint256, uint256) {
         return (
-            _rangeSum(index_, index_),           // quote token in bucket, deposit + interest (WAD)
+            _valueAt(index_),           // quote token in bucket, deposit + interest (WAD)
             buckets[index_].availableCollateral, // unencumbered collateral in bucket (WAD)
             buckets[index_].lpAccumulator,       // outstanding LP balance (WAD)
             _scale(index_)                       // lender interest multiplier (WAD)
@@ -484,7 +484,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function depositAt(uint256 index_) external view override returns (uint256) {
-        return _rangeSum(index_, index_);
+        return _valueAt(index_);
     }
 
     function liquidityToPrice(uint256 index_) external view returns (uint256) {
@@ -500,7 +500,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function exchangeRate(uint256 index_) external view override returns (uint256) {
-        return _exchangeRate(_rangeSum(index_, index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
+        return _exchangeRate(_valueAt(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
     }
 
     function encumberedCollateral(uint256 debt_, uint256 price_) external pure override returns (uint256) {

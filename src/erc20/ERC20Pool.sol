@@ -184,7 +184,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         // Calculate exchange rate before new collateral has been accounted for.
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
-        uint256 rate = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
 
         uint256 quoteValue     = Maths.wmul(amount_, _indexToPrice(index_));
         lpbChange_             = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
@@ -210,7 +210,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         uint256 price = _indexToPrice(index_);
-        uint256 rate  = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate  = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpAmount_     = bucketLender.lpBalance;
         amount_       = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
         require(amount_ != 0, "S:RAC:NO_CLAIM");
@@ -232,7 +232,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         uint256 price        = _indexToPrice(index_);
-        uint256 rate         = _exchangeRate(_rangeSum(index_, index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate         = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs = bucketLender.lpBalance;
 
         // ensure user can actually remove that much
