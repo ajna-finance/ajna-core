@@ -42,7 +42,7 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         uint256 amount;
 
         // Calculate total insertions 
-        uint256 insertsDec = bound(insertions_, 1, 8000);
+        uint256 insertsDec= bound(insertions_, 1000, 5000);
 
         // Calculate total amount to insert
         uint256 totalAmount = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
@@ -55,7 +55,7 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
             i = randomInRange(1, 8190);
 
             // If last iteration, insert remaining
-            amount = insertsDec == 1 ? totalAmountDec : randomInRange(1, totalAmountDec, true);
+            amount = insertsDec == 1 ? totalAmountDec : (totalAmountDec % insertsDec) * randomInRange(1_000, 1 * 1e10, true);
 
             // Update values
             add(i, amount);
@@ -157,9 +157,9 @@ contract FenwickTreeTest is DSTestPlus {
     }
 
     /**
-     *  @notice Fuzz tests additions and scaling values.
+     *  @notice Fuzz tests additions and scaling values, testing prefixSum.
      */
-    function testFenwickFuzzyScaling(
+    function testFenwickFuzzyScalingPrefix(
         uint256 insertions_,
         uint256 totalAmount_,
         uint256 scaleIndex_,
@@ -185,9 +185,43 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 subMin = Maths.min(Maths.wmul(subIndexSum, factor), tree.prefixSum(subIndex));
 
         // 2 >= scaling discrepency
-        assertGe(2, max - min);
-        assertGe(2, subMax - subMin);
+        assertGe(3, max - min);
+        assertGe(3, subMax - subMin);
     }
+
+    /**
+     *  @notice Fuzz tests additions and scaling values, testing findSum.
+     */
+    function testFenwickFuzzyScalingFind(
+        uint256 insertions_,
+        uint256 totalAmount_,
+        uint256 scaleIndex_,
+        uint256 factor_
+        ) external {
+
+        FenwickTreeInstance tree = new FenwickTreeInstance();
+        tree.fillFenwickFuzzy(insertions_, totalAmount_, true);
+
+        uint256 scaleIndex = bound(scaleIndex_, 2, 8191);
+        uint256 subIndex = randomInRange(0, scaleIndex - 1);
+        uint256 factor = bound(factor_, 1 * 1e18, 5 * 1e18);
+
+        tree.mult(scaleIndex, factor);
+
+        uint256 treeDirectedIndex = tree.findSum(tree.prefixSum(scaleIndex));
+        uint256 treeDirectedSubIndex = tree.findSum(tree.prefixSum(subIndex));
+
+        uint256 maxFind = Maths.max(treeDirectedIndex, scaleIndex);
+        uint256 minFind = Maths.min(treeDirectedIndex, scaleIndex);
+
+        uint256 subMaxFind = Maths.max(treeDirectedSubIndex, subIndex);
+        uint256 subMinFind = Maths.min(treeDirectedSubIndex, subIndex);
+
+        // 2 >= scaling discrepency
+        assertGe(43, maxFind - minFind);
+        assertGe(43, subMaxFind - subMinFind);
+    }
+
 
     /**
      *  @notice Fuzz tests additions and value removals.
