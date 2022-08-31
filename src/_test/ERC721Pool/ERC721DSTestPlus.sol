@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
-import { DSTestPlus } from "../utils/DSTestPlus.sol";
+import { DSTestPlus }                     from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
 
 abstract contract ERC721DSTestPlus is DSTestPlus {
@@ -32,23 +32,22 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     // TODO: bool for pool type
     constructor() {
-        _collateral      = new NFTCollateralToken();
-        _quote           = new QuoteToken();
+        _collateral = new NFTCollateralToken();
+        _quote      = new QuoteToken();
     }
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
-            return ERC721Pool(new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        return ERC721Pool(new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
     }
 
     function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
-            return ERC721Pool(new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
+        return ERC721Pool(new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
-    function _getPoolAddresses() internal returns (address[] memory) {
-        address[] memory _poolAddresses = new address[](2);
-        _poolAddresses[0] = address(_collectionPool);
-        _poolAddresses[1] = address(_subsetPool);
-        return _poolAddresses;
+    function _getPoolAddresses() internal view returns (address[] memory poolAddresses_) {
+        poolAddresses_ = new address[](2);
+        poolAddresses_[0] = address(_collectionPool);
+        poolAddresses_[1] = address(_subsetPool);
     }
 
     // TODO: finish implementing
@@ -84,8 +83,8 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     function _assertBalances() internal {}
 
     // TODO: check oldPrev and newPrev
-    function _pledgeCollateral(address borrower_, ERC721Pool pool_, uint256[] memory tokenIdsToAdd_) internal {
-        vm.prank(borrower_);
+    function _pledgeCollateral(address pledger_, address borrower_, ERC721Pool pool_, uint256[] memory tokenIdsToAdd_) internal {
+        vm.prank(pledger_);
         for (uint i; i < tokenIdsToAdd_.length;) {
             emit Transfer(address(borrower_), address(pool_), tokenIdsToAdd_[i]);
             vm.expectEmit(true, true, false, true);
@@ -94,7 +93,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
             }
         }
         emit PledgeCollateralNFT(address(borrower_), tokenIdsToAdd_);
-        pool_.pledgeCollateral(tokenIdsToAdd_, address(0), address(0));
+        pool_.pledgeCollateral(borrower_, tokenIdsToAdd_, address(0), address(0));
     }
 
     // TODO: implement _pullCollateral()
