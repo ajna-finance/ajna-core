@@ -49,9 +49,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     uint256 public override pledgedCollateral;
 
     uint256 public override debtEma;      // [WAD]
-    uint256 public          lupEma;       // [WAD]  // TODO: Override
+    uint256 public override lupEma;       // [WAD]
     uint256 public override lupColEma;    // [WAD]
-    uint256 public          poolPriceEma; // [WAD]  // TODO: Override
+    uint256 public override poolPriceEma; // [WAD]
 
     /**
      *  @notice Mapping of buckets for a given pool
@@ -429,10 +429,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
         return _findSum(borrowerDebt + additionalDebt_);
-    }
-
-    function _ptp() internal view returns (uint256) {
-        return Maths.wdiv(borrowerDebt, pledgedCollateral);
     }
 
     /**

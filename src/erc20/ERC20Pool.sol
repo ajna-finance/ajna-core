@@ -222,7 +222,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    // TODO: Remove
     function liquidate(address borrower_) external {
         (uint256 curDebt) = _accruePoolInterest();
 
@@ -232,8 +231,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
-        require(  // TODO: to kick, collateralization should be < 1 not <= 1
-            _borrowerCollateralization(borrower.debt, borrower.collateral, lup) <= Maths.WAD,
+        require(
+            _borrowerCollateralization(borrower.debt, borrower.collateral, lup) < Maths.WAD,
             "P:L:BORROWER_OK"
         );
 
