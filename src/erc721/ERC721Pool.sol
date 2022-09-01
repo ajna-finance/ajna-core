@@ -92,7 +92,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // update pool state
         uint256 curDebt = _accruePoolInterest();
-        _updateInterestRate(curDebt, _lup());
+        _updateInterestRateAndEMAs(curDebt, _lup());
         pledgedCollateral += Maths.wad(tokenIds_.length);
 
         // accrue interest to borrower
@@ -139,7 +139,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
-        _updateInterestRate(curDebt, newLup);
+        _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move borrowed amount from pool to sender
         emit Borrow(msg.sender, newLup, amount_);
@@ -161,7 +161,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // update pool state
         pledgedCollateral -= Maths.wad(tokenIds_.length);
-        _updateInterestRate(curDebt, curLup);
+        _updateInterestRateAndEMAs(curDebt, curLup);
 
         // remove tokenIds and transfer to caller
         for (uint256 i = 0; i < tokenIds_.length;) {
@@ -213,7 +213,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // update pool state
         borrowerDebt = curDebt;
         uint256 newLup = _lup();
-        _updateInterestRate(curDebt, newLup);
+        _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move amount to repay from sender to pool
         emit Repay(borrower_, newLup, amount);
@@ -244,7 +244,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         buckets[index_] = bucket;
         bucketLenders[index_][msg.sender] = bucketLender;
 
-        _updateInterestRate(borrowerDebt, _lup());
+        _updateInterestRateAndEMAs(borrowerDebt, _lup());
 
         // move required collateral from sender to pool
         for (uint256 i = 0; i < tokenIds_.length;) {
@@ -290,7 +290,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         bucketLender.lpBalance -= lpAmount_;
         bucketLenders[index_][msg.sender] = bucketLender;
 
-        _updateInterestRate(borrowerDebt, _lup());
+        _updateInterestRateAndEMAs(borrowerDebt, _lup());
 
         emit RemoveCollateralNFT(msg.sender, price, tokenIds_);
 
