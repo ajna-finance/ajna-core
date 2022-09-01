@@ -44,10 +44,10 @@ abstract contract FenwickTree {
         require(i_ < SIZE, "FW:M:INVALID_INDEX");
         require(f_ != 0,   "FW:M:FACTOR_ZERO");
 
-        i_ += 1;
-        uint256 sum = 0;
-        uint256 j;                      // Tracks range parents of starting node, i_
-        uint256 df = f_ - Maths.WAD;    // Difference factor
+        i_            += 1;
+        uint256 sum   = 0;
+        uint256 j;                         // Tracks range parents of starting node, i_
+        uint256 df    = f_ - Maths.WAD;    // Difference factor
 
         uint256 scaledI;
         uint256 scaledJ;
@@ -207,11 +207,11 @@ abstract contract FenwickTree {
     function _valueAt(uint256 i_) internal view returns (uint256 s_) {
         require(i_ < SIZE, "FW:V:INVALID_INDEX");
 
-        uint256 j  = i_;
-        uint256 k  = 1;
+        uint256 j  =  i_;
+        uint256 k  =  1;
 
-        i_ += 1;
-        s_ = values[i_];
+        i_         += 1;
+        s_         =  values[i_];
 
         uint256 scaled;
         while (j & k != 0) {
