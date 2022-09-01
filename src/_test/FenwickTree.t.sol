@@ -255,15 +255,16 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 treeDirectedIndex = tree.findSum(tree.prefixSum(scaleIndex));
         uint256 treeDirectedSubIndex = tree.findSum(tree.prefixSum(subIndex));
 
-        uint256 maxFind = Maths.max(treeDirectedIndex, scaleIndex);
-        uint256 minFind = Maths.min(treeDirectedIndex, scaleIndex);
+        uint256 max = Maths.max(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
+        uint256 min = Maths.min(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
 
-        uint256 subMaxFind = Maths.max(treeDirectedSubIndex, subIndex);
-        uint256 subMinFind = Maths.min(treeDirectedSubIndex, subIndex);
+        uint256 subMax = Maths.max(tree.prefixSum(treeDirectedSubIndex), tree.prefixSum(subIndex));
+        uint256 subMin = Maths.min(tree.prefixSum(treeDirectedSubIndex), tree.prefixSum(subIndex));
 
-        // 2 >= scaling discrepency
-        assertGe(43, maxFind - minFind);
-        assertGe(43, subMaxFind - subMinFind);
+        // 1 >= scaling discrepency
+        assertGe(1, max - min);
+        assertGe(1, subMax - subMin);
+
     }
 
 
