@@ -12,7 +12,7 @@ abstract contract Multicall {
      *  @param data_ Externally aggregated function calls serialized into a byte array
      *  @return results_ Array of the results from each aggregated call
      */
-    function multicall(bytes[] calldata data_) public returns (bytes[] memory results_) {
+    function multicall(bytes[] calldata data_) external returns (bytes[] memory results_) {
         results_ = new bytes[](data_.length);
         for (uint256 i = 0; i < data_.length; ) {
             (bool success, bytes memory result) = address(this).delegatecall(data_[i]);

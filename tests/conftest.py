@@ -171,7 +171,7 @@ class TestUtils:
 
     @staticmethod
     def get_usage(gas) -> str:
-        in_eth = gas * 50 * 10e-9
+        in_eth = gas * 50 * 1e-9
         in_fiat = in_eth * 1700
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
     
@@ -303,9 +303,7 @@ class TestUtils:
         # if pool is collateralized...
         if pool.lupIndex() > ScaledPoolUtils.price_to_index_safe(pool, pool.htp()):
             # ...ensure debt is less than the size of the pool
-            assert pool.borrowerDebt <= pool.treeSum()
-            # ...ensure borrowers owe more than lenders are owed
-            assert pool.borrowerDebt() >= pool.lenderDebt()
+            assert pool.borrowerDebt <= pool.poolSize()
 
         # if there are no borrowers in the pool, ensure there is no debt
         if pool.totalBorrowers() == 0:
@@ -403,16 +401,15 @@ class TestUtils:
               f"target utlzn: {pool.poolTargetUtilization()/1e18:>10.1%}   "
               f"collateralization: {pool.poolCollateralization()/1e18:>7.1%}  "
               f"borrowerDebt: {pool.borrowerDebt()/1e18:>12.1f}  "
-              f"lenderDebt: {pool.lenderDebt()/1e18:>12.1f}  "
               f"pendingInf: {pool.pendingInflator()/1e18:>20.18f}")
 
         contract_quote_balance = Contract(pool.quoteToken()).balanceOf(pool)
-        reserves = contract_quote_balance + pool.borrowerDebt() - pool.treeSum()
+        reserves = contract_quote_balance + pool.borrowerDebt() - pool.poolSize()
         pledged_collateral = pool.pledgedCollateral()
         if pledged_collateral > 0:
             ptp = pool.borrowerDebt() * 10 ** 18 / pledged_collateral
             ptp_index = pool.priceToIndex(ptp)
-            ru = pool.prefixSum(ptp_index)
+            ru = pool.depositAt(ptp_index)
         else:
             ptp = 0
             ru = 0
@@ -421,7 +418,7 @@ class TestUtils:
               f"pledged collaterl: {pool.pledgedCollateral()/1e18:>7.1f}  "
               f"ptp: {ptp/1e18:>10.3f}  "
               f"ru: {ru/1e18:>12.1f}  "
-              f"sum: {pool.treeSum()/1e18:>12.1f}  "
+              f"sum: {pool.poolSize()/1e18:>12.1f}  "
               f"rate:     {pool.interestRate()/1e18:>10.6f}")
 
 

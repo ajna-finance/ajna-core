@@ -65,12 +65,12 @@ interface IERC20Pool is IScaledPool {
     /**
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
-     *  @param  borrower_        Address of the borrower.
-     *  @return debt             Amount of debt that the borrower has, in quote token.
-     *  @return collateral       Amount of collateral that the borrower has deposited, in collateral token.
-     *  @return inflatorSnapshot Snapshot of inflator value used to track interest on loans.
+     *  @param  borrower_  Address of the borrower.
+     *  @return debt       Amount of debt that the borrower has, in quote token.
+     *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
+     *  @return inflator   Snapshot of inflator value used to track interest on loans.
      */
-    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 inflatorSnapshot);
+    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 inflator);
 
     /**
      *  @notice Returns the `collateralScale` state variable.
@@ -100,11 +100,12 @@ interface IERC20Pool is IScaledPool {
 
     /**
      *  @notice Called by borrowers to add collateral to the pool.
-     *  @param  amount_  The amount of collateral in deposit tokens to be added to the pool.
-     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
-     *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
+     *  @param  borrower_ The address of borrower to pledge collateral for.
+     *  @param  amount_   The amount of collateral in deposit tokens to be added to the pool.
+     *  @param  oldPrev_  Previous borrower that came before placed loan (old)
+     *  @param  newPrev_  Previous borrower that now comes before placed loan (new)
      */
-    function pledgeCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
+    function pledgeCollateral(address borrower_, uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by a borrower to open or expand a position.
@@ -126,11 +127,12 @@ interface IERC20Pool is IScaledPool {
 
     /**
      *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
+     *  @param  borrower_  The address of borrower to repay quote token amount for.
      *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
      *  @param  oldPrev_   Previous borrower that came before placed loan (old)
      *  @param  newPrev_   Previous borrower that now comes before placed loan (new)
      */
-    function repay(uint256 maxAmount_, address oldPrev_, address newPrev_) external;
+    function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external;
 
     /*****************************/
     /*** Initialize Functions ***/
@@ -154,10 +156,18 @@ interface IERC20Pool is IScaledPool {
     function addCollateral(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_);
 
     /**
+     *  @notice Called by lenders to redeem the maximum amount of LP for unencumbered collateral.
+     *  @param  index_    The bucket index from which unencumbered collateral will be removed.
+     *  @return amount_   The amount of collateral removed.
+     *  @return lpAmount_ The amount of LP used for removing collateral.
+     */
+    function removeAllCollateral(uint256 index_) external returns (uint256 amount_, uint256 lpAmount_);
+
+    /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
      *  @param  amount_   The amount of unencumbered collateral to claim.
-     *  @param  index_    The index of the bucket from which unencumbered collateral will be claimed.
-     *  @return lpAmount_ The amount of LP tokens used for removing collateral amount.
+     *  @param  index_    The bucket index from which unencumbered collateral will be removed.
+     *  @return lpAmount_ The amount of LP used for removing collateral amount.
      */
     function removeCollateral(uint256 amount_, uint256 index_) external returns (uint256 lpAmount_);
 

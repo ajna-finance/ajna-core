@@ -1,0 +1,43 @@
+name: Slither Analysis
+on: [push]
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install and set solc version
+        run: |
+          pip install solc-select && solc-select install 0.8.14 && solc-select use 0.8.14
+        id: solc
+
+      - name: Install Slither
+        run: |
+          pip install slither-analyzer
+        id: slither
+
+      - name: Analyze Position Manager
+        run: |
+          slither src/base/PositionManager.sol
+        continue-on-error: true
+        id: base-analyzer
+
+      - name: Analyze libraries
+        run: |
+          slither src/libraries/.
+        continue-on-error: true
+        id: libraries-analyzer
+
+      - name: Analyze ERC20 Pool
+        run: |
+          slither src/erc20/.
+        continue-on-error: true
+        id: erc20-pool-analyzer
+
+      - name: Analyze ERC721 Pool
+        run: |
+          slither src/erc721/.
+        continue-on-error: true
+        id: erc721-pool-analyzer

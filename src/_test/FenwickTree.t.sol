@@ -75,8 +75,12 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         return _treeSum();
     }
 
+    function rangeSum(uint256 i_, uint256 j_) external view returns (uint256 m_) {
+        return _rangeSum(i_, j_);
+    }
+
     function get(uint256 i_) external view returns (uint256 m_) {
-        return _rangeSum(i_, i_);
+        return _valueAt(i_);
     }
 
     function scale(uint256 i_) external view returns (uint256 a_) {
@@ -101,11 +105,18 @@ contract FenwickTreeTest is DSTestPlus {
         FenwickTreeInstance tree = new FenwickTreeInstance();
         tree.add(11, 300 * 1e18);
         tree.add(9,  200 * 1e18);
+
         assertEq(tree.get(8),  0);
         assertEq(tree.get(9),  200 * 1e18);
         assertEq(tree.get(11), 300 * 1e18);
         assertEq(tree.get(12), 0);
         assertEq(tree.get(13), 0);
+
+        assertEq(tree.rangeSum(8, 8),   0);
+        assertEq(tree.rangeSum(9, 9),   200 * 1e18);
+        assertEq(tree.rangeSum(11, 11), 300 * 1e18);
+        assertEq(tree.rangeSum(12, 12), 0);
+        assertEq(tree.rangeSum(13, 13), 0);
 
         assertEq(tree.prefixSum(0),    0);
         assertEq(tree.prefixSum(5),    0);
@@ -135,6 +146,16 @@ contract FenwickTreeTest is DSTestPlus {
         tree.add(9, 200 * 1e18);
         tree.mult(10, 1.2 * 1e18);
 
+        assertEq(tree.get(5),  132 * 1e18);
+        assertEq(tree.get(9),  480 * 1e18);
+        assertEq(tree.get(10), 0);
+        assertEq(tree.get(11), 300 * 1e18);
+
+        assertEq(tree.rangeSum(5, 5),   132 * 1e18);
+        assertEq(tree.rangeSum(9, 9),   480 * 1e18);
+        assertEq(tree.rangeSum(10, 10), 0);
+        assertEq(tree.rangeSum(11, 11), 300 * 1e18);
+
         assertEq(tree.prefixSum(0),    0);
         assertEq(tree.prefixSum(4),    0);
         assertEq(tree.prefixSum(5),    132 * 1e18);
@@ -154,6 +175,29 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(500 * 1e18),   9);
         assertEq(tree.findSum(900 * 1e18),   11);
         assertEq(tree.findSum(1_000 * 1e18), 8191);
+
+        tree.remove(11, 300 * 1e18);
+
+        assertEq(tree.treeSum(), 612 * 1e18);
+
+        assertEq(tree.findSum(10 * 1e18),    5);
+        assertEq(tree.findSum(100 * 1e18),   5);
+        assertEq(tree.findSum(200 * 1e18),   9);
+        assertEq(tree.findSum(350 * 1e18),   9);
+        assertEq(tree.findSum(400 * 1e18),   9);
+        assertEq(tree.findSum(500 * 1e18),   9);
+        assertEq(tree.findSum(900 * 1e18),   8191);
+        assertEq(tree.findSum(1_000 * 1e18), 8191);
+
+        assertEq(tree.get(5),  132 * 1e18);
+        assertEq(tree.get(9),  480 * 1e18);
+        assertEq(tree.get(10), 0);
+        assertEq(tree.get(11), 0);
+
+        assertEq(tree.rangeSum(5, 5),   132 * 1e18);
+        assertEq(tree.rangeSum(9, 9),   480 * 1e18);
+        assertEq(tree.rangeSum(10, 10), 0);
+        assertEq(tree.rangeSum(11, 11), 0);
     }
 
     /**
