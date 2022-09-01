@@ -14,12 +14,21 @@ import { Maths } from "../libraries/Maths.sol";
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
 
+    struct LiquidationInfo {
+        uint128 kickTime;
+        uint128 referencePrice;
+        uint256 remainingCollateral;
+        uint256 remainingDebt;
+    }
+
     /***********************/
     /*** State Variables ***/
     /***********************/
 
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => Borrower) public override borrowers;
+
+    mapping (address => LiquidationInfo) public liquidations;
 
     uint256 public override collateralScale;
 
@@ -63,7 +72,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update pool state
         pledgedCollateral += amount_;
-        _updateInterestRate(curDebt, _lup());
+        _updateInterestRateAndEMAs(curDebt, _lup());
 
         // move collateral from sender to pool
         emit PledgeCollateral(borrower_, amount_);
@@ -78,7 +87,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         Borrower memory borrower = borrowers[msg.sender];
         uint256 borrowersCount = totalBorrowers;
-        if (borrowersCount != 0) require(borrower.debt + amount_ > _poolMinDebtAmount(curDebt), "S:B:AMT_LT_AVG_DEBT");
+        if (borrowersCount != 0) require(borrower.debt + amount_ > _poolMinDebtAmount(curDebt), "S:B:AMT_LT_MIN_DEBT");
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
@@ -103,7 +112,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
         borrowers[msg.sender] = borrower;
 
-        _updateInterestRate(curDebt, newLup);
+        _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move borrowed amount from pool to sender
         emit Borrow(msg.sender, newLup, amount_);
@@ -127,7 +136,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update pool state
         pledgedCollateral -= amount_;
-        _updateInterestRate(curDebt, curLup);
+        _updateInterestRateAndEMAs(curDebt, curLup);
 
         // move collateral from pool to sender
         emit PullCollateral(msg.sender, amount_);
@@ -135,40 +144,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
-        require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
-
-        Borrower memory borrower = borrowers[borrower_];
-        require(borrower.debt != 0, "S:R:NO_DEBT");
-
-        uint256 curDebt = _accruePoolInterest();
-
-        // update borrower accounting
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        uint256 amount = Maths.min(borrower.debt, maxAmount_);
-        borrower.debt -= amount;
-        curDebt       -= amount;
-
-        // update loan queue
-        uint256 borrowersCount = totalBorrowers;
-        if (borrower.debt == 0) {
-            totalBorrowers = borrowersCount - 1;
-            _removeLoanQueue(borrower_, oldPrev_);
-        } else {
-            if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
-            uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-            _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
-        }
-        borrowers[borrower_] = borrower;
-
-        // update pool state
-        borrowerDebt = curDebt;
-
-        uint256 newLup = _lup();
-        _updateInterestRate(curDebt, newLup);
-
-        // move amount to repay from sender to pool
-        emit Repay(borrower_, newLup, amount);
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
+        _repayDebt(borrower_, maxAmount_, oldPrev_, newPrev_);
     }
 
     /*********************************/
@@ -195,7 +171,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         buckets[index_]                   = bucket;
         bucketLenders[index_][msg.sender] = bucketLender;
 
-        _updateInterestRate(borrowerDebt, _lup());
+        _updateInterestRateAndEMAs(borrowerDebt, _lup());
 
         // move required collateral from sender to pool
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
@@ -242,6 +218,82 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _redeemLPForCollateral(bucket, bucketLender, lpAmount_, amount_, price, index_);
     }
 
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    function liquidate(address borrower_) external {
+        (uint256 curDebt) = _accruePoolInterest();
+
+        Borrower memory borrower = borrowers[borrower_];
+        require(borrower.debt != 0, "P:L:NO_DEBT");
+
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        uint256 lup = _lup();
+        _updateInterestRateAndEMAs(curDebt, lup);
+        require(
+            _borrowerCollateralization(borrower.debt, borrower.collateral, lup) < Maths.WAD,
+            "P:L:BORROWER_OK"
+        );
+
+        borrowers[borrower_] = borrower;
+        liquidations[borrower_] = LiquidationInfo({
+            kickTime:            uint128(block.timestamp),
+            referencePrice:      uint128(_hpbIndex()),
+            remainingCollateral: borrower.collateral,
+            remainingDebt:       borrower.debt
+        });
+
+        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
+        // TODO: Uncomment when needed
+//        uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
+
+        require(lup < thresholdPrice, "P:L:LUP_GT_THRESHOLD");
+
+        // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
+        // TODO: Account for repossessed collateral
+
+        // Post the liquidation bond
+        // Repossess the borrowers collateral, initialize the auction cooldown timer
+    }
+
+    // TODO: Add reentrancy guard
+    function take(address borrower_, uint256 collateralToLiquidate_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external {
+        Borrower        memory borrower    = borrowers[borrower_];
+        LiquidationInfo memory liquidation = liquidations[borrower_];
+
+        require(
+            liquidation.kickTime != 0 &&
+            block.timestamp - uint256(liquidation.kickTime) > 1 hours,
+            "P:T:NOT_PAST_COOLDOWN"
+        );
+
+        require(
+            _borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) <= Maths.WAD,
+            "P:L:BORROWER_OK"
+        );
+
+        uint256 collateralForLiquidation = Maths.min(collateralToLiquidate_, liquidation.remainingCollateral);
+
+        // Reduce liquidation's remaining collateral
+        liquidations[borrower_].remainingCollateral -= collateralForLiquidation;
+
+        // Flash loan full amount to liquidate to borrower
+        collateral().safeTransfer(msg.sender, collateralForLiquidation);
+
+        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
+        msg.sender.call(swapCalldata_);
+
+        // Get current swap price
+        uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralForLiquidation);
+
+        // Pull funds from msg.sender
+        quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenReturnAmount);
+
+        _repayDebt(borrower_, quoteTokenReturnAmount, oldPrev_, newPrev_);
+    }
+
+
     /**************************/
     /*** Internal Functions ***/
     /**************************/
@@ -263,11 +315,48 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         bucketLender.lpBalance -= lpAmount_;
         bucketLenders[index_][msg.sender] = bucketLender;
 
-        _updateInterestRate(borrowerDebt, _lup());
+        _updateInterestRateAndEMAs(borrowerDebt, _lup());
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, price_, amount_);
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+    }
+
+    function _repayDebt(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) internal {
+        require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
+
+        Borrower memory borrower = borrowers[borrower_];
+        require(borrower.debt != 0, "S:R:NO_DEBT");
+
+        uint256 curDebt = _accruePoolInterest();
+
+        // update borrower accounting
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        uint256 amount = Maths.min(borrower.debt, maxAmount_);
+        borrower.debt -= amount;
+        curDebt       -= amount;
+
+        // update loan queue
+        uint256 borrowersCount = totalBorrowers;
+        if (borrower.debt == 0) {
+            totalBorrowers = borrowersCount - 1;
+            _removeLoanQueue(borrower_, oldPrev_);
+        } else {
+            if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_MIN_DEBT");
+            uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+            _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
+        }
+        borrowers[borrower_] = borrower;
+
+        // update pool state
+        borrowerDebt = curDebt;
+
+        uint256 newLup = _lup();
+        _updateInterestRateAndEMAs(curDebt, newLup);
+
+        // move amount to repay from sender to pool
+        emit Repay(borrower_, newLup, amount);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 
     /**********************/
@@ -283,6 +372,14 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
             borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
         );
+    }
+
+
+    function _getQuoteTokenReturnAmount(uint256 kickTime_, uint256 referencePrice_, uint256 collateralForLiquidation_) internal view returns (uint256 price_) {
+        uint256 hoursSinceKick = (block.timestamp - kickTime_) / 1 hours;
+        uint256 currentPrice   = 10 * referencePrice_ * 2 ** (hoursSinceKick - 1 hours);
+
+        price_ = collateralForLiquidation_ * currentPrice * quoteTokenScale / collateralScale;
     }
 
     /************************/

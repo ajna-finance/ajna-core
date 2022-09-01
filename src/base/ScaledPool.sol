@@ -22,14 +22,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     int256  public constant INDEX_OFFSET = 3232;
 
     uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
-    uint256 public constant SECONDS_PER_YEAR    = 3_600 * 24 * 365;
-    uint256 public constant SECONDS_PER_HALFDAY = 43_200;
 
     uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
-    // lambda used for the EMAs calculated as exp(-1/7 * ln2)
-    uint256 public constant LAMBDA_EMA                = 0.905723664263906671 * 10**18;
-    uint256 public constant EMA_RATE_FACTOR           = 10**18 - LAMBDA_EMA;
+
+    uint256 public constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest         EMAs calculated as exp(-1/7   * ln2)
+    uint256 public constant LAMBDA_EMA_180D      = 0.996156587220575207 * 1e18; // Lambda used for liquidation bond EMAs calculated as exp(-1/180 * ln2)
+    uint256 public constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
+    uint256 public constant EMA_180D_RATE_FACTOR = 1e18 - LAMBDA_EMA_180D;
 
     /***********************/
     /*** State Variables ***/
@@ -48,8 +48,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     uint256 public override quoteTokenScale;
     uint256 public override pledgedCollateral;
 
-    uint256 public override debtEma;   // [WAD]
-    uint256 public override lupColEma; // [WAD]
+    uint256 public override debtEma;      // [WAD]
+    uint256 public override lupEma;       // [WAD]
+    uint256 public override lupColEma;    // [WAD]
+    uint256 public override poolPriceEma; // [WAD]
 
     /**
      *  @notice Mapping of buckets for a given pool
@@ -90,7 +92,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _add(index_, amount_);
 
         uint256 newLup = _lup();
-        _updateInterestRate(curDebt, newLup);
+        _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move quote token amount from lender to pool
         emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
@@ -146,7 +148,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         bucketLender           = bucketLenders[toIndex_][msg.sender];
         bucketLender.lpBalance += lpbAmountTo_;
 
-        _updateInterestRate(curDebt, newLup);
+        _updateInterestRateAndEMAs(curDebt, newLup);
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
@@ -293,21 +295,24 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
             }
         }
 
-        _updateInterestRate(debt, newLup);
+        _updateInterestRateAndEMAs(debt, newLup);
 
         // move quote token amount from pool to lender
         emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
     }
 
-    function _updateInterestRate(uint256 curDebt_, uint256 lup_) internal {
+    function _updateInterestRateAndEMAs(uint256 curDebt_, uint256 lup_) internal {
+        if (block.timestamp - interestRateUpdate > 12 hours) {
+            // Update EMAs for pool price and LUP
+            uint256 poolPrice = pledgedCollateral == 0 ? 0 : Maths.wdiv(curDebt_, pledgedCollateral);  // PTP
+            poolPriceEma = Maths.wdiv(poolPrice, EMA_180D_RATE_FACTOR) + Maths.wdiv(poolPriceEma, LAMBDA_EMA_180D);
+            lupEma       = Maths.wdiv(lup_,      EMA_180D_RATE_FACTOR) + Maths.wdiv(poolPriceEma, LAMBDA_EMA_180D);
 
-        if (block.timestamp - interestRateUpdate > SECONDS_PER_HALFDAY) {
+            // Update EMAs for target utilization
             uint256 col = pledgedCollateral;
-
-            uint256 curDebtEma   = Maths.wmul(curDebt_, EMA_RATE_FACTOR) + Maths.wmul(debtEma, LAMBDA_EMA);
-            uint256 curLupColEma = Maths.wmul(Maths.wmul(lup_, col), EMA_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA);
-
+            uint256 curDebtEma   = Maths.wmul(curDebt_,              EMA_7D_RATE_FACTOR) + Maths.wmul(debtEma,   LAMBDA_EMA_7D);
+            uint256 curLupColEma = Maths.wmul(Maths.wmul(lup_, col), EMA_7D_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA_7D);
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
@@ -366,6 +371,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         }
     }
 
+    function _hpbIndex() internal view returns (uint256) {
+        return _findSum(1);
+    }
+
     function _htp() internal view returns (uint256 htp_) {
         if (loanQueueHead != address(0)) htp_ = Maths.wmul(loans[loanQueueHead].thresholdPrice, inflatorSnapshot);
     }
@@ -419,7 +428,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     }
 
     function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
-        return PRBMathUD60x18.exp((interestRate * elapsed_) / SECONDS_PER_YEAR);
+        return PRBMathUD60x18.exp((interestRate * elapsed_) / 365 days);
     }
 
     function _pendingInflator() internal view returns (uint256) {
@@ -440,6 +449,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function lupIndex() external view override returns (uint256) {
         return _lupIndex(0);
+    }
+
+    function hpb() external view returns (uint256) {
+        return _indexToPrice(_hpbIndex());
     }
 
     function htp() external view returns (uint256) {

@@ -134,6 +134,12 @@ interface IScaledPool {
     function liquidityToPrice(uint256 index_) external view returns (uint256 quoteToken_);
 
     /**
+     *  @notice Returns the `lupEma` state variable.
+     *  @return lupEma_ Exponential moving average of the lowest utilized price.
+     */
+    function lupEma() external view returns (uint256 lupEma_);
+
+    /**
      *  @notice Returns the `lupColEma` state variable.
      *  @return lupColEma_ Exponential LUP * pledged collateral moving average.
      */
@@ -156,6 +162,12 @@ interface IScaledPool {
      *  @return pledgedCollateral_ The total pledged collateral in the system, in WAD units.
      */
     function pledgedCollateral() external view returns (uint256 pledgedCollateral_);
+
+    /**
+     *  @notice Returns the `poolPriceEma` state variable.
+     *  @return poolPriceEma_ Exponential moving average of the pool price (debt / encumbered collateral).
+     */
+    function poolPriceEma() external view returns (uint256 poolPriceEma_);
 
     /**
      *  @notice Returns the `totalBorrowers` state variable.
@@ -257,6 +269,12 @@ interface IScaledPool {
      *  @return exchangeRate_ The exchange rate of the bucket, in RAY units.
      */
     function exchangeRate(uint256 index_) external view returns (uint256 exchangeRate_);
+
+    /**
+     *  @notice Returns the Highest Price Bucket (HPB).
+     *  @return hpb_ The price value of the current HPB bucket, in WAD units.
+     */
+    function hpb() external view returns (uint256 hpb_);
 
     /**
      *  @notice Returns the Lowest Utilized Price (LUP).

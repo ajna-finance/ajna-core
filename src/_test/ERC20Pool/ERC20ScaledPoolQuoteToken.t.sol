@@ -60,6 +60,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20DSTestPlus {
      *              attempts to addQuoteToken at invalid price.
      */
     function testScaledPoolDepositQuoteToken() external {
+        assertEq(_pool.hpb(), BucketMath.MIN_PRICE);
 
         // test 10_000 DAI deposit at price of 1 MKR = 3_010.892022197881557845 DAI
         changePrank(_lender);
@@ -71,6 +72,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20DSTestPlus {
 
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
+        assertEq(_pool.hpb(), _pool.indexToPrice(2550));
 
         (uint256 lpBalance, ) = _pool.bucketLenders(2550, _lender);
         assertEq(_pool.poolSize(),         10_000 * 1e18);

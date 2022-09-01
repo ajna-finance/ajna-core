@@ -297,7 +297,7 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         changePrank(_borrower);
         // should revert if borrower attempts to borrow more than minimum amount
-        vm.expectRevert("S:B:AMT_LT_AVG_DEBT");
+        vm.expectRevert("S:B:AMT_LT_MIN_DEBT");
         _pool.borrow(10 * 1e18, 3000, address(0), _borrower2);
 
         changePrank(_borrower2);
@@ -352,7 +352,7 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
-        vm.expectRevert("R:B:AMT_LT_AVG_DEBT");
+        vm.expectRevert("R:B:AMT_LT_MIN_DEBT");
         _pool.repay(_borrower, 750 * 1e18, address(0), address(0));
 
         // should be able to repay loan if properly specified
