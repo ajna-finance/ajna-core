@@ -99,7 +99,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
         // update loan queue
-        uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
 
         emit PledgeCollateralNFT(borrower_, tokenIds_);
@@ -136,7 +136,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         borrowerDebt = curDebt;
 
         // update loan queue
-        uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -179,7 +179,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         }
 
         // update loan queue
-        uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         emit PullCollateralNFT(msg.sender, tokenIds_);
@@ -206,7 +206,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             _removeLoanQueue(borrower_, oldPrev_);
         } else {
             if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
-            uint256 thresholdPrice = _thresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+            uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
             _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
         }
 
