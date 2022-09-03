@@ -118,8 +118,13 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         emit PullCollateral(_borrower, unencumberedCollateral);
         _pool.pullCollateral(unencumberedCollateral, address(0), address(0));
 
+        // check t0 TP
+        assertEq(_pool.loanQueueHead(), _borrower);
+        (uint256 t0Tp, ) = _pool.loans(_borrower);
+        assertEq(t0Tp, 2_976.926646662711731447 * 1e18);
+
         // check pool state
-        assertEq(_pool.htp(), 2_989.185764500745498129 * 1e18);
+        assertEq(_pool.htp(), 2_981.007422784467321393 * 1e18); // HTP should be different than t0 TP recorded in TP queue
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
 
         assertEq(_pool.poolSize(),          30_025.933063902025680000 * 1e18);
