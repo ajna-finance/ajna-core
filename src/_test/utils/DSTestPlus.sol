@@ -70,6 +70,7 @@ abstract contract DSTestPlus is Test {
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
+    event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
