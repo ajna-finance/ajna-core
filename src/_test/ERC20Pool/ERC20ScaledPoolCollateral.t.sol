@@ -251,6 +251,46 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         _pool.removeCollateral(0.32 * 1e18, testIndex);
     }
 
+    function testMoveCollateral() external {
+        // actor deposits collateral into two buckets
+        changePrank(_lender);
+        deal(address(_collateral), _lender, 20 * 1e18);
+        _collateral.approve(address(_pool), 20 * 1e18);
+        _pool.addCollateral(16.3 * 1e18, 3333);
+        _pool.addCollateral(3.7 * 1e18, 3334);
+        skip(2 hours);
+
+        // should revert if bucket doesn't have enough collateral to move
+        vm.expectRevert("S:MC:INSUF_COL");
+        _pool.moveCollateral(5 * 1e18, 3334, 3333);
+
+        // should revert if actor doesn't have enough LP to move specified amount
+        changePrank(_borrower);
+        _pool.addCollateral(1.3 * 1e18, 3334);
+        changePrank(_lender);
+        vm.expectRevert("S:MC:INSUF_LPS");
+        _pool.moveCollateral(5 * 1e18, 3334, 3333);
+
+        // actor moves all their LP into one bucket
+        vm.expectEmit(true, true, true, true);
+        emit MoveCollateral(_lender, 3334, 3333, 3.7 * 1e18);
+        _pool.moveCollateral(3.7 * 1e18, 3334, 3333);
+
+        // check buckets
+        (, uint256 collateral, uint256 lpb, ) = _pool.bucketAt(3333);
+        assertEq(collateral, 20 * 1e18);
+        assertEq(lpb, 1212.547669559140393301 * 1e27);
+        (, collateral, lpb, ) = _pool.bucketAt(3334);
+        assertEq(collateral, 1.3 * 1e18);
+        assertEq(lpb, 78.423481115765299705 * 1e27);
+
+        // check actor LP
+        (uint256 lpBalance, ) = _pool.bucketLenders(3333, address(_lender));
+        assertEq(lpBalance, 1212.547669559140393301 * 1e27);
+        (lpBalance, ) = _pool.bucketLenders(3334, address(_lender));
+        assertEq(lpBalance, 0);
+    }
+
     function testPledgeCollateralFromDifferentActor() external {
         // check initial pool state
         assertEq(_pool.pledgedCollateral(),   0);
