@@ -339,8 +339,13 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(address(_subsetPool)), 28_500 * 1e18);
         assertEq(_quote.balanceOf(_borrower),            borrowAmount / 2);
 
+        // check t0 TP
+        assertEq(_subsetPool.loanQueueHead(), _borrower);
+        (uint256 t0Tp, ) = _subsetPool.loans(_borrower);
+        assertEq(t0Tp, 501.646001051360506542 * 1e18);
+
         // check pool state after partial repay
-        assertEq(_subsetPool.htp(), 503.711801848555564077 * 1e18);
+        assertEq(_subsetPool.htp(), 502.333658244714424687 * 1e18); // HTP should be different than t0 TP recorded in TP queue
         assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2550));
 
         // check utilization changes make sense

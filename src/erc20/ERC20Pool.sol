@@ -67,7 +67,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrower.collateral += amount_;
 
         // update loan queue
-        uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
 
         borrowers[borrower_] = borrower;
@@ -109,7 +109,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrowerDebt = curDebt;
 
         // update loan queue
-        uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
         borrowers[msg.sender] = borrower;
 
@@ -132,7 +132,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrower.collateral -= amount_;
 
         // update loan queue
-        uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
 
         // update pool state
@@ -340,8 +340,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             _removeLoanQueue(borrower_, oldPrev_);
         } else {
             if (borrowersCount != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
-
-            uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
+            uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
             _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
         }
         borrowers[borrower_] = borrower;
