@@ -102,49 +102,6 @@ class ScaledPoolUtils:
         self.bucket_math = ajna_protocol.bucket_math
 
     @staticmethod
-    def find_loan_queue_params(pool, borrower, threshold_price, debug=False):
-        class Loan:
-            def __init__(self, borrower, loan_info):
-                self.borrower = borrower
-                self.tp = loan_info[0]
-                self.next = loan_info[1]
-
-        assert isinstance(borrower, str)
-        assert isinstance(threshold_price, int)
-
-        if pool.loanQueueHead != ZRO_ADD:
-            if debug:
-                print(f"  looking for borrower {borrower[:6]} and TP {threshold_price / 1e18:.18f}")
-            old_previous_borrower = ZRO_ADD
-            node = Loan(pool.loanQueueHead(), pool.loanInfo(pool.loanQueueHead()))
-
-            if node.tp >= threshold_price and node.borrower != borrower:
-                new_previous_borrower = node.borrower
-            else:
-                new_previous_borrower = ZRO_ADD
-
-            while node.borrower != ZRO_ADD:
-                if debug:
-                    print(f"   {node.borrower[:6]} at TP {node.tp / 1e18:.18f}, next is {node.next[:6]}")
-                if node.next == borrower:
-                    old_previous_borrower = node.borrower
-                if node.tp > threshold_price and node.borrower != borrower:
-                    new_previous_borrower = node.borrower
-                node = Loan(node.next, pool.loanInfo(node.next))
-
-            if debug:
-                print(f"  returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
-
-            # validation
-            assert old_previous_borrower != borrower
-            assert new_previous_borrower != borrower
-            _, check_old_prev_next = pool.loanInfo(old_previous_borrower)
-            assert (old_previous_borrower == ZRO_ADD or check_old_prev_next == borrower)
-            return old_previous_borrower, new_previous_borrower
-        else:
-            return ZRO_ADD, ZRO_ADD
-
-    @staticmethod
     def get_origination_fee(pool: ERC20Pool, amount):
         fee_rate = max(pool.interestRate() / 52, 0.0005 * 10**18)
         assert fee_rate >= (0.0005 * 10**18)

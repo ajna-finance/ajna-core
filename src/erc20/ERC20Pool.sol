@@ -9,10 +9,13 @@ import { IERC20Pool } from "./interfaces/IERC20Pool.sol";
 
 import { ScaledPool } from "../base/ScaledPool.sol";
 
-import { Maths } from "../libraries/Maths.sol";
+import { LoansHeap } from "../libraries/LoansHeap.sol";
+import { Maths }     from "../libraries/Maths.sol";
+import "@std/console.sol";
 
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
+    using LoansHeap for LoansHeap.Data;
 
     struct LiquidationInfo {
         uint128 kickTime;
@@ -48,6 +51,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         interestRateUpdate         = block.timestamp;
         minFee                     = 0.0005 * 10**18;
 
+        loans.init();
+
         // increment initializations count to ensure these values can't be updated
         poolInitializations += 1;
     }
@@ -56,7 +61,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(address borrower_, uint256 amount_, address oldPrev_, address newPrev_) external override {
+    function pledgeCollateral(address borrower_, uint256 amount_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -66,7 +71,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
+        if (borrower.debt != 0) loans.insert(borrower_, thresholdPrice);
 
         borrowers[borrower_] = borrower;
 
@@ -79,7 +84,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
-    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
+    function borrow(uint256 amount_, uint256 limitIndex_) external override {
         uint256 lupId = _lupIndex(amount_);
         require(lupId <= limitIndex_, "S:B:LIMIT_REACHED"); // TODO: add check that limitIndex is <= MAX_INDEX
 
@@ -109,7 +114,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+        loans.insert(msg.sender, thresholdPrice);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -119,7 +124,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
     }
 
-    function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
+    function pullCollateral(uint256 amount_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -132,7 +137,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+        if (borrower.debt != 0) loans.insert(msg.sender, thresholdPrice);
 
         // update pool state
         pledgedCollateral -= amount_;
@@ -143,8 +148,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
-    function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
-        _repayDebt(borrower_, maxAmount_, oldPrev_, newPrev_);
+    function repay(address borrower_, uint256 maxAmount_) external override {
+        _repayDebt(borrower_, maxAmount_);
     }
 
     /*********************************/
@@ -258,7 +263,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     // TODO: Add reentrancy guard
-    function take(address borrower_, uint256 collateralToLiquidate_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external {
+    function take(address borrower_, uint256 collateralToLiquidate_, bytes memory swapCalldata_) external {
         Borrower        memory borrower    = borrowers[borrower_];
         LiquidationInfo memory liquidation = liquidations[borrower_];
 
@@ -290,7 +295,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Pull funds from msg.sender
         quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenReturnAmount);
 
-        _repayDebt(borrower_, quoteTokenReturnAmount, oldPrev_, newPrev_);
+        _repayDebt(borrower_, quoteTokenReturnAmount);
     }
 
 
@@ -322,7 +327,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
-    function _repayDebt(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) internal {
+    function _repayDebt(address borrower_, uint256 maxAmount_) internal {
         require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
 
         Borrower memory borrower = borrowers[borrower_];
@@ -340,12 +345,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 borrowersCount = totalBorrowers;
         if (borrower.debt == 0) {
             totalBorrowers = borrowersCount - 1;
-            _removeLoanQueue(borrower_, oldPrev_);
+            loans.extractByBorrower(borrower_);
         } else {
             if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_MIN_DEBT");
             uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-            _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
+            loans.insert(borrower_, thresholdPrice);
         }
+        console.log(totalBorrowers);
         borrowers[borrower_] = borrower;
 
         // update pool state

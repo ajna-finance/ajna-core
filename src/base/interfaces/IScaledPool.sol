@@ -392,4 +392,6 @@ interface IScaledPool {
      *          regardless of pool debt.
      */
     function poolSize() external view returns (uint256);
+
+    function maxBorrower() external view returns (address borrower_);
 }

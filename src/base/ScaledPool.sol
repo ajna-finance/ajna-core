@@ -10,14 +10,15 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IScaledPool } from "./interfaces/IScaledPool.sol";
 
 import { FenwickTree } from "./FenwickTree.sol";
-import { Queue }       from "./Queue.sol";
 
 import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
+import { LoansHeap }      from "../libraries/LoansHeap.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
-    using SafeERC20      for ERC20;
+abstract contract ScaledPool is Clone, FenwickTree, IScaledPool {
+    using SafeERC20 for ERC20;
+    using LoansHeap for LoansHeap.Data;
 
     int256  public constant INDEX_OFFSET = 3232;
 
@@ -69,6 +70,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
      *  @dev    owner address -> new owner address -> deposit index -> allowed amount
      */
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances;
+
+    LoansHeap.Data internal loans;
 
     uint256 internal poolInitializations = 0;
 
@@ -375,8 +378,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         return _findSum(1);
     }
 
-    function _htp() internal view returns (uint256 htp_) {
-        if (loanQueueHead != address(0)) htp_ = Maths.wmul(loans[loanQueueHead].thresholdPrice, inflatorSnapshot);
+    function _htp() internal view returns (uint256) {
+        return Maths.wmul(loans.getMax().tp, inflatorSnapshot);
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
@@ -527,6 +530,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
     function poolSize() external view returns (uint256) {
         return _treeSum();
+    }
+
+    function maxBorrower() external view override returns (address) {
+        return loans.getMax().borrower;
     }
 
     /************************/

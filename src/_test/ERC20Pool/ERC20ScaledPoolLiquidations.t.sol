@@ -47,15 +47,15 @@ contract ERC20PoolKickSuccessTest is DSTestPlus {
         // Borrower adds collateral token and borrows at HPB
         vm.startPrank(_borrower);
         collateralToken.approve(address(pool), 10_000e18);
-        pool.pledgeCollateral(_borrower, 1e18, address(0), address(0));
-        pool.borrow(10_000e18, HPB, address(0), address(0));
+        pool.pledgeCollateral(_borrower, 1e18);
+        pool.borrow(10_000e18, HPB);
         vm.stopPrank();
 
         // Borrower adds collateral token and borrows at LEND_PRICE
         vm.startPrank(_borrower2);
         collateralToken.approve(address(pool), 10_000e18);
-        pool.pledgeCollateral(_borrower2, 1e18, address(0), address(0));
-        pool.borrow(10_000e18, LEND_PRICE, address(0), address(0));
+        pool.pledgeCollateral(_borrower2, 1e18);
+        pool.borrow(10_000e18, LEND_PRICE);
         vm.stopPrank();
 
         // Warp to make borrower undercollateralized
