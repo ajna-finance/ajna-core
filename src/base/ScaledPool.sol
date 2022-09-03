@@ -153,6 +153,44 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
 
+    event Debug(string where, uint256 what);
+
+    function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {  // TODO: override
+        require(fromIndex_ != toIndex_, "S:MC:SAME_PRICE");
+
+        BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
+        uint256 curDebt                   = _accruePoolInterest();
+
+        // determine amount of amount of LP required
+        Bucket storage fromBucket = buckets[fromIndex_];
+        require(fromBucket.availableCollateral >= amount_, "S:MC:INSUF_C");
+        uint256 rate              = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
+        lpbAmountFrom_            = Maths.rdiv((amount_ * _indexToPrice(fromIndex_) / 1e9), rate);
+        emit Debug("moveCollateral lpbAmountFrom_", lpbAmountFrom_);
+        emit Debug("moveCollateral bucketLender.lpBalance", bucketLender.lpBalance);
+        require(bucketLender.lpBalance != 0 && lpbAmountFrom_ <= bucketLender.lpBalance, "S:MC:INSUF_LPS");
+
+        // update "from" bucket accounting
+        fromBucket.lpAccumulator -= lpbAmountFrom_;
+        fromBucket.availableCollateral -= amount_;
+
+        // update "to" bucket accounting
+        Bucket storage toBucket      = buckets[toIndex_];
+        rate                         = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
+        lpbAmountTo_                 = Maths.rdiv((amount_ * _indexToPrice(toIndex_) / 1e9), rate);
+        toBucket.lpAccumulator       += lpbAmountTo_;
+        toBucket.availableCollateral += amount_;
+
+        // update lender accounting
+        bucketLender.lpBalance -= lpbAmountFrom_;
+        bucketLender           = bucketLenders[toIndex_][msg.sender];
+        bucketLender.lpBalance += lpbAmountTo_;
+
+        _updateInterestRateAndEMAs(curDebt, _lup());
+
+        emit MoveCollateral(msg.sender, fromIndex_, toIndex_, amount_);
+    }
+
     function removeAllQuoteToken(uint256 index_) external returns (uint256 amount_, uint256 lpAmount_) {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
