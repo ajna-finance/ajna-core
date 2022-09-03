@@ -5,7 +5,7 @@ import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
 import { DSTestPlus }                     from "../utils/DSTestPlus.sol";
-import { NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
+import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
 
 contract ERC721ScaledPoolFactoryTest is DSTestPlus {
     address            internal _NFTCollectionPoolAddress;
@@ -16,13 +16,13 @@ contract ERC721ScaledPoolFactoryTest is DSTestPlus {
     ERC721Pool         internal _NFTSubsetTwoPool;
     ERC721PoolFactory  internal _factory;
     NFTCollateralToken internal _collateral;
-    QuoteToken         internal _quote;
+    Token              internal _quote;
     uint256[]          internal _tokenIdsSubsetOne;
     uint256[]          internal _tokenIdsSubsetTwo;
 
     function setUp() external {
         _collateral  = new NFTCollateralToken();
-        _quote       = new QuoteToken();
+        _quote       = new Token("Quote", "Q");
 
         // deploy factory
         _factory = new ERC721PoolFactory();

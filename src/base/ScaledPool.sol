@@ -96,7 +96,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move quote token amount from lender to pool
-        emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
+        emit AddQuoteToken(msg.sender, index_, amount_, newLup);
         quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
     }
 
@@ -299,7 +299,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         _updateInterestRateAndEMAs(debt, newLup);
 
         // move quote token amount from pool to lender
-        emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
+        emit RemoveQuoteToken(msg.sender, index_, amount, newLup);
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
     }
 
@@ -436,8 +436,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         return Maths.wmul(inflatorSnapshot, _pendingInterestFactor(block.timestamp - lastInflatorSnapshotUpdate));
     }
 
-    function _thresholdPrice(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256 tp_) {
-        if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wmul(inflator_, debt_), collateral_);
+    function _t0ThresholdPrice(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256 tp_) {
+        if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
     }
 
     /**************************/
