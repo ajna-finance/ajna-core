@@ -6,38 +6,22 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 
-import { ERC20DSTestPlus }             from "./ERC20DSTestPlus.sol";
-import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
+import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
-contract ERC20ScaledPoolTransferLPTokensTest is ERC20DSTestPlus {
+contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
 
     address internal _lender;
     address internal _lender1;
     address internal _lender2;
 
-    CollateralToken internal _collateral;
-    QuoteToken      internal _quote;
-    ERC20Pool       internal _pool;
-
     function setUp() external {
-        _collateral = new CollateralToken();
-        _quote      = new QuoteToken();
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-
         _lender  = makeAddr("lender");
         _lender1 = makeAddr("lender1");
         _lender2 = makeAddr("lender2");
 
-        deal(address(_quote), _lender,  200_000 * 1e18);
-        deal(address(_quote), _lender1, 200_000 * 1e18);
-        deal(address(_quote), _lender2, 200_000 * 1e18);
-
-        vm.startPrank(_lender);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-        changePrank(_lender1);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-        changePrank(_lender2);
-        _quote.approve(address(_pool), 200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender,  200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender1, 200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender2, 200_000 * 1e18);
     }
 
     /********************************/

@@ -8,7 +8,6 @@ import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
 import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
-import { Token }           from "../utils/Tokens.sol";
 
 contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
 
@@ -24,7 +23,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         _lender1   = makeAddr("bidder");
 
         _mintCollateralAndApproveTokens(_borrower,  100 * 1e18);
-        _mintCollateralAndApproveTokens(_borrower,  200 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower2,  200 * 1e18);
 
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
