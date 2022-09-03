@@ -8,7 +8,6 @@ import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
 import { ERC721HelperContract }           from "./ERC721DSTestPlus.sol";
-import { NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
 
 contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
