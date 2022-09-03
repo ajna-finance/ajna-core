@@ -287,9 +287,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Get current swap price
         uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralForLiquidation);
 
-        // Pull funds from msg.sender
-        quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenReturnAmount);
-
         _repayDebt(borrower_, quoteTokenReturnAmount, oldPrev_, newPrev_);
     }
 
