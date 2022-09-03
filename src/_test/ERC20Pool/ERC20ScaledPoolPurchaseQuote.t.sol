@@ -61,7 +61,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
 
         // bidder uses their LP to purchase all quote token in the bucket
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_bidder, priceAtTestIndex, 10_000 * 1e18, _pool.lup());
+        emit RemoveQuoteToken(_bidder, testIndex, 10_000 * 1e18, _pool.lup());
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _bidder, 10_000 * 1e18);
         _pool.removeQuoteToken(10_000 * 1e18, testIndex);
@@ -154,7 +154,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
         assertEq(collateralToPurchaseWith, 3.388032491631335842 * 1e18);
         _pool.addCollateral(collateralToPurchaseWith, 2550);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_bidder, p2550, amountWithInterest, _pool.indexToPrice(2552));
+        emit RemoveQuoteToken(_bidder, 2550, amountWithInterest, _pool.indexToPrice(2552));
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _bidder, amountWithInterest);
         _pool.removeAllQuoteToken(2550);

@@ -95,7 +95,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move quote token amount from lender to pool
-        emit AddQuoteToken(msg.sender, _indexToPrice(index_), amount_, newLup);
+        emit AddQuoteToken(msg.sender, index_, amount_, newLup);
         quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
     }
 
@@ -298,7 +298,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         _updateInterestRateAndEMAs(debt, newLup);
 
         // move quote token amount from pool to lender
-        emit RemoveQuoteToken(msg.sender, _indexToPrice(index_), amount, newLup);
+        emit RemoveQuoteToken(msg.sender, index_, amount, newLup);
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
     }
 
