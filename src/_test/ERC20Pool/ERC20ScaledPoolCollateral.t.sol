@@ -282,13 +282,13 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         assertEq(lpb, 1212.5476695591403933005 * 1e27);
         (, collateral, lpb, ) = _pool.bucketAt(3334);
         assertEq(collateral, 1.3 * 1e18);
-        assertEq(lpb, 78.4234811157652997051 * 1e27);
+        assertEq(lpb, 78.423481115765299705 * 1e27);
 
         // check actor LP
         (uint256 lpBalance, ) = _pool.bucketLenders(3333, address(_lender));
         assertEq(lpBalance, 1212.5476695591403933005 * 1e27);
         (lpBalance, ) = _pool.bucketLenders(3334, address(_lender));
-//        assertEq(lpBalance, 0);  // FIXME: 100000000 dust
+        assertEq(lpBalance, 0);
     }
 
     function testPledgeCollateralFromDifferentActor() external {

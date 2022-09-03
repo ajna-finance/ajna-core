@@ -153,8 +153,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
 
-    event Debug(string where, uint256 what);
-
     function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {  // TODO: override
         require(fromIndex_ != toIndex_, "S:MC:SAME_PRICE");
 
@@ -165,9 +163,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         Bucket storage fromBucket = buckets[fromIndex_];
         require(fromBucket.availableCollateral >= amount_, "S:MC:INSUF_C");
         uint256 rate              = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
-        lpbAmountFrom_            = Maths.rdiv((amount_ * _indexToPrice(fromIndex_) / 1e9), rate);
-        emit Debug("moveCollateral lpbAmountFrom_", lpbAmountFrom_);
-        emit Debug("moveCollateral bucketLender.lpBalance", bucketLender.lpBalance);
+        lpbAmountFrom_            = Maths.rdiv(Maths.wadToRay(Maths.wmul(amount_, _indexToPrice(fromIndex_))), rate);
         require(bucketLender.lpBalance != 0 && lpbAmountFrom_ <= bucketLender.lpBalance, "S:MC:INSUF_LPS");
 
         // update "from" bucket accounting
