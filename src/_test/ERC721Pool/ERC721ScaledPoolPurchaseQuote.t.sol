@@ -191,9 +191,9 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         uint256 amountToPurchase = 10_100 * 1e18;
         assertGt(_quote.balanceOf(address(_subsetPool)), amountToPurchase);
         uint256 amountWithInterest = 24_001.511204352939432000 * 1e18;
-        vm.expectEmit(true, true, false, true);
+        vm.expectEmit(true, true, true, true);
         emit Transfer(_bidder, address(_subsetPool), tokenIdsToAdd[0]);
-        vm.expectEmit(true, true, false, true);
+        vm.expectEmit(true, true, true, true);
         emit AddCollateralNFT(_bidder, _subsetPool.indexToPrice(2350), tokenIdsToAdd);        
         _subsetPool.addCollateral(tokenIdsToAdd, 2350);
         

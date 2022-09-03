@@ -173,7 +173,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // update "to" bucket accounting
         Bucket storage toBucket      = buckets[toIndex_];
         rate                         = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
-        lpbAmountTo_                 = Maths.rdiv((amount_ * _indexToPrice(toIndex_) / 1e9), rate);
+        lpbAmountTo_                 = Maths.rdiv(Maths.wadToRay(Maths.wmul(amount_, _indexToPrice(toIndex_))), rate);
         toBucket.lpAccumulator       += lpbAmountTo_;
         toBucket.availableCollateral += amount_;
 

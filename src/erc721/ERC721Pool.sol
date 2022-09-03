@@ -277,7 +277,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 availableLPs = bucketLender.lpBalance;
 
         // ensure user can actually remove that much
-        lpAmount_ = Maths.rdiv((Maths.wad(tokenIds_.length) * price / 1e9), rate);
+        lpAmount_ = Maths.rdiv((Maths.wad(tokenIds_.length) * price / 1e9), rate);  // TODO: determine if there's a rounding issue here
+//        lpAmount_ = Maths.rdiv(Maths.wadToRay(Maths.wmul(Maths.wad(tokenIds_.length), price)), rate);
         uint256 nftsAvailableForClaiming = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
         require(availableLPs != 0 && lpAmount_ <= availableLPs && Maths.wad(tokenIds_.length) >= nftsAvailableForClaiming, "S:RC:INSUF_LPS");
 

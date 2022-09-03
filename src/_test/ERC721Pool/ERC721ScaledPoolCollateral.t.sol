@@ -404,6 +404,10 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         (, collateral, , ) = _subsetPool.bucketAt(1447);
         assertEq(collateral, 1 * 1e18);
 
+        // check actor
+        (lpb, ) = _subsetPool.bucketLenders(1530, _borrower);
+//        assertEq(lpb, 0);   // FIXME: rounding error producing dust amount
+
         // remove the last token
         tokenIds[0] = 3;
         emit RemoveCollateralNFT(_borrower, _subsetPool.indexToPrice(1447), tokenIds);
