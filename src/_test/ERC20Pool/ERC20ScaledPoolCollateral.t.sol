@@ -7,51 +7,26 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
-import { ERC20DSTestPlus }             from "./ERC20DSTestPlus.sol";
-import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
+import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
-contract ERC20ScaledCollateralTest is ERC20DSTestPlus {
-
-    uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
+contract ERC20ScaledCollateralTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
     address internal _bidder;
 
-    CollateralToken internal _collateral;
-    QuoteToken      internal _quote;
-    ERC20Pool       internal _pool;
-
     function setUp() external {
-        _collateral = new CollateralToken();
-        _quote      = new QuoteToken();
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
         _bidder    = makeAddr("bidder");
 
-        deal(address(_collateral), _borrower,  150 * 1e18);
-        deal(address(_collateral), _borrower2, 100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower,  150 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower2,  100 * 1e18);
 
-        deal(address(_quote), _lender,  200_000 * 1e18);
-        deal(address(_quote), _bidder, 200_000 * 1e18);
-
-        vm.startPrank(_borrower);
-        _collateral.approve(address(_pool), 100 * 1e18);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-
-        changePrank(_borrower2);
-        _collateral.approve(address(_pool), 200 * 1e18);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-
-        changePrank(_lender);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-
-        changePrank(_bidder);
-        _quote.approve(address(_pool), 200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_bidder,  200_000 * 1e18);
     }
 
     /**

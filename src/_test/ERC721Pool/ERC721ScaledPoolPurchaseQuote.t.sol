@@ -8,7 +8,6 @@ import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
 import { ERC721HelperContract }           from "./ERC721DSTestPlus.sol";
-import { NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
 
 contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
@@ -109,7 +108,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         // bidder removes quote token from bucket
         uint256 qtToRemove = Maths.wmul(priceAtTestIndex, 3 * 1e18);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_bidder, priceAtTestIndex, qtToRemove, _subsetPool.lup());
+        emit RemoveQuoteToken(_bidder, testIndex, qtToRemove, _subsetPool.lup());
         _subsetPool.removeAllQuoteToken(testIndex);
         assertEq(_quote.balanceOf(_bidder), qtToRemove);
         (lpBalance, ) = _subsetPool.bucketLenders(testIndex, _bidder);
@@ -137,7 +136,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
         // lender removes remaining quote token to empty the bucket
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_lender, priceAtTestIndex, quote, _subsetPool.lup());
+        emit RemoveQuoteToken(_lender, testIndex, quote, _subsetPool.lup());
         _subsetPool.removeAllQuoteToken(testIndex);
         (quote, collateral, lpb, ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      0);
@@ -199,7 +198,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.addCollateral(tokenIdsToAdd, 2350);
         
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_bidder, _subsetPool.indexToPrice(2350), amountWithInterest, _subsetPool.indexToPrice(2352));
+        emit RemoveQuoteToken(_bidder, 2350, amountWithInterest, _subsetPool.indexToPrice(2352));
         _subsetPool.removeAllQuoteToken(2350);
         assertEq(_quote.balanceOf(_bidder), amountWithInterest);
 

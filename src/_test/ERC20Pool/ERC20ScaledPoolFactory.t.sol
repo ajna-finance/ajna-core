@@ -4,17 +4,12 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { DSTestPlus }                  from "../utils/DSTestPlus.sol";
-import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
+import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
-contract ERC20ScaledPoolFactoryTest is DSTestPlus {
-    CollateralToken  internal _collateral;
-    QuoteToken       internal _quote;
+contract ERC20ScaledPoolFactoryTest is ERC20HelperContract {
     ERC20PoolFactory internal _poolFactory;
 
     function setUp() external {
-        _collateral  = new CollateralToken();
-        _quote       = new QuoteToken();
         _poolFactory = new ERC20PoolFactory();
     }
 
@@ -53,10 +48,10 @@ contract ERC20ScaledPoolFactoryTest is DSTestPlus {
         skip(333);
 
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(address(0xaB62aBC832769E80D24a26216D5E828762d8c13A));
+        emit PoolCreated(address(0x9FE92fe72Ae1Bc5f008C3f405606717d43Fc468D));
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.0543 * 10**18));
 
-        assertEq(address(pool),                     address(0xaB62aBC832769E80D24a26216D5E828762d8c13A));
+        assertEq(address(pool),                     address(0x9FE92fe72Ae1Bc5f008C3f405606717d43Fc468D));
         assertEq(address(pool.collateral()),        address(_collateral));
         assertEq(pool.collateralScale(),            1);
         assertEq(address(pool.quoteToken()),        address(_quote));

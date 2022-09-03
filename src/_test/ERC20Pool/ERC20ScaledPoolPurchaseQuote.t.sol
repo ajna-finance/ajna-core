@@ -7,52 +7,26 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
-import { ERC20DSTestPlus }             from "./ERC20DSTestPlus.sol";
-import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
+import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
-contract ERC20ScaledPurchaseQuoteTokenTest is ERC20DSTestPlus {
-
-    uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
+contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _bidder;
     address internal _lender;
     address internal _lender1;
 
-    CollateralToken internal _collateral;
-    QuoteToken      internal _quote;
-    ERC20Pool       internal _pool;
-
     function setUp() external {
-        _collateral = new CollateralToken();
-        _quote      = new QuoteToken();
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-
         _borrower = makeAddr("borrower");
         _bidder   = makeAddr("bidder");
         _lender   = makeAddr("lender");
         _lender1  = makeAddr("lender1");
 
-        deal(address(_collateral), _borrower,  100 * 1e18);
-        deal(address(_collateral), _bidder, 100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower,   100 * 1e18);
+        _mintCollateralAndApproveTokens(_bidder,     100 * 1e18);
 
-        deal(address(_quote), _lender,  200_000 * 1e18);
-        deal(address(_quote), _lender1, 200_000 * 1e18);
-
-        vm.startPrank(_borrower);
-        _collateral.approve(address(_pool), 100 * 1e18);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-
-        changePrank(_bidder);
-        _collateral.approve(address(_pool), 100 * 1e18);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-
-        changePrank(_lender);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-
-        changePrank(_lender1);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-        _collateral.approve(address(_pool), 100 * 1e18);
+        _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
     }
 
     /**
@@ -87,7 +61,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20DSTestPlus {
 
         // bidder uses their LP to purchase all quote token in the bucket
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_bidder, priceAtTestIndex, 10_000 * 1e18, _pool.lup());
+        emit RemoveQuoteToken(_bidder, testIndex, 10_000 * 1e18, _pool.lup());
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _bidder, 10_000 * 1e18);
         _pool.removeQuoteToken(10_000 * 1e18, testIndex);
@@ -180,7 +154,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20DSTestPlus {
         assertEq(collateralToPurchaseWith, 3.388032491631335842 * 1e18);
         _pool.addCollateral(collateralToPurchaseWith, 2550);
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_bidder, p2550, amountWithInterest, _pool.indexToPrice(2552));
+        emit RemoveQuoteToken(_bidder, 2550, amountWithInterest, _pool.indexToPrice(2552));
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _bidder, amountWithInterest);
         _pool.removeAllQuoteToken(2550);
