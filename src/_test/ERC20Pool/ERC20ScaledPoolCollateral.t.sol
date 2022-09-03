@@ -347,10 +347,27 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         _pool.addCollateral(1 * 1e18, fromBucket);
         skip(2 hours);
 
+        // check LP
+        (, uint256 availableCollateral, uint256 lpBalance, ) = _pool.bucketAt(fromBucket);
+        assertEq(availableCollateral, 1 * 1e18);
+        (lpBalance, ) = _pool.bucketLenders(fromBucket, _lender);
+        assertEq(lpBalance, 1_088_464.114498091939987319 * 1e27);
+        uint256 lpbLast = lpBalance;
+
         // actor moves half their LP into another bucket
         vm.expectEmit(true, true, true, true);
         emit MoveCollateral(_lender, fromBucket, toBucket, 0.5 * 1e18);
         _pool.moveCollateral(0.5 * 1e18, fromBucket, toBucket);
+
+        // check LP
+        (, availableCollateral, lpBalance, ) = _pool.bucketAt(fromBucket);
+        assertEq(availableCollateral, 0.5 * 1e18);
+        assertEq(lpBalance, Maths.rdiv(lpbLast, 2 * 1e27));
+        return;
+        lpbLast = lpBalance;
+        (lpBalance, ) = _pool.bucketLenders(fromBucket, _lender);
+        assertEq(lpBalance, lpbLast);
+        assertEq(lpBalance, 544_232.057249045969993659 * 1e27);
 
         // actor moves remaining LP into the same bucket
         vm.expectEmit(true, true, true, true);
@@ -358,7 +375,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         _pool.moveCollateral(0.5 * 1e18, fromBucket, toBucket);
 
         // confirm no LP remains
-        (, uint256 availableCollateral, uint256 lpBalance, ) = _pool.bucketAt(fromBucket);
+        (, availableCollateral, lpBalance, ) = _pool.bucketAt(fromBucket);
         assertEq(availableCollateral, 0);
         assertEq(lpBalance, 0);
         (lpBalance, ) = _pool.bucketLenders(fromBucket, _lender);
