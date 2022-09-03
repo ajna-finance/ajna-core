@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
+import { IERC721Pool } from "../../erc721/interfaces/IERC721Pool.sol";
+
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
@@ -88,7 +90,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // should revert if borrower attempts to add tokens not in the pool subset
         changePrank(_borrower);
-        vm.expectRevert("P:ONLY_SUBSET");
+        vm.expectRevert(IERC721Pool.OnlySubset.selector);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd, address(0), address(0));
     }
 
@@ -188,7 +190,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // should revert if borrower attempts to remove collateral not in pool
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 51;
-        vm.expectRevert("P:T_NOT_IN_P");
+        vm.expectRevert(IERC721Pool.TokenNotDeposited.selector);
         _subsetPool.pullCollateral(tokenIdsToRemove, address(0), address(0));
 
         // borrower should be able to remove collateral in the pool

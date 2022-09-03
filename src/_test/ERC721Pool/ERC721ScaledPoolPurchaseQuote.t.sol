@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
+import { IERC721Pool } from "../../erc721/interfaces/IERC721Pool.sol";
+
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
@@ -231,7 +233,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         // should revert if lender attempts to remove collateral not available in the bucket
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 1;
-        vm.expectRevert("S:RC:T_NOT_IN_B");
+        vm.expectRevert(IERC721Pool.TokenNotDeposited.selector);
         (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
 
         // lender exchanges their lp for collateral
