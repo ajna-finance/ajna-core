@@ -41,9 +41,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /****************************/
 
     function initialize(uint256 rate_) external {
-        if (poolInitializations != 0) {
-            revert AlreadyInitialized();
-        }
+        if (poolInitializations != 0) revert AlreadyInitialized();
+
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
         inflatorSnapshot           = 10**18;

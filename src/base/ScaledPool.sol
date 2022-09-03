@@ -104,9 +104,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     }
 
     function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
-        if (fromIndex_ == toIndex_) {
-            revert MoveQuoteToSamePrice();
-        }
+        if (fromIndex_ == toIndex_) revert MoveQuoteToSamePrice();
 
         BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
         uint256 availableLPs              = bucketLender.lpBalance;
