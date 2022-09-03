@@ -279,14 +279,14 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         // check buckets
         (, uint256 collateral, uint256 lpb, ) = _pool.bucketAt(3333);
         assertEq(collateral, 20 * 1e18);
-        assertEq(lpb, 1212.5476695591403933005 * 1e27);
+        assertEq(lpb, 1212.547669559140393301 * 1e27);
         (, collateral, lpb, ) = _pool.bucketAt(3334);
         assertEq(collateral, 1.3 * 1e18);
         assertEq(lpb, 78.423481115765299705 * 1e27);
 
         // check actor LP
         (uint256 lpBalance, ) = _pool.bucketLenders(3333, address(_lender));
-        assertEq(lpBalance, 1212.5476695591403933005 * 1e27);
+        assertEq(lpBalance, 1212.547669559140393301 * 1e27);
         (lpBalance, ) = _pool.bucketLenders(3334, address(_lender));
         assertEq(lpBalance, 0);
     }

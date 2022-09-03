@@ -163,7 +163,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         Bucket storage fromBucket = buckets[fromIndex_];
         require(fromBucket.availableCollateral >= amount_, "S:MC:INSUF_COL");
         uint256 rate              = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
-        lpbAmountFrom_            = Maths.rdiv(Maths.wadToRay(Maths.wmul(amount_, _indexToPrice(fromIndex_))), rate);
+        lpbAmountFrom_            = Maths.wrdivr(Maths.wmul(amount_, _indexToPrice(fromIndex_)), rate);
         require(bucketLender.lpBalance != 0 && lpbAmountFrom_ <= bucketLender.lpBalance, "S:MC:INSUF_LPS");
 
         // update "from" bucket accounting
@@ -173,7 +173,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // update "to" bucket accounting
         Bucket storage toBucket      = buckets[toIndex_];
         rate                         = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
-        lpbAmountTo_                 = Maths.rdiv(Maths.wadToRay(Maths.wmul(amount_, _indexToPrice(toIndex_))), rate);
+        lpbAmountTo_                 = Maths.wrdivr(Maths.wmul(amount_, _indexToPrice(toIndex_)), rate);
         toBucket.lpAccumulator       += lpbAmountTo_;
         toBucket.availableCollateral += amount_;
 
