@@ -11,22 +11,12 @@ import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
 contract ERC20PoolMulticallTest is ERC20HelperContract {
 
-    address internal _borrower;
-    address internal _borrower2;
     address internal _lender;
-    address internal _lender2;
 
     function setUp() external {
-        _borrower  = makeAddr("borrower");
-        _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
-        _lender2   = makeAddr("lender2");
-
-        _mintCollateralAndApproveTokens(_borrower,   100 * 1e18);
-        _mintCollateralAndApproveTokens(_borrower2,  100 * 1e18);
 
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
-        _mintQuoteAndApproveTokens(_lender2,  200_000 * 1e18);
     }
 
     function testMulticallDepostQuoteToken() external {
