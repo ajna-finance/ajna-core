@@ -161,7 +161,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // determine amount of amount of LP required
         Bucket storage fromBucket = buckets[fromIndex_];
-        require(fromBucket.availableCollateral >= amount_, "S:MC:INSUF_C");
+        require(fromBucket.availableCollateral >= amount_, "S:MC:INSUF_COL");
         uint256 rate              = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
         lpbAmountFrom_            = Maths.rdiv(Maths.wadToRay(Maths.wmul(amount_, _indexToPrice(fromIndex_))), rate);
         require(bucketLender.lpBalance != 0 && lpbAmountFrom_ <= bucketLender.lpBalance, "S:MC:INSUF_LPS");

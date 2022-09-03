@@ -261,7 +261,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         skip(2 hours);
 
         // should revert if bucket doesn't have enough collateral to move
-        vm.expectRevert("S:MC:INSUF_C");
+        vm.expectRevert("S:MC:INSUF_COL");
         _pool.moveCollateral(5 * 1e18, 3334, 3333);
 
         // should revert if actor doesn't have enough LP to move specified amount
