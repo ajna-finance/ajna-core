@@ -225,15 +225,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         (uint256 curDebt) = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[borrower_];
-        require(borrower.debt != 0, "P:L:NO_DEBT");
+        if (borrower.debt == 0) revert LiquidateNoDebt();
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
-        require(
-            _borrowerCollateralization(borrower.debt, borrower.collateral, lup) < Maths.WAD,
-            "P:L:BORROWER_OK"
-        );
+
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         borrowers[borrower_] = borrower;
         liquidations[borrower_] = LiquidationInfo({
@@ -245,9 +243,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         // TODO: Uncomment when needed
-//        uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
+        // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
 
-        require(lup < thresholdPrice, "P:L:LUP_GT_THRESHOLD");
+        if (lup > thresholdPrice) revert LiquidateLUPGreaterThanTP();
 
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
         // TODO: Account for repossessed collateral
@@ -261,16 +259,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         Borrower        memory borrower    = borrowers[borrower_];
         LiquidationInfo memory liquidation = liquidations[borrower_];
 
-        require(
-            liquidation.kickTime != 0 &&
-            block.timestamp - uint256(liquidation.kickTime) > 1 hours,
-            "P:T:NOT_PAST_COOLDOWN"
-        );
-
-        require(
-            _borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) <= Maths.WAD,
-            "P:L:BORROWER_OK"
-        );
+        // check liquidation process status
+        if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         uint256 collateralForLiquidation = Maths.min(collateralToLiquidate_, liquidation.remainingCollateral);
 

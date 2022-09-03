@@ -83,6 +83,21 @@ interface IERC20Pool is IScaledPool {
     error BorrowPoolUnderCollateralized();
 
     /**
+     *  @notice Borrower has no debt to liquidate.
+     */
+    error LiquidateNoDebt();
+
+    /**
+     *  @notice Borrower has a healthy over-collateralized position.
+     */
+    error LiquidateBorrowerOk();
+
+    /**
+     *  @notice Liquidation must result in LUP below the borrowers threshold price.
+     */
+    error LiquidateLUPGreaterThanTP();
+
+    /**
      *  @notice User is attempting to pull more collateral than is available.
      */
     error RemoveCollateralInsufficientCollateral();
@@ -101,6 +116,11 @@ interface IERC20Pool is IScaledPool {
      *  @notice Borrower is attempting to repay when they have no outstanding debt.
      */
     error RepayNoDebt();
+
+    /**
+     *  @notice Take was called before 1 hour had passed from kick time.
+     */
+    error TakeNotPastCooldown();
 
 
     /*********************************/
