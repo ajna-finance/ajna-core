@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 import { ERC20 }  from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
+// TODO: remove this after replacing with Token
 contract CollateralToken is ERC20 {
 
     constructor() ERC20("Collateral", "C") {}
@@ -14,6 +15,7 @@ contract CollateralToken is ERC20 {
 
 }
 
+// TODO: remove this after replacing with Token
 contract QuoteToken is ERC20 {
 
     constructor() ERC20("Quote", "Q") {}
@@ -22,6 +24,15 @@ contract QuoteToken is ERC20 {
         _mint(to_, amount_);
     }
 
+}
+
+contract Token is ERC20 {
+
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
+
+    function mint(address to_, uint256 amount_) public {
+        _mint(to_, amount_);
+    }
 }
 
 contract NFTCollateralToken is ERC721 {
