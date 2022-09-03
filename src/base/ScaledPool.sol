@@ -156,12 +156,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
     function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
         require(fromIndex_ != toIndex_, "S:MC:SAME_PRICE");
 
+        Bucket storage fromBucket = buckets[fromIndex_];
+        require(fromBucket.availableCollateral >= amount_, "S:MC:INSUF_COL");
+
         BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
         uint256 curDebt                   = _accruePoolInterest();
 
         // determine amount of amount of LP required
-        Bucket storage fromBucket = buckets[fromIndex_];
-        require(fromBucket.availableCollateral >= amount_, "S:MC:INSUF_COL");
         uint256 rate              = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
         lpbAmountFrom_            = Maths.wrdivr(Maths.wmul(amount_, _indexToPrice(fromIndex_)), rate);
         require(bucketLender.lpBalance != 0 && lpbAmountFrom_ <= bucketLender.lpBalance, "S:MC:INSUF_LPS");
@@ -179,8 +180,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // update lender accounting
         bucketLender.lpBalance -= lpbAmountFrom_;
-        bucketLender           = bucketLenders[toIndex_][msg.sender];
-        bucketLender.lpBalance += lpbAmountTo_;
+        bucketLenders[toIndex_][msg.sender].lpBalance += lpbAmountTo_;
 
         _updateInterestRateAndEMAs(curDebt, _lup());
 
