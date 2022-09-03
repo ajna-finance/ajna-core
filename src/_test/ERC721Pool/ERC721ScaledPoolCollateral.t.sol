@@ -359,7 +359,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // add three tokens to a single bucket
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(_borrower, _subsetPool.indexToPrice(1530), tokenIds);
+        emit AddCollateralNFT(_borrower, 1530, tokenIds);
         _subsetPool.addCollateral(tokenIds, 1530);
 
         // should revert if the actor does not have any LP to remove a token
@@ -408,7 +408,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // add three tokens to a single bucket
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(_borrower, _subsetPool.indexToPrice(1530), tokenIds);
+        emit AddCollateralNFT(_borrower, 1530, tokenIds);
         _subsetPool.addCollateral(tokenIds, 1530);
 
         // move half of collateral to another bucket, splitting up the tokens

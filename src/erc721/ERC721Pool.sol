@@ -259,7 +259,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             }
         }
 
-        emit AddCollateralNFT(msg.sender, _indexToPrice(index_), tokenIds_);
+        emit AddCollateralNFT(msg.sender, index_, tokenIds_);
     }
 
     // TODO: finish implementing
