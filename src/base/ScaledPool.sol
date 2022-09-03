@@ -6,17 +6,18 @@ import { Clone } from "@clones/Clone.sol";
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { IScaledPool } from "./interfaces/IScaledPool.sol";
 
 import { FenwickTree } from "./FenwickTree.sol";
+import { Multicall }   from "./Multicall.sol";
 import { Queue }       from "./Queue.sol";
 
 import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
-import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
+abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPool {
     using SafeERC20      for ERC20;
 
     int256  public constant INDEX_OFFSET = 3232;
