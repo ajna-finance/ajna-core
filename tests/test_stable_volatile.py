@@ -151,7 +151,6 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
         print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral TP={threshold_price / 1e18:.1f}")
     assert collateral_to_deposit > 10**18
     pool.pledgeCollateral(borrower, collateral_to_deposit, {"from": borrower})
-    test_utils.validate_queue(pool)
 
     # draw debt
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
@@ -163,7 +162,6 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
           f"with {collateral_deposited / 1e18:.1f} collateral deposited, "
           f"TP={threshold_price / 1e18:.8f} with {new_total_debt/1e18:.1f} total debt")
     tx = pool.borrow(borrow_amount, MIN_BUCKET, {"from": borrower})
-    test_utils.validate_queue(pool)
     test_utils.validate_pool(pool)
     return tx
 
@@ -297,7 +295,6 @@ def repay(borrower, borrower_index, pool, test_utils):
               f"is withdrawing {collateral_deposited/1e18:.1f} collateral")
         assert collateral_to_withdraw > 0
         tx = pool.pullCollateral(collateral_to_withdraw, {"from": borrower})
-        test_utils.validate_queue(pool)
     else:
         print(f" borrower {borrower_index} will not repay dusty {pending_debt/1e18:.1f} debt")
 

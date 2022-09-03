@@ -270,27 +270,6 @@ class TestUtils:
         if pool.totalBorrowers() > 0:
             assert pool.borrowerDebt() > 0
 
-    @staticmethod
-    def validate_queue(pool):
-        found_borrowers = set()
-        assert len(found_borrowers) == 0
-
-        borrower = pool.loanQueueHead()
-        tp, next_borrower = pool.loanInfo(borrower)
-        last_tp = tp
-        while next_borrower != ZRO_ADD:
-            # catch duplicate borrowers
-            assert borrower not in found_borrowers
-            found_borrowers.add(borrower)
-
-            # iterate
-            borrower = next_borrower
-            tp, next_borrower = pool.loanInfo(borrower)
-            # print(f"DEBUG: validate_queue on borrower {borrower} with TP {tp/1e18:.8f}")
-
-            # catch missorted threshold prices
-            assert last_tp >= tp
-            last_tp = tp
 
     @staticmethod
     def dump_book(pool, min_bucket_index, max_bucket_index, with_headers=True, csv=False) -> str:
