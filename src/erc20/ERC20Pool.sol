@@ -37,7 +37,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /****************************/
 
     function initialize(uint256 rate_) external {
-        require(poolInitializations == 0, "P:INITIALIZED");
+        if (poolInitializations != 0) {
+            revert AlreadyInitialized();
+        }
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 

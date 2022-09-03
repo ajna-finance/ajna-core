@@ -56,6 +56,57 @@ interface IScaledPool {
      */
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
 
+    /*********************/
+    /*** Custom Errors ***/
+    /*********************/
+
+    // TODO: add a test for this
+    /**
+     *  @notice Pool already initialized.
+     */
+    error AlreadyInitialized();
+
+    /**
+     *  @notice FromIndex_ and toIndex_ arguments to moveQuoteToken() are the same.
+     */
+    error MoveQuoteToSamePrice();
+
+    /**
+     *  @notice When moving quote token HTP must stay below LUP.
+     */
+    error MoveQuoteLUPBelowHTP();
+
+    /**
+     *  @notice Lender must have non-zero LPB when attemptign to remove quote token from the pool.
+     */
+    error RemoveQuoteNoClaim();
+
+    /**
+     *  @notice Lender must have enough LP tokens to claim the desired amount of quote from the bucket.
+     */
+    error RemoveQuoteInsufficientLPB();
+
+    /**
+     *  @notice Bucket must have more quote available in the bucket than the lender is attempting to claim.
+     */
+    error RemoveQuoteInsufficientQuoteAvailable();
+
+    /**
+     *  @notice When removing quote token HTP must stay below LUP.
+     */
+    error RemoveQuoteLUPBelowHTP();
+
+    /**
+     *  @notice When transferring LP tokens between indices, the new index must be a valid index.
+     */
+    error TransferLPInvalidIndex();
+
+    /**
+     *  @notice Owner of the LP tokens must have approved the new owner prior to transfer.
+     */
+    error TransferLPNoAllowance();
+
+
     /***********************/
     /*** State Variables ***/
     /***********************/
