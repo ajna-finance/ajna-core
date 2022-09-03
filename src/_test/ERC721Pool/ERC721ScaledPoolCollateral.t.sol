@@ -5,6 +5,7 @@ import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
 import { IERC721Pool } from "../../erc721/interfaces/IERC721Pool.sol";
+import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
@@ -341,7 +342,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 3;
         tokenIdsToRemove[1] = 5;
 
-        vm.expectRevert("S:PC:NOT_ENOUGH_COLLATERAL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _subsetPool.pullCollateral(tokenIdsToRemove, address(0), address(0));
     }
 
@@ -365,13 +366,13 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         changePrank(_borrower2);
         tokenIds = new uint256[](1);
         tokenIds[0] = 1;
-        vm.expectRevert("S:RC:INSUF_LPS");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientLP.selector);
         _subsetPool.removeCollateral(tokenIds, 1530);
 
         // should revert if we try to remove a token from a bucket with no collateral
         changePrank(_borrower);
         tokenIds[0] = 1;
-        vm.expectRevert("S:RC:INSUF_COL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _subsetPool.removeCollateral(tokenIds, 1692);
 
         // remove one token
@@ -433,9 +434,9 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // should revert if we try to remove a token from either bucket (both with 0.5 collateral)
         tokenIds[0] = 1;
-        vm.expectRevert("S:RC:INSUF_COL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _subsetPool.removeCollateral(tokenIds, 1530);
-        vm.expectRevert("S:RC:INSUF_COL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _subsetPool.removeCollateral(tokenIds, 1447);
 
         // move LP from old to new bucket, reconstituting the last token

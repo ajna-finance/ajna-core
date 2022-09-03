@@ -63,26 +63,6 @@ interface IERC20Pool is IScaledPool {
     /*********************/
 
     /**
-     *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
-     */
-    error BorrowLimitIndexReached();
-
-    /**
-     *  @notice Borrower is attempting to create or modify a loan such that their loan's quote token would be less than the pool's minimum debt amount.
-     */
-    error BorrowAmountLTMinDebt();
-
-    /**
-     *  @notice Borrower is attempting to borrow more quote token than they have collateral for.
-     */
-    error BorrowBorrowerUnderCollateralized();
-
-    /**
-     *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
-     */
-    error BorrowPoolUnderCollateralized();
-
-    /**
      *  @notice Borrower has no debt to liquidate.
      */
     error LiquidateNoDebt();
@@ -98,24 +78,9 @@ interface IERC20Pool is IScaledPool {
     error LiquidateLUPGreaterThanTP();
 
     /**
-     *  @notice User is attempting to pull more collateral than is available.
-     */
-    error RemoveCollateralInsufficientCollateral();
-
-    /**
-     *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
-     */
-    error RemoveCollateralInsufficientLP();
-
-    /**
      *  @notice Lender is attempting to remove collateral when they have no claim to collateral in the bucket.
      */
     error RemoveCollateralNoClaim();
-
-    /**
-     *  @notice Borrower is attempting to repay when they have no outstanding debt.
-     */
-    error RepayNoDebt();
 
     /**
      *  @notice Take was called before 1 hour had passed from kick time.

@@ -66,7 +66,7 @@ interface IScaledPool {
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
 
     /*********************/
-    /*** Custom Errors ***/
+    /*** Shared Errors ***/
     /*********************/
 
     // TODO: add a test for this
@@ -74,6 +74,26 @@ interface IScaledPool {
      *  @notice Pool already initialized.
      */
     error AlreadyInitialized();
+
+    /**
+     *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
+     */
+    error BorrowLimitIndexReached();
+
+    /**
+     *  @notice Borrower is attempting to create or modify a loan such that their loan's quote token would be less than the pool's minimum debt amount.
+     */
+    error BorrowAmountLTMinDebt();
+
+    /**
+     *  @notice Borrower is attempting to borrow more quote token than they have collateral for.
+     */
+    error BorrowBorrowerUnderCollateralized();
+
+    /**
+     *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
+     */
+    error BorrowPoolUnderCollateralized();
 
     /**
      *  @notice FromIndex_ and toIndex_ arguments to moveQuoteToken() are the same.
@@ -104,6 +124,21 @@ interface IScaledPool {
      *  @notice When removing quote token HTP must stay below LUP.
      */
     error RemoveQuoteLUPBelowHTP();
+
+    /**
+     *  @notice User is attempting to pull more collateral than is available.
+     */
+    error RemoveCollateralInsufficientCollateral();
+
+    /**
+     *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
+     */
+    error RemoveCollateralInsufficientLP();
+
+    /**
+     *  @notice Borrower is attempting to repay when they have no outstanding debt.
+     */
+    error RepayNoDebt();
 
     /**
      *  @notice When transferring LP tokens between indices, the new index must be a valid index.

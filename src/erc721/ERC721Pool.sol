@@ -108,7 +108,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
         uint256 lupId = _lupIndex(amount_);
-        require(lupId <= limitIndex_, "S:B:LIMIT_REACHED");
+        if (lupId > limitIndex_) revert BorrowLimitIndexReached();
 
         // update pool interest
         uint256 curDebt = _accruePoolInterest();
@@ -116,7 +116,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // borrower accounting
         NFTBorrower storage borrower = borrowers[msg.sender];
         uint256 borrowersCount = totalBorrowers;
-        if (borrowersCount != 0) require(borrower.debt + amount_ > _poolMinDebtAmount(curDebt), "S:B:AMT_LT_AVG_DEBT");
+        if (borrowersCount != 0) if (borrower.debt + amount_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
@@ -126,12 +126,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // pool accounting
         uint256 newLup = _indexToPrice(lupId);
-        require(_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), newLup) >= Maths.WAD, "S:B:BUNDER_COLLAT");
 
-        require(
-            _poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) >= Maths.WAD,
-            "S:B:PUNDER_COLLAT"
-        );
+        // check borrow won't push borrower or pool into a state of under-collateralization
+        if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
+        if (_poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) < Maths.WAD) revert BorrowPoolUnderCollateralized();
+
         curDebt += debt;
 
         borrowerDebt = curDebt;
@@ -158,7 +157,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // check collateralization for sufficient unenecumbered collateral
         uint256 curLup = _lup();
-        require(Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) >= Maths.wad(tokenIds_.length), "S:PC:NOT_ENOUGH_COLLATERAL");
+        if (Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) < Maths.wad(tokenIds_.length)) revert RemoveCollateralInsufficientCollateral();
 
         // update pool state
         pledgedCollateral -= Maths.wad(tokenIds_.length);
@@ -187,10 +186,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     }
 
     function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
-        require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");
-
         NFTBorrower storage borrower = borrowers[borrower_];
-        require(borrower.debt != 0, "S:R:NO_DEBT");
+        if (borrower.debt == 0) revert RepayNoDebt();
 
         uint256 curDebt = _accruePoolInterest();
 
@@ -206,7 +203,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             totalBorrowers = borrowersCount - 1;
             _removeLoanQueue(borrower_, oldPrev_);
         } else {
-            if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_AVG_DEBT");
+            if (borrowersCount != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
+
             uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
             _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
         }
@@ -268,7 +266,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     // TODO: check for reentrancy
     function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpAmount_) {
         Bucket memory bucket = buckets[index_];
-        require(Maths.wad(tokenIds_.length) <= bucket.availableCollateral, "S:RC:INSUF_COL");
+        if (Maths.wad(tokenIds_.length) > bucket.availableCollateral) revert RemoveCollateralInsufficientCollateral();
 
         _accruePoolInterest();
 
@@ -280,7 +278,10 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // ensure user can actually remove that much
         lpAmount_ = Maths.rdiv((Maths.wad(tokenIds_.length) * price / 1e9), rate);
         uint256 nftsAvailableForClaiming = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
-        require(availableLPs != 0 && lpAmount_ <= availableLPs && Maths.wad(tokenIds_.length) >= nftsAvailableForClaiming, "S:RC:INSUF_LPS");
+
+        if (availableLPs == 0 || lpAmount_ > availableLPs || Maths.wad(tokenIds_.length) < nftsAvailableForClaiming) {
+            revert RemoveCollateralInsufficientLP();
+        }
 
         // update bucket accounting
         bucket.availableCollateral -= Maths.wad(tokenIds_.length);
