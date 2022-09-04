@@ -18,7 +18,7 @@ MAX_UTILIZATION = 0.8
 GOAL_UTILIZATION = 0.6      # borrowers should collateralize such that target utilization approaches this
 MIN_PARTICIPATION = 10000   # in quote token, the minimum amount to lend
 NUM_LENDERS = 100
-NUM_BORROWERS = 100
+NUM_BORROWERS = 1000
 
 
 # set of buckets deposited into, indexed by lender index
@@ -220,6 +220,19 @@ def draw_debt(borrower, borrower_index, pool, test_utils, collateralization=1.1)
     pool_quote_on_deposit = pool.poolSize() - pool.borrowerDebt()
     borrow_amount = min(pool_quote_on_deposit / 2, borrow_amount)
     collateral_to_deposit = borrow_amount / pool.lup() * collateralization * 10**18
+
+    # if borrower doesn't have enough collateral, adjust debt based on what they can afford
+    collateral_token = Contract(pool.collateral())
+    collateral_balance = collateral_token.balanceOf(borrower)
+    if collateral_balance <= 10**18:
+        print(f" WARN: borrower {borrower_index} has insufficient collateral to draw debt")
+        return
+    elif collateral_balance < collateral_to_deposit:
+        collateral_to_deposit = collateral_balance
+        borrow_amount = collateral_to_deposit * pool.lup() / collateralization / 10**18
+        print(f" WARN: borrower {borrower_index} only has {collateral_balance/1e18:.1f} collateral; "
+              f" drawing {borrow_amount/1e18:.1f} of debt against it")
+
     print(f" borrower {borrower_index} borrowing {borrow_amount / 10**18:.1f} "
           f"collateralizing at {collateralization:.1%}, (pool price is {pool.lup() / 10**18:.1f})")
     assert collateral_to_deposit > 10**18
@@ -310,7 +323,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
-    end_time = start_time + SECONDS_PER_DAY * 3
+    end_time = start_time + SECONDS_PER_DAY * 7
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeAllQuoteToken', 'repay']):
         while chain.time() < end_time:
