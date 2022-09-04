@@ -209,7 +209,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         (quote, collateral, lpb, ) = _subsetPool.bucketAt(2350);
         assertEq(quote,      0);
         assertEq(collateral, Maths.wad(4));
-        assertEq(lpb,        32_654.284956525291224787239818564 * 1e27);
+        assertEq(lpb,        32_654.284956525291224787239794566 * 1e27);
 
         // bidder withdraws unused collateral
         uint256[] memory tokenIdsToRemove = new uint256[](1);
@@ -218,7 +218,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         emit RemoveCollateralNFT(_bidder, _subsetPool.indexToPrice(2350), tokenIdsToRemove);
         (uint256 amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
         (uint256 lpBalance, ) = _subsetPool.bucketLenders(2350, _bidder);
-        assertEq(lpBalance, 490.713717393968418590429863923 * 1e27);
+        assertEq(lpBalance, 490.713717393968418590429839925 * 1e27);
         skip(7200);
 
         // should revert if lender attempts to remove more collateral than available in the bucket
@@ -251,7 +251,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         (quote, collateral, lpb, ) = _subsetPool.bucketAt(2350);
         assertEq(quote,      0);
         assertEq(collateral, Maths.wad(2));
-        assertEq(lpb,        16_327.142478262645612393619909282 * 1e27);
+        assertEq(lpb,        16_327.142478262645612393619885284 * 1e27);
 
         // should revert if lender2 attempts to remove more collateral than lp is available for
         changePrank(_lender2);

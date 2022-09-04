@@ -163,8 +163,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         uint256 curDebt                   = _accruePoolInterest();
 
         // determine amount of amount of LP required
-        uint256 rate              = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
-        lpbAmountFrom_            = Maths.wrdivr(Maths.wmul(amount_, _indexToPrice(fromIndex_)), rate);
+        uint256 rate                 = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
+        lpbAmountFrom_               = (amount_ * _indexToPrice(fromIndex_) * 1e18 + rate / 2) / rate;
         require(bucketLender.lpBalance != 0 && lpbAmountFrom_ <= bucketLender.lpBalance, "S:MC:INSUF_LPS");
 
         // update "from" bucket accounting
@@ -174,7 +174,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         // update "to" bucket accounting
         Bucket storage toBucket      = buckets[toIndex_];
         rate                         = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
-        lpbAmountTo_                 = Maths.wrdivr(Maths.wmul(amount_, _indexToPrice(toIndex_)), rate);
+        lpbAmountTo_                 = (amount_ * _indexToPrice(toIndex_) * 1e18 + rate / 2) / rate;
         toBucket.lpAccumulator       += lpbAmountTo_;
         toBucket.availableCollateral += amount_;
 
@@ -448,11 +448,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         return Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
     }
 
-    // We should either pass the _rangeSum as an argument, or have this method return it alongside the rate.
     function _exchangeRate(uint256 quoteToken_, uint256 availableCollateral_, uint256 lpAccumulator_, uint256 index_) internal pure returns (uint256) {
-        uint256 colValue   = Maths.wmul(_indexToPrice(index_), availableCollateral_);
-        uint256 bucketSize = quoteToken_ + colValue;
-        return lpAccumulator_ != 0 ? Maths.wrdivr(bucketSize, lpAccumulator_) : Maths.RAY;
+        uint256 colValue   = _indexToPrice(index_) * availableCollateral_;             // 10^36
+        uint256 bucketSize = quoteToken_ * 10**18 + colValue;                          // 10^36
+        return lpAccumulator_ != 0 ? bucketSize * 10**18 / lpAccumulator_ : Maths.RAY; // 10^27
     }
 
     function _lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) internal view returns (uint256 quoteAmount_) {
