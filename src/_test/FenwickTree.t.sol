@@ -89,8 +89,8 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         return _scale(i_);
     }
 
-    function findSum(uint256 x_) external view returns (uint256 m_) {
-        return _findSum(x_);
+    function findIndexOfSum(uint256 x_) external view returns (uint256 m_) {
+        return _findIndexOfSum(x_);
     }
 
     function prefixSum(uint256 i_) external view returns (uint256 s_) {
@@ -130,11 +130,11 @@ contract FenwickTreeTest is DSTestPlus {
 
         assertEq(tree.treeSum(), 500 * 1e18);
 
-        assertEq(tree.findSum(10 * 1e18),  9);
-        assertEq(tree.findSum(200 * 1e18), 9);
-        assertEq(tree.findSum(250 * 1e18), 11);
-        assertEq(tree.findSum(500 * 1e18), 11);
-        assertEq(tree.findSum(700 * 1e18), 8191);
+        assertEq(tree.findIndexOfSum(10 * 1e18),  9);
+        assertEq(tree.findIndexOfSum(200 * 1e18), 9);
+        assertEq(tree.findIndexOfSum(250 * 1e18), 11);
+        assertEq(tree.findIndexOfSum(500 * 1e18), 11);
+        assertEq(tree.findIndexOfSum(700 * 1e18), 8191);
     }
     /**
      *  @notice Tests additions and scaling values in the tree.
@@ -169,27 +169,27 @@ contract FenwickTreeTest is DSTestPlus {
 
         assertEq(tree.treeSum(), 912 * 1e18);
 
-        assertEq(tree.findSum(10 * 1e18),    5);
-        assertEq(tree.findSum(100 * 1e18),   5);
-        assertEq(tree.findSum(200 * 1e18),   9);
-        assertEq(tree.findSum(350 * 1e18),   9);
-        assertEq(tree.findSum(400 * 1e18),   9);
-        assertEq(tree.findSum(500 * 1e18),   9);
-        assertEq(tree.findSum(900 * 1e18),   11);
-        assertEq(tree.findSum(1_000 * 1e18), 8191);
+        assertEq(tree.findIndexOfSum(10 * 1e18),    5);
+        assertEq(tree.findIndexOfSum(100 * 1e18),   5);
+        assertEq(tree.findIndexOfSum(200 * 1e18),   9);
+        assertEq(tree.findIndexOfSum(350 * 1e18),   9);
+        assertEq(tree.findIndexOfSum(400 * 1e18),   9);
+        assertEq(tree.findIndexOfSum(500 * 1e18),   9);
+        assertEq(tree.findIndexOfSum(900 * 1e18),   11);
+        assertEq(tree.findIndexOfSum(1_000 * 1e18), 8191);
 
         tree.remove(11, 300 * 1e18);
 
         assertEq(tree.treeSum(), 612 * 1e18);
 
-        assertEq(tree.findSum(10 * 1e18),    5);
-        assertEq(tree.findSum(100 * 1e18),   5);
-        assertEq(tree.findSum(200 * 1e18),   9);
-        assertEq(tree.findSum(350 * 1e18),   9);
-        assertEq(tree.findSum(400 * 1e18),   9);
-        assertEq(tree.findSum(500 * 1e18),   9);
-        assertEq(tree.findSum(900 * 1e18),   8191);
-        assertEq(tree.findSum(1_000 * 1e18), 8191);
+        assertEq(tree.findIndexOfSum(10 * 1e18),    5);
+        assertEq(tree.findIndexOfSum(100 * 1e18),   5);
+        assertEq(tree.findIndexOfSum(200 * 1e18),   9);
+        assertEq(tree.findIndexOfSum(350 * 1e18),   9);
+        assertEq(tree.findIndexOfSum(400 * 1e18),   9);
+        assertEq(tree.findIndexOfSum(500 * 1e18),   9);
+        assertEq(tree.findIndexOfSum(900 * 1e18),   8191);
+        assertEq(tree.findIndexOfSum(1_000 * 1e18), 8191);
 
         assertEq(tree.get(5),  132 * 1e18);
         assertEq(tree.get(9),  480 * 1e18);
@@ -255,8 +255,8 @@ contract FenwickTreeTest is DSTestPlus {
         tree.mult(scaleIndex, factor);
 
         // This offset is done because of a rounding issue that occurs when we calculate the prefixSum
-        uint256 treeDirectedIndex = tree.findSum(tree.prefixSum(scaleIndex) + 1) - 1;
-        uint256 treeDirectedSubIndex = tree.findSum(tree.prefixSum(subIndex) + 1) - 1;
+        uint256 treeDirectedIndex = tree.findIndexOfSum(tree.prefixSum(scaleIndex) + 1) - 1;
+        uint256 treeDirectedSubIndex = tree.findIndexOfSum(tree.prefixSum(subIndex) + 1) - 1;
 
         uint256 max = Maths.max(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
         uint256 min = Maths.min(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
@@ -267,7 +267,6 @@ contract FenwickTreeTest is DSTestPlus {
         // 1 >= scaling discrepency
         assertLe(max - min, 1);
         assertLe(subMax - subMin, 1);
-
     }
 
 
