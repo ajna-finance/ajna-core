@@ -7,12 +7,9 @@ import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
-import { ERC20DSTestPlus }             from "./ERC20DSTestPlus.sol";
-import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
+import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
-contract ERC20ScaledQueueTest is ERC20DSTestPlus {
-
-    uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
+contract ERC20ScaledQueueTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -22,15 +19,7 @@ contract ERC20ScaledQueueTest is ERC20DSTestPlus {
     address internal _borrower6;
     address internal _lender;
 
-    CollateralToken internal _collateral;
-    QuoteToken      internal _quote;
-    ERC20Pool       internal _pool;
-
     function setUp() external {
-        _collateral = new CollateralToken();
-        _quote      = new QuoteToken();
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _borrower3 = makeAddr("borrower3");
@@ -39,40 +28,18 @@ contract ERC20ScaledQueueTest is ERC20DSTestPlus {
         _borrower6 = makeAddr("borrower6");
         _lender    = makeAddr("lender");
 
-        deal(address(_collateral), _borrower,  100 * 1e18);
-        deal(address(_collateral), _borrower2, 100 * 1e18);
-        deal(address(_collateral), _borrower3, 100 * 1e18);
-        deal(address(_collateral), _borrower4, 100 * 1e18);
-        deal(address(_collateral), _borrower5, 100 * 1e18);
-        deal(address(_collateral), _borrower6, 100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower,   100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower2,  100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower3,  100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower4,  100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower5,  100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower6,  100 * 1e18);
 
-        deal(address(_quote), _lender,    300_000 * 1e18);
-        deal(address(_quote), _borrower,  100 * 1e18);
-        deal(address(_quote), _borrower3, 100 * 1e18);
-
-        vm.startPrank(_borrower);
-        _collateral.approve(address(_pool), 100 * 1e18);
-        _quote.approve(address(_pool), 300_000 * 1e18);
-
-        changePrank(_borrower2);
-        _collateral.approve(address(_pool), 100 * 1e18);
-
-        changePrank(_borrower3);
-        _collateral.approve(address(_pool), 100 * 1e18);
-        _quote.approve(address(_pool), 300_000 * 1e18);
-
-        changePrank(_borrower4);
-        _collateral.approve(address(_pool), 100 * 1e18);
-
-        changePrank(_borrower5);
-        _collateral.approve(address(_pool), 100 * 1e18);
-
-        changePrank(_borrower6);
-        _collateral.approve(address(_pool), 100 * 1e18);
+        _mintQuoteAndApproveTokens(_lender,    300_000 * 1e18);
+        _mintQuoteAndApproveTokens(_borrower,  100 * 1e18);
+        _mintQuoteAndApproveTokens(_borrower3, 100 * 1e18);
 
         changePrank(_lender);
-        _quote.approve(address(_pool), 300_000 * 1e18);
-
         _pool.addQuoteToken(50_000 * 1e18, 2549);
         _pool.addQuoteToken(50_000 * 1e18, 2550);
         _pool.addQuoteToken(50_000 * 1e18, 2551);

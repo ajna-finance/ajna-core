@@ -5,7 +5,7 @@ from brownie.exceptions import VirtualMachineError
 from brownie.network.state import TxHistory
 from brownie.utils import color
 
-ZRO_ADD = '0x0000000000000000000000000000000000000000' 
+ZRO_ADD = '0x0000000000000000000000000000000000000000'
 MIN_PRICE = 99836282890
 MAX_PRICE = 1_004_968_987606512354182109771
 
@@ -174,7 +174,7 @@ class TestUtils:
         in_eth = gas * 50 * 1e-9
         in_fiat = in_eth * 1700
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
-    
+
 
 
     class GasWatcher(object):

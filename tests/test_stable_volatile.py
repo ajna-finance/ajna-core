@@ -146,7 +146,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
               f"and cannot deposit {collateral_to_deposit/1e18:.1f} to draw debt")
         return
     borrower_collateral = collateral_deposited + collateral_to_deposit
-    threshold_price = int((inflator * pending_debt) / borrower_collateral)
+    threshold_price = int((pending_debt * 10**36 / inflator) / borrower_collateral)
     old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price, debug)
     if debug:
         print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral TP={threshold_price / 1e18:.1f}")
@@ -159,7 +159,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
     inflator = pool.pendingInflator()
     new_total_debt = pending_debt + borrow_amount + ScaledPoolUtils.get_origination_fee(pool, borrow_amount)
-    threshold_price = int((inflator * new_total_debt) / collateral_deposited)
+    threshold_price = int((new_total_debt * 10**36 / inflator) / collateral_deposited)
     assert threshold_price > 10**18
     old_prev, new_prev = ScaledPoolUtils.find_loan_queue_params(pool, borrower.address, threshold_price, debug)
     print(f" borrower {borrower_index} drawing {borrow_amount / 1e18:.1f} from bucket {pool.lup() / 1e18:.3f} "
