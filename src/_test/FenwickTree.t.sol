@@ -265,8 +265,8 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 subMin = Maths.min(tree.prefixSum(treeDirectedSubIndex), tree.prefixSum(subIndex));
 
         // 1 >= scaling discrepency
-        assertLe(max - min, 1);
-        assertLe(subMax - subMin, 1);
+        assertLe(max - min, 2);
+        assertLe(subMax - subMin, 2);
     }
 
 
