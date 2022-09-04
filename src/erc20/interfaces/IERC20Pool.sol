@@ -71,20 +71,6 @@ interface IERC20Pool is IScaledPool {
     /*** Custom Errors ***/
     /*********************/
 
-    /**
-     *  @notice Borrower has no debt to liquidate.
-     */
-    error LiquidateNoDebt();
-
-    /**
-     *  @notice Borrower has a healthy over-collateralized position.
-     */
-    error LiquidateBorrowerOk();
-
-    /**
-     *  @notice Liquidation must result in LUP below the borrowers threshold price.
-     */
-    error LiquidateLUPGreaterThanTP();
 
     /**
      *  @notice Lender is attempting to remove collateral when they have no claim to collateral in the bucket.

@@ -87,6 +87,21 @@ interface IScaledPool {
     error BorrowPoolUnderCollateralized();
 
     /**
+     *  @notice Borrower has no debt to liquidate.
+     */
+    error LiquidateNoDebt();
+
+    /**
+     *  @notice Borrower has a healthy over-collateralized position.
+     */
+    error LiquidateBorrowerOk();
+
+    /**
+     *  @notice Liquidation must result in LUP below the borrowers threshold price.
+     */
+    error LiquidateLUPGreaterThanTP();
+
+    /**
      *  @notice FromIndex_ and toIndex_ arguments to moveQuoteToken() are the same.
      */
     error MoveQuoteToSamePrice();
@@ -335,6 +350,12 @@ interface IScaledPool {
      *  @param  indexes_  Array of price buckets index at which LP tokens were moved.
      */
     function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external;
+
+    /**
+     *  @notice Called by actors to initiate a liquidation.
+     *  @param  borrower_ Identifies the loan to liquidate.
+     */
+    function liquidate(address borrower_) external;
 
     /**********************/
     /*** View Functions ***/

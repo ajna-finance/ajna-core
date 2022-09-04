@@ -308,6 +308,26 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         }
     }
 
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    function liquidate(address borrower_) external {
+        (uint256 curDebt) = _accruePoolInterest();
+
+        NFTBorrower storage borrower = borrowers[borrower_];
+        if (borrower.debt == 0) revert LiquidateNoDebt();
+
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        uint256 lup = _lup();
+        _updateInterestRateAndEMAs(curDebt, lup);
+
+        if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+
+        // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
+        //  which includes an array of the borrower's tokenIds.
+    }
+
     /**********************/
     /*** View Functions ***/
     /**********************/
