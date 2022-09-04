@@ -213,7 +213,7 @@ contract FenwickTreeTest is DSTestPlus {
         ) external {
 
         FenwickTreeInstance tree = new FenwickTreeInstance();
-        tree.fillFenwickFuzzy(insertions_, totalAmount_, true);
+        tree.fillFenwickFuzzy(insertions_, totalAmount_, false);
 
         uint256 scaleIndex = bound(scaleIndex_, 2, 8191);
         uint256 subIndex = randomInRange(0, scaleIndex - 1);
@@ -246,7 +246,7 @@ contract FenwickTreeTest is DSTestPlus {
         ) external {
 
         FenwickTreeInstance tree = new FenwickTreeInstance();
-        tree.fillFenwickFuzzy(insertions_, totalAmount_, true);
+        tree.fillFenwickFuzzy(insertions_, totalAmount_, false);
 
         uint256 scaleIndex = bound(scaleIndex_, 2, 8191);
         uint256 subIndex = randomInRange(0, scaleIndex - 1);
