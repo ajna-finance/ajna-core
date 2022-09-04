@@ -208,7 +208,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         lpAmount_     = Maths.rdiv((amount_ * price / 1e9), rate);
 
         BucketLender storage bucketLender = bucketLenders[index_][msg.sender];
-        if (availableLPs == 0 || lpAmount_ > availableLPs) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
+        if (bucketLender.lpBalance == 0 || lpAmount_ > bucketLender.lpBalance) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
 
         _redeemLPForCollateral(bucket, bucketLender, lpAmount_, amount_, price, index_);
     }
