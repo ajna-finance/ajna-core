@@ -17,14 +17,16 @@ MIN_UTILIZATION = 0.4
 MAX_UTILIZATION = 0.8
 GOAL_UTILIZATION = 0.6      # borrowers should collateralize such that target utilization approaches this
 MIN_PARTICIPATION = 10000   # in quote token, the minimum amount to lend
-NUM_LENDERS = 100
-NUM_BORROWERS = 1000
+NUM_LENDERS = 50
+NUM_BORROWERS = 50
 
 
 # set of buckets deposited into, indexed by lender index
 buckets_deposited = {lender_id: set() for lender_id in range(0, NUM_LENDERS)}
 # timestamp when a lender/borrower last interacted with the pool
 last_triggered = {}
+# list of threshold prices for borrowers to attain in test setup, to start heap in a worst-case state
+threshold_prices = [1855.13, 2123.72, 1689.44, 2744.13, 1969.42, 1772.74]
 
 
 @pytest.fixture
@@ -92,12 +94,20 @@ def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
         borrower = borrowers[borrower_index]
         borrow_amount = int(target_debt / NUM_BORROWERS)  # WAD
         assert borrow_amount > 10**18
+
         pool_price = pool.lup()
-        if pool_price == MAX_PRICE:             # if there is no LUP,
-            pool_price = 3293.70191 * 10**18    # use the highest-priced bucket with deposit
+        if pool_price == MAX_PRICE:  # if there is no LUP,
+            pool_price = pool.hpb()  # use the highest-priced bucket with deposit
+
+        # determine amount of collateral to deposit
         collateralization_ratio = min((1 / target_utilization) + 0.05, 2.5)  # cap at 250% collateralization
-        collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
-        pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
+        if threshold_prices:
+            tp = threshold_prices.pop(0)
+            collateral_to_deposit = int((borrow_amount / tp) * collateralization_ratio)
+        else:
+            collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
+
+        pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=True)
         test_utils.validate_pool(pool)
 
 
