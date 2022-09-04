@@ -406,7 +406,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     }
 
     function _hpbIndex() internal view returns (uint256) {
-        return _findSum(1);
+        return _findIndexOfSum(1);
     }
 
     function _htp() internal view returns (uint256 htp_) {
@@ -414,7 +414,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
-        return _findSum(borrowerDebt + additionalDebt_);
+        return _findIndexOfSum(borrowerDebt + additionalDebt_);
     }
 
     /**
