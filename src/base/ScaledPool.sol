@@ -77,7 +77,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     /*** Lender External Functions ***/
     /*********************************/
 
-    // TODO: check index incoming index_ is valid?
     function addQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
         uint256 curDebt = _accruePoolInterest();
 
@@ -105,7 +104,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     }
 
     function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
-        require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
+        if (fromIndex_ == toIndex_) revert MoveQuoteToSamePrice();
 
         BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
         uint256 availableLPs              = bucketLender.lpBalance;
@@ -142,7 +141,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
 
         // move lup if necessary and check loan book's htp against new lup
         uint256 newLup = _lup();
-        if (fromIndex_ < toIndex_) require(_htp() <= newLup, "S:MQT:LUP_BELOW_HTP");
+        if (fromIndex_ < toIndex_) if(_htp() > newLup) revert MoveQuoteLUPBelowHTP();
 
         // update lender accounting
         bucketLender.lpBalance -= lpbAmountFrom_;
@@ -194,7 +193,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
 
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         lpAmount_ = bucketLender.lpBalance;
-        require(lpAmount_ != 0, "S:RAQT:NO_CLAIM");
+        if (lpAmount_ == 0) revert RemoveQuoteNoClaim();
 
         Bucket memory bucket        = buckets[index_];
         uint256 availableQuoteToken = _valueAt(index_);
@@ -215,14 +214,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         _accruePoolInterest();
 
         uint256 availableQuoteToken = _valueAt(index_);
-        require(amount_ <= availableQuoteToken, "S:RQT:INSUF_QT");
+        if (amount_ > availableQuoteToken) revert RemoveQuoteInsufficientQuoteAvailable();
 
         Bucket memory bucket = buckets[index_];
         uint256 rate         = _exchangeRate(availableQuoteToken, bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpAmount_            = Maths.wrdivr(amount_, rate);
 
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
-        require(bucketLender.lpBalance != 0 && lpAmount_ <= bucketLender.lpBalance, "S:RQT:INSUF_LPS");
+        if (bucketLender.lpBalance == 0 || lpAmount_ > bucketLender.lpBalance) revert RemoveQuoteInsufficientLPB();
 
         _redeemLPForQuoteToken(bucket, bucketLender, lpAmount_, amount_, index_);
     }
@@ -232,11 +231,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         uint256 indexesLength = indexes_.length;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            require(BucketMath.isValidIndex(_indexToBucketIndex(indexes_[i])), "S:TLT:INVALID_INDEX");
+            if (!BucketMath.isValidIndex(_indexToBucketIndex(indexes_[i]))) revert TransferLPInvalidIndex();
 
             BucketLender memory bucketLenderOwner = bucketLenders[indexes_[i]][owner_];
             uint256 balanceToTransfer             = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
-            require(balanceToTransfer != 0 && balanceToTransfer == bucketLenderOwner.lpBalance, "S:TLT:NO_ALLOWANCE");
+            if (balanceToTransfer == 0 || balanceToTransfer != bucketLenderOwner.lpBalance) revert TransferLPNoAllowance();
 
             delete _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
 
@@ -311,7 +310,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         _remove(index_, amount);  // update FenwickTree
 
         uint256 newLup = _lup();
-        require(_htp() <= newLup, "S:RQT:BAD_LUP");
+        if (_htp() > newLup) revert RemoveQuoteLUPBelowHTP();
 
         bucket.lpAccumulator   -= lpAmount_;
         bucketLender.lpBalance -= lpAmount_;

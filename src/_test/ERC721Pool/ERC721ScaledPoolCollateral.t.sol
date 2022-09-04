@@ -4,6 +4,9 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
+import { IERC721Pool } from "../../erc721/interfaces/IERC721Pool.sol";
+import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
@@ -88,7 +91,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // should revert if borrower attempts to add tokens not in the pool subset
         changePrank(_borrower);
-        vm.expectRevert("P:ONLY_SUBSET");
+        vm.expectRevert(IERC721Pool.OnlySubset.selector);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd, address(0), address(0));
     }
 
@@ -188,7 +191,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // should revert if borrower attempts to remove collateral not in pool
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 51;
-        vm.expectRevert("P:T_NOT_IN_P");
+        vm.expectRevert(IERC721Pool.TokenNotDeposited.selector);
         _subsetPool.pullCollateral(tokenIdsToRemove, address(0), address(0));
 
         // borrower should be able to remove collateral in the pool
@@ -339,7 +342,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 3;
         tokenIdsToRemove[1] = 5;
 
-        vm.expectRevert("S:PC:NOT_ENOUGH_COLLATERAL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _subsetPool.pullCollateral(tokenIdsToRemove, address(0), address(0));
     }
 
@@ -356,20 +359,20 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // add three tokens to a single bucket
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(_borrower, _subsetPool.indexToPrice(1530), tokenIds);
+        emit AddCollateralNFT(_borrower, 1530, tokenIds);
         _subsetPool.addCollateral(tokenIds, 1530);
 
         // should revert if the actor does not have any LP to remove a token
         changePrank(_borrower2);
         tokenIds = new uint256[](1);
         tokenIds[0] = 1;
-        vm.expectRevert("S:RC:INSUF_LPS");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientLP.selector);
         _subsetPool.removeCollateral(tokenIds, 1530);
 
         // should revert if we try to remove a token from a bucket with no collateral
         changePrank(_borrower);
         tokenIds[0] = 1;
-        vm.expectRevert("S:RC:INSUF_COL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _subsetPool.removeCollateral(tokenIds, 1692);
 
         // remove one token
@@ -405,7 +408,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // add three tokens to a single bucket
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateralNFT(_borrower, _subsetPool.indexToPrice(1530), tokenIds);
+        emit AddCollateralNFT(_borrower, 1530, tokenIds);
         _subsetPool.addCollateral(tokenIds, 1530);
 
         // move half of collateral to another bucket, splitting up the tokens
@@ -431,9 +434,9 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // should revert if we try to remove a token from either bucket (both with 0.5 collateral)
         tokenIds[0] = 1;
-        vm.expectRevert("S:RC:INSUF_COL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _subsetPool.removeCollateral(tokenIds, 1530);
-        vm.expectRevert("S:RC:INSUF_COL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _subsetPool.removeCollateral(tokenIds, 1447);
 
         // move LP from old to new bucket, reconstituting the last token

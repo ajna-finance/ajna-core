@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
+import { PoolDeployer } from "../../base/PoolDeployer.sol";
+
 import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
 contract ERC20ScaledPoolFactoryTest is ERC20HelperContract {
@@ -15,21 +17,21 @@ contract ERC20ScaledPoolFactoryTest is ERC20HelperContract {
 
     function testDeployERC20PoolWithZeroAddress() external {
         // should revert if trying to deploy with zero address as collateral
-        vm.expectRevert("PF:DP:ZERO_ADDR");
+        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
         _poolFactory.deployPool(address(0), address(_quote), 0.05 * 10**18);
 
         // should revert if trying to deploy with zero address as quote token
-        vm.expectRevert("PF:DP:ZERO_ADDR");
+        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
         _poolFactory.deployPool(address(_collateral), address(0), 0.05 * 10**18);
     }
 
     function testDeployERC20PoolWithInvalidRate() external {
         // should revert if trying to deploy with interest rate lower than accepted
-        vm.expectRevert("PF:DP:INVALID_RATE");
+        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
         _poolFactory.deployPool(address(_collateral), address(_quote), 10**18);
 
         // should revert if trying to deploy with interest rate higher than accepted
-        vm.expectRevert("PF:DP:INVALID_RATE");
+        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
         _poolFactory.deployPool(address(_collateral), address(_quote), 2 * 10**18);
     }
 
@@ -37,7 +39,7 @@ contract ERC20ScaledPoolFactoryTest is ERC20HelperContract {
         _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
 
         // should revert if trying to deploy same pool one more time
-        vm.expectRevert("PF:DP:POOL_EXISTS");
+        vm.expectRevert(PoolDeployer.PoolAlreadyExists.selector);
         _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
 
         // should deploy different pool

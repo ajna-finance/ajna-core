@@ -4,6 +4,9 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
+import { IERC20Pool } from "../../erc20/interfaces/IERC20Pool.sol";
+import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
@@ -156,7 +159,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
 
         changePrank(_borrower);
         // should revert if trying to remove more collateral than is available
-        vm.expectRevert("S:PC:NOT_ENOUGH_COLLATERAL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _pool.pullCollateral(testCollateralAmount, address(0), address(0));
 
         // borrower deposits 100 collateral
@@ -228,9 +231,9 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
 
         // should revert if no collateral in the bucket
         changePrank(_lender);
-        vm.expectRevert("S:RAC:NO_COL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _pool.removeAllCollateral(testIndex);
-        vm.expectRevert("S:RC:INSUF_COL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _pool.removeCollateral(3.50 * 1e18, testIndex);
 
         // another actor deposits some collateral
@@ -241,13 +244,13 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
 
         // should revert if insufficient collateral in the bucket
         changePrank(_lender);
-        vm.expectRevert("S:RC:INSUF_COL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _pool.removeCollateral(1.25 * 1e18, testIndex);
 
         // should revert if actor does not have LP
-        vm.expectRevert("S:RAC:NO_CLAIM");
+        vm.expectRevert(IERC20Pool.RemoveCollateralNoClaim.selector);
         _pool.removeAllCollateral(testIndex);
-        vm.expectRevert("S:RC:INSUF_LPS");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientLP.selector);
         _pool.removeCollateral(0.32 * 1e18, testIndex);
     }
 
