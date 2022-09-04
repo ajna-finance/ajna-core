@@ -107,15 +107,15 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
         require(fromIndex_ != toIndex_, "S:MQT:SAME_PRICE");
 
-        BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
-        uint256 availableLPs              = bucketLender.lpBalance;
-        uint256 curDebt                   = _accruePoolInterest();
+        uint256 curDebt = _accruePoolInterest();
 
         // determine amount of quote token to move
         Bucket storage fromBucket   = buckets[fromIndex_];
         uint256 availableQuoteToken = _valueAt(fromIndex_);
         uint256 rate                = _exchangeRate(availableQuoteToken, fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
-        uint256 amount              = Maths.min(maxAmount_, Maths.min(availableQuoteToken, Maths.rrdivw(availableLPs, rate)));
+
+        BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
+        uint256 amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, Maths.rrdivw(bucketLender.lpBalance, rate)));
 
         // calculate amount of LP required to move it
         lpbAmountFrom_ = Maths.wrdivr(amount, rate);
@@ -146,8 +146,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
 
         // update lender accounting
         bucketLender.lpBalance -= lpbAmountFrom_;
-        bucketLender           = bucketLenders[toIndex_][msg.sender];
-        bucketLender.lpBalance += lpbAmountTo_;
+        bucketLenders[toIndex_][msg.sender].lpBalance += lpbAmountTo_;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
 
