@@ -312,7 +312,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function liquidate(address borrower_) external {
+    function liquidate(address borrower_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
         NFTBorrower storage borrower = borrowers[borrower_];
@@ -327,6 +327,19 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
         //  which includes an array of the borrower's tokenIds.
     }
+
+    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external override {
+        // TODO: Implement
+    }
+
+    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
+        // TODO: implement
+    }
+
+    function arbTake(address borrower_, uint256 amount_) external override {
+        // TODO: implement
+    }
+
 
     /**********************/
     /*** View Functions ***/

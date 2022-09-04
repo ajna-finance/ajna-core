@@ -251,7 +251,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function liquidate(address borrower_) external {
+    function liquidate(address borrower_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[borrower_];
@@ -285,7 +285,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     // TODO: Add reentrancy guard
-    function take(address borrower_, uint256 collateralToLiquidate_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external {
+    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external override {
         Borrower        memory borrower    = borrowers[borrower_];
         LiquidationInfo memory liquidation = liquidations[borrower_];
 
@@ -293,21 +293,31 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
 
-        uint256 collateralForLiquidation = Maths.min(collateralToLiquidate_, liquidation.remainingCollateral);
+        // TODO: calculate using price decrease function and amount_
+        uint256 liquidationPrice = Maths.WAD;
+        uint256 collateralToPurchase = Maths.wdiv(amount_, liquidationPrice);
 
         // Reduce liquidation's remaining collateral
-        liquidations[borrower_].remainingCollateral -= collateralForLiquidation;
+        liquidations[borrower_].remainingCollateral -= collateralToPurchase;
 
         // Flash loan full amount to liquidate to borrower
-        collateral().safeTransfer(msg.sender, collateralForLiquidation);
+        collateral().safeTransfer(msg.sender, collateralToPurchase);
 
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
         msg.sender.call(swapCalldata_);
 
         // Get current swap price
-        uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralForLiquidation);
+        uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralToPurchase);
 
         _repayDebt(borrower_, quoteTokenReturnAmount, oldPrev_, newPrev_);
+    }
+
+    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
+        // TODO: implement
+    }
+
+    function arbTake(address borrower_, uint256 amount_) external override {
+        // TODO: implement
     }
 
 

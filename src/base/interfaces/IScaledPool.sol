@@ -317,6 +317,12 @@ interface IScaledPool {
     function approveLpOwnership(address allowedNewOwner_, uint256 index_, uint256 amount_) external;
 
     /**
+     *  @notice Called by actors to initiate a liquidation.
+     *  @param  borrower_ Identifies the loan to liquidate.
+     */
+    function liquidate(address borrower_) external;
+
+    /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
      *  @param  maxAmount_     The maximum amount of quote token to be moved by a lender.
      *  @param  fromIndex_     The bucket index from which the quote tokens will be removed.
@@ -343,6 +349,30 @@ interface IScaledPool {
     function removeQuoteToken(uint256 amount_, uint256 index_) external returns (uint256 lpAmount_);
 
     /**
+     *  @notice Called by actors to purchase collateral using quote token they provide themselves.
+     *  @param  borrower_     Identifies the loan to liquidate.
+     *  @param  amount_       Amount of quote token which will be used to purchase collateral at the auction price.
+     *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
+     *                        such that sender will have a sufficient quote token balance prior to payment.
+     */
+    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external;
+
+    /**
+     *  @notice Called by actors to purchase collateral using quote token already on the book.
+     *  @param  borrower_     Identifies the loan to liquidate.
+     *  @param  amount_       Amount of bucket deposit to use to exchange for collateral.
+     *  @param  index_        Index of the bucket which has amount_ quote token available.
+     */
+    function depositTake(address borrower_, uint256 amount_, uint256 index_) external;
+
+    /**
+     *  @notice Called by actors to purchase collateral using quote token at the HPB.
+     *  @param  borrower_     Identifies the loan to liquidate.
+     *  @param  amount_       Amount of bucket deposit to use to exchange for collateral.
+     */
+    function arbTake(address borrower_, uint256 amount_) external;
+
+    /**
      *  @notice Called by lenders to transfers their LP tokens to a different address.
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner_    The original owner address of the position.
@@ -351,11 +381,6 @@ interface IScaledPool {
      */
     function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external;
 
-    /**
-     *  @notice Called by actors to initiate a liquidation.
-     *  @param  borrower_ Identifies the loan to liquidate.
-     */
-    function liquidate(address borrower_) external;
 
     /**********************/
     /*** View Functions ***/
