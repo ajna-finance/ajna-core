@@ -12,6 +12,7 @@ import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
 import { PositionManager } from "../base/PositionManager.sol";
 
 import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
+import { IScaledPool }      from "../base/interfaces/IScaledPool.sol";
 
 // TODO: test this against ERC721Pool
 abstract contract PositionManagerHelperContract is DSTestPlus {
@@ -123,7 +124,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert("S:TLT:NO_ALLOWANCE");
+        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 

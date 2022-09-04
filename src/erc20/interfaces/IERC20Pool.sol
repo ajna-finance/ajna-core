@@ -58,6 +58,36 @@ interface IERC20Pool is IScaledPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+    /*********************/
+    /*** Custom Errors ***/
+    /*********************/
+
+    /**
+     *  @notice Borrower has no debt to liquidate.
+     */
+    error LiquidateNoDebt();
+
+    /**
+     *  @notice Borrower has a healthy over-collateralized position.
+     */
+    error LiquidateBorrowerOk();
+
+    /**
+     *  @notice Liquidation must result in LUP below the borrowers threshold price.
+     */
+    error LiquidateLUPGreaterThanTP();
+
+    /**
+     *  @notice Lender is attempting to remove collateral when they have no claim to collateral in the bucket.
+     */
+    error RemoveCollateralNoClaim();
+
+    /**
+     *  @notice Take was called before 1 hour had passed from kick time.
+     */
+    error TakeNotPastCooldown();
+
+
     /*********************************/
     /*** ERC20Pool State Variables ***/
     /*********************************/

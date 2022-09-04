@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
+import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
@@ -161,7 +163,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         _pool.borrow(10_000 * 1e18, 4551, address(0), address(0));
 
         changePrank(_lender);
-        vm.expectRevert("S:RQT:BAD_LUP");
+        vm.expectRevert(IScaledPool.RemoveQuoteLUPBelowHTP.selector);
         _pool.removeAllQuoteToken(4550);
     }
 
@@ -192,23 +194,23 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         // ensure lender with no LP cannot remove anything
         (uint256 lpBalance, ) = _pool.bucketLenders(4550, _lender1);
         assertEq(0, lpBalance);
-        vm.expectRevert("S:RAQT:NO_CLAIM");
+        vm.expectRevert(IScaledPool.RemoveQuoteNoClaim.selector);
         _pool.removeAllQuoteToken(4550);
 
         // should revert if insufficient quote token
         changePrank(_lender);
-        vm.expectRevert("S:RQT:INSUF_QT");
+        vm.expectRevert(IScaledPool.RemoveQuoteInsufficientQuoteAvailable.selector);
         _pool.removeQuoteToken(20_000 * 1e18, 4550);
 
         // should revert if removing quote token from higher price buckets would drive lup below htp
-        vm.expectRevert("S:RQT:BAD_LUP");
+        vm.expectRevert(IScaledPool.RemoveQuoteLUPBelowHTP.selector);
         _pool.removeQuoteToken(20_000 * 1e18, 4551);
 
         // should revert if bucket has enough quote token, but lender has insufficient LP
         changePrank(_lender1);
         _pool.addQuoteToken(20_000 * 1e18, 4550);
         changePrank(_lender);
-        vm.expectRevert("S:RQT:INSUF_LPS");
+        vm.expectRevert(IScaledPool.RemoveQuoteInsufficientLPB.selector);
         _pool.removeQuoteToken(15_000 * 1e18, 4550);
 
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
@@ -335,7 +337,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         _pool.addQuoteToken(20_000 * 1e18, 4551);
 
         // should revert if moving quote token to the existing price
-        vm.expectRevert("S:MQT:SAME_PRICE");
+        vm.expectRevert(IScaledPool.MoveQuoteToSamePrice.selector);
         _pool.moveQuoteToken(5_000 * 1e18, 4549, 4549);
 
         // add collateral and borrow all available quote in the higher priced original 3 buckets, as well as some of the new lowest price bucket
@@ -348,7 +350,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
 
         // should revert if movement would drive lup below htp
         changePrank(_lender);
-        vm.expectRevert("S:MQT:LUP_BELOW_HTP");
+        vm.expectRevert(IScaledPool.MoveQuoteLUPBelowHTP.selector);
         _pool.moveQuoteToken(40_000 * 1e18, 4549, 6000);
 
         // should be able to moveQuoteToken if properly specified
