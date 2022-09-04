@@ -230,9 +230,9 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 subMax = Maths.max(Maths.wmul(subIndexSum, factor), tree.prefixSum(subIndex));
         uint256 subMin = Maths.min(Maths.wmul(subIndexSum, factor), tree.prefixSum(subIndex));
 
-        // 2 >= scaling discrepency
-        assertGe(3, max - min);
-        assertGe(3, subMax - subMin);
+        // 3 >= scaling discrepency
+        assertLe(max - min, 3);
+        assertLe(subMax - subMin, 3);
     }
 
     /**
@@ -264,7 +264,7 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 subMax = Maths.max(tree.prefixSum(treeDirectedSubIndex), tree.prefixSum(subIndex));
         uint256 subMin = Maths.min(tree.prefixSum(treeDirectedSubIndex), tree.prefixSum(subIndex));
 
-        // 1 >= scaling discrepency
+        // 2 >= scaling discrepency
         assertLe(max - min, 2);
         assertLe(subMax - subMin, 2);
     }
