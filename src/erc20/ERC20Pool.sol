@@ -123,7 +123,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
-        Borrower storage borrower = borrowers[msg.sender];
+        Borrower memory borrower = borrowers[msg.sender];
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
         uint256 curLup = _lup();
@@ -133,6 +133,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // update loan queue
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+
+        borrowers[msg.sender] = borrower;
 
         // update pool state
         pledgedCollateral -= amount_;
