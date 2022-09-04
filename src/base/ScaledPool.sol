@@ -153,8 +153,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
 
-    event Debug (string where, uint256 what);
-
     function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
         require(fromIndex_ != toIndex_, "S:MC:SAME_PRICE");
 
@@ -166,11 +164,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
 
         // determine amount of amount of LP required
         uint256 rate                 = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
-//        lpbAmountFrom_               = Maths.wrdivr(Maths.wmul(amount_, _indexToPrice(fromIndex_)), rate);
         lpbAmountFrom_               = (amount_ * _indexToPrice(fromIndex_) * 1e18 + rate / 2) / rate;
-        emit Debug("moveCollateral _exchangeRate", rate);
-        emit Debug("moveCollateral bucketLender.lpBalance", bucketLender.lpBalance);
-        emit Debug("moveCollateral lpbAmountFrom_", lpbAmountFrom_);
         require(bucketLender.lpBalance != 0 && lpbAmountFrom_ <= bucketLender.lpBalance, "S:MC:INSUF_LPS");
 
         // update "from" bucket accounting
@@ -180,7 +174,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, IScaledPool {
         // update "to" bucket accounting
         Bucket storage toBucket      = buckets[toIndex_];
         rate                         = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
-//        lpbAmountTo_                 = Maths.wrdivr(Maths.wmul(amount_, _indexToPrice(toIndex_)), rate);
         lpbAmountTo_                 = (amount_ * _indexToPrice(toIndex_) * 1e18 + rate / 2) / rate;
         toBucket.lpAccumulator       += lpbAmountTo_;
         toBucket.availableCollateral += amount_;
