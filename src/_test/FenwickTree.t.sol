@@ -5,6 +5,8 @@ import { FenwickTree } from "../base/FenwickTree.sol";
 import { DSTestPlus }  from "./utils/DSTestPlus.sol";
 
 import { Maths } from "../libraries/Maths.sol";
+import "forge-std/console.sol";
+
 
 contract FenwickTreeInstance is FenwickTree, DSTestPlus {
 
@@ -252,8 +254,9 @@ contract FenwickTreeTest is DSTestPlus {
 
         tree.mult(scaleIndex, factor);
 
-        uint256 treeDirectedIndex = tree.findSum(tree.prefixSum(scaleIndex));
-        uint256 treeDirectedSubIndex = tree.findSum(tree.prefixSum(subIndex));
+        // This offset is done because of a rounding issue that occurs when we calculate the prefixSum
+        uint256 treeDirectedIndex = tree.findSum(tree.prefixSum(scaleIndex) + 1) - 1;
+        uint256 treeDirectedSubIndex = tree.findSum(tree.prefixSum(subIndex) + 1) - 1;
 
         uint256 max = Maths.max(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
         uint256 min = Maths.min(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
@@ -262,8 +265,8 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 subMin = Maths.min(tree.prefixSum(treeDirectedSubIndex), tree.prefixSum(subIndex));
 
         // 1 >= scaling discrepency
-        assertGe(1, max - min);
-        assertGe(1, subMax - subMin);
+        assertLe(max - min, 1);
+        assertLe(subMax - subMin, 1);
 
     }
 

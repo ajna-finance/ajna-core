@@ -166,8 +166,6 @@ abstract contract FenwickTree {
 
         uint256 scaled;
         
-        // TODO: Unsure of what this conditional does - index <= SIZE?
-        // This only ever restricts us when we are at the highest bucket? 8192. Possibly cleaner with a require statement?
         while (j > 0 && index <= SIZE) {
 
             scaled = scaling[index];
@@ -229,6 +227,12 @@ abstract contract FenwickTree {
 
     // TODO: rename this to findIndexOfSum
     // TODO: should this revert if failed to find a value past a given index instead of SIZE?
+    /**
+     *  @notice Finds index of passed sum
+     *  @dev    Used in lup calculation
+     *  @param  x_  The sum passed
+     *  @return  m_  returns smallest index where prefixsum > x_
+    */    
     function _findSum(uint256 x_) internal view returns (uint256 m_) {
         uint256 i     = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
         uint256 ss    = 0;
