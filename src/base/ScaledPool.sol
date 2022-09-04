@@ -240,10 +240,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
             delete _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
 
             // move lp tokens to the new owner address
-            BucketLender memory bucketLenderNewOwner = bucketLenders[indexes_[i]][newOwner_];
-            bucketLenderNewOwner.lpBalance           += balanceToTransfer;
-            bucketLenderNewOwner.lastQuoteDeposit    = Maths.max(bucketLenderOwner.lastQuoteDeposit, bucketLenderNewOwner.lastQuoteDeposit);
-            bucketLenders[indexes_[i]][newOwner_]  = bucketLenderNewOwner;
+            BucketLender storage bucketLenderNewOwner = bucketLenders[indexes_[i]][newOwner_];
+            bucketLenderNewOwner.lpBalance            += balanceToTransfer;
+            bucketLenderNewOwner.lastQuoteDeposit     = Maths.max(bucketLenderOwner.lastQuoteDeposit, bucketLenderNewOwner.lastQuoteDeposit);
 
             // delete owner lp balance for this bucket
             delete bucketLenders[indexes_[i]][owner_];
