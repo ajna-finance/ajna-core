@@ -196,18 +196,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             lpAmount_ = Maths.wrdivr(Maths.wmul(amount_, price), rate);
         } // else user is redeeming all of their LPs
 
-        bucket.availableCollateral -= Maths.min(bucket.availableCollateral, amount_);
-        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpAmount_);
-        buckets[index_] = bucket;
-
-        // update lender accounting
-        bucketLender.lpBalance -= lpAmount_;
-
-        _updateInterestRateAndEMAs(borrowerDebt, _lup());
-
-        // move collateral from pool to lender
-        emit RemoveCollateral(msg.sender, price, amount_);
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+        _redeemLPForCollateral(bucket, bucketLender, lpAmount_, amount_, price, index_);
     }
 
     function removeCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
@@ -223,18 +212,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         BucketLender storage bucketLender = bucketLenders[index_][msg.sender];
         require(bucketLender.lpBalance != 0 && lpAmount_ <= bucketLender.lpBalance, "S:RC:INSUF_LPS"); // ensure user can actually remove that much
 
-        bucket.availableCollateral -= Maths.min(bucket.availableCollateral, amount_);
-        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpAmount_);
-        buckets[index_] = bucket;
-
-        // update lender accounting
-        bucketLender.lpBalance -= lpAmount_;
-
-        _updateInterestRateAndEMAs(borrowerDebt, _lup());
-
-        // move collateral from pool to lender
-        emit RemoveCollateral(msg.sender, price, amount_);
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+        _redeemLPForCollateral(bucket, bucketLender, lpAmount_, amount_, price, index_);
     }
 
     /*******************************/
@@ -313,6 +291,29 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
+
+    function _redeemLPForCollateral(
+        Bucket memory bucket,
+        BucketLender storage bucketLender,
+        uint256 lpAmount_,
+        uint256 amount_,
+        uint256 price_,
+        uint256 index_
+    ) internal {
+        // update bucket accounting
+        bucket.availableCollateral -= Maths.min(bucket.availableCollateral, amount_);
+        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpAmount_);
+        buckets[index_] = bucket;
+
+        // update lender accounting
+        bucketLender.lpBalance -= lpAmount_;
+
+        _updateInterestRateAndEMAs(borrowerDebt, _lup());
+
+        // move collateral from pool to lender
+        emit RemoveCollateral(msg.sender, price_, amount_);
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+    }
 
     function _repayDebt(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) internal {
         require(quoteToken().balanceOf(msg.sender) * quoteTokenScale >= maxAmount_, "S:R:INSUF_BAL");

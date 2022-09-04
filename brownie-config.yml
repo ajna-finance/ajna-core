@@ -23,4 +23,6 @@ compiler:
       - "@prb-math=lib/prb-math/"
       - "@clones=lib/clones-with-immutable-args/src/"
       - "@base64-sol=lib/base64/"
+    optimizer:
+      enabled: false
 
