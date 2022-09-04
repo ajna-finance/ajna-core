@@ -161,32 +161,52 @@ abstract contract FenwickTree {
         }
     }
 
-    // TODO: rename this to findIndexOfSum
-    // TODO: should this revert if failed to find a value past a given index instead of SIZE?
-    function _findSum(uint256 x_) internal view returns (uint256 m_) {
-        uint256 i     = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
+    //// TODO: rename this to findIndexOfSum
+    //// TODO: should this revert if failed to find a value past a given index instead of SIZE?
+    //function _findSum(uint256 x_) internal view returns (uint256 m_) {
+    //    uint256 i     = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
+    //    uint256 ss    = 0;
+    //    uint256 sc    = Maths.WAD;
+    //    uint256 index = 4096;
+
+    //    uint256 scaledM;
+    //    uint256 scaledMInc;
+    //    uint256 ssCond;
+
+    //    while (i > 0) {
+    //        scaledMInc = scaling[index];
+    //        ssCond = scaledMInc != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledMInc), values[index]) : ss + Maths.wmul(sc, values[index]);
+    //        if (ssCond < x_) {
+    //            m_ += i;
+    //            scaledM = scaling[m_];
+    //            ss = scaledM != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledM), values[m_]) : ss + Maths.wmul(sc, values[m_]);
+    //        } else {
+    //            if (scaledMInc != 0) sc = Maths.wmul(sc, scaledMInc);
+    //        }
+    //        i = i >> 1;
+    //        index = m_ + i;
+    //    }
+    //}
+
+        function _findSum(uint256 x_) internal view returns (uint256 m_) {
+        uint256 i     = 1 << (13 - 1);
         uint256 ss    = 0;
         uint256 sc    = Maths.WAD;
-        uint256 index = 4096;
-
-        uint256 scaledM;
-        uint256 scaledMInc;
-        uint256 ssCond;
 
         while (i > 0) {
-            scaledMInc = scaling[index];
-            ssCond = scaledMInc != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledMInc), values[index]) : ss + Maths.wmul(sc, values[index]);
-            if (ssCond < x_) {
+            uint256 scaledMPlusI = Maths.max(scaling[m_ + i], Maths.WAD);
+            if (ss + Maths.wmul(Maths.wmul(sc, scaledMPlusI), values[m_ + i]) < x_) {
                 m_ += i;
-                scaledM = scaling[m_];
-                ss = scaledM != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledM), values[m_]) : ss + Maths.wmul(sc, values[m_]);
+                uint256 scaledM = Maths.max(scaling[m_], Maths.WAD);
+                ss += Maths.wmul(Maths.wmul(sc, scaledM), values[m_]);
             } else {
-                if (scaledMInc != 0) sc = Maths.wmul(sc, scaledMInc);
+                sc = Maths.wmul(sc, scaledMPlusI);
             }
             i = i >> 1;
-            index = m_ + i;
         }
     }
+
+
 
     // Least significant bit
     function _lsb(uint256 i_) internal pure returns (uint256 lsb_) {

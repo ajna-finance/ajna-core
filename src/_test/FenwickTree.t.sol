@@ -159,4 +159,34 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(tree.findSum(2500 * 1e18), 5);
     }
 
+        function testFenwickScalingFind() external {
+
+        FenwickTreeInstance tree = new FenwickTreeInstance();
+
+        uint256 scaleIndex = 5057;
+        uint256 subIndex = 2031;
+
+        tree.add(940, 17983138728);
+        tree.add(2438, 0);
+        tree.add(7644, 817578634);
+        tree.add(4915, 0);
+        tree.add(1122, 7476969747874698605214777860545266);
+
+        tree.mult(6590, 4875593610029711303);
+
+
+        uint256 treeDirectedIndex = tree.findSum(tree.prefixSum(scaleIndex));
+        uint256 treeDirectedSubIndex = tree.findSum(tree.prefixSum(subIndex));
+
+        uint256 max = Maths.max(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
+        uint256 min = Maths.min(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
+
+        uint256 subMax = Maths.max(tree.prefixSum(treeDirectedSubIndex), tree.prefixSum(subIndex));
+        uint256 subMin = Maths.min(tree.prefixSum(treeDirectedSubIndex), tree.prefixSum(subIndex));
+
+        // 1 >= scaling discrepency
+        assertLe( max - min, 1);
+        assertLe(subMax - subMin, 1); 
+    }
+
 }
