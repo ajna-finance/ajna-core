@@ -5,6 +5,7 @@ import { FenwickTree } from "../base/FenwickTree.sol";
 import { DSTestPlus }  from "./utils/DSTestPlus.sol";
 
 import { Maths } from "../libraries/Maths.sol";
+import "forge-std/console.sol";
 
 contract FenwickTreeInstance is FenwickTree {
 
@@ -167,16 +168,26 @@ contract FenwickTreeTest is DSTestPlus {
         uint256 subIndex = 2031;
 
         tree.add(940, 17983138728);
-        tree.add(2438, 0);
-        tree.add(7644, 817578634);
-        tree.add(4915, 0);
         tree.add(1122, 7476969747874698605214777860545266);
+
+        tree.add(2438, 0);
+        tree.add(4915, 0);
+
+        tree.add(7644, 817578634);
 
         tree.mult(6590, 4875593610029711303);
 
+        console.log("scaleIndex prefix", tree.prefixSum(scaleIndex));
+        console.log("subIndex prefix", tree.prefixSum(subIndex));
 
-        uint256 treeDirectedIndex = tree.findSum(tree.prefixSum(scaleIndex));
-        uint256 treeDirectedSubIndex = tree.findSum(tree.prefixSum(subIndex));
+        uint256 treeDirectedIndex = tree.findSum(tree.prefixSum(scaleIndex) + 1) - 1;
+        uint256 treeDirectedSubIndex = tree.findSum(tree.prefixSum(subIndex)+ 1) - 1;
+
+        console.log("treeDirectedIndex", treeDirectedIndex);
+        console.log("treeDirectedSubIndex", treeDirectedSubIndex);
+
+        console.log("treeDirectedIndex prefix", tree.prefixSum(treeDirectedIndex));
+        console.log("treeDirectedSubIndex prefix", tree.prefixSum(treeDirectedSubIndex));
 
         uint256 max = Maths.max(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
         uint256 min = Maths.min(tree.prefixSum(treeDirectedIndex), tree.prefixSum(scaleIndex));
