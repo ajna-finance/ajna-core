@@ -30,12 +30,36 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         Liquidity[] amounts; // liquidities to add
     }
 
-    struct BorrowParams {
+    struct BorrowSpecs {
         address from;
         address borrower;
-        uint256 amountToPledge; 
-        uint256 amountToBorrow;
+        uint256 pledgeAmount; 
+        uint256 borrowAmount;
         uint256 indexLimit;
+        address oldPrev;
+        address newPrev;
+        uint256 price;
+    }
+
+    struct PledgeSpecs {
+        address from;
+        address borrower;
+        uint256 amount; 
+        address oldPrev;
+        address newPrev;
+    }
+
+    struct PullSpecs {
+        address from;
+        uint256 amount; 
+        address oldPrev;
+        address newPrev;
+    }
+
+    struct RepaySpecs {
+        address from;
+        address borrower;
+        uint256 repayAmount; 
         address oldPrev;
         address newPrev;
         uint256 price;
@@ -44,6 +68,31 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     struct Liquidity {
         uint256 index;  // bucket index
         uint256 amount; // amount to add
+    }
+
+    struct LenderLPs {
+        address    lender;
+        BucketLP[] bucketLPs;
+    }
+
+    struct BucketLP {
+        uint256 index;
+        uint256 balance;
+        uint256 time;
+    }
+
+    struct BucketState {
+        uint256 index;
+        uint256 LPs;
+        uint256 collateral;
+    }
+
+    struct BorrowerState {
+        address borrower;
+        uint256 debt;
+        uint256 pendingDebt;
+        uint256 collateral;
+        uint256 inflator;
     }
 
     struct PoolState {
@@ -96,32 +145,76 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     }
 
-    function _addLiquidity(AddLiquidity memory liquidity) internal {
-        changePrank(liquidity.from);
-        for (uint256 i = 0; i < liquidity.amounts.length; ++i) {
-            _pool.addQuoteToken(liquidity.amounts[i].amount, liquidity.amounts[i].index);
+    function _addLiquidity(AddLiquidity memory specs_) internal {
+        changePrank(specs_.from);
+        for (uint256 i = 0; i < specs_.amounts.length; ++i) {
+            _pool.addQuoteToken(specs_.amounts[i].amount, specs_.amounts[i].index);
         }
     }
 
-    function _borrow(BorrowParams memory borrow) internal {
-        changePrank(borrow.from);
-        _pool.pledgeCollateral(borrow.borrower, borrow.amountToPledge, borrow.oldPrev, borrow.newPrev);
+    function _borrow(BorrowSpecs memory specs_) internal {
+        changePrank(specs_.from);
+        if (specs_.pledgeAmount != 0) _pool.pledgeCollateral(specs_.borrower, specs_.pledgeAmount, specs_.oldPrev, specs_.newPrev);
 
         vm.expectEmit(true, true, false, true);
-        emit Borrow(borrow.borrower, borrow.price, 21_000 * 1e18);
+        emit Borrow(specs_.borrower, specs_.price, specs_.borrowAmount);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), borrow.from, 21_000 * 1e18);
-        _pool.borrow(borrow.amountToBorrow, borrow.indexLimit, borrow.oldPrev, borrow.newPrev);
+        emit Transfer(address(_pool), specs_.from, specs_.borrowAmount);
+        _pool.borrow(specs_.borrowAmount, specs_.indexLimit, specs_.oldPrev, specs_.newPrev);
     }
 
-    function _assertPoolState(PoolState memory poolState) internal {
-        assertEq(_pool.htp(), poolState.htp);
-        assertEq(_pool.lup(), poolState.lup);
+    function _pledgeCollateral(PledgeSpecs memory specs_) internal {
+        changePrank(specs_.from);
+        _pool.pledgeCollateral(specs_.borrower, specs_.amount, specs_.oldPrev, specs_.newPrev);
+    }
 
-        assertEq(_pool.poolSize(),              poolState.poolSize);
-        assertEq(_pool.borrowerDebt(),          poolState.borrowerDebt);
-        assertEq(_pool.poolActualUtilization(), poolState.actualUtilization);
-        assertEq(_pool.poolTargetUtilization(), poolState.targetUtilization);
-        assertEq(_pool.poolMinDebtAmount(),     poolState.minDebtAmount);
+    function _pullCollateral(PullSpecs memory specs_) internal {
+        changePrank(specs_.from);
+        _pool.pullCollateral(specs_.amount, specs_.oldPrev, specs_.newPrev);
+    }
+
+    function _repay(RepaySpecs memory specs_) internal {
+        changePrank(specs_.from);
+        
+        vm.expectEmit(true, true, false, true);
+        emit Repay(specs_.borrower, specs_.price, specs_.repayAmount);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(specs_.from, address(_pool), specs_.repayAmount);
+        _pool.repay(specs_.borrower, specs_.repayAmount, specs_.oldPrev, specs_.newPrev);
+    }
+
+    function _assertPool(PoolState memory state_) internal {
+        assertEq(_pool.htp(), state_.htp);
+        assertEq(_pool.lup(), state_.lup);
+
+        assertEq(_pool.poolSize(),              state_.poolSize);
+        assertEq(_pool.borrowerDebt(),          state_.borrowerDebt);
+        assertEq(_pool.poolActualUtilization(), state_.actualUtilization);
+        assertEq(_pool.poolTargetUtilization(), state_.targetUtilization);
+        assertEq(_pool.poolMinDebtAmount(),     state_.minDebtAmount);
+    }
+
+    function _assertLPs(LenderLPs memory specs_) internal {
+        for (uint256 i = 0; i < specs_.bucketLPs.length; ++i) {
+            (uint256 lpBalance, uint256 time) = _pool.bucketLenders(specs_.bucketLPs[i].index, specs_.lender);
+            assertEq(lpBalance, specs_.bucketLPs[i].balance);
+            assertEq(time,      specs_.bucketLPs[i].time);
+        }
+    }
+
+    function _assertBuckets(BucketState[] memory state_) internal {
+        for (uint256 i = 0; i < state_.length; ++i) {
+            (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(state_[i].index);
+            assertEq(lpAccumulator,       state_[i].LPs);
+            assertEq(availableCollateral, state_[i].collateral);
+        }
+    }
+
+    function _assertBorrower(BorrowerState memory state_) internal {
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
+        assertEq(debt,        state_.debt);
+        assertEq(pendingDebt, state_.pendingDebt);
+        assertEq(col,         state_.collateral);
+        assertEq(inflator,    state_.inflator);
     }
 }
