@@ -71,7 +71,23 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
      */
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances;
 
+    /**
+     *  @notice Address of the Ajna token, needed for Claimable Reserve Auctions.
+     */
+    address internal ajnaTokenAddress = address(0);
+
     uint256 internal poolInitializations = 0;
+
+    /**
+     *  @notice Time a Claimable Reserve Auction was last kicked.
+     */
+    uint256 internal reserveAuctionKicked = 0;
+
+    /**
+     *  @notice Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+     */
+    uint256 internal reserveAuctionUnclaimed = 0;
+
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -228,11 +244,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     /*******************************/
 
     function startClaimableReserveAuction() external override {
+        reserveAuctionKicked = block.timestamp;
         // TODO: implement
     }
 
-    function takeReserves(uint256 maxAmount_) external override {
+    function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
         // TODO: implement
+        amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
+        reserveAuctionUnclaimed -= amount_;
     }
 
 
@@ -450,45 +469,17 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
     }
 
+    function _reserveAuctionPrice() internal view returns (uint256) {
+        // TODO: Calculate claimable reserves and apply the price decrease function.
+        ERC20 ajnaToken = ERC20(ajnaTokenAddress);
+        uint256 totalAjna = 2_000_000_000 * 10^18 - ajnaToken.totalSupply();
+        return Maths.min(totalAjna, 0);
+    }
+
+
     /**************************/
     /*** External Functions ***/
     /**************************/
-
-    function lup() external view override returns (uint256) {
-        return _lup();
-    }
-
-    function lupIndex() external view override returns (uint256) {
-        return _lupIndex(0);
-    }
-
-    function hpb() external view returns (uint256) {
-        return _indexToPrice(_hpbIndex());
-    }
-
-    function htp() external view returns (uint256) {
-        return _htp();
-    }
-
-    function poolTargetUtilization() external view override returns (uint256) {
-        return _poolTargetUtilization(debtEma, lupColEma);
-    }
-
-    function poolActualUtilization() external view override returns (uint256) {
-        return _poolActualUtilization(borrowerDebt, pledgedCollateral);
-    }
-
-    function priceToIndex(uint256 price_) external pure override returns (uint256) {
-        return _priceToIndex(price_);
-    }
-
-    function indexToPrice(uint256 index_) external pure override returns (uint256) {
-        return _indexToPrice(index_);
-    }
-
-    function poolCollateralization() external view override returns (uint256) {
-        return _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
-    }
 
     function borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) external pure override returns (uint256) {
         return _borrowerCollateralization(debt_, collateral_, price_);
@@ -511,6 +502,26 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         return _valueAt(index_);
     }
 
+    function encumberedCollateral(uint256 debt_, uint256 price_) external pure override returns (uint256) {
+        return _encumberedCollateral(debt_, price_);
+    }
+
+    function exchangeRate(uint256 index_) external view override returns (uint256) {
+        return _exchangeRate(_valueAt(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
+    }
+
+    function hpb() external view returns (uint256) {
+        return _indexToPrice(_hpbIndex());
+    }
+
+    function htp() external view returns (uint256) {
+        return _htp();
+    }
+
+    function indexToPrice(uint256 index_) external pure override returns (uint256) {
+        return _indexToPrice(index_);
+    }
+
     function liquidityToPrice(uint256 index_) external view returns (uint256) {
         return _prefixSum(index_);
     }
@@ -519,16 +530,32 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         return _lpsToQuoteTokens(deposit_, lpTokens_, index_);
     }
 
+    function lup() external view override returns (uint256) {
+        return _lup();
+    }
+
+    function lupIndex() external view override returns (uint256) {
+        return _lupIndex(0);
+    }
+
+    function poolActualUtilization() external view override returns (uint256) {
+        return _poolActualUtilization(borrowerDebt, pledgedCollateral);
+    }
+
+    function poolCollateralization() external view override returns (uint256) {
+        return _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
+    }
+
+    function poolTargetUtilization() external view override returns (uint256) {
+        return _poolTargetUtilization(debtEma, lupColEma);
+    }
+
+    function priceToIndex(uint256 price_) external pure override returns (uint256) {
+        return _priceToIndex(price_);
+    }
+
     function pendingInflator() external view override returns (uint256) {
         return _pendingInflator();
-    }
-
-    function exchangeRate(uint256 index_) external view override returns (uint256) {
-        return _exchangeRate(_valueAt(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
-    }
-
-    function encumberedCollateral(uint256 debt_, uint256 price_) external pure override returns (uint256) {
-        return _encumberedCollateral(debt_, price_);
     }
 
     function poolMinDebtAmount() external view returns (uint256) {
@@ -539,6 +566,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     function poolSize() external view returns (uint256) {
         return _treeSum();
     }
+
+    function reserveAuction() external view returns (uint256 claimableReservesRemaining_, uint256 auctionPrice_)
+    {
+        // TODO: implement
+        claimableReservesRemaining_ = reserveAuctionUnclaimed;
+        auctionPrice_               = _reserveAuctionPrice();
+    }
+
 
     /************************/
     /*** Helper Functions ***/

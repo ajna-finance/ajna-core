@@ -420,9 +420,10 @@ interface IScaledPool {
 
     /**
      *  @notice Purchases claimable reserves during a CRA using Ajna token.
-     *  @param  maxAmount_    Maximum amount of quote token to purchase at the current auction price.
+     *  @param  maxAmount_   Maximum amount of quote token to purchase at the current auction price.
+     *  @return amount_      Actual amount of reserves taken.
      */
-    function takeReserves(uint256 maxAmount_) external;
+    function takeReserves(uint256 maxAmount_) external returns (uint256 amount_);
 
 
     /**********************/
@@ -568,4 +569,13 @@ interface IScaledPool {
      */
     function quoteTokenAddress() external pure returns (address);
 
+    /**
+     *  @notice Returns the state of the Claimaible Reserve Auction.
+     *  @return claimableReservesRemaining_ Amount of claimable reserves which has not yet been taken.
+     *  @return auctionPrice_               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     */
+    function reserveAuction() external view returns (
+        uint256 claimableReservesRemaining_,
+        uint256 auctionPrice_
+    );
 }

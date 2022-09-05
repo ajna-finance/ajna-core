@@ -28,7 +28,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => Borrower) public override borrowers;
 
-    mapping (address => LiquidationInfo) public liquidations;
+    mapping(address => LiquidationInfo) public liquidations;
 
     uint256 public override collateralScale;
 
