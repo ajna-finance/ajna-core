@@ -9,13 +9,12 @@ import { IERC20Pool } from "./interfaces/IERC20Pool.sol";
 
 import { ScaledPool } from "../base/ScaledPool.sol";
 
-import { LoansHeap } from "../libraries/LoansHeap.sol";
-import { Maths }     from "../libraries/Maths.sol";
-import "@std/console.sol";
+import { Heap }  from "../libraries/Heap.sol";
+import { Maths } from "../libraries/Maths.sol";
 
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
-    using LoansHeap for LoansHeap.Data;
+    using Heap      for Heap.Data;
 
     struct LiquidationInfo {
         uint128 kickTime;
@@ -71,7 +70,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) loans.insert(borrower_, thresholdPrice);
+        if (borrower.debt != 0) loans.upsert(borrower_, thresholdPrice);
 
         borrowers[borrower_] = borrower;
 
@@ -91,11 +90,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 curDebt = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[msg.sender];
-        uint256 borrowersCount = totalBorrowers;
-        if (borrowersCount != 0) require(borrower.debt + amount_ > _poolMinDebtAmount(curDebt), "S:B:AMT_LT_MIN_DEBT");
+        if (loans.count - 1 != 0) require(borrower.debt + amount_ > _poolMinDebtAmount(curDebt), "S:B:AMT_LT_MIN_DEBT");
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
 
         uint256 debt  = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
         borrower.debt += debt;
@@ -114,7 +111,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        loans.insert(msg.sender, thresholdPrice);
+        loans.upsert(msg.sender, thresholdPrice);
+
         borrowers[msg.sender] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -137,7 +135,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) loans.insert(msg.sender, thresholdPrice);
+        if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
 
         // update pool state
         pledgedCollateral -= amount_;
@@ -342,16 +340,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         curDebt       -= amount;
 
         // update loan queue
-        uint256 borrowersCount = totalBorrowers;
         if (borrower.debt == 0) {
-            totalBorrowers = borrowersCount - 1;
-            loans.extractByBorrower(borrower_);
+            loans.remove(borrower_);
         } else {
-            if (borrowersCount != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_MIN_DEBT");
+            if (loans.count - 1 != 0) require(borrower.debt > _poolMinDebtAmount(curDebt), "R:B:AMT_LT_MIN_DEBT");
             uint256 thresholdPrice = _thresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-            loans.insert(borrower_, thresholdPrice);
+            loans.upsert(borrower_, thresholdPrice);
         }
-        console.log(totalBorrowers);
         borrowers[borrower_] = borrower;
 
         // update pool state

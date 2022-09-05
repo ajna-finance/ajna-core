@@ -240,7 +240,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         assertEq(address(_pool.maxBorrower()), _borrower);
 
         assertEq(_pool.borrowerDebt(),      debt);
-        assertEq(_pool.pledgedCollateral(), col); 
+        assertEq(_pool.pledgedCollateral(), col);
     }
 
     // TODO: Rework this test to do something useful, now that the purchase feature has been eliminated.

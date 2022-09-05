@@ -3,45 +3,39 @@ pragma solidity 0.8.14;
 
 import { DSTestPlus }  from "./utils/DSTestPlus.sol";
 
-import { LoansHeap } from "../libraries/LoansHeap.sol";
+import { Heap } from "../libraries/Heap.sol";
 
 contract TestPool {
-    using LoansHeap for LoansHeap.Data;
+    using Heap for Heap.Data;
 
-    LoansHeap.Data private _loansHeap;
+    Heap.Data private _loansHeap;
 
     constructor () {
         _loansHeap.init();
     }
 
-    function insertTp(address borrower, uint256 tp) external {
-        // _loansHeap.extractByBorrower(borrower);
-        _loansHeap.insert(borrower, tp);
+    function insertTp(address borrower_, uint256 tp_) external {
+        _loansHeap.upsert(borrower_, tp_);
     }
 
-    function deleteTp(address borrower) external returns (LoansHeap.Node memory) {
-        return _loansHeap.extractByBorrower(borrower);
+    function deleteTp(address borrower_) external {
+        _loansHeap.remove(borrower_);
     }
 
-    function deleteMaxTp() external {
-        _loansHeap.extractMax();
-    }
-
-    function getTp(address borrower) external view returns (uint256) {
-        return _loansHeap.getByBorrower(borrower).tp;
+    function getTp(address borrower_) external view returns (uint256) {
+        return _loansHeap.getById(borrower_).val;
     }
 
     function getMaxTp() external view returns (uint256) {
-        return _loansHeap.getMax().tp;
+        return _loansHeap.getMax().val;
     }
 
     function getMaxBorrower() external view returns (address) {
-        return _loansHeap.getMax().borrower;
+        return _loansHeap.getMax().id;
     }
-
 }
 
-contract LoansHeapTest is DSTestPlus {
+contract HeapTest is DSTestPlus {
     TestPool private _pool;
 
     function setUp() public {
@@ -109,23 +103,23 @@ contract LoansHeapTest is DSTestPlus {
         assertEq(_pool.getMaxTp(), 500 * 1e18);
         assertEq(_pool.getMaxBorrower(), b5);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b5);
         assertEq(_pool.getMaxTp(), 400 * 1e18);
         assertEq(_pool.getMaxBorrower(), b4);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b4);
         assertEq(_pool.getMaxBorrower(), b3);
         assertEq(_pool.getMaxTp(), 300 * 1e18);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b3);
         assertEq(_pool.getMaxBorrower(), b2);
         assertEq(_pool.getMaxTp(), 200 * 1e18);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b2);
         assertEq(_pool.getMaxBorrower(), b1);
         assertEq(_pool.getMaxTp(), 100 * 1e18);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b1);
         assertEq(_pool.getMaxBorrower(), address(0));
         assertEq(_pool.getMaxTp(), 0);
     }

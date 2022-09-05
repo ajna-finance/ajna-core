@@ -399,7 +399,7 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
         changePrank(_borrower);
         _pool.pledgeCollateral(_borrower, 50 * 1e18);
-        vm.expectRevert("B:U:TP_EQ_0");
+        vm.expectRevert("H:I:VAL_EQ_0");
         _pool.borrow(0.00000000000000001 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
@@ -437,7 +437,7 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
 
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
-        vm.expectRevert("B:U:TP_EQ_0");
+        vm.expectRevert("H:I:VAL_EQ_0");
         _pool.repay(_borrower, pendingDebt - 1);
 
         // should be able to pay back all pendingDebt

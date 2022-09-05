@@ -13,12 +13,12 @@ import { FenwickTree } from "./FenwickTree.sol";
 
 import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
-import { LoansHeap }      from "../libraries/LoansHeap.sol";
+import { Heap }           from "../libraries/Heap.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 abstract contract ScaledPool is Clone, FenwickTree, IScaledPool {
     using SafeERC20 for ERC20;
-    using LoansHeap for LoansHeap.Data;
+    using Heap for Heap.Data;
 
     int256  public constant INDEX_OFFSET = 3232;
 
@@ -45,7 +45,6 @@ abstract contract ScaledPool is Clone, FenwickTree, IScaledPool {
 
     uint256 public override borrowerDebt;
 
-    uint256 public override totalBorrowers;
     uint256 public override quoteTokenScale;
     uint256 public override pledgedCollateral;
 
@@ -71,7 +70,7 @@ abstract contract ScaledPool is Clone, FenwickTree, IScaledPool {
      */
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances;
 
-    LoansHeap.Data internal loans;
+    Heap.Data internal loans;
 
     uint256 internal poolInitializations = 0;
 
@@ -379,7 +378,7 @@ abstract contract ScaledPool is Clone, FenwickTree, IScaledPool {
     }
 
     function _htp() internal view returns (uint256) {
-        return Maths.wmul(loans.getMax().tp, inflatorSnapshot);
+        return Maths.wmul(loans.getMax().val, inflatorSnapshot);
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
@@ -405,7 +404,7 @@ abstract contract ScaledPool is Clone, FenwickTree, IScaledPool {
     }
 
     function _poolMinDebtAmount(uint256 debt_) internal view returns (uint256) {
-        return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(totalBorrowers)), 10**19);
+        return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(loans.count - 1)), 10**19);
     }
 
     function _lup() internal view returns (uint256) {
@@ -533,7 +532,7 @@ abstract contract ScaledPool is Clone, FenwickTree, IScaledPool {
     }
 
     function maxBorrower() external view override returns (address) {
-        return loans.getMax().borrower;
+        return loans.getMax().id;
     }
 
     /************************/
