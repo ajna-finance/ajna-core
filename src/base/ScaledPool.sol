@@ -45,7 +45,6 @@ abstract contract ScaledPool is Clone, FenwickTree, IScaledPool {
 
     uint256 public override borrowerDebt;
 
-    uint256 public override totalBorrowers;
     uint256 public override quoteTokenScale;
     uint256 public override pledgedCollateral;
 
@@ -405,7 +404,7 @@ abstract contract ScaledPool is Clone, FenwickTree, IScaledPool {
     }
 
     function _poolMinDebtAmount(uint256 debt_) internal view returns (uint256) {
-        return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(totalBorrowers)), 10**19);
+        return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(loans.count - 1)), 10**19);
     }
 
     function _lup() internal view returns (uint256) {

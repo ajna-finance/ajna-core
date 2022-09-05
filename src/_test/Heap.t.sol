@@ -18,12 +18,8 @@ contract TestPool {
         _loansHeap.upsert(borrower_, tp_);
     }
 
-    function deleteTp(address borrower_) external returns (Heap.Node memory) {
-        return _loansHeap.remove(borrower_);
-    }
-
-    function deleteMaxTp() external {
-        _loansHeap.removeMax();
+    function deleteTp(address borrower_) external {
+        _loansHeap.remove(borrower_);
     }
 
     function getTp(address borrower_) external view returns (uint256) {
@@ -107,23 +103,23 @@ contract HeapTest is DSTestPlus {
         assertEq(_pool.getMaxTp(), 500 * 1e18);
         assertEq(_pool.getMaxBorrower(), b5);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b5);
         assertEq(_pool.getMaxTp(), 400 * 1e18);
         assertEq(_pool.getMaxBorrower(), b4);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b4);
         assertEq(_pool.getMaxBorrower(), b3);
         assertEq(_pool.getMaxTp(), 300 * 1e18);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b3);
         assertEq(_pool.getMaxBorrower(), b2);
         assertEq(_pool.getMaxTp(), 200 * 1e18);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b2);
         assertEq(_pool.getMaxBorrower(), b1);
         assertEq(_pool.getMaxTp(), 100 * 1e18);
 
-        _pool.deleteMaxTp();
+        _pool.deleteTp(b1);
         assertEq(_pool.getMaxBorrower(), address(0));
         assertEq(_pool.getMaxTp(), 0);
     }
