@@ -16,16 +16,29 @@ library Heap {
       uint256 val;
     }
 
-    function init(Data storage self) internal {
-        require(self.count == 0, "H:ALREADY_INIT");
-        self.nodes.push(Node(address(0),0));
-        self.count++;
+    /**
+     *  @notice Initializes Max Heap.
+     *  @dev    Organizes loans so Highest Threshold Price can be retreived easily.
+     *  @param self_ Holds tree node data.
+     */
+    function init(Data storage self_) internal {
+        require(self_.count == 0, "H:ALREADY_INIT");
+        self_.nodes.push(Node(address(0),0));
+        ++self_.count;
     }
 
-    function upsert(Data storage self_, address id_, uint256 val_) internal returns(Node memory n_) {
+    /**
+     *  @notice Performs an insert or an update dependent on borrowers existance.
+     *  @param self_ Holds tree node data.
+     *  @param id_   Id address that is being updated or inserted.
+     *  @param val_  Value that is updated or inserted.
+     */
+    function upsert(Data storage self_, address id_, uint256 val_) internal {
         require(val_ != 0, "H:I:VAL_EQ_0");
         uint256 i = self_.indices[id_];
-        if (i != 0) { // node exists, update in place
+
+        // Node exists, update in place.
+        if (i != 0) { 
             Node memory currentNode = self_.nodes[i];
             if (currentNode.val > val_) {
                 currentNode.val = val_;
@@ -34,69 +47,99 @@ library Heap {
                 currentNode.val = val_;
                 _bubbleUp(self_, currentNode, i);
             }
-        } else { // new node, insert it
-            n_ = Node(id_, val_);
-            _bubbleUp(self_, n_, self_.count);
-            self_.count++;
+
+        // New node, insert it
+        } else { 
+            //Node n_ = Node(id_, val_);
+            _bubbleUp(self_, Node(id_, val_), self_.count);
+            ++self_.count;
         }
     }
 
-    function removeMax(Data storage self_) internal returns(Node memory) {
-        return _extract(self_, ROOT_INDEX);
-    }
-
-    function remove(Data storage self, address id_) internal returns(Node memory) {
-        return _extract(self, self.indices[id_]);
-    }
-
+    /**
+     *  @notice Retreives Node by Id address.
+     *  @param self_ Holds tree node data.
+     *  @param id_   Id address that is being updated or inserted.
+     *  @return Node Id's freshly updated or inserted Node.
+     */
     function getById(Data storage self_, address id_) internal view returns(Node memory) {
         return getByIndex(self_, self_.indices[id_]);
     }
 
-    function getByIndex(Data storage self_, uint i_) internal view returns(Node memory) {
+    /**
+     *  @notice Retreives Node by index, i_.
+     *  @param self_ Holds tree node data.
+     *  @param i_    Index to retreive Node.
+     *  @return Node Node revreived by index.
+     */
+    function getByIndex(Data storage self_, uint256 i_) internal view returns(Node memory) {
         return self_.count > i_ ? self_.nodes[i_] : Node(address(0),0);
     }
 
+    /**
+     *  @notice Retreives Node with the highest value, val in the Heap.
+     *  @param self_ Holds tree node data.
+     *  @return Node Max Node in the Heap.
+     */
     function getMax(Data storage self_) internal view returns(Node memory){
         return getByIndex(self_, ROOT_INDEX);
     }
 
-    //private
-    function _extract(Data storage self_, uint i_) private returns(Node memory extractedNode_) {
-        if (self_.count <= i_ || i_ <= 0) return Node(address(0),0);
+    /**
+     *  @notice Removes node at Id's index, id_, from Heap.
+     *  @param self_ Holds tree node data.
+     *  @param id_   Id's address whose Node is being updated or inserted.
+     */
+    function remove(Data storage self_, address id_) internal {
 
-        extractedNode_ = self_.nodes[i_];
-        delete self_.indices[extractedNode_.id];
+        uint256 i_ = self_.indices[id_];
+        require(i_ <= self_.count);
+
         delete self_.nodes[i_];
-        uint256 curCount = self_.count - 1;
+        delete self_.indices[id_];
+        --self_.count;
 
-        Node memory tailNode = self_.nodes[curCount];
-        if (i_ < curCount){ // if extracted node was not tail
-            _bubbleUp(self_, tailNode, i_);
-            _bubbleDown(self_, self_.nodes[i_], i_); // then try bubbling down
+        Node memory tail = self_.nodes[self_.count];
+
+        // If extracted node is not tail.
+        if (i_ < self_.count){ 
+            _bubbleUp(self_, tail, i_);
+            _bubbleDown(self_, self_.nodes[i_], i_);
         }
-        self_.count = curCount;
     }
 
+    /**
+     *  @notice Moves a Node up the tree.
+     *  @param self_ Holds tree node data.
+     *  @param n_    Node to be moved.
+     *  @param i_    index for Node to be moved to.
+     */
     function _bubbleUp(Data storage self_, Node memory n_, uint i_) private {
-        if (i_ == ROOT_INDEX || n_.val <= self_.nodes[i_/2].val){
+        if (i_ == ROOT_INDEX || n_.val <= self_.nodes[i_ / 2].val){
           _insert(self_, n_, i_);
         } else {
-          _insert(self_, self_.nodes[i_/2], i_);
-          _bubbleUp(self_, n_, i_/2);
+          _insert(self_, self_.nodes[i_ / 2], i_);
+          _bubbleUp(self_, n_, i_ / 2);
         }
     }
 
+    /**
+     *  @notice Moves a Node down the tree.
+     *  @param self_ Holds tree node data.
+     *  @param n_    Node to be moved.
+     *  @param i_    index for Node to be moved to.
+     */
     function _bubbleDown(Data storage self_, Node memory n_, uint i_) private {
-        uint256 length = self_.count;
-        uint cIndex = i_ * 2; // left child index
 
-        if (length <= cIndex) {
+        // Left child index.
+        uint cIndex = i_ * 2; 
+
+        if (self_.count <= cIndex) {
             _insert(self_, n_, i_);
         } else {
             Node memory largestChild = self_.nodes[cIndex];
 
-            if (length > cIndex+1 && self_.nodes[cIndex+1].val > largestChild.val) {
+            if (self_.count > cIndex + 1 && self_.nodes[cIndex + 1].val > largestChild.val) {
                 largestChild = self_.nodes[++cIndex];
             }
 
@@ -109,8 +152,14 @@ library Heap {
         }
     }
 
+    /**
+     *  @notice Inserts a Node in the tree.
+     *  @param self_ Holds tree node data.
+     *  @param n_    Node to be inserted.
+     *  @param i_    index for Node to be inserted at.
+     */
     function _insert(Data storage self_, Node memory n_, uint i_) private {
-        if (i_ == self_.nodes.length) self_.nodes.push(n_);
+        if (i_ == self_.count) self_.nodes.push(n_);
         else self_.nodes[i_] = n_;
 
         self_.indices[n_.id] = i_;
