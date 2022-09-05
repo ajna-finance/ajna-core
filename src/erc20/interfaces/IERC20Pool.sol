@@ -29,6 +29,22 @@ interface IERC20Pool is IScaledPool {
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     /**
+     *  @notice Emitted when an actor settles debt in a completed liquidation
+     *  @param  borrower_           Identifies the loan being liquidated.
+     *  @param  hpbIndex_           The index of the Highest Price Bucket where debt was cleared.
+     *  @param  amount_             Amount of debt cleared from the HPB in this transaction.
+     *  @param  collateralReturned_ Amount of collateral returned to the borrower in this transaction.
+     *  @param  amountRemaining_    Amount of debt which still needs to be cleared.
+     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
+     */
+    event Clear(
+        address indexed borrower_,
+        uint256 hpbIndex_,
+        uint256 amount_,
+        uint256 collateralReturned_,
+        uint256 amountRemaining_);
+
+    /**
      *  @notice Emitted when borrower locks collateral in the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  amount_   Amount of collateral locked in the pool.

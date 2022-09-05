@@ -325,23 +325,34 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
-        //  which includes an array of the borrower's tokenIds.
+        //  which includes an array of the borrower's tokenIds being auctioned off.
     }
 
     function take(address borrower_, uint256 amount_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external override {
         // TODO: Implement
+
+        // copypasta to quell warnings
+        msg.sender.call(swapCalldata_);
+        this.repay(borrower_, 0, oldPrev_, newPrev_);
+
+        emit Take(borrower_, amount_, 0);
     }
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
+        emit DepositTake(borrower_, index_, amount_, 0);
     }
 
     function arbTake(address borrower_, uint256 amount_) external override {
         // TODO: implement
+        emit ArbTake(borrower_, _hpbIndex(), amount_, 0);
     }
 
     function clear(address borrower_, uint256 amount_) external override {
         // TODO: implement
+        uint256[] memory tokenIdsReturned = new uint256[](1);
+        tokenIdsReturned[0] = 0;
+        emit ClearNFT(borrower_, _hpbIndex(), amount_, tokenIdsReturned, 0);
     }
 
     /**********************/

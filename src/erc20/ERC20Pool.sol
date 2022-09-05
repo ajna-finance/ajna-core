@@ -279,9 +279,12 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
         // TODO: Account for repossessed collateral
+        liquidationBondEscrowed += Maths.wmul(borrower.debt, 0.01 * 1e18);
 
         // Post the liquidation bond
         // Repossess the borrowers collateral, initialize the auction cooldown timer
+
+        emit Liquidate(borrower_, borrower.debt, borrower.collateral);
     }
 
     // TODO: Add reentrancy guard
@@ -310,18 +313,23 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralToPurchase);
 
         _repayDebt(borrower_, quoteTokenReturnAmount, oldPrev_, newPrev_);
+
+        emit Take(borrower_, amount_, collateralToPurchase);
     }
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
+        emit DepositTake(borrower_, index_, amount_, 0);
     }
 
     function arbTake(address borrower_, uint256 amount_) external override {
         // TODO: implement
+        emit ArbTake(borrower_, _hpbIndex(), amount_, 0);
     }
 
     function clear(address borrower_, uint256 amount_) external override {
         // TODO: implement
+        emit Clear(borrower_, _hpbIndex(), amount_, 0, 0);
     }
 
     /**************************/

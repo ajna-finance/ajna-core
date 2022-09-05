@@ -12,6 +12,16 @@ interface IScaledPool {
     /*********************/
 
     /**
+     *  @notice Emitted when an actor uses quote token from the HPB to purchase collateral under liquidation.
+     *  @param  borrower_   Identifies the loan being liquidated.
+     *  @param  hpbIndex_   The index of the Highest Price Bucket used for this take.
+     *  @param  amount_     Amount of quote token used to purchase collateral.
+     *  @param  collateral_ Amount of collateral purchased with quote token.
+     *  @dev    amount_ / collateral_ implies the auction price.
+     */
+    event ArbTake(address indexed borrower_, uint256 hpbIndex_, uint256 amount_, uint256 collateral_);
+
+    /**
      *  @notice Emitted when lender adds quote token to the pool.
      *  @param  lender_ Recipient that added quote tokens.
      *  @param  price_  Price at which quote tokens were added.
@@ -19,6 +29,24 @@ interface IScaledPool {
      *  @param  lup_    LUP calculated after deposit.
      */
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
+
+    /**
+     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
+     *  @param  borrower_   Identifies the loan being liquidated.
+     *  @param  index_      Index of the price bucket from which quote token was exchanged for collateral.
+     *  @param  amount_     Amount of quote token taken from the bucket to purchase collateral.
+     *  @param  collateral_ Amount of collateral purchased with quote token.
+     *  @dev    amount_ / collateral_ implies the auction price.
+     */
+    event DepositTake(address indexed borrower_, uint256 index_, uint256 amount_, uint256 collateral_);
+
+    /**
+     *  @notice Emitted when a liquidation is initiated.
+     *  @param  borrower_   Identifies the loan being liquidated.
+     *  @param  debt_       Debt the liquidation will attempt to cover.
+     *  @param  collateral_ Amount of collateral up for liquidation.
+     */
+    event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
 
     /**
      *  @notice Emitted when lender moves collateral from a bucket price to another.
@@ -47,6 +75,15 @@ interface IScaledPool {
      *  @param  lup_    LUP calculated after removal.
      */
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
+
+    /**
+     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
+     *  @param  borrower_   Identifies the loan being liquidated.
+     *  @param  amount_     Amount of quote token used to purchase collateral.
+     *  @param  collateral_ Amount of collateral purchased with quote token.
+     *  @dev    amount_ / collateral_ implies the auction price.
+     */
+    event Take(address indexed borrower_, uint256 amount_, uint256 collateral_);
 
     /**
      *  @notice Emitted when a lender transfers their LP tokens to a different address.
@@ -238,6 +275,12 @@ interface IScaledPool {
     function lenderInterestFactor() external view returns (uint256 lenderInterestFactor_);
 
     /**
+     *  @notice Returns the amount of liquidation bond across all liquidators.
+     *  @return liquidationBondEscrowed_ Total amount of quote token being escrowed.
+     */
+    function liquidationBondEscrowed() external view returns (uint256 liquidationBondEscrowed_);
+
+    /**
      *  @notice Returns the amount of quote token in the book down to the specified bucket index.
      *  @return quoteToken_ Amount of quote token (deposit + interest), regardless of pool debt.
      */
@@ -278,6 +321,7 @@ interface IScaledPool {
      *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
      */
     function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
+
     /**
      *  @notice Returns the `totalBorrowers` state variable.
      *  @return totalBorrowers_ The total number of borrowers in pool.

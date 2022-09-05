@@ -43,8 +43,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     uint256 public override interestRate;               // [WAD]
     uint256 public override interestRateUpdate;         // [SEC]
 
-    uint256 public override borrowerDebt;
-
+    uint256 public override borrowerDebt;               // [WAD]
+    uint256 public override liquidationBondEscrowed;    // [WAD]
     uint256 public override totalBorrowers;
     uint256 public override quoteTokenScale;
     uint256 public override pledgedCollateral;

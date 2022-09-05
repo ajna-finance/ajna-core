@@ -23,6 +23,22 @@ interface IERC721Pool is IScaledPool {
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
 
     /**
+     *  @notice Emitted when an actor settles debt in a completed liquidation
+     *  @param  borrower_           Identifies the loan being liquidated.
+     *  @param  hpbIndex_           The index of the Highest Price Bucket where debt was cleared.
+     *  @param  amount_             Amount of debt cleared from the HPB in this transaction.
+     *  @param  tokenIdsReturned_   Array of NFTs returned to the borrower in this transaction.
+     *  @param  amountRemaining_    Amount of debt which still needs to be cleared.
+     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
+     */
+    event ClearNFT(
+        address   indexed borrower_,
+        uint256   hpbIndex_,
+        uint256   amount_,
+        uint256[] tokenIdsReturned_,
+        uint256   amountRemaining_);
+
+    /**
      *  @notice Emitted when borrower borrows quote tokens from pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  lup_      LUP after borrow.
