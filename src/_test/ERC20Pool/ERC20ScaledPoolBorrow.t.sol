@@ -39,38 +39,59 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         uint256 depositIndexLowest  = 2554;
 
         // lender deposits 10000 DAI in 5 buckets each
-        changePrank(_lender);
-        _pool.addQuoteToken(10_000 * 1e18, depositIndexHighest);
-        _pool.addQuoteToken(10_000 * 1e18, depositIndexHigh);
-        _pool.addQuoteToken(10_000 * 1e18, depositIndexMed);
-        _pool.addQuoteToken(10_000 * 1e18, depositIndexLow);
-        _pool.addQuoteToken(10_000 * 1e18, depositIndexLowest);
+        Liquidity[] memory amounts = new Liquidity[](5);
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: depositIndexHighest});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: depositIndexHigh});
+        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: depositIndexMed});
+        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: depositIndexLow});
+        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: depositIndexLowest});
+        _addLiquidity(
+            AddLiquidity({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
 
-        assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
-
-        assertEq(_pool.poolSize(),              50_000 * 1e18);
-        assertEq(_pool.borrowerDebt(),          0);
-        assertEq(_pool.poolActualUtilization(), 0);
-        assertEq(_pool.poolMinDebtAmount(),     0);
+        _assertPoolState(
+            PoolState({
+                htp:               0,
+                lup:               BucketMath.MAX_PRICE,
+                poolSize:          50_000 * 1e18,
+                borrowerDebt:      0,
+                actualUtilization: 0,
+                targetUtilization: 1e18,
+                minDebtAmount:     0
+            })
+        );
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 50_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
 
-        // borrower deposit 100 WETH collateral
-        changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 100 * 1e18, address(0), address(0));
-        assertEq(_pool.poolTargetUtilization(), 1 * 1e18);
-        assertEq(_pool.poolActualUtilization(), 0);
+        _borrow(
+            BorrowParams({
+                from:     _borrower,
+                borrower: _borrower,
+                amountToPledge: 100 * 1e18,
+                amountToBorrow: 21_000 * 1e18,
+                indexLimit:     3_000,
+                oldPrev:        address(0),
+                newPrev:        address(0),
+                price:          2_981.007422784467321543 * 1e18
+            })
+        );
 
-        // get a 21_000 DAI loan
-        vm.expectEmit(true, true, false, true);
-        emit Borrow(_borrower, 2_981.007422784467321543 * 1e18, 21_000 * 1e18);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(address(_pool), _borrower, 21_000 * 1e18);
-        _pool.borrow(21_000 * 1e18, 3000, address(0), address(0));
-
+        _assertPoolState(
+            PoolState({
+                htp:               210.201923076923077020 * 1e18,
+                lup:               2_981.007422784467321543 * 1e18,
+                poolSize:          21_020.192307692307702000 * 1e18,
+                borrowerDebt:      0,
+                actualUtilization: 0,
+                targetUtilization: 1e18,
+                minDebtAmount:     0
+            })
+        );
         assertEq(_pool.htp(), 210.201923076923077020 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
 

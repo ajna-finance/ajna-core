@@ -21,6 +21,41 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+    /*****************/
+    /*** Utilities ***/
+    /*****************/
+
+    struct AddLiquidity {
+        address from;        // lender address
+        Liquidity[] amounts; // liquidities to add
+    }
+
+    struct BorrowParams {
+        address from;
+        address borrower;
+        uint256 amountToPledge; 
+        uint256 amountToBorrow;
+        uint256 indexLimit;
+        address oldPrev;
+        address newPrev;
+        uint256 price;
+    }
+
+    struct Liquidity {
+        uint256 index;  // bucket index
+        uint256 amount; // amount to add
+    }
+
+    struct PoolState {
+        uint256 htp;
+        uint256 lup;
+        uint256 poolSize;
+        uint256 borrowerDebt;
+        uint256 actualUtilization;
+        uint256 targetUtilization;
+        uint256 minDebtAmount;
+    }
+
     function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
         assertEq(address(erc1_), address(erc2_));
     }
@@ -59,5 +94,34 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         vm.prank(operator_);
         _quote.approve(address(_pool), type(uint256).max);
 
+    }
+
+    function _addLiquidity(AddLiquidity memory liquidity) internal {
+        changePrank(liquidity.from);
+        for (uint256 i = 0; i < liquidity.amounts.length; ++i) {
+            _pool.addQuoteToken(liquidity.amounts[i].amount, liquidity.amounts[i].index);
+        }
+    }
+
+    function _borrow(BorrowParams memory borrow) internal {
+        changePrank(borrow.from);
+        _pool.pledgeCollateral(borrow.borrower, borrow.amountToPledge, borrow.oldPrev, borrow.newPrev);
+
+        vm.expectEmit(true, true, false, true);
+        emit Borrow(borrow.borrower, borrow.price, 21_000 * 1e18);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), borrow.from, 21_000 * 1e18);
+        _pool.borrow(borrow.amountToBorrow, borrow.indexLimit, borrow.oldPrev, borrow.newPrev);
+    }
+
+    function _assertPoolState(PoolState memory poolState) internal {
+        assertEq(_pool.htp(), poolState.htp);
+        assertEq(_pool.lup(), poolState.lup);
+
+        assertEq(_pool.poolSize(),              poolState.poolSize);
+        assertEq(_pool.borrowerDebt(),          poolState.borrowerDebt);
+        assertEq(_pool.poolActualUtilization(), poolState.actualUtilization);
+        assertEq(_pool.poolTargetUtilization(), poolState.targetUtilization);
+        assertEq(_pool.poolMinDebtAmount(),     poolState.minDebtAmount);
     }
 }
