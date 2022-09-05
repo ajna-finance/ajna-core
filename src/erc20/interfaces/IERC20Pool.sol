@@ -13,11 +13,12 @@ interface IERC20Pool is IScaledPool {
     /************************/
 
     /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  amount_   Amount of collateral locked in the pool.
+     *  @notice Emitted when actor adds unencumbered collateral to a bucket.
+     *  @param  actor_  Recipient that added collateral.
+     *  @param  price_  Price at which collateral were added.
+     *  @param  amount_ Amount of collateral added to the pool.
      */
-    event PledgeCollateral(address indexed borrower_, uint256 amount_);
+    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
 
     /**
      *  @notice Emitted when borrower borrows quote tokens from pool.
@@ -28,12 +29,18 @@ interface IERC20Pool is IScaledPool {
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     /**
-     *  @notice Emitted when actor adds unencumbered collateral to a bucket.
-     *  @param  actor_  Recipient that added collateral.
-     *  @param  price_  Price at which collateral were added.
-     *  @param  amount_ Amount of collateral added to the pool.
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  amount_   Amount of collateral locked in the pool.
      */
-    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
+    event PledgeCollateral(address indexed borrower_, uint256 amount_);
+
+    /**
+     *  @notice Emitted when borrower removes pledged collateral from the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  amount_   Amount of collateral removed from the pool.
+     */
+    event PullCollateral(address indexed borrower_, uint256 amount_);
 
     /**
      *  @notice Emitted when lender moves collateral from a bucket price to another.
@@ -53,13 +60,6 @@ interface IERC20Pool is IScaledPool {
     event RemoveCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_);
 
     /**
-     *  @notice Emitted when borrower removes pledged collateral from the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  amount_   Amount of collateral removed from the pool.
-     */
-    event PullCollateral(address indexed borrower_, uint256 amount_);
-
-    /**
      *  @notice Emitted when borrower repays quote tokens to the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  lup_      LUP after repay.
@@ -67,10 +67,10 @@ interface IERC20Pool is IScaledPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+
     /*********************/
     /*** Custom Errors ***/
     /*********************/
-
 
     /**
      *  @notice Lender is attempting to remove collateral when they have no claim to collateral in the bucket.
@@ -103,6 +103,7 @@ interface IERC20Pool is IScaledPool {
      */
     function collateralScale() external view returns (uint256 collateralScale_);
 
+
     /*************************/
     /*** ERC20Pool Structs ***/
     /*************************/
@@ -119,18 +120,10 @@ interface IERC20Pool is IScaledPool {
         uint256 inflatorSnapshot;    // [WAD]
     }
 
+
     /*********************************************/
     /*** ERC20Pool Borrower External Functions ***/
     /*********************************************/
-
-    /**
-     *  @notice Called by borrowers to add collateral to the pool.
-     *  @param  borrower_ The address of borrower to pledge collateral for.
-     *  @param  amount_   The amount of collateral in deposit tokens to be added to the pool.
-     *  @param  oldPrev_  Previous borrower that came before placed loan (old)
-     *  @param  newPrev_  Previous borrower that now comes before placed loan (new)
-     */
-    function pledgeCollateral(address borrower_, uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by a borrower to open or expand a position.
@@ -141,6 +134,15 @@ interface IERC20Pool is IScaledPool {
      *  @param  newPrev_    Previous borrower that now comes before placed loan (new)
      */
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external;
+
+    /**
+     *  @notice Called by borrowers to add collateral to the pool.
+     *  @param  borrower_ The address of borrower to pledge collateral for.
+     *  @param  amount_   The amount of collateral in deposit tokens to be added to the pool.
+     *  @param  oldPrev_  Previous borrower that came before placed loan (old)
+     *  @param  newPrev_  Previous borrower that now comes before placed loan (new)
+     */
+    function pledgeCollateral(address borrower_, uint256 amount_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by borrowers to remove an amount of collateral.
@@ -159,9 +161,17 @@ interface IERC20Pool is IScaledPool {
      */
     function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external;
 
+
     /*****************************/
     /*** Initialize Functions ***/
     /*****************************/
+
+    /**
+     *  @notice Deposit unencumbered collateral into a specified bucket.
+     *  @param  amount_ Amount of collateral to deposit.
+     *  @param  index_  The bucket index to which collateral will be deposited.
+     */
+    function addCollateral(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_);
 
     /**
      *  @notice Initializes a new pool, setting initial state variables.
@@ -205,6 +215,7 @@ interface IERC20Pool is IScaledPool {
      *  @return lpAmount_ The amount of LP used for removing collateral amount.
      */
     function removeCollateral(uint256 amount_, uint256 index_) external returns (uint256 lpAmount_);
+
 
     /**********************/
     /*** View Functions ***/

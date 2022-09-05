@@ -222,6 +222,20 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
     }
 
+
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    function startClaimableReserveAuction() external override {
+        // TODO: implement
+    }
+
+    function takeReserves(uint256 maxAmount_) external override {
+        // TODO: implement
+    }
+
+
     /**************************/
     /*** Internal Functions ***/
     /**************************/

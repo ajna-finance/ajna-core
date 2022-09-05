@@ -23,19 +23,19 @@ interface IERC721Pool is IScaledPool {
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
 
     /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
-     */
-    event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
-
-    /**
      *  @notice Emitted when borrower borrows quote tokens from pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  lup_      LUP after borrow.
      *  @param  amount_   Amount of quote tokens borrowed from the pool.
      */
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
+     */
+    event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
 
     /**
      *  @notice Emitted when borrower removes collateral from the pool.
@@ -60,6 +60,7 @@ interface IERC721Pool is IScaledPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+
     /*************************/
     /*** ERC721Pool Errors ***/
     /*************************/
@@ -70,25 +71,26 @@ interface IERC721Pool is IScaledPool {
     error AddTokenFailed();
 
     /**
-     *  @notice Failed to remove a tokenId from an EnumerableSet.
-     */
-    error RemoveTokenFailed();
-
-    /**
      *  @notice User attempted to add an NFT to the pool with a tokenId outsde of the allowed subset.
      */
     error OnlySubset();
+
+    /**
+     *  @notice Failed to remove a tokenId from an EnumerableSet.
+     */
+    error RemoveTokenFailed();
 
     /**
      *  @notice User attempted to interact with a tokenId that hasn't been deposited into the pool or bucket.
      */
     error TokenNotDeposited();
 
+
     /**************************/
     /*** ERC721Pool Structs ***/
     /**************************/
 
-     /**
+    /**
      *  @notice Struct holding borrower related info per price bucket, for borrowers using NFTs as collateral.
      *  @param  debt                Borrower debt, WAD units.
      *  @param  collateralDeposited OZ Enumberable Set tracking the tokenIds of collateral that have been deposited
@@ -100,6 +102,7 @@ interface IERC721Pool is IScaledPool {
         uint256               inflatorSnapshot;    // [WAD]
     }
 
+
     /*****************************/
     /*** Initialize Functions ***/
     /*****************************/
@@ -110,18 +113,10 @@ interface IERC721Pool is IScaledPool {
      */
     function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_) external;
 
+
     /***********************************/
     /*** Borrower External Functions ***/
     /***********************************/
-
-    /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower_ The address of borrower to pledge collateral for.
-     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
-     *  @param  oldPrev_  Previous borrower that came before placed loan (old)
-     *  @param  newPrev_  Previous borrower that now comes before placed loan (new)
-     */
-    function pledgeCollateral(address borrower_, uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by a borrower to open or expand a position.
@@ -132,6 +127,15 @@ interface IERC721Pool is IScaledPool {
      *  @param  newPrev_    Previous borrower that now comes before placed loan (new)
      */
     function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external;
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ The address of borrower to pledge collateral for.
+     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
+     *  @param  oldPrev_  Previous borrower that came before placed loan (old)
+     *  @param  newPrev_  Previous borrower that now comes before placed loan (new)
+     */
+    function pledgeCollateral(address borrower_, uint256[] calldata tokenIds_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Called by borrowers to remove an amount of collateral.
@@ -149,6 +153,7 @@ interface IERC721Pool is IScaledPool {
      *  @param  newPrev_   Previous borrower that now comes before placed loan (new)
      */
     function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external;
+
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -168,6 +173,7 @@ interface IERC721Pool is IScaledPool {
      *  @return lpAmount_ The amount of LP tokens used for removing collateral amount.
      */
     function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external returns (uint256 lpAmount_);
+
 
     /**********************/
     /*** View Functions ***/

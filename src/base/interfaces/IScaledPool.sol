@@ -21,6 +21,15 @@ interface IScaledPool {
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
 
     /**
+     *  @notice Emitted when lender moves collateral from a bucket price to another.
+     *  @param  lender_ Recipient that moved collateral.
+     *  @param  from_   Price bucket from which collateral was moved.
+     *  @param  to_     Price bucket where collateral was moved.
+     *  @param  amount_ Amount of collateral moved.
+     */
+    event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
+
+    /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
      *  @param  lender_ Recipient that moved quote tokens.
      *  @param  from_   Price bucket from which quote tokens were moved.
@@ -67,11 +76,6 @@ interface IScaledPool {
     error AlreadyInitialized();
 
     /**
-     *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
-     */
-    error BorrowLimitIndexReached();
-
-    /**
      *  @notice Borrower is attempting to create or modify a loan such that their loan's quote token would be less than the pool's minimum debt amount.
      */
     error BorrowAmountLTMinDebt();
@@ -82,14 +86,14 @@ interface IScaledPool {
     error BorrowBorrowerUnderCollateralized();
 
     /**
+     *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
+     */
+    error BorrowLimitIndexReached();
+
+    /**
      *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
      */
     error BorrowPoolUnderCollateralized();
-
-    /**
-     *  @notice Borrower has no debt to liquidate.
-     */
-    error LiquidateNoDebt();
 
     /**
      *  @notice Borrower has a healthy over-collateralized position.
@@ -102,6 +106,11 @@ interface IScaledPool {
     error LiquidateLUPGreaterThanTP();
 
     /**
+     *  @notice Borrower has no debt to liquidate.
+     */
+    error LiquidateNoDebt();
+
+    /**
      *  @notice FromIndex_ and toIndex_ arguments to moveQuoteToken() are the same.
      */
     error MoveQuoteToSamePrice();
@@ -112,9 +121,14 @@ interface IScaledPool {
     error MoveQuoteLUPBelowHTP();
 
     /**
-     *  @notice Lender must have non-zero LPB when attemptign to remove quote token from the pool.
+     *  @notice User is attempting to pull more collateral than is available.
      */
-    error RemoveQuoteNoClaim();
+    error RemoveCollateralInsufficientCollateral();
+
+    /**
+     *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
+     */
+    error RemoveCollateralInsufficientLP();
 
     /**
      *  @notice Lender must have enough LP tokens to claim the desired amount of quote from the bucket.
@@ -132,14 +146,9 @@ interface IScaledPool {
     error RemoveQuoteLUPBelowHTP();
 
     /**
-     *  @notice User is attempting to pull more collateral than is available.
+     *  @notice Lender must have non-zero LPB when attemptign to remove quote token from the pool.
      */
-    error RemoveCollateralInsufficientCollateral();
-
-    /**
-     *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
-     */
-    error RemoveCollateralInsufficientLP();
+    error RemoveQuoteNoClaim();
 
     /**
      *  @notice Borrower is attempting to repay when they have no outstanding debt.
@@ -160,6 +169,12 @@ interface IScaledPool {
     /***********************/
     /*** State Variables ***/
     /***********************/
+
+    /**
+     *  @notice Returns the `borrowerDebt` state variable.
+     *  @return borrowerDebt_ Total amount of borrower debt in pool.
+     */
+    function borrowerDebt() external view returns (uint256 borrowerDebt_);
 
     /**
      *  @notice Mapping of buckets indexes to {Bucket} structs.
@@ -185,12 +200,6 @@ interface IScaledPool {
      *  @return lastQuoteDeposit Time the user last deposited quote token.
      */
     function bucketLenders(uint256 index_, address lp_) external view returns (uint256 lpBalance, uint256 lastQuoteDeposit);
-
-    /**
-     *  @notice Returns the `borrowerDebt` state variable.
-     *  @return borrowerDebt_ Total amount of borrower debt in pool.
-     */
-    function borrowerDebt() external view returns (uint256 borrowerDebt_);
 
     /**
      *  @notice Returns the `debtEma` state variable.
@@ -235,28 +244,22 @@ interface IScaledPool {
     function liquidityToPrice(uint256 index_) external view returns (uint256 quoteToken_);
 
     /**
-     *  @notice Returns the `lupEma` state variable.
-     *  @return lupEma_ Exponential moving average of the lowest utilized price.
-     */
-    function lupEma() external view returns (uint256 lupEma_);
-
-    /**
      *  @notice Returns the `lupColEma` state variable.
      *  @return lupColEma_ Exponential LUP * pledged collateral moving average.
      */
     function lupColEma() external view returns (uint256 lupColEma_);
 
     /**
+     *  @notice Returns the `lupEma` state variable.
+     *  @return lupEma_ Exponential moving average of the lowest utilized price.
+     */
+    function lupEma() external view returns (uint256 lupEma_);
+
+    /**
      *  @notice Returns the `minFee` state variable.
      *  @return minFee_ TODO
      */
     function minFee() external view returns (uint256 minFee_);
-
-    /**
-     *  @notice Returns the `quoteTokenScale` state variable.
-     *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
-     */
-    function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
 
     /**
      *  @notice Returns the `pledgedCollateral` state variable.
@@ -271,10 +274,16 @@ interface IScaledPool {
     function poolPriceEma() external view returns (uint256 poolPriceEma_);
 
     /**
+     *  @notice Returns the `quoteTokenScale` state variable.
+     *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
+     */
+    function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
+    /**
      *  @notice Returns the `totalBorrowers` state variable.
      *  @return totalBorrowers_ The total number of borrowers in pool.
      */
     function totalBorrowers() external view returns (uint256 totalBorrowers_);
+
 
     /***************/
     /*** Structs ***/
@@ -294,6 +303,7 @@ interface IScaledPool {
         uint256 lpBalance;           // [RAY]
         uint256 lastQuoteDeposit;    // timestamp
     }
+
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -317,10 +327,14 @@ interface IScaledPool {
     function approveLpOwnership(address allowedNewOwner_, uint256 index_, uint256 amount_) external;
 
     /**
-     *  @notice Called by actors to initiate a liquidation.
-     *  @param  borrower_ Identifies the loan to liquidate.
+     *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
+     *  @param  amount_        The amount of collateral to be moved by a lender.
+     *  @param  fromIndex_     The bucket index from which collateral will be removed.
+     *  @param  toIndex_       The bucket index to which collateral will be added.
+     *  @return lpbAmountFrom_ The amount of LPs moved out from bucket.
+     *  @return lpbAmountTo_   The amount of LPs moved to destination bucket.
      */
-    function liquidate(address borrower_) external;
+    function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_);
 
     /**
      *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
@@ -349,13 +363,32 @@ interface IScaledPool {
     function removeQuoteToken(uint256 amount_, uint256 index_) external returns (uint256 lpAmount_);
 
     /**
-     *  @notice Called by actors to purchase collateral using quote token they provide themselves.
-     *  @param  borrower_     Identifies the loan to liquidate.
-     *  @param  amount_       Amount of quote token which will be used to purchase collateral at the auction price.
-     *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
-     *                        such that sender will have a sufficient quote token balance prior to payment.
+     *  @notice Called by lenders to transfers their LP tokens to a different address.
+     *  @dev    Used by PositionManager.memorializePositions().
+     *  @param  owner_    The original owner address of the position.
+     *  @param  newOwner_ The new owner address of the position.
+     *  @param  indexes_  Array of price buckets index at which LP tokens were moved.
      */
-    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external;
+    function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external;
+
+
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    /**
+     *  @notice Called by actors to purchase collateral using quote token at the HPB.
+     *  @param  borrower_     Identifies the loan to liquidate.
+     *  @param  amount_       Amount of bucket deposit to use to exchange for collateral.
+     */
+    function arbTake(address borrower_, uint256 amount_) external;
+
+    /**
+     *  @notice Called by actors to settle an amount of debt in a completed liquidation.
+     *  @param  borrower_ Identifies the loan to liquidate.
+     *  @param  amount_   Amount of debt to settle, which implies depth of HPB iteration.
+     */
+    function clear(address borrower_, uint256 amount_) external;
 
     /**
      *  @notice Called by actors to purchase collateral using quote token already on the book.
@@ -366,20 +399,30 @@ interface IScaledPool {
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external;
 
     /**
-     *  @notice Called by actors to purchase collateral using quote token at the HPB.
-     *  @param  borrower_     Identifies the loan to liquidate.
-     *  @param  amount_       Amount of bucket deposit to use to exchange for collateral.
+     *  @notice Called by actors to initiate a liquidation.
+     *  @param  borrower_ Identifies the loan to liquidate.
      */
-    function arbTake(address borrower_, uint256 amount_) external;
+    function liquidate(address borrower_) external;
 
     /**
-     *  @notice Called by lenders to transfers their LP tokens to a different address.
-     *  @dev    Used by PositionManager.memorializePositions().
-     *  @param  owner_    The original owner address of the position.
-     *  @param  newOwner_ The new owner address of the position.
-     *  @param  indexes_  Array of price buckets index at which LP tokens were moved.
+     *  @notice Called by actor to start a Claimable Reserve Auction (CRA).
      */
-    function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external;
+    function startClaimableReserveAuction() external;
+
+    /**
+     *  @notice Called by actors to purchase collateral using quote token they provide themselves.
+     *  @param  borrower_     Identifies the loan to liquidate.
+     *  @param  amount_       Amount of quote token which will be used to purchase collateral at the auction price.
+     *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
+     *                        such that sender will have a sufficient quote token balance prior to payment.
+     */
+    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external;
+
+    /**
+     *  @notice Purchases claimable reserves during a CRA using Ajna token.
+     *  @param  maxAmount_    Maximum amount of quote token to purchase at the current auction price.
+     */
+    function takeReserves(uint256 maxAmount_) external;
 
 
     /**********************/
@@ -394,53 +437,6 @@ interface IScaledPool {
      *  @return borrowerCollateralization_ Current borrower collateralization ratio.
      */
     function borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) external view returns (uint256 borrowerCollateralization_);
-
-    /**
-     *  @notice Returns exchange rate of the bucket.
-     *  @param  index_        The index of the bucket to calculate exchange rate for.
-     *  @return exchangeRate_ The exchange rate of the bucket, in RAY units.
-     */
-    function exchangeRate(uint256 index_) external view returns (uint256 exchangeRate_);
-
-    /**
-     *  @notice Returns the Highest Price Bucket (HPB).
-     *  @return hpb_ The price value of the current HPB bucket, in WAD units.
-     */
-    function hpb() external view returns (uint256 hpb_);
-
-    /**
-     *  @notice Returns the Lowest Utilized Price (LUP).
-     *  @return lup_ The price value of the current LUP bucket, in WAD units.
-     */
-    function lup() external view returns (uint256 lup_);
-
-    /**
-     *  @notice Returns the Lowest Utilized Price (LUP) bucket index.
-     *  @return lupIndex_ The index of the current LUP bucket.
-     */
-    function lupIndex() external view returns (uint256 lupIndex_);
-
-    /**
-     *  @notice Returns the Highest Threshold Price (HTP).
-     *  @dev    If no loans in queue returns 0
-     *  @dev    Value is scaled by current pool inflator snapshot
-     *  @return htp_ The price value of the current HTP bucket, in WAD units.
-     */
-    function htp() external view returns (uint256 htp_);
-
-    /**
-     *  @notice Returns the bucket index of for a specific price.
-     *  @param  price_ Bucket price, WAD units.
-     *  @return index_ Bucket index
-     */
-    function priceToIndex(uint256 price_) external view returns (uint256 index_);
-
-    /**
-     *  @notice Returns the bucket price of for a specific index.
-     *  @param  index_ Bucket index
-     *  @return price_ Bucket price, WAD units.
-     */
-    function indexToPrice(uint256 index_) external view returns (uint256 price_);
 
     /**
      *  @notice Get a bucket struct for a given index.
@@ -461,6 +457,11 @@ interface IScaledPool {
         );
 
     /**
+     *  @notice Returns the address of the pool's collateral token
+     */
+    function collateralTokenAddress() external pure returns (address);
+
+    /**
      *  @notice Get a bucket deposit for a given index.
      *  @param  index_   The index of the bucket to retrieve deposit for.
      *  @return deposit_ Quote tokens deposit at specified index (WAD).
@@ -474,6 +475,55 @@ interface IScaledPool {
      *  @return encumbrance_ The current encumbrance of a given debt balance, in WAD units.
      */
     function encumberedCollateral(uint256 debt_, uint256 price_) external view returns (uint256 encumbrance_);
+
+    /**
+     *  @notice Returns exchange rate of the bucket.
+     *  @param  index_        The index of the bucket to calculate exchange rate for.
+     *  @return exchangeRate_ The exchange rate of the bucket, in RAY units.
+     */
+    function exchangeRate(uint256 index_) external view returns (uint256 exchangeRate_);
+
+    /**
+     *  @notice Returns the Highest Price Bucket (HPB).
+     *  @return hpb_ The price value of the current HPB bucket, in WAD units.
+     */
+    function hpb() external view returns (uint256 hpb_);
+
+    /**
+     *  @notice Returns the Highest Threshold Price (HTP).
+     *  @dev    If no loans in queue returns 0
+     *  @dev    Value is scaled by current pool inflator snapshot
+     *  @return htp_ The price value of the current HTP bucket, in WAD units.
+     */
+    function htp() external view returns (uint256 htp_);
+
+    /**
+     *  @notice Returns the bucket price of for a specific index.
+     *  @param  index_ Bucket index
+     *  @return price_ Bucket price, WAD units.
+     */
+    function indexToPrice(uint256 index_) external view returns (uint256 price_);
+
+    /**
+     *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
+     *  @param  deposit_     The amount of quote tokens available at this bucket index.
+     *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
+     *  @param  index_       The price bucket index for which the value should be calculated.
+     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
+     */
+    function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteAmount_);
+
+    /**
+     *  @notice Returns the Lowest Utilized Price (LUP).
+     *  @return lup_ The price value of the current LUP bucket, in WAD units.
+     */
+    function lup() external view returns (uint256 lup_);
+
+    /**
+     *  @notice Returns the Lowest Utilized Price (LUP) bucket index.
+     *  @return lupIndex_ The index of the current LUP bucket.
+     */
+    function lupIndex() external view returns (uint256 lupIndex_);
 
     /**
      *  @notice Calculates the pending inflator in pool.
@@ -495,33 +545,27 @@ interface IScaledPool {
     function poolCollateralization() external view returns (uint256 poolCollateralization_);
 
     /**
+     *  @notice Returns the total amount of quote token (depsoit + accumulated interest) in the pool,
+     *          regardless of pool debt.
+     */
+    function poolSize() external view returns (uint256);
+
+    /**
      *  @notice Gets the current target utilization of the pool
      *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
      */
     function poolTargetUtilization() external view returns (uint256 poolTargetUtilization_);
 
     /**
-     *  @notice Returns the address of the pool's collateral token
+     *  @notice Returns the bucket index of for a specific price.
+     *  @param  price_ Bucket price, WAD units.
+     *  @return index_ Bucket index
      */
-    function collateralTokenAddress() external pure returns (address);
+    function priceToIndex(uint256 price_) external view returns (uint256 index_);
 
     /**
      *  @notice Returns the address of the pools quote token
      */
     function quoteTokenAddress() external pure returns (address);
 
-    /**
-     *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
-     *  @param  deposit_     The amount of quote tokens available at this bucket index.
-     *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
-     *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
-     */
-    function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteAmount_);
-
-    /**
-     *  @notice Returns the total amount of quote token (depsoit + accumulated interest) in the pool,
-     *          regardless of pool debt.
-     */
-    function poolSize() external view returns (uint256);
 }

@@ -320,6 +320,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // TODO: implement
     }
 
+    function clear(address borrower_, uint256 amount_) external override {
+        // TODO: implement
+    }
 
     /**************************/
     /*** Internal Functions ***/

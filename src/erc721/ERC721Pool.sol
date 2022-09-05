@@ -340,6 +340,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // TODO: implement
     }
 
+    function clear(address borrower_, uint256 amount_) external override {
+        // TODO: implement
+    }
 
     /**********************/
     /*** View Functions ***/
