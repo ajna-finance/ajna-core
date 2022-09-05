@@ -16,6 +16,25 @@ abstract contract PoolDeployer {
      */
     event PoolCreated(address pool_);
 
+    /**************/
+    /*** Errors ***/
+    /**************/
+
+    /**
+     *  @notice Can't deploy with one of the args pointing to the 0x0 address.
+     */
+    error DeployWithZeroAddress();
+
+    /**
+     *  @notice Pool with this combination of quote and collateral already exists.
+     */
+    error PoolAlreadyExists();
+
+    /**
+     *  @notice Pool starting interest rate is invalid.
+     */
+    error PoolInterestRateInvalid();
+
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -28,9 +47,9 @@ abstract contract PoolDeployer {
     /*****************/
 
     modifier canDeploy(bytes32 subsetHash_, address collateral_, address quote_, uint256 interestRate_) {
-        require(collateral_ != address(0) && quote_ != address(0),             "PF:DP:ZERO_ADDR");
-        require(deployedPools[subsetHash_][collateral_][quote_] == address(0), "PF:DP:POOL_EXISTS");
-        require(MIN_RATE <= interestRate_ && interestRate_ <= MAX_RATE,        "PF:DP:INVALID_RATE");
+        if (collateral_ == address(0) || quote_ == address(0))              revert DeployWithZeroAddress();
+        if (deployedPools[subsetHash_][collateral_][quote_] != address(0)) revert PoolAlreadyExists();
+        if (MIN_RATE >= interestRate_ || interestRate_ >= MAX_RATE)         revert PoolInterestRateInvalid();
         _;
     }
 }

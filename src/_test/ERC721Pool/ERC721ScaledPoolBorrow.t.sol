@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
+import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
@@ -212,7 +214,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd, address(0), address(0));
 
         // should revert if insufficient quote available before limit price
-        vm.expectRevert("S:B:LIMIT_REACHED");
+        vm.expectRevert(IScaledPool.BorrowLimitIndexReached.selector);
         _subsetPool.borrow(21_000 * 1e18, 2551, address(0), address(0));
     }
 
@@ -230,7 +232,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd, address(0), address(0));
 
         // should revert if borrower did not deposit enough collateral
-        vm.expectRevert("S:B:BUNDER_COLLAT");
+        vm.expectRevert(IScaledPool.BorrowBorrowerUnderCollateralized.selector);
         _subsetPool.borrow(40 * 1e18, 4000, address(0), address(0));
     }
 
@@ -242,7 +244,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
         // should revert if borrow would result in pool under collateralization
         changePrank(_borrower);
-        vm.expectRevert("S:B:PUNDER_COLLAT");
+        vm.expectRevert(IScaledPool.BorrowPoolUnderCollateralized.selector);
         _subsetPool.borrow(500 * 1e18, 4000, address(0), address(0));
     }
 
@@ -434,14 +436,11 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.addQuoteToken(10_000 * 1e18, 2550);
         _subsetPool.addQuoteToken(10_000 * 1e18, 2551);
 
-        // should revert if borrower has insufficient quote to repay desired amount
         changePrank(_borrower);
-        vm.expectRevert("S:R:INSUF_BAL");
-        _subsetPool.repay(_borrower, 10_000 * 1e18, address(0), address(0));
 
         // should revert if borrower has no debt
         deal(address(_quote), _borrower, _quote.balanceOf(_borrower) + 10_000 * 1e18);
-        vm.expectRevert("S:R:NO_DEBT");
+        vm.expectRevert(IScaledPool.RepayNoDebt.selector);
         _subsetPool.repay(_borrower, 10_000 * 1e18, address(0), address(0));
 
         // borrower 1 borrows 1000 quote from the pool
@@ -465,7 +464,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
-        vm.expectRevert("R:B:AMT_LT_AVG_DEBT");
+        vm.expectRevert(IScaledPool.BorrowAmountLTMinDebt.selector);
         _subsetPool.repay(_borrower, 900 * 1e18, address(0), address(0));
 
         // should be able to repay loan if properly specified

@@ -31,6 +31,15 @@ interface IScaledPool {
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
 
     /**
+     *  @notice Emitted when lender moves collateral from a bucket price to another.
+     *  @param  lender_ Recipient that moved collateral.
+     *  @param  from_   Price bucket from which collateral was moved.
+     *  @param  to_     Price bucket where collateral was moved.
+     *  @param  amount_ Amount of collateral moved.
+     */
+    event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
+
+    /**
      *  @notice Emitted when lender removes quote token from the pool.
      *  @param  lender_ Recipient that removed quote tokens.
      *  @param  price_  Price at which quote tokens were removed.
@@ -55,6 +64,92 @@ interface IScaledPool {
      *  @param  newRate_ New pool interest rate.
      */
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
+
+    /*********************/
+    /*** Shared Errors ***/
+    /*********************/
+
+    // TODO: add a test for this
+    /**
+     *  @notice Pool already initialized.
+     */
+    error AlreadyInitialized();
+
+    /**
+     *  @notice Borrower is attempting to borrow more quote token than is available before the supplied limitIndex.
+     */
+    error BorrowLimitIndexReached();
+
+    /**
+     *  @notice Borrower is attempting to create or modify a loan such that their loan's quote token would be less than the pool's minimum debt amount.
+     */
+    error BorrowAmountLTMinDebt();
+
+    /**
+     *  @notice Borrower is attempting to borrow more quote token than they have collateral for.
+     */
+    error BorrowBorrowerUnderCollateralized();
+
+    /**
+     *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
+     */
+    error BorrowPoolUnderCollateralized();
+
+    /**
+     *  @notice FromIndex_ and toIndex_ arguments to moveQuoteToken() are the same.
+     */
+    error MoveQuoteToSamePrice();
+
+    /**
+     *  @notice When moving quote token HTP must stay below LUP.
+     */
+    error MoveQuoteLUPBelowHTP();
+
+    /**
+     *  @notice Lender must have non-zero LPB when attemptign to remove quote token from the pool.
+     */
+    error RemoveQuoteNoClaim();
+
+    /**
+     *  @notice Lender must have enough LP tokens to claim the desired amount of quote from the bucket.
+     */
+    error RemoveQuoteInsufficientLPB();
+
+    /**
+     *  @notice Bucket must have more quote available in the bucket than the lender is attempting to claim.
+     */
+    error RemoveQuoteInsufficientQuoteAvailable();
+
+    /**
+     *  @notice When removing quote token HTP must stay below LUP.
+     */
+    error RemoveQuoteLUPBelowHTP();
+
+    /**
+     *  @notice User is attempting to pull more collateral than is available.
+     */
+    error RemoveCollateralInsufficientCollateral();
+
+    /**
+     *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.
+     */
+    error RemoveCollateralInsufficientLP();
+
+    /**
+     *  @notice Borrower is attempting to repay when they have no outstanding debt.
+     */
+    error RepayNoDebt();
+
+    /**
+     *  @notice When transferring LP tokens between indices, the new index must be a valid index.
+     */
+    error TransferLPInvalidIndex();
+
+    /**
+     *  @notice Owner of the LP tokens must have approved the new owner prior to transfer.
+     */
+    error TransferLPNoAllowance();
+
 
     /***********************/
     /*** State Variables ***/
@@ -224,6 +319,16 @@ interface IScaledPool {
      *  @return lpbAmountTo_   The amount of LPs moved to destination bucket.
      */
     function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_);
+
+    /**
+     *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
+     *  @param  amount_        The amount of collateral to be moved by a lender.
+     *  @param  fromIndex_     The bucket index from which collateral will be removed.
+     *  @param  toIndex_       The bucket index to which collateral will be added.
+     *  @return lpbAmountFrom_ The amount of LPs moved out from bucket.
+     *  @return lpbAmountTo_   The amount of LPs moved to destination bucket.
+     */
+    function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_);
 
     /**
      *  @notice Called by lenders to redeem the maximum amount of LP for quote token.

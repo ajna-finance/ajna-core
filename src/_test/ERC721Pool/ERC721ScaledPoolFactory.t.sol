@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
+import { PoolDeployer } from "../../base/PoolDeployer.sol";
+
 import { DSTestPlus }                     from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
 
@@ -69,27 +71,27 @@ contract ERC721ScaledPoolFactoryTest is DSTestPlus {
 
     function testDeployERC721CollectionPoolWithZeroAddress() external {
         // should revert if trying to deploy with zero address as collateral
-        vm.expectRevert("PF:DP:ZERO_ADDR");
+        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
         _factory.deployPool(address(0), address(_quote), 0.05 * 10**18);
 
         // should revert if trying to deploy with zero address as quote token
-        vm.expectRevert("PF:DP:ZERO_ADDR");
+        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
         _factory.deployPool(address(_collateral), address(0), 0.05 * 10**18);
     }
 
     function testDeployERC721CollectionPoolWithInvalidRate() external {
         // should revert if trying to deploy with interest rate lower than accepted
-        vm.expectRevert("PF:DP:INVALID_RATE");
+        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
         _factory.deployPool(address(_quote), address(_quote), 10**18);
 
         // should revert if trying to deploy with interest rate higher than accepted
-        vm.expectRevert("PF:DP:INVALID_RATE");
+        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
         _factory.deployPool(address(_quote), address(_quote), 2 * 10**18);
     }
 
     function testDeployERC20PoolMultipleTimes() external {
         // should revert if trying to deploy same pool one more time
-        vm.expectRevert("PF:DP:POOL_EXISTS");
+        vm.expectRevert(PoolDeployer.PoolAlreadyExists.selector);
         _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
     }
 
@@ -121,11 +123,11 @@ contract ERC721ScaledPoolFactoryTest is DSTestPlus {
         tokenIdsTestSubset[2] = 3;
 
         // should revert if trying to deploy with zero address as collateral
-        vm.expectRevert("PF:DP:ZERO_ADDR");
+        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
         _factory.deploySubsetPool(address(0), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
 
         // should revert if trying to deploy with zero address as quote token
-        vm.expectRevert("PF:DP:ZERO_ADDR");
+        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
         _factory.deploySubsetPool(address(_collateral), address(0), tokenIdsTestSubset, 0.05 * 10**18);
     }
 
@@ -135,10 +137,10 @@ contract ERC721ScaledPoolFactoryTest is DSTestPlus {
         tokenIdsTestSubset[1] = 2;
         tokenIdsTestSubset[2] = 3;
 
-        vm.expectRevert("PF:DP:INVALID_RATE");
+        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
         _factory.deploySubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.11 * 10**18);
 
-        vm.expectRevert("PF:DP:INVALID_RATE");
+        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
         _factory.deploySubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.009 * 10**18);
     }
 
@@ -150,7 +152,7 @@ contract ERC721ScaledPoolFactoryTest is DSTestPlus {
 
         _factory.deploySubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
 
-        vm.expectRevert("PF:DP:POOL_EXISTS");
+        vm.expectRevert(PoolDeployer.PoolAlreadyExists.selector);
         _factory.deploySubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
     }
 
