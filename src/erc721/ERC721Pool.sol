@@ -312,6 +312,23 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Pool External Functions ***/
     /*******************************/
 
+    function arbTake(address borrower_, uint256 amount_, uint256[] calldata tokenIds_) external override {
+        // TODO: implement
+        emit ArbTakeNFT(borrower_, _hpbIndex(), amount_, tokenIds_);
+    }
+
+    function clear(address borrower_, uint256 amount_) external override {
+        // TODO: implement
+        uint256[] memory tokenIdsReturned = new uint256[](1);
+        tokenIdsReturned[0] = 0;
+        emit ClearNFT(borrower_, _hpbIndex(), amount_, tokenIdsReturned, 0);
+    }
+
+    function depositTake(address borrower_, uint256 amount_, uint256 index_, uint256[] calldata tokenIds_) external override {
+        // TODO: implement
+        emit DepositTake(borrower_, index_, amount_, tokenIds_);
+    }
+
     function liquidate(address borrower_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
@@ -328,31 +345,13 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         //  which includes an array of the borrower's tokenIds being auctioned off.
     }
 
-    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external override {
+    function take(address borrower_, uint256 amount_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external override {
         // TODO: Implement
 
         // copypasta to quell warnings
         msg.sender.call(swapCalldata_);
-        this.repay(borrower_, 0, oldPrev_, newPrev_);
 
-        emit Take(borrower_, amount_, 0);
-    }
-
-    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
-        // TODO: implement
-        emit DepositTake(borrower_, index_, amount_, 0);
-    }
-
-    function arbTake(address borrower_, uint256 amount_) external override {
-        // TODO: implement
-        emit ArbTake(borrower_, _hpbIndex(), amount_, 0);
-    }
-
-    function clear(address borrower_, uint256 amount_) external override {
-        // TODO: implement
-        uint256[] memory tokenIdsReturned = new uint256[](1);
-        tokenIdsReturned[0] = 0;
-        emit ClearNFT(borrower_, _hpbIndex(), amount_, tokenIdsReturned, 0);
+        emit Take(borrower_, amount_, tokenIds_);
     }
 
     /**********************/

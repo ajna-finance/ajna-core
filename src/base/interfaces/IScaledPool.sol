@@ -12,16 +12,6 @@ interface IScaledPool {
     /*********************/
 
     /**
-     *  @notice Emitted when an actor uses quote token from the HPB to purchase collateral under liquidation.
-     *  @param  borrower_   Identifies the loan being liquidated.
-     *  @param  hpbIndex_   The index of the Highest Price Bucket used for this take.
-     *  @param  amount_     Amount of quote token used to purchase collateral.
-     *  @param  collateral_ Amount of collateral purchased with quote token.
-     *  @dev    amount_ / collateral_ implies the auction price.
-     */
-    event ArbTake(address indexed borrower_, uint256 hpbIndex_, uint256 amount_, uint256 collateral_);
-
-    /**
      *  @notice Emitted when lender adds quote token to the pool.
      *  @param  lender_ Recipient that added quote tokens.
      *  @param  price_  Price at which quote tokens were added.
@@ -29,16 +19,6 @@ interface IScaledPool {
      *  @param  lup_    LUP calculated after deposit.
      */
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
-
-    /**
-     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
-     *  @param  borrower_   Identifies the loan being liquidated.
-     *  @param  index_      Index of the price bucket from which quote token was exchanged for collateral.
-     *  @param  amount_     Amount of quote token taken from the bucket to purchase collateral.
-     *  @param  collateral_ Amount of collateral purchased with quote token.
-     *  @dev    amount_ / collateral_ implies the auction price.
-     */
-    event DepositTake(address indexed borrower_, uint256 index_, uint256 amount_, uint256 collateral_);
 
     /**
      *  @notice Emitted when a liquidation is initiated.
@@ -75,15 +55,6 @@ interface IScaledPool {
      *  @param  lup_    LUP calculated after removal.
      */
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
-
-    /**
-     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
-     *  @param  borrower_   Identifies the loan being liquidated.
-     *  @param  amount_     Amount of quote token used to purchase collateral.
-     *  @param  collateral_ Amount of collateral purchased with quote token.
-     *  @dev    amount_ / collateral_ implies the auction price.
-     */
-    event Take(address indexed borrower_, uint256 amount_, uint256 collateral_);
 
     /**
      *  @notice Emitted when a lender transfers their LP tokens to a different address.
@@ -421,26 +392,11 @@ interface IScaledPool {
     /*******************************/
 
     /**
-     *  @notice Called by actors to purchase collateral using quote token at the HPB.
-     *  @param  borrower_     Identifies the loan to liquidate.
-     *  @param  amount_       Amount of bucket deposit to use to exchange for collateral.
-     */
-    function arbTake(address borrower_, uint256 amount_) external;
-
-    /**
      *  @notice Called by actors to settle an amount of debt in a completed liquidation.
      *  @param  borrower_ Identifies the loan to liquidate.
      *  @param  amount_   Amount of debt to settle, which implies depth of HPB iteration.
      */
     function clear(address borrower_, uint256 amount_) external;
-
-    /**
-     *  @notice Called by actors to purchase collateral using quote token already on the book.
-     *  @param  borrower_     Identifies the loan to liquidate.
-     *  @param  amount_       Amount of bucket deposit to use to exchange for collateral.
-     *  @param  index_        Index of the bucket which has amount_ quote token available.
-     */
-    function depositTake(address borrower_, uint256 amount_, uint256 index_) external;
 
     /**
      *  @notice Called by actors to initiate a liquidation.
@@ -452,15 +408,6 @@ interface IScaledPool {
      *  @notice Called by actor to start a Claimable Reserve Auction (CRA).
      */
     function startClaimableReserveAuction() external;
-
-    /**
-     *  @notice Called by actors to purchase collateral using quote token they provide themselves.
-     *  @param  borrower_     Identifies the loan to liquidate.
-     *  @param  amount_       Amount of quote token which will be used to purchase collateral at the auction price.
-     *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
-     *                        such that sender will have a sufficient quote token balance prior to payment.
-     */
-    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external;
 
     /**
      *  @notice Purchases claimable reserves during a CRA using Ajna token.
