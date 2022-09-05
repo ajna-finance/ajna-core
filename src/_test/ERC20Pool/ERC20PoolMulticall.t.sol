@@ -5,6 +5,8 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
+import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+
 import { BucketMath } from "../../libraries/BucketMath.sol";
 
 import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
@@ -78,6 +80,23 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         (lpBalance, ) = _pool.bucketLenders(2552, _lender);
         assertEq(lpBalance,                10_000 * 1e27);
         assertEq(_pool.exchangeRate(2552), 1 * 1e27);
+    }
+
+    function testMulticallRevertString() public {
+        bytes[] memory callsToExecute = new bytes[](1);
+
+        callsToExecute[0] = abi.encodeWithSignature(
+            "borrow(uint256,uint256,address,address)",
+            10_000 * 1e18,
+            2550,
+            address(0),
+            address(0)
+        );
+
+        changePrank(_lender);
+        vm.expectRevert(IScaledPool.BorrowLimitIndexReached.selector);
+        _pool.multicall(callsToExecute);
+
     }
 
 
