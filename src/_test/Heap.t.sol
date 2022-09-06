@@ -33,6 +33,10 @@ contract TestPool {
     function getMaxBorrower() external view returns (address) {
         return _loansHeap.getMax().id;
     }
+
+    function getTotalTps() external view returns (uint256) {
+        return _loansHeap.count;
+    }
 }
 
 contract HeapTest is DSTestPlus {
@@ -59,28 +63,34 @@ contract HeapTest is DSTestPlus {
         _pool.upsertTp(b4, 400 * 1e18);
         _pool.upsertTp(b3, 300 * 1e18);
 
-        assertEq(_pool.getMaxTp(), 500 * 1e18);
+        assertEq(_pool.getMaxTp(),       500 * 1e18);
         assertEq(_pool.getMaxBorrower(), b5);
+        assertEq(_pool.getTotalTps(),    6);
 
         _pool.removeTp(b2);
-        assertEq(_pool.getMaxTp(), 500 * 1e18);
+        assertEq(_pool.getMaxTp(),       500 * 1e18);
         assertEq(_pool.getMaxBorrower(), b5);
+        assertEq(_pool.getTotalTps(),    5);
 
         _pool.removeTp(b5);
-        assertEq(_pool.getMaxTp(), 400 * 1e18);
+        assertEq(_pool.getMaxTp(),       400 * 1e18);
         assertEq(_pool.getMaxBorrower(), b4);
+        assertEq(_pool.getTotalTps(),    4);
 
         _pool.removeTp(b4);
         assertEq(_pool.getMaxBorrower(), b3);
-        assertEq(_pool.getMaxTp(), 300 * 1e18);
+        assertEq(_pool.getMaxTp(),       300 * 1e18);
+        assertEq(_pool.getTotalTps(),    3);
 
         _pool.removeTp(b1);
         assertEq(_pool.getMaxBorrower(), b3);
-        assertEq(_pool.getMaxTp(), 300 * 1e18);
+        assertEq(_pool.getMaxTp(),       300 * 1e18);
+        assertEq(_pool.getTotalTps(),    2);
 
         _pool.removeTp(b3);
         assertEq(_pool.getMaxBorrower(), address(0));
-        assertEq(_pool.getMaxTp(), 0);
+        assertEq(_pool.getMaxTp(),       0);
+        assertEq(_pool.getTotalTps(),    1);
     }
 
     function testHeapInsertAndRemoveHeadByMaxTp() public {
@@ -100,45 +110,54 @@ contract HeapTest is DSTestPlus {
         _pool.upsertTp(b4, 400 * 1e18);
         _pool.upsertTp(b5, 500 * 1e18);
 
-        assertEq(_pool.getMaxTp(), 500 * 1e18);
+        assertEq(_pool.getMaxTp(),       500 * 1e18);
         assertEq(_pool.getMaxBorrower(), b5);
+        assertEq(_pool.getTotalTps(),    6);
 
         _pool.removeTp(b5);
-        assertEq(_pool.getMaxTp(), 400 * 1e18);
+        assertEq(_pool.getMaxTp(),       400 * 1e18);
         assertEq(_pool.getMaxBorrower(), b4);
+        assertEq(_pool.getTotalTps(),    5);
 
         _pool.removeTp(b4);
         assertEq(_pool.getMaxBorrower(), b3);
-        assertEq(_pool.getMaxTp(), 300 * 1e18);
+        assertEq(_pool.getMaxTp(),       300 * 1e18);
+        assertEq(_pool.getTotalTps(),    4);
 
         _pool.removeTp(b3);
         assertEq(_pool.getMaxBorrower(), b2);
-        assertEq(_pool.getMaxTp(), 200 * 1e18);
+        assertEq(_pool.getMaxTp(),       200 * 1e18);
+        assertEq(_pool.getTotalTps(),    3);
 
         _pool.removeTp(b2);
         assertEq(_pool.getMaxBorrower(), b1);
-        assertEq(_pool.getMaxTp(), 100 * 1e18);
+        assertEq(_pool.getMaxTp(),       100 * 1e18);
+        assertEq(_pool.getTotalTps(),    2);
 
         _pool.removeTp(b1);
         assertEq(_pool.getMaxBorrower(), address(0));
-        assertEq(_pool.getMaxTp(), 0);
+        assertEq(_pool.getMaxTp(),       0);
+        assertEq(_pool.getTotalTps(),    1);
     }
 
     function testHeapRemoveLastTp() public {
         // assert initial state
         assertEq(_pool.getMaxBorrower(), address(0));
-        assertEq(_pool.getMaxTp(), 0);
+        assertEq(_pool.getMaxTp(),       0);
+        assertEq(_pool.getTotalTps(),    1);
 
         address b1 = makeAddr("b1");
         _pool.upsertTp(b1, 100 * 1e18);
 
         assertEq(_pool.getMaxBorrower(), b1);
-        assertEq(_pool.getMaxTp(), 100 * 1e18);
+        assertEq(_pool.getMaxTp(),       100 * 1e18);
+        assertEq(_pool.getTotalTps(),    2);
 
         // remove last TP
         _pool.removeTp(b1);
         assertEq(_pool.getMaxBorrower(), address(0));
-        assertEq(_pool.getMaxTp(), 0);
+        assertEq(_pool.getMaxTp(),       0);
+        assertEq(_pool.getTotalTps(),    1);
     }
 
     function testHeapUpdateTp() public {
@@ -156,24 +175,29 @@ contract HeapTest is DSTestPlus {
         _pool.upsertTp(b5, 500 * 1e18);
         _pool.upsertTp(b6, 600 * 1e18);
 
-        assertEq(_pool.getMaxTp(), 600 * 1e18);
+        assertEq(_pool.getMaxTp(),       600 * 1e18);
         assertEq(_pool.getMaxBorrower(), b6);
+        assertEq(_pool.getTotalTps(),    7);
 
         _pool.upsertTp(b4, 1_000 * 1e18);
-        assertEq(_pool.getMaxTp(), 1_000 * 1e18);
+        assertEq(_pool.getMaxTp(),       1_000 * 1e18);
         assertEq(_pool.getMaxBorrower(), b4);
+        assertEq(_pool.getTotalTps(),    7);
 
         _pool.upsertTp(b4, 10 * 1e18);
-        assertEq(_pool.getMaxTp(), 600 * 1e18);
+        assertEq(_pool.getMaxTp(),       600 * 1e18);
         assertEq(_pool.getMaxBorrower(), b6);
+        assertEq(_pool.getTotalTps(),    7);
 
         _pool.upsertTp(b6, 100 * 1e18);
-        assertEq(_pool.getMaxTp(), 500 * 1e18);
+        assertEq(_pool.getMaxTp(),       500 * 1e18);
         assertEq(_pool.getMaxBorrower(), b5);
+        assertEq(_pool.getTotalTps(),    7);
 
         _pool.upsertTp(b6, 3_000 * 1e18);
-        assertEq(_pool.getMaxTp(), 3_000 * 1e18);
+        assertEq(_pool.getMaxTp(),       3_000 * 1e18);
         assertEq(_pool.getMaxBorrower(), b6);
+        assertEq(_pool.getTotalTps(),    7);
     }
 
     function testHeapUpsertRequireChecks() public {
@@ -185,12 +209,6 @@ contract HeapTest is DSTestPlus {
 
         vm.expectRevert("H:I:VAL_EQ_0");
         _pool.upsertTp(b1, 0);
-    }
-
-    function testHeapUpsertFuzzy(uint256 tp_, address borrower_) public {
-        tp_ = bound(tp_, 1, 1e18);
-        _pool.upsertTp(borrower_, tp_);
-        assertEq(_pool.getTp(borrower_), tp_);
     }
 
 }
