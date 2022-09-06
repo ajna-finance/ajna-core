@@ -175,6 +175,40 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
+    function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
+        require(fromIndex_ != toIndex_, "S:MC:SAME_PRICE");
+
+        Bucket storage fromBucket = buckets[fromIndex_];
+        require(fromBucket.availableCollateral >= amount_, "S:MC:INSUF_COL");
+
+        BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
+        uint256 curDebt                   = _accruePoolInterest();
+
+        // determine amount of amount of LP required
+        uint256 rate                 = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
+        lpbAmountFrom_               = (amount_ * _indexToPrice(fromIndex_) * 1e18 + rate / 2) / rate;
+        require(bucketLender.lpBalance != 0 && lpbAmountFrom_ <= bucketLender.lpBalance, "S:MC:INSUF_LPS");
+
+        // update "from" bucket accounting
+        fromBucket.lpAccumulator -= lpbAmountFrom_;
+        fromBucket.availableCollateral -= amount_;
+
+        // update "to" bucket accounting
+        Bucket storage toBucket      = buckets[toIndex_];
+        rate                         = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
+        lpbAmountTo_                 = (amount_ * _indexToPrice(toIndex_) * 1e18 + rate / 2) / rate;
+        toBucket.lpAccumulator       += lpbAmountTo_;
+        toBucket.availableCollateral += amount_;
+
+        // update lender accounting
+        bucketLender.lpBalance -= lpbAmountFrom_;
+        bucketLenders[toIndex_][msg.sender].lpBalance += lpbAmountTo_;
+
+        _updateInterestRateAndEMAs(curDebt, _lup());
+
+        emit MoveCollateral(msg.sender, fromIndex_, toIndex_, amount_);
+    }
+
     function removeAllCollateral(uint256 index_) external override returns (uint256 amount_, uint256 lpAmount_) {
         Bucket memory bucket = buckets[index_];
         if (bucket.availableCollateral == 0) revert RemoveCollateralInsufficientCollateral();
