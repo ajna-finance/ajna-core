@@ -244,9 +244,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function arbTake(address borrower_, uint256 amount_) external override {
+    function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
-        emit ArbTake(borrower_, _hpbIndex(), amount_, 0);
+        emit ArbTake(borrower_, index_, amount_, 0);
     }
 
     function clear(address borrower_, uint256 amount_) external override {

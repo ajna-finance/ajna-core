@@ -23,16 +23,6 @@ interface IERC721Pool is IScaledPool {
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
 
     /**
-     *  @notice Emitted when an actor uses quote token from the HPB to purchase collateral under liquidation.
-     *  @param  borrower_   Identifies the loan being liquidated.
-     *  @param  hpbIndex_   The index of the Highest Price Bucket used for this take.
-     *  @param  amount_     Amount of quote token used to purchase collateral.
-     *  @param  tokenIds_   Tokens purchased with quote token.
-     *  @dev    amount_ / len(tokenIds_) implies the auction price.
-     */
-    event ArbTakeNFT(address indexed borrower_, uint256 hpbIndex_, uint256 amount_, uint256[] tokenIds_);
-
-    /**
      *  @notice Emitted when borrower borrows quote tokens from pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  lup_      LUP after borrow.
@@ -55,16 +45,6 @@ interface IERC721Pool is IScaledPool {
         uint256   amount_,
         uint256[] tokenIdsReturned_,
         uint256   amountRemaining_);
-
-    /**
-     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
-     *  @param  borrower_   Identifies the loan being liquidated.
-     *  @param  index_      Index of the price bucket from which quote token was exchanged for collateral.
-     *  @param  amount_     Amount of quote token taken from the bucket to purchase collateral.
-     *  @param  tokenIds_   Tokens purchased with quote token.
-     *  @dev    amount_ / len(tokenIds_) implies the auction price.
-     */
-    event DepositTake(address indexed borrower_, uint256 index_, uint256 amount_, uint256[] tokenIds_);
 
     /**
      *  @notice Emitted when borrower locks collateral in the pool.
@@ -239,31 +219,13 @@ interface IERC721Pool is IScaledPool {
     /*******************************/
 
     /**
-     *  @notice Called by actors to purchase collateral using quote token at the HPB.
-     *  @param  borrower_     Identifies the loan to liquidate.
-     *  @param  amount_       Amount of bucket deposit to use to exchange for collateral.
-     *  @param  tokenIds_     NFT token ids caller wishes to purchase from the liquidation.
-     */
-    function arbTake(address borrower_, uint256 amount_, uint256[] calldata tokenIds_) external;
-
-    /**
-     *  @notice Called by actors to purchase collateral using quote token already on the book.
-     *  @param  borrower_     Identifies the loan to liquidate.
-     *  @param  amount_       Amount of bucket deposit to use to exchange for 1 or more NFTs.
-     *  @param  index_        Index of the bucket which has amount_ quote token available.
-     *  @param  tokenIds_     NFT token ids caller wishes to purchase from the liquidation.
-     */
-    function depositTake(address borrower_, uint256 amount_, uint256 index_, uint256[] calldata tokenIds_) external;
-
-    /**
      *  @notice Called by actors to purchase collateral using quote token they provide themselves.
      *  @param  borrower_     Identifies the loan to liquidate.
-     *  @param  amount_       Amount of quote token which will be used to purchase collateral at the auction price.
      *  @param  tokenIds_     NFT token ids caller wishes to purchase from the liquidation.
      *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
      *                        such that sender will have a sufficient quote token balance prior to payment.
      */
-    function take(address borrower_, uint256 amount_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external;
+    function take(address borrower_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external;
 
 
     /**********************/

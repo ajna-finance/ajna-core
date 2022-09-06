@@ -314,9 +314,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function arbTake(address borrower_, uint256 amount_, uint256[] calldata tokenIds_) external override {
+    function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
-        emit ArbTakeNFT(borrower_, _hpbIndex(), amount_, tokenIds_);
+        emit ArbTake(borrower_, index_, amount_, 0);
     }
 
     function clear(address borrower_, uint256 amount_) external override {
@@ -326,9 +326,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit ClearNFT(borrower_, _hpbIndex(), amount_, tokenIdsReturned, 0);
     }
 
-    function depositTake(address borrower_, uint256 amount_, uint256 index_, uint256[] calldata tokenIds_) external override {
+    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
-        emit DepositTake(borrower_, index_, amount_, tokenIds_);
+        emit DepositTake(borrower_, index_, amount_, 0);
     }
 
     function liquidate(address borrower_) external override {
@@ -347,13 +347,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         //  which includes an array of the borrower's tokenIds being auctioned off.
     }
 
-    function take(address borrower_, uint256 amount_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external override {
+    function take(address borrower_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external override {
         // TODO: Implement
-
         // copypasta to quell warnings
         msg.sender.call(swapCalldata_);
-
-        emit Take(borrower_, amount_, tokenIds_);
+        emit Take(borrower_, 0, tokenIds_);
     }
 
     /**********************/

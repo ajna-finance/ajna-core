@@ -21,6 +21,26 @@ interface IScaledPool {
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
 
     /**
+     *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
+     *  @param  borrower_   Identifies the loan being liquidated.
+     *  @param  index_      The index of the Highest Price Bucket used for this take.
+     *  @param  amount_     Amount of quote token used to purchase collateral.
+     *  @param  collateral_ Amount of collateral purchased with quote token.
+     *  @dev    amount_ / collateral_ implies the auction price.
+     */
+    event ArbTake(address indexed borrower_, uint256 index_, uint256 amount_, uint256 collateral_);
+
+    /**
+     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
+     *  @param  borrower_   Identifies the loan being liquidated.
+     *  @param  index_      Index of the price bucket from which quote token was exchanged for collateral.
+     *  @param  amount_     Amount of quote token taken from the bucket to purchase collateral.
+     *  @param  collateral_ Amount of collateral purchased with quote token.
+     *  @dev    amount_ / collateral_ implies the auction price.
+     */
+    event DepositTake(address indexed borrower_, uint256 index_, uint256 amount_, uint256 collateral_);
+
+    /**
      *  @notice Emitted when a liquidation is initiated.
      *  @param  borrower_   Identifies the loan being liquidated.
      *  @param  debt_       Debt the liquidation will attempt to cover.
@@ -392,11 +412,27 @@ interface IScaledPool {
     /*******************************/
 
     /**
+     *  @notice Called by actors to use quote token to arb higher-priced deposit off the book.
+     *  @param  borrower_ Identifies the loan to liquidate.
+     *  @param  amount_   Amount of bucket deposit to use to exchange for collateral.
+     *  @param  index_    Index of a bucket, likely the HPB, in which collateral will be deposited.
+     */
+    function arbTake(address borrower_, uint256 amount_, uint256 index_) external;
+
+    /**
      *  @notice Called by actors to settle an amount of debt in a completed liquidation.
      *  @param  borrower_ Identifies the loan to liquidate.
      *  @param  amount_   Amount of debt to settle, which implies depth of HPB iteration.
      */
     function clear(address borrower_, uint256 amount_) external;
+
+    /**
+     *  @notice Called by actors to purchase collateral using quote token already on the book.
+     *  @param  borrower_     Identifies the loan to liquidate.
+     *  @param  amount_       Amount of bucket deposit to use to exchange for collateral.
+     *  @param  index_        Index of the bucket which has amount_ quote token available.
+     */
+    function depositTake(address borrower_, uint256 amount_, uint256 index_) external;
 
     /**
      *  @notice Called by actors to initiate a liquidation.
