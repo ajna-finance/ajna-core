@@ -4,7 +4,6 @@ pragma solidity 0.8.14;
 import { DSTestPlus }  from "./utils/DSTestPlus.sol";
 
 import { Heap } from "../libraries/Heap.sol";
-import "forge-std/console.sol";
 
 
 contract TestPool is DSTestPlus {
@@ -281,6 +280,27 @@ contract HeapTest is DSTestPlus {
         assertEq(length - 1, _pool.getCount() - 1);
         assertEq(_pool.getTp(removeAddress), 0);
         assertTrue(_pool.getTp(removeAddress) != tp);
+    }
+
+    function testHeapRemoveNonExistentTp() public {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+        address b4 = makeAddr("b4");
+        address b5 = makeAddr("b5");
+        address b6 = makeAddr("b6");
+
+        _pool.upsertTp(b1, 100 * 1e18);
+        _pool.upsertTp(b2, 200 * 1e18);
+        _pool.upsertTp(b3, 300 * 1e18);
+        _pool.upsertTp(b4, 400 * 1e18);
+        _pool.upsertTp(b5, 500 * 1e18);
+        _pool.upsertTp(b6, 600 * 1e18);
+        assertEq(_pool.getMaxBorrower(), b6);
+        assertEq(_pool.getTotalTps(),    7);
+
+        vm.expectRevert("H:R:NO_ID");
+        _pool.removeTp(address(100));
     }
 
 }

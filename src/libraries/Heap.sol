@@ -12,8 +12,8 @@ library Heap {
     }
 
     struct Node {
-      address id;
-      uint256 val;
+        address id;
+        uint256 val;
     }
 
     /**
@@ -93,7 +93,7 @@ library Heap {
     function remove(Data storage self_, address id_) internal {
 
         uint256 i_ = self_.indices[id_];
-        require(i_ <= self_.count);
+        require(i_ != 0, "H:R:NO_ID");
 
         delete self_.nodes[i_];
         delete self_.indices[id_];
