@@ -36,6 +36,15 @@ interface IERC20Pool is IScaledPool {
     event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
 
     /**
+     *  @notice Emitted when lender moves collateral from a bucket price to another.
+     *  @param  lender_ Recipient that moved collateral.
+     *  @param  from_   Price bucket from which collateral was moved.
+     *  @param  to_     Price bucket where collateral was moved.
+     *  @param  amount_ Amount of collateral moved.
+     */
+    event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
+
+    /**
      *  @notice Emitted when lender claims unencumbered collateral.
      *  @param  claimer_ Recipient that claimed collateral.
      *  @param  price_   Price at which unencumbered collateral was claimed.
@@ -184,6 +193,16 @@ interface IERC20Pool is IScaledPool {
      *  @param  index_  The bucket index to which collateral will be deposited.
      */
     function addCollateral(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_);
+
+    /**
+     *  @notice Called by lenders to move an amount of credit from a specified price bucket to another specified price bucket.
+     *  @param  amount_        The amount of collateral to be moved by a lender.
+     *  @param  fromIndex_     The bucket index from which collateral will be removed.
+     *  @param  toIndex_       The bucket index to which collateral will be added.
+     *  @return lpbAmountFrom_ The amount of LPs moved out from bucket.
+     *  @return lpbAmountTo_   The amount of LPs moved to destination bucket.
+     */
+    function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_);
 
     /**
      *  @notice Called by lenders to redeem the maximum amount of LP for unencumbered collateral.
