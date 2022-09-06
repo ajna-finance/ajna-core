@@ -81,4 +81,12 @@ abstract contract DSTestPlus is Test {
         difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
     }
 
+    function randomInRange(uint256 min, uint256 max, bool nonZero) public returns (uint256) {
+        if      (max == 0 && nonZero) return 1;
+        else if (max == min)          return max;
+        uint256 rand = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % (max - min + 1) + min;
+        _nonce++;
+        return rand;
+    }
+
 }

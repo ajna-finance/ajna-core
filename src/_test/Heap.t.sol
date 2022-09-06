@@ -4,17 +4,36 @@ pragma solidity 0.8.14;
 import { DSTestPlus }  from "./utils/DSTestPlus.sol";
 
 import { Heap } from "../libraries/Heap.sol";
+import "forge-std/console.sol";
 
-contract TestPool {
+
+contract TestPool is DSTestPlus {
     using Heap for Heap.Data;
 
     Heap.Data private _loansHeap;
+
+    /**
+     *  @notice used to track fuzzing test insertions.
+     */
+    address[] private inserts;
 
     constructor () {
         _loansHeap.init();
     }
 
-    function upsertTp(address borrower_, uint256 tp_) external {
+    function getCount() public view returns (uint256) {
+        return _loansHeap.count;
+    }
+
+    function numInserts() public view returns (uint256) {
+        return inserts.length;
+    }
+
+    function getIdByInsertIndex(uint256 i_) public view returns (address) {
+        return inserts[i_];
+    }
+
+    function upsertTp(address borrower_, uint256 tp_) public {
         _loansHeap.upsert(borrower_, tp_);
     }
 
@@ -22,7 +41,7 @@ contract TestPool {
         _loansHeap.remove(borrower_);
     }
 
-    function getTp(address borrower_) external view returns (uint256) {
+    function getTp(address borrower_) public view returns (uint256) {
         return _loansHeap.getById(borrower_).val;
     }
 
@@ -36,6 +55,42 @@ contract TestPool {
 
     function getTotalTps() external view returns (uint256) {
         return _loansHeap.count;
+    }
+
+
+    /**
+     *  @notice fills Heap with fuzzed values and tests additions.
+     */
+    function fuzzyFill(
+        uint256 insertions_,
+        bool trackInserts)
+        external {
+
+        uint256 tp;
+        address borrower;
+
+        // Calculate total insertions 
+        uint256 totalInserts = bound(insertions_, 1000, 2000); 
+        uint256 insertsDec = totalInserts;
+
+        while (insertsDec > 0) {
+
+            // build address and TP
+            borrower = makeAddr(vm.toString(insertsDec));
+            tp = randomInRange(99_836_282_890, 1_004_968_987.606512354182109771 * 10**18, true);
+
+            // Insert TP
+            upsertTp(borrower, tp);
+            insertsDec  -=  1;
+
+            // Verify amount of Heap TPs
+            assertEq(_loansHeap.count - 1, totalInserts - insertsDec);
+            assertEq(getTp(borrower), tp);
+
+            if (trackInserts)  inserts.push(borrower);
+        }
+
+        assertEq(_loansHeap.count - 1, totalInserts);
     }
 }
 
@@ -209,6 +264,23 @@ contract HeapTest is DSTestPlus {
 
         vm.expectRevert("H:I:VAL_EQ_0");
         _pool.upsertTp(b1, 0);
+    }
+
+    function testHeapFuzzy(uint256 inserts_) public {
+
+        // test adding different TPs
+        _pool.fuzzyFill(inserts_, true);
+
+        // test adding different TPs
+        address removeAddress = _pool.getIdByInsertIndex(randomInRange(1, _pool.numInserts() - 1, true));
+        uint256 tp = _pool.getTp(removeAddress);
+        uint256 length = _pool.getCount() - 1;
+
+        _pool.removeTp(removeAddress);
+        
+        assertEq(length - 1, _pool.getCount() - 1);
+        assertEq(_pool.getTp(removeAddress), 0);
+        assertTrue(_pool.getTp(removeAddress) != tp);
     }
 
 }
