@@ -299,7 +299,7 @@ class TestUtils:
         # if pool is collateralized...
         if pool.lupIndex() > ScaledPoolUtils.price_to_index_safe(pool, pool.htp()):
             # ...ensure debt is less than the size of the pool
-            assert pool.borrowerDebt <= pool.poolSize()
+            assert pool.borrowerDebt() <= pool.poolSize()
 
         # FIXME: need the pool/heap to expose borrower count to run these validations
         # # if there are no borrowers in the pool, ensure there is no debt
