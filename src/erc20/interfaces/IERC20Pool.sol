@@ -148,6 +148,21 @@ interface IERC20Pool is IScaledPool {
      */
     function collateralScale() external view returns (uint256 collateralScale_);
 
+    /**
+     *  @notice Mapping of borrower under liquidation to {LiquidationInfo} structs.
+     *  @param  borrower_  Address of the borrower.
+     *  @return kickTime            Time the liquidation was initiated.
+     *  @return referencePrice      Highest Price Bucket at time of liquidation.
+     *  @return remainingCollateral Amount of collateral which has not yet been taken.
+     *  @return remainingDebt       Amount of debt which has not been covered by the liquidation.
+     */
+    function liquidations(address borrower_) external view returns (
+        uint128 kickTime,
+        uint128 referencePrice,
+        uint256 remainingCollateral,
+        uint256 remainingDebt
+    );
+
 
     /*************************/
     /*** ERC20Pool Structs ***/
@@ -163,6 +178,20 @@ interface IERC20Pool is IScaledPool {
         uint256 debt;                // [WAD]
         uint256 collateral;          // [WAD]
         uint256 inflatorSnapshot;    // [WAD]
+    }
+
+    /**
+     *  @notice Maintains the state of a liquidation.
+     *  @param  kickTime            Time the liquidation was initiated.
+     *  @param  referencePrice      Highest Price Bucket at time of liquidation.
+     *  @param  remainingCollateral Amount of collateral which has not yet been taken.
+     *  @param  remainingDebt       Amount of debt which has not been covered by the liquidation.
+     */
+    struct LiquidationInfo {
+        uint128 kickTime;
+        uint128 referencePrice;
+        uint256 remainingCollateral;
+        uint256 remainingDebt;
     }
 
 

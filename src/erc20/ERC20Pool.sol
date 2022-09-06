@@ -14,13 +14,6 @@ import { Maths } from "../libraries/Maths.sol";
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
 
-    struct LiquidationInfo {
-        uint128 kickTime;
-        uint128 referencePrice;
-        uint256 remainingCollateral;
-        uint256 remainingDebt;
-    }
-
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -28,7 +21,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => Borrower) public override borrowers;
 
-    mapping(address => LiquidationInfo) public liquidations;
+    mapping(address => LiquidationInfo) public override liquidations;
 
     uint256 public override collateralScale;
 

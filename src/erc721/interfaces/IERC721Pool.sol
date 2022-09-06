@@ -147,6 +147,20 @@ interface IERC721Pool is IScaledPool {
         uint256               inflatorSnapshot;    // [WAD]
     }
 
+    /**
+     *  @notice Maintains the state of a liquidation.
+     *  @param  kickTime            Time the liquidation was initiated.
+     *  @param  referencePrice      Highest Price Bucket at time of liquidation.
+     *  @param  remainingTokenIds   Liquidated NFTs which not yet been taken.
+     *  @param  remainingDebt       Amount of debt which has not been covered by the liquidation.
+     */
+    struct NFTLiquidationInfo {
+        uint128               kickTime;
+        uint128               referencePrice;
+        EnumerableSet.UintSet remainingTokenIds;
+        uint256               remainingDebt;
+    }
+
 
     /*****************************/
     /*** Initialize Functions ***/

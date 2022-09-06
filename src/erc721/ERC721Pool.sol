@@ -36,6 +36,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     // borrowers book: borrower address -> NFTBorrower
     mapping(address => NFTBorrower) private borrowers;
 
+    mapping(address => NFTLiquidationInfo) private liquidations;
+
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
