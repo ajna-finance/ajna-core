@@ -1,3 +1,4 @@
+import math
 import pytest
 from sdk import *
 from brownie import test, network, Contract, ERC20PoolFactory, ERC20Pool
@@ -123,6 +124,46 @@ def scaled_pool_utils(ajna_protocol):
     return ScaledPoolUtils(ajna_protocol)
 
 
+class LoansHeapUtils:
+    @staticmethod
+    def _worst_case(a, root, level, offset):
+        """
+        Args:
+            a:      pre-allocated list in which we build up the values to insert in order
+            root:   index 0, max node, head
+            level:  depth of the tree being created
+            offset: value by which all elements will be offset
+
+        Returns:
+            mutated list
+        """
+        if level == 0:
+            a[root] = offset
+            return offset + 1
+        else:
+            offset = LoansHeapUtils._worst_case(a, 2 * root + 1, level - 1, offset)
+            offset = LoansHeapUtils._worst_case(a, 2 * root + 2, level - 1, offset)
+            a[root] = offset
+            return offset + 1
+
+    @staticmethod
+    def _find_next_power_of_two(n):
+        return 2 ** (int(math.log(n - 1, 2)) + 1)
+
+    @staticmethod
+    def worst_case_heap_orientation(n, scale=1):
+        # build a larger tree which can hold all required nodes
+        tree_size = LoansHeapUtils._find_next_power_of_two(n)
+        a = [0] * tree_size
+        max_depth = int(math.log(tree_size, 2) - 1)
+        # populate the tree
+        LoansHeapUtils._worst_case(a, 0, max_depth, 0)
+        # scale the tree
+        a = list(map(lambda i: i * scale, a))
+        # return the first n elements
+        return a[:n]
+
+
 class TestUtils:
     capsys = None
 
@@ -131,8 +172,6 @@ class TestUtils:
         in_eth = gas * 50 * 1e-9
         in_fiat = in_eth * 1700
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
-
-
 
     class GasWatcher(object):
         _cache = {}
@@ -263,11 +302,11 @@ class TestUtils:
             assert pool.borrowerDebt <= pool.poolSize()
 
         # if there are no borrowers in the pool, ensure there is no debt
-        if pool.totalBorrowers() == 0:
+        if pool.loans().count == 0:
             assert pool.borrowerDebt() == 0
 
-        # totalBorrowers should be decremented as borrowers repay debt
-        if pool.totalBorrowers() > 0:
+        # loan count should be decremented as borrowers repay debt
+        if pool.loans().count > 0:
             assert pool.borrowerDebt() > 0
 
 
@@ -345,7 +384,7 @@ class TestUtils:
         if pledged_collateral > 0:
             ptp = pool.borrowerDebt() * 10 ** 18 / pledged_collateral
             ptp_index = pool.priceToIndex(ptp)
-            ru = pool.depositAt(ptp_index)
+            ru = pool.depositAt(ptp_index)  # FIXME: saw this revert with under/overflow once
         else:
             ptp = 0
             ru = 0

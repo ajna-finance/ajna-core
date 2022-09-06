@@ -7,7 +7,7 @@ from decimal import *
 from brownie import Contract
 from brownie.exceptions import VirtualMachineError
 from sdk import AjnaProtocol, DAI_ADDRESS, MKR_ADDRESS
-from conftest import MAX_PRICE, ScaledPoolUtils, TestUtils
+from conftest import LoansHeapUtils, MAX_PRICE, ScaledPoolUtils, TestUtils
 
 
 MAX_BUCKET = 2532  # 3293.70191, highest bucket for initial deposits, is exceeded after initialization
@@ -17,8 +17,8 @@ MIN_UTILIZATION = 0.4
 MAX_UTILIZATION = 0.8
 GOAL_UTILIZATION = 0.6      # borrowers should collateralize such that target utilization approaches this
 MIN_PARTICIPATION = 10000   # in quote token, the minimum amount to lend
-NUM_LENDERS = 50
-NUM_BORROWERS = 50
+NUM_LENDERS = 100
+NUM_BORROWERS = 100
 
 
 # set of buckets deposited into, indexed by lender index
@@ -26,7 +26,9 @@ buckets_deposited = {lender_id: set() for lender_id in range(0, NUM_LENDERS)}
 # timestamp when a lender/borrower last interacted with the pool
 last_triggered = {}
 # list of threshold prices for borrowers to attain in test setup, to start heap in a worst-case state
-threshold_prices = [1855.13, 2123.72, 1689.44, 2744.13, 1969.42, 1772.74]
+threshold_prices = LoansHeapUtils.worst_case_heap_orientation(NUM_BORROWERS, scale=10)
+print(threshold_prices)
+assert len(threshold_prices) == NUM_BORROWERS
 
 
 @pytest.fixture
@@ -75,7 +77,8 @@ def pool1(scaled_pool, lenders, borrowers, scaled_pool_utils, test_utils):
 
 def add_initial_liquidity(lenders, pool, scaled_pool_utils):
     # Lenders 0-9 will be "new to the pool" upon actual testing
-    deposit_amount = 60_000 * 10 ** 18
+    # TODO: determine this non-arbitrarily
+    deposit_amount = 1_000 * 10 ** 18
     for i in range(10, len(lenders) - 1):
         # determine how many buckets to deposit into
         for b in range(1, (i % 4) + 1):
@@ -103,7 +106,10 @@ def draw_initial_debt(borrowers, pool, test_utils, target_utilization):
         collateralization_ratio = min((1 / target_utilization) + 0.05, 2.5)  # cap at 250% collateralization
         if threshold_prices:
             tp = threshold_prices.pop(0)
-            collateral_to_deposit = int((borrow_amount / tp) * collateralization_ratio)
+            if tp:
+                collateral_to_deposit = int((borrow_amount / tp) * collateralization_ratio)
+            else:  # 0 TP implies empty node on the tree
+                collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio
         else:
             collateral_to_deposit = borrow_amount * 10**18 / pool_price * collateralization_ratio  # WAD
 
@@ -147,6 +153,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
     if not ensure_pool_is_funded(pool, borrow_amount, "borrow"):
         return
+    assert borrow_amount > 10**18
 
     # pledge collateral
     collateral_token = Contract(pool.collateral())
@@ -158,15 +165,17 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
     borrower_collateral = collateral_deposited + collateral_to_deposit
     if debug:
         print(f" borrower {borrower_index} pledging {collateral_to_deposit / 1e18:.8f} collateral")
-    assert collateral_to_deposit > 10**18
+    assert collateral_to_deposit > 0.001 * 10**18
     pool.pledgeCollateral(borrower, collateral_to_deposit, {"from": borrower})
 
     # draw debt
     (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower.address)
     new_total_debt = pending_debt + borrow_amount + ScaledPoolUtils.get_origination_fee(pool, borrow_amount)
-    print(f" borrower {borrower_index} drawing {borrow_amount / 1e18:.1f} from bucket {pool.lup() / 1e18:.3f} "
-          f"with {collateral_deposited / 1e18:.1f} collateral deposited, "
-          f"with {new_total_debt/1e18:.1f} total debt")
+    threshold_price = new_total_debt * 10**18 / collateral_deposited
+    print(f" borrower {borrower_index:>4} drawing {borrow_amount / 1e18:>8.1f} from bucket {pool.lup() / 1e18:>6.3f} "
+          f"with {collateral_deposited / 1e18:>6.1f} collateral deposited, "
+          f"with {new_total_debt/1e18:>9.1f} total debt "
+          f"at a TP of {threshold_price/1e18:8.1f}")
     tx = pool.borrow(borrow_amount, MIN_BUCKET, {"from": borrower})
     test_utils.validate_pool(pool)
     return tx
@@ -245,8 +254,6 @@ def draw_debt(borrower, borrower_index, pool, test_utils, collateralization=1.1)
 
     print(f" borrower {borrower_index} borrowing {borrow_amount / 10**18:.1f} "
           f"collateralizing at {collateralization:.1%}, (pool price is {pool.lup() / 10**18:.1f})")
-    assert collateral_to_deposit > 10**18
-    assert borrow_amount > 10**18
     tx = pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils)
 
 
@@ -304,7 +311,7 @@ def repay(borrower, borrower_index, pool, test_utils):
         # do the repayment
         repay_amount = int(repay_amount * 1.01)
         print(f" borrower {borrower_index} repaying {repay_amount/1e18:.1f} of {pending_debt/1e18:.1f} debt")
-        pool.repay(borrower, repay_amount, {"from": borrower})
+        tx = pool.repay(borrower, repay_amount, {"from": borrower})
 
         # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
         (_, pending_debt, collateral_deposited, _) = pool.borrowerInfo(borrower)
@@ -327,7 +334,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
     assert pool1.quoteToken() == DAI_ADDRESS
     assert len(lenders) == NUM_LENDERS
     assert len(borrowers) == NUM_BORROWERS
-    assert pool1.poolSize() > 2_700_000 * 10**18
+    # assert pool1.poolSize() > 2_700_000 * 10**18
     assert pool1.poolActualUtilization() > 0.50 * 10**18
     test_utils.validate_pool(pool1)
 
