@@ -1,5 +1,5 @@
 project_structure:
-    build: out
+    build: out/brownie
     contracts: src
     tests: tests
 
