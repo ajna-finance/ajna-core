@@ -27,7 +27,6 @@ buckets_deposited = {lender_id: set() for lender_id in range(0, NUM_LENDERS)}
 last_triggered = {}
 # list of threshold prices for borrowers to attain in test setup, to start heap in a worst-case state
 threshold_prices = LoansHeapUtils.worst_case_heap_orientation(NUM_BORROWERS, scale=10)
-print(threshold_prices)
 assert len(threshold_prices) == NUM_BORROWERS
 
 
@@ -78,8 +77,9 @@ def pool1(scaled_pool, lenders, borrowers, scaled_pool_utils, test_utils):
 def add_initial_liquidity(lenders, pool, scaled_pool_utils):
     # Lenders 0-9 will be "new to the pool" upon actual testing
     # TODO: determine this non-arbitrarily
-    deposit_amount = 1_000 * 10 ** 18
-    for i in range(10, len(lenders) - 1):
+    deposit_amount = 10_000 * 10 ** 18
+    starting_point = 10 if len(lenders) > 10 else 0
+    for i in range(starting_point, len(lenders) - 1):
         # determine how many buckets to deposit into
         for b in range(1, (i % 4) + 1):
             price_count = MIN_BUCKET - MAX_BUCKET

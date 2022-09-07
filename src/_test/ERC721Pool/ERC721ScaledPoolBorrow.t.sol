@@ -445,7 +445,8 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
         _subsetPool.borrow(1_000 * 1e18, 3000);
 
-        assertEq(_borrower, _subsetPool.maxBorrower());
+        assertEq(_subsetPool.maxBorrower(), _borrower);
+        assertEq(_subsetPool.loansCount(),  1);
 
         // borrower 2 borrows 3k quote from the pool and becomes new queue HEAD
         changePrank(_borrower2);
@@ -454,7 +455,8 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.pledgeCollateral(_borrower2, tokenIdsToAdd);
         _subsetPool.borrow(3_000 * 1e18, 3000);
 
-        assertEq(_borrower2, _subsetPool.maxBorrower());
+        assertEq(_subsetPool.maxBorrower(), _borrower2);
+        assertEq(_subsetPool.loansCount(),  2);
 
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);

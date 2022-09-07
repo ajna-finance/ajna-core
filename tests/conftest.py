@@ -301,15 +301,13 @@ class TestUtils:
             # ...ensure debt is less than the size of the pool
             assert pool.borrowerDebt() <= pool.poolSize()
 
-        # FIXME: need the pool/heap to expose borrower count to run these validations
-        # # if there are no borrowers in the pool, ensure there is no debt
-        # if pool.loans().count == 0:
-        #     assert pool.borrowerDebt() == 0
-        #
-        # # loan count should be decremented as borrowers repay debt
-        # if pool.loans().count > 0:
-        #     assert pool.borrowerDebt() > 0
+        # if there are no borrowers in the pool, ensure there is no debt
+        if pool.loansCount() == 0:
+            assert pool.borrowerDebt() == 0
 
+        # loan count should be decremented as borrowers repay debt
+        if pool.loansCount() > 0:
+            assert pool.borrowerDebt() > 0
 
     @staticmethod
     def dump_book(pool, min_bucket_index, max_bucket_index, with_headers=True, csv=False) -> str:

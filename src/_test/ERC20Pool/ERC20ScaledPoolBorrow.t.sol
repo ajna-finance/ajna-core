@@ -317,14 +317,16 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         _pool.pledgeCollateral(_borrower, 50 * 1e18);
         _pool.borrow(1_000 * 1e18, 3000);
 
-        assertEq(_borrower, _pool.maxBorrower());
+        assertEq(_pool.maxBorrower(), _borrower);
+        assertEq(_pool.loansCount(),  1);
 
         // borrower 2 borrows 5k quote from the pool and becomes new queue HEAD
         changePrank(_borrower2);
         _pool.pledgeCollateral(_borrower2, 50 * 1e18);
         _pool.borrow(5_000 * 1e18, 3000);
 
-        assertEq(_borrower2, _pool.maxBorrower());
+        assertEq(_pool.maxBorrower(), _borrower2);
+        assertEq(_pool.loansCount(),  2);
 
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
@@ -370,7 +372,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         _pool.addQuoteToken(10_000 * 1e18, 2551);
 
         assertEq(_pool.htp(), 0);
-        assertEq(address(_pool.maxBorrower()), address(0));
+        assertEq(_pool.maxBorrower(), address(0));
+        assertEq(_pool.loansCount(),  0);
 
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
         changePrank(_borrower);
@@ -383,7 +386,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         _pool.borrow(500 * 1e18, 3000);
 
         assertGt(_pool.htp(), 0);
-        assertEq(address(_pool.maxBorrower()), _borrower);
+        assertEq(_pool.maxBorrower(), _borrower);
+        assertEq(_pool.loansCount(),  1);
 
     }
 
@@ -407,7 +411,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         _pool.borrow(500 * 1e18, 2551);
 
         assertGt(_pool.htp(), 0);
-        assertEq(address(_pool.maxBorrower()), _borrower);
+        assertEq(_pool.maxBorrower(), _borrower);
+        assertEq(_pool.loansCount(),  1);
 
         (, uint256 pendingDebt, , ) = _pool.borrowerInfo(_borrower);
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
@@ -419,7 +424,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         // should be able to pay back all pendingDebt
         _pool.repay(_borrower, pendingDebt);
         assertEq(_pool.htp(), 0);
-        assertEq(address(_pool.maxBorrower()), address(0));
+        assertEq(_pool.maxBorrower(), address(0));
+        assertEq(_pool.loansCount(),  0);
     }
 
 }

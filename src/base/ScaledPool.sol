@@ -503,6 +503,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return _prefixSum(index_);
     }
 
+    function loansCount() external view override returns (uint256) {
+        return loans.count - 1;
+    }
+
     function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
         return _lpsToQuoteTokens(deposit_, lpTokens_, index_);
     }
