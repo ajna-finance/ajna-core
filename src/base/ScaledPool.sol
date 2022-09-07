@@ -82,22 +82,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     function addQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256) {
         uint256 curDebt = _accruePoolInterest();
 
-        //Bucket storage bucket = buckets[index_];
-        //uint256 rate = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
-        //uint256 lpbChange_ = Maths.rdiv(Maths.wadToRay(amount_), rate);
-        //bucket.lpAccumulator += lpbChange_;
-        
-        //_add(index_, amount_);
-
-        //uint256 newLup = _lup();
-
         (uint256 lpbChange, uint256 newLup) = _addQuoteAcc(index_, amount_, curDebt);
 
         BucketLender storage bucketLender = bucketLenders[index_][msg.sender];
         bucketLender.lpBalance            += lpbChange;
         bucketLender.lastQuoteDeposit     = block.timestamp;
-
-        //_updateInterestRateAndEMAs(curDebt, newLup);
 
         // move quote token amount from lender to pool
         emit AddQuoteToken(msg.sender, index_, amount_, newLup);
@@ -141,23 +130,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         // update "to" bucket accounting
         (uint256 lpbAmountTo, uint256 newLup) = _addQuoteAcc(toIndex_, amount, curDebt);
 
-        //Bucket storage bucket = buckets[toIndex_];
-        //rate = _exchangeRate(_valueAt(toIndex_), bucket.availableCollateral, bucket.lpAccumulator, toIndex_);
-        //lpbAmountTo_  = Maths.rdiv(Maths.wadToRay(amount), rate);
-        //bucket.lpAccumulator += lpbAmountTo_;
-        
-        //_add(toIndex_, amount);
-
-        //uint256 newLup = _lup();
-
         // move lup if necessary and check loan book's htp against new lup
         if (fromIndex_ < toIndex_) if(_htp() > newLup) revert MoveQuoteLUPBelowHTP();
 
         // update lender accounting
         bucketLender.lpBalance -= lpbAmountTo;
         bucketLenders[toIndex_][msg.sender].lpBalance += lpbAmountTo;
-
-        //_updateInterestRateAndEMAs(curDebt, newLup);
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
         return (lpbAmountFrom, lpbAmountTo);
