@@ -459,6 +459,11 @@ interface IScaledPool {
     function quoteTokenAddress() external pure returns (address);
 
     /**
+     *  @notice Returns the number of loans in pool
+     */
+    function loansCount() external view returns (uint256);
+
+    /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
      *  @param  deposit_     The amount of quote tokens available at this bucket index.
      *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
