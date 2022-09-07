@@ -25,16 +25,16 @@ library BucketMath {
     /**
         @dev constant price indices defining the min and max of the potential price range
      */
-    int256 public constant MAX_PRICE_INDEX = 4_156;
-    int256 public constant MIN_PRICE_INDEX = -3_232;
+    int256 internal constant MAX_PRICE_INDEX = 4_156;
+    int256 internal constant MIN_PRICE_INDEX = -3_232;
 
-    uint256 public constant MIN_PRICE = 99_836_282_890;
-    uint256 public constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
+    uint256 internal constant MIN_PRICE = 99_836_282_890;
+    uint256 internal constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
 
     /**
         @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
      */
-    int256 public constant FLOAT_STEP_INT = 1.005 * 10**18;
+    int256 internal constant FLOAT_STEP_INT = 1.005 * 10**18;
 
     function abs(int256 x) private pure returns (uint256) {
         return x >= 0 ? uint256(x) : uint256(-x);
@@ -48,7 +48,7 @@ library BucketMath {
      *          V2: index = (log(FLOAT_STEP) * price) /  MAX_PRICE
      *          V3 (final): index =  log_2(price) / log_2(FLOAT_STEP)
      */
-    function priceToIndex(uint256 price_) public pure returns (int256) {
+    function priceToIndex(uint256 price_) internal pure returns (int256) {
         require(price_ >= MIN_PRICE && price_ <= MAX_PRICE, "BM:PTI:OOB");
 
         int256 index = PRBMathSD59x18.div(
@@ -72,7 +72,7 @@ library BucketMath {
      *          V2: price = MAX_PRICE * (FLOAT_STEP ** (abs(int256(index - MAX_PRICE_INDEX))));
      *          V3 (final): x^y = 2^(y*log_2(x))
      */
-    function indexToPrice(int256 index_) public pure returns (uint256) {
+    function indexToPrice(int256 index_) internal pure returns (uint256) {
         require(index_ >= MIN_PRICE_INDEX && index_ <= MAX_PRICE_INDEX, "BM:ITP:OOB");
 
         return uint256(
@@ -90,7 +90,7 @@ library BucketMath {
      *  @dev    Price needs to be cast to int, since indices can be negative
      *  @return isValid_ Boolean indicating if the given price is valid
      */
-    function isValidPrice(uint256 price_) public pure returns (bool) {
+    function isValidPrice(uint256 price_) internal pure returns (bool) {
         int256 index = priceToIndex(price_);
         uint256 price = indexToPrice(index);
         return price_ == price;
@@ -100,7 +100,7 @@ library BucketMath {
      *  @notice Determine if a given index is within the constant range
      *  @return isValid_ Boolean indicating if the given index is valid
     */
-    function isValidIndex(int256 index_) public pure returns (bool) {
+    function isValidIndex(int256 index_) internal pure returns (bool) {
         return index_ >= MIN_PRICE_INDEX && index_ <= MAX_PRICE_INDEX;
     }
 
