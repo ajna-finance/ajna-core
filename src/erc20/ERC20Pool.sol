@@ -179,10 +179,10 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
-        require(fromIndex_ != toIndex_, "S:MC:SAME_PRICE");
+        if (fromIndex_ == toIndex_) revert MoveCollateralToSamePrice();
 
         Bucket storage fromBucket = buckets[fromIndex_];
-        require(fromBucket.availableCollateral >= amount_, "S:MC:INSUF_COL");
+        if (fromBucket.availableCollateral < amount_) revert MoveCollateralInsufficientCollateral();
 
         BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
         uint256 curDebt                   = _accruePoolInterest();
@@ -190,7 +190,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // determine amount of amount of LP required
         uint256 rate                 = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
         lpbAmountFrom_               = (amount_ * _indexToPrice(fromIndex_) * 1e18 + rate / 2) / rate;
-        require(bucketLender.lpBalance != 0 && lpbAmountFrom_ <= bucketLender.lpBalance, "S:MC:INSUF_LPS");
+        if (lpbAmountFrom_ > bucketLender.lpBalance) revert MoveCollateralInsufficientLP();
 
         // update "from" bucket accounting
         fromBucket.lpAccumulator -= lpbAmountFrom_;
