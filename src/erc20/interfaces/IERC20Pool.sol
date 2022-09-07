@@ -221,13 +221,6 @@ interface IERC20Pool is IScaledPool {
     /*****************************/
 
     /**
-     *  @notice Deposit unencumbered collateral into a specified bucket.
-     *  @param  amount_ Amount of collateral to deposit.
-     *  @param  index_  The bucket index to which collateral will be deposited.
-     */
-    function addCollateral(uint256 amount_, uint256 index_) external returns (uint256 lpbChange_);
-
-    /**
      *  @notice Initializes a new pool, setting initial state variables.
      *  @param  interestRate_ Default interest rate of the pool.
      */
