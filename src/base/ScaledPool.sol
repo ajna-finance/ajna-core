@@ -246,6 +246,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     function startClaimableReserveAuction() external override {
         reserveAuctionKicked = block.timestamp;
         // TODO: implement
+        uint256 claimableReserves = Maths.wmul(0.995 * 1e18, borrowerDebt)
+                                        + quoteToken().balanceOf(address(this))
+                                        - this.poolSize()
+                                        - liquidationBondEscrowed;
+        reserveAuctionUnclaimed += claimableReserves;
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
@@ -494,8 +499,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         );
     }
 
-    function bucketCount() external view returns (uint256) {
+    function bucketCount() external view override returns (uint256) {
         return this.SIZE();
+    }
+
+    function reserves() external view override returns (uint256) {
+        return borrowerDebt + quoteToken().balanceOf(address(this)) - this.poolSize() - liquidationBondEscrowed - reserveAuctionUnclaimed;
     }
 
     function depositAt(uint256 index_) external view override returns (uint256) {

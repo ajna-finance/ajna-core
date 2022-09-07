@@ -314,6 +314,11 @@ interface IScaledPool {
     function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
 
     /**
+     *  @notice Returns the amount of excess quote tokens.
+     */
+    function reserves() external view returns (uint256 reserves_);
+
+    /**
      *  @notice Returns the `totalBorrowers` state variable.
      *  @return totalBorrowers_ The total number of borrowers in pool.
      */
