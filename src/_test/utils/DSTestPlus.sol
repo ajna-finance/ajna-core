@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import { Maths } from "../../libraries/Maths.sol";
 import { Heap} from "../../libraries/Heap.sol";
+import { FenwickTree } from "../../base/FenwickTree.sol";
 
 import { Test } from "@std/Test.sol";
 import { Vm }   from "@std/Vm.sol";
@@ -108,7 +109,7 @@ abstract contract DSTestPlus is Test {
 
 }
 
-contract HeapForTesting is DSTestPlus {
+contract HeapInstance is DSTestPlus {
     using Heap for Heap.Data;
 
     Heap.Data private _heap;
@@ -193,4 +194,100 @@ contract HeapForTesting is DSTestPlus {
 
         assertEq(_heap.count - 1, totalInserts);
     }
+}
+
+
+contract FenwickTreeInstance is FenwickTree, DSTestPlus {
+
+    /**
+     *  @notice used to track fuzzing test insertions.
+     */
+    uint256[] private inserts;
+
+    function numInserts() public view returns (uint256) {
+        return inserts.length;
+    }
+
+    function getIByInsertIndex(uint256 i_) public view returns (uint256) {
+        return inserts[i_];
+    }
+
+    function add(uint256 i_, uint256 x_) public {
+        _add(i_, x_);
+    }
+
+    function remove(uint256 i_, uint256 x_) public {
+        _remove(i_, x_);
+    }
+
+    function mult(uint256 i_, uint256 f_) public {
+        _mult(i_, f_);
+    }
+
+    function treeSum() external view returns (uint256) {
+        return _treeSum();
+    }
+
+    function rangeSum(uint256 i_, uint256 j_) external view returns (uint256 m_) {
+        return _rangeSum(i_, j_);
+    }
+
+    function get(uint256 i_) external view returns (uint256 m_) {
+        return _valueAt(i_);
+    }
+
+    function scale(uint256 i_) external view returns (uint256 a_) {
+        return _scale(i_);
+    }
+
+    function findIndexOfSum(uint256 x_) external view returns (uint256 m_) {
+        return _findIndexOfSum(x_);
+    }
+
+    function prefixSum(uint256 i_) external view returns (uint256 s_) {
+        return _prefixSum(i_);
+    }
+
+    /**
+     *  @notice fills fenwick tree with fuzzed values and tests additions.
+     */
+    function fuzzyFill(
+        uint256 insertions_,
+        uint256 amount_,
+        bool trackInserts)
+        external {
+
+        uint256 i;
+        uint256 amount;
+
+        // Calculate total insertions 
+        uint256 insertsDec= bound(insertions_, 1000, 2000);
+
+        // Calculate total amount to insert
+        uint256 totalAmount = bound(amount_, 1 * 1e18, 9_000_000_000_000_000 * 1e18);
+        uint256 totalAmountDec = totalAmount;
+
+
+        while (totalAmountDec > 0 && insertsDec > 0) {
+
+            // Insert at random index
+            i = randomInRange(1, 8190);
+
+            // If last iteration, insert remaining
+            amount = insertsDec == 1 ? totalAmountDec : (totalAmountDec % insertsDec) * randomInRange(1_000, 1 * 1e10, true);
+
+            // Update values
+            add(i, amount);
+            totalAmountDec  -=  amount;
+            insertsDec      -=  1;
+
+            // Verify tree sum
+            assertEq(_treeSum(), totalAmount - totalAmountDec);
+
+            if (trackInserts)  inserts.push(i);
+        }
+
+        assertEq(_treeSum(), totalAmount);
+    }
+
 }
