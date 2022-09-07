@@ -44,8 +44,8 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
         assertEq(_pool.interestRateUpdate(), 0);
 
         changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 100 * 1e18, address(0), address(0));
-        _pool.borrow(46_000 * 1e18, 4300, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 100 * 1e18);
+        _pool.borrow(46_000 * 1e18, 4300);
 
         assertEq(_pool.htp(), 460.442307692307692520 * 1e18);
         assertEq(_pool.lup(), 2_981.007422784467321543 * 1e18);
@@ -58,7 +58,7 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
 
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
-        _pool.repay(_borrower, 46_200 * 1e18, address(0), address(0));
+        _pool.repay(_borrower, 46_200 * 1e18);
 
         skip(864000);
 
@@ -92,8 +92,8 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
 
         // draw debt
         changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 50 * 1e18, address(0), address(0));
-        _pool.borrow(15_000 * 1e18, 4300, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 50 * 1e18);
+        _pool.borrow(15_000 * 1e18, 4300);
         assertEq(_pool.inflatorSnapshot(), 1.0 * 1e18);
         assertEq(_pool.pendingInflator(), 1.000005707778846384 * 1e18);
         vm.warp(block.timestamp+3600);

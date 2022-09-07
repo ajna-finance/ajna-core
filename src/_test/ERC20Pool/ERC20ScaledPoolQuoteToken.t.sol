@@ -159,8 +159,8 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         changePrank(_borrower);
         deal(address(_collateral), _borrower,  _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         _collateral.approve(address(_pool), 3_500_000 * 1e18);
-        _pool.pledgeCollateral(_borrower, 3_500_000 * 1e18, address(0), address(0));
-        _pool.borrow(10_000 * 1e18, 4551, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 3_500_000 * 1e18);
+        _pool.borrow(10_000 * 1e18, 4551);
 
         changePrank(_lender);
         vm.expectRevert(IScaledPool.RemoveQuoteLUPBelowHTP.selector);
@@ -186,8 +186,8 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         changePrank(_borrower);
         deal(address(_collateral), _borrower,  _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         _collateral.approve(address(_pool), 3_500_000 * 1e18);
-        _pool.pledgeCollateral(_borrower, 3_500_000 * 1e18, address(0), address(0));
-        _pool.borrow(70_000 * 1e18, 4551, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 3_500_000 * 1e18);
+        _pool.borrow(70_000 * 1e18, 4551);
 
         // ensure lender cannot withdraw from a bucket with no deposit
         changePrank(_lender1);
@@ -238,10 +238,10 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         changePrank(_borrower);
         deal(address(_collateral), _borrower, _collateral.balanceOf(_borrower) + 100 * 1e18);
         _collateral.approve(address(_pool), 100 * 1e18);
-        _pool.pledgeCollateral(_borrower, 100 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 100 * 1e18);
         uint256 limitPrice = _pool.priceToIndex(4_000 * 1e18);
         assertGt(limitPrice, 1663);
-        _pool.borrow(3_000 * 1e18, limitPrice, address(0), address(0));
+        _pool.borrow(3_000 * 1e18, limitPrice);
         skip(2 hours);
         (lpBalance, lastQuoteDeposit) = _pool.bucketLenders(1606, _lender);
         assertEq(lpb_before, lpBalance);
@@ -345,8 +345,8 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         changePrank(_borrower);
         deal(address(_collateral), _borrower, _collateral.balanceOf(_borrower) + 1_500_000 * 1e18);
         _collateral.approve(address(_pool), 1_500_000 * 1e18);
-        _pool.pledgeCollateral(_borrower, 1500000 * 1e18, address(0), address(0));
-        _pool.borrow(60000.1 * 1e18, 4651, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 1500000 * 1e18);
+        _pool.borrow(60000.1 * 1e18, 4651);
 
         // should revert if movement would drive lup below htp
         changePrank(_lender);
@@ -369,8 +369,8 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         // borrower draws debt, establishing a pool threshold price
         skip(2 hours);
         changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 10 * 1e18, address(0), address(0));
-        _pool.borrow(5_000 * 1e18, 3000, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 10 * 1e18);
+        _pool.borrow(5_000 * 1e18, 3000);
         uint256 ptp = Maths.wdiv(_pool.borrowerDebt(), 10 * 1e18);
         assertEq(ptp, 500.480769230769231 * 1e18);
 

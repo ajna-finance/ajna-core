@@ -86,17 +86,14 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         bytes[] memory callsToExecute = new bytes[](1);
 
         callsToExecute[0] = abi.encodeWithSignature(
-            "borrow(uint256,uint256,address,address)",
+            "borrow(uint256,uint256)",
             10_000 * 1e18,
-            2550,
-            address(0),
-            address(0)
+            2550
         );
 
         changePrank(_lender);
         vm.expectRevert(IScaledPool.BorrowLimitIndexReached.selector);
         _pool.multicall(callsToExecute);
-
     }
 
 

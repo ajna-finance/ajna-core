@@ -60,7 +60,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      0,
                 actualUtilization: 0,
                 targetUtilization: 1e18,
-                minDebtAmount:     0
+                minDebtAmount:     0,
+                loans:             0,
+                maxBorrower:       address(0)
             })
         );
 
@@ -75,8 +77,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 100 * 1e18,
                 borrowAmount: 21_000 * 1e18,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        2_981.007422784467321543 * 1e18
             })
         );
@@ -89,7 +89,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      21_020.192307692307702000 * 1e18,
                 actualUtilization: 0.420403846153846154 * 1e18,
                 targetUtilization: 1e18,
-                minDebtAmount:     2_102.0192307692307702 * 1e18
+                minDebtAmount:     2_102.0192307692307702 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
 
@@ -129,8 +131,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 0,
                 borrowAmount: 19_000 * 1e18,
                 indexLimit:   3_500,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        2_951.419442869698640451 * 1e18
             })
         );
@@ -143,7 +143,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      40_038.461538461538480000 * 1e18,
                 actualUtilization: 0.800769230769230770 * 1e18,
                 targetUtilization: 1e18,
-                minDebtAmount:     4_003.846153846153848 * 1e18
+                minDebtAmount:     4_003.846153846153848 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
 
@@ -157,8 +159,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 from:        _borrower,
                 borrower:    _borrower,
                 repayAmount: 10_000 * 1e18,
-                oldPrev:     address(0),
-                newPrev:     address(0),
                 price:       2_966.176540084047110076 * 1e18
             })
         );
@@ -171,7 +171,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      30_038.461538461538480000 * 1e18,
                 actualUtilization: 0.600769230769230770 * 1e18,
                 targetUtilization: 1e18,
-                minDebtAmount:     3_003.846153846153848000 * 1e18
+                minDebtAmount:     3_003.846153846153848000 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
 
@@ -186,8 +188,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 from:        _borrower,
                 borrower:    _borrower,
                 repayAmount: 30_038.461538461538480000 * 1e18,
-                oldPrev:     address(0),
-                newPrev:     address(0),
                 price:       BucketMath.MAX_PRICE
             })
         );
@@ -200,7 +200,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      0,
                 actualUtilization: 0,
                 targetUtilization: 1e18,
-                minDebtAmount:     0
+                minDebtAmount:     0,
+                loans:             0,
+                maxBorrower:       address(0)
             })
         );
 
@@ -238,7 +240,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      0,
                 actualUtilization: 0,
                 targetUtilization: 1e18,
-                minDebtAmount:     0
+                minDebtAmount:     0,
+                loans:             0,
+                maxBorrower:       address(0)
             })
         );
 
@@ -250,8 +254,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 50 * 1e18,
                 borrowAmount: 21_000 * 1e18,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        2_981.007422784467321543 * 1e18
             })
         );
@@ -264,7 +266,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      21_020.192307692307702000 * 1e18,
                 actualUtilization: 0.420403846153846154 * 1e18,
                 targetUtilization: 0.000000461866946770 * 1e18,
-                minDebtAmount:     2_102.019230769230770200 * 1e18
+                minDebtAmount:     2_102.019230769230770200 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
         _assertBorrower(
@@ -282,9 +286,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
             PledgeSpecs({
                 from:     _borrower,
                 borrower: _borrower,
-                amount:   10 * 1e18,
-                oldPrev:  address(0),
-                newPrev:  address(0)
+                amount:   10 * 1e18
             })
         );
 
@@ -296,7 +298,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      21_083.636385101213387311 * 1e18,
                 actualUtilization: 0.421191729529563507 * 1e18,
                 targetUtilization: 0.000000973344306926 * 1e18,
-                minDebtAmount:     2_108.363638510121338731 * 1e18
+                minDebtAmount:     2_108.363638510121338731 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
         _assertBorrower(
@@ -313,9 +317,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         _pullCollateral(
             PullSpecs({
                 from:    _borrower,
-                amount:  10 * 1e18,
-                oldPrev: address(0),
-                newPrev: address(0)
+                amount:  10 * 1e18
             })
         );
 
@@ -327,7 +329,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      21_118.612213260575675180 * 1e18,
                 actualUtilization: 0.421625310446902749 * 1e18,
                 targetUtilization: 0.000001538993982628 * 1e18,
-                minDebtAmount:     2_111.861221326057567518 * 1e18
+                minDebtAmount:     2_111.861221326057567518 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
         _assertBorrower(
@@ -348,8 +352,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 0,
                 borrowAmount: 0,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        2_981.007422784467321543 * 1e18
             })
         );
@@ -362,7 +364,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      21_157.152643010853298669 * 1e18,
                 actualUtilization: 0.422102449585604636 * 1e18,
                 targetUtilization: 0.000002164656347431 * 1e18,
-                minDebtAmount:     2_115.715264301085329867 * 1e18
+                minDebtAmount:     2_115.715264301085329867 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
         _assertBorrower(
@@ -381,8 +385,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 from:        _borrower,
                 borrower:    _borrower,
                 repayAmount: 0,
-                oldPrev:     address(0),
-                newPrev:     address(0),
                 price:       2_981.007422784467321543 * 1e18
             })
         );
@@ -394,7 +396,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      21_199.628356897284446170 * 1e18,
                 actualUtilization: 0.422627544035780001 * 1e18,
                 targetUtilization: 0.000002856824049756 * 1e18,
-                minDebtAmount:     2_119.962835689728444617 * 1e18
+                minDebtAmount:     2_119.962835689728444617 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
         _assertBorrower(
@@ -416,7 +420,9 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 borrowerDebt:      21_199.628356897284446170 * 1e18,
                 actualUtilization: 0.422627544035780001 * 1e18,
                 targetUtilization: 0.000002856824049756 * 1e18,
-                minDebtAmount:     2_119.962835689728444617 * 1e18
+                minDebtAmount:     2_119.962835689728444617 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
         _assertBorrower(
@@ -442,7 +448,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         // should revert if borrower attempts to borrow with an out of bounds limitIndex
         changePrank(_borrower);
         vm.expectRevert(IScaledPool.BorrowLimitIndexReached.selector);
-        _pool.borrow(1_000 * 1e18, 5000, address(0), address(0));
+        _pool.borrow(1_000 * 1e18, 5000);
 
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
@@ -458,7 +464,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         changePrank(_borrower);
         // should revert if borrow would result in pool under collateralization
         vm.expectRevert(IScaledPool.BorrowPoolUnderCollateralized.selector);
-        _pool.borrow(500 * 1e18, 3000, address(0), address(0));
+        _pool.borrow(500 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after adding sufficient collateral
         _borrow(
@@ -468,8 +474,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 50 * 1e18,
                 borrowAmount: 500 * 1e18,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        3_010.892022197881557845 * 1e18
             })
         );
@@ -482,8 +486,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 6 * 1e18,
                 borrowAmount: 15_000 * 1e18,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        2_995.912459898389633881 * 1e18
             })
         );
@@ -491,12 +493,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         changePrank(_borrower);
         // should revert if borrower attempts to borrow more than minimum amount
         vm.expectRevert(IScaledPool.BorrowAmountLTMinDebt.selector);
-        _pool.borrow(10 * 1e18, 3000, address(0), _borrower2);
+        _pool.borrow(10 * 1e18, 3000);
 
         changePrank(_borrower2);
-        // should revert if borrow would result in borrower under collateralizations
         vm.expectRevert(IScaledPool.BorrowBorrowerUnderCollateralized.selector);
-        _pool.borrow(2_976 * 1e18, 3000, address(0), _borrower);
+        _pool.borrow(2_976 * 1e18, 3000);
 
         // should be able to borrow if properly specified
         _borrow(
@@ -506,8 +507,6 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 0,
                 borrowAmount: 10 * 1e18,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        2_995.912459898389633881 * 1e18
             })
         );
@@ -536,7 +535,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         // should revert if borrower has no debt
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         vm.expectRevert(IScaledPool.RepayNoDebt.selector);
-        _pool.repay(_borrower, 10_000 * 1e18, address(0), address(0));
+        _pool.repay(_borrower, 10_000 * 1e18);
 
         // borrower 1 borrows 1000 quote from the pool
         _borrow(
@@ -546,12 +545,23 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 50 * 1e18,
                 borrowAmount: 1_000 * 1e18,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        3_010.892022197881557845 * 1e18
             })
         );
-        assertEq(_borrower, _pool.loanQueueHead());
+
+        _assertPool(
+            PoolState({
+                htp:               20.019230769230769240 * 1e18,
+                lup:               3_010.892022197881557845 * 1e18,
+                poolSize:          20_000 * 1e18,
+                borrowerDebt:      1_000.961538461538462000 * 1e18,
+                actualUtilization: 0.050048076923076923 * 1e18,
+                targetUtilization: 1 * 1e18,
+                minDebtAmount:     100.096153846153846200 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
+            })
+        );
 
         // borrower 2 borrows 5k quote from the pool and becomes new queue HEAD
         _borrow(
@@ -561,17 +571,28 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 50 * 1e18,
                 borrowAmount: 5_000 * 1e18,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        3_010.892022197881557845 * 1e18
             })
         );
-        assertEq(_borrower2, _pool.loanQueueHead());
+
+        _assertPool(
+            PoolState({
+                htp:               100.096153846153846200 * 1e18,
+                lup:               3_010.892022197881557845 * 1e18,
+                poolSize:          20_000 * 1e18,
+                borrowerDebt:      6_005.769230769230772000 * 1e18,
+                actualUtilization: 0.300288461538461539 * 1e18,
+                targetUtilization: 1 * 1e18,
+                minDebtAmount:     300.288461538461538600 * 1e18,
+                loans:             2,
+                maxBorrower:       _borrower
+            })
+        );
 
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
         vm.expectRevert(IScaledPool.BorrowAmountLTMinDebt.selector);
-        _pool.repay(_borrower, 750 * 1e18, address(0), address(0));
+        _pool.repay(_borrower, 750 * 1e18);
 
         // should be able to repay loan if properly specified
         _repay(
@@ -579,9 +600,21 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 from:        _borrower,
                 borrower:    _borrower,
                 repayAmount: 0.0001 * 1e18,
-                oldPrev:     _borrower2,
-                newPrev:     _borrower2,
                 price:       3_010.892022197881557845 * 1e18
+            })
+        );
+
+        _assertPool(
+            PoolState({
+                htp:               100.096153846153846200 * 1e18,
+                lup:               3_010.892022197881557845 * 1e18,
+                poolSize:          20_000 * 1e18,
+                borrowerDebt:      6_005.769130769230772000 * 1e18,
+                actualUtilization: 0.300288456538461539 * 1e18,
+                targetUtilization: 1 * 1e18,
+                minDebtAmount:     300.288456538461538600 * 1e18,
+                loans:             2,
+                maxBorrower:       _borrower
             })
         );
     }
@@ -605,9 +638,21 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 50 * 1e18,
                 borrowAmount: 1_000 * 1e18,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        3_010.892022197881557845 * 1e18
+            })
+        );
+
+        _assertPool(
+            PoolState({
+                htp:               20.019230769230769240 * 1e18,
+                lup:               3_010.892022197881557845 * 1e18,
+                poolSize:          20_000 * 1e18,
+                borrowerDebt:      1_000.961538461538462000 * 1e18,
+                actualUtilization: 0.050048076923076923 * 1e18,
+                targetUtilization: 1 * 1e18,
+                minDebtAmount:     100.096153846153846200 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
 
@@ -617,9 +662,21 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 from:        _lender,
                 borrower:    _borrower,
                 repayAmount: 0.0001 * 1e18,
-                oldPrev:     address(0),
-                newPrev:     address(0),
                 price:       3_010.892022197881557845 * 1e18
+            })
+        );
+
+        _assertPool(
+            PoolState({
+                htp:               20.019228769230769240 * 1e18,
+                lup:               3_010.892022197881557845 * 1e18,
+                poolSize:          20_000 * 1e18,
+                borrowerDebt:      1_000.961438461538462000 * 1e18,
+                actualUtilization: 0.050048071923076923 * 1e18,
+                targetUtilization: 1 * 1e18,
+                minDebtAmount:     100.096143846153846200 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
             })
         );
     }
@@ -640,13 +697,12 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 amounts: amounts
             })
         );
-        assertEq(address(_pool.loanQueueHead()), address(0));
 
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
         changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 50 * 1e18, address(0), address(0));
-        vm.expectRevert("B:U:TP_EQ_0");
-        _pool.borrow(0.00000000000000001 * 1e18, 3000, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 50 * 1e18);
+        vm.expectRevert("H:I:VAL_EQ_0");
+        _pool.borrow(0.00000000000000001 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
         _borrow(
@@ -656,12 +712,23 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 50 * 1e18,
                 borrowAmount: 500 * 1e18,
                 indexLimit:   3_000,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        3_010.892022197881557845 * 1e18
             })
         );
-        assertEq(address(_pool.loanQueueHead()), _borrower);
+
+        _assertPool(
+            PoolState({
+                htp:               5.004807692307692310 * 1e18,
+                lup:               3_010.892022197881557845 * 1e18,
+                poolSize:          20_000 * 1e18,
+                borrowerDebt:      500.48076923076923100 * 1e18,
+                actualUtilization: 0.025024038461538462 * 1e18,
+                targetUtilization: 1 * 1e18,
+                minDebtAmount:     50.048076923076923100 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
+            })
+        );
     }
 
     /**
@@ -690,18 +757,29 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 50 * 1e18,
                 borrowAmount: 500 * 1e18,
                 indexLimit:   2_551,
-                oldPrev:      address(0),
-                newPrev:      address(0),
                 price:        3_010.892022197881557845 * 1e18
             })
         );
-        assertEq(address(_pool.loanQueueHead()), _borrower);
+
+        _assertPool(
+            PoolState({
+                htp:               10.009615384615384620 * 1e18,
+                lup:               3_010.892022197881557845 * 1e18,
+                poolSize:          20_000 * 1e18,
+                borrowerDebt:      500.480769230769231000 * 1e18,
+                actualUtilization: 0.025024038461538462 * 1e18,
+                targetUtilization: 1 * 1e18,
+                minDebtAmount:     50.048076923076923100 * 1e18,
+                loans:             1,
+                maxBorrower:       _borrower
+            })
+        );
 
         (, uint256 pendingDebt, , ) = _pool.borrowerInfo(_borrower);
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
-        vm.expectRevert("B:U:TP_EQ_0");
-        _pool.repay(_borrower, pendingDebt - 1, address(0), address(0));
+        vm.expectRevert("H:I:VAL_EQ_0");
+        _pool.repay(_borrower, pendingDebt - 1);
 
         // should be able to pay back all pendingDebt
         _repay(
@@ -709,12 +787,23 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 from:        _borrower,
                 borrower:    _borrower,
                 repayAmount: pendingDebt,
-                oldPrev:     address(0),
-                newPrev:     address(0),
                 price:       BucketMath.MAX_PRICE
             })
         );
-        assertEq(address(_pool.loanQueueHead()), address(0));
+
+        _assertPool(
+            PoolState({
+                htp:               0,
+                lup:               BucketMath.MAX_PRICE,
+                poolSize:          20_000 * 1e18,
+                borrowerDebt:      0,
+                actualUtilization: 0,
+                targetUtilization: 1e18,
+                minDebtAmount:     0,
+                loans:             0,
+                maxBorrower:       address(0)
+            })
+        );
     }
 
 }

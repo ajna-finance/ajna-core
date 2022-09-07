@@ -36,14 +36,16 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
         // Borrower adds collateral token and borrows at HPB
         vm.startPrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 1e18, address(0), address(0));
-        _pool.borrow(10_000e18, HPB, address(0), address(0));
+        _collateral.approve(address(_pool), 10_000e18);
+        _pool.pledgeCollateral(_borrower, 1e18);
+        _pool.borrow(10_000e18, HPB);
         vm.stopPrank();
 
         // Borrower adds collateral token and borrows at LEND_PRICE
         vm.startPrank(_borrower2);
-        _pool.pledgeCollateral(_borrower2, 1e18, address(0), address(0));
-        _pool.borrow(10_000e18, LEND_PRICE, address(0), address(0));
+        _collateral.approve(address(_pool), 10_000e18);
+        _pool.pledgeCollateral(_borrower2, 1e18);
+        _pool.borrow(10_000e18, LEND_PRICE);
         vm.stopPrank();
 
         // Warp to make borrower undercollateralized
