@@ -255,12 +255,6 @@ interface IScaledPool {
      */
     function poolPriceEma() external view returns (uint256 poolPriceEma_);
 
-    /**
-     *  @notice Returns the `totalBorrowers` state variable.
-     *  @return totalBorrowers_ The total number of borrowers in pool.
-     */
-    function totalBorrowers() external view returns (uint256 totalBorrowers_);
-
     /***************/
     /*** Structs ***/
     /***************/
@@ -478,4 +472,6 @@ interface IScaledPool {
      *          regardless of pool debt.
      */
     function poolSize() external view returns (uint256);
+
+    function maxBorrower() external view returns (address borrower_);
 }

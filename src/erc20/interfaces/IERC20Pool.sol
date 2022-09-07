@@ -141,37 +141,29 @@ interface IERC20Pool is IScaledPool {
      *  @notice Called by borrowers to add collateral to the pool.
      *  @param  borrower_ The address of borrower to pledge collateral for.
      *  @param  amount_   The amount of collateral in deposit tokens to be added to the pool.
-     *  @param  oldPrev_  Previous borrower that came before placed loan (old)
-     *  @param  newPrev_  Previous borrower that now comes before placed loan (new)
      */
-    function pledgeCollateral(address borrower_, uint256 amount_, address oldPrev_, address newPrev_) external;
+    function pledgeCollateral(address borrower_, uint256 amount_) external;
 
     /**
      *  @notice Called by a borrower to open or expand a position.
      *  @dev    Can only be called if quote tokens have already been added to the pool.
      *  @param  amount_     The amount of quote token to borrow.
      *  @param  limitIndex_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
-     *  @param  oldPrev_    Previous borrower that came before placed loan (old)
-     *  @param  newPrev_    Previous borrower that now comes before placed loan (new)
      */
-    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external;
+    function borrow(uint256 amount_, uint256 limitIndex_) external;
 
     /**
      *  @notice Called by borrowers to remove an amount of collateral.
      *  @param  amount_ The amount of collateral in deposit tokens to be removed from a position.
-     *  @param  oldPrev_ Previous borrower that came before placed loan (old)
-     *  @param  newPrev_ Previous borrower that now comes before placed loan (new)
      */
-    function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external;
+    function pullCollateral(uint256 amount_) external;
 
     /**
      *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
      *  @param  borrower_  The address of borrower to repay quote token amount for.
      *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
-     *  @param  oldPrev_   Previous borrower that came before placed loan (old)
-     *  @param  newPrev_   Previous borrower that now comes before placed loan (new)
      */
-    function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external;
+    function repay(address borrower_, uint256 maxAmount_) external;
 
     /*****************************/
     /*** Initialize Functions ***/

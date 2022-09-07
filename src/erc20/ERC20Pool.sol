@@ -9,10 +9,12 @@ import { IERC20Pool } from "./interfaces/IERC20Pool.sol";
 
 import { ScaledPool } from "../base/ScaledPool.sol";
 
+import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
 
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
+    using Heap      for Heap.Data;
 
     struct LiquidationInfo {
         uint128 kickTime;
@@ -49,6 +51,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         interestRateUpdate         = block.timestamp;
         minFee                     = 0.0005 * 10**18;
 
+        loans.init();
+
         // increment initializations count to ensure these values can't be updated
         poolInitializations += 1;
     }
@@ -57,7 +61,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(address borrower_, uint256 amount_, address oldPrev_, address newPrev_) external override {
+    function pledgeCollateral(address borrower_, uint256 amount_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -67,7 +71,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
+        if (borrower.debt != 0) loans.upsert(borrower_, thresholdPrice);
 
         borrowers[borrower_] = borrower;
 
@@ -80,18 +84,16 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
-    function borrow(uint256 amount_, uint256 limitIndex_, address oldPrev_, address newPrev_) external override {
+    function borrow(uint256 amount_, uint256 limitIndex_) external override {
         uint256 lupId = _lupIndex(amount_);
         if (lupId > limitIndex_) revert BorrowLimitIndexReached();
 
         uint256 curDebt = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[msg.sender];
-        uint256 borrowersCount = totalBorrowers;
-        if (borrowersCount != 0) if (borrower.debt + amount_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
+        if (loans.count - 1 != 0) if (borrower.debt + amount_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        if (borrower.debt == 0) totalBorrowers = borrowersCount + 1;
 
         uint256 debt  = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
         borrower.debt += debt;
@@ -109,7 +111,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+        loans.upsert(msg.sender, thresholdPrice);
+
         borrowers[msg.sender] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -119,7 +122,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
     }
 
-    function pullCollateral(uint256 amount_, address oldPrev_, address newPrev_) external override {
+    function pullCollateral(uint256 amount_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
@@ -132,7 +135,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // update loan queue
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) _updateLoanQueue(msg.sender, thresholdPrice, oldPrev_, newPrev_);
+        if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
 
         borrowers[msg.sender] = borrower;
 
@@ -145,8 +148,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
-    function repay(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) external override {
-        _repayDebt(borrower_, maxAmount_, oldPrev_, newPrev_);
+    function repay(address borrower_, uint256 maxAmount_) external override {
+        _repayDebt(borrower_, maxAmount_);
     }
 
     /*********************************/
@@ -285,7 +288,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     // TODO: Add reentrancy guard
-    function take(address borrower_, uint256 collateralToLiquidate_, bytes memory swapCalldata_, address oldPrev_, address newPrev_) external {
+    function take(address borrower_, uint256 collateralToLiquidate_, bytes memory swapCalldata_) external {
         Borrower        memory borrower    = borrowers[borrower_];
         LiquidationInfo memory liquidation = liquidations[borrower_];
 
@@ -307,7 +310,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Get current swap price
         uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralForLiquidation);
 
-        _repayDebt(borrower_, quoteTokenReturnAmount, oldPrev_, newPrev_);
+        _repayDebt(borrower_, quoteTokenReturnAmount);
     }
 
 
@@ -338,7 +341,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
-    function _repayDebt(address borrower_, uint256 maxAmount_, address oldPrev_, address newPrev_) internal {
+    function _repayDebt(address borrower_, uint256 maxAmount_) internal {
         Borrower memory borrower = borrowers[borrower_];
         if (borrower.debt == 0) revert RepayNoDebt();
 
@@ -351,14 +354,12 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         curDebt       -= amount;
 
         // update loan queue
-        uint256 borrowersCount = totalBorrowers;
         if (borrower.debt == 0) {
-            totalBorrowers = borrowersCount - 1;
-            _removeLoanQueue(borrower_, oldPrev_);
+            loans.remove(borrower_);
         } else {
-            if (borrowersCount != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
+            if (loans.count - 1 != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
             uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-            _updateLoanQueue(borrower_, thresholdPrice, oldPrev_, newPrev_);
+            loans.upsert(borrower_, thresholdPrice);
         }
         borrowers[borrower_] = borrower;
 

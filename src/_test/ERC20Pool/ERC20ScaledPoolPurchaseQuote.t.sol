@@ -135,8 +135,8 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
 
         // borrower draws debt
         changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 100 * 1e18, address(0), address(0));
-        _pool.borrow(15_000 * 1e18, 3000, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 100 * 1e18);
+        _pool.borrow(15_000 * 1e18, 3000);
         assertEq(_pool.lup(), _pool.indexToPrice(2551));
         skip(86400);
 
