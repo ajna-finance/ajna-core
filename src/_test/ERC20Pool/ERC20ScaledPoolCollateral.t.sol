@@ -60,7 +60,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
         emit PledgeCollateral(_borrower, 100 * 1e18);
-        _pool.pledgeCollateral(_borrower, 100 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 100 * 1e18);
 
         // check pool state collateral accounting updated successfully
         assertEq(_pool.pledgedCollateral(),        100 * 1e18);
@@ -71,7 +71,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         emit Borrow(_borrower, 2_981.007422784467321543 * 1e18, 21_000 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _borrower, 21_000 * 1e18);
-        _pool.borrow(21_000 * 1e18, 3000, address(0), address(0));
+        _pool.borrow(21_000 * 1e18, 3000);
 
         // check pool state
         assertEq(_pool.htp(), 210.201923076923077020 * 1e18);
@@ -101,7 +101,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         // remove some of the collateral
         vm.expectEmit(true, true, false, true);
         emit PullCollateral(_borrower, 50 * 1e18);
-        _pool.pullCollateral(50 * 1e18, address(0), address(0));
+        _pool.pullCollateral(50 * 1e18);
 
         // check borrower state
         (borrowerDebt, , borrowerCollateral, ) = _pool.borrowerInfo(_borrower);
@@ -119,12 +119,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         uint256 unencumberedCollateral = borrowerCollateral - _pool.encumberedCollateral(borrowerDebt, _pool.lup());
         vm.expectEmit(true, true, false, true);
         emit PullCollateral(_borrower, unencumberedCollateral);
-        _pool.pullCollateral(unencumberedCollateral, address(0), address(0));
-
-        // check t0 TP
-        assertEq(_pool.loanQueueHead(), _borrower);
-        (uint256 t0Tp, ) = _pool.loans(_borrower);
-        assertEq(t0Tp, 2_976.926646662711731447 * 1e18);
+        _pool.pullCollateral(unencumberedCollateral);
 
         // check pool state
         assertEq(_pool.htp(), 2_981.007422784467321393 * 1e18); // HTP should be different than t0 TP recorded in TP queue
@@ -160,17 +155,17 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         changePrank(_borrower);
         // should revert if trying to remove more collateral than is available
         vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
-        _pool.pullCollateral(testCollateralAmount, address(0), address(0));
+        _pool.pullCollateral(testCollateralAmount);
 
         // borrower deposits 100 collateral
         vm.expectEmit(true, true, true, true);
         emit PledgeCollateral(_borrower, testCollateralAmount);
-        _pool.pledgeCollateral(_borrower, testCollateralAmount, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, testCollateralAmount);
 
         // should be able to now remove collateral
         vm.expectEmit(true, true, true, true);
         emit PullCollateral(_borrower, testCollateralAmount);
-        _pool.pullCollateral(testCollateralAmount, address(0), address(0));
+        _pool.pullCollateral(testCollateralAmount);
     }
 
     /**
@@ -396,7 +391,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         emit PledgeCollateral(_borrower, 100 * 1e18);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower2, address(_pool), 100 * 1e18);
-        _pool.pledgeCollateral(_borrower, 100 * 1e18, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 100 * 1e18);
 
         // check pool state collateral accounting updated properly
         assertEq(_pool.pledgedCollateral(),         100 * 1e18);

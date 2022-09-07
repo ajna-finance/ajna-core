@@ -12,13 +12,14 @@ import { IScaledPool } from "./interfaces/IScaledPool.sol";
 
 import { FenwickTree } from "./FenwickTree.sol";
 import { Multicall }   from "./Multicall.sol";
-import { Queue }       from "./Queue.sol";
 
-import { BucketMath }     from "../libraries/BucketMath.sol";
-import { Maths }          from "../libraries/Maths.sol";
+import { BucketMath }  from "../libraries/BucketMath.sol";
+import { Maths }       from "../libraries/Maths.sol";
+import { Heap }        from "../libraries/Heap.sol";
 
-abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPool {
+abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     using SafeERC20      for ERC20;
+    using Heap for Heap.Data;
 
     int256  public constant INDEX_OFFSET = 3232;
 
@@ -74,7 +75,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     /**
      *  @notice Address of the Ajna token, needed for Claimable Reserve Auctions.
      */
-    address internal ajnaTokenAddress = address(0);
+    address internal ajnaTokenAddress = address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
+
+    Heap.Data internal loans;
 
     uint256 internal poolInitializations = 0;
 
@@ -411,8 +414,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         return _findIndexOfSum(1);
     }
 
-    function _htp() internal view returns (uint256 htp_) {
-        if (loanQueueHead != address(0)) htp_ = Maths.wmul(loans[loanQueueHead].thresholdPrice, inflatorSnapshot);
+    function _htp() internal view returns (uint256) {
+        return Maths.wmul(loans.getMax().val, inflatorSnapshot);
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
@@ -438,7 +441,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
     }
 
     function _poolMinDebtAmount(uint256 debt_) internal view returns (uint256) {
-        return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(totalBorrowers)), 10**19);
+        return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(loans.count - 1)), 10**19);
     }
 
     function _lup() internal view returns (uint256) {
@@ -583,6 +586,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, Queue, IScaledPoo
         auctionPrice_               = _reserveAuctionPrice();
     }
 
+    function maxBorrower() external view override returns (address) {
+        return loans.getMax().id;
+    }
 
     /************************/
     /*** Helper Functions ***/

@@ -147,7 +147,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         emit PledgeCollateral(_borrower, 50 * _collateralPoolPrecision);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_pool), 50 * _collateralPrecision);
-        _pool.pledgeCollateral(_borrower, 50 * _collateralPoolPrecision, address(0), address(0));
+        _pool.pledgeCollateral(_borrower, 50 * _collateralPoolPrecision);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -158,7 +158,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         // check pool state
         assertEq(_pool.htp(), 0);
         assertEq(_pool.lup(), BucketMath.MAX_PRICE);
-        assertEq(address(_pool.loanQueueHead()), address(0));
+        assertEq(address(_pool.maxBorrower()), address(0));
 
         (uint256 lpBalance, ) = _pool.bucketLenders(2549, _lender);
         assertEq(_pool.poolSize(),         150_000 * _quotePoolPrecision);
@@ -170,7 +170,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         emit Borrow(_borrower, _pool.indexToPrice(2549), 10_000 * _quotePoolPrecision);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _borrower, 10_000 * _quotePrecision);
-        _pool.borrow(10_000 * _quotePoolPrecision, 3000, address(0), address(0));
+        _pool.borrow(10_000 * _quotePoolPrecision, 3000);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -182,7 +182,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         (uint256 debt, , uint256 col,) = _pool.borrowerInfo(_borrower);
         assertEq(_pool.htp(), Maths.wdiv(debt, col));
         assertEq(_pool.lup(), _pool.indexToPrice(2549));
-        assertEq(address(_pool.loanQueueHead()), _borrower);
+        assertEq(address(_pool.maxBorrower()), _borrower);
 
         assertEq(_pool.borrowerDebt(),      debt);
         assertEq(_pool.pledgedCollateral(), col);
@@ -197,7 +197,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         emit Repay(_borrower, _pool.indexToPrice(2549), 5_000 * _quotePoolPrecision);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_pool), 5_000 * _quotePrecision);
-        _pool.repay(_borrower, 5_000 * _quotePoolPrecision, address(0), address(0));
+        _pool.repay(_borrower, 5_000 * _quotePoolPrecision);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -209,7 +209,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         (debt, , col,) = _pool.borrowerInfo(_borrower);
         assertEq(_pool.htp(), Maths.wdiv(debt, col));
         assertEq(_pool.lup(), _pool.indexToPrice(2549));
-        assertEq(address(_pool.loanQueueHead()), _borrower);
+        assertEq(address(_pool.maxBorrower()), _borrower);
 
         assertEq(_pool.borrowerDebt(),      debt);
         assertEq(_pool.pledgedCollateral(), col);
@@ -225,7 +225,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         emit PullCollateral(_borrower, unencumberedCollateral);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _borrower, unencumberedCollateral / _pool.collateralScale());
-        _pool.pullCollateral(unencumberedCollateral, address(0), address(0));
+        _pool.pullCollateral(unencumberedCollateral);
 
         //  FIXME: check balances
         // assertEq(_collateral.balanceOf(address(_pool)),   1.7 * _collateralPrecision);
@@ -237,10 +237,10 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         (debt, , col,) = _pool.borrowerInfo(_borrower);
         assertEq(_pool.htp(), Maths.wdiv(debt, col));
         assertEq(_pool.lup(), _pool.indexToPrice(2549));
-        assertEq(address(_pool.loanQueueHead()), _borrower);
+        assertEq(address(_pool.maxBorrower()), _borrower);
 
         assertEq(_pool.borrowerDebt(),      debt);
-        assertEq(_pool.pledgedCollateral(), col); 
+        assertEq(_pool.pledgedCollateral(), col);
     }
 
     // TODO: Rework this test to do something useful, now that the purchase feature has been eliminated.

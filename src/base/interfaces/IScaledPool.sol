@@ -315,7 +315,6 @@ interface IScaledPool {
      */
     function totalBorrowers() external view returns (uint256 totalBorrowers_);
 
-
     /***************/
     /*** Structs ***/
     /***************/
@@ -538,6 +537,8 @@ interface IScaledPool {
      *  @return lupIndex_ The index of the current LUP bucket.
      */
     function lupIndex() external view returns (uint256 lupIndex_);
+
+    function maxBorrower() external view returns (address borrower_);
 
     /**
      *  @notice Calculates the pending inflator in pool.

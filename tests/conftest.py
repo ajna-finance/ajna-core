@@ -1,3 +1,4 @@
+import math
 import pytest
 from sdk import *
 from brownie import test, network, Contract, ERC20PoolFactory, ERC20Pool
@@ -102,49 +103,6 @@ class ScaledPoolUtils:
         self.bucket_math = ajna_protocol.bucket_math
 
     @staticmethod
-    def find_loan_queue_params(pool, borrower, threshold_price, debug=False):
-        class Loan:
-            def __init__(self, borrower, loan_info):
-                self.borrower = borrower
-                self.tp = loan_info[0]
-                self.next = loan_info[1]
-
-        assert isinstance(borrower, str)
-        assert isinstance(threshold_price, int)
-
-        if pool.loanQueueHead != ZRO_ADD:
-            if debug:
-                print(f"  looking for borrower {borrower[:6]} and TP {threshold_price / 1e18:.18f}")
-            old_previous_borrower = ZRO_ADD
-            node = Loan(pool.loanQueueHead(), pool.loanInfo(pool.loanQueueHead()))
-
-            if node.tp >= threshold_price and node.borrower != borrower:
-                new_previous_borrower = node.borrower
-            else:
-                new_previous_borrower = ZRO_ADD
-
-            while node.borrower != ZRO_ADD:
-                if debug:
-                    print(f"   {node.borrower[:6]} at TP {node.tp / 1e18:.18f}, next is {node.next[:6]}")
-                if node.next == borrower:
-                    old_previous_borrower = node.borrower
-                if node.tp > threshold_price and node.borrower != borrower:
-                    new_previous_borrower = node.borrower
-                node = Loan(node.next, pool.loanInfo(node.next))
-
-            if debug:
-                print(f"  returning old {old_previous_borrower[:6]} new {new_previous_borrower[:6]}")
-
-            # validation
-            assert old_previous_borrower != borrower
-            assert new_previous_borrower != borrower
-            _, check_old_prev_next = pool.loanInfo(old_previous_borrower)
-            assert (old_previous_borrower == ZRO_ADD or check_old_prev_next == borrower)
-            return old_previous_borrower, new_previous_borrower
-        else:
-            return ZRO_ADD, ZRO_ADD
-
-    @staticmethod
     def get_origination_fee(pool: ERC20Pool, amount):
         fee_rate = max(pool.interestRate() / 52, 0.0005 * 10**18)
         assert fee_rate >= (0.0005 * 10**18)
@@ -166,6 +124,46 @@ def scaled_pool_utils(ajna_protocol):
     return ScaledPoolUtils(ajna_protocol)
 
 
+class LoansHeapUtils:
+    @staticmethod
+    def _worst_case(a, root, level, offset):
+        """
+        Args:
+            a:      pre-allocated list in which we build up the values to insert in order
+            root:   index 0, max node, head
+            level:  depth of the tree being created
+            offset: value by which all elements will be offset
+
+        Returns:
+            mutated list
+        """
+        if level == 0:
+            a[root] = offset
+            return offset + 1
+        else:
+            offset = LoansHeapUtils._worst_case(a, 2 * root + 1, level - 1, offset)
+            offset = LoansHeapUtils._worst_case(a, 2 * root + 2, level - 1, offset)
+            a[root] = offset
+            return offset + 1
+
+    @staticmethod
+    def _find_next_power_of_two(n):
+        return 2 ** (int(math.log(n - 1, 2)) + 1)
+
+    @staticmethod
+    def worst_case_heap_orientation(n, scale=1):
+        # build a larger tree which can hold all required nodes
+        tree_size = LoansHeapUtils._find_next_power_of_two(n)
+        a = [0] * tree_size
+        max_depth = int(math.log(tree_size, 2) - 1)
+        # populate the tree
+        LoansHeapUtils._worst_case(a, 0, max_depth, 0)
+        # scale the tree
+        a = list(map(lambda i: i * scale, a))
+        # return the first n elements
+        return a[:n]
+
+
 class TestUtils:
     capsys = None
 
@@ -174,8 +172,6 @@ class TestUtils:
         in_eth = gas * 50 * 1e-9
         in_fiat = in_eth * 1700
         return f"Gas amount: {gas}, Gas in ETH: {in_eth}, Gas price: ${in_fiat}"
-
-
 
     class GasWatcher(object):
         _cache = {}
@@ -303,37 +299,17 @@ class TestUtils:
         # if pool is collateralized...
         if pool.lupIndex() > ScaledPoolUtils.price_to_index_safe(pool, pool.htp()):
             # ...ensure debt is less than the size of the pool
-            assert pool.borrowerDebt <= pool.poolSize()
+            assert pool.borrowerDebt() <= pool.poolSize()
 
-        # if there are no borrowers in the pool, ensure there is no debt
-        if pool.totalBorrowers() == 0:
-            assert pool.borrowerDebt() == 0
+        # FIXME: need the pool/heap to expose borrower count to run these validations
+        # # if there are no borrowers in the pool, ensure there is no debt
+        # if pool.loans().count == 0:
+        #     assert pool.borrowerDebt() == 0
+        #
+        # # loan count should be decremented as borrowers repay debt
+        # if pool.loans().count > 0:
+        #     assert pool.borrowerDebt() > 0
 
-        # totalBorrowers should be decremented as borrowers repay debt
-        if pool.totalBorrowers() > 0:
-            assert pool.borrowerDebt() > 0
-
-    @staticmethod
-    def validate_queue(pool):
-        found_borrowers = set()
-        assert len(found_borrowers) == 0
-
-        borrower = pool.loanQueueHead()
-        tp, next_borrower = pool.loanInfo(borrower)
-        last_tp = tp
-        while next_borrower != ZRO_ADD:
-            # catch duplicate borrowers
-            assert borrower not in found_borrowers
-            found_borrowers.add(borrower)
-
-            # iterate
-            borrower = next_borrower
-            tp, next_borrower = pool.loanInfo(borrower)
-            # print(f"DEBUG: validate_queue on borrower {borrower} with TP {tp/1e18:.8f}")
-
-            # catch missorted threshold prices
-            assert last_tp >= tp
-            last_tp = tp
 
     @staticmethod
     def dump_book(pool, min_bucket_index, max_bucket_index, with_headers=True, csv=False) -> str:
@@ -409,7 +385,7 @@ class TestUtils:
         if pledged_collateral > 0:
             ptp = pool.borrowerDebt() * 10 ** 18 / pledged_collateral
             ptp_index = pool.priceToIndex(ptp)
-            ru = pool.depositAt(ptp_index)
+            ru = pool.depositAt(ptp_index)  # FIXME: saw this revert with under/overflow once
         else:
             ptp = 0
             ru = 0
