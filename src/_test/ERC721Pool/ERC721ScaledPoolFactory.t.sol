@@ -89,7 +89,7 @@ contract ERC721ScaledPoolFactoryTest is DSTestPlus {
         _factory.deployPool(address(_quote), address(_quote), 2 * 10**18);
     }
 
-    function testDeployERC20PoolMultipleTimes() external {
+    function testDeployERC721PoolMultipleTimes() external {
         // should revert if trying to deploy same pool one more time
         vm.expectRevert(PoolDeployer.PoolAlreadyExists.selector);
         _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
