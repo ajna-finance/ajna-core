@@ -6,6 +6,7 @@ import { Clone } from "@clones/Clone.sol";
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { IScaledPool } from "./interfaces/IScaledPool.sol";
@@ -303,6 +304,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             newDebt_ = Maths.wmul(borrowerDebt_, Maths.wdiv(poolInflator_, borrowerInflator_));
         }
         newInflator_ = poolInflator_;
+    }
+
+    function _auctionPrice(uint256 liqRefPrice, uint128 timeOfLiq) internal view returns (uint256 price_) {
+        // TODO: get signed/unsigned types right, check PRBMath boundaries
+        uint256 elapsed = (block.timestamp - timeOfLiq - 1 hours);
+        int256 time_adjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsed));
+        price_ = 10 * liqRefPrice * uint256(PRBMathSD59x18.exp2(time_adjustment));
     }
 
     function _redeemLPForQuoteToken(

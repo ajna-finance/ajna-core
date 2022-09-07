@@ -136,6 +136,8 @@ interface IERC20Pool is IScaledPool {
      *  @return remainingCollateral Amount of collateral which has not yet been taken.
      *  @return remainingDebt       Amount of debt which has not been covered by the liquidation.
      */
+    // TODO: Instead of just returning the struct, should also calculate and include auction price.
+    // TODO: Need to implement this for NFT pool.
     function liquidations(address borrower_) external view returns (
         uint128 kickTime,
         uint128 referencePrice,
