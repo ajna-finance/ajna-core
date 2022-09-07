@@ -60,6 +60,30 @@ interface IERC721Pool is IScaledPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+    /*************************/
+    /*** ERC721Pool Errors ***/
+    /*************************/
+
+    /**
+     *  @notice Failed to add tokenId to an EnumerableSet.
+     */
+    error AddTokenFailed();
+
+    /**
+     *  @notice Failed to remove a tokenId from an EnumerableSet.
+     */
+    error RemoveTokenFailed();
+
+    /**
+     *  @notice User attempted to add an NFT to the pool with a tokenId outsde of the allowed subset.
+     */
+    error OnlySubset();
+
+    /**
+     *  @notice User attempted to interact with a tokenId that hasn't been deposited into the pool or bucket.
+     */
+    error TokenNotDeposited();
+
     /**************************/
     /*** ERC721Pool Structs ***/
     /**************************/

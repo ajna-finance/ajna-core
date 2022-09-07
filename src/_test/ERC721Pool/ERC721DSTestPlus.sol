@@ -4,8 +4,8 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
-import { DSTestPlus }                     from "../utils/DSTestPlus.sol";
-import { NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
+import { DSTestPlus }                from "../utils/DSTestPlus.sol";
+import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
 
 abstract contract ERC721DSTestPlus is DSTestPlus {
 
@@ -26,14 +26,14 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
     NFTCollateralToken internal _collateral;
-    QuoteToken         internal _quote;
+    Token              internal _quote;
     ERC721Pool         internal _collectionPool;
     ERC721Pool         internal _subsetPool;
 
     // TODO: bool for pool type
     constructor() {
         _collateral = new NFTCollateralToken();
-        _quote      = new QuoteToken();
+        _quote      = new Token("Quote", "Q");
     }
 
     function _deployCollectionPool() internal returns (ERC721Pool) {

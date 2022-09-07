@@ -6,6 +6,7 @@ import { Heap} from "../../libraries/Heap.sol";
 
 import { Test } from "@std/Test.sol";
 import { Vm }   from "@std/Vm.sol";
+import { ERC20 }  from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 abstract contract DSTestPlus is Test {
 
@@ -71,6 +72,7 @@ abstract contract DSTestPlus is Test {
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
     event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
+    event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
@@ -78,16 +80,30 @@ abstract contract DSTestPlus is Test {
     // Pool deployer events
     event PoolCreated(address pool_);
 
-    function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
-        difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
+    function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
+        assertEq(address(erc1_), address(erc2_));
+    }
+
+    function generateAddress() internal returns (address addr) {
+        // https://ethereum.stackexchange.com/questions/72940/solidity-how-do-i-generate-a-random-address
+        addr = address(uint160(uint256(keccak256(abi.encodePacked(_nonce, blockhash(block.number))))));
+        _nonce++;
+    }
+
+    function randomInRange(uint256 min, uint256 max) public returns (uint256) {
+        return randomInRange(min, max, false);
     }
 
     function randomInRange(uint256 min, uint256 max, bool nonZero) public returns (uint256) {
         if      (max == 0 && nonZero) return 1;
-        else if (max == min)          return max;
+        else if (max == min)           return max;
         uint256 rand = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _nonce))) % (max - min + 1) + min;
         _nonce++;
         return rand;
+    }
+
+    function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
+        difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
     }
 
 }

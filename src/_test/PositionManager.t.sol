@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { CollateralToken, NFTCollateralToken, QuoteToken } from "./utils/Tokens.sol";
+import { Token } from "./utils/Tokens.sol";
 import { DSTestPlus }                                      from "./utils/DSTestPlus.sol";
 
 import { Maths } from "../libraries/Maths.sol";
@@ -12,17 +12,19 @@ import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
 import { PositionManager } from "../base/PositionManager.sol";
 
 import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
+import { IScaledPool }      from "../base/interfaces/IScaledPool.sol";
 
+// TODO: test this against ERC721Pool
 abstract contract PositionManagerHelperContract is DSTestPlus {
-    CollateralToken  internal _collateral;
     ERC20Pool        internal _pool;
     ERC20PoolFactory internal _factory;
     PositionManager  internal _positionManager;
-    QuoteToken       internal _quote;
+    Token            internal _collateral;
+    Token            internal _quote;
 
     constructor() {
-        _collateral      = new CollateralToken();
-        _quote           = new QuoteToken();
+        _collateral      = new Token("Collateral", "C");
+        _quote           = new Token("Quote", "Q");
         _factory         = new ERC20PoolFactory();
         _positionManager = new PositionManager();
         _pool            = ERC20Pool(_factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
@@ -122,7 +124,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert("S:TLT:NO_ALLOWANCE");
+        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 

@@ -4,25 +4,25 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
+import { IERC721Pool } from "../../erc721/interfaces/IERC721Pool.sol";
+import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
-import { ERC721HelperContract }           from "./ERC721DSTestPlus.sol";
-import { NFTCollateralToken, QuoteToken } from "../utils/Tokens.sol";
+import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
 
 // TODO: pass different pool type to enable collection + subset test simplification
 contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
-    address internal _bidder;
     address internal _lender;
     address internal _lender2;
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
-        _bidder    = makeAddr("bidder");
         _lender    = makeAddr("lender");
         _lender2   = makeAddr("lender2");
 
@@ -44,7 +44,6 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         _mintAndApproveCollateralTokens(_poolAddresses, _borrower,  52);
         _mintAndApproveCollateralTokens(_poolAddresses, _borrower2, 53);
-        _mintAndApproveCollateralTokens(_poolAddresses, _bidder,    10);
     }
 
     /*******************************/
@@ -92,7 +91,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // should revert if borrower attempts to add tokens not in the pool subset
         changePrank(_borrower);
-        vm.expectRevert("P:ONLY_SUBSET");
+        vm.expectRevert(IERC721Pool.OnlySubset.selector);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
     }
 
@@ -192,7 +191,8 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // should revert if borrower attempts to remove collateral not in pool
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 51;
-        vm.expectRevert("P:T_NOT_IN_P");
+
+        vm.expectRevert(IERC721Pool.TokenNotDeposited.selector);
         _subsetPool.pullCollateral(tokenIdsToRemove);
 
         // borrower should be able to remove collateral in the pool
@@ -343,8 +343,60 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 3;
         tokenIdsToRemove[1] = 5;
 
-        vm.expectRevert("S:PC:NOT_ENOUGH_COLLATERAL");
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _subsetPool.pullCollateral(tokenIdsToRemove);
     }
 
+    function testAddRemoveCollateral() external {
+        vm.startPrank(_lender);
+        // lender adds some liquidity
+        _subsetPool.addQuoteToken(10_000 * 1e18, 1530);
+        _subsetPool.addQuoteToken(10_000 * 1e18, 1692);
+
+        uint256[] memory tokenIds = new uint256[](2);
+        tokenIds[0] = 1;
+        tokenIds[1] = 5;
+
+        // add three tokens to a single bucket
+        changePrank(_borrower);
+        vm.expectEmit(true, true, false, true);
+        emit AddCollateralNFT(_borrower, 1530, tokenIds);
+        _subsetPool.addCollateral(tokenIds, 1530);
+
+        // should revert if the actor does not have any LP to remove a token
+        changePrank(_borrower2);
+        tokenIds = new uint256[](1);
+        tokenIds[0] = 1;
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientLP.selector);
+        _subsetPool.removeCollateral(tokenIds, 1530);
+
+        // should revert if we try to remove a token from a bucket with no collateral
+        changePrank(_borrower);
+        tokenIds[0] = 1;
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        _subsetPool.removeCollateral(tokenIds, 1692);
+
+        // remove one token
+        tokenIds[0] = 5;
+        emit RemoveCollateralNFT(_borrower, _subsetPool.indexToPrice(1530), tokenIds);
+        _subsetPool.removeCollateral(tokenIds, 1530);
+        (, uint256 collateral, , ) = _subsetPool.bucketAt(1530);
+        assertEq(collateral, 1 * 1e18);
+
+        // remove another token
+        tokenIds[0] = 1;
+        emit RemoveCollateralNFT(_borrower, _subsetPool.indexToPrice(1530), tokenIds);
+        _subsetPool.removeCollateral(tokenIds, 1530);
+        (, collateral, , ) = _subsetPool.bucketAt(1530);
+        assertEq(collateral, 0);
+        (uint256 lpb, ) = _subsetPool.bucketLenders(1530, _borrower);
+        assertEq(lpb, 0);
+
+        // lender removes quote token
+        changePrank(_lender);
+        _subsetPool.removeAllQuoteToken(1530);
+        (, collateral, lpb, ) = _subsetPool.bucketAt(1530);
+        assertEq(collateral, 0);
+        assertEq(lpb, 0);
+    }
 }

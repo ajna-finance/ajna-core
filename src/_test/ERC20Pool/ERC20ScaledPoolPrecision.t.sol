@@ -78,7 +78,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2549);
         _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2550);
         vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, _pool.indexToPrice(2551), 50_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
+        emit AddQuoteToken(_lender, 2551, 50_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 50_000 * _quotePrecision);
         _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2551);
@@ -103,7 +103,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
 
         // lender removes some quote token from highest priced bucket
         vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_lender, _pool.indexToPrice(2549), 25_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
+        emit RemoveQuoteToken(_lender, 2549, 25_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _lender, 25_000 * _quotePrecision);
         _pool.removeQuoteToken(25_000 * _quotePoolPrecision, 2549);

@@ -4,53 +4,31 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
+import { IERC20Pool } from "../../erc20/interfaces/IERC20Pool.sol";
+import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+
 import { BucketMath } from "../../libraries/BucketMath.sol";
 
-import { ERC20DSTestPlus }             from "./ERC20DSTestPlus.sol";
-import { CollateralToken, QuoteToken } from "../utils/Tokens.sol";
+import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
-contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
-
-    uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
+contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
     address internal _lender1;
 
-    CollateralToken internal _collateral;
-    QuoteToken      internal _quote;
-    ERC20Pool       internal _pool;
-
     function setUp() external {
-        _collateral = new CollateralToken();
-        _quote      = new QuoteToken();
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
         _lender1   = makeAddr("lender1");
 
-        deal(address(_collateral), _borrower,  100 * 1e18);
-        deal(address(_collateral), _borrower2, 100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower,  100 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower2,  100 * 1e18);
 
-        deal(address(_quote), _lender,  200_000 * 1e18);
-        deal(address(_quote), _lender1, 200_000 * 1e18);
-
-        vm.startPrank(_borrower);
-        _collateral.approve(address(_pool), 100 * 1e18);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-
-        changePrank(_borrower2);
-        _collateral.approve(address(_pool), 200 * 1e18);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-
-        changePrank(_lender);
-        _quote.approve(address(_pool), 200_000 * 1e18);
-
-        changePrank(_lender1);
-        _quote.approve(address(_pool), 200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
     }
 
     function testScaledPoolBorrowAndRepay() external {
@@ -273,7 +251,7 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
     function testScaledPoolBorrowRequireChecks() external {
         // should revert if borrower attempts to borrow with an out of bounds limitIndex
         changePrank(_borrower);
-        vm.expectRevert("S:B:LIMIT_REACHED");
+        vm.expectRevert(IScaledPool.BorrowLimitIndexReached.selector);
         _pool.borrow(1_000 * 1e18, 5000);
 
         // add initial quote to the pool
@@ -283,7 +261,7 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         changePrank(_borrower);
         // should revert if borrow would result in pool under collateralization
-        vm.expectRevert("S:B:PUNDER_COLLAT");
+        vm.expectRevert(IScaledPool.BorrowPoolUnderCollateralized.selector);
         _pool.borrow(500 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after adding sufficient collateral
@@ -297,13 +275,14 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         changePrank(_borrower);
         // should revert if borrower attempts to borrow more than minimum amount
-        vm.expectRevert("S:B:AMT_LT_MIN_DEBT");
+        vm.expectRevert(IScaledPool.BorrowAmountLTMinDebt.selector);
         _pool.borrow(10 * 1e18, 3000);
 
         changePrank(_borrower2);
         // should revert if borrow would result in borrower under collateralization
         assertEq(_pool.lup(), 2_995.912459898389633881 * 1e18);
-        vm.expectRevert("S:B:BUNDER_COLLAT");
+
+        vm.expectRevert(IScaledPool.BorrowBorrowerUnderCollateralized.selector);
         _pool.borrow(2_976 * 1e18, 3000);
 
         // should be able to borrow if properly specified
@@ -327,14 +306,11 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
         _pool.addQuoteToken(10_000 * 1e18, 2550);
         _pool.addQuoteToken(10_000 * 1e18, 2551);
 
-        // should revert if borrower has insufficient quote to repay desired amount
         changePrank(_borrower);
-        vm.expectRevert("S:R:INSUF_BAL");
-        _pool.repay(_borrower, 10_000 * 1e18);
 
         // should revert if borrower has no debt
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
-        vm.expectRevert("S:R:NO_DEBT");
+        vm.expectRevert(IScaledPool.RepayNoDebt.selector);
         _pool.repay(_borrower, 10_000 * 1e18);
 
         // borrower 1 borrows 1000 quote from the pool
@@ -352,7 +328,7 @@ contract ERC20ScaledBorrowTest is ERC20DSTestPlus {
 
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
-        vm.expectRevert("R:B:AMT_LT_MIN_DEBT");
+        vm.expectRevert(IScaledPool.BorrowAmountLTMinDebt.selector);
         _pool.repay(_borrower, 750 * 1e18);
 
         // should be able to repay loan if properly specified
