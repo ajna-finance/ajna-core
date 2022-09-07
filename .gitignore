@@ -1,5 +1,5 @@
 cache/
-out/
+*out/
 node_modules/*
 node_modules
 .env
