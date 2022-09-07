@@ -2,7 +2,6 @@ import brownie
 import pytest
 import inspect
 from brownie import Contract
-from conftest import ZRO_ADD
 
 
 def test_quote_deposit_move_remove_scaled(
@@ -61,7 +60,7 @@ def test_borrow_repay_scaled(
 
         col_txes = []
         for i in range(10):
-            tx = scaled_pool.pledgeCollateral(borrowers[0], 10 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+            tx = scaled_pool.pledgeCollateral(borrowers[0], 10 * 10**18, {"from": borrowers[0]})
             col_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
@@ -71,11 +70,11 @@ def test_borrow_repay_scaled(
                 print(f"Transaction: {i} | {test_utils.get_usage(col_txes[i].gas_used)}")
         
         txes = []
-        tx1 = scaled_pool.borrow(110 * 10**18, 5000, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx1 = scaled_pool.borrow(110 * 10**18, 5000, {"from": borrowers[0]})
         txes.append(tx1)
-        tx2 = scaled_pool.borrow(110 * 10**18, 5000, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx2 = scaled_pool.borrow(110 * 10**18, 5000, {"from": borrowers[0]})
         txes.append(tx2)
-        tx3 = scaled_pool.borrow(50 * 10**18, 5000, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx3 = scaled_pool.borrow(50 * 10**18, 5000, {"from": borrowers[0]})
         txes.append(tx3)
 
         with capsys.disabled():
@@ -86,11 +85,11 @@ def test_borrow_repay_scaled(
                 print(f"Transaction: {i} | {test_utils.get_usage(txes[i].gas_used)}")
 
         repay_txes = []
-        tx = scaled_pool.repay(borrowers[0], 110 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx = scaled_pool.repay(borrowers[0], 110 * 10**18, {"from": borrowers[0]})
         repay_txes.append(tx)
-        tx = scaled_pool.repay(borrowers[0], 110 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx = scaled_pool.repay(borrowers[0], 110 * 10**18, {"from": borrowers[0]})
         repay_txes.append(tx)
-        tx = scaled_pool.repay(borrowers[0], 50 * 10**18, ZRO_ADD, ZRO_ADD, {"from": borrowers[0]})
+        tx = scaled_pool.repay(borrowers[0], 50 * 10**18, {"from": borrowers[0]})
         repay_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
