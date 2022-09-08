@@ -157,7 +157,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*********************************/
 
     function addCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
-        _accruePoolInterest();
+        uint256 curDebt = _accruePoolInterest();
 
         // Calculate exchange rate before new collateral has been accounted for.
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
@@ -171,7 +171,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         bucketLenders[index_][msg.sender].lpBalance += lpbChange_;
 
-        _updateInterestRateAndEMAs(borrowerDebt, _lup());
+        _updateInterestRateAndEMAs(curDebt, _lup());
 
         // move required collateral from sender to pool
         emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
