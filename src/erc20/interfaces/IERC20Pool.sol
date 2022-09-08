@@ -209,7 +209,6 @@ interface IERC20Pool is IScaledPool {
      */
     function repay(address borrower_, uint256 maxAmount_) external;
 
-
     /*****************************/
     /*** Initialize Functions ***/
     /*****************************/

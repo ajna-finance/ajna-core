@@ -6,13 +6,13 @@ import { Clone } from "@clones/Clone.sol";
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Multicall } from "@openzeppelin/contracts/utils/Multicall.sol";
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { IScaledPool } from "./interfaces/IScaledPool.sol";
 
 import { FenwickTree } from "./FenwickTree.sol";
-import { Multicall }   from "./Multicall.sol";
 
 import { BucketMath }  from "../libraries/BucketMath.sol";
 import { Maths }       from "../libraries/Maths.sol";
@@ -47,7 +47,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     uint256 public override borrowerDebt;               // [WAD]
     uint256 public override liquidationBondEscrowed;    // [WAD]
-    uint256 public override totalBorrowers;
     uint256 public override quoteTokenScale;
     uint256 public override pledgedCollateral;
 
@@ -544,6 +543,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     function liquidityToPrice(uint256 index_) external view returns (uint256) {
         return _prefixSum(index_);
+    }
+
+    function loansCount() external view override returns (uint256) {
+        return loans.count - 1;
     }
 
     function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view override returns (uint256) {

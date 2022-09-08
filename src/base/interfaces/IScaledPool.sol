@@ -130,6 +130,21 @@ interface IScaledPool {
     error LiquidateNoDebt();
 
     /**
+     *  @notice User is attempting to move more collateral than is available.
+     */
+    error MoveCollateralInsufficientCollateral();
+
+    /**
+     *  @notice Lender is attempting to move more collateral they have claim to in the bucket.
+     */
+    error MoveCollateralInsufficientLP();
+
+    /**
+     *  @notice FromIndex_ and toIndex_ arguments to moveQuoteToken() are the same.
+     */
+    error MoveCollateralToSamePrice();
+
+    /**
      *  @notice FromIndex_ and toIndex_ arguments to moveQuoteToken() are the same.
      */
     error MoveQuoteToSamePrice();
@@ -308,12 +323,6 @@ interface IScaledPool {
      *  @notice Returns the amount of excess quote tokens.
      */
     function reserves() external view returns (uint256 reserves_);
-
-    /**
-     *  @notice Returns the `totalBorrowers` state variable.
-     *  @return totalBorrowers_ The total number of borrowers in pool.
-     */
-    function totalBorrowers() external view returns (uint256 totalBorrowers_);
 
     /***************/
     /*** Structs ***/
@@ -518,6 +527,11 @@ interface IScaledPool {
     function indexToPrice(uint256 index_) external view returns (uint256 price_);
 
     /**
+     *  @notice Returns the number of loans in pool
+     */
+    function loansCount() external view returns (uint256);
+
+    /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
      *  @param  deposit_     The amount of quote tokens available at this bucket index.
      *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
@@ -538,6 +552,10 @@ interface IScaledPool {
      */
     function lupIndex() external view returns (uint256 lupIndex_);
 
+    /**
+     *  @notice Returns the address with the highest TP in pool.
+     *  @return borrower_ The address with the highest TP in pool.
+     */
     function maxBorrower() external view returns (address borrower_);
 
     /**
