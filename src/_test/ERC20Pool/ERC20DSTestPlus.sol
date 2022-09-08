@@ -25,9 +25,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     /*** Utilities ***/
     /*****************/
 
-    struct AddLiquidity {
+    struct AddLiquiditySpecs {
         address from;        // lender address
         Liquidity[] amounts; // liquidities to add
+    }
+
+    struct AddCollateralSpecs {
+        address from;
+        uint256 amount;
+        uint256 index;
+        uint256 price;
     }
 
     struct BorrowSpecs {
@@ -48,6 +55,23 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     struct PullSpecs {
         address from;
         uint256 amount; 
+    }
+
+    struct MoveCollateralSpecs {
+        address from;
+        uint256 amount;
+        uint256 fromIndex; 
+        uint256 toIndex;
+        uint256 lpRedeemFrom;
+        uint256 lpRedeemTo;
+    }
+
+    struct RemoveCollateralSpecs {
+        address from;
+        uint256 amount;
+        uint256 index; 
+        uint256 price;
+        uint256 lpRedeem;
     }
 
     struct RepaySpecs {
@@ -84,6 +108,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 debt;
         uint256 pendingDebt;
         uint256 collateral;
+        uint256 collateralization;
         uint256 inflator;
     }
 
@@ -91,6 +116,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 htp;
         uint256 lup;
         uint256 poolSize;
+        uint256 pledgedCollateral;
+        uint256 encumberedCollateral;
         uint256 borrowerDebt;
         uint256 actualUtilization;
         uint256 targetUtilization;
@@ -139,11 +166,50 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     }
 
-    function _addLiquidity(AddLiquidity memory specs_) internal {
+    function _addLiquidity(AddLiquiditySpecs memory specs_) internal {
         changePrank(specs_.from);
         for (uint256 i = 0; i < specs_.amounts.length; ++i) {
             _pool.addQuoteToken(specs_.amounts[i].amount, specs_.amounts[i].index);
         }
+    }
+
+    function _addCollateral(AddCollateralSpecs memory specs_) internal {
+        changePrank(specs_.from);
+        vm.expectEmit(true, true, false, true);
+        emit AddCollateral(specs_.from, specs_.price, specs_.amount);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(specs_.from, address(_pool), specs_.amount);
+        _pool.addCollateral(specs_.amount, specs_.index);
+    }
+
+    function _removeAllCollateral(RemoveCollateralSpecs memory specs_) internal {
+        changePrank(specs_.from);
+        vm.expectEmit(true, true, true, true);
+        emit RemoveCollateral(specs_.from, specs_.price, specs_.amount);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), specs_.from, specs_.amount);
+        (uint256 collateralRemoved, uint256 lpAmount) = _pool.removeAllCollateral(specs_.index);
+        assertEq(collateralRemoved, specs_.amount);
+        assertEq(lpAmount, specs_.lpRedeem);
+    }
+
+    function _removeCollateral(RemoveCollateralSpecs memory specs_) internal {
+        changePrank(specs_.from);
+        vm.expectEmit(true, true, true, true);
+        emit RemoveCollateral(specs_.from, specs_.price, specs_.amount);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), specs_.from, specs_.amount);
+        uint256 lpRedeemed = _pool.removeCollateral(specs_.amount, specs_.index);
+        assertEq(lpRedeemed, specs_.lpRedeem);
+    }
+
+    function _moveCollateral(MoveCollateralSpecs memory specs_) internal {
+        changePrank(specs_.from);
+        vm.expectEmit(true, true, true, true);
+        emit MoveCollateral(specs_.from, specs_.fromIndex, specs_.toIndex, specs_.amount);
+        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveCollateral(specs_.amount, specs_.fromIndex, specs_.toIndex);
+        assertEq(lpbFrom, specs_.lpRedeemFrom);
+        assertEq(lpbTo, specs_.lpRedeemTo);
     }
 
     function _borrow(BorrowSpecs memory specs_) internal {
@@ -159,11 +225,17 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     function _pledgeCollateral(PledgeSpecs memory specs_) internal {
         changePrank(specs_.from);
+        vm.expectEmit(true, true, false, true);
+        emit PledgeCollateral(specs_.from, specs_.amount);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(specs_.from, address(_pool), specs_.amount);
         _pool.pledgeCollateral(specs_.borrower, specs_.amount);
     }
 
     function _pullCollateral(PullSpecs memory specs_) internal {
         changePrank(specs_.from);
+        vm.expectEmit(true, true, false, true);
+        emit PullCollateral(specs_.from, specs_.amount);
         _pool.pullCollateral(specs_.amount);
     }
 
@@ -182,13 +254,16 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(_pool.lup(), state_.lup);
 
         assertEq(_pool.poolSize(),              state_.poolSize);
+        assertEq(_pool.pledgedCollateral(),     state_.pledgedCollateral);
         assertEq(_pool.borrowerDebt(),          state_.borrowerDebt);
         assertEq(_pool.poolActualUtilization(), state_.actualUtilization);
         assertEq(_pool.poolTargetUtilization(), state_.targetUtilization);
         assertEq(_pool.poolMinDebtAmount(),     state_.minDebtAmount);
 
         assertEq(_pool.loansCount(),  state_.loans);
-        // assertEq(_pool.maxBorrower(), state_.maxBorrower);
+        assertEq(_pool.maxBorrower(), state_.maxBorrower);
+
+        assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
     }
 
     function _assertLPs(LenderLPs memory specs_) internal {
@@ -213,5 +288,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(pendingDebt, state_.pendingDebt);
         assertEq(col,         state_.collateral);
         assertEq(inflator,    state_.inflator);
+
+        assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, _pool.lup()), state_.collateralization);
     }
 }
