@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { DSTestPlus, HeapForTesting }  from "./utils/DSTestPlus.sol";
+import { DSTestPlus, HeapInstance }  from "./utils/DSTestPlus.sol";
 
 contract HeapTest is DSTestPlus {
-    HeapForTesting private _loans;
+    HeapInstance private _loans;
 
     function setUp() public {
-       _loans = new HeapForTesting();
+       _loans = new HeapInstance();
     }
 
     function testHeapInsertAndRandomlyRemoveTps() public {

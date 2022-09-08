@@ -87,6 +87,21 @@ interface IScaledPool {
     error BorrowPoolUnderCollateralized();
 
     /**
+     *  @notice User is attempting to move more collateral than is available.
+     */
+    error MoveCollateralInsufficientCollateral();
+
+    /**
+     *  @notice Lender is attempting to move more collateral they have claim to in the bucket.
+     */
+    error MoveCollateralInsufficientLP();
+
+    /**
+     *  @notice FromIndex_ and toIndex_ arguments to moveQuoteToken() are the same.
+     */
+    error MoveCollateralToSamePrice();
+
+    /**
      *  @notice FromIndex_ and toIndex_ arguments to moveQuoteToken() are the same.
      */
     error MoveQuoteToSamePrice();
