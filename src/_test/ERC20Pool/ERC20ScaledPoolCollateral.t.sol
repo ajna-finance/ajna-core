@@ -37,7 +37,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
      */
     function testAddPullCollateral() external {
         // lender deposits 10000 Quote into 3 buckets
-        Liquidity[] memory amounts = new Liquidity[](5);
+        Liquidity[] memory amounts = new Liquidity[](3);
         amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
         amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
         amounts[2] = Liquidity({amount: 10_000 * 1e18, index: 2552});
