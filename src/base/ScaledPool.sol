@@ -6,12 +6,13 @@ import { Clone } from "@clones/Clone.sol";
 
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Multicall } from "@openzeppelin/contracts/utils/Multicall.sol";
+
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { IScaledPool } from "./interfaces/IScaledPool.sol";
 
 import { FenwickTree } from "./FenwickTree.sol";
-import { Multicall }   from "./Multicall.sol";
 
 import { BucketMath }  from "../libraries/BucketMath.sol";
 import { Maths }       from "../libraries/Maths.sol";
