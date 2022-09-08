@@ -223,7 +223,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
     // TODO: does pool state need to be updated with collateral deposited as well?
     function addCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpbChange_) {
-        _accruePoolInterest();
+        uint256 curDebt = _accruePoolInterest();
 
         Bucket memory bucket = buckets[index_];
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
@@ -241,7 +241,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         buckets[index_] = bucket;
         bucketLenders[index_][msg.sender] = bucketLender;
 
-        _updateInterestRateAndEMAs(borrowerDebt, _lup());
+        _updateInterestRateAndEMAs(curDebt, _lup());
 
         // move required collateral from sender to pool
         for (uint256 i = 0; i < tokenIds_.length;) {
@@ -266,7 +266,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         Bucket memory bucket = buckets[index_];
         if (Maths.wad(tokenIds_.length) > bucket.availableCollateral) revert RemoveCollateralInsufficientCollateral();
 
-        _accruePoolInterest();
+        uint256 curDebt = _accruePoolInterest();
 
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
         uint256 price        = _indexToPrice(index_);
@@ -290,7 +290,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         bucketLender.lpBalance -= lpAmount_;
         bucketLenders[index_][msg.sender] = bucketLender;
 
-        _updateInterestRateAndEMAs(borrowerDebt, _lup());
+        _updateInterestRateAndEMAs(curDebt, _lup());
 
         emit RemoveCollateralNFT(msg.sender, price, tokenIds_);
 
