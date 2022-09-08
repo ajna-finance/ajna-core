@@ -12,6 +12,16 @@ abstract contract FenwickTree {
     uint256 public constant SIZE = 8192;
 
     /**
+     *  @notice Not a valid tree index.
+     */
+    error InvalidIndex();
+
+    /**
+     *  @notice Scalilng factor is invalid.
+     */
+    error InvalidScalingFactor();
+
+    /**
      *  @notice Array of values in the FenwickTree.
      */
     uint256[8193] internal values;  // values
@@ -28,7 +38,7 @@ abstract contract FenwickTree {
      *  @param  x_  amount to increase the value by.
     */    
     function _add(uint256 i_, uint256 x_) internal {
-        require(i_ < SIZE, "FW:A:INVALID_INDEX");
+        if (i_ >= SIZE) revert InvalidIndex();
 
         uint256 j     = SIZE;       // Binary index, 1 << 13
         uint256 ii    = 0;          // Binary index offset
@@ -108,8 +118,8 @@ abstract contract FenwickTree {
     */    
     // TODO: add check to ensure scaling factor is at least a WAD? 
     function _mult(uint256 i_, uint256 f_) internal {
-        require(i_ < SIZE, "FW:M:INVALID_INDEX");
-        require(f_ != 0,   "FW:M:FACTOR_ZERO");
+        if (i_ >= SIZE) revert InvalidIndex();
+        if (f_ == 0) revert InvalidScalingFactor();
 
         i_          += 1;
         uint256 sum = 0;
@@ -186,24 +196,13 @@ abstract contract FenwickTree {
     }
 
     /**
-     *  @notice Returns the sum of a given range.
-     *  @param  start_  start of range to sum.
-     *  @param  stop_   end of range to sum.
-    */
-    function _rangeSum(uint256 start_, uint256 stop_) internal view returns (uint256) {
-        require(start_ < SIZE, "FW:R:INVALID_START");
-        require(stop_ >= start_ && stop_ <= SIZE,  "FW:R:INVALID_STOP");
-        return _prefixSum(stop_) - _prefixSum(start_ - 1);
-    }
-
-    /**
      *  @notice Decrease a node in the FenwickTree at an index.
      *  @dev    Starts at tree root and decrements through range parent nodes until index, i_, is reached.
      *  @param  i_  The index pointing to the value
      *  @param  x_  Amount to decrease the value by.
     */    
     function _remove(uint256 i_, uint256 x_) internal {
-        require(i_ < SIZE, "FW:R:INVALID_INDEX");
+        if (i_ >= SIZE) revert InvalidIndex();
 
         uint256 j     = SIZE;       // Binary index, 1 << 13
         uint256 ii    = 0;          // Binary index offset
@@ -232,7 +231,7 @@ abstract contract FenwickTree {
     }
 
     function _scale(uint256 i_) internal view returns (uint256 a_) {
-        require(i_ < SIZE, "FW:S:INVALID_INDEX");
+        if (i_ >= SIZE) revert InvalidIndex();
 
         a_ = Maths.WAD;
         uint256 scaled;
@@ -248,7 +247,7 @@ abstract contract FenwickTree {
     }
 
     function _valueAt(uint256 i_) internal view returns (uint256 s_) {
-        require(i_ < SIZE, "FW:V:INVALID_INDEX");
+        if (i_ >= SIZE) revert InvalidIndex();
 
         uint256 j  =  i_;
         uint256 k  =  1;

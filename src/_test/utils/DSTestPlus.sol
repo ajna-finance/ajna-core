@@ -228,10 +228,6 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         return _treeSum();
     }
 
-    function rangeSum(uint256 i_, uint256 j_) external view returns (uint256 m_) {
-        return _rangeSum(i_, j_);
-    }
-
     function get(uint256 i_) external view returns (uint256 m_) {
         return _valueAt(i_);
     }

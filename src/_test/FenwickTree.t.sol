@@ -27,12 +27,6 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(_tree.get(12), 0);
         assertEq(_tree.get(13), 0);
 
-        assertEq(_tree.rangeSum(8, 8),   0);
-        assertEq(_tree.rangeSum(9, 9),   200 * 1e18);
-        assertEq(_tree.rangeSum(11, 11), 300 * 1e18);
-        assertEq(_tree.rangeSum(12, 12), 0);
-        assertEq(_tree.rangeSum(13, 13), 0);
-
         assertEq(_tree.prefixSum(0),    0);
         assertEq(_tree.prefixSum(5),    0);
         assertEq(_tree.prefixSum(10),   200 * 1e18);
@@ -64,11 +58,6 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(_tree.get(9),  480 * 1e18);
         assertEq(_tree.get(10), 0);
         assertEq(_tree.get(11), 300 * 1e18);
-
-        assertEq(_tree.rangeSum(5, 5),   132 * 1e18);
-        assertEq(_tree.rangeSum(9, 9),   480 * 1e18);
-        assertEq(_tree.rangeSum(10, 10), 0);
-        assertEq(_tree.rangeSum(11, 11), 300 * 1e18);
 
         assertEq(_tree.prefixSum(0),    0);
         assertEq(_tree.prefixSum(4),    0);
@@ -107,11 +96,6 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(_tree.get(9),  480 * 1e18);
         assertEq(_tree.get(10), 0);
         assertEq(_tree.get(11), 0);
-
-        assertEq(_tree.rangeSum(5, 5),   132 * 1e18);
-        assertEq(_tree.rangeSum(9, 9),   480 * 1e18);
-        assertEq(_tree.rangeSum(10, 10), 0);
-        assertEq(_tree.rangeSum(11, 11), 0);
     }
 
     /**
