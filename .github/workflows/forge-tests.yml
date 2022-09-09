@@ -5,7 +5,6 @@ on: [push]
 env:
   ## Loads environment from secrets
   ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
-  FOO: bar
 
 jobs:
   tests:
@@ -21,7 +20,7 @@ jobs:
           version: nightly
 
       - name: Run tests
-        run: echo "DEBUG ${{env.ETH_RPC_URL}} ${{env.FOO}}"; make test-with-gas-report
+        run: echo "ENV ${{env.ETH_RPC_URL}} SECRET ${{secrets.ETH_RPC_URL}}"; make test-with-gas-report
 
       - name: Run coverage
         continue-on-error: true
