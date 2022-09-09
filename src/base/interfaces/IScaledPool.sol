@@ -418,9 +418,10 @@ interface IScaledPool {
     /**
      *  @notice Called by actors to settle an amount of debt in a completed liquidation.
      *  @param  borrower_ Identifies the loan under liquidation.
-     *  @param  amount_   Amount of debt to settle, which implies depth of HPB iteration.
+     *  @param  maxDepth_ Measured from HPB, maximum number of buckets deep to settle debt.
+     *  @dev maxDepth_ is used to prevent unbounded iteration clearing large liquidations.
      */
-    function clear(address borrower_, uint256 amount_) external;
+    function clear(address borrower_, uint256 maxDepth_) external;
 
     /**
      *  @notice Called by actors to purchase collateral using quote token already on the book.

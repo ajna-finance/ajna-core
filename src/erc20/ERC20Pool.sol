@@ -252,9 +252,10 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit ArbTake(borrower_, index_, amount_, 0, 0);
     }
 
-    function clear(address borrower_, uint256 amount_) external override {
+    function clear(address borrower_, uint256 maxDepth_) external override {
         // TODO: implement
-        emit Clear(borrower_, _hpbIndex(), amount_, 0, 0);
+        uint256 debtCleared = maxDepth_ * 10_000;
+        emit Clear(borrower_, _hpbIndex(), debtCleared, 0, 0);
     }
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
