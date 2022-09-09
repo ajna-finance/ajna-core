@@ -249,7 +249,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
     function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
-        emit ArbTake(borrower_, index_, amount_, 0);
+        emit ArbTake(borrower_, index_, amount_, 0, 0);
     }
 
     function clear(address borrower_, uint256 amount_) external override {
@@ -259,7 +259,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
-        emit DepositTake(borrower_, index_, amount_, 0);
+        emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
     function kick(address borrower_) external override {
@@ -325,7 +325,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         _repayDebt(borrower_, quoteTokenReturnAmount);
 
-        emit Take(borrower_, amount_, collateralToPurchase);
+        emit Take(borrower_, amount_, collateralToPurchase, 0);
     }
 
 

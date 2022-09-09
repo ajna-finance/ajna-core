@@ -88,9 +88,10 @@ interface IERC20Pool is IScaledPool {
      *  @param  borrower_   Identifies the loan being liquidated.
      *  @param  amount_     Amount of quote token used to purchase collateral.
      *  @param  collateral_ Amount of collateral purchased with quote token.
+     *  @param  bondChange_ Impact of this take to the liquidation bond.
      *  @dev    amount_ / collateral_ implies the auction price.
      */
-    event Take(address indexed borrower_, uint256 amount_, uint256 collateral_);
+    event Take(address indexed borrower_, uint256 amount_, uint256 collateral_, int256 bondChange_);
 
 
     /*********************/

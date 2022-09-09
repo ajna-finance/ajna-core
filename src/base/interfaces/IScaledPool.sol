@@ -26,9 +26,10 @@ interface IScaledPool {
      *  @param  index_      The index of the Highest Price Bucket used for this take.
      *  @param  amount_     Amount of quote token used to purchase collateral.
      *  @param  collateral_ Amount of collateral purchased with quote token.
+     *  @param  bondChange_ Impact of this take to the liquidation bond.
      *  @dev    amount_ / collateral_ implies the auction price.
      */
-    event ArbTake(address indexed borrower_, uint256 index_, uint256 amount_, uint256 collateral_);
+    event ArbTake(address indexed borrower_, uint256 index_, uint256 amount_, uint256 collateral_, int256 bondChange_);
 
     /**
      *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
@@ -36,9 +37,10 @@ interface IScaledPool {
      *  @param  index_      Index of the price bucket from which quote token was exchanged for collateral.
      *  @param  amount_     Amount of quote token taken from the bucket to purchase collateral.
      *  @param  collateral_ Amount of collateral purchased with quote token.
+     *  @param  bondChange_ Impact of this take to the liquidation bond.
      *  @dev    amount_ / collateral_ implies the auction price.
      */
-    event DepositTake(address indexed borrower_, uint256 index_, uint256 amount_, uint256 collateral_);
+    event DepositTake(address indexed borrower_, uint256 index_, uint256 amount_, uint256 collateral_, int256 bondChange_);
 
     /**
      *  @notice Emitted when a liquidation is initiated.

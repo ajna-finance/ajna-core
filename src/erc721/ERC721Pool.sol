@@ -315,7 +315,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
     function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
-        emit ArbTake(borrower_, index_, amount_, 0);
+        emit ArbTake(borrower_, index_, amount_, 0, 0);
     }
 
     function clear(address borrower_, uint256 amount_) external override {
@@ -327,7 +327,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
-        emit DepositTake(borrower_, index_, amount_, 0);
+        emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
     function kick(address borrower_) external override {
@@ -350,7 +350,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // TODO: Implement
         // copypasta to quell warnings
         msg.sender.call(swapCalldata_);
-        emit Take(borrower_, 0, tokenIds_);
+        emit Take(borrower_, 0, tokenIds_, 0);
     }
 
     /**********************/

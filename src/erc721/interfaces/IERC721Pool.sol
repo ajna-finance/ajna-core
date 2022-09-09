@@ -81,9 +81,10 @@ interface IERC721Pool is IScaledPool {
      *  @param  borrower_   Identifies the loan being liquidated.
      *  @param  amount_     Amount of quote token used to purchase collateral.
      *  @param  tokenIds_   Tokens purchased with quote token.
+     *  @param  bondChange_ Impact of this take to the liquidation bond.
      *  @dev    amount_ / len(tokenIds_) implies the auction price.
      */
-    event Take(address indexed borrower_, uint256 amount_, uint256[] tokenIds_);
+    event Take(address indexed borrower_, uint256 amount_, uint256[] tokenIds_, int256 bondChange_);
 
 
     /*************************/
