@@ -20,7 +20,7 @@ jobs:
           version: nightly
 
       - name: Run tests
-        run: make test-with-gas-report
+        run: echo "DEBUG ${{env.ETH_RPC_URL}}"; make test-with-gas-report
 
       - name: Run coverage
         continue-on-error: true
