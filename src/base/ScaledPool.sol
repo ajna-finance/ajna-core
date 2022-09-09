@@ -99,7 +99,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         _lpTokenAllowances[msg.sender][allowedNewOwner_][index_] = amount_;
     }
 
-    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256, uint256) {
+    function moveQuoteToken(uint256 maxAmount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
         if (fromIndex_ == toIndex_) revert MoveQuoteToSamePrice();
 
         uint256 curDebt = _accruePoolInterest();
@@ -113,10 +113,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, Maths.rrdivw(bucketLender.lpBalance, rate)));
 
         // calculate amount of LP required to move it
-        uint256 lpbAmountFrom = Maths.wrdivr(amount, rate);
+        lpbAmountFrom_ = Maths.wrdivr(amount, rate);
 
         // update "from" bucket accounting
-        fromBucket.lpAccumulator -= lpbAmountFrom;
+        fromBucket.lpAccumulator -= lpbAmountFrom_;
         _remove(fromIndex_, amount);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
@@ -129,17 +129,17 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         }
 
         // update "to" bucket accounting
-        (uint256 lpbAmountTo, uint256 newLup) = _addQuoteAcc(toIndex_, amount, curDebt);
+        uint256 newLup;
+        (lpbAmountTo_, newLup) = _addQuoteAcc(toIndex_, amount, curDebt);
 
         // move lup if necessary and check loan book's htp against new lup
         if (fromIndex_ < toIndex_) if(_htp() > newLup) revert MoveQuoteLUPBelowHTP();
 
         // update lender accounting
-        bucketLender.lpBalance -= lpbAmountTo;
-        bucketLenders[toIndex_][msg.sender].lpBalance += lpbAmountTo;
+        bucketLender.lpBalance -= lpbAmountTo_;
+        bucketLenders[toIndex_][msg.sender].lpBalance += lpbAmountTo_;
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
-        return (lpbAmountFrom, lpbAmountTo);
     }
 
     function removeAllQuoteToken(uint256 index_) external returns (uint256 amount_, uint256 lpAmount_) {
