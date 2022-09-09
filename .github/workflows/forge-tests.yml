@@ -10,19 +10,18 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     steps:
-#      - uses: actions/checkout@v2
-#        with:
-#          submodules: recursive
-#
-#      - name: Install Foundry
-#        uses: foundry-rs/foundry-toolchain@v1
-#        with:
-#          version: nightly
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
 
       - name: Run tests
-        run: echo "ENV ${{env.ETH_RPC_URL}}\n; echo SECRET ${{secrets.ETH_RPC_URL}}"
-#        run: make test-with-gas-report
+        run: make test-with-gas-report
 
-#      - name: Run coverage
-#        continue-on-error: true
-#        run: make coverage
+      - name: Run coverage
+        continue-on-error: true
+        run: make coverage
