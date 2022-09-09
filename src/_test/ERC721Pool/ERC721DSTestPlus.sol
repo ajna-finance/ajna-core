@@ -37,6 +37,11 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         uint256 loans;
         address maxBorrower;
     }
+
+    struct ReserveAuctionState {
+        uint256 claimableReservesRemaining;
+        uint256 auctionPrice;
+    }
 }
 
 abstract contract ERC721HelperContract is ERC721DSTestPlus {
@@ -51,11 +56,16 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     // TODO: bool for pool type
     constructor() {
         _collateral = new NFTCollateralToken();
+        vm.makePersistent(address(_collateral));
         _quote      = new Token("Quote", "Q");
+        vm.makePersistent(address(_quote));
     }
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
-        return ERC721Pool(new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        address contractAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        vm.makePersistent(contractAddress);
+        vm.makePersistent(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079)); // HACK: doesn't help; will remove
+        return ERC721Pool(contractAddress);
     }
 
     function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
@@ -133,5 +143,13 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         assertEq(pool.maxBorrower(), state_.maxBorrower);
 
         assertEq(pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+    }
+
+    function _assertReserveAuction(ReserveAuctionState memory state_) internal {
+        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
+
+        (uint256 claimableReservesRemaining, uint256 auctionPrice) = pool.reserveAuction();
+        assertEq(claimableReservesRemaining, state_.claimableReservesRemaining);
+        assertEq(auctionPrice, state_.auctionPrice);
     }
 }

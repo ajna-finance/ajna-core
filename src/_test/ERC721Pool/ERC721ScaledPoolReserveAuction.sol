@@ -3,7 +3,6 @@ pragma solidity 0.8.14;
 
 import { ERC721Pool }           from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory }    from "../../erc721/ERC721PoolFactory.sol";
-
 import { IERC721Pool }          from "../../erc721/interfaces/IERC721Pool.sol";
 import { IScaledPool }          from "../../base/interfaces/IScaledPool.sol";
 
@@ -19,6 +18,9 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
     address internal _lender;
 
     function setUp() external {
+        // TODO: consider moving this into helper contract deployPool methods
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+
         _borrower  = makeAddr("borrower");
         _bidder    = makeAddr("bidder");
         _lender    = makeAddr("lender");
@@ -68,7 +70,12 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
     }
 
     function testClaimableReserveAuction() external {
-        // TODO: implement
+        _assertReserveAuction(
+            ReserveAuctionState({
+                claimableReservesRemaining: 0,
+                auctionPrice:               0
+            })
+        );
 //        _collectionPool.startClaimableReserveAuction();
     }
 

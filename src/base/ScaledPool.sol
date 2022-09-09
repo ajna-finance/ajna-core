@@ -483,11 +483,17 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
     }
 
-    function _reserveAuctionPrice() internal view returns (uint256) {
+    function _reserveAuctionPrice() internal view returns (uint256 _price) {
+        // assert(ajnaTokenAddress != address(0));                                      // FIXME: this fails
+        ERC20 ajnaToken = ERC20(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079));   // FIXME: hack around it
         // TODO: Calculate claimable reserves and apply the price decrease function.
-        ERC20 ajnaToken = ERC20(ajnaTokenAddress);
-        uint256 totalAjna = 2_000_000_000 * 10^18 - ajnaToken.totalSupply();
-        return Maths.min(totalAjna, 0);
+        assert(ajnaToken.decimals() == 18);
+        if (reserveAuctionKicked == 0) {
+            _price = 0;
+        } else {
+            uint256 hoursElapsed = Maths.wad(reserveAuctionKicked - block.timestamp) / 1 hours;
+            _price = hoursElapsed > 72 ? 0 : 1_000_000_000 * Maths.wpow(0.5 * 1e18, hoursElapsed);
+        }
     }
 
 
