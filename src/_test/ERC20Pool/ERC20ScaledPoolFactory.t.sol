@@ -49,11 +49,12 @@ contract ERC20ScaledPoolFactoryTest is ERC20HelperContract {
     function testDeployERC20Pool() external {
         skip(333);
 
+        address poolAddress = 0x9FE92fe72Ae1Bc5f008C3f405606717d43Fc468D;
         vm.expectEmit(true, true, false, true);
-        emit PoolCreated(address(0x4Ea45aCE8CADc2cA49445d82f24921231e63c322));
+        emit PoolCreated(poolAddress);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.0543 * 10**18));
 
-        assertEq(address(pool),                     address(0x4Ea45aCE8CADc2cA49445d82f24921231e63c322));
+        assertEq(address(pool),                     poolAddress);
         assertEq(address(pool.collateral()),        address(_collateral));
         assertEq(pool.collateralScale(),            1);
         assertEq(address(pool.quoteToken()),        address(_quote));
