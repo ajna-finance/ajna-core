@@ -30,11 +30,11 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
 
     function testScaledPoolInterestRateIncreaseDecrease() external {
         Liquidity[] memory amounts = new Liquidity[](5);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 20_000 * 1e18, index: 2551});
-        amounts[2] = Liquidity({amount: 20_000 * 1e18, index: 2552});
-        amounts[3] = Liquidity({amount: 50_000 * 1e18, index: 3900});
-        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: 4200});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 20_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 20_000 * 1e18, index: 2552, newLup: BucketMath.MAX_PRICE});
+        amounts[3] = Liquidity({amount: 50_000 * 1e18, index: 3900, newLup: BucketMath.MAX_PRICE});
+        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: 4200, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -108,7 +108,7 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
 
         // enforce rate update - decrease
         amounts = new Liquidity[](1);
-        amounts[0] = Liquidity({amount: 100 * 1e18, index: 5});
+        amounts[0] = Liquidity({amount: 100 * 1e18, index: 5, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -149,9 +149,9 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
     function testPendingInflator() external {
         // add liquidity
         Liquidity[] memory amounts = new Liquidity[](3);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2552});
-        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: 4200});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2552, newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: 4200, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,

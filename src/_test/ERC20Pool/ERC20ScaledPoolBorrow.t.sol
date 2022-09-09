@@ -40,11 +40,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         // lender deposits 10000 DAI in 5 buckets each
         Liquidity[] memory amounts = new Liquidity[](5);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high});
-        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med});
-        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low});
-        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high,    newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med,     newLup: BucketMath.MAX_PRICE});
+        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low,     newLup: BucketMath.MAX_PRICE});
+        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest,  newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -249,11 +249,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         // lender deposits 10000 DAI in 5 buckets each
         Liquidity[] memory amounts = new Liquidity[](5);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high});
-        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med});
-        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low});
-        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high,    newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med,     newLup: BucketMath.MAX_PRICE});
+        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low,     newLup: BucketMath.MAX_PRICE});
+        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest,  newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -529,8 +529,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -599,8 +599,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
     function testScaledPoolRepayRequireChecks() external {
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -716,8 +716,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
     function testRepayLoanFromDifferentActor() external {
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -796,8 +796,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
     function testZeroThresholdPriceLoan() external {
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -853,8 +853,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,

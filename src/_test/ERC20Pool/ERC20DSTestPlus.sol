@@ -6,6 +6,8 @@ import { ERC20 }      from "@solmate/tokens/ERC20.sol";
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
+import { Maths } from "../../libraries/Maths.sol";
+
 import { DSTestPlus } from "../utils/DSTestPlus.sol";
 import { Token }      from "../utils/Tokens.sol";
 
@@ -74,6 +76,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 lpRedeem;
     }
 
+    struct RemoveLiquiditySpecs {
+        address from;
+        uint256 index;
+        uint256 amount;
+        uint256 penalty;
+        uint256 newLup;
+        uint256 lpRedeem;
+    }
+
     struct RepaySpecs {
         address from;
         address borrower;
@@ -84,6 +95,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     struct Liquidity {
         uint256 index;  // bucket index
         uint256 amount; // amount to add
+        uint256 newLup;
     }
 
     struct LenderLPs {
@@ -173,6 +185,10 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     function _addLiquidity(AddLiquiditySpecs memory specs_) internal {
         changePrank(specs_.from);
         for (uint256 i = 0; i < specs_.amounts.length; ++i) {
+            vm.expectEmit(true, true, false, true);
+            emit AddQuoteToken(specs_.from, specs_.amounts[i].index, specs_.amounts[i].amount, specs_.amounts[i].newLup);
+            vm.expectEmit(true, true, false, true);
+            emit Transfer(specs_.from, address(_pool), specs_.amounts[i].amount);
             _pool.addQuoteToken(specs_.amounts[i].amount, specs_.amounts[i].index);
         }
     }
@@ -204,6 +220,19 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit Transfer(address(_pool), specs_.from, specs_.amount);
         uint256 lpRedeemed = _pool.removeCollateral(specs_.amount, specs_.index);
+        assertEq(lpRedeemed, specs_.lpRedeem);
+    }
+
+    function _removeLiquidity(RemoveLiquiditySpecs memory specs_) internal {
+        // apply penalty if case
+        uint256 expectedWithdrawal = specs_.penalty != 0 ? Maths.wmul(specs_.amount, specs_.penalty) : specs_.amount;
+
+        changePrank(specs_.from);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(specs_.from, specs_.index, expectedWithdrawal, specs_.newLup);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), specs_.from, expectedWithdrawal);
+        uint256 lpRedeemed = _pool.removeQuoteToken(specs_.amount, specs_.index);
         assertEq(lpRedeemed, specs_.lpRedeem);
     }
 
