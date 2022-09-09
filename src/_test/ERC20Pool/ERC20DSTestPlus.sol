@@ -124,6 +124,10 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 minDebtAmount;
         uint256 loans;
         address maxBorrower;
+        uint256 inflatorSnapshot;
+        uint256 pendingInflator;
+        uint256 interestRate;
+        uint256 interestRateUpdate;
     }
 
     function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
@@ -255,6 +259,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
         assertEq(_pool.poolSize(),              state_.poolSize);
         assertEq(_pool.pledgedCollateral(),     state_.pledgedCollateral);
+        assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
         assertEq(_pool.borrowerDebt(),          state_.borrowerDebt);
         assertEq(_pool.poolActualUtilization(), state_.actualUtilization);
         assertEq(_pool.poolTargetUtilization(), state_.targetUtilization);
@@ -263,7 +268,11 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(_pool.loansCount(),  state_.loans);
         assertEq(_pool.maxBorrower(), state_.maxBorrower);
 
-        assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+        assertEq(_pool.inflatorSnapshot(), state_.inflatorSnapshot);
+        assertEq(_pool.pendingInflator(), state_.pendingInflator);
+
+        assertEq(_pool.interestRate(),       state_.interestRate);
+        assertEq(_pool.interestRateUpdate(), state_.interestRateUpdate);
     }
 
     function _assertLPs(LenderLPs memory specs_) internal {
