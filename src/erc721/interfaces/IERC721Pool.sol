@@ -23,19 +23,35 @@ interface IERC721Pool is IScaledPool {
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
 
     /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
-     */
-    event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
-
-    /**
      *  @notice Emitted when borrower borrows quote tokens from pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  lup_      LUP after borrow.
      *  @param  amount_   Amount of quote tokens borrowed from the pool.
      */
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
+
+    /**
+     *  @notice Emitted when an actor settles debt in a completed liquidation
+     *  @param  borrower_           Identifies the loan being liquidated.
+     *  @param  hpbIndex_           The index of the Highest Price Bucket where debt was cleared.
+     *  @param  amount_             Amount of debt cleared from the HPB in this transaction.
+     *  @param  tokenIdsReturned_   Array of NFTs returned to the borrower in this transaction.
+     *  @param  amountRemaining_    Amount of debt which still needs to be cleared.
+     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
+     */
+    event ClearNFT(
+        address   indexed borrower_,
+        uint256   hpbIndex_,
+        uint256   amount_,
+        uint256[] tokenIdsReturned_,
+        uint256   amountRemaining_);
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
+     */
+    event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
 
     /**
      *  @notice Emitted when borrower removes collateral from the pool.
@@ -60,6 +76,17 @@ interface IERC721Pool is IScaledPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+    /**
+     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
+     *  @param  borrower_   Identifies the loan being liquidated.
+     *  @param  amount_     Amount of quote token used to purchase collateral.
+     *  @param  tokenIds_   Tokens purchased with quote token.
+     *  @param  bondChange_ Impact of this take to the liquidation bond.
+     *  @dev    amount_ / len(tokenIds_) implies the auction price.
+     */
+    event Take(address indexed borrower_, uint256 amount_, uint256[] tokenIds_, int256 bondChange_);
+
+
     /*************************/
     /*** ERC721Pool Errors ***/
     /*************************/
@@ -70,25 +97,26 @@ interface IERC721Pool is IScaledPool {
     error AddTokenFailed();
 
     /**
-     *  @notice Failed to remove a tokenId from an EnumerableSet.
-     */
-    error RemoveTokenFailed();
-
-    /**
      *  @notice User attempted to add an NFT to the pool with a tokenId outsde of the allowed subset.
      */
     error OnlySubset();
+
+    /**
+     *  @notice Failed to remove a tokenId from an EnumerableSet.
+     */
+    error RemoveTokenFailed();
 
     /**
      *  @notice User attempted to interact with a tokenId that hasn't been deposited into the pool or bucket.
      */
     error TokenNotDeposited();
 
+
     /**************************/
     /*** ERC721Pool Structs ***/
     /**************************/
 
-     /**
+    /**
      *  @notice Struct holding borrower related info per price bucket, for borrowers using NFTs as collateral.
      *  @param  debt                Borrower debt, WAD units.
      *  @param  collateralDeposited OZ Enumberable Set tracking the tokenIds of collateral that have been deposited
@@ -100,6 +128,21 @@ interface IERC721Pool is IScaledPool {
         uint256               inflatorSnapshot;    // [WAD]
     }
 
+    /**
+     *  @notice Maintains the state of a liquidation.
+     *  @param  kickTime            Time the liquidation was initiated.
+     *  @param  referencePrice      Highest Price Bucket at time of liquidation.
+     *  @param  remainingTokenIds   Liquidated NFTs which not yet been taken.
+     *  @param  remainingDebt       Amount of debt which has not been covered by the liquidation.
+     */
+    struct NFTLiquidationInfo {
+        uint128               kickTime;
+        uint128               referencePrice;
+        EnumerableSet.UintSet remainingTokenIds;
+        uint256               remainingDebt;
+    }
+
+
     /*****************************/
     /*** Initialize Functions ***/
     /*****************************/
@@ -110,16 +153,10 @@ interface IERC721Pool is IScaledPool {
      */
     function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_) external;
 
+
     /***********************************/
     /*** Borrower External Functions ***/
     /***********************************/
-
-    /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower_ The address of borrower to pledge collateral for.
-     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
-     */
-    function pledgeCollateral(address borrower_, uint256[] calldata tokenIds_) external;
 
     /**
      *  @notice Called by a borrower to open or expand a position.
@@ -128,6 +165,13 @@ interface IERC721Pool is IScaledPool {
      *  @param  limitIndex_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
      */
     function borrow(uint256 amount_, uint256 limitIndex_) external;
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ The address of borrower to pledge collateral for.
+     *  @param  tokenIds_ Array of tokenIds to be added to the pool.
+     */
+    function pledgeCollateral(address borrower_, uint256[] calldata tokenIds_) external;
 
     /**
      *  @notice Called by borrowers to remove an amount of collateral.
@@ -160,6 +204,21 @@ interface IERC721Pool is IScaledPool {
      *  @return lpAmount_ The amount of LP tokens used for removing collateral amount.
      */
     function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external returns (uint256 lpAmount_);
+
+
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    /**
+     *  @notice Called by actors to purchase collateral using quote token they provide themselves.
+     *  @param  borrower_     Identifies the loan being liquidated.
+     *  @param  tokenIds_     NFT token ids caller wishes to purchase from the liquidation.
+     *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
+     *                        such that sender will have a sufficient quote token balance prior to payment.
+     */
+    function take(address borrower_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external;
+
 
     /**********************/
     /*** View Functions ***/

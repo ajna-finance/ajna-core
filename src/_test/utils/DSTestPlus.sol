@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
-import { Maths } from "../../libraries/Maths.sol";
-import { Heap} from "../../libraries/Heap.sol";
+import { Maths }       from "../../libraries/Maths.sol";
+import { Heap}         from "../../libraries/Heap.sol";
 import { FenwickTree } from "../../base/FenwickTree.sol";
 
 import { Test } from "@std/Test.sol";

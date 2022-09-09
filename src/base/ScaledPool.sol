@@ -7,7 +7,7 @@ import { Clone } from "@clones/Clone.sol";
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Multicall } from "@openzeppelin/contracts/utils/Multicall.sol";
-
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { IScaledPool } from "./interfaces/IScaledPool.sol";
@@ -45,8 +45,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     uint256 public override interestRate;               // [WAD]
     uint256 public override interestRateUpdate;         // [SEC]
 
-    uint256 public override borrowerDebt;
-
+    uint256 public override borrowerDebt;               // [WAD]
+    uint256 public override liquidationBondEscrowed;    // [WAD]
     uint256 public override quoteTokenScale;
     uint256 public override pledgedCollateral;
 
@@ -72,9 +72,25 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
      */
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances;
 
+    /**
+     *  @notice Address of the Ajna token, needed for Claimable Reserve Auctions.
+     */
+    address internal ajnaTokenAddress = address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
+
     Heap.Data internal loans;
 
     uint256 internal poolInitializations = 0;
+
+    /**
+     *  @notice Time a Claimable Reserve Auction was last kicked.
+     */
+    uint256 internal reserveAuctionKicked = 0;
+
+    /**
+     *  @notice Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+     */
+    uint256 internal reserveAuctionUnclaimed = 0;
+
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -225,6 +241,28 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
     }
 
+
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    function startClaimableReserveAuction() external override {
+        reserveAuctionKicked = block.timestamp;
+        // TODO: implement
+        uint256 claimableReserves = Maths.wmul(0.995 * 1e18, borrowerDebt)
+                                        + quoteToken().balanceOf(address(this))
+                                        - this.poolSize()
+                                        - liquidationBondEscrowed;
+        reserveAuctionUnclaimed += claimableReserves;
+    }
+
+    function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
+        // TODO: implement
+        amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
+        reserveAuctionUnclaimed -= amount_;
+    }
+
+
     /**************************/
     /*** Internal Functions ***/
     /**************************/
@@ -265,6 +303,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             newDebt_ = Maths.wmul(borrowerDebt_, Maths.wdiv(poolInflator_, borrowerInflator_));
         }
         newInflator_ = poolInflator_;
+    }
+
+    function _auctionPrice(uint256 referencePrice, uint128 timeOfLiq) internal view returns (uint256 price_) {
+        // TODO: get signed/unsigned types right, check PRBMath boundaries
+        uint256 elapsed = (block.timestamp - timeOfLiq - 1 hours);
+        int256 time_adjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsed));
+        price_ = 10 * referencePrice * uint256(PRBMathSD59x18.exp2(time_adjustment));
     }
 
     function _redeemLPForQuoteToken(
@@ -439,45 +484,17 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
     }
 
+    function _reserveAuctionPrice() internal view returns (uint256) {
+        // TODO: Calculate claimable reserves and apply the price decrease function.
+        ERC20 ajnaToken = ERC20(ajnaTokenAddress);
+        uint256 totalAjna = 2_000_000_000 * 10^18 - ajnaToken.totalSupply();
+        return Maths.min(totalAjna, 0);
+    }
+
+
     /**************************/
     /*** External Functions ***/
     /**************************/
-
-    function lup() external view override returns (uint256) {
-        return _lup();
-    }
-
-    function lupIndex() external view override returns (uint256) {
-        return _lupIndex(0);
-    }
-
-    function hpb() external view returns (uint256) {
-        return _indexToPrice(_hpbIndex());
-    }
-
-    function htp() external view returns (uint256) {
-        return _htp();
-    }
-
-    function poolTargetUtilization() external view override returns (uint256) {
-        return _poolTargetUtilization(debtEma, lupColEma);
-    }
-
-    function poolActualUtilization() external view override returns (uint256) {
-        return _poolActualUtilization(borrowerDebt, pledgedCollateral);
-    }
-
-    function priceToIndex(uint256 price_) external pure override returns (uint256) {
-        return _priceToIndex(price_);
-    }
-
-    function indexToPrice(uint256 index_) external pure override returns (uint256) {
-        return _indexToPrice(index_);
-    }
-
-    function poolCollateralization() external view override returns (uint256) {
-        return _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
-    }
 
     function borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) external pure override returns (uint256) {
         return _borrowerCollateralization(debt_, collateral_, price_);
@@ -492,12 +509,36 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         );
     }
 
-    function bucketCount() external view returns (uint256) {
+    function bucketCount() external view override returns (uint256) {
         return this.SIZE();
+    }
+
+    function reserves() external view override returns (uint256) {
+        return borrowerDebt + quoteToken().balanceOf(address(this)) - this.poolSize() - liquidationBondEscrowed - reserveAuctionUnclaimed;
     }
 
     function depositAt(uint256 index_) external view override returns (uint256) {
         return _valueAt(index_);
+    }
+
+    function encumberedCollateral(uint256 debt_, uint256 price_) external pure override returns (uint256) {
+        return _encumberedCollateral(debt_, price_);
+    }
+
+    function exchangeRate(uint256 index_) external view override returns (uint256) {
+        return _exchangeRate(_valueAt(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
+    }
+
+    function hpb() external view returns (uint256) {
+        return _indexToPrice(_hpbIndex());
+    }
+
+    function htp() external view returns (uint256) {
+        return _htp();
+    }
+
+    function indexToPrice(uint256 index_) external pure override returns (uint256) {
+        return _indexToPrice(index_);
     }
 
     function liquidityToPrice(uint256 index_) external view returns (uint256) {
@@ -512,16 +553,32 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return _lpsToQuoteTokens(deposit_, lpTokens_, index_);
     }
 
+    function lup() external view override returns (uint256) {
+        return _lup();
+    }
+
+    function lupIndex() external view override returns (uint256) {
+        return _lupIndex(0);
+    }
+
+    function poolActualUtilization() external view override returns (uint256) {
+        return _poolActualUtilization(borrowerDebt, pledgedCollateral);
+    }
+
+    function poolCollateralization() external view override returns (uint256) {
+        return _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
+    }
+
+    function poolTargetUtilization() external view override returns (uint256) {
+        return _poolTargetUtilization(debtEma, lupColEma);
+    }
+
+    function priceToIndex(uint256 price_) external pure override returns (uint256) {
+        return _priceToIndex(price_);
+    }
+
     function pendingInflator() external view override returns (uint256) {
         return _pendingInflator();
-    }
-
-    function exchangeRate(uint256 index_) external view override returns (uint256) {
-        return _exchangeRate(_valueAt(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
-    }
-
-    function encumberedCollateral(uint256 debt_, uint256 price_) external pure override returns (uint256) {
-        return _encumberedCollateral(debt_, price_);
     }
 
     function poolMinDebtAmount() external view returns (uint256) {
@@ -531,6 +588,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     function poolSize() external view returns (uint256) {
         return _treeSum();
+    }
+
+    function reserveAuction() external view returns (uint256 claimableReservesRemaining_, uint256 auctionPrice_)
+    {
+        // TODO: implement
+        claimableReservesRemaining_ = reserveAuctionUnclaimed;
+        auctionPrice_               = _reserveAuctionPrice();
     }
 
     function maxBorrower() external view override returns (address) {

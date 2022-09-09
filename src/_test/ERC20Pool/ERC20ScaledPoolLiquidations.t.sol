@@ -81,7 +81,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         /*** Kick ***/
         /************/
 
-        _pool.liquidate(_borrower2);
+        _pool.kick(_borrower2);
 
         /***********************/
         /*** Post-kick state ***/

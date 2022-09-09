@@ -13,11 +13,12 @@ interface IERC20Pool is IScaledPool {
     /************************/
 
     /**
-     *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  amount_   Amount of collateral locked in the pool.
+     *  @notice Emitted when actor adds unencumbered collateral to a bucket.
+     *  @param  actor_  Recipient that added collateral.
+     *  @param  price_  Price at which collateral were added.
+     *  @param  amount_ Amount of collateral added to the pool.
      */
-    event PledgeCollateral(address indexed borrower_, uint256 amount_);
+    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
 
     /**
      *  @notice Emitted when borrower borrows quote tokens from pool.
@@ -28,12 +29,34 @@ interface IERC20Pool is IScaledPool {
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     /**
-     *  @notice Emitted when actor adds unencumbered collateral to a bucket.
-     *  @param  actor_  Recipient that added collateral.
-     *  @param  price_  Price at which collateral were added.
-     *  @param  amount_ Amount of collateral added to the pool.
+     *  @notice Emitted when an actor settles debt in a completed liquidation
+     *  @param  borrower_           Identifies the loan under liquidation.
+     *  @param  hpbIndex_           The index of the Highest Price Bucket where debt was cleared.
+     *  @param  amount_             Amount of debt cleared from the HPB in this transaction.
+     *  @param  collateralReturned_ Amount of collateral returned to the borrower in this transaction.
+     *  @param  amountRemaining_    Amount of debt which still needs to be cleared.
+     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
      */
-    event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
+    event Clear(
+        address indexed borrower_,
+        uint256 hpbIndex_,
+        uint256 amount_,
+        uint256 collateralReturned_,
+        uint256 amountRemaining_);
+
+    /**
+     *  @notice Emitted when borrower locks collateral in the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  amount_   Amount of collateral locked in the pool.
+     */
+    event PledgeCollateral(address indexed borrower_, uint256 amount_);
+
+    /**
+     *  @notice Emitted when borrower removes pledged collateral from the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  amount_   Amount of collateral removed from the pool.
+     */
+    event PullCollateral(address indexed borrower_, uint256 amount_);
 
     /**
      *  @notice Emitted when lender moves collateral from a bucket price to another.
@@ -53,13 +76,6 @@ interface IERC20Pool is IScaledPool {
     event RemoveCollateral(address indexed claimer_, uint256 indexed price_, uint256 amount_);
 
     /**
-     *  @notice Emitted when borrower removes pledged collateral from the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  amount_   Amount of collateral removed from the pool.
-     */
-    event PullCollateral(address indexed borrower_, uint256 amount_);
-
-    /**
      *  @notice Emitted when borrower repays quote tokens to the pool.
      *  @param  borrower_ `msg.sender`.
      *  @param  lup_      LUP after repay.
@@ -67,24 +83,20 @@ interface IERC20Pool is IScaledPool {
      */
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
+    /**
+     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
+     *  @param  borrower_   Identifies the loan being liquidated.
+     *  @param  amount_     Amount of quote token used to purchase collateral.
+     *  @param  collateral_ Amount of collateral purchased with quote token.
+     *  @param  bondChange_ Impact of this take to the liquidation bond.
+     *  @dev    amount_ / collateral_ implies the auction price.
+     */
+    event Take(address indexed borrower_, uint256 amount_, uint256 collateral_, int256 bondChange_);
+
+
     /*********************/
     /*** Custom Errors ***/
     /*********************/
-
-    /**
-     *  @notice Borrower has no debt to liquidate.
-     */
-    error LiquidateNoDebt();
-
-    /**
-     *  @notice Borrower has a healthy over-collateralized position.
-     */
-    error LiquidateBorrowerOk();
-
-    /**
-     *  @notice Liquidation must result in LUP below the borrowers threshold price.
-     */
-    error LiquidateLUPGreaterThanTP();
 
     /**
      *  @notice Lender is attempting to remove collateral when they have no claim to collateral in the bucket.
@@ -117,6 +129,24 @@ interface IERC20Pool is IScaledPool {
      */
     function collateralScale() external view returns (uint256 collateralScale_);
 
+    /**
+     *  @notice Mapping of borrower under liquidation to {LiquidationInfo} structs.
+     *  @param  borrower_  Address of the borrower.
+     *  @return kickTime            Time the liquidation was initiated.
+     *  @return referencePrice      Highest Price Bucket at time of liquidation.
+     *  @return remainingCollateral Amount of collateral which has not yet been taken.
+     *  @return remainingDebt       Amount of debt which has not been covered by the liquidation.
+     */
+    // TODO: Instead of just returning the struct, should also calculate and include auction price.
+    // TODO: Need to implement this for NFT pool.
+    function liquidations(address borrower_) external view returns (
+        uint128 kickTime,
+        uint128 referencePrice,
+        uint256 remainingCollateral,
+        uint256 remainingDebt
+    );
+
+
     /*************************/
     /*** ERC20Pool Structs ***/
     /*************************/
@@ -133,16 +163,24 @@ interface IERC20Pool is IScaledPool {
         uint256 inflatorSnapshot;    // [WAD]
     }
 
+    /**
+     *  @notice Maintains the state of a liquidation.
+     *  @param  kickTime            Time the liquidation was initiated.
+     *  @param  referencePrice      Highest Price Bucket at time of liquidation.
+     *  @param  remainingCollateral Amount of collateral which has not yet been taken.
+     *  @param  remainingDebt       Amount of debt which has not been covered by the liquidation.
+     */
+    struct LiquidationInfo {
+        uint128 kickTime;
+        uint128 referencePrice;
+        uint256 remainingCollateral;
+        uint256 remainingDebt;
+    }
+
+
     /*********************************************/
     /*** ERC20Pool Borrower External Functions ***/
     /*********************************************/
-
-    /**
-     *  @notice Called by borrowers to add collateral to the pool.
-     *  @param  borrower_ The address of borrower to pledge collateral for.
-     *  @param  amount_   The amount of collateral in deposit tokens to be added to the pool.
-     */
-    function pledgeCollateral(address borrower_, uint256 amount_) external;
 
     /**
      *  @notice Called by a borrower to open or expand a position.
@@ -151,6 +189,13 @@ interface IERC20Pool is IScaledPool {
      *  @param  limitIndex_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
      */
     function borrow(uint256 amount_, uint256 limitIndex_) external;
+
+    /**
+     *  @notice Called by borrowers to add collateral to the pool.
+     *  @param  borrower_ The address of borrower to pledge collateral for.
+     *  @param  amount_   The amount of collateral in deposit tokens to be added to the pool.
+     */
+    function pledgeCollateral(address borrower_, uint256 amount_) external;
 
     /**
      *  @notice Called by borrowers to remove an amount of collateral.
@@ -211,6 +256,21 @@ interface IERC20Pool is IScaledPool {
      *  @return lpAmount_ The amount of LP used for removing collateral amount.
      */
     function removeCollateral(uint256 amount_, uint256 index_) external returns (uint256 lpAmount_);
+
+
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    /**
+     *  @notice Called by actors to purchase collateral using quote token they provide themselves.
+     *  @param  borrower_     Identifies the loan under liquidation.
+     *  @param  amount_       Amount of quote token which will be used to purchase collateral at the auction price.
+     *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
+     *                        such that sender will have a sufficient quote token balance prior to payment.
+     */
+    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external;
+
 
     /**********************/
     /*** View Functions ***/

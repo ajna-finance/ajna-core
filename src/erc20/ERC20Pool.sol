@@ -16,13 +16,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
     using Heap      for Heap.Data;
 
-    struct LiquidationInfo {
-        uint128 kickTime;
-        uint128 referencePrice;
-        uint256 remainingCollateral;
-        uint256 remainingDebt;
-    }
-
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -30,7 +23,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => Borrower) public override borrowers;
 
-    mapping (address => LiquidationInfo) public liquidations;
+    mapping(address => LiquidationInfo) public override liquidations;
 
     uint256 public override collateralScale;
 
@@ -254,11 +247,27 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function liquidate(address borrower_) external {
+    function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
+        // TODO: implement
+        emit ArbTake(borrower_, index_, amount_, 0, 0);
+    }
+
+    function clear(address borrower_, uint256 maxDepth_) external override {
+        // TODO: implement
+        uint256 debtCleared = maxDepth_ * 10_000;
+        emit Clear(borrower_, _hpbIndex(), debtCleared, 0, 0);
+    }
+
+    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
+        // TODO: implement
+        emit DepositTake(borrower_, index_, amount_, 0, 0);
+    }
+
+    function kick(address borrower_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[borrower_];
-        if (borrower.debt == 0) revert LiquidateNoDebt();
+        if (borrower.debt == 0) revert KickNoDebt();
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();
@@ -278,17 +287,20 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // TODO: Uncomment when needed
         // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
 
-        if (lup > thresholdPrice) revert LiquidateLUPGreaterThanTP();
+        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
 
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
         // TODO: Account for repossessed collateral
+        liquidationBondEscrowed += Maths.wmul(borrower.debt, 0.01 * 1e18);
 
         // Post the liquidation bond
         // Repossess the borrowers collateral, initialize the auction cooldown timer
+
+        emit Kick(borrower_, borrower.debt, borrower.collateral);
     }
 
     // TODO: Add reentrancy guard
-    function take(address borrower_, uint256 collateralToLiquidate_, bytes memory swapCalldata_) external {
+    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external override {
         Borrower        memory borrower    = borrowers[borrower_];
         LiquidationInfo memory liquidation = liquidations[borrower_];
 
@@ -296,21 +308,25 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
 
-        uint256 collateralForLiquidation = Maths.min(collateralToLiquidate_, liquidation.remainingCollateral);
+        // TODO: calculate using price decrease function and amount_
+        uint256 liquidationPrice = Maths.WAD;
+        uint256 collateralToPurchase = Maths.wdiv(amount_, liquidationPrice);
 
         // Reduce liquidation's remaining collateral
-        liquidations[borrower_].remainingCollateral -= collateralForLiquidation;
+        liquidations[borrower_].remainingCollateral -= collateralToPurchase;
 
         // Flash loan full amount to liquidate to borrower
-        collateral().safeTransfer(msg.sender, collateralForLiquidation);
+        collateral().safeTransfer(msg.sender, collateralToPurchase);
 
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
         msg.sender.call(swapCalldata_);
 
         // Get current swap price
-        uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralForLiquidation);
+        uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralToPurchase);
 
         _repayDebt(borrower_, quoteTokenReturnAmount);
+
+        emit Take(borrower_, amount_, collateralToPurchase, 0);
     }
 
 

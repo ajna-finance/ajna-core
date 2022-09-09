@@ -38,6 +38,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     // borrowers book: borrower address -> NFTBorrower
     mapping(address => NFTBorrower) private borrowers;
 
+    mapping(address => NFTLiquidationInfo) private liquidations;
+
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
@@ -305,6 +307,51 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
                 ++i;
             }
         }
+    }
+
+    /*******************************/
+    /*** Pool External Functions ***/
+    /*******************************/
+
+    function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
+        // TODO: implement
+        emit ArbTake(borrower_, index_, amount_, 0, 0);
+    }
+
+    function clear(address borrower_, uint256 maxDepth_) external override {
+        // TODO: implement
+        uint256[] memory tokenIdsReturned = new uint256[](1);
+        tokenIdsReturned[0] = 0;
+        uint256 debtCleared = maxDepth_ * 10_000;
+        emit ClearNFT(borrower_, _hpbIndex(), debtCleared, tokenIdsReturned, 0);
+    }
+
+    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
+        // TODO: implement
+        emit DepositTake(borrower_, index_, amount_, 0, 0);
+    }
+
+    function kick(address borrower_) external override {
+        (uint256 curDebt) = _accruePoolInterest();
+
+        NFTBorrower storage borrower = borrowers[borrower_];
+        if (borrower.debt == 0) revert KickNoDebt();
+
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        uint256 lup = _lup();
+        _updateInterestRateAndEMAs(curDebt, lup);
+
+        if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+
+        // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
+        //  which includes an array of the borrower's tokenIds being auctioned off.
+    }
+
+    function take(address borrower_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external override {
+        // TODO: Implement
+        // copypasta to quell warnings
+        msg.sender.call(swapCalldata_);
+        emit Take(borrower_, 0, tokenIds_, 0);
     }
 
     /**********************/
