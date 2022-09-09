@@ -2,21 +2,21 @@
 
 pragma solidity 0.8.14;
 
-import { Clone } from "@clones/Clone.sol";
-
-import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Multicall } from "@openzeppelin/contracts/utils/Multicall.sol";
+import { Clone }          from "@clones/Clone.sol";
+import { ERC20 }          from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20Burnable }  from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import { SafeERC20 }      from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Multicall }      from "@openzeppelin/contracts/utils/Multicall.sol";
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
-import { IScaledPool } from "./interfaces/IScaledPool.sol";
+import { IScaledPool }    from "./interfaces/IScaledPool.sol";
 
-import { FenwickTree } from "./FenwickTree.sol";
+import { FenwickTree }    from "./FenwickTree.sol";
 
-import { BucketMath }  from "../libraries/BucketMath.sol";
-import { Maths }       from "../libraries/Maths.sol";
-import { Heap }        from "../libraries/Heap.sol";
+import { BucketMath }     from "../libraries/BucketMath.sol";
+import { Maths }          from "../libraries/Maths.sol";
+import { Heap }           from "../libraries/Heap.sol";
 
 abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     using SafeERC20      for ERC20;
@@ -244,8 +244,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
+        if (reserveAuctionKicked == 0 || block.timestamp - reserveAuctionKicked > 72 hours) revert NoAuction();
+
+        assert(ajnaTokenAddress != address(0));
+        ERC20Burnable ajnaToken = ERC20Burnable(ajnaTokenAddress);
         // TODO: implement
-        amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
+//        ajnaToken.burn(1);
+        amount_ = 0; //Maths.min(reserveAuctionUnclaimed, maxAmount_);
         reserveAuctionUnclaimed -= amount_;
     }
 
@@ -484,10 +489,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _reserveAuctionPrice() internal view returns (uint256 _price) {
-        // assert(ajnaTokenAddress != address(0));                                      // FIXME: this fails
-        ERC20 ajnaToken = ERC20(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079));   // FIXME: hack around it
-        // TODO: Calculate claimable reserves and apply the price decrease function.
-        assert(ajnaToken.decimals() == 18);
         if (reserveAuctionKicked == 0) {
             _price = 0;
         } else {

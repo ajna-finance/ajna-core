@@ -49,6 +49,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
+        ajnaTokenAddress           = address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
         lenderInterestFactor       = 0.9 * 10**18;

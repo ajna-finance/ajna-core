@@ -69,14 +69,18 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         assertEq(_collectionPool.reserves(), 610.479702351371553626 * 1e18);
     }
 
-    function testClaimableReserveAuction() external {
+    function testClaimableReserveNoAuction() external {
+        // ensure empty state is returned
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: 0,
                 auctionPrice:               0
             })
         );
-//        _collectionPool.startClaimableReserveAuction();
+
+        // ensure cannot take when no auction was started
+        vm.expectRevert(IScaledPool.NoAuction.selector);
+        _collectionPool.takeReserves(555 * 1e18);
     }
 
 }

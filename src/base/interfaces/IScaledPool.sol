@@ -157,6 +157,11 @@ interface IScaledPool {
     error MoveQuoteLUPBelowHTP();
 
     /**
+     *  @notice Actor is attempting to take or clear an inactive auction.
+     */
+    error NoAuction();
+
+    /**
      *  @notice User is attempting to pull more collateral than is available.
      */
     error RemoveCollateralInsufficientCollateral();
