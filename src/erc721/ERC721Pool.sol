@@ -330,11 +330,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit DepositTake(borrower_, index_, amount_, 0);
     }
 
-    function liquidate(address borrower_) external override {
+    function kick(address borrower_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
         NFTBorrower storage borrower = borrowers[borrower_];
-        if (borrower.debt == 0) revert LiquidateNoDebt();
+        if (borrower.debt == 0) revert KickNoDebt();
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();

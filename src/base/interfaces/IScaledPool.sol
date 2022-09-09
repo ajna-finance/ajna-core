@@ -46,7 +46,7 @@ interface IScaledPool {
      *  @param  debt_       Debt the liquidation will attempt to cover.
      *  @param  collateral_ Amount of collateral up for liquidation.
      */
-    event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
+    event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_);
 
     /**
      *  @notice Emitted when lender moves quote token from a bucket price to another.
@@ -115,19 +115,19 @@ interface IScaledPool {
     error BorrowPoolUnderCollateralized();
 
     /**
-     *  @notice Borrower has a healthy over-collateralized position.
-     */
-    error LiquidateBorrowerOk();
-
-    /**
      *  @notice Liquidation must result in LUP below the borrowers threshold price.
      */
-    error LiquidateLUPGreaterThanTP();
+    error KickLUPGreaterThanTP();
 
     /**
      *  @notice Borrower has no debt to liquidate.
      */
-    error LiquidateNoDebt();
+    error KickNoDebt();
+
+    /**
+     *  @notice Borrower has a healthy over-collateralized position.
+     */
+    error LiquidateBorrowerOk();
 
     /**
      *  @notice User is attempting to move more collateral than is available.
@@ -415,14 +415,14 @@ interface IScaledPool {
 
     /**
      *  @notice Called by actors to settle an amount of debt in a completed liquidation.
-     *  @param  borrower_ Identifies the loan to liquidate.
+     *  @param  borrower_ Identifies the loan under liquidation.
      *  @param  amount_   Amount of debt to settle, which implies depth of HPB iteration.
      */
     function clear(address borrower_, uint256 amount_) external;
 
     /**
      *  @notice Called by actors to purchase collateral using quote token already on the book.
-     *  @param  borrower_     Identifies the loan to liquidate.
+     *  @param  borrower_     Identifies the loan under liquidation.
      *  @param  amount_       Amount of bucket deposit to use to exchange for collateral.
      *  @param  index_        Index of the bucket which has amount_ quote token available.
      */
@@ -432,7 +432,7 @@ interface IScaledPool {
      *  @notice Called by actors to initiate a liquidation.
      *  @param  borrower_ Identifies the loan to liquidate.
      */
-    function liquidate(address borrower_) external;
+    function kick(address borrower_) external;
 
     /**
      *  @notice Called by actor to start a Claimable Reserve Auction (CRA).

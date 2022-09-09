@@ -211,7 +211,7 @@ interface IERC721Pool is IScaledPool {
 
     /**
      *  @notice Called by actors to purchase collateral using quote token they provide themselves.
-     *  @param  borrower_     Identifies the loan to liquidate.
+     *  @param  borrower_     Identifies the loan being liquidated.
      *  @param  tokenIds_     NFT token ids caller wishes to purchase from the liquidation.
      *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
      *                        such that sender will have a sufficient quote token balance prior to payment.

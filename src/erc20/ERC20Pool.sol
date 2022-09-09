@@ -262,11 +262,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit DepositTake(borrower_, index_, amount_, 0);
     }
 
-    function liquidate(address borrower_) external override {
+    function kick(address borrower_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[borrower_];
-        if (borrower.debt == 0) revert LiquidateNoDebt();
+        if (borrower.debt == 0) revert KickNoDebt();
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();
@@ -286,7 +286,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // TODO: Uncomment when needed
         // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
 
-        if (lup > thresholdPrice) revert LiquidateLUPGreaterThanTP();
+        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
 
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
         // TODO: Account for repossessed collateral
@@ -295,7 +295,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Post the liquidation bond
         // Repossess the borrowers collateral, initialize the auction cooldown timer
 
-        emit Liquidate(borrower_, borrower.debt, borrower.collateral);
+        emit Kick(borrower_, borrower.debt, borrower.collateral);
     }
 
     // TODO: Add reentrancy guard

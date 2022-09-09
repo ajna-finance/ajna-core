@@ -305,11 +305,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         newInflator_ = poolInflator_;
     }
 
-    function _auctionPrice(uint256 liqRefPrice, uint128 timeOfLiq) internal view returns (uint256 price_) {
+    function _auctionPrice(uint256 referencePrice, uint128 timeOfLiq) internal view returns (uint256 price_) {
         // TODO: get signed/unsigned types right, check PRBMath boundaries
         uint256 elapsed = (block.timestamp - timeOfLiq - 1 hours);
         int256 time_adjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsed));
-        price_ = 10 * liqRefPrice * uint256(PRBMathSD59x18.exp2(time_adjustment));
+        price_ = 10 * referencePrice * uint256(PRBMathSD59x18.exp2(time_adjustment));
     }
 
     function _redeemLPForQuoteToken(

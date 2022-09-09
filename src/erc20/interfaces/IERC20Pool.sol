@@ -30,7 +30,7 @@ interface IERC20Pool is IScaledPool {
 
     /**
      *  @notice Emitted when an actor settles debt in a completed liquidation
-     *  @param  borrower_           Identifies the loan being liquidated.
+     *  @param  borrower_           Identifies the loan under liquidation.
      *  @param  hpbIndex_           The index of the Highest Price Bucket where debt was cleared.
      *  @param  amount_             Amount of debt cleared from the HPB in this transaction.
      *  @param  collateralReturned_ Amount of collateral returned to the borrower in this transaction.
@@ -263,7 +263,7 @@ interface IERC20Pool is IScaledPool {
 
     /**
      *  @notice Called by actors to purchase collateral using quote token they provide themselves.
-     *  @param  borrower_     Identifies the loan to liquidate.
+     *  @param  borrower_     Identifies the loan under liquidation.
      *  @param  amount_       Amount of quote token which will be used to purchase collateral at the auction price.
      *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
      *                        such that sender will have a sufficient quote token balance prior to payment.
