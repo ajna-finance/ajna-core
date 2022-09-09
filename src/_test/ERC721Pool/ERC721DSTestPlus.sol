@@ -19,6 +19,24 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     event PullCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
     event RemoveCollateralNFT(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
+
+    /*****************/
+    /*** Utilities ***/
+    /*****************/
+
+    struct PoolState {
+        uint256 htp;
+        uint256 lup;
+        uint256 poolSize;
+        uint256 pledgedCollateral;
+        uint256 encumberedCollateral;
+        uint256 borrowerDebt;
+        uint256 actualUtilization;
+        uint256 targetUtilization;
+        uint256 minDebtAmount;
+        uint256 loans;
+        address maxBorrower;
+    }
 }
 
 abstract contract ERC721HelperContract is ERC721DSTestPlus {
@@ -97,5 +115,23 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     // TODO: implement _pullCollateral()
+    
+    function _assertPool(PoolState memory state_) internal {
+        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
+        
+        assertEq(pool.htp(), state_.htp);
+        assertEq(pool.lup(), state_.lup);
 
+        assertEq(pool.poolSize(),              state_.poolSize);
+        assertEq(pool.pledgedCollateral(),     state_.pledgedCollateral);
+        assertEq(pool.borrowerDebt(),          state_.borrowerDebt);
+        assertEq(pool.poolActualUtilization(), state_.actualUtilization);
+        assertEq(pool.poolTargetUtilization(), state_.targetUtilization);
+        assertEq(pool.poolMinDebtAmount(),     state_.minDebtAmount);
+
+        assertEq(pool.loansCount(),  state_.loans);
+        assertEq(pool.maxBorrower(), state_.maxBorrower);
+
+        assertEq(pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+    }
 }
