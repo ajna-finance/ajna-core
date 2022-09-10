@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
+import { ERC20 }             from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
@@ -19,6 +21,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     event PullCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
     event RemoveCollateralNFT(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
+    event ReserveAuction(uint256 claimableReservesRemaining_, uint256 auctionPrice_);
 
     /*****************/
     /*** Utilities ***/
@@ -50,21 +53,25 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     NFTCollateralToken internal _collateral;
     Token              internal _quote;
+    ERC20              internal _ajna;
     ERC721Pool         internal _collectionPool;
     ERC721Pool         internal _subsetPool;
 
     // TODO: bool for pool type
     constructor() {
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+
         _collateral = new NFTCollateralToken();
         vm.makePersistent(address(_collateral));
         _quote      = new Token("Quote", "Q");
         vm.makePersistent(address(_quote));
+        _ajna       = ERC20(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079));
+        vm.makePersistent(address(_ajna));
     }
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
         address contractAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
         vm.makePersistent(contractAddress);
-        vm.makePersistent(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079)); // HACK: doesn't help; will remove
         return ERC721Pool(contractAddress);
     }
 
@@ -101,6 +108,18 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         for (uint i; i < pools_.length;) {
             vm.prank(operator_);
             _collateral.setApprovalForAll(address(pools_[i]), true);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function _mintAndApproveAjnaTokens(address[] memory pools_, address operator_, uint256 mintAmount_) internal {
+        deal(address(_ajna), operator_, mintAmount_);
+
+        for (uint i; i < pools_.length;) {
+            vm.prank(operator_);
+            _ajna.approve(address(pools_[i]), type(uint256).max);
             unchecked {
                 ++i;
             }

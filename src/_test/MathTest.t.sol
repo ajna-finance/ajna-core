@@ -69,4 +69,8 @@ contract MathTest is DSTestPlus {
     function testExp() external {
         assertEq(PRBMathUD60x18.exp(1.53 * 1e18), 4.618176822299780807 * 1e18);
     }
+
+    function testWpow() external {
+        assertEq(Maths.wpow(3 * 1e18, 3), 27 * 1e18);
+    }
 }

@@ -4,7 +4,6 @@ pragma solidity 0.8.14;
 
 import { Clone }          from "@clones/Clone.sol";
 import { ERC20 }          from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ERC20Burnable }  from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { SafeERC20 }      from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Multicall }      from "@openzeppelin/contracts/utils/Multicall.sol";
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
@@ -18,9 +17,17 @@ import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
 import { Heap }           from "../libraries/Heap.sol";
 
+// TODO: replace this with OZ BurnableToken thing?
+interface AjnaTokenLike {
+    function burn(uint256 amount) external;
+    // FIXME: these aren't real
+//    function safeTransfer(address to, uint256 value) external;
+//    function safeTransferFrom(address from, address to, uint256 value) external;
+}
+
 abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
-    using SafeERC20      for ERC20;
-    using Heap for Heap.Data;
+    using SafeERC20 for ERC20;
+    using Heap      for Heap.Data;
 
     int256  public constant INDEX_OFFSET = 3232;
 
@@ -75,7 +82,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     /**
      *  @notice Address of the Ajna token, needed for Claimable Reserve Auctions.
      */
-    address internal ajnaTokenAddress = address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
+    address internal ajnaTokenAddress = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
 
     Heap.Data internal loans;
 
@@ -235,23 +242,28 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     function startClaimableReserveAuction() external override {
         reserveAuctionKicked = block.timestamp;
-        // TODO: implement
         uint256 claimableReserves = Maths.wmul(0.995 * 1e18, borrowerDebt)
                                         + quoteToken().balanceOf(address(this))
                                         - this.poolSize()
-                                        - liquidationBondEscrowed;
+                                        - liquidationBondEscrowed
+                                        - reserveAuctionUnclaimed;
         reserveAuctionUnclaimed += claimableReserves;
+        emit ReserveAuction(reserveAuctionUnclaimed, _reserveAuctionPrice());
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
         if (reserveAuctionKicked == 0 || block.timestamp - reserveAuctionKicked > 72 hours) revert NoAuction();
 
-        assert(ajnaTokenAddress != address(0));
-        ERC20Burnable ajnaToken = ERC20Burnable(ajnaTokenAddress);
-        // TODO: implement
-//        ajnaToken.burn(1);
-        amount_ = 0; //Maths.min(reserveAuctionUnclaimed, maxAmount_);
+        amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
+        uint256 price = _reserveAuctionPrice();
+        uint256 ajnaRequired = Maths.wdiv(amount_, price);
         reserveAuctionUnclaimed -= amount_;
+
+        emit ReserveAuction(reserveAuctionUnclaimed, price);
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
+        AjnaTokenLike ajnaToken = AjnaTokenLike(ajnaTokenAddress);
+        ERC20(address(ajnaToken)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
+        ajnaToken.burn(ajnaRequired);
     }
 
 
@@ -492,7 +504,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (reserveAuctionKicked == 0) {
             _price = 0;
         } else {
-            uint256 hoursElapsed = Maths.wad(reserveAuctionKicked - block.timestamp) / 1 hours;
+            uint256 hoursElapsed = (Maths.wad(block.timestamp - reserveAuctionKicked) / 1 hours) / 1e18;
             _price = hoursElapsed > 72 ? 0 : 1_000_000_000 * Maths.wpow(0.5 * 1e18, hoursElapsed);
         }
     }

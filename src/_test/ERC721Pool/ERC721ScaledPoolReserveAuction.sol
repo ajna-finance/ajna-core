@@ -18,9 +18,6 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
     address internal _lender;
 
     function setUp() external {
-        // TODO: consider moving this into helper contract deployPool methods
-        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
-
         _borrower  = makeAddr("borrower");
         _bidder    = makeAddr("bidder");
         _lender    = makeAddr("lender");
@@ -29,8 +26,10 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _collectionPool = _deployCollectionPool();
         address[] memory poolAddresses_ = new address[](1);
         poolAddresses_[0] = address(_collectionPool);
-        _mintAndApproveQuoteTokens(poolAddresses_, _lender, 250_000 * 1e18);
+        _mintAndApproveQuoteTokens(poolAddresses_, _lender,   250_000 * 1e18);
         _mintAndApproveQuoteTokens(poolAddresses_, _borrower, 5_000 * 1e18);
+        _mintAndApproveAjnaTokens( poolAddresses_, _bidder,   1 * 1e18);
+        assertEq(_ajna.balanceOf(_bidder), 1 * 1e18);
         _mintAndApproveCollateralTokens(poolAddresses_, _borrower, 12);
 
         // lender adds liquidity and borrower draws debt
@@ -83,4 +82,37 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _collectionPool.takeReserves(555 * 1e18);
     }
 
+    function testClaimableReserveAuction() external {
+        uint256 expectedPrice = 1_000_000_000 * 1e18;
+        uint256 expectedReserves = _collectionPool.reserves();
+
+        // kick off a new auction
+        vm.expectEmit(true, true, true, true);
+        emit ReserveAuction(expectedReserves, expectedPrice);
+        _collectionPool.startClaimableReserveAuction();
+        _assertReserveAuction(
+            ReserveAuctionState({
+                claimableReservesRemaining: expectedReserves,
+                auctionPrice:               expectedPrice
+            })
+        );
+
+        // bid once the price becomes attractive
+        skip(16 hours);
+        expectedPrice = 15_258.7890625 * 1e18;
+        _assertReserveAuction(
+            ReserveAuctionState({
+                claimableReservesRemaining: expectedReserves,
+                auctionPrice:               expectedPrice
+            })
+        );
+        changePrank(_bidder);
+        vm.expectEmit(true, true, true, true);
+        emit ReserveAuction(310.479702351371553626 * 1e18, expectedPrice);
+//        vm.expectEmit(false, false, false, false);  // FIXME: tries to compare with NFT Transfer method
+//        emit Transfer(address(_collectionPool), address(_bidder), 300 * 1e18);
+//        vm.expectEmit(true, true, false, true);
+//        emit Transfer(_bidder, address(_collectionPool), 0.0196608 * 1e18);
+        _collectionPool.takeReserves(300 * 1e18);
+    }
 }
