@@ -136,14 +136,16 @@ interface IERC20Pool is IScaledPool {
      *  @return referencePrice      Highest Price Bucket at time of liquidation.
      *  @return remainingCollateral Amount of collateral which has not yet been taken.
      *  @return remainingDebt       Amount of debt which has not been covered by the liquidation.
+     *  @return liquidationBond     Bond
      */
     // TODO: Instead of just returning the struct, should also calculate and include auction price.
     // TODO: Need to implement this for NFT pool.
     function liquidations(address borrower_) external view returns (
         uint128 kickTime,
-        uint128 referencePrice,
+        uint256 referencePrice,
         uint256 remainingCollateral,
-        uint256 remainingDebt
+        uint256 remainingDebt,
+        uint256 liquidationBond
     );
 
 
@@ -169,12 +171,14 @@ interface IERC20Pool is IScaledPool {
      *  @param  referencePrice      Highest Price Bucket at time of liquidation.
      *  @param  remainingCollateral Amount of collateral which has not yet been taken.
      *  @param  remainingDebt       Amount of debt which has not been covered by the liquidation.
+     *  @param  liquidationBond     Bond
      */
     struct LiquidationInfo {
         uint128 kickTime;
-        uint128 referencePrice;
+        uint256 referencePrice;
         uint256 remainingCollateral;
         uint256 remainingDebt;
+        uint256 bond;
     }
 
 

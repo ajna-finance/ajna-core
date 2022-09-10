@@ -45,6 +45,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         minFee                     = 0.0005 * 10**18;
 
         loans.init();
+        auctions.init();
 
         // increment initializations count to ensure these values can't be updated
         poolInitializations += 1;
@@ -53,11 +54,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /***********************************/
     /*** Borrower External Functions ***/
     /***********************************/
-
     function pledgeCollateral(address borrower_, uint256 amount_) external override {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
+        //TODO: check if loan is in liquidation, remove loan from liquidation if additional pledge collateral saves it.
         Borrower memory borrower = borrowers[borrower_];
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         borrower.collateral += amount_;
@@ -269,33 +270,43 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         Borrower memory borrower = borrowers[borrower_];
         if (borrower.debt == 0) revert KickNoDebt();
 
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        (borrower.debt,) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
-        borrowers[borrower_] = borrower;
-        liquidations[borrower_] = LiquidationInfo({
-            kickTime:            uint128(block.timestamp),
-            referencePrice:      uint128(_hpbIndex()),
-            remainingCollateral: borrower.collateral,
-            remainingDebt:       borrower.debt
-        });
-
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
-        // TODO: Uncomment when needed
-        // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
-
         if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
 
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
+        uint256 liquidationBond = Maths.wmul(borrower.debt, 0.01 * 1e18);
+
+        liquidations[borrower_] = LiquidationInfo({
+            kickTime:            uint128(block.timestamp),
+            referencePrice:      hpb(),
+            remainingCollateral: borrower.collateral,
+            remainingDebt:       borrower.debt,
+            bond:                liquidationBond 
+        });
+
+        // TODO: Uncomment when needed
+        // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
+
         // TODO: Account for repossessed collateral
-        liquidationBondEscrowed += Maths.wmul(borrower.debt, 0.01 * 1e18);
+        // TODO: add liquidationDebt var here? asked in doc think we should just use borrowerDebt var instead to track interest
 
         // Post the liquidation bond
         // Repossess the borrowers collateral, initialize the auction cooldown timer
+        liquidationDebt += borrower.debt;
+        borrowerDebt    -= borrower.debt;
+        delete borrowers[borrower_];
 
+        loans.remove(borrower_);
+        auctions.upsert(borrower_, uint128(block.timestamp));
+
+        quoteToken().safeTransferFrom(msg.sender, address(this), liquidationBond / quoteTokenScale);
         emit Kick(borrower_, borrower.debt, borrower.collateral);
     }
 
@@ -309,6 +320,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: calculate using price decrease function and amount_
+        // TODO: remove auction from queue if auctionDebt == 0;
+
         uint256 liquidationPrice = Maths.WAD;
         uint256 collateralToPurchase = Maths.wdiv(amount_, liquidationPrice);
 
@@ -364,6 +377,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 curDebt = _accruePoolInterest();
 
         // update borrower accounting
+        //TODO: check if loan is in liquidation, remove loan from liquidation if repaymentsaves it.
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 amount = Maths.min(borrower.debt, maxAmount_);
         borrower.debt -= amount;

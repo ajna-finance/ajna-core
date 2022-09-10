@@ -15,6 +15,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
     address internal _lender;
 
     uint256 HPB        = 1987;  // _p49910
+    uint256 HPB_PRICE  =  _p49910;
     uint256 LEND_PRICE = 2309;  // _p10016
     uint256 START      = block.timestamp;
 
@@ -23,7 +24,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
 
-        _mintQuoteAndApproveTokens(_lender, 21_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender, 25_000 * 1e18);
 
         // Lender adds quote token in two price buckets
         vm.startPrank(_lender);
@@ -71,7 +72,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         assertEq(_pool.borrowerCollateralization(borrowerPendingDebt, collateralDeposited, _pool.lup()), 0.998633861930247030 * 1e18);
         assertEq(borrowerInflator,     1e18);
 
-        ( uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt ) = _pool.liquidations(_borrower2);
+        ( uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt, uint256 bond) = _pool.liquidations(_borrower2);
 
         assertEq(kickTime,            0);
         assertEq(referencePrice,      0);
@@ -80,13 +81,12 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         /************/
         /*** Kick ***/
         /************/
-
+        vm.startPrank(_lender);
         _pool.kick(_borrower2);
 
         /***********************/
         /*** Post-kick state ***/
         /***********************/
-
         (
             borrowerDebt,
             borrowerPendingDebt,
@@ -94,19 +94,29 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             borrowerInflator
         ) = _pool.borrowerInfo(_borrower2);
 
-        assertEq(borrowerDebt,         10_030.204233142901661009 * 1e18);  // Updated to reflect debt
-        assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);  // Pending debt is unchanged
-        assertEq(collateralDeposited,  1e18);                              // Unchanged
-        assertEq(_pool.encumberedCollateral(borrowerDebt, _pool.lup()), 1.001368006956135433 * 1e18);  // Unencumbered collateral is unchanged because based off pending debt
-        assertEq(_pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _pool.lup()), 0.998633861930247030 * 1e18);  // Unchanged because based off pending debt
-        assertEq(borrowerInflator,     1.002056907057504104 * 1e18);       // Inflator is updated to reflect new debt
+        assertEq(borrowerDebt,         0);  // Updated to reflect debt
+        assertEq(borrowerPendingDebt,  0);  // Pending debt is unchanged
+        assertEq(collateralDeposited,  0);                              // Unchanged
+        assertEq(_pool.encumberedCollateral(borrowerDebt, _pool.lup()), 0);  // Unencumbered collateral is unchanged because based off pending debt
+        assertEq(_pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _pool.lup()), 1 * 1e18);  // Unchanged because based off pending debt
+        assertEq(borrowerInflator,   0);       // Inflator is updated to reflect new debt
 
-        ( kickTime, referencePrice, remainingCollateral, remainingDebt ) = _pool.liquidations(_borrower2);
-
+        (kickTime, referencePrice, remainingCollateral, remainingDebt, bond) = _pool.liquidations(_borrower2);
         assertEq(kickTime,            block.timestamp);
-        assertEq(referencePrice,      HPB);
+        assertEq(referencePrice,      HPB_PRICE);
         assertEq(remainingCollateral, 1e18);
+        assertEq(remainingDebt, 10_030.204233142901661009 * 1e18);
+        assertEq(bond, 100.302042331429016610 * 1e18);
+
+
+        /************/
+        /*** Take ***/
+        /************/
+
+
+
     }
+
 
     // TODO: move to DSTestPlus?
     function _logBorrowerInfo(address borrower_) internal {

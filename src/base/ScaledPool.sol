@@ -55,6 +55,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     uint256 public override lupColEma;    // [WAD]
     uint256 public override poolPriceEma; // [WAD]
 
+    uint256 internal liquidationDebt;
+
     /**
      *  @notice Mapping of buckets for a given pool
      *  @dev    deposit index -> bucket
@@ -78,6 +80,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     address internal ajnaTokenAddress = address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
 
     Heap.Data internal loans;
+    Heap.Data internal auctions;
 
     uint256 internal poolInitializations = 0;
 
@@ -528,7 +531,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return _exchangeRate(_valueAt(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
     }
 
-    function hpb() external view returns (uint256) {
+    function hpb() public view returns (uint256) {
         return _indexToPrice(_hpbIndex());
     }
 
