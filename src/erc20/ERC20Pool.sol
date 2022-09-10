@@ -11,6 +11,7 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
+import "forge-std/console.sol";
 
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
@@ -280,25 +281,18 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
 
-        // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
-        uint256 liquidationBond = Maths.wmul(borrower.debt, 0.01 * 1e18);
+        uint256 poolPrice = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
+        uint256 bondFactor = Maths.min(3e17, Maths.max(1e16, Maths.WAD - Maths.wdiv(thresholdPrice, poolPrice)));
+        uint256 bondSize = Maths.wmul(bondFactor, borrower.debt);
 
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),
             referencePrice:      hpb(),
             remainingCollateral: borrower.collateral,
             remainingDebt:       borrower.debt,
-            bond:                liquidationBond 
+            bond:                bondSize 
         });
 
-        // TODO: Uncomment when needed
-        // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
-
-        // TODO: Account for repossessed collateral
-        // TODO: add liquidationDebt var here? asked in doc think we should just use borrowerDebt var instead to track interest
-
-        // Post the liquidation bond
-        // Repossess the borrowers collateral, initialize the auction cooldown timer
         liquidationDebt += borrower.debt;
         borrowerDebt    -= borrower.debt;
         delete borrowers[borrower_];
@@ -306,7 +300,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         loans.remove(borrower_);
         auctions.upsert(borrower_, uint128(block.timestamp));
 
-        quoteToken().safeTransferFrom(msg.sender, address(this), liquidationBond / quoteTokenScale);
+        quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
         emit Kick(borrower_, borrower.debt, borrower.collateral);
     }
 
