@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
@@ -282,15 +283,18 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
 
         uint256 poolPrice = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
+        
+        // bondFactor = min(30%, max(1%, (poolPrice - thresholdPrice) / poolPrice))
         uint256 bondFactor = Maths.min(3e17, Maths.max(1e16, Maths.WAD - Maths.wdiv(thresholdPrice, poolPrice)));
         uint256 bondSize = Maths.wmul(bondFactor, borrower.debt);
 
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),
-            referencePrice:      hpb(),
-            remainingCollateral: borrower.collateral,
-            remainingDebt:       borrower.debt,
-            bond:                bondSize 
+            referencePrice:      _indexToPrice(_hpbIndex()),
+            collateral:          borrower.collateral,
+            debt:                borrower.debt,
+            bondFactor:          bondFactor,
+            bondSize:            bondSize
         });
 
         liquidationDebt += borrower.debt;
@@ -300,8 +304,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         loans.remove(borrower_);
         auctions.upsert(borrower_, uint128(block.timestamp));
 
-        quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
         emit Kick(borrower_, borrower.debt, borrower.collateral);
+        quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
     }
 
     // TODO: Add reentrancy guard
@@ -316,11 +320,39 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // TODO: calculate using price decrease function and amount_
         // TODO: remove auction from queue if auctionDebt == 0;
 
+
+        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
+        uint256 timePassed = block.timestamp - liquidation.kickTime - 1 hours;
+        //uint256 price = 10 * Maths.wmul(liquidation.referencePrice, (2^ - block.timestamp - liquidation.kickTime - 1 hours));
+
+        uint256 price =  uint256(
+            PRBMathSD59x18.exp2(
+                PRBMathSD59x18.mul(
+                    PRBMathSD59x18.fromInt(-1),
+                    PRBMathSD59x18.fromInt(int(timePassed))
+                )
+            )
+        );
+        uint256 neutralPrice = Maths.wmul(thresholdPrice, Maths.wdiv(poolPriceEma, lupEma));
+       // uint256 BPF =  liquidation.bondFactor Maths.wdiv(neutralPrice - price, neutralPrice - thresholdPrice);
+
+       // uint256 price =  uint256(
+       //     PRBMathSD59x18.exp2(
+       //         PRBMathSD59x18.mul(
+       //             int(neutralPrice) - int(price),
+       //             int(neutralPrice) - int(thresholdPrice),
+       //             
+       //         )
+       //     )
+       // );
+
+
+
         uint256 liquidationPrice = Maths.WAD;
         uint256 collateralToPurchase = Maths.wdiv(amount_, liquidationPrice);
 
         // Reduce liquidation's remaining collateral
-        liquidations[borrower_].remainingCollateral -= collateralToPurchase;
+        liquidations[borrower_].collateral -= collateralToPurchase;
 
         // Flash loan full amount to liquidate to borrower
         collateral().safeTransfer(msg.sender, collateralToPurchase);
@@ -363,6 +395,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit RemoveCollateral(msg.sender, price_, amount_);
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
+
 
     function _repayDebt(address borrower_, uint256 maxAmount_) internal {
         Borrower memory borrower = borrowers[borrower_];

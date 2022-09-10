@@ -531,7 +531,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return _exchangeRate(_valueAt(index_), buckets[index_].availableCollateral, buckets[index_].lpAccumulator, index_);
     }
 
-    function hpb() public view returns (uint256) {
+    function hpb() external view returns (uint256) {
         return _indexToPrice(_hpbIndex());
     }
 
