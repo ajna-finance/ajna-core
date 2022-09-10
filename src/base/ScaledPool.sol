@@ -508,10 +508,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         );
     }
 
-    function bucketCount() external view override returns (uint256) {
-        return this.SIZE();
-    }
-
     function reserves() external view override returns (uint256) {
         return borrowerDebt + quoteToken().balanceOf(address(this)) - this.poolSize() - liquidationBondEscrowed - reserveAuctionUnclaimed;
     }

@@ -222,12 +222,6 @@ interface IScaledPool {
     function buckets(uint256 index_) external view returns (uint256 lpAccumulator, uint256 availableCollateral);
 
     /**
-     *  @notice Returns the `SIZE` constant, equivalent to the maximum number of price indices in the pool.
-     *  @return Number of price buckets in the pool, a constant.
-     */
-    function bucketCount() external view returns (uint256);
-
-    /**
      *  @notice Mapping of buckets indexes and owner addresses to {BucketLender} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  index_           Bucket index.
