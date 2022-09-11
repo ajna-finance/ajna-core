@@ -57,6 +57,72 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getTotalTps(),    1);
     }
 
+    function testHeapInsertMultipleLoansWithSameTp() public {
+        // assert initial state
+        assertEq(_loans.getMaxBorrower(), address(0));
+        assertEq(_loans.getMaxTp(), 0);
+
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+        address b4 = makeAddr("b4");
+        address b5 = makeAddr("b5");
+        address b6 = makeAddr("b6");
+
+        _loans.upsertTp(b1, 100 * 1e18);
+        _loans.upsertTp(b2, 200 * 1e18);
+        _loans.upsertTp(b3, 200 * 1e18);
+        _loans.upsertTp(b4, 300 * 1e18);
+        _loans.upsertTp(b5, 400 * 1e18);
+        _loans.upsertTp(b6, 400 * 1e18);
+
+        assertEq(_loans.getMaxBorrower(), b5);
+        assertEq(_loans.getMaxTp(),       400 * 1e18);
+        assertEq(_loans.getTotalTps(),    7);
+
+        assertEq(_loans.getTp(b1), 100 * 1e18);
+        assertEq(_loans.getTp(b2), 200 * 1e18);
+        assertEq(_loans.getTp(b3), 200 * 1e18);
+        assertEq(_loans.getTp(b4), 300 * 1e18);
+        assertEq(_loans.getTp(b5), 400 * 1e18);
+        assertEq(_loans.getTp(b6), 400 * 1e18);
+
+        _loans.removeTp(b5);
+        assertEq(_loans.getMaxBorrower(), b6);
+        assertEq(_loans.getMaxTp(),       400 * 1e18);
+        assertEq(_loans.getTotalTps(),    6);
+
+        _loans.removeTp(b6);
+        assertEq(_loans.getMaxBorrower(), b4);
+        assertEq(_loans.getMaxTp(),       300 * 1e18);
+        assertEq(_loans.getTotalTps(),    5);
+
+        _loans.removeTp(b4);
+        assertEq(_loans.getMaxBorrower(), b2);
+        assertEq(_loans.getMaxTp(),       200 * 1e18);
+        assertEq(_loans.getTotalTps(),    4);
+
+        _loans.upsertTp(b1, 200 * 1e18);
+        assertEq(_loans.getMaxBorrower(), b2);
+        assertEq(_loans.getMaxTp(),       200 * 1e18);
+        assertEq(_loans.getTotalTps(),    4);
+
+        _loans.removeTp(b2);
+        assertEq(_loans.getMaxBorrower(), b3);
+        assertEq(_loans.getMaxTp(),       200 * 1e18);
+        assertEq(_loans.getTotalTps(),    3);
+
+        _loans.removeTp(b3);
+        assertEq(_loans.getMaxBorrower(), b1);
+        assertEq(_loans.getMaxTp(),       200 * 1e18);
+        assertEq(_loans.getTotalTps(),    2);
+
+        _loans.removeTp(b1);
+        assertEq(_loans.getMaxBorrower(), address(0));
+        assertEq(_loans.getMaxTp(),       0);
+        assertEq(_loans.getTotalTps(),    1);
+    }
+
     function testHeapInsertAndRemoveHeadByMaxTp() public {
         // assert initial state
         assertEq(_loans.getMaxBorrower(), address(0));
