@@ -188,3 +188,70 @@ contract FenwickTreeTest is DSTestPlus {
     }
 
 }
+
+contract FenwickTreeGasLoadTest is DSTestPlus {
+    FenwickTreeInstance private _tree;
+    uint256 private constant DEPOSITS_COUNT = 8_192;
+
+    function setUp() public {
+        _tree = new FenwickTreeInstance();
+        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+            _tree.add(i, 100 * 1e18);
+        }
+    }
+
+    function testGasLoadFenwickTreeGasExerciseDeleteOnAllDeposits() public {
+
+        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+            uint256 snapshot = vm.snapshot();
+            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18);
+
+            _tree.remove(i, 100 * 1e18);
+
+            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18 - 100 * 1e18);
+            vm.revertTo(snapshot);
+        }
+    }
+
+    function testGasLoadFenwickTreeGasExerciseAddOnAllDeposits() public {
+
+        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+            uint256 snapshot = vm.snapshot();
+            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18);
+
+            _tree.add(i, 100 * 1e18);
+
+            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18 + 100 * 1e18);
+            vm.revertTo(snapshot);
+        }
+    }
+
+    function testGasLoadFenwickTreeGasExerciseFindIndexOfSumOnAllDeposits() public {
+        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+            assertEq(_tree.findIndexOfSum(819_200 * 1e18 - i * 100 * 1e18), DEPOSITS_COUNT - i - 1);
+        }
+    }
+
+    function testGasLoadFenwickTreeGasExerciseFindPrefixSumOnAllDeposits() public {
+        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+            assertEq(_tree.prefixSum(i), 100 * 1e18 + i * 100 * 1e18);
+        }
+    }
+
+    function testGasLoadFenwickTreeGasExerciseGetOnAllIndexes() public {
+        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+            assertEq(_tree.get(i), 100 * 1e18);
+        }
+    }
+
+    function testGasLoadFenwickTreeGasExerciseScaleOnAllDeposits() public {
+        for (uint256 i; i < DEPOSITS_COUNT; i++) {
+            uint256 snapshot = vm.snapshot();
+            assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18);
+
+            _tree.mult(i, 100 * 1e18);
+            _tree.scale(2);
+            vm.revertTo(snapshot);
+        }
+    }
+}
