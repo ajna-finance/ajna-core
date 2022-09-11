@@ -53,7 +53,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         vm.warp(START + 15 days);
     }
 
-    function test_kick() external {
+    function testKick() external {
 
         /**********************/
         /*** Pre-kick state ***/
@@ -122,6 +122,32 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
 
 
+    }
+
+    function testBondFactorFormula() external {
+        // threshold price (100) greater than the pool price (50)
+        // min(0.3, max(0.01, 1 - 2)) = min(0.3, max(0.01, -1)) = min(0.3, 0.01) = 0.01
+        assertEq(_bondFactorFormula(100 * 1e18, 50 * 1e18), 0.01 * 1e18);
+
+        // threshold price (100) equals pool price (100)
+        // min(0.3, max(0.01, 1 - 1)) = min(0.3, max(0.01, 0)) = min(0.3, 0.01) = 0.01
+        assertEq(_bondFactorFormula(100 * 1e18, 50 * 1e18), 0.01 * 1e18);
+
+        // threshold price (100) less than pool price (110)
+        // min(0.3, max(0.01, 1 - 0.909090909)) = min(0.3, max(0.01, 0.090909091)) = min(0.3, 0.090909091) = 0.090909091
+        assertEq(_bondFactorFormula(100 * 1e18, 110 * 1e18), 0.090909090909090909 * 1e18);
+
+        // threshold price 80, pool price 100
+        // min(0.3, max(0.01, 1 - 0.8)) = min(0.3, max(0.01, 0.2)) = min(0.3, 0.2) = 0.2
+        assertEq(_bondFactorFormula(80 * 1e18, 100 * 1e18), 0.2 * 1e18);
+
+        // threshold price 30, pool price 100
+        // min(0.3, max(0.01, 1 - 0.3)) = min(0.3, max(0.01, 0.7)) = min(0.3, 0.7) = 0.3
+        assertEq(_bondFactorFormula(30 * 1e18, 100 * 1e18), 0.3 * 1e18);
+    }
+
+    function _bondFactorFormula(uint256 thresholdPrice_, uint256 poolPrice_) internal pure returns (uint256 bondFactor_) {
+        bondFactor_= thresholdPrice_ >= poolPrice_ ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1 * 1e18 - Maths.wdiv(thresholdPrice_, poolPrice_)));
     }
 
 
