@@ -12,7 +12,6 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
-import "forge-std/console.sol";
 
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
@@ -283,13 +282,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
 
         uint256 poolPrice = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
-        
         // bondFactor = min(30%, max(1%, (poolPrice - thresholdPrice) / poolPrice))
-        uint256 bondFactor = Maths.min(3e17, Maths.max(1e16, Maths.WAD - Maths.wdiv(thresholdPrice, poolPrice)));
-        uint256 bondSize = Maths.wmul(bondFactor, borrower.debt);
+        uint256 bondFactor = thresholdPrice >= poolPrice ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1 * 1e18 - Maths.wdiv(thresholdPrice, poolPrice)));
+        uint256 bondSize   = Maths.wmul(bondFactor, borrower.debt);
 
+        uint128 kickTime = uint128(block.timestamp);
         liquidations[borrower_] = LiquidationInfo({
-            kickTime:            uint128(block.timestamp),
+            kickTime:            kickTime,
             referencePrice:      _indexToPrice(_hpbIndex()),
             collateral:          borrower.collateral,
             debt:                borrower.debt,
@@ -297,12 +296,12 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             bondSize:            bondSize
         });
 
+        auctions.upsert(borrower_, kickTime);
         liquidationDebt += borrower.debt;
-        borrowerDebt    -= borrower.debt;
-        delete borrowers[borrower_];
 
         loans.remove(borrower_);
-        auctions.upsert(borrower_, uint128(block.timestamp));
+        borrowerDebt -= borrower.debt;
+        delete borrowers[borrower_];
 
         emit Kick(borrower_, borrower.debt, borrower.collateral);
         quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
