@@ -416,7 +416,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
-        return _findIndexOfSum(borrowerDebt + additionalDebt_);
+        return _findIndexOfSum(borrowerDebt + liquidationDebt + additionalDebt_);
     }
 
     /**
