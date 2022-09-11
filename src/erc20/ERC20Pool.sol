@@ -323,9 +323,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 timePassed = (block.timestamp - uint256(liquidation.kickTime) - 1 hours) / 3600;
         uint256 price = Maths.wdiv(Maths.WAD, Maths.wpow(2e18, timePassed));
 
-        console.log("postExp - ", price);
-        console.log("price here - ", price);
-
         price = 10 * Maths.wmul(liquidation.referencePrice, price);
 
         //uint256 neutralPrice = Maths.wmul(thresholdPrice, Maths.wdiv(poolPriceEma, lupEma));

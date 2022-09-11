@@ -111,6 +111,20 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         assertEq(_pool.loansCount(), LOANS_COUNT);
     }
 
+    function testGasLoadERC20PoolGasRepayAllLoans() public {
+        assertEq(_pool.loansCount(), LOANS_COUNT);
+
+        for (uint256 i; i < LOANS_COUNT; i++) {
+            address borrower = _borrowers[i];
+            (, uint256 pendingDebt, , ) = _pool.borrowerInfo(borrower);
+            vm.prank(borrower);
+            _pool.repay(borrower, pendingDebt);
+
+        }
+
+        assertEq(_pool.loansCount(), 0);
+    }
+
     function testGasLoadERC20PoolGasExerciseBorrowMoreForAllBorrowers() public {
         assertEq(_pool.loansCount(), LOANS_COUNT);
 
@@ -129,6 +143,35 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         assertEq(_pool.loansCount(), LOANS_COUNT);
     }
 
+    function testGasLoadERC20PoolGasExerciseKickBadLoanFromHighestTP() public {
+        address kicker    = _lenders[0];
+
+        vm.startPrank(kicker);
+        for (uint256 i; i < LOANS_COUNT; i ++) {
+            uint256 snapshot = vm.snapshot();
+            vm.warp(8640000000);
+            _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
+
+            assertEq(_pool.loansCount(), LOANS_COUNT - 1);
+            vm.revertTo(snapshot);
+        }
+        vm.stopPrank();
+    }
+
+    function testGasLoadERC20PoolGasExerciseKickBadLoanFromLowestTP() public {
+        address kicker    = _lenders[0];
+
+        vm.startPrank(kicker);
+        for (uint256 i; i < LOANS_COUNT; i ++) {
+            uint256 snapshot = vm.snapshot();
+            vm.warp(8640000000);
+            _pool.kick(_borrowers[i]);
+
+            assertEq(_pool.loansCount(), LOANS_COUNT - 1);
+            vm.revertTo(snapshot);
+        }
+        vm.stopPrank();
+    }
 
     /*************************/
     /*** Utility Functions ***/
@@ -140,7 +183,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
 
             address lender = address(uint160(uint256(keccak256(abi.encodePacked(i, 'lender')))));
 
-            _mintQuoteAndApproveTokens(lender, 200_000 * 1e18);
+            _mintQuoteAndApproveTokens(lender, 300_000_000_000 * 1e18);
 
             vm.startPrank(lender);
             _pool.addQuoteToken(100_000 * 1e18, 7388 - i);
