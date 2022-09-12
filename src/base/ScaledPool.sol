@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 
 import { Clone }          from "@clones/Clone.sol";
 import { ERC20 }          from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20Burnable }  from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { SafeERC20 }      from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Multicall }      from "@openzeppelin/contracts/utils/Multicall.sol";
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
@@ -17,13 +18,7 @@ import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
 import { Heap }           from "../libraries/Heap.sol";
 
-// TODO: replace this with OZ BurnableToken thing?
-interface AjnaTokenLike {
-    function burn(uint256 amount) external;
-    // FIXME: these aren't real
-//    function safeTransfer(address to, uint256 value) external;
-//    function safeTransferFrom(address from, address to, uint256 value) external;
-}
+import "forge-std/console.sol";
 
 abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     using SafeERC20 for ERC20;
@@ -261,9 +256,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
         emit ReserveAuction(reserveAuctionUnclaimed, price);
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
-        AjnaTokenLike ajnaToken = AjnaTokenLike(ajnaTokenAddress);
-        ERC20(address(ajnaToken)).safeTransferFrom(msg.sender, address(this), ajnaRequired);
-        ajnaToken.burn(ajnaRequired);
+        ERC20(ajnaTokenAddress).safeTransferFrom(msg.sender, address(this), ajnaRequired);
+        ERC20Burnable(ajnaTokenAddress).burn(ajnaRequired);
     }
 
 
@@ -504,6 +498,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (reserveAuctionKicked == 0) {
             _price = 0;
         } else {
+            // FIXME: because exponents must be integers, will only update once per hour
             uint256 hoursElapsed = (Maths.wad(block.timestamp - reserveAuctionKicked) / 1 hours) / 1e18;
             _price = hoursElapsed > 72 ? 0 : 1_000_000_000 * Maths.wpow(0.5 * 1e18, hoursElapsed);
         }

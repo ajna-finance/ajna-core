@@ -85,6 +85,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
     function testClaimableReserveAuction() external {
         uint256 expectedPrice = 1_000_000_000 * 1e18;
         uint256 expectedReserves = _collectionPool.reserves();
+        assertEq(expectedReserves, 610.479702351371553626 * 1e18);
+        uint256 expectedQuoteBalance = _quote.balanceOf(_bidder);
 
         // kick off a new auction
         vm.expectEmit(true, true, true, true);
@@ -109,10 +111,50 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         changePrank(_bidder);
         vm.expectEmit(true, true, true, true);
         emit ReserveAuction(310.479702351371553626 * 1e18, expectedPrice);
-//        vm.expectEmit(false, false, false, false);  // FIXME: tries to compare with NFT Transfer method
-//        emit Transfer(address(_collectionPool), address(_bidder), 300 * 1e18);
-//        vm.expectEmit(true, true, false, true);
-//        emit Transfer(_bidder, address(_collectionPool), 0.0196608 * 1e18);
         _collectionPool.takeReserves(300 * 1e18);
+        expectedQuoteBalance += 300 * 1e18;
+        assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
+        assertEq(_ajna.balanceOf(_bidder), 0.9803392 * 1e18);
+        expectedReserves -= 300 * 1e18;
+        _assertReserveAuction(
+            ReserveAuctionState({
+                claimableReservesRemaining: expectedReserves,
+                auctionPrice:               expectedPrice
+            })
+        );
+
+        // bid max amount
+        skip(5 minutes);
+//        expectedPrice = 12_222 * 1e18;    // FIXME: price won't update until an hour passes
+        _assertReserveAuction(
+            ReserveAuctionState({
+                claimableReservesRemaining: expectedReserves,
+                auctionPrice:               expectedPrice
+            })
+        );
+        vm.expectEmit(true, true, true, true);
+        emit ReserveAuction(0, expectedPrice);
+        _collectionPool.takeReserves(400 * 1e18);
+        expectedQuoteBalance += expectedReserves;
+        assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
+        assertEq(_ajna.balanceOf(_bidder), 0.959991602226700514 * 1e18);
+        expectedReserves = 0;
+        _assertReserveAuction(
+            ReserveAuctionState({
+                claimableReservesRemaining: expectedReserves,
+                auctionPrice:               expectedPrice
+            })
+        );
+
+        // ensure take reverts after auction ends
+        skip(72 hours);
+        vm.expectRevert(IScaledPool.NoAuction.selector);
+        _collectionPool.takeReserves(777 * 1e18);
+        _assertReserveAuction(
+            ReserveAuctionState({
+                claimableReservesRemaining: 0,
+                auctionPrice:               0
+            })
+        );
     }
 }
