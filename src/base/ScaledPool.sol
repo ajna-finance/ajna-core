@@ -237,6 +237,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     function startClaimableReserveAuction() external override {
         reserveAuctionKicked = block.timestamp;
+        console.log("borrowerDebt:            %s", borrowerDebt);
+        console.log("borrowerDebt less 50bps: %s", Maths.wmul(0.995 * 1e18, borrowerDebt));
+        console.log("pool balance:            %s", quoteToken().balanceOf(address(this)));
+        console.log("pool size:               %s", this.poolSize());
+        console.log("liquidationBondEscrowed: %s", liquidationBondEscrowed);
+        console.log("reserveAuctionUnclaimed: %s", reserveAuctionUnclaimed);
         uint256 claimableReserves = Maths.wmul(0.995 * 1e18, borrowerDebt)
                                         + quoteToken().balanceOf(address(this))
                                         - this.poolSize()
@@ -251,7 +257,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
         amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
         uint256 price = _reserveAuctionPrice();
-        uint256 ajnaRequired = Maths.wdiv(amount_, price);
+        uint256 ajnaRequired = Maths.wmul(amount_, price);
         reserveAuctionUnclaimed -= amount_;
 
         emit ReserveAuction(reserveAuctionUnclaimed, price);
@@ -523,7 +529,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function reserves() external view override returns (uint256) {
-        return borrowerDebt + quoteToken().balanceOf(address(this)) - this.poolSize() - liquidationBondEscrowed - reserveAuctionUnclaimed;
+        return borrowerDebt
+            + quoteToken().balanceOf(address(this))
+            - this.poolSize()
+            - liquidationBondEscrowed
+            - reserveAuctionUnclaimed;
     }
 
     function depositAt(uint256 index_) external view override returns (uint256) {

@@ -28,8 +28,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         poolAddresses_[0] = address(_collectionPool);
         _mintAndApproveQuoteTokens(poolAddresses_, _lender,   250_000 * 1e18);
         _mintAndApproveQuoteTokens(poolAddresses_, _borrower, 5_000 * 1e18);
-        _mintAndApproveAjnaTokens( poolAddresses_, _bidder,   1 * 1e18);
-        assertEq(_ajna.balanceOf(_bidder), 1 * 1e18);
+        _mintAndApproveAjnaTokens( poolAddresses_, _bidder,   40_000 * 1e18);
+        assertEq(_ajna.balanceOf(_bidder), 40_000 * 1e18);
         _mintAndApproveCollateralTokens(poolAddresses_, _borrower, 12);
 
         // lender adds liquidity and borrower draws debt
@@ -62,10 +62,6 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
             })
         );
         skip(26 weeks);
-
-        // borrower repays debt
-        _collectionPool.repay(_borrower, 205_000 * 1e18);
-        assertEq(_collectionPool.reserves(), 610.479702351371553626 * 1e18);
     }
 
     function testClaimableReserveNoAuction() external {
@@ -80,15 +76,21 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         // ensure cannot take when no auction was started
         vm.expectRevert(IScaledPool.NoAuction.selector);
         _collectionPool.takeReserves(555 * 1e18);
+        assertEq(_collectionPool.reserves(), 168.26923076923085 * 1e18);
     }
 
     function testClaimableReserveAuction() external {
+        // borrower repays all debt (auction for full reserves)
+        changePrank(_borrower);
+        _collectionPool.repay(_borrower, 205_000 * 1e18);
+        assertEq(_collectionPool.reserves(), 610.479702351371553626 * 1e18);
+
+        // kick off a new auction
         uint256 expectedPrice = 1_000_000_000 * 1e18;
         uint256 expectedReserves = _collectionPool.reserves();
         assertEq(expectedReserves, 610.479702351371553626 * 1e18);
         uint256 expectedQuoteBalance = _quote.balanceOf(_bidder);
-
-        // kick off a new auction
+        changePrank(_bidder);
         vm.expectEmit(true, true, true, true);
         emit ReserveAuction(expectedReserves, expectedPrice);
         _collectionPool.startClaimableReserveAuction();
@@ -98,23 +100,23 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
                 auctionPrice:               expectedPrice
             })
         );
+        assertEq(_collectionPool.reserves(), 0);
 
         // bid once the price becomes attractive
-        skip(16 hours);
-        expectedPrice = 15_258.7890625 * 1e18;
+        skip(24 hours);
+        expectedPrice = 59.604644775 * 1e18;
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
                 auctionPrice:               expectedPrice
             })
         );
-        changePrank(_bidder);
         vm.expectEmit(true, true, true, true);
         emit ReserveAuction(310.479702351371553626 * 1e18, expectedPrice);
         _collectionPool.takeReserves(300 * 1e18);
         expectedQuoteBalance += 300 * 1e18;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
-        assertEq(_ajna.balanceOf(_bidder), 0.9803392 * 1e18);
+        assertEq(_ajna.balanceOf(_bidder), 22_118.6065675 * 1e18);
         expectedReserves -= 300 * 1e18;
         _assertReserveAuction(
             ReserveAuctionState({
@@ -137,7 +139,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _collectionPool.takeReserves(400 * 1e18);
         expectedQuoteBalance += expectedReserves;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
-        assertEq(_ajna.balanceOf(_bidder), 0.959991602226700514 * 1e18);
+        assertEq(_ajna.balanceOf(_bidder), 3_612.574198998766312082 * 1e18);
         expectedReserves = 0;
         _assertReserveAuction(
             ReserveAuctionState({
@@ -156,5 +158,40 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
                 auctionPrice:               0
             })
         );
+        assertEq(_collectionPool.reserves(), 0);
+    }
+
+    function testReserveAuctionPartiallyTaken() external {
+        // borrower repays partial debt (auction leaves small buffer in reserves)
+        changePrank(_borrower);
+        _collectionPool.repay(_borrower, 50_000 * 1e18);
+        assertEq(_collectionPool.reserves(), 610.479702351371553626 * 1e18);
+        uint256 expectedReserves = _collectionPool.reserves();
+
+        changePrank(_bidder);
+        // _collectionPool.startClaimableReserveAuction();  // FIXME: underflow because CR formula returns negative value
+        //assertEq(_collectionPool.reserves(), 5.555 * 1e18);
+
+//        // partial take
+//        skip(1 days);
+//        uint256 expectedPrice = 59.604644775 * 1e18;
+//        _collectionPool.takeReserves(200 * 1e18);
+//        expectedReserves -= 200 * 1e18;
+//        _assertReserveAuction(
+//            ReserveAuctionState({
+//                claimableReservesRemaining: expectedReserves,
+//                auctionPrice:               expectedPrice
+//            })
+//        );
+//
+//        // wait until auction ends
+//        skip(3 days);
+//        expectedPrice = 0;
+//        _assertReserveAuction(
+//            ReserveAuctionState({
+//                claimableReservesRemaining: expectedReserves,
+//                auctionPrice:               expectedPrice
+//            })
+//        );
     }
 }
