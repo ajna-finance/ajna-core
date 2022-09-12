@@ -36,10 +36,6 @@ library BucketMath {
      */
     int256 public constant FLOAT_STEP_INT = 1.005 * 10**18;
 
-    function abs(int256 x) private pure returns (uint256) {
-        return x >= 0 ? uint256(x) : uint256(-x);
-    }
-
     /**
      *  @notice Calculates the index for a given bucket price
      *  @dev    Throws if price exceeds maximum constant
