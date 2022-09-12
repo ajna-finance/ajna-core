@@ -280,3 +280,50 @@ contract HeapTest is DSTestPlus {
     }
 
 }
+
+contract HeapGasLoadTest is DSTestPlus {
+    HeapInstance private _loans;
+    address[] private _borrowers;
+    uint256 private constant NODES_COUNT = 10_000;
+
+    function setUp() public {
+        _loans = new HeapInstance();
+        for (uint256 i; i < NODES_COUNT; i++) {
+                address borrower = makeAddr(vm.toString(i));
+            _loans.upsertTp(borrower, 1 * 1e18 + i * 1e18);
+            _borrowers.push(borrower);
+        }
+    }
+
+    function testGasLoadHeapGasExerciseDeleteOnAllNodes() public {
+        assertEq(_loans.getTotalTps(), NODES_COUNT + 1); // account node 0 too
+
+        for (uint256 i; i < NODES_COUNT; i++) {
+            uint256 snapshot = vm.snapshot();
+            assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+
+            _loans.removeTp(_borrowers[i]);
+
+            assertEq(_loans.getTotalTps(), NODES_COUNT);
+            vm.revertTo(snapshot);
+        }
+
+        assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+    }
+
+    function testGasLoadHeapGasExerciseUpsertOnAllNodes() public {
+        assertEq(_loans.getTotalTps(), NODES_COUNT + 1); // account node 0 too
+
+        for (uint256 i; i < NODES_COUNT; i++) {
+            uint256 snapshot = vm.snapshot();
+            assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+
+            _loans.upsertTp(_borrowers[i], 1_000_000 * 1e18 + i * 1e18);
+
+            assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+            vm.revertTo(snapshot);
+        }
+
+        assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
+    }
+}
