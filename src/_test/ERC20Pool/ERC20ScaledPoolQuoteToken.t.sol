@@ -555,9 +555,17 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
             })
         );
 
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2549, 2552, 5_000 * 1e18, BucketMath.MAX_PRICE);
-        _pool.moveQuoteToken(5_000 * 1e18, 2549, 2552);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       5_000 * 1e18,
+                fromIndex:    2549,
+                toIndex:      2552,
+                newLup:       BucketMath.MAX_PRICE,
+                lpRedeemFrom: 5_000 * 1e27,
+                lpRedeemTo:   5_000 * 1e27
+            })
+        );
 
         lps[0] = BucketLP({index: 2549, balance: 35_000 * 1e27, time: 0});
         lps[1] = BucketLP({index: 2552, balance: 5_000 * 1e27, time: 0});
@@ -568,9 +576,17 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
             })
         );
 
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2549, 2540, 5_000 * 1e18, BucketMath.MAX_PRICE);
-        _pool.moveQuoteToken(5_000 * 1e18, 2549, 2540);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       5_000 * 1e18,
+                fromIndex:    2549,
+                toIndex:      2540,
+                newLup:       BucketMath.MAX_PRICE,
+                lpRedeemFrom: 5_000 * 1e27,
+                lpRedeemTo:   5_000 * 1e27
+            })
+        );
 
         lps = new BucketLP[](3);
         lps[0] = BucketLP({index: 2540, balance: 5_000 * 1e27, time: 0});
@@ -583,9 +599,17 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
             })
         );
 
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2551, 2777, 15_000 * 1e18, BucketMath.MAX_PRICE);
-        _pool.moveQuoteToken(15_000 * 1e18, 2551, 2777);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       15_000 * 1e18,
+                fromIndex:    2551,
+                toIndex:      2777,
+                newLup:       BucketMath.MAX_PRICE,
+                lpRedeemFrom: 15_000 * 1e27,
+                lpRedeemTo:   15_000 * 1e27
+            })
+        );
 
         lps = new BucketLP[](5);
         lps[0] = BucketLP({index: 2540, balance: 5_000 * 1e27, time: 0});
@@ -648,9 +672,17 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         _pool.moveQuoteToken(40_000 * 1e18, 4549, 6000);
 
         // should be able to moveQuoteToken if properly specified
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 4549, 4550, 10_000 * 1e18, _pool.indexToPrice(4551));
-        _pool.moveQuoteToken(10_000 * 1e18, 4549, 4550);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       10_000 * 1e18,
+                fromIndex:    4549,
+                toIndex:      4550,
+                newLup:       _pool.indexToPrice(4551),
+                lpRedeemFrom: 10_000 * 1e27,
+                lpRedeemTo:   10_000 * 1e27
+            })
+        );
     }
 
     function testMoveQuoteTokenWithDebt() external {
@@ -683,12 +715,17 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
 
         // lender moves some liquidity below the pool threshold price; penalty should be assessed
         skip(16 hours);
-        changePrank(_lender);
-        assertEq(_pool.priceToIndex(400 * 1e18), 2954);
-        uint256 moved = 2_497.596153846153845000 * 1e18;
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2873, 2954, moved, _pool.lup());
-        _pool.moveQuoteToken(2500 * 1e18, 2873, 2954);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       2_500 * 1e18,
+                fromIndex:    2873,
+                toIndex:      2954,
+                newLup:       _pool.lup(),
+                lpRedeemFrom: 2_499.877878608019467246904020519 * 1e27,
+                lpRedeemTo:   2_497.596153846153845 * 1e27
+            })
+        );
 
         // another lender provides liquidity to prevent LUP from moving
         skip(1 hours);
@@ -702,11 +739,17 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
 
         // lender moves more liquidity; no penalty assessed as sufficient time has passed
         skip(12 hours);
-        changePrank(_lender);
-        moved = 2500 * 1e18;
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2873, 2954, moved, _pool.lup());
-        _pool.moveQuoteToken(moved, 2873, 2954);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       2_500 * 1e18,
+                fromIndex:    2873,
+                toIndex:      2954,
+                newLup:       _pool.lup(),
+                lpRedeemFrom: 2_499.778568979414622058441434089 * 1e27,
+                lpRedeemTo:   2_500 * 1e27
+            })
+        );
 
         // after a week, another lender funds the pool
         skip(7 days);

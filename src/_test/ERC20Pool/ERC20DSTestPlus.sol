@@ -68,6 +68,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 lpRedeemTo;
     }
 
+    struct MoveLiquiditySpecs {
+        address from;
+        uint256 amount;
+        uint256 fromIndex; 
+        uint256 toIndex;
+        uint256 newLup;
+        uint256 lpRedeemFrom;
+        uint256 lpRedeemTo;
+    }
+
     struct RemoveAllLiquiditySpecs {
         address from;
         uint256 index;
@@ -261,6 +271,15 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit MoveCollateral(specs_.from, specs_.fromIndex, specs_.toIndex, specs_.amount);
         (uint256 lpbFrom, uint256 lpbTo) = _pool.moveCollateral(specs_.amount, specs_.fromIndex, specs_.toIndex);
+        assertEq(lpbFrom, specs_.lpRedeemFrom);
+        assertEq(lpbTo, specs_.lpRedeemTo);
+    }
+
+    function _moveLiquidity(MoveLiquiditySpecs memory specs_) internal {
+        changePrank(specs_.from);
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(specs_.from, specs_.fromIndex, specs_.toIndex, specs_.lpRedeemTo / 1e9, specs_.newLup);
+        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(specs_.amount, specs_.fromIndex, specs_.toIndex);
         assertEq(lpbFrom, specs_.lpRedeemFrom);
         assertEq(lpbTo, specs_.lpRedeemTo);
     }
