@@ -311,32 +311,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _claimableReserves() internal view returns (uint256) {
-        // Three implementations to compare gas
-
-        // 1 - no checks (causes underflow in situations such as partial repayment)
-//        return Maths.wmul(0.995 * 1e18, borrowerDebt)
-//            + quoteToken().balanceOf(address(this))
-//            - this.poolSize()
-//            - liquidationBondEscrowed
-//            - reserveAuctionUnclaimed;
-
-        // 2 - Maths.min - 3543 worst gas
         uint256 claimable = Maths.wmul(0.995 * 1e18, borrowerDebt) + quoteToken().balanceOf(address(this));
         claimable -= Maths.min(claimable, this.poolSize());
         claimable -= Maths.min(claimable, liquidationBondEscrowed);
         claimable -= Maths.min(claimable, reserveAuctionUnclaimed);
         return claimable;
-//
-//        // 3 - conditionals - 3573 worst gas
-//        uint256 claimable = Maths.wmul(0.995 * 1e18, borrowerDebt) + quoteToken().balanceOf(address(this));
-//        uint256 poolSize = this.poolSize();
-//        if (poolSize > claimable) return 0;
-//        claimable -= poolSize;
-//        if (liquidationBondEscrowed > claimable) return 0;
-//        claimable -= liquidationBondEscrowed;
-//        if (reserveAuctionUnclaimed > claimable) return 0;
-//        claimable -= reserveAuctionUnclaimed;
-//        return claimable;
     }
 
     function _redeemLPForQuoteToken(
@@ -527,17 +506,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (reserveAuctionKicked == 0) {
             _price = 0;
         } else {
-            // FIXME: This only gets us a little over an hour into an auction, where RAY precision drops off
-//            uint256 minutesElapsed = (Maths.wad(block.timestamp - reserveAuctionKicked) / 1 minutes) / 1e18;
-//            uint256 mog = Maths.rpow(Maths.wadToRay(0.5 * 1e18), minutesElapsed);
-//            _price = 1_000_000_000 * PRBMathUD60x18.pow(mog, 0.016666666666666667 * 1e18);  // mog^(1/60)
-//            console.log("minutes: %s", minutesElapsed);
-//            console.log("mog:     %s", mog);
-//            console.log("price:   %s", _price);
-
-            // FIXME: because exponents must be integers, will only update once per hour
-            uint256 hoursElapsed = (Maths.wad(block.timestamp - reserveAuctionKicked) / 1 hours) / 1e18;
-            _price = hoursElapsed > 72 ? 0 : 1_000_000_000 * Maths.wpow(0.5 * 1e18, hoursElapsed);
+            uint256 minuteHalfLife = 0.988514020352896 * 1e18;              // TODO: define constant
+            uint256 secondsElapsed = block.timestamp - reserveAuctionKicked;
+            uint256 hoursElapsed = secondsElapsed / 3600;
+            uint256 minutesElapsed = secondsElapsed % 3600 / 60;
+            uint256 hoursComponent = Maths.wpow(0.5 * 1e18, hoursElapsed);  // TODO: bitshift by hours instead
+            uint256 minutesComponent = Maths.wpow(minuteHalfLife, minutesElapsed);
+            _price = 1_000_000_000 * Maths.wmul(hoursComponent, minutesComponent);
         }
     }
 

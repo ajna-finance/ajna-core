@@ -90,6 +90,47 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _collectionPool.startClaimableReserveAuction();
     }
 
+    function testReserveAuctionPricing() external {
+        // borrower repays all debt (auction for full reserves)
+        changePrank(_borrower);
+        _collectionPool.repay(_borrower, 205_000 * 1e18);
+        assertEq(_collectionPool.reserves(), 610.479702351371553626 * 1e18);
+
+        // kick off a new auction
+        changePrank(_bidder);
+        uint256 expectedReserves = 604.374905327857838090 * 1e18;
+        _collectionPool.startClaimableReserveAuction();
+        _assertReserveAuctionPrice(1_000_000_000 * 1e18);
+
+        // check prices
+        skip(37 minutes);
+        _assertReserveAuctionPrice(652176034.882778815 * 1e18);
+        skip(23 hours);     // 23 hours 37 minutes
+        _assertReserveAuctionPrice(77.745441781 * 1e18);
+        skip(1400);         // 24 hours 0 minutes 20 seconds
+        _assertReserveAuctionPrice(59.604644775 * 1e18);
+        skip(100);          // 24 hours 2 minutes
+        _assertReserveAuctionPrice(58.243272807 * 1e18);
+        skip(58 minutes);   // 25 hours
+        _assertReserveAuctionPrice(29.802322388 * 1e18);
+        skip(5 hours);      // 30 hours
+        _assertReserveAuctionPrice(0.931322575 * 1e18);
+        skip(121 minutes);  // 32 hours 1 minute
+        _assertReserveAuctionPrice(0.230156356 * 1e18);
+        skip(7700 seconds); // 34 hours 9 minutes 20 seconds
+        _assertReserveAuctionPrice(0.052459681 * 1e18);
+        skip(8 hours);      // 42 hours 9 minutes 20 seconds
+        _assertReserveAuctionPrice(0.000204921 * 1e18);
+        skip(6 hours);      // 42 hours 9 minutes 20 seconds
+        _assertReserveAuctionPrice(0.000003202 * 1e18);
+        skip(3100 seconds); // 43 hours
+        _assertReserveAuctionPrice(0.000001756 * 1e18);
+        skip(5 hours);      // 48 hours
+        _assertReserveAuctionPrice(0.000000055 * 1e18);
+        skip(12 hours);     // 60 hours
+        _assertReserveAuctionPrice(0);
+    }
+
     function testClaimableReserveAuction() external {
         // borrower repays all debt (auction for full reserves)
         changePrank(_borrower);
@@ -142,7 +183,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
 
         // bid max amount
         skip(5 minutes);
-//        expectedPrice = 12_222 * 1e18;    // FIXME: price won't update until an hour passes
+        expectedPrice = 56.25929312 * 1e18;
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
@@ -154,7 +195,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _collectionPool.takeReserves(400 * 1e18);
         expectedQuoteBalance += expectedReserves;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
-        assertEq(_ajna.balanceOf(_bidder), 3_976.448457008778648946 * 1e18);
+        assertEq(_ajna.balanceOf(_bidder), 4_994.689550287796185205 * 1e18);
         expectedReserves = 0;
         _assertReserveAuction(
             ReserveAuctionState({
