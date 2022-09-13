@@ -155,8 +155,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Calculate exchange rate before new collateral has been accounted for.
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
         Bucket memory bucket        = buckets[index_];
+        uint256 price               = _indexToPrice(index_);
         uint256 rate                = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 quoteValue          = Maths.wmul(amount_, _indexToPrice(index_));
+        uint256 quoteValue          = Maths.wmul(amount_, price);
         lpbChange_                 = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
         bucket.lpAccumulator       += lpbChange_;
         bucket.availableCollateral += amount_;
@@ -167,7 +168,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRateAndEMAs(curDebt, _lup());
 
         // move required collateral from sender to pool
-        emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
+        emit AddCollateral(msg.sender, price, amount_);
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
