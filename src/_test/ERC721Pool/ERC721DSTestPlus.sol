@@ -176,7 +176,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _assertReserveAuctionPrice(uint256 expectedPrice) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        (uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.reserveAuction();
+        (, uint256 auctionPrice, ) = pool.reserveAuction();
         assertEq(auctionPrice, expectedPrice);
     }
 }

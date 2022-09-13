@@ -99,7 +99,6 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
 
         // kick off a new auction
         changePrank(_bidder);
-        uint256 expectedReserves = 604.374905327857838090 * 1e18;
         _collectionPool.startClaimableReserveAuction();
         _assertReserveAuctionPrice(1_000_000_000 * 1e18);
 
