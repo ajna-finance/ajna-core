@@ -139,6 +139,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 pendingDebt;
         uint256 collateral;
         uint256 collateralization;
+        uint256 lupFactor;
         uint256 inflator;
     }
 
@@ -360,10 +361,11 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _assertBorrower(BorrowerState memory state_) internal {
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 lupFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
         assertEq(debt,        state_.debt);
         assertEq(pendingDebt, state_.pendingDebt);
         assertEq(col,         state_.collateral);
+        assertEq(lupFactor,   state_.lupFactor);
         assertEq(inflator,    state_.inflator);
 
         assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, _pool.lup()), state_.collateralization);

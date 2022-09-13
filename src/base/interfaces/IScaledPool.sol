@@ -286,12 +286,6 @@ interface IScaledPool {
     function lupColEma() external view returns (uint256 lupColEma_);
 
     /**
-     *  @notice Returns the `lupEma` state variable.
-     *  @return lupEma_ Exponential moving average of the lowest utilized price.
-     */
-    function lupEma() external view returns (uint256 lupEma_);
-
-    /**
      *  @notice Returns the `minFee` state variable.
      *  @return minFee_ TODO
      */
@@ -302,12 +296,6 @@ interface IScaledPool {
      *  @return pledgedCollateral_ The total pledged collateral in the system, in WAD units.
      */
     function pledgedCollateral() external view returns (uint256 pledgedCollateral_);
-
-    /**
-     *  @notice Returns the `poolPriceEma` state variable.
-     *  @return poolPriceEma_ Exponential moving average of the pool price (debt / encumbered collateral).
-     */
-    function poolPriceEma() external view returns (uint256 poolPriceEma_);
 
     /**
      *  @notice Returns the `quoteTokenScale` state variable.

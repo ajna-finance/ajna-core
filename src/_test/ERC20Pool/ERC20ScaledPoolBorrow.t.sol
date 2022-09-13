@@ -319,6 +319,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_051.890446235135648008 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.090818626082626625 * 1e18,
+                lupFactor:         2_981.007422784467321543 * 1e18,
                 inflator:          1 * 1e18
             })
         );
@@ -358,6 +359,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_083.636385101213387311 * 1e18,
                 collateral:        60 * 1e18,
                 collateralization: 8.483377444958217435 * 1e18,
+                lupFactor:         2_972.037088529352426932 * 1e18,
                 inflator:          1.003018244385218513 * 1e18
             })
         );
@@ -396,6 +398,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_118.612213260575675180 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.057773002983275249 * 1e18,
+                lupFactor:         2_967.114915734949620331 * 1e18,
                 inflator:          1.004682160092905114 * 1e18
             })
         );
@@ -438,6 +441,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_157.152643010853298669 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.044916376706357985 * 1e18,
+                lupFactor:         2_961.709940599570999250 * 1e18,
                 inflator:          1.006515655675920014 * 1e18
             })
         );
@@ -477,6 +481,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_199.628356897284446170 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.030801136225104189 * 1e18,
+                lupFactor:         2_955.775839211865438160 * 1e18,
                 inflator:          1.008536365727696620 * 1e18
             })
         );
@@ -508,6 +513,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_246.450141935843879765 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.030801136225104189 * 1e18,
+                lupFactor:         2_955.775839211865438160 * 1e18,
                 inflator:          1.008536365727696620 * 1e18
             })
         );
@@ -894,7 +900,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
             })
         );
 
-        (, uint256 pendingDebt, , ) = _pool.borrowerInfo(_borrower);
+        (, uint256 pendingDebt, , , ) = _pool.borrowerInfo(_borrower);
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert("H:I:VAL_EQ_0");
