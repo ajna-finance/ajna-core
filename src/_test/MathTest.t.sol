@@ -54,6 +54,8 @@ contract MathTest is DSTestPlus {
         uint256 claimableCollateral2 = lpBalance * 1e36 / exchangeRate / price;                  // truncates
         assertEq(claimableCollateral1, 33.726184963566645999 * 1e18);
         assertEq(claimableCollateral2, 33.726184963566645998 * 1e18);
+
+        assertEq(Maths.wdiv(1 * 1e18, 60 * 1e18), 0.016666666666666667 * 1e18);
     }
 
     function testWadToIntRoundingDown() external {
@@ -70,7 +72,9 @@ contract MathTest is DSTestPlus {
         assertEq(PRBMathUD60x18.exp(1.53 * 1e18), 4.618176822299780807 * 1e18);
     }
 
-    function testWpow() external {
+    function testPow() external {
         assertEq(Maths.wpow(3 * 1e18, 3), 27 * 1e18);
+        assertEq(Maths.rpow(0.5 * 1e27, 60), 0.000000000000000000867361738 * 1e27);
+        assertEq(Maths.rpow(0.5 * 1e27, 80), 0.000000000000000000000000827 * 1e27);  // FIXME: not much precision
     }
 }

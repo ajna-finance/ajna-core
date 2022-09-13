@@ -236,20 +236,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     /*******************************/
 
     function startClaimableReserveAuction() external override {
+        uint256 claimable = _claimableReserves();
+        uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
+        reserveAuctionUnclaimed += claimable - kickerAward;
+        if (reserveAuctionUnclaimed == 0) revert KickNoReserves();
+
         reserveAuctionKicked = block.timestamp;
-        console.log("borrowerDebt:            %s", borrowerDebt);
-        console.log("borrowerDebt less 50bps: %s", Maths.wmul(0.995 * 1e18, borrowerDebt));
-        console.log("pool balance:            %s", quoteToken().balanceOf(address(this)));
-        console.log("pool size:               %s", this.poolSize());
-        console.log("liquidationBondEscrowed: %s", liquidationBondEscrowed);
-        console.log("reserveAuctionUnclaimed: %s", reserveAuctionUnclaimed);
-        uint256 claimableReserves = Maths.wmul(0.995 * 1e18, borrowerDebt)
-                                        + quoteToken().balanceOf(address(this))
-                                        - this.poolSize()
-                                        - liquidationBondEscrowed
-                                        - reserveAuctionUnclaimed;
-        reserveAuctionUnclaimed += claimableReserves;
         emit ReserveAuction(reserveAuctionUnclaimed, _reserveAuctionPrice());
+        quoteToken().safeTransfer(msg.sender, kickerAward / quoteTokenScale);
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
@@ -314,6 +308,35 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 elapsed = (block.timestamp - timeOfLiq - 1 hours);
         int256 time_adjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsed));
         price_ = 10 * referencePrice * uint256(PRBMathSD59x18.exp2(time_adjustment));
+    }
+
+    function _claimableReserves() internal view returns (uint256) {
+        // Three implementations to compare gas
+
+        // 1 - no checks (causes underflow in situations such as partial repayment)
+//        return Maths.wmul(0.995 * 1e18, borrowerDebt)
+//            + quoteToken().balanceOf(address(this))
+//            - this.poolSize()
+//            - liquidationBondEscrowed
+//            - reserveAuctionUnclaimed;
+
+        // 2 - Maths.min - 3543 worst gas
+        uint256 claimable = Maths.wmul(0.995 * 1e18, borrowerDebt) + quoteToken().balanceOf(address(this));
+        claimable -= Maths.min(claimable, this.poolSize());
+        claimable -= Maths.min(claimable, liquidationBondEscrowed);
+        claimable -= Maths.min(claimable, reserveAuctionUnclaimed);
+        return claimable;
+//
+//        // 3 - conditionals - 3573 worst gas
+//        uint256 claimable = Maths.wmul(0.995 * 1e18, borrowerDebt) + quoteToken().balanceOf(address(this));
+//        uint256 poolSize = this.poolSize();
+//        if (poolSize > claimable) return 0;
+//        claimable -= poolSize;
+//        if (liquidationBondEscrowed > claimable) return 0;
+//        claimable -= liquidationBondEscrowed;
+//        if (reserveAuctionUnclaimed > claimable) return 0;
+//        claimable -= reserveAuctionUnclaimed;
+//        return claimable;
     }
 
     function _redeemLPForQuoteToken(
@@ -481,7 +504,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 rate = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpbChange_ = Maths.rdiv(Maths.wadToRay(amount_), rate);
         bucket.lpAccumulator += lpbChange_;
-        
+
         _add(index_, amount_);
 
         lup_ = _lup();
@@ -504,6 +527,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (reserveAuctionKicked == 0) {
             _price = 0;
         } else {
+            // FIXME: This only gets us a little over an hour into an auction, where RAY precision drops off
+//            uint256 minutesElapsed = (Maths.wad(block.timestamp - reserveAuctionKicked) / 1 minutes) / 1e18;
+//            uint256 mog = Maths.rpow(Maths.wadToRay(0.5 * 1e18), minutesElapsed);
+//            _price = 1_000_000_000 * PRBMathUD60x18.pow(mog, 0.016666666666666667 * 1e18);  // mog^(1/60)
+//            console.log("minutes: %s", minutesElapsed);
+//            console.log("mog:     %s", mog);
+//            console.log("price:   %s", _price);
+
             // FIXME: because exponents must be integers, will only update once per hour
             uint256 hoursElapsed = (Maths.wad(block.timestamp - reserveAuctionKicked) / 1 hours) / 1e18;
             _price = hoursElapsed > 72 ? 0 : 1_000_000_000 * Maths.wpow(0.5 * 1e18, hoursElapsed);
@@ -526,6 +557,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             buckets[index_].lpAccumulator,       // outstanding LP balance (WAD)
             _scale(index_)                       // lender interest multiplier (WAD)
         );
+    }
+
+    function claimableReserves() external view override returns (uint256) {
+        return _claimableReserves();
     }
 
     function reserves() external view override returns (uint256) {

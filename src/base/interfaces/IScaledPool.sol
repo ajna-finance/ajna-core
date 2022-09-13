@@ -134,6 +134,11 @@ interface IScaledPool {
     error KickNoDebt();
 
     /**
+     *  @notice No pool reserves are claimable.
+     */
+    error KickNoReserves();
+
+    /**
      *  @notice Borrower has a healthy over-collateralized position.
      */
     error LiquidateBorrowerOk();
@@ -486,6 +491,12 @@ interface IScaledPool {
             uint256 lpAccumulator_,
             uint256 scale_
         );
+
+    /**
+     *  @notice Calculates the amount of reserves which can be claimed through a Claimable Reserve Auction.
+     *  @return _claimableReserves Denominated in quote token, or 0 if no reserves can be auctioned.
+     */
+    function claimableReserves() external view returns (uint256 _claimableReserves);
 
     /**
      *  @notice Returns the address of the pool's collateral token
