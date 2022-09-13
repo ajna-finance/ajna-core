@@ -39,23 +39,45 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
     function testScaledPoolDepositQuoteToken() external {
         assertEq(_pool.hpb(), BucketMath.MIN_PRICE);
 
-        // test 10_000 DAI deposit at price of 1 MKR = 3_010.892022197881557845 DAI
-        changePrank(_lender);
-        vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, 2550, 10_000 * 1e18, BucketMath.MAX_PRICE);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(_lender, address(_pool), 10_000 * 1e18);
-        _pool.addQuoteToken(10_000 * 1e18, 2550);
-
-        assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
-        assertEq(_pool.hpb(), _pool.indexToPrice(2550));
-
-        (uint256 lpBalance, ) = _pool.bucketLenders(2550, _lender);
-        assertEq(_pool.poolSize(),         10_000 * 1e18);
-        assertEq(lpBalance,                10_000 * 1e27);
-        assertEq(_pool.exchangeRate(2550), 1 * 1e27);
-
+        // test 10_000 deposit at price of 3_010.892022197881557845
+        Liquidity[] memory amounts = new Liquidity[](1);
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
+        _assertPool(
+            PoolState({
+                htp:                  0,
+                lup:                  BucketMath.MAX_PRICE,
+                poolSize:             10_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                borrowerDebt:         0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+        BucketState[] memory bucketStates = new BucketState[](1);
+        bucketStates[0] = BucketState({index: 2550, LPs: 10_000 * 1e27, collateral: 0});
+        _assertBuckets(bucketStates);
+        BucketLP[] memory lps = new BucketLP[](1);
+        lps[0] = BucketLP({index: 2550, balance: 10_000 * 1e27, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 10_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        190_000 * 1e18);
@@ -65,85 +87,241 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         assertEq(lpAccumulator,       10_000 * 1e27);
         assertEq(availableCollateral, 0);
 
-        // test 20_000 DAI deposit at price of 1 MKR = 2_995.912459898389633881 DAI
-        vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, 2551, 20_000 * 1e18, BucketMath.MAX_PRICE);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(_lender, address(_pool), 20_000 * 1e18);
-        _pool.addQuoteToken(20_000 * 1e18, 2551);
-
-        assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
-
-        (lpBalance, ) = _pool.bucketLenders(2551, _lender);
-        assertEq(_pool.poolSize(), 30_000 * 1e18);
-        assertEq(lpBalance,        20_000 * 1e27);
-
+        // test 20_000 deposit at price of 2_995.912459898389633881
+        amounts[0] = Liquidity({amount: 20_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
+        _assertPool(
+            PoolState({
+                htp:                  0,
+                lup:                  BucketMath.MAX_PRICE,
+                poolSize:             30_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                borrowerDebt:         0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+        bucketStates = new BucketState[](2);
+        bucketStates[0] = BucketState({index: 2550, LPs: 10_000 * 1e27, collateral: 0});
+        bucketStates[0] = BucketState({index: 2551, LPs: 20_000 * 1e27, collateral: 0});
+        _assertBuckets(bucketStates);
+        lps = new BucketLP[](2);
+        lps[0] = BucketLP({index: 2550, balance: 10_000 * 1e27, time: 0});
+        lps[1] = BucketLP({index: 2551, balance: 20_000 * 1e27, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
         // check balances
         assertEq(_quote.balanceOf(address(_pool)),   30_000 * 1e18);
         assertEq(_quote.balanceOf(_lender), 170_000 * 1e18);
 
-        // check bucket balance
-        (lpAccumulator, availableCollateral) = _pool.buckets(2551);
-        assertEq(lpAccumulator,       20_000 * 1e27);
-        assertEq(availableCollateral, 0);
+        // test 40_000 deposit at price of 3_025.946482308870940904 DAI
+        amounts[0] = Liquidity({amount: 40_000 * 1e18, index: 2549, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
+        _assertPool(
+            PoolState({
+                htp:                  0,
+                lup:                  BucketMath.MAX_PRICE,
+                poolSize:             70_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                borrowerDebt:         0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+        bucketStates = new BucketState[](3);
+        bucketStates[0] = BucketState({index: 2549, LPs: 40_000 * 1e27, collateral: 0});
+        bucketStates[1] = BucketState({index: 2550, LPs: 10_000 * 1e27, collateral: 0});
+        bucketStates[2] = BucketState({index: 2551, LPs: 20_000 * 1e27, collateral: 0});
+        _assertBuckets(bucketStates);
+        lps = new BucketLP[](3);
+        lps[0] = BucketLP({index: 2549, balance: 40_000 * 1e27, time: 0});
+        lps[1] = BucketLP({index: 2550, balance: 10_000 * 1e27, time: 0});
+        lps[2] = BucketLP({index: 2551, balance: 20_000 * 1e27, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)), 70_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender),        130_000 * 1e18);
+    }
 
-        // test 40_000 DAI deposit at price of 1 MKR = 3_025.946482308870940904 DAI
-        vm.expectEmit(true, true, false, true);
-        emit AddQuoteToken(_lender, 2549, 40_000 * 1e18, BucketMath.MAX_PRICE);
-        vm.expectEmit(true, true, false, true);
-        emit Transfer(_lender, address(_pool), 40_000 * 1e18);
-        _pool.addQuoteToken(40_000 * 1e18, 2549);
-
-        assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
-
-        (lpBalance, ) = _pool.bucketLenders(2549, _lender);
-        assertEq(_pool.poolSize(), 70_000 * 1e18);
-        assertEq(lpBalance,        40_000 * 1e27);
-
+    function testScaledPoolRemoveQuoteToken() external {
+        Liquidity[] memory amounts = new Liquidity[](3);
+        amounts[0] = Liquidity({amount: 40_000 * 1e18, index: 2549, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 20_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
+        _assertPool(
+            PoolState({
+                htp:                  0,
+                lup:                  BucketMath.MAX_PRICE,
+                poolSize:             70_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                borrowerDebt:         0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+        BucketState[] memory bucketStates = new BucketState[](3);
+        bucketStates[0] = BucketState({index: 2549, LPs: 40_000 * 1e27, collateral: 0});
+        bucketStates[1] = BucketState({index: 2550, LPs: 10_000 * 1e27, collateral: 0});
+        bucketStates[2] = BucketState({index: 2551, LPs: 20_000 * 1e27, collateral: 0});
+        _assertBuckets(bucketStates);
+        BucketLP[] memory lps = new BucketLP[](3);
+        lps[0] = BucketLP({index: 2549, balance: 40_000 * 1e27, time: 0});
+        lps[1] = BucketLP({index: 2550, balance: 10_000 * 1e27, time: 0});
+        lps[2] = BucketLP({index: 2551, balance: 20_000 * 1e27, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 70_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        130_000 * 1e18);
 
-        // check bucket balance
-        (lpAccumulator, availableCollateral) = _pool.buckets(2549);
-        assertEq(lpAccumulator,       40_000 * 1e27);
-        assertEq(availableCollateral, 0);
-    }
-
-    function testScaledPoolRemoveQuoteToken() external {
-        assertEq(_quote.balanceOf(address(_pool)), 0);
-        assertEq(_quote.balanceOf(_lender),        200_000 * 1e18);
-
-        changePrank(_lender);
-        _pool.addQuoteToken(40_000 * 1e18, 2549);
-        _pool.addQuoteToken(10_000 * 1e18, 2550);
-        _pool.addQuoteToken(20_000 * 1e18, 2551);
-
-        (uint256 lpBalance, ) = _pool.bucketLenders(2549, _lender);
-        assertEq(lpBalance, 40_000 * 1e27);
-
-        assertEq(_quote.balanceOf(address(_pool)), 70_000 * 1e18);
-        assertEq(_quote.balanceOf(_lender),        130_000 * 1e18);
-
-        vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_lender, 2549, 5_000 * 1e18, BucketMath.MAX_PRICE);
-        uint256 lpRedeemed = _pool.removeQuoteToken(5_000 * 1e18, 2549);
-        assertEq(lpRedeemed, 5_000 * 1e27);
-
-        (lpBalance, ) = _pool.bucketLenders(2549, _lender);
-        assertEq(lpBalance, 35_000 * 1e27);
-
+        _removeLiquidity(
+            RemoveLiquiditySpecs({
+                from:     _lender,
+                index:    2549,
+                amount:   5_000 * 1e18,
+                penalty:  0,
+                newLup:   BucketMath.MAX_PRICE,
+                lpRedeem: 5_000 * 1e27
+            })
+        );
+        _assertPool(
+            PoolState({
+                htp:                  0,
+                lup:                  BucketMath.MAX_PRICE,
+                poolSize:             65_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                borrowerDebt:         0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+        bucketStates = new BucketState[](3);
+        bucketStates[0] = BucketState({index: 2549, LPs: 35_000 * 1e27, collateral: 0});
+        bucketStates[1] = BucketState({index: 2550, LPs: 10_000 * 1e27, collateral: 0});
+        bucketStates[2] = BucketState({index: 2551, LPs: 20_000 * 1e27, collateral: 0});
+        _assertBuckets(bucketStates);
+        lps = new BucketLP[](3);
+        lps[0] = BucketLP({index: 2549, balance: 35_000 * 1e27, time: 0});
+        lps[1] = BucketLP({index: 2550, balance: 10_000 * 1e27, time: 0});
+        lps[2] = BucketLP({index: 2551, balance: 20_000 * 1e27, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
+        // check balances
         assertEq(_quote.balanceOf(address(_pool)),   65_000 * 1e18);
         assertEq(_quote.balanceOf(_lender), 135_000 * 1e18);
 
-        vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_lender, 2549, 35_000 * 1e18, BucketMath.MAX_PRICE);
-        uint256 removed;
-        (removed, lpRedeemed) = _pool.removeAllQuoteToken(2549);
-        assertEq(removed, 35_000 * 1e18);
-        assertEq(lpRedeemed, 35_000 * 1e27);
+        _removeLiquidity(
+            RemoveLiquiditySpecs({
+                from:     _lender,
+                index:    2549,
+                amount:   35_000 * 1e18,
+                penalty:  0,
+                newLup:   BucketMath.MAX_PRICE,
+                lpRedeem: 35_000 * 1e27
+            })
+        );
+        _assertPool(
+            PoolState({
+                htp:                  0,
+                lup:                  BucketMath.MAX_PRICE,
+                poolSize:             30_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                borrowerDebt:         0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+        bucketStates = new BucketState[](3);
+        bucketStates[0] = BucketState({index: 2549, LPs: 0,             collateral: 0});
+        bucketStates[1] = BucketState({index: 2550, LPs: 10_000 * 1e27, collateral: 0});
+        bucketStates[2] = BucketState({index: 2551, LPs: 20_000 * 1e27, collateral: 0});
+        _assertBuckets(bucketStates);
+        lps = new BucketLP[](3);
+        lps[0] = BucketLP({index: 2549, balance: 0,             time: 0});
+        lps[1] = BucketLP({index: 2550, balance: 10_000 * 1e27, time: 0});
+        lps[2] = BucketLP({index: 2551, balance: 20_000 * 1e27, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
+        // check balances
+        assertEq(_quote.balanceOf(address(_pool)),   30_000 * 1e18);
+        assertEq(_quote.balanceOf(_lender), 170_000 * 1e18);
     }
 
     /**
@@ -152,15 +330,27 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
      *              Attempts to remove more quote tokens than available in bucket.
      */
     function testScaledPoolRemoveQuoteTokenNotAvailable() external {
+        _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         // lender adds initial quote token
-        changePrank(_lender);
-        _pool.addQuoteToken(10_000 * 1e18, 4550);
+        Liquidity[] memory amounts = new Liquidity[](1);
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 4550, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
 
-        changePrank(_borrower);
-        deal(address(_collateral), _borrower,  _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
-        _collateral.approve(address(_pool), 3_500_000 * 1e18);
-        _pool.pledgeCollateral(_borrower, 3_500_000 * 1e18);
-        _pool.borrow(10_000 * 1e18, 4551);
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 3_500_000 * 1e18,
+                borrowAmount: 10_000 * 1e18,
+                indexLimit:   4_551,
+                price:        0.140143083210662942 * 1e18
+            })
+        );
 
         changePrank(_lender);
         vm.expectRevert(IScaledPool.RemoveQuoteLUPBelowHTP.selector);
@@ -174,26 +364,33 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
      *              Attempts to remove quote token when doing so would drive lup below htp.
      */
     function testScaledPoolRemoveQuoteTokenRequireChecks() external {
+        _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         // lender adds initial quote token
-        changePrank(_lender);
-        _pool.addQuoteToken(40_000 * 1e18, 4549);
-        _pool.addQuoteToken(10_000 * 1e18, 4550);
-        _pool.addQuoteToken(20_000 * 1e18, 4551);
-
-        // add collateral and borrow all available quote in the higher priced original 3 buckets
-        _pool.addQuoteToken(30_000 * 1e18, 4990);
-
-        changePrank(_borrower);
-        deal(address(_collateral), _borrower,  _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
-        _collateral.approve(address(_pool), 3_500_000 * 1e18);
-        _pool.pledgeCollateral(_borrower, 3_500_000 * 1e18);
-        _pool.borrow(70_000 * 1e18, 4551);
+        Liquidity[] memory amounts = new Liquidity[](4);
+        amounts[0] = Liquidity({amount: 40_000 * 1e18, index: 4549, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 4550, newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 20_000 * 1e18, index: 4551, newLup: BucketMath.MAX_PRICE});
+        amounts[3] = Liquidity({amount: 30_000 * 1e18, index: 4990, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 3_500_000 * 1e18,
+                borrowAmount: 70_000 * 1e18,
+                indexLimit:   4551,
+                price:        0.139445853940958153 * 1e18
+            })
+        );
 
         // ensure lender cannot withdraw from a bucket with no deposit
         changePrank(_lender1);
         // ensure lender with no LP cannot remove anything
-        (uint256 lpBalance, ) = _pool.bucketLenders(4550, _lender1);
-        assertEq(0, lpBalance);
         vm.expectRevert(IScaledPool.RemoveQuoteNoClaim.selector);
         _pool.removeAllQuoteToken(4550);
 
@@ -214,108 +411,218 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         _pool.removeQuoteToken(15_000 * 1e18, 4550);
 
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
-        emit RemoveQuoteToken(_lender, 4990, 10_000 * 1e18, _pool.indexToPrice(4551));
-        _pool.removeQuoteToken(10_000 * 1e18, 4990);
+        _removeLiquidity(
+            RemoveLiquiditySpecs({
+                from:     _lender,
+                index:    4990,
+                amount:   10_000 * 1e18,
+                penalty:  0,
+                newLup:   _pool.indexToPrice(4551),
+                lpRedeem: 10_000 * 1e27
+            })
+        );
     }
 
     function testScaledPoolRemoveQuoteTokenWithDebt() external {
+        _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 100 * 1e18);
+
         // lender adds initial quote token
         skip(1 minutes);  // prevent deposit from having a zero timestamp
-        changePrank(_lender);
-        _pool.addQuoteToken(3_400 * 1e18, 1606);
-        _pool.addQuoteToken(3_400 * 1e18, 1663);
-        (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.bucketLenders(1606, _lender);
-        uint256 lpb_before = lpBalance;
-        assertEq(lastQuoteDeposit, 60);
+
+        Liquidity[] memory amounts = new Liquidity[](2);
+        amounts[0] = Liquidity({amount: 3_400 * 1e18, index: 1606, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 3_400 * 1e18, index: 1663, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
+
+        BucketState[] memory bucketStates = new BucketState[](2);
+        bucketStates[0] = BucketState({index: 1606, LPs: 3_400 * 1e27, collateral: 0});
+        bucketStates[1] = BucketState({index: 1663, LPs: 3_400 * 1e27, collateral: 0});
+        _assertBuckets(bucketStates);
+        BucketLP[] memory lps = new BucketLP[](2);
+        lps[0] = BucketLP({index: 1606, balance: 3_400 * 1e27, time: 60});
+        lps[1] = BucketLP({index: 1663, balance: 3_400 * 1e27, time: 60});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
         uint256 exchangeRateBefore = _pool.exchangeRate(1606);
+
         skip(59 minutes);
-        (lpBalance, ) = _pool.bucketLenders(1606, _lender);
-        assertEq(lpb_before, lpBalance);
+
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
         assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
         uint256 lenderBalanceBefore = _quote.balanceOf(_lender);
 
         // borrower takes a loan of 3000 quote token
-        changePrank(_borrower);
-        deal(address(_collateral), _borrower, _collateral.balanceOf(_borrower) + 100 * 1e18);
-        _collateral.approve(address(_pool), 100 * 1e18);
-        _pool.pledgeCollateral(_borrower, 100 * 1e18);
-        uint256 limitPrice = _pool.priceToIndex(4_000 * 1e18);
-        assertGt(limitPrice, 1663);
-        _pool.borrow(3_000 * 1e18, limitPrice);
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 100 * 1e18,
+                borrowAmount: 3_000 * 1e18,
+                indexLimit:   _pool.priceToIndex(4_000 * 1e18),
+                price:        333_777.824045947762079231 * 1e18
+            })
+        );
+
         skip(2 hours);
-        (lpBalance, lastQuoteDeposit) = _pool.bucketLenders(1606, _lender);
-        assertEq(lpb_before, lpBalance);
-        assertEq(lastQuoteDeposit, 60);
+        lps[0] = BucketLP({index: 1606, balance: 3_400 * 1e27, time: 60});
+        lps[1] = BucketLP({index: 1663, balance: 3_400 * 1e27, time: 60});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
         assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
 
         // lender makes a partial withdrawal, paying an early withdrawal penalty
-        changePrank(_lender);
         uint256 penalty = Maths.WAD - Maths.wdiv(_pool.interestRate(), _pool.WAD_WEEKS_PER_YEAR());
         assertLt(penalty, Maths.WAD);
         uint256 expectedWithdrawal1 = Maths.wmul(1_700 * 1e18, penalty);
-        vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_lender, 1606, expectedWithdrawal1, _pool.indexToPrice(1663));
-        uint lpRedeemed = _pool.removeQuoteToken(1_700 * 1e18, 1606);
-        assertEq(lpRedeemed, 1_699.988430646832348876473462074 * 1e27);
+        _removeLiquidity(
+            RemoveLiquiditySpecs({
+                from:     _lender,
+                index:    1606,
+                amount:   1_700 * 1e18,
+                penalty:  penalty,
+                newLup:   _pool.indexToPrice(1663),
+                lpRedeem: 1_699.988430646832348876473462074 * 1e27
+            })
+        );
 
         // lender removes all quote token, including interest, from the bucket
         skip(1 days);
         assertGt(_pool.indexToPrice(1606), _pool.htp());
         uint256 expectedWithdrawal2 = 1_700.146556206967894132 * 1e18;
-        vm.expectEmit(true, true, false, true);
-        emit RemoveQuoteToken(_lender, 1606, expectedWithdrawal2, _pool.indexToPrice(1663));
-        uint256 removed;
-        (removed, lpRedeemed) = _pool.removeAllQuoteToken(1606);
-        assertEq(removed, expectedWithdrawal2);
-        assertEq(lpRedeemed, 1_700.011569353167651123526537926 * 1e27);
+        _removeAllLiquidity(
+            RemoveAllLiquiditySpecs({
+                from:     _lender,
+                index:    1606,
+                amount:   expectedWithdrawal2,
+                newLup:   _pool.indexToPrice(1663),
+                lpRedeem: 1_700.011569353167651123526537926 * 1e27
+            })
+        );
         assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + expectedWithdrawal1 + expectedWithdrawal2);
-        (lpBalance, ) = _pool.bucketLenders(1606, _lender);
-        assertEq(lpBalance, 0);
 
-        // ensure bucket is empty
-        (uint256 quote, uint256 collateral, uint256 lpb, ) = _pool.bucketAt(1606);
-        assertEq(quote, 0);
-        assertEq(collateral, 0);
-        assertEq(lpb, 0);
+        bucketStates = new BucketState[](2);
+        bucketStates[0] = BucketState({index: 1606, LPs: 0, collateral: 0});
+        bucketStates[1] = BucketState({index: 1663, LPs: 3_400 * 1e27, collateral: 0});
+        _assertBuckets(bucketStates);
+        lps = new BucketLP[](2);
+        lps[0] = BucketLP({index: 1606, balance: 0, time: 60});
+        lps[1] = BucketLP({index: 1663, balance: 3_400 * 1e27, time: 60});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
     }
 
     function testScaledPoolMoveQuoteToken() external {
-        changePrank(_lender);
-        _pool.addQuoteToken(40_000 * 1e18, 2549);
-        _pool.addQuoteToken(10_000 * 1e18, 2550);
-        _pool.addQuoteToken(20_000 * 1e18, 2551);
+        Liquidity[] memory amounts = new Liquidity[](3);
+        amounts[0] = Liquidity({amount: 40_000 * 1e18, index: 2549, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 20_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
 
-        (uint256 lpBalance, ) = _pool.bucketLenders(2549, _lender);
-        assertEq(lpBalance, 40_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(2552, _lender);
-        assertEq(lpBalance, 0);
+        BucketLP[] memory lps = new BucketLP[](2);
+        lps[0] = BucketLP({index: 2549, balance: 40_000 * 1e27, time: 0});
+        lps[1] = BucketLP({index: 2552, balance: 0, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
 
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2549, 2552, 5_000 * 1e18, BucketMath.MAX_PRICE);
-        _pool.moveQuoteToken(5_000 * 1e18, 2549, 2552);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       5_000 * 1e18,
+                fromIndex:    2549,
+                toIndex:      2552,
+                newLup:       BucketMath.MAX_PRICE,
+                lpRedeemFrom: 5_000 * 1e27,
+                lpRedeemTo:   5_000 * 1e27
+            })
+        );
 
-        (lpBalance, ) = _pool.bucketLenders(2549, _lender);
-        assertEq(lpBalance, 35_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(2552, _lender);
-        assertEq(lpBalance, 5_000 * 1e27);
+        lps[0] = BucketLP({index: 2549, balance: 35_000 * 1e27, time: 0});
+        lps[1] = BucketLP({index: 2552, balance: 5_000 * 1e27, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
 
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2549, 2540, 5_000 * 1e18, BucketMath.MAX_PRICE);
-        _pool.moveQuoteToken(5_000 * 1e18, 2549, 2540);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       5_000 * 1e18,
+                fromIndex:    2549,
+                toIndex:      2540,
+                newLup:       BucketMath.MAX_PRICE,
+                lpRedeemFrom: 5_000 * 1e27,
+                lpRedeemTo:   5_000 * 1e27
+            })
+        );
 
-        (lpBalance, ) = _pool.bucketLenders(2549, _lender);
-        assertEq(lpBalance, 30_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(2540, _lender);
-        assertEq(lpBalance, 5_000 * 1e27);
+        lps = new BucketLP[](3);
+        lps[0] = BucketLP({index: 2540, balance: 5_000 * 1e27, time: 0});
+        lps[1] = BucketLP({index: 2549, balance: 30_000 * 1e27, time: 0});
+        lps[2] = BucketLP({index: 2552, balance: 5_000 * 1e27, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
 
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2551, 2777, 15_000 * 1e18, BucketMath.MAX_PRICE);
-        _pool.moveQuoteToken(15_000 * 1e18, 2551, 2777);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       15_000 * 1e18,
+                fromIndex:    2551,
+                toIndex:      2777,
+                newLup:       BucketMath.MAX_PRICE,
+                lpRedeemFrom: 15_000 * 1e27,
+                lpRedeemTo:   15_000 * 1e27
+            })
+        );
 
-        (lpBalance, ) = _pool.bucketLenders(2551, _lender);
-        assertEq(lpBalance, 5_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(2777, _lender);
-        assertEq(lpBalance, 15_000 * 1e27);
+        lps = new BucketLP[](5);
+        lps[0] = BucketLP({index: 2540, balance: 5_000 * 1e27, time: 0});
+        lps[1] = BucketLP({index: 2549, balance: 30_000 * 1e27, time: 0});
+        lps[2] = BucketLP({index: 2551, balance: 5_000 * 1e27, time: 0});
+        lps[3] = BucketLP({index: 2552, balance: 5_000 * 1e27, time: 0});
+        lps[4] = BucketLP({index: 2777, balance: 15_000 * 1e27, time: 0});
+        _assertLPs(
+            LenderLPs({
+                lender:    _lender,
+                bucketLPs: lps
+            })
+        );
     }
 
     /**
@@ -327,26 +634,37 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
      */
     function testScaledPoolMoveQuoteTokenRequireChecks() external {
         // test setup
-        deal(address(_collateral), _lender1, _collateral.balanceOf(_lender1) + 100_000 * 1e18);
-        _collateral.approve(address(_pool), 100_000 * 1e18);
+        _mintCollateralAndApproveTokens(_lender1, _collateral.balanceOf(_lender1) + 100_000 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_lender1) + 1_500_000 * 1e18);
 
         // lender adds initial quote token
-        changePrank(_lender);
-        _pool.addQuoteToken(40_000 * 1e18, 4549);
-        _pool.addQuoteToken(10_000 * 1e18, 4550);
-        _pool.addQuoteToken(20_000 * 1e18, 4551);
+        Liquidity[] memory amounts = new Liquidity[](4);
+        amounts[0] = Liquidity({amount: 40_000 * 1e18, index: 4549, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 4550, newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 20_000 * 1e18, index: 4551, newLup: BucketMath.MAX_PRICE});
+        amounts[3] = Liquidity({amount: 30_000 * 1e18, index: 4651, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
 
         // should revert if moving quote token to the existing price
         vm.expectRevert(IScaledPool.MoveQuoteToSamePrice.selector);
         _pool.moveQuoteToken(5_000 * 1e18, 4549, 4549);
 
-        // add collateral and borrow all available quote in the higher priced original 3 buckets, as well as some of the new lowest price bucket
-        _pool.addQuoteToken(30_000 * 1e18, 4651);
-        changePrank(_borrower);
-        deal(address(_collateral), _borrower, _collateral.balanceOf(_borrower) + 1_500_000 * 1e18);
-        _collateral.approve(address(_pool), 1_500_000 * 1e18);
-        _pool.pledgeCollateral(_borrower, 1500000 * 1e18);
-        _pool.borrow(60000.1 * 1e18, 4651);
+        // borrow all available quote in the higher priced original 3 buckets, as well as some of the new lowest price bucket
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 1_500_000 * 1e18,
+                borrowAmount: 60_000.1 * 1e18,
+                indexLimit:   4651,
+                price:        0.139445853940958153 * 1e18
+            })
+        );
 
         // should revert if movement would drive lup below htp
         changePrank(_lender);
@@ -354,58 +672,115 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         _pool.moveQuoteToken(40_000 * 1e18, 4549, 6000);
 
         // should be able to moveQuoteToken if properly specified
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 4549, 4550, 10_000 * 1e18, _pool.indexToPrice(4551));
-        _pool.moveQuoteToken(10_000 * 1e18, 4549, 4550);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       10_000 * 1e18,
+                fromIndex:    4549,
+                toIndex:      4550,
+                newLup:       _pool.indexToPrice(4551),
+                lpRedeemFrom: 10_000 * 1e27,
+                lpRedeemTo:   10_000 * 1e27
+            })
+        );
     }
 
     function testMoveQuoteTokenWithDebt() external {
         // lender makes an initial deposit
         skip(1 hours);
-        changePrank(_lender);
-        assertEq(_pool.priceToIndex(600 * 1e18), 2873);
-        _pool.addQuoteToken(10_000 * 1e18, 2873);
+        Liquidity[] memory amounts = new Liquidity[](1);
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2873, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
 
         // borrower draws debt, establishing a pool threshold price
         skip(2 hours);
-        changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 10 * 1e18);
-        _pool.borrow(5_000 * 1e18, 3000);
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 10 * 1e18,
+                borrowAmount: 5_000 * 1e18,
+                indexLimit:   3000,
+                price:        601.252968524772188572 * 1e18
+            })
+        );
+
         uint256 ptp = Maths.wdiv(_pool.borrowerDebt(), 10 * 1e18);
         assertEq(ptp, 500.480769230769231 * 1e18);
 
         // lender moves some liquidity below the pool threshold price; penalty should be assessed
         skip(16 hours);
-        changePrank(_lender);
-        assertEq(_pool.priceToIndex(400 * 1e18), 2954);
-        uint256 moved = 2_497.596153846153845000 * 1e18;
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2873, 2954, moved, _pool.lup());
-        _pool.moveQuoteToken(2500 * 1e18, 2873, 2954);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       2_500 * 1e18,
+                fromIndex:    2873,
+                toIndex:      2954,
+                newLup:       _pool.lup(),
+                lpRedeemFrom: 2_499.877878608019467246904020519 * 1e27,
+                lpRedeemTo:   2_497.596153846153845 * 1e27
+            })
+        );
 
         // another lender provides liquidity to prevent LUP from moving
         skip(1 hours);
-        changePrank(_lender1);
-        _pool.addQuoteToken(1_000 * 1e18, 2873);
+        amounts[0] = Liquidity({amount: 1_000 * 1e18, index: 2873, newLup: 601.252968524772188572 * 1e18});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender1,
+                amounts: amounts
+            })
+        );
 
         // lender moves more liquidity; no penalty assessed as sufficient time has passed
         skip(12 hours);
-        changePrank(_lender);
-        moved = 2500 * 1e18;
-        vm.expectEmit(true, true, false, true);
-        emit MoveQuoteToken(_lender, 2873, 2954, moved, _pool.lup());
-        _pool.moveQuoteToken(moved, 2873, 2954);
+        _moveLiquidity(
+            MoveLiquiditySpecs({
+                from:         _lender,
+                amount:       2_500 * 1e18,
+                fromIndex:    2873,
+                toIndex:      2954,
+                newLup:       _pool.lup(),
+                lpRedeemFrom: 2_499.778568979414622058441434089 * 1e27,
+                lpRedeemTo:   2_500 * 1e27
+            })
+        );
 
         // after a week, another lender funds the pool
         skip(7 days);
-        changePrank(_lender1);
-        _pool.addQuoteToken(9_000 * 1e18, 2873);
+        amounts[0] = Liquidity({amount: 9_000 * 1e18, index: 2873, newLup: 601.252968524772188572 * 1e18});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender1,
+                amounts: amounts
+            })
+        );
 
         // lender removes all their quote, with interest
         skip(1 hours);
-        changePrank(_lender);
-        _pool.removeAllQuoteToken(2873);
-        _pool.removeAllQuoteToken(2954);
+        _removeAllLiquidity(
+            RemoveAllLiquiditySpecs({
+                from:     _lender,
+                index:    2873,
+                amount:   5_006.457978117347442734 * 1e18,
+                newLup:   601.252968524772188572 * 1e18,
+                lpRedeem: 5_002.403846153846155 * 1e27
+            })
+        );
+        _removeAllLiquidity(
+            RemoveAllLiquiditySpecs({
+                from:     _lender,
+                index:    2954,
+                amount:   4_997.596153846153845 * 1e18,
+                newLup:   601.252968524772188572 * 1e18,
+                lpRedeem: 4_997.596153846153845 * 1e27
+            })
+        );
         assertGt(_quote.balanceOf(_lender), 200_000 * 1e18);
     }
 }
