@@ -506,8 +506,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             _price = 0;
         } else {
             uint256 secondsElapsed = block.timestamp - reserveAuctionKicked;
-            // uint256 hoursComponent = Maths.wpow(0.5 * 1e18, secondsElapsed / 3600);   // worst gas 7256
-            uint256 hoursComponent = 1e18 >> secondsElapsed / 3600;                      // worst gas 4405
+            uint256 hoursComponent = 1e18 >> secondsElapsed / 3600;
             uint256 minutesComponent = Maths.wpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
             _price = 1_000_000_000 * Maths.wmul(hoursComponent, minutesComponent);
         }
