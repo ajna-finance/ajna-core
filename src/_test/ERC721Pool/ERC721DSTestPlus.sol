@@ -44,6 +44,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     struct ReserveAuctionState {
         uint256 claimableReservesRemaining;
         uint256 auctionPrice;
+        uint256 timeRemaining;
     }
 }
 
@@ -167,14 +168,15 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
 
-        (uint256 claimableReservesRemaining, uint256 auctionPrice) = pool.reserveAuction();
+        (uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.reserveAuction();
         assertEq(claimableReservesRemaining, state_.claimableReservesRemaining);
         assertEq(auctionPrice, state_.auctionPrice);
+        assertEq(timeRemaining, state_.timeRemaining);
     }
 
     function _assertReserveAuctionPrice(uint256 expectedPrice) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        (uint256 claimableReservesRemaining, uint256 auctionPrice) = pool.reserveAuction();
+        (uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.reserveAuction();
         assertEq(auctionPrice, expectedPrice);
     }
 }

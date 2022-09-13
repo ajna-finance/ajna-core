@@ -18,8 +18,6 @@ import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
 import { Heap }           from "../libraries/Heap.sol";
 
-import "forge-std/console.sol";
-
 abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     using SafeERC20 for ERC20;
     using Heap      for Heap.Data;
@@ -27,6 +25,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     int256  public constant INDEX_OFFSET = 3232;
 
     uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
+    uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135 * 1e18;  // 0.5^(1/60)
 
     uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
@@ -506,12 +505,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (reserveAuctionKicked == 0) {
             _price = 0;
         } else {
-            uint256 minuteHalfLife = 0.988514020352896 * 1e18;              // TODO: define constant
             uint256 secondsElapsed = block.timestamp - reserveAuctionKicked;
-            uint256 hoursElapsed = secondsElapsed / 3600;
-            uint256 minutesElapsed = secondsElapsed % 3600 / 60;
-            uint256 hoursComponent = Maths.wpow(0.5 * 1e18, hoursElapsed);  // TODO: bitshift by hours instead
-            uint256 minutesComponent = Maths.wpow(minuteHalfLife, minutesElapsed);
+            // uint256 hoursComponent = Maths.wpow(0.5 * 1e18, secondsElapsed / 3600);   // worst gas 7256
+            uint256 hoursComponent = 1e18 >> secondsElapsed / 3600;                      // worst gas 4405
+            uint256 minutesComponent = Maths.wpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
             _price = 1_000_000_000 * Maths.wmul(hoursComponent, minutesComponent);
         }
     }
@@ -619,11 +616,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return _treeSum();
     }
 
-    function reserveAuction() external view returns (uint256 claimableReservesRemaining_, uint256 auctionPrice_)
+    function reserveAuction() external view override returns (
+        uint256 claimableReservesRemaining_,
+        uint256 auctionPrice_,
+        uint256 timeRemaining_)
     {
-        // TODO: implement
         claimableReservesRemaining_ = reserveAuctionUnclaimed;
         auctionPrice_               = _reserveAuctionPrice();
+        timeRemaining_              = 3 days - Maths.min(3 days, block.timestamp - reserveAuctionKicked);
     }
 
     function maxBorrower() external view override returns (address) {

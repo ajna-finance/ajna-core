@@ -69,7 +69,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: 0,
-                auctionPrice:               0
+                auctionPrice:               0,
+                timeRemaining:              0
             })
         );
 
@@ -104,29 +105,29 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
 
         // check prices
         skip(37 minutes);
-        _assertReserveAuctionPrice(652176034.882778815 * 1e18);
+        _assertReserveAuctionPrice(652176034.882782114 * 1e18);
         skip(23 hours);     // 23 hours 37 minutes
-        _assertReserveAuctionPrice(77.745441781 * 1e18);
+        _assertReserveAuctionPrice(77.74544178 * 1e18);
         skip(1400);         // 24 hours 0 minutes 20 seconds
         _assertReserveAuctionPrice(59.604644775 * 1e18);
         skip(100);          // 24 hours 2 minutes
         _assertReserveAuctionPrice(58.243272807 * 1e18);
         skip(58 minutes);   // 25 hours
-        _assertReserveAuctionPrice(29.802322388 * 1e18);
+        _assertReserveAuctionPrice(29.802322387 * 1e18);
         skip(5 hours);      // 30 hours
-        _assertReserveAuctionPrice(0.931322575 * 1e18);
+        _assertReserveAuctionPrice(0.931322574 * 1e18);
         skip(121 minutes);  // 32 hours 1 minute
-        _assertReserveAuctionPrice(0.230156356 * 1e18);
+        _assertReserveAuctionPrice(0.230156355 * 1e18);
         skip(7700 seconds); // 34 hours 9 minutes 20 seconds
         _assertReserveAuctionPrice(0.052459681 * 1e18);
         skip(8 hours);      // 42 hours 9 minutes 20 seconds
-        _assertReserveAuctionPrice(0.000204921 * 1e18);
+        _assertReserveAuctionPrice(0.000204920 * 1e18);
         skip(6 hours);      // 42 hours 9 minutes 20 seconds
-        _assertReserveAuctionPrice(0.000003202 * 1e18);
+        _assertReserveAuctionPrice(0.000003201 * 1e18);
         skip(3100 seconds); // 43 hours
         _assertReserveAuctionPrice(0.000001756 * 1e18);
         skip(5 hours);      // 48 hours
-        _assertReserveAuctionPrice(0.000000055 * 1e18);
+        _assertReserveAuctionPrice(0.000000054 * 1e18);
         skip(12 hours);     // 60 hours
         _assertReserveAuctionPrice(0);
     }
@@ -152,7 +153,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              3 days
             })
         );
         assertEq(_collectionPool.reserves(), 0);
@@ -164,7 +166,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              2 days
             })
         );
         vm.expectEmit(true, true, true, true);
@@ -177,7 +180,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              2 days
             })
         );
 
@@ -187,7 +191,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              2875 minutes
             })
         );
         vm.expectEmit(true, true, true, true);
@@ -200,7 +205,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              2875 minutes
             })
         );
 
@@ -211,7 +217,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: 0,
-                auctionPrice:               0
+                auctionPrice:               0,
+                timeRemaining:              0
             })
         );
         assertEq(_collectionPool.reserves(), 0);
@@ -236,7 +243,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              3 days
             })
         );
         assertEq(_collectionPool.reserves(), 610.479702351371553626 * 1e18 - 212.527832618418361858 * 1e18);
@@ -250,7 +258,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              2 days
             })
         );
 
@@ -260,7 +269,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              0
             })
         );
 
@@ -289,7 +299,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              44 hours
             })
         );
         expectedReserves = 0;
@@ -299,7 +310,8 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
-                auctionPrice:               expectedPrice
+                auctionPrice:               expectedPrice,
+                timeRemaining:              44 hours
             })
         );
     }

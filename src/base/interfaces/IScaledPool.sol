@@ -625,10 +625,11 @@ interface IScaledPool {
      *  @notice Returns the state of the Claimaible Reserve Auction.
      *  @return claimableReservesRemaining_ Amount of claimable reserves which has not yet been taken.
      *  @return auctionPrice_               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return timeRemaining_              Seconds remaining before takes are no longer allowed.
      */
     function reserveAuction() external view returns (
         uint256 claimableReservesRemaining_,
-        uint256 auctionPrice_
-        // TODO: should I add a timeRemaining_ field?
+        uint256 auctionPrice_,
+        uint256 timeRemaining_
     );
 }
