@@ -46,6 +46,11 @@ abstract contract DSTestPlus is Test {
     uint256 internal _p13_57    = 13.578453165083418466 * 1e18;
     uint256 internal _p13_31    = 13.310245063610237646 * 1e18;
     uint256 internal _p12_66    = 12.662674231425615571 * 1e18;
+    uint256 internal _p9_91     = 9.917184843435912074 * 1e18;
+    uint256 internal _p9_81     = 9.818751856078723036 * 1e18;
+    uint256 internal _p9_72     = 9.721295865031779605 * 1e18;
+    uint256 internal _p9_62     = 9.624807173121239337 * 1e18;
+    uint256 internal _p9_52     = 9.529276179422528643 * 1e18;
     uint256 internal _p5_26     = 5.263790124045347667 * 1e18;
     uint256 internal _p1_64     = 1.646668492116543299 * 1e18;
     uint256 internal _p1_31     = 1.315628874808846999 * 1e18;
@@ -57,6 +62,14 @@ abstract contract DSTestPlus is Test {
     uint256 internal _p0_006822 = 0.006822416727411372 * 1e18;
     uint256 internal _p0_000046 = 0.000046545370002462 * 1e18;
     uint256 internal _p1        = 1 * 1e18;
+
+    uint256 internal _i10016    = 2309;
+    uint256 internal _i100      = 3232;
+    uint256 internal _i9_91     = 3696;
+    uint256 internal _i9_81     = 3698;
+    uint256 internal _i9_72     = 3700;
+    uint256 internal _i9_62     = 3702;
+    uint256 internal _i9_52     = 3704;
 
     // PositionManager events
     event Burn(address indexed lender_, uint256 indexed price_);

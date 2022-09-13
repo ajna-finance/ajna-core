@@ -18,6 +18,8 @@ import { BucketMath }  from "../libraries/BucketMath.sol";
 import { Maths }       from "../libraries/Maths.sol";
 import { Heap }        from "../libraries/Heap.sol";
 
+import "@std/console.sol";
+
 abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     using SafeERC20      for ERC20;
     using Heap for Heap.Data;
@@ -339,11 +341,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _updateInterestRateAndEMAs(uint256 curDebt_, uint256 lup_) internal {
-        if (block.timestamp - interestRateUpdate > 12 hours) {
+        // Ensure borrowerDebt is pos to run this function!
+        if (borrowerDebt > 0 && block.timestamp - interestRateUpdate > 12 hours) {
             // Update EMAs for pool price and LUP
             uint256 poolPrice = pledgedCollateral == 0 ? 0 : Maths.wdiv(curDebt_, pledgedCollateral);  // PTP
             poolPriceEma = Maths.wdiv(poolPrice, EMA_180D_RATE_FACTOR) + Maths.wdiv(poolPriceEma, LAMBDA_EMA_180D);
-            lupEma       = Maths.wdiv(lup_,      EMA_180D_RATE_FACTOR) + Maths.wdiv(poolPriceEma, LAMBDA_EMA_180D);
+            lupEma       = Maths.wdiv(lup_,      EMA_180D_RATE_FACTOR) + Maths.wdiv(lupEma, LAMBDA_EMA_180D);
 
             // Update EMAs for target utilization
             uint256 col = pledgedCollateral;

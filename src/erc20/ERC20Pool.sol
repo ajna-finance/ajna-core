@@ -13,6 +13,8 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
 
+import "@std/console.sol";
+
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
     using Heap      for Heap.Data;
@@ -282,6 +284,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
 
         uint256 poolPrice = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
+
         // bondFactor = min(30%, max(1%, (poolPrice - thresholdPrice) / poolPrice))
         uint256 bondFactor = thresholdPrice >= poolPrice ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1 * 1e18 - Maths.wdiv(thresholdPrice, poolPrice)));
         uint256 bondSize   = Maths.wmul(bondFactor, borrower.debt);
@@ -312,6 +315,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         Borrower        memory borrower    = borrowers[borrower_];
         LiquidationInfo memory liquidation = liquidations[borrower_];
 
+        (uint256 curDebt) = _accruePoolInterest();
+
+        uint256 lup = _lup();
+        _updateInterestRateAndEMAs(curDebt, lup);
+
         // check liquidation process status
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
         if (_borrowerCollateralization(liquidation.debt, liquidation.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
@@ -319,19 +327,26 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // TODO: calculate using price decrease function and amount_
         // TODO: remove auction from queue if auctionDebt == 0;
 
-        uint256 thresholdPrice = liquidation.debt * Maths.WAD / liquidation.collateral;
         uint256 timePassed = (block.timestamp - uint256(liquidation.kickTime) - 1 hours) / 3600;
         uint256 price = Maths.wdiv(Maths.WAD, Maths.wpow(2e18, timePassed));
 
-        console.log("postExp - ", price);
+        price = 10 * Maths.wmul(liquidation.referencePrice, price);
         console.log("price here - ", price);
 
-        price = 10 * Maths.wmul(liquidation.referencePrice, price);
+        uint256 thresholdPrice = Maths.wdiv(liquidation.debt, liquidation.collateral);
+        //console.log("TP here - ", thresholdPrice);
+        //console.log("poolPriceEma here - ", poolPriceEma);
+        //console.log("lupEma here - ", lupEma);
+        int256 neutralPrice = int(Maths.wmul(thresholdPrice, Maths.wdiv(poolPriceEma, lupEma)));
+        console.log("neutralprice here - ");
+        console.logInt(neutralPrice);
 
-        //uint256 neutralPrice = Maths.wmul(thresholdPrice, Maths.wdiv(poolPriceEma, lupEma));
-        ////uint256 BPF =  liquidation.bondFactor Maths.wdiv(neutralPrice - price, neutralPrice - thresholdPrice);
+        uint256 BPF = Maths.minInt(1e18, Maths.maxInt(-1 * 1e18, Maths.wdivInt(neutralPrice - int(price), neutralPrice - int(thresholdPrice))));
 
-        //uint256 liquidationPrice = Maths.WAD;
+        console.log(BPF);
+        console.log("BPF here - ", Maths.wmul(liquidation.bondFactor, BPF));
+
+
         //uint256 collateralToPurchase = Maths.wdiv(amount_, liquidationPrice);
 
         //// Reduce liquidation's remaining collateral

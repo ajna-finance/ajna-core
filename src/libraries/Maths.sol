@@ -19,6 +19,10 @@ library Maths {
         return (x * 10**18 + y / 2) / y;
     }
 
+     function wdivTest(uint256 x, uint256 y) internal pure returns (uint256) {
+        return (x * 10**1 + y / 2) / y;
+    }
+
     function max(uint256 x, uint256 y) internal pure returns (uint256) {
         return x >= y ? x : y;
     }
@@ -159,6 +163,14 @@ library Maths {
 
     function maxInt(int256 x, int256 y) internal pure returns (int256) {
         return x >= y ? x : y;
+    }
+
+    function minInt(int256 x, int256 y) internal pure returns (int256) {
+        return x <= y ? x : y;
+    }
+
+    function wdivInt(int256 x, int256 y) internal pure returns (int256) {
+        return (x * 10**18 + y / 2) / y;
     }
 
 }
