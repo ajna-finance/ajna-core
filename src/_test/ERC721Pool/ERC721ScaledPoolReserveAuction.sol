@@ -105,31 +105,37 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
 
         // check prices
         skip(37 minutes);
-        _assertReserveAuctionPrice(652176034.882782114 * 1e18);
+        _assertReserveAuctionPrice(652176034.882782126826643053 * 1e18);
         skip(23 hours);     // 23 hours 37 minutes
-        _assertReserveAuctionPrice(77.74544178 * 1e18);
+        _assertReserveAuctionPrice(77.745441780421987394 * 1e18);
         skip(1400);         // 24 hours 0 minutes 20 seconds
-        _assertReserveAuctionPrice(59.604644775 * 1e18);
+        _assertReserveAuctionPrice(59.604644775390625 * 1e18);
         skip(100);          // 24 hours 2 minutes
-        _assertReserveAuctionPrice(58.243272807 * 1e18);
+        _assertReserveAuctionPrice(58.243272807255146201 * 1e18);
         skip(58 minutes);   // 25 hours
-        _assertReserveAuctionPrice(29.802322387 * 1e18);
+        _assertReserveAuctionPrice(29.8023223876953125 * 1e18);
         skip(5 hours);      // 30 hours
-        _assertReserveAuctionPrice(0.931322574 * 1e18);
+        _assertReserveAuctionPrice(0.931322574615478515 * 1e18);
         skip(121 minutes);  // 32 hours 1 minute
-        _assertReserveAuctionPrice(0.230156355 * 1e18);
+        _assertReserveAuctionPrice(0.230156355619639189 * 1e18);
         skip(7700 seconds); // 34 hours 9 minutes 20 seconds
-        _assertReserveAuctionPrice(0.052459681 * 1e18);
+        _assertReserveAuctionPrice(0.052459681325756842 * 1e18);
         skip(8 hours);      // 42 hours 9 minutes 20 seconds
-        _assertReserveAuctionPrice(0.000204920 * 1e18);
+        _assertReserveAuctionPrice(0.000204920630178738 * 1e18);
         skip(6 hours);      // 42 hours 9 minutes 20 seconds
-        _assertReserveAuctionPrice(0.000003201 * 1e18);
+        _assertReserveAuctionPrice(0.000003201884846542 * 1e18);
         skip(3100 seconds); // 43 hours
-        _assertReserveAuctionPrice(0.000001756 * 1e18);
+        _assertReserveAuctionPrice(0.000001755953640897 * 1e18);
         skip(5 hours);      // 48 hours
-        _assertReserveAuctionPrice(0.000000054 * 1e18);
+        _assertReserveAuctionPrice(0.000000054873551278 * 1e18);
         skip(12 hours);     // 60 hours
-        _assertReserveAuctionPrice(0);
+        _assertReserveAuctionPrice(0.000000000013396863 * 1e18);
+        skip(11 hours);     // 71 hours
+        _assertReserveAuctionPrice(0.000000000000006541 * 1e18);
+        skip(3599 seconds); // 71 hours 59 minutes 59 seconds
+        _assertReserveAuctionPrice(0.000000000000003308 * 1e18);
+        skip(1 seconds);    // 72 hours
+        _assertReserveAuctionPrice(0.000000000000003270 * 1e18);
     }
 
     function testClaimableReserveAuction() external {
@@ -162,7 +168,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
 
         // bid once the price becomes attractive
         skip(24 hours);
-        expectedPrice = 59.604644775 * 1e18;
+        expectedPrice = 59.604644775390625 * 1e18;
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
@@ -175,7 +181,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _collectionPool.takeReserves(300 * 1e18);
         expectedQuoteBalance += 300 * 1e18;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
-        assertEq(_ajna.balanceOf(_bidder), 22_118.6065675 * 1e18);
+        assertEq(_ajna.balanceOf(_bidder), 22_118.6065673828125 * 1e18);
         expectedReserves -= 300 * 1e18;
         _assertReserveAuction(
             ReserveAuctionState({
@@ -187,7 +193,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
 
         // bid max amount
         skip(5 minutes);
-        expectedPrice = 56.25929312 * 1e18;
+        expectedPrice = 56.259293120008319416 * 1e18;
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,
@@ -200,7 +206,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         _collectionPool.takeReserves(400 * 1e18);
         expectedQuoteBalance += expectedReserves;
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
-        assertEq(_ajna.balanceOf(_bidder), 4_994.689550287796185205 * 1e18);
+        assertEq(_ajna.balanceOf(_bidder), 4_994.689550168076463748 * 1e18);
         expectedReserves = 0;
         _assertReserveAuction(
             ReserveAuctionState({
@@ -252,7 +258,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         // partial take
         skip(1 days);
         changePrank(_bidder);
-        expectedPrice = 59.604644775 * 1e18;
+        expectedPrice = 59.604644775390625 * 1e18;
         _collectionPool.takeReserves(100 * 1e18);
         expectedReserves -= 100 * 1e18;
         _assertReserveAuction(
@@ -295,7 +301,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         // take everything
         skip(28 hours);
         assertEq(expectedReserves, 538.990762002892312075 * 1e18);
-        expectedPrice = 3.725290298 * 1e18;
+        expectedPrice = 3.725290298461914062 * 1e18;
         _assertReserveAuction(
             ReserveAuctionState({
                 claimableReservesRemaining: expectedReserves,

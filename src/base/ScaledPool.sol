@@ -25,7 +25,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     int256  public constant INDEX_OFFSET = 3232;
 
     uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
-    uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135 * 1e18;  // 0.5^(1/60)
+    uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
 
     uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
@@ -506,9 +506,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             _price = 0;
         } else {
             uint256 secondsElapsed = block.timestamp - reserveAuctionKicked;
-            uint256 hoursComponent = 1e18 >> secondsElapsed / 3600;
-            uint256 minutesComponent = Maths.wpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
-            _price = 1_000_000_000 * Maths.wmul(hoursComponent, minutesComponent);
+            uint256 hoursComponent = 1e27 >> secondsElapsed / 3600;
+            uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
+            _price = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
         }
     }
 
