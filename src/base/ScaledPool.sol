@@ -255,9 +255,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         reserveAuctionUnclaimed -= amount_;
 
         emit ReserveAuction(reserveAuctionUnclaimed, price);
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
         ERC20(ajnaTokenAddress).safeTransferFrom(msg.sender, address(this), ajnaRequired);
         ERC20Burnable(ajnaTokenAddress).burn(ajnaRequired);
+        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
     }
 
 
