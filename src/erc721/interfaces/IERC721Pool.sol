@@ -151,9 +151,12 @@ interface IERC721Pool is IScaledPool {
 
     /**
      *  @notice Called by deployNFTSubsetPool()
-     *  @dev Used to initialize pools that only support a subset of tokenIds
+     *  @dev    Used to initialize pools that only support a subset of tokenIds
+     *  @param  tokenIds_         Enumerates tokenIds to be allowed in the pool.
+     *  @param  interestRate_     Initial interest rate of the pool.
+     *  @param  ajnaTokenAddress_ Address of the Ajna token.
      */
-    function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_) external;
+    function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_, address ajnaTokenAddress_) external;
 
 
     /***********************************/

@@ -219,9 +219,10 @@ interface IERC20Pool is IScaledPool {
 
     /**
      *  @notice Initializes a new pool, setting initial state variables.
-     *  @param  interestRate_ Default interest rate of the pool.
+     *  @param  interestRate_     Default interest rate of the pool.
+     *  @param  ajnaTokenAddress_ Address of the Ajna token.
      */
-    function initialize(uint256 interestRate_) external;
+    function initialize(uint256 interestRate_, address ajnaTokenAddress_) external;
 
     /*******************************************/
     /*** ERC20Pool Lender External Functions ***/
