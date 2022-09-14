@@ -246,7 +246,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
-        if (reserveAuctionKicked == 0 || block.timestamp - reserveAuctionKicked > 72 hours) revert NoAuction();
+        uint256 kicked = reserveAuctionKicked;
+        if (kicked == 0 || block.timestamp - kicked > 72 hours) revert NoAuction();
 
         amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
         uint256 price = _reserveAuctionPrice();
@@ -309,12 +310,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         price_ = 10 * referencePrice * uint256(PRBMathSD59x18.exp2(time_adjustment));
     }
 
-    function _claimableReserves() internal view returns (uint256) {
-        uint256 claimable = Maths.wmul(0.995 * 1e18, borrowerDebt) + quoteToken().balanceOf(address(this));
-        claimable -= Maths.min(claimable, this.poolSize());
-        claimable -= Maths.min(claimable, liquidationBondEscrowed);
-        claimable -= Maths.min(claimable, reserveAuctionUnclaimed);
-        return claimable;
+    function _claimableReserves() internal view returns (uint256 claimable_) {
+        claimable_ = Maths.wmul(0.995 * 1e18, borrowerDebt) + quoteToken().balanceOf(address(this));
+        claimable_ -= Maths.min(claimable_, this.poolSize() + liquidationBondEscrowed + reserveAuctionUnclaimed);
     }
 
     function _redeemLPForQuoteToken(
@@ -502,9 +500,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _reserveAuctionPrice() internal view returns (uint256 _price) {
-        if (reserveAuctionKicked == 0) {
-            _price = 0;
-        } else {
+        if (reserveAuctionKicked != 0) {
             uint256 secondsElapsed = block.timestamp - reserveAuctionKicked;
             uint256 hoursComponent = 1e27 >> secondsElapsed / 3600;
             uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
