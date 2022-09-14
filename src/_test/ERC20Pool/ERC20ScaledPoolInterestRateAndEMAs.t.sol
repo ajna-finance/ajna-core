@@ -250,6 +250,8 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   0
             })
         );
+        assertEq(_pool.debtEma(),   0);
+        assertEq(_pool.lupColEma(), 0);
 
         // borrower 1 borrows 500 quote from the pool
         _borrow(
@@ -282,6 +284,8 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   0
             })
         );
+        assertEq(_pool.debtEma(),   0);
+        assertEq(_pool.lupColEma(), 0);
 
         _borrow(
             BorrowSpecs({
@@ -313,6 +317,8 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   0
             })
         );
+        assertEq(_pool.debtEma(),   0);
+        assertEq(_pool.lupColEma(), 0);
 
         skip(10 days);
 
@@ -347,6 +353,8 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   864000
             })
         );
+        assertEq(_pool.debtEma(),   95.440014344854493304 * 1e18);
+        assertEq(_pool.lupColEma(), 3_084.610933645840358918 * 1e18);
     }
 
 }

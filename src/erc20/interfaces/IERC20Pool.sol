@@ -156,7 +156,7 @@ interface IERC20Pool is IScaledPool {
      *  @notice Struct holding borrower related info.
      *  @param  debt             Borrower debt, WAD units.
      *  @param  collateral       Collateral deposited by borrower, WAD units.
-     *  @return lupFactor        The LUP / inflator snapshot factor used.
+     *  @return lupFactor        LUP / inflator, used in neutralPrice calc (WAD)
      *  @param  inflatorSnapshot Current borrower inflator snapshot, WAD units.
      */
     struct Borrower {
@@ -285,7 +285,7 @@ interface IERC20Pool is IScaledPool {
      *  @return debt_             Borrower accrued debt (WAD)
      *  @return pendingDebt_      Borrower current debt, accrued and pending accrual (WAD)
      *  @return collateral_       Deposited collateral including encumbered (WAD)
-     *  @return lupFactor_        LUP / inflator (WAD)
+     *  @return lupFactor_        LUP / inflator, used in neutralPrice calc (WAD)
      *  @return inflatorSnapshot_ Inflator used to calculate pending interest (WAD)
      */
     function borrowerInfo(address borrower_)

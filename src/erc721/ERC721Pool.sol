@@ -372,7 +372,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             borrowers[borrower_].debt,                         // accrued debt (WAD)
             pendingDebt,                                       // current debt, accrued and pending accrual (WAD)
             borrowers[borrower_].collateralDeposited.values(), // deposited collateral including encumbered (WAD)
-            borrowers[borrower_].lupFactor,                    // LUP / inflator (WAD)
+            borrowers[borrower_].lupFactor,                    // LUP / inflator, used in neutralPrice calc (WAD)
             borrowers[borrower_].inflatorSnapshot              // used to calculate pending interest (WAD)
         );
     }
