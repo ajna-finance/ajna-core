@@ -19,8 +19,8 @@ import { Maths }       from "../libraries/Maths.sol";
 import { Heap }        from "../libraries/Heap.sol";
 
 abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
-    using SafeERC20      for ERC20;
-    using Heap for Heap.Data;
+    using SafeERC20 for ERC20;
+    using Heap      for Heap.Data;
 
     int256  public constant INDEX_OFFSET = 3232;
 
@@ -29,10 +29,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
 
-    uint256 public constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest         EMAs calculated as exp(-1/7   * ln2)
-    uint256 public constant LAMBDA_EMA_180D      = 0.996156587220575207 * 1e18; // Lambda used for liquidation bond EMAs calculated as exp(-1/180 * ln2)
+    uint256 public constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
     uint256 public constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
-    uint256 public constant EMA_180D_RATE_FACTOR = 1e18 - LAMBDA_EMA_180D;
 
     /***********************/
     /*** State Variables ***/
@@ -51,9 +49,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     uint256 public override pledgedCollateral;
 
     uint256 public override debtEma;      // [WAD]
-    uint256 public override lupEma;       // [WAD]
     uint256 public override lupColEma;    // [WAD]
-    uint256 public override poolPriceEma; // [WAD]
 
     /**
      *  @notice Mapping of buckets for a given pool
@@ -337,15 +333,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     function _updateInterestRateAndEMAs(uint256 curDebt_, uint256 lup_) internal {
         if (block.timestamp - interestRateUpdate > 12 hours) {
-            // Update EMAs for pool price and LUP
-            uint256 poolPrice = pledgedCollateral == 0 ? 0 : Maths.wdiv(curDebt_, pledgedCollateral);  // PTP
-            poolPriceEma = Maths.wdiv(poolPrice, EMA_180D_RATE_FACTOR) + Maths.wdiv(poolPriceEma, LAMBDA_EMA_180D);
-            lupEma       = Maths.wdiv(lup_,      EMA_180D_RATE_FACTOR) + Maths.wdiv(poolPriceEma, LAMBDA_EMA_180D);
-
             // Update EMAs for target utilization
             uint256 col = pledgedCollateral;
+
             uint256 curDebtEma   = Maths.wmul(curDebt_,              EMA_7D_RATE_FACTOR) + Maths.wmul(debtEma,   LAMBDA_EMA_7D);
             uint256 curLupColEma = Maths.wmul(Maths.wmul(lup_, col), EMA_7D_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA_7D);
+
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
