@@ -9,13 +9,14 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 import { IERC20Pool } from "./interfaces/IERC20Pool.sol";
 
 import { ScaledPool } from "../base/ScaledPool.sol";
+import { Queue } from "../base/Queue.sol";
 
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
 
 import "@std/console.sol";
 
-contract ERC20Pool is IERC20Pool, ScaledPool {
+contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
     using SafeERC20 for ERC20;
     using Heap      for Heap.Data;
 
@@ -48,7 +49,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         minFee                     = 0.0005 * 10**18;
 
         loans.init();
-        auctions.init();
 
         // increment initializations count to ensure these values can't be updated
         poolInitializations += 1;
@@ -267,7 +267,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
-    function kick(address borrower_) external override {
+    function kick(address borrower_, address newPrev_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[borrower_];
@@ -299,7 +299,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             bondSize:            bondSize
         });
 
-        auctions.upsert(borrower_, kickTime);
+        _addAuction(borrower_, kickTime, newPrev_);
         liquidationDebt += borrower.debt;
 
         loans.remove(borrower_);
@@ -341,10 +341,10 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         console.log("neutralprice here - ");
         console.logInt(neutralPrice);
 
-        uint256 BPF = Maths.minInt(1e18, Maths.maxInt(-1 * 1e18, Maths.wdivInt(neutralPrice - int(price), neutralPrice - int(thresholdPrice))));
+        //uint256 BPF = Maths.minInt(1e18, Maths.maxInt(-1 * 1e18, Maths.wdivInt(neutralPrice - int(price), neutralPrice - int(thresholdPrice))));
 
-        console.log(BPF);
-        console.log("BPF here - ", Maths.wmul(liquidation.bondFactor, BPF));
+        //console.log(BPF);
+        //console.log("BPF here - ", Maths.wmul(liquidation.bondFactor, BPF));
 
 
         //uint256 collateralToPurchase = Maths.wdiv(amount_, liquidationPrice);
