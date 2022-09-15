@@ -125,7 +125,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         /*** Kick ***/
         /************/
         vm.startPrank(_lender);
-        _pool.kick(_borrower2);
+        _pool.kick(_borrower2, address(0));
 
         /***********************/
         /*** Post-kick state ***/
@@ -351,7 +351,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         uint256 thresholdPrice = borrowerDebt * Maths.WAD / borrowerCollateral;
 
         vm.startPrank(_lender);
-        _pool.kick(_borrower);
+        _pool.kick(_borrower, address(0));
 
         skip(2 hours);
  

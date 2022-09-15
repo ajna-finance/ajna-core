@@ -331,7 +331,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
-    function kick(address borrower_) external override {
+    function kick(address borrower_, address newPrev_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
         NFTBorrower storage borrower = borrowers[borrower_];

@@ -150,7 +150,6 @@ interface IERC20Pool is IScaledPool {
         uint256 bondSize
     );
 
-
     /*************************/
     /*** ERC20Pool Structs ***/
     /*************************/
