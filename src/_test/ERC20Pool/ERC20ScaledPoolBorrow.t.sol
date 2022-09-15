@@ -40,11 +40,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         // lender deposits 10000 DAI in 5 buckets each
         Liquidity[] memory amounts = new Liquidity[](5);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high});
-        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med});
-        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low});
-        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high,    newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med,     newLup: BucketMath.MAX_PRICE});
+        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low,     newLup: BucketMath.MAX_PRICE});
+        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest,  newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -64,7 +64,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
                 loans:                0,
-                maxBorrower:          address(0)
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
@@ -95,7 +99,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        2_102.0192307692307702 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
@@ -151,7 +159,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        4_003.846153846153848 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
         // check balances
@@ -180,7 +192,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        3_003.846153846153848000 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
@@ -211,7 +227,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
                 loans:                0,
-                maxBorrower:          address(0)
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
@@ -229,11 +249,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         // lender deposits 10000 DAI in 5 buckets each
         Liquidity[] memory amounts = new Liquidity[](5);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high});
-        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med});
-        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low});
-        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high,    newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med,     newLup: BucketMath.MAX_PRICE});
+        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low,     newLup: BucketMath.MAX_PRICE});
+        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest,  newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -253,7 +273,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
                 loans:                0,
-                maxBorrower:          address(0)
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
@@ -281,7 +305,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    0.000000461866946770 * 1e18,
                 minDebtAmount:        2_102.019230769230770200 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1.001507985182953253 * 1e18,
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   864000
             })
         );
         _assertBorrower(
@@ -291,6 +319,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_051.890446235135648008 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.090818626082626625 * 1e18,
+                lupFactor:         2_981.007422784467321543 * 1e18,
                 inflator:          1 * 1e18
             })
         );
@@ -316,7 +345,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    0.000000973344306926 * 1e18,
                 minDebtAmount:        2_108.363638510121338731 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1.003018244385218513 * 1e18,
+                pendingInflator:      1.003018244385218513 * 1e18,
+                interestRate:         0.0605 * 1e18,
+                interestRateUpdate:   1728000
             })
         );
         _assertBorrower(
@@ -326,6 +359,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_083.636385101213387311 * 1e18,
                 collateral:        60 * 1e18,
                 collateralization: 8.483377444958217435 * 1e18,
+                lupFactor:         2_972.037088529352426932 * 1e18,
                 inflator:          1.003018244385218513 * 1e18
             })
         );
@@ -350,7 +384,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    0.000001538993982628 * 1e18,
                 minDebtAmount:        2_111.861221326057567518 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1.004682160092905114 * 1e18,
+                pendingInflator:      1.004682160092905114 * 1e18,
+                interestRate:         0.06655 * 1e18,
+                interestRateUpdate:   2592000
             })
         );
         _assertBorrower(
@@ -360,6 +398,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_118.612213260575675180 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.057773002983275249 * 1e18,
+                lupFactor:         2_967.114915734949620331 * 1e18,
                 inflator:          1.004682160092905114 * 1e18
             })
         );
@@ -388,7 +427,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    0.000002164656347431 * 1e18,
                 minDebtAmount:        2_115.715264301085329867 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1.006515655675920014 * 1e18,
+                pendingInflator:      1.006515655675920014 * 1e18,
+                interestRate:         0.073205 * 1e18,
+                interestRateUpdate:   3456000
             })
         );
         _assertBorrower(
@@ -398,6 +441,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_157.152643010853298669 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.044916376706357985 * 1e18,
+                lupFactor:         2_961.709940599570999250 * 1e18,
                 inflator:          1.006515655675920014 * 1e18
             })
         );
@@ -423,7 +467,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    0.000002856824049756 * 1e18,
                 minDebtAmount:        2_119.962835689728444617 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1.008536365727696620 * 1e18,
+                pendingInflator:      1.008536365727696620 * 1e18,
+                interestRate:         0.0805255 * 1e18,
+                interestRateUpdate:   4320000
             })
         );
         _assertBorrower(
@@ -433,6 +481,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_199.628356897284446170 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.030801136225104189 * 1e18,
+                lupFactor:         2_955.775839211865438160 * 1e18,
                 inflator:          1.008536365727696620 * 1e18
             })
         );
@@ -450,7 +499,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    0.000002856824049756 * 1e18,
                 minDebtAmount:        2_119.962835689728444617 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1.008536365727696620 * 1e18,
+                pendingInflator:      1.010763832743848754 * 1e18,
+                interestRate:         0.0805255 * 1e18,
+                interestRateUpdate:   4320000
             })
         );
         _assertBorrower(
@@ -460,6 +513,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pendingDebt:       21_246.450141935843879765 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.030801136225104189 * 1e18,
+                lupFactor:         2_955.775839211865438160 * 1e18,
                 inflator:          1.008536365727696620 * 1e18
             })
         );
@@ -481,8 +535,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -551,8 +605,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
     function testScaledPoolRepayRequireChecks() external {
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -590,7 +644,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        100.096153846153846200 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
@@ -618,7 +676,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        300.288461538461538600 * 1e18,
                 loans:                2,
-                maxBorrower:          _borrower2
+                maxBorrower:          _borrower2,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
@@ -649,15 +711,19 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        300.288456538461538600 * 1e18,
                 loans:                2,
-                maxBorrower:          _borrower2
+                maxBorrower:          _borrower2,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
     }
 
     function testRepayLoanFromDifferentActor() external {
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -689,7 +755,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        100.096153846153846200 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
@@ -715,7 +785,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        100.096143846153846200 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
     }
@@ -728,8 +802,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
     function testZeroThresholdPriceLoan() external {
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -767,7 +841,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        50.048076923076923100 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
     }
@@ -781,8 +859,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -814,11 +892,15 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        50.048076923076923100 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
-        (, uint256 pendingDebt, , ) = _pool.borrowerInfo(_borrower);
+        (, uint256 pendingDebt, , , ) = _pool.borrowerInfo(_borrower);
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert("H:I:VAL_EQ_0");
@@ -846,7 +928,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
                 loans:                0,
-                maxBorrower:          address(0)
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
     }

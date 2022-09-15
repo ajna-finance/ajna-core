@@ -119,9 +119,10 @@ interface IERC20Pool is IScaledPool {
      *  @param  borrower_  Address of the borrower.
      *  @return debt       Amount of debt that the borrower has, in quote token.
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
+     *  @return lupFactor  The LUP / inflator snapshot factor used.
      *  @return inflator   Snapshot of inflator value used to track interest on loans.
      */
-    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 inflator);
+    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 lupFactor, uint256 inflator);
 
     /**
      *  @notice Returns the `collateralScale` state variable.
@@ -155,12 +156,14 @@ interface IERC20Pool is IScaledPool {
      *  @notice Struct holding borrower related info.
      *  @param  debt             Borrower debt, WAD units.
      *  @param  collateral       Collateral deposited by borrower, WAD units.
+     *  @return lupFactor        LUP / inflator, used in neutralPrice calc (WAD)
      *  @param  inflatorSnapshot Current borrower inflator snapshot, WAD units.
      */
     struct Borrower {
-        uint256 debt;                // [WAD]
-        uint256 collateral;          // [WAD]
-        uint256 inflatorSnapshot;    // [WAD]
+        uint256 debt;             // [WAD]
+        uint256 collateral;       // [WAD]
+        uint256 lupFactor;        // [WAD]
+        uint256 inflatorSnapshot; // [WAD]
     }
 
     /**
@@ -216,9 +219,10 @@ interface IERC20Pool is IScaledPool {
 
     /**
      *  @notice Initializes a new pool, setting initial state variables.
-     *  @param  interestRate_ Default interest rate of the pool.
+     *  @param  interestRate_     Default interest rate of the pool.
+     *  @param  ajnaTokenAddress_ Address of the Ajna token.
      */
-    function initialize(uint256 interestRate_) external;
+    function initialize(uint256 interestRate_, address ajnaTokenAddress_) external;
 
     /*******************************************/
     /*** ERC20Pool Lender External Functions ***/
@@ -282,6 +286,7 @@ interface IERC20Pool is IScaledPool {
      *  @return debt_             Borrower accrued debt (WAD)
      *  @return pendingDebt_      Borrower current debt, accrued and pending accrual (WAD)
      *  @return collateral_       Deposited collateral including encumbered (WAD)
+     *  @return lupFactor_        LUP / inflator, used in neutralPrice calc (WAD)
      *  @return inflatorSnapshot_ Inflator used to calculate pending interest (WAD)
      */
     function borrowerInfo(address borrower_)
@@ -291,6 +296,7 @@ interface IERC20Pool is IScaledPool {
             uint256 debt_,
             uint256 pendingDebt_,
             uint256 collateral_,
+            uint256 lupFactor_,
             uint256 inflatorSnapshot_
         );
 }

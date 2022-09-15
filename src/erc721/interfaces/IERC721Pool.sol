@@ -120,11 +120,13 @@ interface IERC721Pool is IScaledPool {
      *  @notice Struct holding borrower related info per price bucket, for borrowers using NFTs as collateral.
      *  @param  debt                Borrower debt, WAD units.
      *  @param  collateralDeposited OZ Enumberable Set tracking the tokenIds of collateral that have been deposited
+     *  @param  lupFactor           LUP / inflator, used in neutralPrice calc (WAD)
      *  @param  inflatorSnapshot    Current borrower inflator snapshot, RAY units.
      */
     struct NFTBorrower {
         uint256               debt;                // [WAD]
         EnumerableSet.UintSet collateralDeposited;
+        uint256               lupFactor;
         uint256               inflatorSnapshot;    // [WAD]
     }
 
@@ -149,9 +151,12 @@ interface IERC721Pool is IScaledPool {
 
     /**
      *  @notice Called by deployNFTSubsetPool()
-     *  @dev Used to initialize pools that only support a subset of tokenIds
+     *  @dev    Used to initialize pools that only support a subset of tokenIds
+     *  @param  tokenIds_         Enumerates tokenIds to be allowed in the pool.
+     *  @param  interestRate_     Initial interest rate of the pool.
+     *  @param  ajnaTokenAddress_ Address of the Ajna token.
      */
-    function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_) external;
+    function initializeSubset(uint256[] memory tokenIds_, uint256 interestRate_, address ajnaTokenAddress_) external;
 
 
     /***********************************/
@@ -230,6 +235,7 @@ interface IERC721Pool is IScaledPool {
      *  @return debt_                Borrower accrued debt (WAD)
      *  @return pendingDebt_         Borrower current debt, accrued and pending accrual (WAD)
      *  @return collateralDeposited_ Array of deposited collateral IDs including encumbered
+     *  @return lupFactor_           LUP / inflator, used in neutralPrice calc (WAD)
      *  @return inflatorSnapshot_    Inflator used to calculate pending interest (WAD)
      */
     function borrowerInfo(address borrower_)
@@ -239,6 +245,7 @@ interface IERC721Pool is IScaledPool {
             uint256 debt_,
             uint256 pendingDebt_,
             uint256[] memory collateralDeposited_,
+            uint256 lupFactor_,
             uint256 inflatorSnapshot_
         );
 

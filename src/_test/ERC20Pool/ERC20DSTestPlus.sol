@@ -6,6 +6,8 @@ import { ERC20 }      from "@solmate/tokens/ERC20.sol";
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
+import { Maths } from "../../libraries/Maths.sol";
+
 import { DSTestPlus } from "../utils/DSTestPlus.sol";
 import { Token }      from "../utils/Tokens.sol";
 
@@ -66,11 +68,38 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 lpRedeemTo;
     }
 
+    struct MoveLiquiditySpecs {
+        address from;
+        uint256 amount;
+        uint256 fromIndex; 
+        uint256 toIndex;
+        uint256 newLup;
+        uint256 lpRedeemFrom;
+        uint256 lpRedeemTo;
+    }
+
+    struct RemoveAllLiquiditySpecs {
+        address from;
+        uint256 index;
+        uint256 amount;
+        uint256 newLup;
+        uint256 lpRedeem;
+    }
+
     struct RemoveCollateralSpecs {
         address from;
         uint256 amount;
         uint256 index; 
         uint256 price;
+        uint256 lpRedeem;
+    }
+
+    struct RemoveLiquiditySpecs {
+        address from;
+        uint256 index;
+        uint256 amount;
+        uint256 penalty;
+        uint256 newLup;
         uint256 lpRedeem;
     }
 
@@ -84,6 +113,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     struct Liquidity {
         uint256 index;  // bucket index
         uint256 amount; // amount to add
+        uint256 newLup;
     }
 
     struct LenderLPs {
@@ -109,6 +139,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 pendingDebt;
         uint256 collateral;
         uint256 collateralization;
+        uint256 lupFactor;
         uint256 inflator;
     }
 
@@ -124,6 +155,10 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 minDebtAmount;
         uint256 loans;
         address maxBorrower;
+        uint256 inflatorSnapshot;
+        uint256 pendingInflator;
+        uint256 interestRate;
+        uint256 interestRateUpdate;
     }
 
     function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
@@ -169,6 +204,10 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     function _addLiquidity(AddLiquiditySpecs memory specs_) internal {
         changePrank(specs_.from);
         for (uint256 i = 0; i < specs_.amounts.length; ++i) {
+            vm.expectEmit(true, true, false, true);
+            emit AddQuoteToken(specs_.from, specs_.amounts[i].index, specs_.amounts[i].amount, specs_.amounts[i].newLup);
+            vm.expectEmit(true, true, false, true);
+            emit Transfer(specs_.from, address(_pool), specs_.amounts[i].amount);
             _pool.addQuoteToken(specs_.amounts[i].amount, specs_.amounts[i].index);
         }
     }
@@ -193,6 +232,18 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(lpAmount, specs_.lpRedeem);
     }
 
+    function _removeAllLiquidity(RemoveAllLiquiditySpecs memory specs_) internal {
+        // apply penalty if case
+        changePrank(specs_.from);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(specs_.from, specs_.index, specs_.amount, specs_.newLup);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), specs_.from, specs_.amount);
+        (uint256 amount, uint256 lpRedeemed) = _pool.removeAllQuoteToken(specs_.index);
+        assertEq(amount, specs_.amount);
+        assertEq(lpRedeemed, specs_.lpRedeem);
+    }
+
     function _removeCollateral(RemoveCollateralSpecs memory specs_) internal {
         changePrank(specs_.from);
         vm.expectEmit(true, true, true, true);
@@ -203,11 +254,33 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(lpRedeemed, specs_.lpRedeem);
     }
 
+    function _removeLiquidity(RemoveLiquiditySpecs memory specs_) internal {
+        // apply penalty if case
+        uint256 expectedWithdrawal = specs_.penalty != 0 ? Maths.wmul(specs_.amount, specs_.penalty) : specs_.amount;
+
+        changePrank(specs_.from);
+        vm.expectEmit(true, true, false, true);
+        emit RemoveQuoteToken(specs_.from, specs_.index, expectedWithdrawal, specs_.newLup);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(address(_pool), specs_.from, expectedWithdrawal);
+        uint256 lpRedeemed = _pool.removeQuoteToken(specs_.amount, specs_.index);
+        assertEq(lpRedeemed, specs_.lpRedeem);
+    }
+
     function _moveCollateral(MoveCollateralSpecs memory specs_) internal {
         changePrank(specs_.from);
         vm.expectEmit(true, true, true, true);
         emit MoveCollateral(specs_.from, specs_.fromIndex, specs_.toIndex, specs_.amount);
         (uint256 lpbFrom, uint256 lpbTo) = _pool.moveCollateral(specs_.amount, specs_.fromIndex, specs_.toIndex);
+        assertEq(lpbFrom, specs_.lpRedeemFrom);
+        assertEq(lpbTo, specs_.lpRedeemTo);
+    }
+
+    function _moveLiquidity(MoveLiquiditySpecs memory specs_) internal {
+        changePrank(specs_.from);
+        vm.expectEmit(true, true, true, true);
+        emit MoveQuoteToken(specs_.from, specs_.fromIndex, specs_.toIndex, specs_.lpRedeemTo / 1e9, specs_.newLup);
+        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(specs_.amount, specs_.fromIndex, specs_.toIndex);
         assertEq(lpbFrom, specs_.lpRedeemFrom);
         assertEq(lpbTo, specs_.lpRedeemTo);
     }
@@ -255,6 +328,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
         assertEq(_pool.poolSize(),              state_.poolSize);
         assertEq(_pool.pledgedCollateral(),     state_.pledgedCollateral);
+        assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
         assertEq(_pool.borrowerDebt(),          state_.borrowerDebt);
         assertEq(_pool.poolActualUtilization(), state_.actualUtilization);
         assertEq(_pool.poolTargetUtilization(), state_.targetUtilization);
@@ -263,7 +337,11 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(_pool.loansCount(),  state_.loans);
         assertEq(_pool.maxBorrower(), state_.maxBorrower);
 
-        assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+        assertEq(_pool.inflatorSnapshot(), state_.inflatorSnapshot);
+        assertEq(_pool.pendingInflator(), state_.pendingInflator);
+
+        assertEq(_pool.interestRate(),       state_.interestRate);
+        assertEq(_pool.interestRateUpdate(), state_.interestRateUpdate);
     }
 
     function _assertLPs(LenderLPs memory specs_) internal {
@@ -283,10 +361,11 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _assertBorrower(BorrowerState memory state_) internal {
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 lupFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
         assertEq(debt,        state_.debt);
         assertEq(pendingDebt, state_.pendingDebt);
         assertEq(col,         state_.collateral);
+        assertEq(lupFactor,   state_.lupFactor);
         assertEq(inflator,    state_.inflator);
 
         assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, _pool.lup()), state_.collateralization);

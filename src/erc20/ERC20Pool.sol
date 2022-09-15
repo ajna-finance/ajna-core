@@ -31,12 +31,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Initialize Functions ***/
     /****************************/
 
-    function initialize(uint256 rate_) external {
+    function initialize(uint256 rate_, address ajnaTokenAddress_) external {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
+        ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
         lenderInterestFactor       = 0.9 * 10**18;
@@ -66,11 +67,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         if (borrower.debt != 0) loans.upsert(borrower_, thresholdPrice);
 
-        borrowers[borrower_] = borrower;
-
         // update pool state
         pledgedCollateral += amount_;
-        _updateInterestRateAndEMAs(curDebt, _lup());
+
+        uint256 lup = _lup();
+        borrower.lupFactor    = Maths.wdiv(lup, borrower.inflatorSnapshot);
+        borrowers[borrower_] = borrower;
+        _updateInterestRateAndEMAs(curDebt, lup);
 
         // move collateral from sender to pool
         emit PledgeCollateral(borrower_, amount_);
@@ -106,6 +109,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         loans.upsert(msg.sender, thresholdPrice);
 
+        borrower.lupFactor    = Maths.wdiv(newLup, borrower.inflatorSnapshot);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -130,6 +134,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
 
+        borrower.lupFactor    = Maths.wdiv(curLup, borrower.inflatorSnapshot);
         borrowers[msg.sender] = borrower;
 
         // update pool state
@@ -155,8 +160,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Calculate exchange rate before new collateral has been accounted for.
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
         Bucket memory bucket        = buckets[index_];
+        uint256 price               = _indexToPrice(index_);
         uint256 rate                = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
-        uint256 quoteValue          = Maths.wmul(amount_, _indexToPrice(index_));
+        uint256 quoteValue          = Maths.wmul(amount_, price);
         lpbChange_                 = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
         bucket.lpAccumulator       += lpbChange_;
         bucket.availableCollateral += amount_;
@@ -167,7 +173,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRateAndEMAs(curDebt, _lup());
 
         // move required collateral from sender to pool
-        emit AddCollateral(msg.sender, _indexToPrice(index_), amount_);
+        emit AddCollateral(msg.sender, price, amount_);
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
@@ -377,12 +383,14 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
             loans.upsert(borrower_, thresholdPrice);
         }
-        borrowers[borrower_] = borrower;
 
         // update pool state
         borrowerDebt = curDebt;
 
         uint256 newLup = _lup();
+        borrower.lupFactor    = Maths.wdiv(newLup, borrower.inflatorSnapshot);
+        borrowers[borrower_] = borrower;
+
         _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move amount to repay from sender to pool
@@ -394,13 +402,14 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** View Functions ***/
     /**********************/
 
-    function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
+    function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256, uint256, uint256) {
         uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
 
         return (
             borrowers[borrower_].debt,            // accrued debt (WAD)
             pendingDebt,                          // current debt, accrued and pending accrual (WAD)
             borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
+            borrowers[borrower_].lupFactor,       // LUP / inflator, used in neutralPrice calc (WAD)
             borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
         );
     }

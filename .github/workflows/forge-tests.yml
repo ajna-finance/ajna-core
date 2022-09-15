@@ -2,6 +2,10 @@ name: Forge Tests
 
 on: [push]
 
+env:
+  ## Loads environment from secrets
+  ETH_RPC_URL: ${{secrets.ETH_RPC_URL}}
+
 jobs:
   tests:
     runs-on: ubuntu-latest

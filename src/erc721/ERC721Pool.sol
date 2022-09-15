@@ -44,11 +44,12 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Initialize Functions ***/
     /****************************/
 
-    function initialize(uint256 rate_) external {
+    function initialize(uint256 rate_, address ajnaTokenAddress_) external {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
+        ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
         lenderInterestFactor       = 0.9 * 10**18;
@@ -62,8 +63,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         poolInitializations += 1;
     }
 
-    function initializeSubset(uint256[] memory tokenIds_, uint256 rate_) external override {
-        this.initialize(rate_);
+    function initializeSubset(uint256[] memory tokenIds_, uint256 rate_, address ajnaTokenAddress_) external override {
+        this.initialize(rate_, ajnaTokenAddress_);
 
         // add subset of tokenIds allowed in the pool
         for (uint256 id = 0; id < tokenIds_.length;) {
@@ -98,11 +99,13 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // update pool state
         uint256 curDebt = _accruePoolInterest();
-        _updateInterestRateAndEMAs(curDebt, _lup());
+        uint256 lup = _lup();
+        _updateInterestRateAndEMAs(curDebt, lup);
         pledgedCollateral += Maths.wad(tokenIds_.length);
 
         // accrue interest to borrower
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        borrower.lupFactor = Maths.wdiv(lup, borrower.inflatorSnapshot);
 
         // update loan queue
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
@@ -134,6 +137,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
         if (_poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) < Maths.WAD) revert BorrowPoolUnderCollateralized();
 
+        borrower.lupFactor = Maths.wdiv(newLup, borrower.inflatorSnapshot);
         curDebt += debt;
 
         borrowerDebt = curDebt;
@@ -161,6 +165,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // check collateralization for sufficient unenecumbered collateral
         uint256 curLup = _lup();
         if (Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) < Maths.wad(tokenIds_.length)) revert RemoveCollateralInsufficientCollateral();
+
+        borrower.lupFactor = Maths.wdiv(curLup, borrower.inflatorSnapshot);
 
         // update pool state
         pledgedCollateral -= Maths.wad(tokenIds_.length);
@@ -212,6 +218,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // update pool state
         borrowerDebt = curDebt;
         uint256 newLup = _lup();
+        borrower.lupFactor = Maths.wdiv(newLup, borrower.inflatorSnapshot);
+
         _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move amount to repay from sender to pool
@@ -358,13 +366,14 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** View Functions ***/
     /**********************/
 
-    function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256[] memory, uint256) {
+    function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256[] memory, uint256, uint256) {
         uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
 
         return (
             borrowers[borrower_].debt,                         // accrued debt (WAD)
             pendingDebt,                                       // current debt, accrued and pending accrual (WAD)
             borrowers[borrower_].collateralDeposited.values(), // deposited collateral including encumbered (WAD)
+            borrowers[borrower_].lupFactor,                    // LUP / inflator, used in neutralPrice calc (WAD)
             borrowers[borrower_].inflatorSnapshot              // used to calculate pending interest (WAD)
         );
     }
