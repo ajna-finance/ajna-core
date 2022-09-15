@@ -53,7 +53,6 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
     }
 
     function test_liquidate() external {
-
         /**********************/
         /*** Pre-kick state ***/
         /**********************/
@@ -108,6 +107,30 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         assertEq(kickTime,            block.timestamp);
         assertEq(referencePrice,      HPB);
         assertEq(remainingCollateral, 1e18);
+    }
+
+    function testAuctionPrice() external {
+        skip(6238);
+        uint256 referencePrice = 8_678.5 * 1e18;
+        uint256 liquidationTime = block.timestamp;
+        assertEq(_pool.auctionPrice(referencePrice, liquidationTime), 86_785.0 * 1e18);
+        skip(1444); // price should not change in the first hour
+        assertEq(_pool.auctionPrice(referencePrice, liquidationTime), 86_785.0 * 1e18);
+
+        skip(5756);     // 2 hours
+        assertEq(_pool.auctionPrice(referencePrice, liquidationTime), 43_392.5 * 1e18);
+        skip(2394);     // 2 hours, 39 minutes, 54 seconds
+        assertEq(_pool.auctionPrice(referencePrice, liquidationTime), 27_367.159606354998613290 * 1e18);
+        skip(2586);     // 3 hours, 23 minutes
+        assertEq(_pool.auctionPrice(referencePrice, liquidationTime), 16_633.737549018910661740 * 1e18);
+        skip(3);        // 3 seconds later
+        assertEq(_pool.auctionPrice(referencePrice, liquidationTime), 16_624.132299820494703920 * 1e18);
+        skip(20153);    // 8 hours, 35 minutes, 53 seconds
+        assertEq(_pool.auctionPrice(referencePrice, liquidationTime), 343.207165783609045700 * 1e18);
+        skip(97264);    // 36 hours
+        assertEq(_pool.auctionPrice(referencePrice, liquidationTime), 0.00000252577588655 * 1e18);
+        skip(129600);   // 72 hours
+        assertEq(_pool.auctionPrice(referencePrice, liquidationTime), 0);
     }
 
     // TODO: move to DSTestPlus?
