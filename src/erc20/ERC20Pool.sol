@@ -31,13 +31,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Initialize Functions ***/
     /****************************/
 
-    function initialize(uint256 rate_) external {
+    function initialize(uint256 rate_, address ajnaTokenAddress_) external {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
-        ajnaTokenAddress           = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
+        ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
         lenderInterestFactor       = 0.9 * 10**18;

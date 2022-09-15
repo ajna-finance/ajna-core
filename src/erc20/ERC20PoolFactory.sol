@@ -32,6 +32,6 @@ contract ERC20PoolFactory is IPoolFactory, PoolDeployer {
         deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
 
-        pool.initialize(interestRate_);
+        pool.initialize(interestRate_, ajnaTokenAddress);
     }
 }

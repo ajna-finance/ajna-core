@@ -240,6 +240,7 @@ class TestUtils:
                     lines.append(
                         f"   {prefix} {fn_name} -  avg: {values['avg']}  avg (confirmed):"
                         f" {values['avg_success']}  low: {values['low']}  high: {values['high']}"
+                        f"  tx count: {values['count']}"
                     )
 
             return lines + [""]

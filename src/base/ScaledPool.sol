@@ -72,7 +72,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     /**
      *  @notice Address of the Ajna token, needed for Claimable Reserve Auctions.
      */
-    address internal ajnaTokenAddress = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
+    address internal ajnaTokenAddress;
 
     Heap.Data internal loans;
 

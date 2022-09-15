@@ -44,12 +44,12 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** Initialize Functions ***/
     /****************************/
 
-    function initialize(uint256 rate_) external {
+    function initialize(uint256 rate_, address ajnaTokenAddress_) external {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
-        ajnaTokenAddress           = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
+        ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
         lenderInterestFactor       = 0.9 * 10**18;
@@ -63,8 +63,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         poolInitializations += 1;
     }
 
-    function initializeSubset(uint256[] memory tokenIds_, uint256 rate_) external override {
-        this.initialize(rate_);
+    function initializeSubset(uint256[] memory tokenIds_, uint256 rate_, address ajnaTokenAddress_) external override {
+        this.initialize(rate_, ajnaTokenAddress_);
 
         // add subset of tokenIds allowed in the pool
         for (uint256 id = 0; id < tokenIds_.length;) {
