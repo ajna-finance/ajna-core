@@ -18,8 +18,6 @@ import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
 import { Heap }           from "../libraries/Heap.sol";
 
-import "forge-std/console.sol";
-
 abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     using SafeERC20 for ERC20;
     using Heap      for Heap.Data;
@@ -302,9 +300,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _auctionPrice(uint256 referencePrice, uint256 timeOfLiq) internal view returns (uint256 price_) {
-        uint256 elapsedSeconds = block.timestamp - timeOfLiq;
-        uint256 elapsedHours = Maths.wdiv(elapsedSeconds * 1e18, 1 hours * 1e18);
-        elapsedHours -= Maths.min(elapsedHours, 1e18);
+        uint256 elapsedHours = Maths.wdiv((block.timestamp - timeOfLiq) * 1e18, 1 hours * 1e18);
+        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
 
         int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
         price_ = 10 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
