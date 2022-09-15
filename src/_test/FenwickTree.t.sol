@@ -133,7 +133,7 @@ contract FenwickTreeTest is DSTestPlus {
     /**
      *  @notice Fuzz tests additions and scaling values, testing findSum.
      */
-    function testFenwickFuzzyScalingFind(
+    function testLoadFenwickFuzzyScalingFind(
         uint256 insertions_,
         uint256 totalAmount_,
         uint256 scaleIndex_,
@@ -167,7 +167,7 @@ contract FenwickTreeTest is DSTestPlus {
      *  @notice Fuzz tests additions and value removals.
      */
     // TODO: check random parent to verify sum post removal
-    function testFenwickFuzzyRemoval(
+    function testLoadFenwickFuzzyRemoval(
         uint256 insertions_,
         uint256 totalAmount_
         ) external {
@@ -200,7 +200,7 @@ contract FenwickTreeGasLoadTest is DSTestPlus {
         }
     }
 
-    function testGasLoadFenwickTreeGasExerciseDeleteOnAllDeposits() public {
+    function testLoadFenwickTreeGasExerciseDeleteOnAllDeposits() public {
 
         for (uint256 i; i < DEPOSITS_COUNT; i++) {
             uint256 snapshot = vm.snapshot();
@@ -213,7 +213,7 @@ contract FenwickTreeGasLoadTest is DSTestPlus {
         }
     }
 
-    function testGasLoadFenwickTreeGasExerciseAddOnAllDeposits() public {
+    function testLoadFenwickTreeGasExerciseAddOnAllDeposits() public {
 
         for (uint256 i; i < DEPOSITS_COUNT; i++) {
             uint256 snapshot = vm.snapshot();
@@ -226,25 +226,25 @@ contract FenwickTreeGasLoadTest is DSTestPlus {
         }
     }
 
-    function testGasLoadFenwickTreeGasExerciseFindIndexOfSumOnAllDeposits() public {
+    function testLoadFenwickTreeGasExerciseFindIndexOfSumOnAllDeposits() public {
         for (uint256 i; i < DEPOSITS_COUNT; i++) {
             assertEq(_tree.findIndexOfSum(819_200 * 1e18 - i * 100 * 1e18), DEPOSITS_COUNT - i - 1);
         }
     }
 
-    function testGasLoadFenwickTreeGasExerciseFindPrefixSumOnAllDeposits() public {
+    function testLoadFenwickTreeGasExerciseFindPrefixSumOnAllDeposits() public {
         for (uint256 i; i < DEPOSITS_COUNT; i++) {
             assertEq(_tree.prefixSum(i), 100 * 1e18 + i * 100 * 1e18);
         }
     }
 
-    function testGasLoadFenwickTreeGasExerciseGetOnAllIndexes() public {
+    function testLoadFenwickTreeGasExerciseGetOnAllIndexes() public {
         for (uint256 i; i < DEPOSITS_COUNT; i++) {
             assertEq(_tree.get(i), 100 * 1e18);
         }
     }
 
-    function testGasLoadFenwickTreeGasExerciseScaleOnAllDeposits() public {
+    function testLoadFenwickTreeGasExerciseScaleOnAllDeposits() public {
         for (uint256 i; i < DEPOSITS_COUNT; i++) {
             uint256 snapshot = vm.snapshot();
             assertEq(_tree.treeSum(), DEPOSITS_COUNT * 100 * 1e18);
