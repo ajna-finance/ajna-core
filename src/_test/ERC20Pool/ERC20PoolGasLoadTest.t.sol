@@ -20,7 +20,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         _setupBorrowersAndLoans(LOANS_COUNT);
     }
 
-    function testGasLoadERC20PoolFuzzyPartialRepay(uint256 borrowerId_) public {
+    function testLoadERC20PoolFuzzyPartialRepay(uint256 borrowerId_) public {
         assertEq(_pool.loansCount(), LOANS_COUNT);
 
         vm.assume(borrowerId_ <= LOANS_COUNT);
@@ -32,7 +32,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         assertEq(_pool.loansCount(), LOANS_COUNT);
     }
 
-    function testGasLoadERC20PoolGasFuzzyFullRepay(uint256 borrowerId_) public {
+    function testLoadERC20PoolGasFuzzyFullRepay(uint256 borrowerId_) public {
         assertEq(_pool.loansCount(), LOANS_COUNT);
 
         vm.assume(borrowerId_ <= LOANS_COUNT);
@@ -45,7 +45,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         assertEq(_pool.loansCount(), LOANS_COUNT - 1);
     }
 
-    function testGasLoadERC20PoolGasFuzzyBorrowExisting(uint256 borrowerId_) public {
+    function testLoadERC20PoolGasFuzzyBorrowExisting(uint256 borrowerId_) public {
         assertEq(_pool.loansCount(), LOANS_COUNT);
 
         vm.assume(borrowerId_ <= LOANS_COUNT);
@@ -57,7 +57,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         assertEq(_pool.loansCount(), LOANS_COUNT);
     }
 
-    function testGasLoadERC20PoolGasBorrowNew() public {
+    function testLoadERC20PoolGasBorrowNew() public {
         uint256 snapshot = vm.snapshot();
 
         assertEq(_pool.loansCount(), LOANS_COUNT);
@@ -80,7 +80,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         assertEq(_pool.loansCount(), LOANS_COUNT);
     }
 
-    function testGasLoadERC20PoolGasExercisePartialRepayForAllBorrowers() public {
+    function testLoadERC20PoolGasExercisePartialRepayForAllBorrowers() public {
         assertEq(_pool.loansCount(), LOANS_COUNT);
 
         for (uint256 i; i < LOANS_COUNT; i++) {
@@ -99,7 +99,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         assertEq(_pool.loansCount(), LOANS_COUNT);
     }
 
-    function testGasLoadERC20PoolGasExerciseRepayAllForAllBorrowers() public {
+    function testLoadERC20PoolGasExerciseRepayAllForAllBorrowers() public {
         assertEq(_pool.loansCount(), LOANS_COUNT);
 
         for (uint256 i; i < LOANS_COUNT; i++) {
@@ -119,7 +119,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         assertEq(_pool.loansCount(), LOANS_COUNT);
     }
 
-    function testGasLoadERC20PoolGasExerciseBorrowMoreForAllBorrowers() public {
+    function testLoadERC20PoolGasExerciseBorrowMoreForAllBorrowers() public {
         assertEq(_pool.loansCount(), LOANS_COUNT);
 
         for (uint256 i; i < LOANS_COUNT; i++) {
@@ -138,7 +138,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         assertEq(_pool.loansCount(), LOANS_COUNT);
     }
 
-    function testGasLoadERC20PoolGasFuzzyAddRemoveQuoteToken(uint256 index_) public {
+    function testLoadERC20PoolGasFuzzyAddRemoveQuoteToken(uint256 index_) public {
         vm.assume(index_ > 1 && index_ < 7388);
 
         address lender = _lenders[0];
@@ -156,7 +156,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         vm.stopPrank();
     }
 
-    function testGasLoadERC20PoolGasExerciseAddRemoveQuoteTokenForAllIndexes() public {
+    function testLoadERC20PoolGasExerciseAddRemoveQuoteTokenForAllIndexes() public {
         address lender = _lenders[0];
         _mintQuoteAndApproveTokens(lender, 200_000 * 1e18);
 

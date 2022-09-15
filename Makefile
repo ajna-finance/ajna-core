@@ -14,9 +14,9 @@ install :; git submodule update --init --recursive
 build  :; forge clean && forge build
 
 # Tests
-test   :; forge clean && forge test -v --no-match-test testGasLoad # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-with-gas-report   :; forge clean && forge build && forge test -v --no-match-path testGasLoad --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
-test-gas-load   :; forge clean && forge build && forge test -vv --match-test testGasLoad --gas-report
+test   :; forge clean && forge test -v --no-match-test testLoad # --ffi # enable if you need the `ffi` cheat code on HEVM
+test-with-gas-report   :; forge clean && forge build && forge test -v --no-match-path testLoad --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
+test-load   :; forge clean && forge build && forge test -vv --match-test testLoad --gas-report
 coverage   :; forge coverage
 
 # Generate Gas Snapshots
