@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 import { Maths }       from "../../libraries/Maths.sol";
 import { Heap}         from "../../libraries/Heap.sol";
 import { FenwickTree } from "../../base/FenwickTree.sol";
+import { Queue } from "../../base/Queue.sol";
 
 import { Test } from "@std/Test.sol";
 import { Vm }   from "@std/Vm.sol";
@@ -297,6 +298,21 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
         }
 
         assertEq(_treeSum(), totalAmount);
+    }
+}
+
+contract QueueInstance is Queue, DSTestPlus {
+
+    function add(address borrower_, uint256 kickTime_, address newPrev_) external {
+        return _addAuction(borrower_, kickTime_, newPrev_);
+    }
+
+    function remove(address borrower_) external {
+        return _removeAuction(borrower_);
+    }
+
+    function removeHead() external {
+        return _removeAuctionHead();
     }
 
 }
