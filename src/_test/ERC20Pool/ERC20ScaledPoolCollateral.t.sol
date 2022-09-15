@@ -38,9 +38,9 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
     function testAddPullCollateral() external {
         // lender deposits 10000 Quote into 3 buckets
         Liquidity[] memory amounts = new Liquidity[](3);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551});
-        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: 2552});
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
+        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: 2552, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
@@ -60,7 +60,11 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
                 loans:                0,
-                maxBorrower:          address(0)
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
         assertEq(_collateral.balanceOf(_borrower), 150 * 1e18);
@@ -89,7 +93,11 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        2_102.019230769230770200 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
         _assertBorrower(
@@ -127,7 +135,11 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 targetUtilization:    0.141220760889469864 * 1e18,
                 minDebtAmount:        2_104.900682313900291843 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1.001370801704613834 * 1e18,
+                pendingInflator:      1.001370801704613834 * 1e18,
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   864000
             })
         );
         _assertBorrower(
@@ -162,7 +174,11 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 targetUtilization:    0.141220760889469864 * 1e18,
                 minDebtAmount:        2_104.900682313900291843 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1.001370801704613834 * 1e18,
+                pendingInflator:      1.001370801704613834 * 1e18,
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   864000
             })
         );
         _assertBorrower(
@@ -554,7 +570,11 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
                 loans:                0,
-                maxBorrower:          address(0)
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
         assertEq(_collateral.balanceOf(_borrower),  150 * 1e18);
@@ -582,12 +602,14 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
                 loans:                0,
-                maxBorrower:          address(0)
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
         assertEq(_collateral.balanceOf(_borrower),  150 * 1e18);
         assertEq(_collateral.balanceOf(_borrower2), 0);
     }
-
-    // TODO: add collateralization, utilization and encumberance test? -> use hardcoded amounts in pure functions without creaitng whole pool flows
 }
