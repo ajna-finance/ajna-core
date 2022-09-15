@@ -8,3 +8,4 @@ node_modules
 .vscode/*.log
 __pycache__/
 reports/
+.gas-snapshot

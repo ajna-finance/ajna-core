@@ -8,7 +8,7 @@ import { BucketMath } from "../../libraries/BucketMath.sol";
 
 import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
-contract ERC20ScaledInterestRateTest is ERC20HelperContract {
+contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -63,6 +63,7 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
                 interestRateUpdate:   0
             })
         );
+        // enforce EMA and target utilization update
         _borrow(
             BorrowSpecs({
                 from:         _borrower,
@@ -106,7 +107,7 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
 
         skip(864000);
 
-        // enforce rate update - decrease
+        // enforce EMA and target utilization update
         amounts = new Liquidity[](1);
         amounts[0] = Liquidity({amount: 100 * 1e18, index: 5, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
@@ -141,6 +142,7 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
                 pendingDebt:       0,
                 collateral:        100 * 1e18,
                 collateralization: 1e18,
+                lupFactor:         1_003_455_791.141722003295902974 * 1e18,
                 inflator:          1.001507985182953253 * 1e18
             })
         );
@@ -214,6 +216,145 @@ contract ERC20ScaledInterestRateTest is ERC20HelperContract {
                 interestRateUpdate:   0
             })
         );
+    }
+
+    function testScaledPoolEMAAndTargetUtilizationUpdate() external {
+
+        // add initial quote to the pool
+        Liquidity[] memory amounts = new Liquidity[](2);
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 3_010, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2_995, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
+
+        _assertPool(
+            PoolState({
+                htp:                  0,
+                lup:                  BucketMath.MAX_PRICE,
+                poolSize:             20_000 * 1e18,
+                pledgedCollateral:    0,
+                encumberedCollateral: 0,
+                borrowerDebt:         0,
+                actualUtilization:    0,
+                targetUtilization:    1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+        assertEq(_pool.debtEma(),   0);
+        assertEq(_pool.lupColEma(), 0);
+
+        // borrower 1 borrows 500 quote from the pool
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 50 * 1e18,
+                borrowAmount: 500 * 1e18,
+                indexLimit:   3_010,
+                price:        327.188250324085203338 * 1e18
+            })
+        ); 
+
+        _assertPool(
+            PoolState({
+                htp:                  10.009615384615384620 * 1e18,
+                lup:                  327.188250324085203338 * 1e18,
+                poolSize:             20_000 * 1e18,
+                pledgedCollateral:    50 * 1e18,
+                encumberedCollateral: 1.529641632103338099 * 1e18,
+                borrowerDebt:         500.480769230769231000 * 1e18,
+                actualUtilization:    0.025024038461538462 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        50.048076923076923100 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+        assertEq(_pool.debtEma(),   0);
+        assertEq(_pool.lupColEma(), 0);
+
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower2,
+                borrower:     _borrower2,
+                pledgeAmount: 50 * 1e18,
+                borrowAmount: 500 * 1e18,
+                indexLimit:   3_010,
+                price:        327.188250324085203338 * 1e18
+            })
+        ); 
+
+        _assertPool(
+            PoolState({
+                htp:                  10.009615384615384620 * 1e18,
+                lup:                  327.188250324085203338 * 1e18,
+                poolSize:             20_000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 3.059283264206676197 * 1e18,
+                borrowerDebt:         1000.961538461538462000 * 1e18,
+                actualUtilization:    0.050048076923076923 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        50.048076923076923100 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+        assertEq(_pool.debtEma(),   0);
+        assertEq(_pool.lupColEma(), 0);
+
+        skip(10 days);
+
+        // borrower 1 borrows 500 quote from the pool
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 0,
+                borrowAmount: 10 * 1e18,
+                indexLimit:   3_010,
+                price:        327.188250324085203338 * 1e18
+            })
+        );
+
+        _assertPool(
+            PoolState({
+                htp:                  10.223528890139451939 * 1e18,
+                lup:                  327.188250324085203338 * 1e18,
+                poolSize:             20_001.234907804858360000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 3.094069767562214045 * 1e18,
+                borrowerDebt:         1012.343273629329809307 * 1e18,
+                actualUtilization:    0.050614038497907667 * 1e18,
+                targetUtilization:    0.030940697675622140 * 1e18,
+                minDebtAmount:        50.617163681466490465 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                inflatorSnapshot:     1.001370801704613834 * 1e18,
+                pendingInflator:      1.001370801704613834 * 1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   864000
+            })
+        );
+        assertEq(_pool.debtEma(),   95.440014344854493304 * 1e18);
+        assertEq(_pool.lupColEma(), 3_084.610933645840358918 * 1e18);
     }
 
 }

@@ -32,7 +32,7 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         deployedPools[ERC721_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
 
-        pool.initialize(interestRate_);
+        pool.initialize(interestRate_, ajnaTokenAddress);
     }
 
     function deploySubsetPool(
@@ -45,7 +45,7 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         deployedPools[getNFTSubsetHash(tokenIds_)][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
 
-        pool.initializeSubset(tokenIds_, interestRate_);
+        pool.initializeSubset(tokenIds_, interestRate_, ajnaTokenAddress);
     }
 
     /*********************************/

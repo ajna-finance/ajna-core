@@ -106,6 +106,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             uint256 borrowerDebt,
             uint256 borrowerPendingDebt,
             uint256 collateralDeposited,
+            uint256 lupFactor,
             uint256 borrowerInflator
         ) = _pool.borrowerInfo(_borrower2);
 
@@ -134,6 +135,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             borrowerDebt,
             borrowerPendingDebt,
             collateralDeposited,
+            lupFactor,
             borrowerInflator
         ) = _pool.borrowerInfo(_borrower2);
 
@@ -394,6 +396,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             uint256 borrowerDebt,
             uint256 borrowerPendingDebt,
             uint256 collateralDeposited,
+            uint256 lupFactor,
             uint256 borrowerInflator
 
         ) = _pool.borrowerInfo(address(borrower_));
@@ -401,6 +404,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         emit log_named_uint("borrowerDebt        ", borrowerDebt);
         emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
         emit log_named_uint("collateralDeposited ", collateralDeposited);
+        emit log_named_uint("lupFactor ",           lupFactor);
         emit log_named_uint("collateralEncumbered", _pool.encumberedCollateral(borrowerDebt, _pool.lup()));
         emit log_named_uint("collateralization   ", _pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _pool.lup()));
         emit log_named_uint("borrowerInflator    ", borrowerInflator);

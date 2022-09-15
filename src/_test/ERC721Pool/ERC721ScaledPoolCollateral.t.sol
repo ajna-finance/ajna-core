@@ -102,9 +102,9 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower2),           53);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 0);
 
-        (, , uint256[] memory col, ) = _subsetPool.borrowerInfo(_borrower);
+        (, , uint256[] memory col, , ) = _subsetPool.borrowerInfo(_borrower);
         assertEq(col.length,  0);
-        (, , col, ) = _subsetPool.borrowerInfo(_borrower2);
+        (, , col, , ) = _subsetPool.borrowerInfo(_borrower2);
         assertEq(col.length,  0);
 
         uint256[] memory tokenIdsToAdd = new uint256[](1);
@@ -125,9 +125,9 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower2),           52);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 1);
 
-        (, , col, ) = _subsetPool.borrowerInfo(_borrower);
+        (, , col, , ) = _subsetPool.borrowerInfo(_borrower);
         assertEq(col.length,  1);
-        (, , col, ) = _subsetPool.borrowerInfo(_borrower2);
+        (, , col, , ) = _subsetPool.borrowerInfo(_borrower2);
         assertEq(col.length,  0);
     }
 

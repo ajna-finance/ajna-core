@@ -70,6 +70,13 @@ interface IScaledPool {
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
 
     /**
+     *  @notice Emitted when a Claimaible Reserve Auction is started or taken.
+     *  @return claimableReservesRemaining_ Amount of claimable reserves which has not yet been taken.
+     *  @return auctionPrice_               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     */
+    event ReserveAuction(uint256 claimableReservesRemaining_, uint256 auctionPrice_);
+
+    /**
      *  @notice Emitted when a lender transfers their LP tokens to a different address.
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner_    The original owner address of the position.
@@ -127,6 +134,11 @@ interface IScaledPool {
     error KickNoDebt();
 
     /**
+     *  @notice No pool reserves are claimable.
+     */
+    error KickNoReserves();
+
+    /**
      *  @notice Borrower has a healthy over-collateralized position.
      */
     error LiquidateBorrowerOk();
@@ -155,6 +167,11 @@ interface IScaledPool {
      *  @notice When moving quote token HTP must stay below LUP.
      */
     error MoveQuoteLUPBelowHTP();
+
+    /**
+     *  @notice Actor is attempting to take or clear an inactive auction.
+     */
+    error NoAuction();
 
     /**
      *  @notice User is attempting to pull more collateral than is available.
@@ -286,12 +303,6 @@ interface IScaledPool {
     function lupColEma() external view returns (uint256 lupColEma_);
 
     /**
-     *  @notice Returns the `lupEma` state variable.
-     *  @return lupEma_ Exponential moving average of the lowest utilized price.
-     */
-    function lupEma() external view returns (uint256 lupEma_);
-
-    /**
      *  @notice Returns the `minFee` state variable.
      *  @return minFee_ TODO
      */
@@ -302,12 +313,6 @@ interface IScaledPool {
      *  @return pledgedCollateral_ The total pledged collateral in the system, in WAD units.
      */
     function pledgedCollateral() external view returns (uint256 pledgedCollateral_);
-
-    /**
-     *  @notice Returns the `poolPriceEma` state variable.
-     *  @return poolPriceEma_ Exponential moving average of the pool price (debt / encumbered collateral).
-     */
-    function poolPriceEma() external view returns (uint256 poolPriceEma_);
 
     /**
      *  @notice Returns the `quoteTokenScale` state variable.
@@ -477,6 +482,12 @@ interface IScaledPool {
         );
 
     /**
+     *  @notice Calculates the amount of reserves which can be claimed through a Claimable Reserve Auction.
+     *  @return _claimableReserves Denominated in quote token, or 0 if no reserves can be auctioned.
+     */
+    function claimableReserves() external view returns (uint256 _claimableReserves);
+
+    /**
      *  @notice Returns the address of the pool's collateral token
      */
     function collateralTokenAddress() external pure returns (address);
@@ -603,9 +614,11 @@ interface IScaledPool {
      *  @notice Returns the state of the Claimaible Reserve Auction.
      *  @return claimableReservesRemaining_ Amount of claimable reserves which has not yet been taken.
      *  @return auctionPrice_               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return timeRemaining_              Seconds remaining before takes are no longer allowed.
      */
     function reserveAuction() external view returns (
         uint256 claimableReservesRemaining_,
-        uint256 auctionPrice_
+        uint256 auctionPrice_,
+        uint256 timeRemaining_
     );
 }

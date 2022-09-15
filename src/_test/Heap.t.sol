@@ -241,7 +241,7 @@ contract HeapTest is DSTestPlus {
         _loans.upsertTp(b1, 0);
     }
 
-    function testHeapFuzzy(uint256 inserts_) public {
+    function testLoadHeapFuzzy(uint256 inserts_) public {
 
         // test adding different TPs
         _loans.fuzzyFill(inserts_, true);
@@ -295,7 +295,7 @@ contract HeapGasLoadTest is DSTestPlus {
         }
     }
 
-    function testGasLoadHeapGasExerciseDeleteOnAllNodes() public {
+    function testLoadHeapGasExerciseDeleteOnAllNodes() public {
         assertEq(_loans.getTotalTps(), NODES_COUNT + 1); // account node 0 too
 
         for (uint256 i; i < NODES_COUNT; i++) {
@@ -311,7 +311,7 @@ contract HeapGasLoadTest is DSTestPlus {
         assertEq(_loans.getTotalTps(), NODES_COUNT + 1);
     }
 
-    function testGasLoadHeapGasExerciseUpsertOnAllNodes() public {
+    function testLoadHeapGasExerciseUpsertOnAllNodes() public {
         assertEq(_loans.getTotalTps(), NODES_COUNT + 1); // account node 0 too
 
         for (uint256 i; i < NODES_COUNT; i++) {
