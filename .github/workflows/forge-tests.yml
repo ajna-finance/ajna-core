@@ -28,7 +28,7 @@ jobs:
         id: cache-gas
         uses: actions/cache@v3
         with:
-          path: gas-reports-*
+          path: gas-reports-${{ github.run_id }}
           key: ${{ steps.gas.outputs.dir }}-${{ github.run_id }}
           restore-keys: |
             ${{ steps.gas.outputs.dir }}-
@@ -36,7 +36,6 @@ jobs:
       - name: Run tests and compare gas
         shell: bash
         run: |
-          ls -la
           [ -d gas-reports-* ] && forge snapshot --no-match-test testLoad --diff gas-reports-*/.gas-snapshot
           mkdir -p gas-reports-${{ github.run_id }}
           forge snapshot --no-match-test testLoad --gas-report --snap gas-reports-${{ github.run_id }}/.gas-snapshot
