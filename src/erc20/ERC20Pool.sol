@@ -86,7 +86,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         uint256 curDebt = _accruePoolInterest();
 
-        Borrower memory borrower = borrowers[msg.sender];
+        Borrower storage borrower = borrowers[msg.sender];
         if (loans.count - 1 != 0) if (borrower.debt + amount_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
@@ -110,7 +110,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         loans.upsert(msg.sender, thresholdPrice);
 
         borrower.lupFactor    = Maths.wdiv(newLup, borrower.inflatorSnapshot);
-        borrowers[msg.sender] = borrower;
+        // borrowers[msg.sender] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
 
