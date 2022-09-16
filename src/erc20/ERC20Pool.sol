@@ -11,6 +11,7 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
+import '../libraries/Book.sol';
 
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
@@ -94,7 +95,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 debt  = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
         borrower.debt += debt;
 
-        uint256 newLup = _indexToPrice(lupId);
+        uint256 newLup = Book.indexToPrice(lupId);
 
         // check borrow won't push borrower or pool into a state of under-collateralization
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
@@ -160,7 +161,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Calculate exchange rate before new collateral has been accounted for.
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
         Bucket memory bucket        = buckets[index_];
-        uint256 price               = _indexToPrice(index_);
+        uint256 price               = Book.indexToPrice(index_);
         uint256 rate                = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 quoteValue          = Maths.wmul(amount_, price);
         lpbChange_                 = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
@@ -188,7 +189,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // determine amount of amount of LP required
         uint256 rate                 = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
-        lpbAmountFrom_               = (amount_ * _indexToPrice(fromIndex_) * 1e18 + rate / 2) / rate;
+        lpbAmountFrom_               = (amount_ * Book.indexToPrice(fromIndex_) * 1e18 + rate / 2) / rate;
         if (lpbAmountFrom_ > bucketLender.lpBalance) revert MoveCollateralInsufficientLP();
 
         // update "from" bucket accounting
@@ -198,7 +199,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // update "to" bucket accounting
         Bucket storage toBucket      = buckets[toIndex_];
         rate                         = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
-        lpbAmountTo_                 = (amount_ * _indexToPrice(toIndex_) * 1e18 + rate / 2) / rate;
+        lpbAmountTo_                 = (amount_ * Book.indexToPrice(toIndex_) * 1e18 + rate / 2) / rate;
         toBucket.lpAccumulator       += lpbAmountTo_;
         toBucket.availableCollateral += amount_;
 
@@ -218,7 +219,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _accruePoolInterest();
 
         BucketLender storage bucketLender = bucketLenders[index_][msg.sender];
-        uint256 price = _indexToPrice(index_);
+        uint256 price = Book.indexToPrice(index_);
         uint256 rate  = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpAmount_     = bucketLender.lpBalance;
         amount_       = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
@@ -239,7 +240,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         _accruePoolInterest();
 
-        uint256 price = _indexToPrice(index_);
+        uint256 price = Book.indexToPrice(index_);
         uint256 rate  = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         lpAmount_     = Maths.rdiv((amount_ * price / 1e9), rate);
 

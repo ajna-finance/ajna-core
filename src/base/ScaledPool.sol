@@ -17,6 +17,7 @@ import { FenwickTree }    from "./FenwickTree.sol";
 import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
 import { Heap }           from "../libraries/Heap.sol";
+import '../libraries/Book.sol';
 
 abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     using SafeERC20 for ERC20;
@@ -136,7 +137,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 col = pledgedCollateral;
         if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
             uint256 ptp = Maths.wdiv(curDebt, col);
-            if (_indexToPrice(fromIndex_) > ptp && _indexToPrice(toIndex_) < ptp) {
+            if (Book.indexToPrice(fromIndex_) > ptp && Book.indexToPrice(toIndex_) < ptp) {
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
             }
         }
@@ -199,7 +200,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 indexesLength = indexes_.length;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            if (!BucketMath.isValidIndex(_indexToBucketIndex(indexes_[i]))) revert TransferLPInvalidIndex();
+            if (!BucketMath.isValidIndex(Book.indexToBucketIndex(indexes_[i]))) revert TransferLPInvalidIndex();
 
             BucketLender memory bucketLenderOwner = bucketLenders[indexes_[i]][owner_];
             uint256 balanceToTransfer             = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
@@ -335,7 +336,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 debt = borrowerDebt;
         if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
             uint256 ptp = Maths.wdiv(debt, col);
-            if (_indexToPrice(index_) > ptp) {
+            if (Book.indexToPrice(index_) > ptp) {
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
             }
         }
@@ -425,20 +426,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return _findIndexOfSum(borrowerDebt + additionalDebt_);
     }
 
-    /**
-     *  @dev Fenwick index to bucket index conversion
-     *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
-     *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
-     *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
-     */
-    function _indexToBucketIndex(uint256 index_) internal pure returns (int256 bucketIndex_) {
-        bucketIndex_ = (index_ != 8191) ? 4156 - int256(index_) : BucketMath.MIN_PRICE_INDEX;
-    }
-
-    function _indexToPrice(uint256 index_) internal pure returns (uint256) {
-        return BucketMath.indexToPrice(_indexToBucketIndex(index_));
-    }
-
     function _priceToIndex(uint256 price_) internal pure returns (uint256) {
         return uint256(7388 - (BucketMath.priceToIndex(price_) + 3232));
     }
@@ -448,7 +435,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _lup() internal view returns (uint256) {
-        return _indexToPrice(_lupIndex(0));
+        return Book.indexToPrice(_lupIndex(0));
     }
 
     function _calculateFeeRate() internal view returns (uint256) {
@@ -457,7 +444,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _exchangeRate(uint256 quoteToken_, uint256 availableCollateral_, uint256 lpAccumulator_, uint256 index_) internal pure returns (uint256) {
-        uint256 colValue   = _indexToPrice(index_) * availableCollateral_;             // 10^36
+        uint256 colValue   = Book.indexToPrice(index_) * availableCollateral_;             // 10^36
         uint256 bucketSize = quoteToken_ * 10**18 + colValue;                          // 10^36
         return lpAccumulator_ != 0 ? bucketSize * 10**18 / lpAccumulator_ : Maths.RAY; // 10^27
     }
@@ -544,7 +531,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function hpb() external view returns (uint256) {
-        return _indexToPrice(_hpbIndex());
+        return Book.indexToPrice(_hpbIndex());
     }
 
     function htp() external view returns (uint256) {
@@ -552,7 +539,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function indexToPrice(uint256 index_) external pure override returns (uint256) {
-        return _indexToPrice(index_);
+        return Book.indexToPrice(index_);
     }
 
     function liquidityToPrice(uint256 index_) external view returns (uint256) {

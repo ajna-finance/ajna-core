@@ -14,6 +14,7 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
+import '../libraries/Book.sol';
 
 contract ERC721Pool is IERC721Pool, ScaledPool {
     using SafeERC20     for ERC20;
@@ -131,7 +132,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         borrower.debt += debt;
 
         // pool accounting
-        uint256 newLup = _indexToPrice(lupId);
+        uint256 newLup = Book.indexToPrice(lupId);
 
         // check borrow won't push borrower or pool into a state of under-collateralization
         if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
@@ -242,7 +243,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 rate = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
 
         uint256 tokensToAdd        = Maths.wad(tokenIds_.length);
-        uint256 quoteValue         = Maths.wmul(tokensToAdd, _indexToPrice(index_));
+        uint256 quoteValue         = Maths.wmul(tokensToAdd, Book.indexToPrice(index_));
         lpbChange_                 = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
         bucket.lpAccumulator       += lpbChange_;
         bucketLender.lpBalance     += lpbChange_;
@@ -279,7 +280,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 curDebt = _accruePoolInterest();
 
         BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
-        uint256 price        = _indexToPrice(index_);
+        uint256 price        = Book.indexToPrice(index_);
         uint256 rate         = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
         uint256 availableLPs = bucketLender.lpBalance;
 
