@@ -26,30 +26,24 @@ jobs:
       #   continue-on-error: true
       #   run: make coverage
 
+      - name: Create snapshot cache id
+        shell: bash
+        run: echo "##[set-output name=file;]$(echo ${GITHUB_REF#refs/heads/}-gas-snapshot)"
+        id: gas
+
       - name: Cache gas snasphot
         id: cache-gas
         uses: actions/cache@v3
         with:
           path: .gas-snapshot
-          key: ${GITHUB_REF#refs/heads/}-gas-snapshot
+          key: ${{ steps.gas.outputs.file }}
 
       - run: |
           if echo ${{ steps.cache-gas.outputs.cache-hit }} | grep -c "true"
           then
             forge snapshot --no-match-test testLoad --diff
           else
-            echo "First run on current branch, take initial gas snapshot"
-            forge snapshot --no-match-test testLoad
+            echo "First run on current branch, take only initial gas snapshot"
           fi
+          forge snapshot --no-match-test testLoad
         shell: bash
-
-      # - if: ${{ steps.cache-gas.outputs.cache-hit != 'true' }}
-      #   name: Gas diff
-      #   shell: bash
-      #   run: echo "##[set-output name=gas-diff-output;]$(forge snapshot --no-match-test testLoad --diff)"
-      #   id: gas-diff-output
-
-      # - if: ${{ steps.cache-gas.outputs.cache-hit != 'true' }}
-      #   name: Take initial gas snapshot
-      #   continue-on-error: true
-      #   run: forge snapshot --no-match-test testLoad
