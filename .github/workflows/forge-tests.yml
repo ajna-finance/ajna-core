@@ -57,4 +57,4 @@ jobs:
         with:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
-          message: Commit https://github.com/ajna-finance/contracts/commit/${{ github.sha }} ${{ steps.forge-tests.outputs.gas-diff }} .
+          message: Commit https://github.com/ajna-finance/contracts/commit/${{ github.sha }} ```${{ steps.forge-tests.outputs.gas-diff }} compared with last commit``` .
