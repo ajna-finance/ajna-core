@@ -110,7 +110,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         loans.upsert(msg.sender, thresholdPrice);
 
-        borrower.mompFactor = Maths.wdiv(_indexToPrice(_findIndexOfSum(borrowerDebt /  loans.count - 1)), borrower.inflatorSnapshot);
+        uint256 avgLoan = loans.count - 1 != 0 ? borrowerDebt / loans.count - 1 : 0;
+        borrower.mompFactor = Maths.wdiv(_indexToPrice(_findIndexOfSum(avgLoan)), borrower.inflatorSnapshot);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
