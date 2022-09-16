@@ -573,26 +573,26 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
             })
         );
 
-       // changePrank(_borrower);
-       // // should revert if borrower attempts to borrow more than minimum amount
-       // vm.expectRevert(IScaledPool.BorrowAmountLTMinDebt.selector);
-       // _pool.borrow(10 * 1e18, 3000);
+        changePrank(_borrower);
+        // should revert if borrower attempts to borrow more than minimum amount
+        vm.expectRevert(IScaledPool.BorrowAmountLTMinDebt.selector);
+        _pool.borrow(10 * 1e18, 3000);
 
-       // changePrank(_borrower2);
-       // vm.expectRevert(IScaledPool.BorrowBorrowerUnderCollateralized.selector);
-       // _pool.borrow(2_976 * 1e18, 3000);
+        changePrank(_borrower2);
+        vm.expectRevert(IScaledPool.BorrowBorrowerUnderCollateralized.selector);
+        _pool.borrow(2_976 * 1e18, 3000);
 
-       // // should be able to borrow if properly specified
-       // _borrow(
-       //     BorrowSpecs({
-       //         from:         _borrower2,
-       //         borrower:     _borrower2,
-       //         pledgeAmount: 0,
-       //         borrowAmount: 10 * 1e18,
-       //         indexLimit:   3_000,
-       //         price:        2_981.007422784467321543 * 1e18
-       //     })
-       // );
+        // should be able to borrow if properly specified
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower2,
+                borrower:     _borrower2,
+                pledgeAmount: 0,
+                borrowAmount: 10 * 1e18,
+                indexLimit:   3_000,
+                price:        2_981.007422784467321543 * 1e18
+            })
+        );
     }
 
     /**
