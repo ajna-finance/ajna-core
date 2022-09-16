@@ -105,7 +105,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // accrue interest to borrower
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        borrower.lupFactor = Maths.wdiv(lup, borrower.inflatorSnapshot);
+        borrower.mompFactor = Maths.wdiv(lup, borrower.inflatorSnapshot);
 
         // update loan queue
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
@@ -137,7 +137,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
         if (_poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) < Maths.WAD) revert BorrowPoolUnderCollateralized();
 
-        borrower.lupFactor = Maths.wdiv(newLup, borrower.inflatorSnapshot);
+        borrower.mompFactor = Maths.wdiv(newLup, borrower.inflatorSnapshot);
         curDebt += debt;
 
         borrowerDebt = curDebt;
@@ -166,7 +166,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 curLup = _lup();
         if (Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) < Maths.wad(tokenIds_.length)) revert RemoveCollateralInsufficientCollateral();
 
-        borrower.lupFactor = Maths.wdiv(curLup, borrower.inflatorSnapshot);
+        borrower.mompFactor = Maths.wdiv(curLup, borrower.inflatorSnapshot);
 
         // update pool state
         pledgedCollateral -= Maths.wad(tokenIds_.length);
@@ -218,7 +218,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // update pool state
         borrowerDebt = curDebt;
         uint256 newLup = _lup();
-        borrower.lupFactor = Maths.wdiv(newLup, borrower.inflatorSnapshot);
+        borrower.mompFactor = Maths.wdiv(newLup, borrower.inflatorSnapshot);
 
         _updateInterestRateAndEMAs(curDebt, newLup);
 
@@ -373,7 +373,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             borrowers[borrower_].debt,                         // accrued debt (WAD)
             pendingDebt,                                       // current debt, accrued and pending accrual (WAD)
             borrowers[borrower_].collateralDeposited.values(), // deposited collateral including encumbered (WAD)
-            borrowers[borrower_].lupFactor,                    // LUP / inflator, used in neutralPrice calc (WAD)
+            borrowers[borrower_].mompFactor,                    // LUP / inflator, used in neutralPrice calc (WAD)
             borrowers[borrower_].inflatorSnapshot              // used to calculate pending interest (WAD)
         );
     }
