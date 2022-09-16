@@ -590,7 +590,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
                 pledgeAmount: 0,
                 borrowAmount: 10 * 1e18,
                 indexLimit:   3_000,
-                price:        2_981.007422784467321543 * 1e18
+                price:        2_995.912459898389633881 * 1e18
             })
         );
     }
