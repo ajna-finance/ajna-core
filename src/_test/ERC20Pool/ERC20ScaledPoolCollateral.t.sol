@@ -107,7 +107,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 pendingDebt:       21_020.192307692307702000 * 1e18,
                 collateral:        100 * 1e18,
                 collateralization: 14.181637252165253251 * 1e18,
-                lupFactor:         2_981.007422784467321543 * 1e18,
+                mompFactor:        2_981.007422784467321543 * 1e18,
                 inflator:          1 * 1e18
             })
         );
@@ -150,7 +150,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 pendingDebt:       21_049.006823139002918431 * 1e18,
                 collateral:        50 * 1e18,
                 collateralization: 7.081111825921092812 * 1e18,
-                lupFactor:         2_976.926646662711731597 * 1e18,
+                mompFactor:        2_976.926646662711731597 * 1e18,
                 inflator:          1.001370801704613834 * 1e18
             })
         );
@@ -190,7 +190,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 pendingDebt:       21_049.006823139002918431 * 1e18,
                 collateral:        7.061038044473493202 * 1e18,
                 collateralization: 1 * 1e18,
-                lupFactor:         2_976.926646662711731597 * 1e18,
+                mompFactor:        2_976.926646662711731597 * 1e18,
                 inflator:          1.001370801704613834 * 1e18
             })
         );
