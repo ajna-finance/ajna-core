@@ -36,8 +36,9 @@ jobs:
       - name: Run tests and compare gas
         shell: bash
         run: |
-          ls -1 gas-reports-* > /dev/null 2>&1; if [ "$?" = "0" ]; then dir=$(ls -td -- gas-reports-* | head -n 1); else mkdir -p gas-reports-${{ github.run_id }};fi
-          [ -f $dir/.gas-snapshot ] && forge snapshot --no-match-test testLoad --diff $dir/.gas-snapshot
+          prevRuns=$(find . -name "gas-reports-*" -printf '.' | wc -m)
+          if [ $prevRuns = "0" ]; then echo "No prev run"; else dir=$(ls -td -- gas-reports-* | head -n 1) && forge snapshot --no-match-test testLoad --diff $dir/.gas-snapshot;fi
+          mkdir -p gas-reports-${{ github.run_id }}
           forge snapshot --no-match-test testLoad --gas-report --snap gas-reports-${{ github.run_id }}/.gas-snapshot
 
       # - name: Run coverage
