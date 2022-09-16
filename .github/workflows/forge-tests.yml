@@ -37,13 +37,15 @@ jobs:
         with:
           path: .gas-snapshot
           key: ${{ steps.gas.outputs.file }}
+          update: true
 
-      - run: |
+      - name: Compare gas
+        shell: bash
+        run: |
           if echo ${{ steps.cache-gas.outputs.cache-hit }} | grep -c "true"
           then
             forge snapshot --no-match-test testLoad --diff
           else
-            echo "First run on current branch, take only initial gas snapshot"
+            echo "First run on current branch, take initial gas snapshot"
           fi
           forge snapshot --no-match-test testLoad
-        shell: bash
