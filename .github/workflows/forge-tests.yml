@@ -52,9 +52,16 @@ jobs:
       #   continue-on-error: true
       #   run: make coverage
 
-      - name: Send to Discord
-        uses: appleboy/discord-action@master
+      - name: Discord notification
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        uses: Ilshidur/action-discord@0.3.2"
         with:
-          webhook_id: ${{ secrets.WEBHOOK_ID }}
-          webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
-          message: Commit ${{ github.head_ref }}.${{ github.sha }} in branch ${GITHUB_REF#refs/heads/} ${{ steps.forge-tests.outputs.gas-diff }} .
+          args: 'Gas comparision with previous run: ${{ steps.forge-tests.outputs.gas-diff }}.'
+
+      # - name: Send to Discord
+      #   uses: appleboy/discord-action@master
+      #   with:
+      #     webhook_id: ${{ secrets.WEBHOOK_ID }}
+      #     webhook_token: ${{ secrets.WEBHOOK_TOKEN }}
+      #     message: Commit ${{ github.head_ref }}.${{ github.sha }} in branch ${GITHUB_REF#refs/heads/} ${{ steps.forge-tests.outputs.gas-diff }} .
