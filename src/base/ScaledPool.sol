@@ -30,6 +30,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
     uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
+    uint256 public constant CUBIC_ROOT_100      = 4.641588833612778892 * 1e18;
+    uint256 public constant ONE_THIRD           = 0.333333333333333334 * 1e18;
 
     uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
@@ -720,7 +722,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     function _mompFactor(uint256 inflator) internal view returns (uint256 momFactor_) {
         uint256 numLoans = loans.count - 1;
-        if (numLoans != 0) momFactor_ = Maths.wdiv(Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans * 1e18))), inflator); 
+        if (numLoans != 0) momFactor_ = Maths.wdiv(Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans * 1e18))), inflator);
+    }
+
+    function _nim(uint256 mau) external pure returns (uint256) {
+        // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
+        // cubic root of the percentage of meaningful unutilized deposit
+        uint256 crpud = PRBMathUD60x18.pow(100 * 1e18 - Maths.wmul(Maths.min(mau, 1e18), 100 * 1e18), ONE_THIRD);
+        return Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_100), 0.15 * 1e18);
     }
 
 
