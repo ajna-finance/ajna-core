@@ -299,8 +299,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         newInflator_ = poolInflator_;
     }
 
-    function _auctionPrice(uint256 referencePrice, uint256 timeOfLiq) internal view returns (uint256 price_) {
-        uint256 elapsedHours = Maths.wdiv((block.timestamp - timeOfLiq) * 1e18, 1 hours * 1e18);
+    function _auctionPrice(uint256 referencePrice, uint256 kickTime) internal view returns (uint256 price_) {
+        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime) * 1e18, 1 hours * 1e18);
         elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
 
         int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
@@ -508,8 +508,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     /**************************/
 
     // TODO: Temporarily here for unit testing; move to accessor method when merging with current implementation.
-    function auctionPrice(uint256 referencePrice, uint256 timeOfLiq) external view returns (uint256) {
-        return _auctionPrice(referencePrice, timeOfLiq);
+    function auctionPrice(uint256 referencePrice, uint256 kickTime) external view returns (uint256) {
+        return _auctionPrice(referencePrice, kickTime);
     }
 
     function borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) external pure override returns (uint256) {
