@@ -19,8 +19,8 @@ jobs:
         with:
           version: nightly
 
-      - name: Run tests
-        run: make test-with-gas-report
+      # - name: Run tests
+      #   run: make test-with-gas-report
 
       # - name: Run coverage
       #   continue-on-error: true
@@ -49,4 +49,5 @@ jobs:
           else
             echo "First run on current branch, take initial gas snapshot"
           fi
+          mkdir gas-reports-${{ github.run_id }}
           forge snapshot --no-match-test testLoad --snap gas-reports-${{ github.run_id }}/.gas-snapshot
