@@ -19,9 +19,11 @@ jobs:
         with:
           version: nightly
 
-      - name: Create snapshot cache id
+      - name: Create ids
         shell: bash
-        run: echo "##[set-output name=dir;]$(echo ${GITHUB_REF#refs/heads/}-gas-reports)"
+        run: |
+          echo "##[set-output name=dir;]$(echo ${GITHUB_REF#refs/heads/}-gas-reports)"
+          echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
         id: gas
 
       - name: Cache gas snasphot
@@ -57,4 +59,4 @@ jobs:
         with:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
-          message: Commit https://github.com/ajna-finance/contracts/commit/${{ github.sha }} ```${{ steps.forge-tests.outputs.gas-diff }} compared with last commit``` .
+          message: '```Commit ${{ github.sha }} in branch ${{ steps.gas.outputs.branch }} ${{ steps.forge-tests.outputs.gas-diff }} compared with last commit```'
