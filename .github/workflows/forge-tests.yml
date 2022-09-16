@@ -50,13 +50,13 @@ jobs:
         run: |
           echo "${{ steps.forge-tests.outputs.gas-diff }}"
 
-      # - name: Run coverage
-      #   continue-on-error: true
-      #   run: make coverage
-
       - name: Send to Discord
         uses: appleboy/discord-action@master
         with:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
           message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.forge-tests.outputs.gas-diff }} compared with last run in branch ${{ steps.gas.outputs.branch }}```
+
+      - name: Run coverage
+        continue-on-error: true
+        run: make coverage
