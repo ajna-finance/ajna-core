@@ -19,13 +19,6 @@ jobs:
         with:
           version: nightly
 
-      # - name: Run tests
-      #   run: make test-with-gas-report
-
-      # - name: Run coverage
-      #   continue-on-error: true
-      #   run: make coverage
-
       - name: Create snapshot cache id
         shell: bash
         run: echo "##[set-output name=dir;]$(echo ${GITHUB_REF#refs/heads/}-gas-reports)"
@@ -40,14 +33,18 @@ jobs:
           restore-keys: |
             ${{ steps.gas.outputs.dir }}
 
-      - name: Compare gas
+      - name: Run tests and compare gas
         shell: bash
         run: |
           if echo ${{ steps.cache-gas.outputs.cache-hit }} | grep -c "true"
           then
             forge snapshot --no-match-test testLoad --diff gas-reports-*/.gas-snapshot
           else
-            echo "First run on current branch, take initial gas snapshot"
+            echo "First run on current branch"
           fi
           mkdir -p gas-reports-${{ github.run_id }}
-          forge snapshot --no-match-test testLoad --snap gas-reports-${{ github.run_id }}/.gas-snapshot
+          forge snapshot --no-match-test testLoad --gas-report --snap gas-reports-${{ github.run_id }}/.gas-snapshot
+
+      # - name: Run coverage
+      #   continue-on-error: true
+      #   run: make coverage
