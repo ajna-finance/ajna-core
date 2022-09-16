@@ -49,5 +49,5 @@ jobs:
           else
             echo "First run on current branch, take initial gas snapshot"
           fi
-          mkdir gas-reports-${{ github.run_id }}
+          mkdir -p gas-reports-${{ github.run_id }}
           forge snapshot --no-match-test testLoad --snap gas-reports-${{ github.run_id }}/.gas-snapshot
