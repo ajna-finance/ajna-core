@@ -29,9 +29,9 @@ jobs:
         uses: actions/cache@v3
         with:
           path: gas-reports-*
-          key: ${{ steps.gas.outputs.dir }}
+          key: ${{ steps.gas.outputs.dir }}-${{ github.run_id }}
           restore-keys: |
-            ${{ steps.gas.outputs.dir }}
+            ${{ steps.gas.outputs.dir }}-
 
       - name: Run tests and compare gas
         shell: bash
