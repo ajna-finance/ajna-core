@@ -439,12 +439,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
     }
 
-    function _exchangeRate(uint256 quoteToken_, uint256 availableCollateral_, uint256 lpAccumulator_, uint256 index_) internal pure returns (uint256) {
-        uint256 colValue   = Book.indexToPrice(index_) * availableCollateral_;             // 10^36
-        uint256 bucketSize = quoteToken_ * 10**18 + colValue;                          // 10^36
-        return lpAccumulator_ != 0 ? bucketSize * 10**18 / lpAccumulator_ : Maths.RAY; // 10^27
-    }
-
     function _lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) internal view returns (uint256 quoteAmount_) {
         uint256 rate = buckets.getExchangeRate(index_, deposit_);
         quoteAmount_ = Maths.min(deposit_, Maths.rayToWad(Maths.rmul(lpTokens_, rate))); // TODO optimize to calculate bucket size only once

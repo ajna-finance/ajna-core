@@ -53,7 +53,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _mintAndApproveCollateralTokens(_poolAddresses, _bidder, 13);   
     }
 
-    function _testSubsetPurchaseQuote() external {
+    function testSubsetPurchaseQuote() external {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = _subsetPool.indexToPrice(testIndex);
@@ -243,22 +243,22 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateralNFT(_lender, _subsetPool.indexToPrice(2350), tokenIdsToRemove);
         (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
-        // (lpBalance, ) = _subsetPool.bucketLenders(2350, _lender);
-        // assertEq(lpBalance, 11_836.428760868677193803190045359 * 1e27);
-        // skip(3600);
+        (lpBalance, ) = _subsetPool.bucketLenders(2350, _lender);
+        assertEq(lpBalance, 11_836.428760868677193803190045359 * 1e27);
+        skip(3600);
 
-        // // check bucket state
-        // (quote, collateral, lpb, ) = _subsetPool.bucketAt(2350);
-        // assertEq(quote,      0);
-        // assertEq(collateral, Maths.wad(2));
-        // assertEq(lpb,        16_327.142478262645612393619885284 * 1e27);
+        // check bucket state
+        (quote, collateral, lpb, ) = _subsetPool.bucketAt(2350);
+        assertEq(quote,      0);
+        assertEq(collateral, Maths.wad(2));
+        assertEq(lpb,        16_327.142478262645612393619885284 * 1e27);
 
-        // // should revert if lender2 attempts to remove more collateral than lp is available for
-        // changePrank(_lender2);
-        // tokenIdsToRemove = new uint256[](1);
-        // tokenIdsToRemove[0] = 74;
-        // vm.expectRevert(IScaledPool.RemoveCollateralInsufficientLP.selector);
-        // (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
+        // should revert if lender2 attempts to remove more collateral than lp is available for
+        changePrank(_lender2);
+        tokenIdsToRemove = new uint256[](1);
+        tokenIdsToRemove[0] = 74;
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientLP.selector);
+        (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
     }
 
 }

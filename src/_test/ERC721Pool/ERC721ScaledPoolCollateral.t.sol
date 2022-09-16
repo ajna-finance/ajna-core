@@ -347,7 +347,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         _subsetPool.pullCollateral(tokenIdsToRemove);
     }
 
-    function _testAddRemoveCollateral() external {
+    function testAddRemoveCollateral() external {
         vm.startPrank(_lender);
         // lender adds some liquidity
         _subsetPool.addQuoteToken(10_000 * 1e18, 1530);

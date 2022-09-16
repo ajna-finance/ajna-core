@@ -292,7 +292,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         }
 
         // update bucket accounting
-        buckets.removeFromBucket(index_, lpAmount_, tokenIds_.length);
+        buckets.removeFromBucket(index_, lpAmount_, Maths.wad(tokenIds_.length));
 
         // update lender accounting
         bucketLender.lpBalance -= lpAmount_;
