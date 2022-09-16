@@ -37,15 +37,9 @@ jobs:
         shell: bash
         run: |
           prevRuns=$(find . -name "gas-reports-*" -printf '.' | wc -m)
-          if [ $prevRuns = "0" ]; then echo "No prev run"; else dir=$(ls -td -- gas-reports-* | head -n 1) && ##[set-output name=gas-check;]$(forge snapshot --no-match-test testLoad --diff $dir/.gas-snapshot | tail -1);fi
+          if [ $prevRuns = "0" ]; then echo "No prev run"; else dir=$(ls -td -- gas-reports-* | head -n 1) && forge snapshot --no-match-test testLoad --diff $dir/.gas-snapshot;fi
           mkdir -p gas-reports-${{ github.run_id }}
           forge snapshot --no-match-test testLoad --gas-report --snap gas-reports-${{ github.run_id }}/.gas-snapshot
-        id: forge-tests
-
-      - name: Compare gas result
-        shell: bash
-        run: |
-          echo ${{ steps.forge-tests.outputs.gas-check }}
 
       # - name: Run coverage
       #   continue-on-error: true
