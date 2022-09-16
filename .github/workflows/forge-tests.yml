@@ -36,6 +36,7 @@ jobs:
       - name: Run tests and compare gas
         shell: bash
         run: |
+          ls -la
           [ -d gas-reports-* ] && forge snapshot --no-match-test testLoad --diff gas-reports-*/.gas-snapshot
           mkdir -p gas-reports-${{ github.run_id }}
           forge snapshot --no-match-test testLoad --gas-report --snap gas-reports-${{ github.run_id }}/.gas-snapshot
