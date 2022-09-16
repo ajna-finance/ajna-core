@@ -28,7 +28,7 @@ jobs:
 
       - name: Create snapshot cache id
         shell: bash
-        run: echo "##[set-output name=file;]$(echo ${GITHUB_REF#refs/heads/}-gas-snapshot)"
+        run: echo "##[set-output name=file;]$(echo ${GITHUB_REF#refs/heads/}-gas-snapshot-)"
         id: gas
 
       - name: Cache gas snasphot
@@ -48,4 +48,4 @@ jobs:
           else
             echo "First run on current branch, take initial gas snapshot"
           fi
-          forge snapshot --no-match-test testLoad
+          forge snapshot --no-match-test testLoad --snap ${{ steps.gas.outputs.file }}-${{ github.run_id }}
