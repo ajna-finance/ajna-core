@@ -46,7 +46,7 @@ jobs:
       - name: Gas diff results
         shell: bash
         run: |
-          echo ${{ steps.forge-tests.outputs.gas-diff }}
+          echo "${{ steps.forge-tests.outputs.gas-diff }}"
 
       # - name: Run coverage
       #   continue-on-error: true
