@@ -15,6 +15,7 @@ import '../libraries/Book.sol';
 
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
+    using Book      for mapping(uint256 => Book.Bucket);
     using Heap      for Heap.Data;
 
     /***********************/
@@ -160,15 +161,12 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // Calculate exchange rate before new collateral has been accounted for.
         // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
-        Bucket memory bucket        = buckets[index_];
         uint256 price               = Book.indexToPrice(index_);
-        uint256 rate                = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate                = buckets.getExchangeRate(index_, _valueAt(index_));
         uint256 quoteValue          = Maths.wmul(amount_, price);
         lpbChange_                 = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
-        bucket.lpAccumulator       += lpbChange_;
-        bucket.availableCollateral += amount_;
-        buckets[index_]            = bucket;
 
+        buckets.addToBucket(index_, lpbChange_, amount_);
         bucketLenders[index_][msg.sender].lpBalance += lpbChange_;
 
         _updateInterestRateAndEMAs(curDebt, _lup());
@@ -181,28 +179,23 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
         if (fromIndex_ == toIndex_) revert MoveCollateralToSamePrice();
 
-        Bucket storage fromBucket = buckets[fromIndex_];
-        if (fromBucket.availableCollateral < amount_) revert MoveCollateralInsufficientCollateral();
+        if (buckets.getCollateral(fromIndex_) < amount_) revert MoveCollateralInsufficientCollateral();
 
         BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
         uint256 curDebt                   = _accruePoolInterest();
 
         // determine amount of amount of LP required
-        uint256 rate                 = _exchangeRate(_valueAt(fromIndex_), fromBucket.availableCollateral, fromBucket.lpAccumulator, fromIndex_);
-        lpbAmountFrom_               = (amount_ * Book.indexToPrice(fromIndex_) * 1e18 + rate / 2) / rate;
+        uint256 rate   = buckets.getExchangeRate(fromIndex_, _valueAt(fromIndex_));
+        lpbAmountFrom_ = (amount_ * Book.indexToPrice(fromIndex_) * 1e18 + rate / 2) / rate;
         if (lpbAmountFrom_ > bucketLender.lpBalance) revert MoveCollateralInsufficientLP();
 
-        // update "from" bucket accounting
-        fromBucket.lpAccumulator -= lpbAmountFrom_;
-        fromBucket.availableCollateral -= amount_;
-
         // update "to" bucket accounting
-        Bucket storage toBucket      = buckets[toIndex_];
-        rate                         = _exchangeRate(_valueAt(toIndex_), toBucket.availableCollateral, toBucket.lpAccumulator, toIndex_);
-        lpbAmountTo_                 = (amount_ * Book.indexToPrice(toIndex_) * 1e18 + rate / 2) / rate;
-        toBucket.lpAccumulator       += lpbAmountTo_;
-        toBucket.availableCollateral += amount_;
+        rate          = buckets.getExchangeRate(toIndex_, _valueAt(toIndex_));
+        lpbAmountTo_  = (amount_ * Book.indexToPrice(toIndex_) * 1e18 + rate / 2) / rate;
 
+        // update buckets
+        buckets.removeFromBucket(fromIndex_, lpbAmountFrom_, amount_);
+        buckets.addToBucket(toIndex_, lpbAmountTo_, amount_);
         // update lender accounting
         bucketLender.lpBalance -= lpbAmountFrom_;
         bucketLenders[toIndex_][msg.sender].lpBalance += lpbAmountTo_;
@@ -213,41 +206,40 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     function removeAllCollateral(uint256 index_) external override returns (uint256 amount_, uint256 lpAmount_) {
-        Bucket memory bucket = buckets[index_];
-        if (bucket.availableCollateral == 0) revert RemoveCollateralInsufficientCollateral();
+        uint256 availableCollateral = buckets.getCollateral(index_);
+        if (availableCollateral == 0) revert RemoveCollateralInsufficientCollateral();
 
         _accruePoolInterest();
 
         BucketLender storage bucketLender = bucketLenders[index_][msg.sender];
         uint256 price = Book.indexToPrice(index_);
-        uint256 rate  = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate  = buckets.getExchangeRate(index_, _valueAt(index_));
         lpAmount_     = bucketLender.lpBalance;
         amount_       = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
         if (amount_ == 0) revert RemoveCollateralNoClaim();
 
-        if (amount_ > bucket.availableCollateral) {
+        if (amount_ > availableCollateral) {
             // user is owed more collateral than is available in the bucket
-            amount_   = bucket.availableCollateral;
+            amount_   = availableCollateral;
             lpAmount_ = Maths.wrdivr(Maths.wmul(amount_, price), rate);
         } // else user is redeeming all of their LPs
 
-        _redeemLPForCollateral(bucket, bucketLender, lpAmount_, amount_, price, index_);
+        _redeemLPForCollateral(bucketLender, lpAmount_, amount_, price, index_);
     }
 
     function removeCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
-        Bucket memory bucket = buckets[index_];
-        if (amount_ > bucket.availableCollateral) revert RemoveCollateralInsufficientCollateral();
+        if (amount_ > buckets.getCollateral(index_)) revert RemoveCollateralInsufficientCollateral();
 
         _accruePoolInterest();
 
         uint256 price = Book.indexToPrice(index_);
-        uint256 rate  = _exchangeRate(_valueAt(index_), bucket.availableCollateral, bucket.lpAccumulator, index_);
+        uint256 rate  = buckets.getExchangeRate(index_, _valueAt(index_));
         lpAmount_     = Maths.rdiv((amount_ * price / 1e9), rate);
 
         BucketLender storage bucketLender = bucketLenders[index_][msg.sender];
         if (bucketLender.lpBalance == 0 || lpAmount_ > bucketLender.lpBalance) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
 
-        _redeemLPForCollateral(bucket, bucketLender, lpAmount_, amount_, price, index_);
+        _redeemLPForCollateral(bucketLender, lpAmount_, amount_, price, index_);
     }
 
     /*******************************/
@@ -342,7 +334,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /**************************/
 
     function _redeemLPForCollateral(
-        Bucket memory bucket,
         BucketLender storage bucketLender,
         uint256 lpAmount_,
         uint256 amount_,
@@ -350,9 +341,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 index_
     ) internal {
         // update bucket accounting
-        bucket.availableCollateral -= Maths.min(bucket.availableCollateral, amount_);
-        bucket.lpAccumulator       -= Maths.min(bucket.lpAccumulator, lpAmount_);
-        buckets[index_] = bucket;
+        buckets.removeFromBucket(index_, lpAmount_, amount_);
 
         // update lender accounting
         bucketLender.lpBalance -= lpAmount_;
