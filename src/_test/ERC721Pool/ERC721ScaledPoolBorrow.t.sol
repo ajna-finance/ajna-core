@@ -97,7 +97,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(debt,        5_017.163540992622874208 * 1e18);
         assertEq(pendingDebt, 5_017.163540992622874208 * 1e18);
         assertEq(col.length,  4);
-        assertEq(mompFactor,   3_003.477050385824310983 * 1e18);
+        assertEq(mompFactor,  3_003.477050385824310983 * 1e18);
         assertEq(inflator,    1.002468795894779594 * 1e18);
 
         // borrower pulls some of their collateral after some time has passed

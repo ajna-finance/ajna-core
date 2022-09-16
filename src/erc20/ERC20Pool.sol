@@ -71,7 +71,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         pledgedCollateral += amount_;
 
         uint256 lup = _lup();
-        borrower.mompFactor = _updateMompFactor(borrower.inflatorSnapshot);
+        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
         borrowers[borrower_] = borrower;
         _updateInterestRateAndEMAs(curDebt, lup);
 
@@ -109,7 +109,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         loans.upsert(msg.sender, thresholdPrice);
 
-        borrower.mompFactor = _updateMompFactor(borrower.inflatorSnapshot);
+        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -134,7 +134,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
 
-        borrower.mompFactor = _updateMompFactor(borrower.inflatorSnapshot);
+        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
         borrowers[msg.sender] = borrower;
 
         // update pool state
@@ -388,7 +388,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrowerDebt = curDebt;
 
         uint256 newLup = _lup();
-        borrower.mompFactor = _updateMompFactor(borrower.inflatorSnapshot);
+        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
         borrowers[borrower_] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
