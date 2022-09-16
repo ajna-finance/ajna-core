@@ -142,7 +142,7 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
                 pendingDebt:       0,
                 collateral:        100 * 1e18,
                 collateralization: 1e18,
-                mompFactor:        2_981.007422784467321543 * 1e18,
+                mompFactor:        0 * 1e18,
                 inflator:          1.001507985182953253 * 1e18
             })
         );

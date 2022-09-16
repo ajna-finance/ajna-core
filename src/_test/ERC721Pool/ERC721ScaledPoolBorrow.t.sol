@@ -84,7 +84,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(debt,        5_004.807692307692310000 * 1e18);
         assertEq(pendingDebt, 5_010.981808341113791532 * 1e18);
         assertEq(col.length,  3);
-        assertEq(mompFactor,   3_010.892022197881557845 * 1e18);
+        assertEq(mompFactor,  0 * 1e18);
         assertEq(inflator,    1 * 1e18);
 
         // borrower pledge additional collateral after some time has passed
@@ -135,7 +135,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
-        assertEq(mompFactor,   999_484_076.340322579760520204 * 1e18);
+        assertEq(mompFactor,  0 * 1e18);
         assertEq(col.length,  3);
         assertEq(inflator,    1.005487742522395296 * 1e18);
 
@@ -328,7 +328,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(debt,        3_002.884615384615386000 * 1e18);
         assertEq(pendingDebt, 3_002.884615384615386000 * 1e18);
         assertEq(col.length,  3);
-        assertEq(mompFactor,   3_010.892022197881557845 * 1e18);
+        assertEq(mompFactor,  0);
         assertEq(inflator,    1 * 1e18);
 
         // pass time to allow interest to accumulate
@@ -429,7 +429,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(col.length,  0);
-        assertEq(mompFactor,   1_002_356_715.905391712168567717 * 1e18);
+        assertEq(mompFactor,  0 * 1e18);
     }
 
     function testScaledPoolRepayRequireChecks() external {
