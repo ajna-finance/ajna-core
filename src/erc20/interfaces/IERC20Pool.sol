@@ -156,13 +156,13 @@ interface IERC20Pool is IScaledPool {
      *  @notice Struct holding borrower related info.
      *  @param  debt             Borrower debt, WAD units.
      *  @param  collateral       Collateral deposited by borrower, WAD units.
-     *  @return lupFactor        LUP / inflator, used in neutralPrice calc (WAD)
+     *  @return mompFactor       Most Optimistic Matching Price (MOMP) / inflator, used in neutralPrice calc, WAD units.
      *  @param  inflatorSnapshot Current borrower inflator snapshot, WAD units.
      */
     struct Borrower {
         uint256 debt;             // [WAD]
         uint256 collateral;       // [WAD]
-        uint256 lupFactor;        // [WAD]
+        uint256 mompFactor;       // [WAD]
         uint256 inflatorSnapshot; // [WAD]
     }
 

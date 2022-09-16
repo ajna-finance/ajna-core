@@ -71,7 +71,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         pledgedCollateral += amount_;
 
         uint256 lup = _lup();
-        borrower.lupFactor    = Maths.wdiv(lup, borrower.inflatorSnapshot);
+        uint256 avgLoan = loans.count - 1 != 0 ? borrowerDebt / loans.count - 1 : 0; 
+        borrower.mompFactor = Maths.wdiv(_indexToPrice(_findIndexOfSum(avgLoan)), borrower.inflatorSnapshot);
         borrowers[borrower_] = borrower;
         _updateInterestRateAndEMAs(curDebt, lup);
 
@@ -109,7 +110,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         loans.upsert(msg.sender, thresholdPrice);
 
-        borrower.lupFactor    = Maths.wdiv(newLup, borrower.inflatorSnapshot);
+        borrower.mompFactor = Maths.wdiv(_indexToPrice(_findIndexOfSum(borrowerDebt /  loans.count - 1)), borrower.inflatorSnapshot);
         borrowers[msg.sender] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -134,7 +135,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
 
-        borrower.lupFactor    = Maths.wdiv(curLup, borrower.inflatorSnapshot);
+        uint256 avgLoan = loans.count - 1 != 0 ? borrowerDebt / loans.count - 1 : 0; 
+        borrower.mompFactor = Maths.wdiv(_indexToPrice(_findIndexOfSum(avgLoan)), borrower.inflatorSnapshot);
         borrowers[msg.sender] = borrower;
 
         // update pool state
@@ -388,7 +390,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrowerDebt = curDebt;
 
         uint256 newLup = _lup();
-        borrower.lupFactor    = Maths.wdiv(newLup, borrower.inflatorSnapshot);
+        uint256 avgLoan = loans.count - 1 != 0 ? borrowerDebt / loans.count - 1 : 0; 
+        borrower.mompFactor = Maths.wdiv(_indexToPrice(_findIndexOfSum(avgLoan)), borrower.inflatorSnapshot);
         borrowers[borrower_] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -409,7 +412,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             borrowers[borrower_].debt,            // accrued debt (WAD)
             pendingDebt,                          // current debt, accrued and pending accrual (WAD)
             borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
-            borrowers[borrower_].lupFactor,       // LUP / inflator, used in neutralPrice calc (WAD)
+            borrowers[borrower_].mompFactor,      // MOMP / inflator, used in neutralPrice calc (WAD)
             borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
         );
     }
