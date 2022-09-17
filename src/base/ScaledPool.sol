@@ -298,11 +298,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         newInflator_ = poolInflator_;
     }
 
-    function _auctionPrice(uint256 referencePrice, uint128 timeOfLiq) internal view returns (uint256 price_) {
-        // TODO: get signed/unsigned types right, check PRBMath boundaries
-        uint256 elapsed = (block.timestamp - timeOfLiq - 1 hours);
-        int256 time_adjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsed));
-        price_ = 10 * referencePrice * uint256(PRBMathSD59x18.exp2(time_adjustment));
+    function _auctionPrice(uint256 referencePrice, uint256 kickTime) internal view returns (uint256 price_) {
+        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime) * 1e18, 1 hours * 1e18);
+        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
+
+        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
+        price_ = 10 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
     }
 
     function _claimableReserves() internal view returns (uint256 claimable_) {
@@ -481,6 +482,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     /*** External Functions ***/
     /**************************/
 
+    // TODO: Temporarily here for unit testing; move to accessor method when merging with current implementation.
+    function auctionPrice(uint256 referencePrice, uint256 kickTime) external view returns (uint256) {
+        return _auctionPrice(referencePrice, kickTime);
+    }
+
     function borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) external pure override returns (uint256) {
         return _borrowerCollateralization(debt_, collateral_, price_);
     }
@@ -610,5 +616,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     function quoteTokenAddress() external pure returns (address) {
         return _getArgAddress(0x14);
+    }
+ 
+    function _mompFactor(uint256 inflator) internal view returns (uint256) {
+        uint256 numLoans = (loans.count - 1) * 1e18;
+        if (numLoans != 0) {
+            return Maths.wdiv(_indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans))), inflator);
+        }
+        return 0;
     }
 }

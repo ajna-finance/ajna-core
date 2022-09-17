@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import { DSTestPlus }     from "./utils/DSTestPlus.sol";
 import { Maths }          from "../libraries/Maths.sol";
+import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 contract MathTest is DSTestPlus {
@@ -70,6 +71,9 @@ contract MathTest is DSTestPlus {
 
     function testExp() external {
         assertEq(PRBMathUD60x18.exp(1.53 * 1e18), 4.618176822299780807 * 1e18);
+
+        int256 testPower = PRBMathSD59x18.mul(-1 * 1e18, int256(Maths.wdiv(12180 * 1e18, 3600 * 1e18)));
+        assertEq(PRBMathSD59x18.exp2(testPower), 0.095833021541850035 * 1e18);
     }
 
     function testPow() external {

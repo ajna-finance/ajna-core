@@ -53,7 +53,6 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
     }
 
     function test_liquidate() external {
-
         /**********************/
         /*** Pre-kick state ***/
         /**********************/
@@ -62,7 +61,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             uint256 borrowerDebt,
             uint256 borrowerPendingDebt,
             uint256 collateralDeposited,
-            uint256 lupFactor,
+            uint256 mompFactor,
             uint256 borrowerInflator
         ) = _pool.borrowerInfo(_borrower2);
 
@@ -92,7 +91,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             borrowerDebt,
             borrowerPendingDebt,
             collateralDeposited,
-            lupFactor,
+            mompFactor,
             borrowerInflator
         ) = _pool.borrowerInfo(_borrower2);
 
@@ -110,13 +109,37 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         assertEq(remainingCollateral, 1e18);
     }
 
+    function testAuctionPrice() external {
+        skip(6238);
+        uint256 referencePrice = 8_678.5 * 1e18;
+        uint256 kickTime = block.timestamp;
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
+        skip(1444); // price should not change in the first hour
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
+
+        skip(5756);     // 2 hours
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), 43_392.5 * 1e18);
+        skip(2394);     // 2 hours, 39 minutes, 54 seconds
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), 27_367.159606354998613290 * 1e18);
+        skip(2586);     // 3 hours, 23 minutes
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), 16_633.737549018910661740 * 1e18);
+        skip(3);        // 3 seconds later
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), 16_624.132299820494703920 * 1e18);
+        skip(20153);    // 8 hours, 35 minutes, 53 seconds
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), 343.207165783609045700 * 1e18);
+        skip(97264);    // 36 hours
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), 0.00000252577588655 * 1e18);
+        skip(129600);   // 72 hours
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), 0);
+    }
+
     // TODO: move to DSTestPlus?
     function _logBorrowerInfo(address borrower_) internal {
         (
             uint256 borrowerDebt,
             uint256 borrowerPendingDebt,
             uint256 collateralDeposited,
-            uint256 lupFactor,
+            uint256 mompFactor,
             uint256 borrowerInflator
 
         ) = _pool.borrowerInfo(address(borrower_));
@@ -124,7 +147,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         emit log_named_uint("borrowerDebt        ", borrowerDebt);
         emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
         emit log_named_uint("collateralDeposited ", collateralDeposited);
-        emit log_named_uint("lupFactor ",           lupFactor);
+        emit log_named_uint("mompFactor ",           mompFactor);
         emit log_named_uint("collateralEncumbered", _pool.encumberedCollateral(borrowerDebt, _pool.lup()));
         emit log_named_uint("collateralization   ", _pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _pool.lup()));
         emit log_named_uint("borrowerInflator    ", borrowerInflator);
