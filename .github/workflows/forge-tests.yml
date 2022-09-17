@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           prevRuns=$(find . -name "gas-reports-*" -printf '.' | wc -m)
-          if [ $prevRuns = "0" ]; then echo "No previous run"; else dir=$(ls -td -- gas-reports-* | head -n 1) && forge snapshot --no-match-test testLoad --diff $dir/.gas-snapshot;fi 2> /dev/null | tee gas-diff-output.txt
+          if [ $prevRuns = "0" ]; then echo "No previous run"; else dir=$(ls -td -- gas-reports-* | head -n 1) && forge snapshot --no-match-test testLoad --diff $dir/.gas-snapshot 2> /dev/null;fi | tee gas-diff-output.txt
           mkdir -p gas-reports-${{ github.run_id }}
           forge snapshot --no-match-test testLoad --gas-report --snap gas-reports-${{ github.run_id }}/.gas-snapshot
           echo "##[set-output name=gas-diff;]$(echo $(cat gas-diff-output.txt|tail -1|sed -e 's/\x1b\[[0-9;]*m//g'))"
