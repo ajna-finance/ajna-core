@@ -80,11 +80,11 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.borrow(5_000 * 1e18, 2551);
 
         assertEq(_subsetPool.borrowerDebt(), 5_004.807692307692310000 * 1e18);
-        (uint256 debt, uint256 pendingDebt, uint256[] memory col, uint256 lupFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
+        (uint256 debt, uint256 pendingDebt, uint256[] memory col, uint256 mompFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        5_004.807692307692310000 * 1e18);
         assertEq(pendingDebt, 5_010.981808341113791532 * 1e18);
         assertEq(col.length,  3);
-        assertEq(lupFactor,   3_010.892022197881557845 * 1e18);
+        assertEq(mompFactor,  0 * 1e18);
         assertEq(inflator,    1 * 1e18);
 
         // borrower pledge additional collateral after some time has passed
@@ -93,11 +93,11 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToAdd[0] = 51;
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
         assertEq(_subsetPool.borrowerDebt(), 5_017.163540992622874208 * 1e18);
-        (debt, pendingDebt, col, lupFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        5_017.163540992622874208 * 1e18);
         assertEq(pendingDebt, 5_017.163540992622874208 * 1e18);
         assertEq(col.length,  4);
-        assertEq(lupFactor,   3_003.477050385824310983 * 1e18);
+        assertEq(mompFactor,  3_003.477050385824310983 * 1e18);
         assertEq(inflator,    1.002468795894779594 * 1e18);
 
         // borrower pulls some of their collateral after some time has passed
@@ -106,22 +106,22 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 1;
         _subsetPool.pullCollateral(tokenIdsToRemove);
         assertEq(_subsetPool.borrowerDebt(), 5_022.733620353117867729 * 1e18);
-        (debt, pendingDebt, col, lupFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        5_022.733620353117867729 * 1e18);
         assertEq(pendingDebt, 5_022.733620353117867729 * 1e18);
         assertEq(col.length,  3);
-        assertEq(lupFactor,   3_000.146273404086167746 * 1e18);
+        assertEq(mompFactor,   3_000.146273404086167746 * 1e18);
         assertEq(inflator,    1.003581741626751696 * 1e18);
 
         // borrower borrows some additional quote after some time has passed
         skip(864000);
         _subsetPool.borrow(1_000 * 1e18, 3000);
         assertEq(_subsetPool.borrowerDebt(), 6_028.452940379879069654 * 1e18);
-        (debt, pendingDebt, col, lupFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        6_028.452940379879069654 * 1e18);
         assertEq(pendingDebt, 6_028.452940379879069654 * 1e18);
         assertEq(col.length,  3);
-        assertEq(lupFactor,   2_997.151732388411916563 * 1e18);
+        assertEq(mompFactor,   2_997.151732388411916563 * 1e18);
         assertEq(inflator,    1.004584449182531072 * 1e18);
 
         // mint additional quote to borrower to enable repayment
@@ -129,13 +129,13 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
         // borrower repays their loan after some additional time
         skip(864000);
-        (debt, pendingDebt, col, lupFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         _subsetPool.repay(_borrower, pendingDebt);
         assertEq(_subsetPool.borrowerDebt(), 0);
-        (debt, pendingDebt, col, lupFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
-        assertEq(lupFactor,   999_484_076.340322579760520204 * 1e18);
+        assertEq(mompFactor,  0 * 1e18);
         assertEq(col.length,  3);
         assertEq(inflator,    1.005487742522395296 * 1e18);
 
@@ -324,11 +324,11 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(availableCollateral, 0);
 
         // check borrower info after borrow
-        (uint256 debt, uint256 pendingDebt, uint256[] memory col, uint256 lupFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
+        (uint256 debt, uint256 pendingDebt, uint256[] memory col, uint256 mompFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        3_002.884615384615386000 * 1e18);
         assertEq(pendingDebt, 3_002.884615384615386000 * 1e18);
         assertEq(col.length,  3);
-        assertEq(lupFactor,   3_010.892022197881557845 * 1e18);
+        assertEq(mompFactor,  0);
         assertEq(inflator,    1 * 1e18);
 
         // pass time to allow interest to accumulate
@@ -366,11 +366,11 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(availableCollateral, 0);
 
         // check borrower info after partial repay
-        (debt, pendingDebt, col, lupFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        1_507.000974734143274062 * 1e18);
         assertEq(pendingDebt, 1_507.000974734143274062 * 1e18);
         assertEq(col.length,  3);
-        assertEq(lupFactor,   3_006.770336295505368176 * 1e18);
+        assertEq(mompFactor,   3_006.770336295505368176 * 1e18);
         assertEq(inflator,    1.001370801704613834 * 1e18);
 
         // pass time to allow additional interest to accumulate
@@ -425,11 +425,11 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(availableCollateral, 0);
 
         // check borrower info after fully repay
-        (debt, pendingDebt, col, lupFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(col.length,  0);
-        assertEq(lupFactor,   1_002_356_715.905391712168567717 * 1e18);
+        assertEq(mompFactor,  0 * 1e18);
     }
 
     function testScaledPoolRepayRequireChecks() external {
