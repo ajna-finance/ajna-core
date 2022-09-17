@@ -621,7 +621,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     function _mompFactor(uint256 inflator) internal view returns (uint256) {
         uint256 numLoans = (loans.count - 1) * 1e18;
         if (numLoans != 0) {
-            return Maths.wdiv(_indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans))), inflator);
+            return Maths.wdiv(Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans))), inflator);
         }
         return 0;
     }

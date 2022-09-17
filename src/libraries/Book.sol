@@ -10,9 +10,14 @@ library Book {
     /*** Buckets ***/
     /***************/
 
+    /**
+     *  @notice struct holding bucket info
+     *  @param lps        Bucket LP accumulator, RAY
+     *  @param collateral Available collateral tokens deposited in the bucket, WAD
+     */
     struct Bucket {
-        uint256 lps;       // [RAY]
-        uint256 collateral; // [WAD]
+        uint256 lps;
+        uint256 collateral;
     }
 
     function addLPs(

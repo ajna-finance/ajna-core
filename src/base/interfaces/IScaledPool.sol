@@ -329,16 +329,6 @@ interface IScaledPool {
     /*** Structs ***/
     /***************/
 
-    /**
-     *  @notice struct holding bucket info
-     *  @param lpAccumulator       Bucket LP accumulator, RAY
-     *  @param availableCollateral Available collateral tokens deposited in the bucket, WAD
-     */
-    struct Bucket {
-        uint256 lpAccumulator;       // [RAY]
-        uint256 availableCollateral; // [WAD]
-    }
-
     struct BucketLender {
         uint256 lpBalance;           // [RAY]
         uint256 lastQuoteDeposit;    // timestamp
