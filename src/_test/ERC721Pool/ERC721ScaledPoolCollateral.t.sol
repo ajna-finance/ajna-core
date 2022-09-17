@@ -389,7 +389,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         _subsetPool.removeCollateral(tokenIds, 1530);
         (, collateral, , ) = _subsetPool.bucketAt(1530);
         assertEq(collateral, 0);
-        (uint256 lpb, ) = _subsetPool.bucketLenders(1530, _borrower);
+        (uint256 lpb, ) = _subsetPool.lenders(1530, _borrower);
         assertEq(lpb, 0);
 
         // lender removes quote token

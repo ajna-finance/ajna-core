@@ -239,14 +239,14 @@ interface IScaledPool {
     function buckets(uint256 index_) external view returns (uint256 lpAccumulator, uint256 availableCollateral);
 
     /**
-     *  @notice Mapping of buckets indexes and owner addresses to {BucketLender} structs.
+     *  @notice Mapping of buckets indexes and owner addresses to {Lender} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  index_           Bucket index.
      *  @param  lp_              Address of the liquidity provider.
      *  @return lpBalance        Amount of LPs owner has in current bucket.
      *  @return lastQuoteDeposit Time the user last deposited quote token.
      */
-    function bucketLenders(uint256 index_, address lp_) external view returns (uint256 lpBalance, uint256 lastQuoteDeposit);
+    function lenders(uint256 index_, address lp_) external view returns (uint256 lpBalance, uint256 lastQuoteDeposit);
 
     /**
      *  @notice Returns the `debtEma` state variable.
@@ -324,15 +324,6 @@ interface IScaledPool {
      *  @notice Returns the amount of excess quote tokens.
      */
     function reserves() external view returns (uint256 reserves_);
-
-    /***************/
-    /*** Structs ***/
-    /***************/
-
-    struct BucketLender {
-        uint256 lpBalance;           // [RAY]
-        uint256 lastQuoteDeposit;    // timestamp
-    }
 
 
     /*********************************/

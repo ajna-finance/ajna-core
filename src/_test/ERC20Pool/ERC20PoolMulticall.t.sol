@@ -69,15 +69,15 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         assertEq(_pool.poolSize(),                 30_000 * 1e18);
 
         // check buckets
-        (uint256 lpBalance, ) = _pool.bucketLenders(2550, _lender);
+        (uint256 lpBalance, ) = _pool.lenders(2550, _lender);
         assertEq(lpBalance,                10_000 * 1e27);
         assertEq(_pool.exchangeRate(2550), 1 * 1e27);
 
-        (lpBalance, ) = _pool.bucketLenders(2551, _lender);
+        (lpBalance, ) = _pool.lenders(2551, _lender);
         assertEq(lpBalance,                10_000 * 1e27);
         assertEq(_pool.exchangeRate(2551), 1 * 1e27);
 
-        (lpBalance, ) = _pool.bucketLenders(2552, _lender);
+        (lpBalance, ) = _pool.lenders(2552, _lender);
         assertEq(lpBalance,                10_000 * 1e27);
         assertEq(_pool.exchangeRate(2552), 1 * 1e27);
     }

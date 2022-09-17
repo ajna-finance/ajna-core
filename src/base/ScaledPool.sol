@@ -18,10 +18,12 @@ import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
 import { Heap }           from "../libraries/Heap.sol";
 import '../libraries/Book.sol';
+import '../libraries/Lenders.sol';
 
 abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
+    using Lenders   for mapping(uint256 => mapping(address => Lenders.Lender));
     using Heap      for Heap.Data;
 
     int256  public constant INDEX_OFFSET = 3232;
@@ -63,7 +65,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     /**
      *  @dev deposit index -> lender address -> lender lp [RAY] and deposit timestamp
      */
-    mapping(uint256 => mapping(address => BucketLender)) public override bucketLenders;
+    mapping(uint256 => mapping(address => Lenders.Lender)) public override lenders;
 
     /**
      *  @notice Used for tracking LP token ownership address for transferLPTokens access control
@@ -100,9 +102,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
         (uint256 lpbChange, uint256 newLup) = _addQuoteAcc(index_, amount_, curDebt);
 
-        BucketLender storage bucketLender = bucketLenders[index_][msg.sender];
-        bucketLender.lpBalance            += lpbChange;
-        bucketLender.lastQuoteDeposit     = block.timestamp;
+        lenders.addLPsWithTime(index_, msg.sender, lpbChange);
 
         // move quote token amount from lender to pool
         emit AddQuoteToken(msg.sender, index_, amount_, newLup);
@@ -123,8 +123,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 availableQuoteToken = _valueAt(fromIndex_);
         uint256 rate                = buckets.getExchangeRate(fromIndex_, availableQuoteToken);
 
-        BucketLender storage bucketLender = bucketLenders[fromIndex_][msg.sender];
-        uint256 amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, Maths.rrdivw(bucketLender.lpBalance, rate)));
+        (uint256 lpBalance, uint256 lastDeposit) = lenders.getLenderInfo(fromIndex_, msg.sender);
+        uint256 amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, Maths.rrdivw(lpBalance, rate)));
 
         // calculate amount of LP required to move it
         lpbAmountFrom_ = Maths.wrdivr(amount, rate);
@@ -135,7 +135,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         uint256 col = pledgedCollateral;
-        if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
+        if (col != 0 && lastDeposit != 0 && block.timestamp - lastDeposit < 1 days) {
             uint256 ptp = Maths.wdiv(curDebt, col);
             if (Book.indexToPrice(fromIndex_) > ptp && Book.indexToPrice(toIndex_) < ptp) {
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
@@ -150,8 +150,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (fromIndex_ < toIndex_) if(_htp() > newLup) revert MoveQuoteLUPBelowHTP();
 
         // update lender accounting
-        bucketLender.lpBalance -= lpbAmountTo_;
-        bucketLenders[toIndex_][msg.sender].lpBalance += lpbAmountTo_;
+        lenders.removeLPs(fromIndex_, msg.sender, lpbAmountTo_); // TODO check why moving lpbAmountTo_ instead lpbAmountFrom_
+        lenders.addLPs(toIndex_, msg.sender, lpbAmountTo_);
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
@@ -160,8 +160,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
-        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
-        lpAmount_ = bucketLender.lpBalance;
+        (lpAmount_, ) = lenders.getLenderInfo(index_, msg.sender);
         if (lpAmount_ == 0) revert RemoveQuoteNoClaim();
 
         uint256 availableQuoteToken = _valueAt(index_);
@@ -174,7 +173,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             lpAmount_ = Maths.wrdivr(amount_, rate);
         } // else user is redeeming all of their LPs
 
-        _redeemLPForQuoteToken(bucketLender, lpAmount_, amount_, index_);
+        _redeemLPForQuoteToken(lpAmount_, amount_, index_);
     }
 
     function removeQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
@@ -187,10 +186,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 rate         = buckets.getExchangeRate(index_, availableQuoteToken);
         lpAmount_            = Maths.wrdivr(amount_, rate);
 
-        BucketLender memory bucketLender = bucketLenders[index_][msg.sender];
-        if (bucketLender.lpBalance == 0 || lpAmount_ > bucketLender.lpBalance) revert RemoveQuoteInsufficientLPB();
+        (uint256 lpBalance, ) = lenders.getLenderInfo(index_, msg.sender);
+        if (lpBalance == 0 || lpAmount_ > lpBalance) revert RemoveQuoteInsufficientLPB();
 
-        _redeemLPForQuoteToken(bucketLender, lpAmount_, amount_, index_);
+        _redeemLPForQuoteToken(lpAmount_, amount_, index_);
     }
 
     function transferLPTokens(address owner_, address newOwner_, uint256[] calldata indexes_) external {
@@ -200,21 +199,17 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         for (uint256 i = 0; i < indexesLength; ) {
             if (!BucketMath.isValidIndex(Book.indexToBucketIndex(indexes_[i]))) revert TransferLPInvalidIndex();
 
-            BucketLender memory bucketLenderOwner = bucketLenders[indexes_[i]][owner_];
-            uint256 balanceToTransfer             = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
-            if (balanceToTransfer == 0 || balanceToTransfer != bucketLenderOwner.lpBalance) revert TransferLPNoAllowance();
+            uint256 transferAmount = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
+            if (transferAmount == 0) revert TransferLPNoAllowance();
 
-            delete _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
+            (uint256 lpBalance, uint256 lastDeposit) = lenders.getLenderInfo(indexes_[i], owner_);
+            if (transferAmount != lpBalance) revert TransferLPNoAllowance();
 
-            // move lp tokens to the new owner address
-            BucketLender storage bucketLenderNewOwner = bucketLenders[indexes_[i]][newOwner_];
-            bucketLenderNewOwner.lpBalance            += balanceToTransfer;
-            bucketLenderNewOwner.lastQuoteDeposit     = Maths.max(bucketLenderOwner.lastQuoteDeposit, bucketLenderNewOwner.lastQuoteDeposit);
+            delete _lpTokenAllowances[owner_][newOwner_][indexes_[i]]; // delete allowance
 
-            // delete owner lp balance for this bucket
-            delete bucketLenders[indexes_[i]][owner_];
+            lenders.transferLPs(indexes_[i], owner_, newOwner_, transferAmount, lastDeposit);
 
-            tokensTransferred += balanceToTransfer;
+            tokensTransferred += transferAmount;
 
             unchecked {
                 ++i;
@@ -312,7 +307,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _redeemLPForQuoteToken(
-        BucketLender memory bucketLender,
         uint256 lpAmount_,
         uint256 amount,
         uint256 index_
@@ -322,16 +316,15 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 newLup = _lup();
         if (_htp() > newLup) revert RemoveQuoteLUPBelowHTP();
 
-        bucketLender.lpBalance -= lpAmount_;
-
         // persist bucket changes
         buckets.removeLPs(index_, lpAmount_);
-        bucketLenders[index_][msg.sender] = bucketLender;
+        lenders.removeLPs(index_,msg.sender, lpAmount_);
+        (, uint256 lastDeposit) = lenders.getLenderInfo(index_, msg.sender);
 
         // apply early withdrawal penalty if quote token is withdrawn above the PTP
         uint256 col  = pledgedCollateral;
         uint256 debt = borrowerDebt;
-        if (col != 0 && bucketLender.lastQuoteDeposit != 0 && block.timestamp - bucketLender.lastQuoteDeposit < 1 days) {
+        if (col != 0 && lastDeposit != 0 && block.timestamp - lastDeposit < 1 days) {
             uint256 ptp = Maths.wdiv(debt, col);
             if (Book.indexToPrice(index_) > ptp) {
                 amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());

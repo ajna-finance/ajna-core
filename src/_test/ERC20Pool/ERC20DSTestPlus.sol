@@ -346,7 +346,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     function _assertLPs(LenderLPs memory specs_) internal {
         for (uint256 i = 0; i < specs_.bucketLPs.length; ++i) {
-            (uint256 lpBalance, uint256 time) = _pool.bucketLenders(specs_.bucketLPs[i].index, specs_.lender);
+            (uint256 lpBalance, uint256 time) = _pool.lenders(specs_.bucketLPs[i].index, specs_.lender);
             assertEq(lpBalance, specs_.bucketLPs[i].balance);
             assertEq(time,      specs_.bucketLPs[i].time);
         }

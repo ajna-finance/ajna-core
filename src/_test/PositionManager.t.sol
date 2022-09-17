@@ -180,17 +180,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         uint256 tokenId = _mintNFT(testAddress, address(_pool));
 
         // check pool state
-        (uint256 lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        (uint256 lpBalance, ) = _pool.lenders(indexes[0], testAddress);
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[1], testAddress);
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[2], testAddress);
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[0], address(_positionManager));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[1], address(_positionManager));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[2], address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -222,17 +222,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[0], testAddress);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[1], testAddress);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[2], testAddress);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[0], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[1], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[2], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
 
         // check position manager state
@@ -252,17 +252,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _pool.addQuoteToken(3_000 * 1e18, indexes[2]);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[0], testAddress);
         assertEq(lpBalance, 1_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[1], testAddress);
         assertEq(lpBalance, 2_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[2], testAddress);
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[0], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[1], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[2], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
 
         // check position manager state
@@ -290,17 +290,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[0], testAddress);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[1], testAddress);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], testAddress);
+        (lpBalance, ) = _pool.lenders(indexes[2], testAddress);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[0], address(_positionManager));
         assertEq(lpBalance, 4_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[1], address(_positionManager));
         assertEq(lpBalance, 5_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[2], address(_positionManager));
         assertEq(lpBalance, 6_000 * 1e27);
 
         // check position manager state
@@ -348,25 +348,25 @@ contract PositionManagerTest is PositionManagerHelperContract {
         uint256 tokenId2 = _mintNFT(testLender2, address(_pool));
 
         // check lender, position manager, and pool state
-        (uint256 lpBalance, ) = _pool.bucketLenders(indexes[0], testLender1);
+        (uint256 lpBalance, ) = _pool.lenders(indexes[0], testLender1);
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], testLender1);
+        (lpBalance, ) = _pool.lenders(indexes[1], testLender1);
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], testLender1);
-        assertEq(lpBalance, 3_000 * 1e27);
-
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], testLender2);
-        assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[3], testLender2);
+        (lpBalance, ) = _pool.lenders(indexes[2], testLender1);
         assertEq(lpBalance, 3_000 * 1e27);
 
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[0], testLender2);
+        assertEq(lpBalance, 3_000 * 1e27);
+        (lpBalance, ) = _pool.lenders(indexes[3], testLender2);
+        assertEq(lpBalance, 3_000 * 1e27);
+
+        (lpBalance, ) = _pool.lenders(indexes[0], address(_positionManager));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[1], address(_positionManager));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[2], address(_positionManager));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[3], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[3], address(_positionManager));
         assertEq(lpBalance, 0);
 
         assertEq(_positionManager.getLPTokens(indexes[0], tokenId1), 0);
@@ -405,20 +405,20 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check lender, position manager,  and pool state
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(testLender1));
+        (lpBalance, ) = _pool.lenders(indexes[0], address(testLender1));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(testLender1));
+        (lpBalance, ) = _pool.lenders(indexes[1], address(testLender1));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(testLender1));
+        (lpBalance, ) = _pool.lenders(indexes[2], address(testLender1));
         assertEq(lpBalance, 0);
 
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[0], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[1], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[2], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[3], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[3], address(_positionManager));
         assertEq(lpBalance, 0);
 
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[0]), 3_000 * 1e27);
@@ -450,18 +450,18 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check lender, position manager,  and pool state
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], testLender2);
+        (lpBalance, ) = _pool.lenders(indexes[0], testLender2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[3], testLender2);
+        (lpBalance, ) = _pool.lenders(indexes[3], testLender2);
         assertEq(lpBalance, 0);
 
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[0], address(_positionManager));
         assertEq(lpBalance, 6_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[1], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[2], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[3], address(_positionManager));
+        (lpBalance, ) = _pool.lenders(indexes[3], address(_positionManager));
         assertEq(lpBalance, 3_000 * 1e27);
 
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[0]), 3_000 * 1e27);
@@ -514,11 +514,11 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _pool.addQuoteToken(15_000 * 1e18, testIndexPrice);
 
         // check pool state
-        (uint256 lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (uint256 lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testReceiver);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -537,11 +537,11 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testReceiver);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 15_000 * 1e27);
 
         // check position manager state
@@ -569,11 +569,11 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testReceiver);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -604,11 +604,11 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _pool.addQuoteToken(15_000 * 1e18, testIndexPrice);
 
         // check pool state
-        (uint256 lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (uint256 lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testReceiver);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -627,11 +627,11 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testReceiver);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 15_000 * 1e27);
 
         // check position manager state
@@ -676,11 +676,11 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testReceiver);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -806,17 +806,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.ownerOf(tokenId2), testAddress2);
 
         // check pool state
-        (uint256 lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        (uint256 lpBalance, ) = _pool.lenders(mintIndex, testAddress1);
         assertEq(lpBalance, 2_500 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(mintIndex, testAddress2);
         assertEq(lpBalance, 5_500 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(mintIndex, address(_positionManager));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(moveIndex, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -843,17 +843,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        (lpBalance, ) = _pool.lenders(mintIndex, testAddress1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(mintIndex, testAddress2);
         assertEq(lpBalance, 5_500 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(mintIndex, address(_positionManager));
         assertEq(lpBalance, 2_500 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(moveIndex, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -878,17 +878,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        (lpBalance, ) = _pool.lenders(mintIndex, testAddress1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(mintIndex, testAddress2);
         assertEq(lpBalance, 5_500 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(mintIndex, address(_positionManager));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(moveIndex, address(_positionManager));
         assertEq(lpBalance, 2_500 * 1e27);
 
         // check position manager state
@@ -913,17 +913,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        (lpBalance, ) = _pool.lenders(mintIndex, testAddress1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(mintIndex, testAddress2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(mintIndex, address(_positionManager));
         assertEq(lpBalance, 5_500 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(moveIndex, address(_positionManager));
         assertEq(lpBalance, 2_500 * 1e27);
 
         // check position manager state
@@ -948,17 +948,17 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.moveLiquidity(moveLiquidityParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress1);
+        (lpBalance, ) = _pool.lenders(mintIndex, testAddress1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress1);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(mintIndex, testAddress2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, testAddress2);
+        (lpBalance, ) = _pool.lenders(moveIndex, testAddress2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(mintIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(mintIndex, address(_positionManager));
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(moveIndex, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(moveIndex, address(_positionManager));
         assertEq(lpBalance, 8_000 * 1e27);
 
         // check position manager state
@@ -988,9 +988,9 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _pool.addQuoteToken(15_000 * 1e18, testIndexPrice);
 
         // check pool state
-        (uint256 lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (uint256 lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -1009,9 +1009,9 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 15_000 * 1e27);
 
         // check position manager state
@@ -1035,9 +1035,9 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -1089,13 +1089,13 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _pool.addQuoteToken(15_000 * 1e18, testIndexPrice);
 
         // check pool state
-        (uint256 lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (uint256 lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testReceiver);
         assertEq(lpBalance, 25_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(2551, testReceiver);
+        (lpBalance, ) = _pool.lenders(2551, testReceiver);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state
@@ -1114,13 +1114,13 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.memorializePositions(memorializeParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testReceiver);
         assertEq(lpBalance, 25_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(2551, testReceiver);
+        (lpBalance, ) = _pool.lenders(2551, testReceiver);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 15_000 * 1e27);
 
         // check position manager state
@@ -1159,13 +1159,13 @@ contract PositionManagerTest is PositionManagerHelperContract {
         _positionManager.reedemPositions(reedemParams);
 
         // check pool state
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testMinter);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testMinter);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, testReceiver);
+        (lpBalance, ) = _pool.lenders(testIndexPrice, testReceiver);
         assertEq(lpBalance, 40_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(2551, testReceiver);
+        (lpBalance, ) = _pool.lenders(2551, testReceiver);
         assertEq(lpBalance, 15_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(testIndexPrice, address(_positionManager));
+        (lpBalance, ) = _pool.lenders(testIndexPrice, address(_positionManager));
         assertEq(lpBalance, 0);
 
         // check position manager state

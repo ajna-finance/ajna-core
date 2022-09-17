@@ -98,7 +98,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         (quote, collateral, lpb, ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      10_000 * 1e18);
         assertEq(collateral, Maths.wad(3));
-        (uint256 lpBalance, ) = _subsetPool.bucketLenders(testIndex, _bidder);
+        (uint256 lpBalance, ) = _subsetPool.lenders(testIndex, _bidder);
         assertEq(lpBalance, lpBalanceChange);
 
         // check pool state
@@ -114,7 +114,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         emit RemoveQuoteToken(_bidder, testIndex, qtToRemove, _subsetPool.lup());
         _subsetPool.removeAllQuoteToken(testIndex);
         assertEq(_quote.balanceOf(_bidder), qtToRemove);
-        (lpBalance, ) = _subsetPool.bucketLenders(testIndex, _bidder);
+        (lpBalance, ) = _subsetPool.lenders(testIndex, _bidder);
         assertEq(lpBalance, 0);
         (quote, collateral, , ) = _subsetPool.bucketAt(testIndex);
         assertEq(quote,      10_000 * 1e18 - qtToRemove);
@@ -217,7 +217,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateralNFT(_bidder, _subsetPool.indexToPrice(2350), tokenIdsToRemove);
         (uint256 amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
-        (uint256 lpBalance, ) = _subsetPool.bucketLenders(2350, _bidder);
+        (uint256 lpBalance, ) = _subsetPool.lenders(2350, _bidder);
         assertEq(lpBalance, 490.713717393968418590429839925 * 1e27);
         skip(7200);
 
@@ -243,7 +243,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateralNFT(_lender, _subsetPool.indexToPrice(2350), tokenIdsToRemove);
         (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
-        (lpBalance, ) = _subsetPool.bucketLenders(2350, _lender);
+        (lpBalance, ) = _subsetPool.lenders(2350, _lender);
         assertEq(lpBalance, 11_836.428760868677193803190045359 * 1e27);
         skip(3600);
 
