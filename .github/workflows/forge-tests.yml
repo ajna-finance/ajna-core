@@ -26,14 +26,14 @@ jobs:
           echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
         id: gas
 
-      # - name: Cache gas snasphot
-      #   id: cache-gas
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: gas-reports-*
-      #     key: ${{ steps.gas.outputs.dir }}-${{ github.run_id }}
-      #     restore-keys: |
-      #       ${{ steps.gas.outputs.dir }}-
+      - name: Cache gas snasphot
+        id: cache-gas
+        uses: actions/cache@v3
+        with:
+          path: gas-reports-*
+          key: ${{ steps.gas.outputs.dir }}-${{ github.run_id }}
+          restore-keys: |
+            ${{ steps.gas.outputs.dir }}-
 
       - name: Run tests and compare gas
         shell: bash
