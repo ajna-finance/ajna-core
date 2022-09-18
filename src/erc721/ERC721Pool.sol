@@ -41,6 +41,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /// @dev Internal visibility is required as it contains a nested struct
     // borrowers book: borrower address -> NFTBorrower
     mapping(address => NFTBorrower) private borrowers;
+    mapping(address => EnumerableSet.UintSet) private lockedNFTs;
 
     mapping(address => NFTLiquidationInfo) private liquidations;
 
@@ -84,14 +85,14 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /***********************************/
 
     function pledgeCollateral(address borrower_, uint256[] calldata tokenIds_) external override {
-        NFTBorrower storage borrower = borrowers[borrower_];
+        EnumerableSet.UintSet storage collateralDeposited = lockedNFTs[borrower_];
 
         // add tokenIds to the pool
         for (uint256 i = 0; i < tokenIds_.length;) {
             if (_tokenIdsAllowed.length() != 0) if(!_tokenIdsAllowed.contains(tokenIds_[i])) revert OnlySubset();
 
             if (!_poolCollateralTokenIds.add(tokenIds_[i]))      revert AddTokenFailed(); // update pool state
-            if (!borrower.collateralDeposited.add(tokenIds_[i])) revert AddTokenFailed(); // update borrower accounting
+            if (!collateralDeposited.add(tokenIds_[i])) revert AddTokenFailed(); // update borrower accounting
 
             //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]); // move collateral from sender to pool
@@ -108,11 +109,12 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         pledgedCollateral += Maths.wad(tokenIds_.length);
 
         // accrue interest to borrower
+        NFTBorrower storage borrower = borrowers[borrower_];
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
         borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
         // update loan queue
-        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) loans.upsert(borrower_, thresholdPrice);
 
         emit PledgeCollateralNFT(borrower_, tokenIds_);
@@ -138,7 +140,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 newLup = Book.indexToPrice(lupId);
 
         // check borrow won't push borrower or pool into a state of under-collateralization
-        if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
+        uint256 noOfNFTs = Maths.wad(lockedNFTs[msg.sender].length());
+        if (_borrowerCollateralization(borrower.debt, noOfNFTs, newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
         if (_poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) < Maths.WAD) revert BorrowPoolUnderCollateralized();
 
         borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
@@ -147,7 +150,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         borrowerDebt = curDebt;
 
         // update loan queue
-        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, noOfNFTs, borrower.inflatorSnapshot);
         loans.upsert(msg.sender, thresholdPrice);
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -168,7 +171,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // check collateralization for sufficient unenecumbered collateral
         uint256 curLup = _lup();
-        if (Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) < Maths.wad(tokenIds_.length)) revert RemoveCollateralInsufficientCollateral();
+        EnumerableSet.UintSet storage collateralDeposited = lockedNFTs[msg.sender];
+        if (Maths.wad(collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) < Maths.wad(tokenIds_.length)) revert RemoveCollateralInsufficientCollateral();
 
         borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
 
@@ -181,7 +185,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             //slither-disable-next-line calls-loop
             if (collateral().ownerOf(tokenIds_[i]) != address(this)) revert TokenNotDeposited();
             if (!_poolCollateralTokenIds.remove(tokenIds_[i]))       revert RemoveTokenFailed(); // pool level accounting
-            if (!borrower.collateralDeposited.remove(tokenIds_[i]))  revert RemoveTokenFailed(); // borrower accounting
+            if (!collateralDeposited.remove(tokenIds_[i]))  revert RemoveTokenFailed(); // borrower accounting
 
             //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]); // move collateral from pool to sender
@@ -192,7 +196,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         }
 
         // update loan queue
-        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
 
         emit PullCollateralNFT(msg.sender, tokenIds_);
@@ -215,7 +219,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
             loans.remove(borrower_);
         } else {
             if (loans.count - 1 != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
-            uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
+            uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(lockedNFTs[borrower_].length()), borrower.inflatorSnapshot);
             loans.upsert(borrower_, thresholdPrice);
         }
 
@@ -344,7 +348,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (_borrowerCollateralization(borrower.debt, Maths.wad(lockedNFTs[borrower_].length()), lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
         //  which includes an array of the borrower's tokenIds being auctioned off.
@@ -365,11 +369,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
 
         return (
-            borrowers[borrower_].debt,                         // accrued debt (WAD)
-            pendingDebt,                                       // current debt, accrued and pending accrual (WAD)
-            borrowers[borrower_].collateralDeposited.values(), // deposited collateral including encumbered (WAD)
-            borrowers[borrower_].mompFactor,                   // MOMP / inflator, used in neutralPrice calc (WAD)
-            borrowers[borrower_].inflatorSnapshot              // used to calculate pending interest (WAD)
+            borrowers[borrower_].debt,            // accrued debt (WAD)
+            pendingDebt,                          // current debt, accrued and pending accrual (WAD)
+            lockedNFTs[borrower_].values(),       // deposited collateral including encumbered (WAD)
+            borrowers[borrower_].mompFactor,      // MOMP / inflator, used in neutralPrice calc (WAD)
+            borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
         );
     }
 

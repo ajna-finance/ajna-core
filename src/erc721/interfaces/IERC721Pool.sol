@@ -125,7 +125,6 @@ interface IERC721Pool is IScaledPool {
      */
     struct NFTBorrower {
         uint256               debt;                // [WAD]
-        EnumerableSet.UintSet collateralDeposited;
         uint256               mompFactor;
         uint256               inflatorSnapshot;    // [WAD]
     }
