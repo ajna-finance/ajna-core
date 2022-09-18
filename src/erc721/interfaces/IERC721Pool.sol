@@ -23,14 +23,6 @@ interface IERC721Pool is IScaledPool {
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
 
     /**
-     *  @notice Emitted when borrower borrows quote tokens from pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  lup_      LUP after borrow.
-     *  @param  amount_   Amount of quote tokens borrowed from the pool.
-     */
-    event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
-
-    /**
      *  @notice Emitted when an actor settles debt in a completed liquidation
      *  @param  borrower_           Identifies the loan being liquidated.
      *  @param  hpbIndex_           The index of the Highest Price Bucket where debt was cleared.
@@ -67,14 +59,6 @@ interface IERC721Pool is IScaledPool {
      *  @param  tokenIds_ Array of tokenIds to be removed from the pool.
      */
     event RemoveCollateralNFT(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_);
-
-    /**
-     *  @notice Emitted when borrower repays quote tokens to the pool.
-     *  @param  borrower_ `msg.sender`.
-     *  @param  lup_      LUP after repay.
-     *  @param  amount_   Amount of quote tokens repayed to the pool.
-     */
-    event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
 
     /**
      *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
@@ -117,19 +101,6 @@ interface IERC721Pool is IScaledPool {
     /**************************/
 
     /**
-     *  @notice Struct holding borrower related info per price bucket, for borrowers using NFTs as collateral.
-     *  @param  debt                Borrower debt, WAD units.
-     *  @param  collateralDeposited OZ Enumberable Set tracking the tokenIds of collateral that have been deposited
-     *  @param  mompFactor          Momp / borrower.inflatorSnapshot, used in neutralPrice calc (WAD)
-     *  @param  inflatorSnapshot    Current borrower inflator snapshot, RAY units.
-     */
-    struct NFTBorrower {
-        uint256               debt;                // [WAD]
-        uint256               mompFactor;
-        uint256               inflatorSnapshot;    // [WAD]
-    }
-
-    /**
      *  @notice Maintains the state of a liquidation.
      *  @param  kickTime            Time the liquidation was initiated.
      *  @param  referencePrice      Highest Price Bucket at time of liquidation.
@@ -163,14 +134,6 @@ interface IERC721Pool is IScaledPool {
     /***********************************/
 
     /**
-     *  @notice Called by a borrower to open or expand a position.
-     *  @dev    Can only be called if quote tokens have already been added to the pool.
-     *  @param  amount_     The amount of quote token to borrow.
-     *  @param  limitIndex_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
-     */
-    function borrow(uint256 amount_, uint256 limitIndex_) external;
-
-    /**
      *  @notice Emitted when borrower locks collateral in the pool.
      *  @param  borrower_ The address of borrower to pledge collateral for.
      *  @param  tokenIds_ Array of tokenIds to be added to the pool.
@@ -182,13 +145,7 @@ interface IERC721Pool is IScaledPool {
      *  @param  tokenIds_ Array of tokenIds to be removed from the pool.
      */
     function pullCollateral(uint256[] calldata tokenIds_) external;
-
-    /**
-     *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
-     *  @param  borrower_  The address of borrower to repay quote token amount for.
-     *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
-     */
-    function repay(address borrower_, uint256 maxAmount_) external;
+    
 
     /*********************************/
     /*** Lender External Functions ***/

@@ -24,9 +24,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** State Variables ***/
     /***********************/
 
-    // borrowers book: borrower address -> BorrowerInfo
-    mapping(address => Borrower) public override borrowers;
-
     mapping(address => LiquidationInfo) public override liquidations;
 
     uint256 public override collateralScale;
@@ -60,98 +57,19 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /***********************************/
 
     function pledgeCollateral(address borrower_, uint256 amount_) external override {
-        uint256 curDebt = _accruePoolInterest();
-
-        // borrower accounting
-        Borrower memory borrower = borrowers[borrower_];
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        borrower.collateral += amount_;
-
-        // update loan queue
-        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) loans.upsert(borrower_, thresholdPrice);
-
-        // update pool state
-        pledgedCollateral += amount_;
-
-        uint256 lup = _lup();
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
-        borrowers[borrower_] = borrower;
-        _updateInterestRateAndEMAs(curDebt, lup);
+        _pledgeCollateral(borrower_, amount_);
 
         // move collateral from sender to pool
         emit PledgeCollateral(borrower_, amount_);
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
-    function borrow(uint256 amount_, uint256 limitIndex_) external override {
-        uint256 lupId = _lupIndex(amount_);
-        if (lupId > limitIndex_) revert BorrowLimitIndexReached();
-
-        uint256 curDebt = _accruePoolInterest();
-
-        Borrower memory borrower = borrowers[msg.sender];
-        if (loans.count - 1 != 0) if (borrower.debt + amount_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
-
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-
-        uint256 debt  = Maths.wmul(amount_, _calculateFeeRate() + Maths.WAD);
-        borrower.debt += debt;
-
-        uint256 newLup = Book.indexToPrice(lupId);
-
-        // check borrow won't push borrower or pool into a state of under-collateralization
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
-        if (_poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) < Maths.WAD) revert BorrowPoolUnderCollateralized();
-
-        curDebt += debt;
-
-        // update actor accounting
-        borrowerDebt = curDebt;
-
-        // update loan queue
-        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        loans.upsert(msg.sender, thresholdPrice);
-
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
-        borrowers[msg.sender] = borrower;
-
-        _updateInterestRateAndEMAs(curDebt, newLup);
-
-        // move borrowed amount from pool to sender
-        emit Borrow(msg.sender, newLup, amount_);
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
-    }
-
     function pullCollateral(uint256 amount_) external override {
-        uint256 curDebt = _accruePoolInterest();
-
-        // borrower accounting
-        Borrower memory borrower = borrowers[msg.sender];
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-
-        uint256 curLup = _lup();
-        if (borrower.collateral - _encumberedCollateral(borrower.debt, curLup) < amount_) revert RemoveCollateralInsufficientCollateral();
-        borrower.collateral -= amount_;
-
-        // update loan queue
-        uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-        if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
-
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
-        borrowers[msg.sender] = borrower;
-
-        // update pool state
-        pledgedCollateral -= amount_;
-        _updateInterestRateAndEMAs(curDebt, curLup);
+        _pullCollateral(amount_);
 
         // move collateral from pool to sender
         emit PullCollateral(msg.sender, amount_);
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-    }
-
-    function repay(address borrower_, uint256 maxAmount_) external override {
-        _repayDebt(borrower_, maxAmount_);
     }
 
     /*********************************/
@@ -159,22 +77,10 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*********************************/
 
     function addCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
-        uint256 curDebt = _accruePoolInterest();
-
-        // Calculate exchange rate before new collateral has been accounted for.
-        // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
-        uint256 price      = Book.indexToPrice(index_);
-        uint256 rate       = buckets.getExchangeRate(index_, _valueAt(index_));
-        uint256 quoteValue = Maths.wmul(amount_, price);
-        lpbChange_         = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
-
-        buckets.addToBucket(index_, lpbChange_, amount_);
-        lenders.addLPs(index_, msg.sender, lpbChange_);
-
-        _updateInterestRateAndEMAs(curDebt, _lup());
+        lpbChange_ = _addCollateral(amount_, index_);
 
         // move required collateral from sender to pool
-        emit AddCollateral(msg.sender, price, amount_);
+        emit AddCollateral(msg.sender, index_, amount_);
         collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
     }
 
@@ -226,22 +132,26 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             lpAmount_ = Maths.wrdivr(Maths.wmul(amount_, price), rate);
         } // else user is redeeming all of their LPs
 
-        _redeemLPForCollateral(lpAmount_, amount_, price, index_);
+        // update bucket accounting
+        buckets.removeFromBucket(index_, lpAmount_, amount_);
+
+        // update lender accounting
+        lenders.removeLPs(index_, msg.sender, lpAmount_);
+
+        _updateInterestRateAndEMAs(borrowerDebt, _lup());
+
+        // move collateral from pool to lender
+        emit RemoveCollateral(msg.sender, price, amount_);
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
     function removeCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
-        if (amount_ > buckets.getCollateral(index_)) revert RemoveCollateralInsufficientCollateral();
+        uint256 price;
+        (lpAmount_, price) = _removeCollateral(amount_, index_);
 
-        _accruePoolInterest();
-
-        uint256 price = Book.indexToPrice(index_);
-        uint256 rate  = buckets.getExchangeRate(index_, _valueAt(index_));
-        lpAmount_     = Maths.rdiv((amount_ * price / 1e9), rate);
-
-        (uint256 lpBalance, ) = lenders.getLenderInfo(index_, msg.sender);
-        if (lpBalance == 0 || lpAmount_ > lpBalance) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
-
-        _redeemLPForCollateral(lpAmount_, amount_, price, index_);
+        // move collateral from pool to lender
+        emit RemoveCollateral(msg.sender, price, amount_);
+        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
     /*******************************/
@@ -352,41 +262,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, price_, amount_);
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-    }
-
-    function _repayDebt(address borrower_, uint256 maxAmount_) internal {
-        Borrower memory borrower = borrowers[borrower_];
-        if (borrower.debt == 0) revert RepayNoDebt();
-
-        uint256 curDebt = _accruePoolInterest();
-
-        // update borrower accounting
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        uint256 amount = Maths.min(borrower.debt, maxAmount_);
-        borrower.debt -= amount;
-        curDebt       -= amount;
-
-        // update loan queue
-        if (borrower.debt == 0) {
-            loans.remove(borrower_);
-        } else {
-            if (loans.count - 1 != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
-            uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
-            loans.upsert(borrower_, thresholdPrice);
-        }
-
-        // update pool state
-        borrowerDebt = curDebt;
-
-        uint256 newLup = _lup();
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
-        borrowers[borrower_] = borrower;
-
-        _updateInterestRateAndEMAs(curDebt, newLup);
-
-        // move amount to repay from sender to pool
-        emit Repay(borrower_, newLup, amount);
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 
     /**********************/

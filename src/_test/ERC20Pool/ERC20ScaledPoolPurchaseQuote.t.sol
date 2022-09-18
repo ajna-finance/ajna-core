@@ -54,8 +54,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _bidder,
                 amount: collateralToPurchaseWith,
-                index:  testIndex,
-                price:  priceAtTestIndex
+                index:  testIndex
             })
         );
 
@@ -245,8 +244,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _bidder,
                 amount: collateralToPurchaseWith,
-                index:  2550,
-                price:  3_010.892022197881557845 * 1e18
+                index:  2550
             })
         );
 

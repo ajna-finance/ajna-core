@@ -238,8 +238,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _bidder,
                 amount: 4 * 1e18,
-                index:  2550,
-                price: _pool.indexToPrice(2550)
+                index:  2550
             })
         );
 
@@ -320,8 +319,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _bidder,
                 amount: 1 * 1e18,
-                index:  1530,
-                price: _pool.indexToPrice(1530)
+                index:  1530
             })
         );
 
@@ -412,16 +410,14 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _lender,
                 amount: 16.3 * 1e18,
-                index:  3333,
-                price: _pool.indexToPrice(3333)
+                index:  3333
             })
         );
         _addCollateral(
             AddCollateralSpecs({
                 from:   _lender,
                 amount: 3.7 * 1e18,
-                index:  3334,
-                price: _pool.indexToPrice(3334)
+                index:  3334
             })
         );
 
@@ -439,8 +435,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _borrower,
                 amount: 1.3 * 1e18,
-                index:  3334,
-                price: _pool.indexToPrice(3334)
+                index:  3334
             })
         );
         // should revert if actor doesn't have enough LP to move specified amount
@@ -487,8 +482,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _lender,
                 amount: 1 * 1e18,
-                index:  fromBucket,
-                price: _pool.indexToPrice(1369)
+                index:  fromBucket
             })
         );
         skip(2 hours);

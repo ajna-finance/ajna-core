@@ -36,7 +36,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         address from;
         uint256 amount;
         uint256 index;
-        uint256 price;
     }
 
     struct BorrowSpecs {
@@ -215,7 +214,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     function _addCollateral(AddCollateralSpecs memory specs_) internal {
         changePrank(specs_.from);
         vm.expectEmit(true, true, false, true);
-        emit AddCollateral(specs_.from, specs_.price, specs_.amount);
+        emit AddCollateral(specs_.from, specs_.index, specs_.amount);
         vm.expectEmit(true, true, false, true);
         emit Transfer(specs_.from, address(_pool), specs_.amount);
         _pool.addCollateral(specs_.amount, specs_.index);

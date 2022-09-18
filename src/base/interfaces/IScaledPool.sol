@@ -21,6 +21,22 @@ interface IScaledPool {
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
 
     /**
+     *  @notice Emitted when borrower borrows quote tokens from pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  lup_      LUP after borrow.
+     *  @param  amount_   Amount of quote tokens borrowed from the pool.
+     */
+    event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
+
+    /**
+     *  @notice Emitted when borrower repays quote tokens to the pool.
+     *  @param  borrower_ `msg.sender`.
+     *  @param  lup_      LUP after repay.
+     *  @param  amount_   Amount of quote tokens repayed to the pool.
+     */
+    event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
+
+    /**
      *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
      *  @param  borrower_   Identifies the loan being liquidated.
      *  @param  index_      The index of the Highest Price Bucket used for this take.
@@ -219,6 +235,21 @@ interface IScaledPool {
     error TransferLPNoAllowance();
 
 
+    /**
+     *  @notice Struct holding borrower related info.
+     *  @param  debt             Borrower debt, WAD units.
+     *  @param  collateral       Collateral deposited by borrower, WAD units.
+     *  @return mompFactor       Most Optimistic Matching Price (MOMP) / inflator, used in neutralPrice calc, WAD units.
+     *  @param  inflatorSnapshot Current borrower inflator snapshot, WAD units.
+     */
+    struct Borrower {
+        uint256 debt;             // [WAD]
+        uint256 collateral;       // [WAD]
+        uint256 mompFactor;       // [WAD]
+        uint256 inflatorSnapshot; // [WAD]
+    }
+
+
     /***********************/
     /*** State Variables ***/
     /***********************/
@@ -228,6 +259,17 @@ interface IScaledPool {
      *  @return borrowerDebt_ Total amount of borrower debt in pool.
      */
     function borrowerDebt() external view returns (uint256 borrowerDebt_);
+
+    /**
+     *  @notice Mapping of borrower addresses to {Borrower} structs.
+     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
+     *  @param  borrower_  Address of the borrower.
+     *  @return debt       Amount of debt that the borrower has, in quote token.
+     *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
+     *  @return mompFactor Momp / borrowerInflatorSnapshot factor used.
+     *  @return inflator   Snapshot of inflator value used to track interest on loans.
+     */
+    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 mompFactor, uint256 inflator);
 
     /**
      *  @notice Mapping of buckets indexes to {Bucket} structs.
@@ -428,6 +470,26 @@ interface IScaledPool {
      *  @return amount_      Actual amount of reserves taken.
      */
     function takeReserves(uint256 maxAmount_) external returns (uint256 amount_);
+
+
+    /***********************************/
+    /*** Borrower External Functions ***/
+    /***********************************/
+
+    /**
+     *  @notice Called by a borrower to open or expand a position.
+     *  @dev    Can only be called if quote tokens have already been added to the pool.
+     *  @param  amount_     The amount of quote token to borrow.
+     *  @param  limitIndex_ Lower bound of LUP change (if any) that the borrower will tolerate from a creating or modifying position.
+     */
+    function borrow(uint256 amount_, uint256 limitIndex_) external;
+
+    /**
+     *  @notice Called by a borrower to repay some amount of their borrowed quote tokens.
+     *  @param  borrower_  The address of borrower to repay quote token amount for.
+     *  @param  maxAmount_ WAD The maximum amount of quote token to repay.
+     */
+    function repay(address borrower_, uint256 maxAmount_) external;
 
 
     /**********************/

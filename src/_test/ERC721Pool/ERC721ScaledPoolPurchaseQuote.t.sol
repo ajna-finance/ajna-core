@@ -89,9 +89,9 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 70;
         tokenIdsToAdd[2] = 73;
         vm.expectEmit(true, true, false, true);
-        emit Transfer(_bidder, address(_subsetPool), tokenIdsToAdd[0]);
-        vm.expectEmit(true, true, false, true);
         emit AddCollateralNFT(_bidder, testIndex, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(_bidder, address(_subsetPool), tokenIdsToAdd[0]);
         uint256 lpBalanceChange = _subsetPool.addCollateral(tokenIdsToAdd, testIndex);
 
         // check bucket state
@@ -195,9 +195,9 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertGt(_quote.balanceOf(address(_subsetPool)), amountToPurchase);
         uint256 amountWithInterest = 24_001.511204352939432000 * 1e18;
         vm.expectEmit(true, true, true, true);
-        emit Transfer(_bidder, address(_subsetPool), tokenIdsToAdd[0]);
-        vm.expectEmit(true, true, true, true);
         emit AddCollateralNFT(_bidder, 2350, tokenIdsToAdd);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(_bidder, address(_subsetPool), tokenIdsToAdd[0]);
         _subsetPool.addCollateral(tokenIdsToAdd, 2350);
         
         vm.expectEmit(true, true, false, true);

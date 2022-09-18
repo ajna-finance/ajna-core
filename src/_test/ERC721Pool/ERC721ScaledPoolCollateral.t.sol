@@ -68,13 +68,13 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
+        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 5);
-        vm.expectEmit(true, true, false, true);
-        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // check token balances after add
@@ -114,9 +114,9 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         changePrank(_borrower2);
         _collateral.setApprovalForAll(address(_subsetPool), true);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(_borrower2, address(_subsetPool), 53);
-        vm.expectEmit(true, true, false, true);
         emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(_borrower2, address(_subsetPool), 53);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // check token balances after add
@@ -145,13 +145,13 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
+        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 5);
-        vm.expectEmit(true, true, false, true);
-        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // check token balances after add
@@ -165,11 +165,11 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // borrower removes some of their deposted NFTS from the pool
         vm.expectEmit(true, true, false, true);
+        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 5);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
         _subsetPool.pullCollateral(tokenIdsToRemove);
 
         // check token balances after remove
@@ -202,13 +202,13 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         tokenIdsToRemove[2] = 5;
 
         vm.expectEmit(true, true, false, true);
+        vm.expectEmit(true, true, false, true);
+        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
         emit Transfer(address(_subsetPool), _borrower, 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 5);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
         _subsetPool.pullCollateral(tokenIdsToRemove);
     }
 
@@ -242,13 +242,13 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
+        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 5);
-        vm.expectEmit(true, true, false, true);
-        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // TODO: determine how to handle checking both token types of Transfer
@@ -279,11 +279,11 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // borrower removes some of their deposted NFTS from the pool
         vm.expectEmit(true, true, false, true);
+        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 5);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
         _subsetPool.pullCollateral(tokenIdsToRemove);
 
         // check token balances after remove
@@ -318,13 +318,13 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
+        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 5);
-        vm.expectEmit(true, true, false, true);
-        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // check collateralization after pledge
