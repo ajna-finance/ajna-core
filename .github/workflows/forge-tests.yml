@@ -38,24 +38,19 @@ jobs:
       - name: Run tests and compare gas
         shell: bash
         run: |
-          # prevRuns=$(find . -name "gas-reports-*" -printf '.' | wc -m)
-          # if [ $prevRuns = "0" ]; then echo "No previous run"; else dir=$(ls -td -- gas-reports-* | head -n 1) && forge snapshot --no-match-test testLoad --diff $dir/.gas-snapshot 2> /dev/null;fi | tee gas-diff-output.txt
+          prevRuns=$(find . -name "gas-reports-*" -printf '.' | wc -m)
+          if [ $prevRuns = "0" ]; then echo "No previous run"; else dir=$(ls -td -- gas-reports-* | head -n 1) && forge snapshot --no-match-test testLoad --diff $dir/.gas-snapshot;fi 2>&1 | tee gas-diff-output.txt
           mkdir -p gas-reports-${{ github.run_id }}
           forge snapshot --no-match-test testLoad --gas-report --snap gas-reports-${{ github.run_id }}/.gas-snapshot
-          # echo "##[set-output name=gas-diff;]$(echo $(cat gas-diff-output.txt|tail -1|sed -e 's/\x1b\[[0-9;]*m//g'))"
+          echo "##[set-output name=gas-diff;]$(echo $(cat gas-diff-output.txt|tail -1|sed -e 's/\x1b\[[0-9;]*m//g'))"
         id: forge-tests
 
-      # - name: Gas diff results
-      #   shell: bash
-      #   run: |
-      #     echo "${{ steps.forge-tests.outputs.gas-diff }}"
-
-      # - name: Send to Discord
-      #   uses: appleboy/discord-action@master
-      #   with:
-      #     webhook_id: ${{ secrets.DISCORD_ID }}
-      #     webhook_token: ${{ secrets.DISCORD_TOKEN }}
-      #     message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.forge-tests.outputs.gas-diff }} compared with last run in branch ${{ steps.gas.outputs.branch }}```
+      - name: Send to Discord
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.DISCORD_ID }}
+          webhook_token: ${{ secrets.DISCORD_TOKEN }}
+          message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.forge-tests.outputs.gas-diff }} compared with last run in branch ${{ steps.gas.outputs.branch }}```
 
       - name: Run coverage
         continue-on-error: true
