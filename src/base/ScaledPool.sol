@@ -185,8 +185,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 availableQuoteToken = _valueAt(index_);
         if (amount_ > availableQuoteToken) revert RemoveQuoteInsufficientQuoteAvailable();
 
-        uint256 rate         = buckets.getExchangeRate(index_, availableQuoteToken);
-        lpAmount_            = Maths.wrdivr(amount_, rate);
+        uint256 rate = buckets.getExchangeRate(index_, availableQuoteToken);
+        lpAmount_    = Maths.wrdivr(amount_, rate);
 
         (uint256 lpBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         if (lpBalance == 0 || lpAmount_ > lpBalance) revert RemoveQuoteInsufficientLPB();
@@ -759,12 +759,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     function _addCollateral(uint256 amount_, uint256 index_) internal returns (uint256 lpbChange_) {
         uint256 curDebt = _accruePoolInterest();
 
-        // Calculate exchange rate before new collateral has been accounted for.
-        // This is consistent with how lbpChange in addQuoteToken is adjusted before calling _add.
-        uint256 price      = Book.indexToPrice(index_);
-        uint256 rate       = buckets.getExchangeRate(index_, _valueAt(index_));
-        uint256 quoteValue = Maths.wmul(amount_, price);
-        lpbChange_         = Maths.rdiv(Maths.wadToRay(quoteValue), rate);
+        lpbChange_ = buckets.collateralToLPs(index_, _valueAt(index_), amount_);
 
         buckets.addToBucket(index_, lpbChange_, amount_);
         lenders.addLPs(index_, msg.sender, lpbChange_);
@@ -772,23 +767,18 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         _updateInterestRateAndEMAs(curDebt, _lup());
     }
 
-    function _removeCollateral(uint256 amount_, uint256 index_) internal returns (uint256 lpAmount_, uint256 price_) {
+    function _removeCollateral(uint256 amount_, uint256 index_) internal returns (uint256 lpbChange_) {
         if (amount_ > buckets.getCollateral(index_)) revert RemoveCollateralInsufficientCollateral();
 
         _accruePoolInterest();
 
-        price_ = Book.indexToPrice(index_);
-        uint256 rate  = buckets.getExchangeRate(index_, _valueAt(index_));
-        lpAmount_     = Maths.rdiv((amount_ * price_ / 1e9), rate);
+        lpbChange_ = buckets.collateralToLPs(index_, _valueAt(index_), amount_);
 
         (uint256 lpBalance, ) = lenders.getLenderInfo(index_, msg.sender);
-        if (lpBalance == 0 || lpAmount_ > lpBalance) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
+        if (lpBalance == 0 || lpbChange_ > lpBalance) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
 
-        // update bucket accounting
-        buckets.removeFromBucket(index_, lpAmount_, amount_);
-
-        // update lender accounting
-        lenders.removeLPs(index_, msg.sender, lpAmount_);
+        buckets.removeFromBucket(index_, lpbChange_, amount_);
+        lenders.removeLPs(index_, msg.sender, lpbChange_);
 
         _updateInterestRateAndEMAs(borrowerDebt, _lup());
     }

@@ -150,10 +150,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     // TODO: finish implementing
     // TODO: check for reentrancy
     function removeCollateral(uint256[] calldata tokenIds_, uint256 index_) external override returns (uint256 lpAmount_) {
-        uint256 price;
-        (lpAmount_, price) = _removeCollateral(Maths.wad(tokenIds_.length), index_);
+        lpAmount_ = _removeCollateral(Maths.wad(tokenIds_.length), index_);
 
-        emit RemoveCollateralNFT(msg.sender, price, tokenIds_);
+        emit RemoveCollateralNFT(msg.sender, index_, tokenIds_);
         // move collateral from pool to lender
         for (uint256 i = 0; i < tokenIds_.length;) {
             if (!_bucketCollateralTokenIds.get(tokenIds_[i])) revert TokenNotDeposited();

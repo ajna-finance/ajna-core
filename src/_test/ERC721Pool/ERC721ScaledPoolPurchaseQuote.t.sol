@@ -125,7 +125,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         uint256[] memory tokenIdsToRemove = new uint256[](2);
         tokenIdsToRemove = tokenIdsToAdd;
         vm.expectEmit(true, true, false, true);
-        emit RemoveCollateralNFT(_lender, priceAtTestIndex, tokenIdsToRemove);
+        emit RemoveCollateralNFT(_lender, testIndex, tokenIdsToRemove);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _lender, tokenIdsToRemove[0]);
         vm.expectEmit(true, true, false, true);
@@ -215,7 +215,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 65;
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateralNFT(_bidder, _subsetPool.indexToPrice(2350), tokenIdsToRemove);
+        emit RemoveCollateralNFT(_bidder, 2350, tokenIdsToRemove);
         (uint256 amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
         (uint256 lpBalance, ) = _subsetPool.lenders(2350, _bidder);
         assertEq(lpBalance, 490.713717393968418590429839925 * 1e27);
@@ -241,7 +241,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 73;
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateralNFT(_lender, _subsetPool.indexToPrice(2350), tokenIdsToRemove);
+        emit RemoveCollateralNFT(_lender, 2350, tokenIdsToRemove);
         (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
         (lpBalance, ) = _subsetPool.lenders(2350, _lender);
         assertEq(lpBalance, 11_836.428760868677193803190045359 * 1e27);

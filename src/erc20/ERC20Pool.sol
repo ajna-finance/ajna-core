@@ -141,16 +141,15 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRateAndEMAs(borrowerDebt, _lup());
 
         // move collateral from pool to lender
-        emit RemoveCollateral(msg.sender, price, amount_);
+        emit RemoveCollateral(msg.sender, index_, amount_);
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
     function removeCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
-        uint256 price;
-        (lpAmount_, price) = _removeCollateral(amount_, index_);
+        lpAmount_ = _removeCollateral(amount_, index_);
 
         // move collateral from pool to lender
-        emit RemoveCollateral(msg.sender, price, amount_);
+        emit RemoveCollateral(msg.sender, index_, amount_);
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 

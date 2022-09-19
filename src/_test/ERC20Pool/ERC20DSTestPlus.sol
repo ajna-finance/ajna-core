@@ -88,8 +88,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     struct RemoveCollateralSpecs {
         address from;
         uint256 amount;
-        uint256 index; 
-        uint256 price;
+        uint256 index;
         uint256 lpRedeem;
     }
 
@@ -223,7 +222,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     function _removeAllCollateral(RemoveCollateralSpecs memory specs_) internal {
         changePrank(specs_.from);
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateral(specs_.from, specs_.price, specs_.amount);
+        emit RemoveCollateral(specs_.from, specs_.index, specs_.amount);
         vm.expectEmit(true, true, true, true);
         emit Transfer(address(_pool), specs_.from, specs_.amount);
         (uint256 collateralRemoved, uint256 lpAmount) = _pool.removeAllCollateral(specs_.index);
@@ -246,7 +245,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     function _removeCollateral(RemoveCollateralSpecs memory specs_) internal {
         changePrank(specs_.from);
         vm.expectEmit(true, true, true, true);
-        emit RemoveCollateral(specs_.from, specs_.price, specs_.amount);
+        emit RemoveCollateral(specs_.from, specs_.index, specs_.amount);
         vm.expectEmit(true, true, true, true);
         emit Transfer(address(_pool), specs_.from, specs_.amount);
         uint256 lpRedeemed = _pool.removeCollateral(specs_.amount, specs_.index);

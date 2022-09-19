@@ -125,7 +125,6 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 from: _lender,
                 amount: 3.321274866808485288 * 1e18,
                 index: testIndex,
-                price: priceAtTestIndex,
                 lpRedeem: 10_000 * 1e27
             })
         );
@@ -155,7 +154,6 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 from: _bidder,
                 amount: 0.678725133191514712 * 1e18,
                 index: testIndex,
-                price: priceAtTestIndex,
                 lpRedeem: 2_043.56808879152623138 * 1e27
             })
         );
@@ -254,7 +252,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 index:    2550,
                 amount:   amountWithInterest,
                 newLup:   _pool.indexToPrice(2552),
-                lpRedeem: 10_000.000000000000000000030608033 * 1e27
+                lpRedeem: 10_000 * 1e27
             })
         );
 
@@ -265,8 +263,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   expectedCollateral,
                 index:    2550,
-                price:    p2550,
-                lpRedeem: 200.344335561364860742267847549 * 1e27
+                lpRedeem: 200.344335561364860742236645388 * 1e27
             })
         );
         BucketLP[] memory lps = new BucketLP[](1);
@@ -287,7 +284,6 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _lender,
                 amount:   expectedCollateral,
                 index:    2550,
-                price:    p2550,
                 lpRedeem: 6_000 * 1e27
             })
         );
@@ -308,7 +304,6 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _lender1,
                 amount:   expectedCollateral,
                 index:    2550,
-                price:    p2550,
                 lpRedeem: 4_000 * 1e27
             })
         );

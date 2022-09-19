@@ -68,6 +68,18 @@ library Book {
         return bucket.lps != 0 ? bucketSize * 10**18 / bucket.lps : Maths.RAY; // 10^27
     }
 
+    function collateralToLPs(
+        mapping(uint256 => Bucket) storage self,
+        uint256 index_,
+        uint256 deposit_,
+        uint256 collateral_
+    ) internal view returns (uint256 lps_) {
+        uint256 price = indexToPrice(index_);
+        uint256 rate  = getExchangeRate(self, index_, deposit_);
+        uint256 quote = collateral_ * price / 1e9;
+        lps_          = Maths.rdiv(quote, rate);
+    }
+
     function getCollateral(
         mapping(uint256 => Bucket) storage self,
         uint256 index_
