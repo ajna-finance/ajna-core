@@ -33,7 +33,7 @@ contract QueueTest is DSTestPlus {
         auctions.add(_borrower, block.timestamp, address(0)); 
         // check queue head was set correctly
         assertEq(_borrower, auctions.head());
-        (uint256 val, address next, bool removed) = auctions.getAuction(auctions.head());
+        (uint256 val, address next, bool active) = auctions.getAuction(auctions.head());
         assertEq(address(0), next);
 
         // insert borrower2
@@ -43,13 +43,13 @@ contract QueueTest is DSTestPlus {
 
         // check queue head remains, _borrower -> _borrower2
         assertEq(_borrower, auctions.head());
-        (val, next, removed) = auctions.getAuction(auctions.head());
+        (val, next, active) = auctions.getAuction(auctions.head());
         assertEq(address(_borrower2), next);
-        (val, next, removed) = auctions.getAuction(_borrower2);
+        (val, next, active) = auctions.getAuction(_borrower2);
         assertEq(address(0), next);
         assertEq(val, block.timestamp);
 
-        (val, next, removed) = auctions.getAuction(_borrower);
+        (val, next, active) = auctions.getAuction(_borrower);
         assertEq(_borrower2, next);
 
         // _borrower -> _borrower2 -> _borrower3
@@ -57,13 +57,13 @@ contract QueueTest is DSTestPlus {
         auctions.add(_borrower3, block.timestamp, _borrower2);
 
         assertEq(_borrower, auctions.head());
-        (val, next, removed) = auctions.getAuction(auctions.head());
+        (val, next, active) = auctions.getAuction(auctions.head());
         assertEq(address(_borrower2), next);
 
-        (val, next, removed) = auctions.getAuction(_borrower2);
+        (val, next, active) = auctions.getAuction(_borrower2);
         assertEq(address(_borrower3), next);
 
-        (val, next, removed) = auctions.getAuction(_borrower3);
+        (val, next, active) = auctions.getAuction(_borrower3);
         assertEq(address(0), next);
     }
 
@@ -78,13 +78,14 @@ contract QueueTest is DSTestPlus {
         vm.expectRevert("Q:RH:AUCT_NOT_REM");
         auctions.removeHead();
         auctions.remove(_borrower);
-        (uint256 val, address next, bool removed) = auctions.getAuction(_borrower);
-        assertEq(removed, true);
+        (uint256 val, address next, bool active) = auctions.getAuction(_borrower);
+        assertEq(active, false);
         auctions.removeHead();
 
         assertEq(auctions.head(), _borrower2);
 
         auctions.remove(_borrower2);
-        (val, next, removed) = auctions.getAuction(_borrower2);
-        assertEq(removed, true);
+        (val, next, active) = auctions.getAuction(_borrower2);
+        assertEq(active, false);
     }
+}

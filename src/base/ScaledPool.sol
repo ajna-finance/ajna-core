@@ -54,8 +54,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     uint256 public override debtEma;      // [WAD]
     uint256 public override lupColEma;    // [WAD]
 
-    uint256 internal liquidationDebt;
-
     /**
      *  @notice Mapping of buckets for a given pool
      *  @dev    deposit index -> bucket
@@ -428,7 +426,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
-        return _findIndexOfSum(borrowerDebt + liquidationDebt + additionalDebt_);
+        return _findIndexOfSum(borrowerDebt + additionalDebt_);
     }
 
     /**

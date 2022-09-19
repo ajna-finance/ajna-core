@@ -53,8 +53,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         _pool.borrow(10_000e18, _i10016);
         vm.stopPrank();
 
-        // Warp to make borrower undercollateralized
-        vm.warp(START + 15 days);
+        // Skip to make borrower undercollateralized
+        skip(15 days);
 
 
         /**********************/
@@ -80,7 +80,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 bondFactor: 0,
                 bondSize: 0,
                 next: address(0),
-                active: true
+                active: false
             })
         );
 
@@ -90,7 +90,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         /************/
         vm.startPrank(_lender);
         _pool.kick(_borrower2, address(0));
-
+        vm.stopPrank();
 
         /**********************/
         /*** Post-kick state ***/
@@ -147,8 +147,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         _pool.borrow(7_980 * 1e18, _i9_72);
         vm.stopPrank();
 
-        // Warp to make borrower undercollateralized
-        vm.warp(START + 10 days);
+        // Skip to make borrower undercollateralized
+        skip(10 days);
 
         _assertBorrower(
             BorrowerState({

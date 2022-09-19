@@ -442,7 +442,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         uint256 curDebt = _accruePoolInterest();
 
         // update borrower accounting
-        //TODO: check if loan is in liquidation, remove loan from liquidation if repaymentsaves it.
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 amount = Maths.min(borrower.debt, maxAmount_);
         borrower.debt -= amount;
