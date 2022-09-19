@@ -45,11 +45,6 @@ jobs:
           echo "##[set-output name=gas-diff;]$(echo $(cat gas-diff-output.txt|tail -1|sed -e 's/\x1b\[[0-9;]*m//g'))"
         id: forge-tests
 
-      - name: Gas diff results
-        shell: bash
-        run: |
-          echo "${{ steps.forge-tests.outputs.gas-diff }}"
-
       - name: Send to Discord
         uses: appleboy/discord-action@master
         with:
