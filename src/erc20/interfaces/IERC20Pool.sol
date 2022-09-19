@@ -219,28 +219,4 @@ interface IERC20Pool is IScaledPool {
      */
     function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external;
 
-
-    /**********************/
-    /*** View Functions ***/
-    /**********************/
-
-    /**
-     *  @notice Get a borrower info struct for a given address.
-     *  @param  borrower_         The borrower address.
-     *  @return debt_             Borrower accrued debt (WAD)
-     *  @return pendingDebt_      Borrower current debt, accrued and pending accrual (WAD)
-     *  @return collateral_       Deposited collateral including encumbered (WAD)
-     *  @return mompFactor_        LUP / inflator, used in neutralPrice calc (WAD)
-     *  @return inflatorSnapshot_ Inflator used to calculate pending interest (WAD)
-     */
-    function borrowerInfo(address borrower_)
-        external
-        view
-        returns (
-            uint256 debt_,
-            uint256 pendingDebt_,
-            uint256 collateral_,
-            uint256 mompFactor_,
-            uint256 inflatorSnapshot_
-        );
 }

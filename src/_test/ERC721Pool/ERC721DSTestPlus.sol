@@ -147,7 +147,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     // TODO: implement _pullCollateral()
     
     function _assertPool(PoolState memory state_) internal {
-        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
+        ERC721Pool pool = _subsetPool;
         
         assertEq(pool.htp(), state_.htp);
         assertEq(pool.lup(), state_.lup);
@@ -166,7 +166,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {
-        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
+        ERC721Pool pool = _subsetPool;
 
         (uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.reserveAuction();
         assertEq(claimableReservesRemaining, state_.claimableReservesRemaining);
@@ -175,7 +175,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _assertReserveAuctionPrice(uint256 expectedPrice) internal {
-        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
+        ERC721Pool pool = _subsetPool;
         (, uint256 auctionPrice, ) = pool.reserveAuction();
         assertEq(auctionPrice, expectedPrice);
     }

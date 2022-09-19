@@ -233,59 +233,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         msg.sender.call(swapCalldata_);
 
         // Get current swap price
-        uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralToPurchase);
+        uint256 hoursSinceKick = (block.timestamp - uint256(liquidation.kickTime)) / 1 hours;
+        uint256 currentPrice   = 10 * uint256(liquidation.referencePrice) * 2 ** (hoursSinceKick - 1 hours);
+        uint256 quoteTokenReturnAmount = collateralToPurchase * currentPrice * quoteTokenScale / collateralScale;
 
         _repayDebt(borrower_, quoteTokenReturnAmount);
 
         emit Take(borrower_, amount_, collateralToPurchase, 0);
-    }
-
-
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
-
-    function _redeemLPForCollateral(
-        uint256 lpAmount_,
-        uint256 amount_,
-        uint256 price_,
-        uint256 index_
-    ) internal {
-        // update bucket accounting
-        buckets.removeFromBucket(index_, lpAmount_, amount_);
-
-        // update lender accounting
-        lenders.removeLPs(index_, msg.sender, lpAmount_);
-
-        _updateInterestRateAndEMAs(borrowerDebt, _lup());
-
-        // move collateral from pool to lender
-        emit RemoveCollateral(msg.sender, price_, amount_);
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
-    }
-
-    /**********************/
-    /*** View Functions ***/
-    /**********************/
-
-    function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256, uint256, uint256) {
-        uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
-
-        return (
-            borrowers[borrower_].debt,            // accrued debt (WAD)
-            pendingDebt,                          // current debt, accrued and pending accrual (WAD)
-            borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
-            borrowers[borrower_].mompFactor,      // MOMP / inflator, used in neutralPrice calc (WAD)
-            borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
-        );
-    }
-
-
-    function _getQuoteTokenReturnAmount(uint256 kickTime_, uint256 referencePrice_, uint256 collateralForLiquidation_) internal view returns (uint256 price_) {
-        uint256 hoursSinceKick = (block.timestamp - kickTime_) / 1 hours;
-        uint256 currentPrice   = 10 * referencePrice_ * 2 ** (hoursSinceKick - 1 hours);
-
-        price_ = collateralForLiquidation_ * currentPrice * quoteTokenScale / collateralScale;
     }
 
     /************************/

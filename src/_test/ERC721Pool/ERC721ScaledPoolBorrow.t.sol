@@ -80,10 +80,10 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.borrow(5_000 * 1e18, 2551);
 
         assertEq(_subsetPool.borrowerDebt(), 5_004.807692307692310000 * 1e18);
-        (uint256 debt, uint256 pendingDebt, uint256[] memory col, uint256 mompFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        5_004.807692307692310000 * 1e18);
         assertEq(pendingDebt, 5_012.354868151222773335 * 1e18);
-        assertEq(col.length,  3);
+        assertEq(col       ,  3 * 1e18);
         assertEq(mompFactor,  3_010.892022197881557845 * 1e18);
         assertEq(inflator,    1 * 1e18);
 
@@ -96,7 +96,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        5_019.913425024098425550 * 1e18);
         assertEq(pendingDebt, 5_019.913425024098425550 * 1e18);
-        assertEq(col.length,  4);
+        assertEq(col,         4 * 1e18);
         assertEq(mompFactor,  3_001.831760341859136562 * 1e18);
         assertEq(inflator,    1.003018244385218513 * 1e18);
 
@@ -109,7 +109,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        5_028.241003157279922662 * 1e18);
         assertEq(pendingDebt, 5_028.241003157279922662 * 1e18);
-        assertEq(col.length,  3);
+        assertEq(col,         3 * 1e18);
         assertEq(mompFactor,  2_996.860242765192441905 * 1e18);
         assertEq(inflator,    1.004682160092905114 * 1e18);
 
@@ -120,7 +120,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        6_038.697103647272763112 * 1e18);
         assertEq(pendingDebt, 6_038.697103647272763112 * 1e18);
-        assertEq(col.length,  3);
+        assertEq(col       ,  3 * 1e18);
         assertEq(mompFactor,  2_991.401082754081650235 * 1e18);
         assertEq(inflator,    1.006515655675920014 * 1e18);
 
@@ -136,7 +136,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(mompFactor,  0 * 1e18);
-        assertEq(col.length,  3);
+        assertEq(col       ,  3 * 1e18);
         assertEq(inflator,    1.008536365727696620 * 1e18);
 
     }
@@ -324,10 +324,10 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(availableCollateral, 0);
 
         // check borrower info after borrow
-        (uint256 debt, uint256 pendingDebt, uint256[] memory col, uint256 mompFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        3_002.884615384615386000 * 1e18);
         assertEq(pendingDebt, 3_002.884615384615386000 * 1e18);
-        assertEq(col.length,  3);
+        assertEq(col       ,  3 * 1e18);
         assertEq(mompFactor,  3_010.892022197881557845 * 1e18);
         assertEq(inflator,    1 * 1e18);
 
@@ -369,7 +369,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        1_507.000974734143274062 * 1e18);
         assertEq(pendingDebt, 1_507.000974734143274062 * 1e18);
-        assertEq(col.length,  3);
+        assertEq(col,         3 * 1e18);
         assertEq(mompFactor,  3_006.770336295505368176 * 1e18);
         assertEq(inflator,    1.001370801704613834 * 1e18);
 
@@ -428,7 +428,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
-        assertEq(col.length,  0);
+        assertEq(col,         0);
         assertEq(mompFactor,  0 * 1e18);
     }
 

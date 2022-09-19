@@ -186,26 +186,6 @@ interface IERC721Pool is IScaledPool {
     /**********************/
 
     /**
-     *  @notice Get a borrower info struct for a given address.
-     *  @param  borrower_            The borrower address.
-     *  @return debt_                Borrower accrued debt (WAD)
-     *  @return pendingDebt_         Borrower current debt, accrued and pending accrual (WAD)
-     *  @return collateralDeposited_ Array of deposited collateral IDs including encumbered
-     *  @return mompFactor_          Momp / borrower.inflatorSnapshot, used in neutralPrice calc (WAD)
-     *  @return inflatorSnapshot_    Inflator used to calculate pending interest (WAD)
-     */
-    function borrowerInfo(address borrower_)
-        external
-        view
-        returns (
-            uint256 debt_,
-            uint256 pendingDebt_,
-            uint256[] memory collateralDeposited_,
-            uint256 mompFactor_,
-            uint256 inflatorSnapshot_
-        );
-
-    /**
      *  @notice Check if a token id is allowed as collateral in pool.
      *  @param  tokenId_ The token id to check.
      *  @return allowed_ True if token id is allowed in pool

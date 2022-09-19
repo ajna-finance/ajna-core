@@ -6,7 +6,7 @@ import { Clone } from "@clones/Clone.sol";
 import { ERC20 }         from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import '@openzeppelin/contracts/utils/structs/BitMaps.sol';
 
 import { IERC721Pool } from "./interfaces/IERC721Pool.sol";
 
@@ -18,27 +18,27 @@ import '../libraries/Book.sol';
 import '../libraries/Lenders.sol';
 
 contract ERC721Pool is IERC721Pool, ScaledPool {
-    using SafeERC20     for ERC20;
-    using EnumerableSet for EnumerableSet.UintSet;
-    using Book          for mapping(uint256 => Book.Bucket);
-    using Lenders       for mapping(uint256 => mapping(address => Lenders.Lender));
-    using Heap          for Heap.Data;
+    using SafeERC20 for ERC20;
+    using BitMaps   for BitMaps.BitMap;
+    using Book      for mapping(uint256 => Book.Bucket);
+    using Lenders   for mapping(uint256 => mapping(address => Lenders.Lender));
+    using Heap      for Heap.Data;
 
     /***********************/
     /*** State Variables ***/
     /***********************/
 
     /// @dev Set of tokenIds that are currently being used as collateral in the pool
-    EnumerableSet.UintSet private _poolCollateralTokenIds;
+    BitMaps.BitMap private _poolCollateralTokenIds;
 
     /// @dev Set of NFT Token Ids that have been deposited into any bucket
-    EnumerableSet.UintSet private _bucketCollateralTokenIds;
+    BitMaps.BitMap private _bucketCollateralTokenIds; // TODO do we really need this one?
 
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
-    EnumerableSet.UintSet private _tokenIdsAllowed;
+    BitMaps.BitMap private _tokenIdsAllowed;
 
-    mapping(address => EnumerableSet.UintSet) private lockedNFTs;
+    mapping(address => BitMaps.BitMap) private lockedNFTs;
 
     mapping(address => NFTLiquidationInfo) private liquidations;
 
@@ -70,7 +70,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // add subset of tokenIds allowed in the pool
         for (uint256 id = 0; id < tokenIds_.length;) {
-            if (!_tokenIdsAllowed.add(tokenIds_[id])) revert AddTokenFailed();
+            _tokenIdsAllowed.set(tokenIds_[id]);
             unchecked {
                 ++id;
             }
@@ -86,12 +86,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // move collateral from sender to pool
         emit PledgeCollateralNFT(borrower_, tokenIds_);
-        EnumerableSet.UintSet storage collateralDeposited = lockedNFTs[borrower_];
         for (uint256 i = 0; i < tokenIds_.length;) {
-            if (_tokenIdsAllowed.length() != 0) if(!_tokenIdsAllowed.contains(tokenIds_[i])) revert OnlySubset();
+            if (!_tokenIdsAllowed.get(tokenIds_[i])) revert OnlySubset();
 
-            if (!_poolCollateralTokenIds.add(tokenIds_[i]))      revert AddTokenFailed(); // update pool state
-            if (!collateralDeposited.add(tokenIds_[i])) revert AddTokenFailed(); // update borrower accounting
+            _poolCollateralTokenIds.set(tokenIds_[i]);
+            lockedNFTs[borrower_].set(tokenIds_[i]);
 
             //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]); // move collateral from sender to pool
@@ -109,12 +108,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // move collateral from pool to sender
         emit PullCollateralNFT(msg.sender, tokenIds_);
-        EnumerableSet.UintSet storage collateralDeposited = lockedNFTs[msg.sender];
         for (uint256 i = 0; i < tokenIds_.length;) {
             //slither-disable-next-line calls-loop
             if (collateral().ownerOf(tokenIds_[i]) != address(this)) revert TokenNotDeposited();
-            if (!_poolCollateralTokenIds.remove(tokenIds_[i]))       revert RemoveTokenFailed(); // pool level accounting
-            if (!collateralDeposited.remove(tokenIds_[i]))  revert RemoveTokenFailed(); // borrower accounting
+            _poolCollateralTokenIds.unset(tokenIds_[i]);
+            lockedNFTs[msg.sender].unset(tokenIds_[i]);
 
             //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]); // move collateral from pool to sender
@@ -136,9 +134,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // move required collateral from sender to pool
         emit AddCollateralNFT(msg.sender, index_, tokenIds_);
         for (uint256 i = 0; i < tokenIds_.length;) {
-            if (_tokenIdsAllowed.length() != 0) if(!_tokenIdsAllowed.contains(tokenIds_[i])) revert OnlySubset();
+            if (!_tokenIdsAllowed.get(tokenIds_[i])) revert OnlySubset();
 
-            if (!_bucketCollateralTokenIds.add(tokenIds_[i])) revert AddTokenFailed();
+            _bucketCollateralTokenIds.set(tokenIds_[i]);
 
             //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(msg.sender, address(this), tokenIds_[i]); // move collateral from sender to pool
@@ -158,7 +156,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit RemoveCollateralNFT(msg.sender, price, tokenIds_);
         // move collateral from pool to lender
         for (uint256 i = 0; i < tokenIds_.length;) {
-            if (!_bucketCollateralTokenIds.contains(tokenIds_[i])) revert TokenNotDeposited();
+            if (!_bucketCollateralTokenIds.get(tokenIds_[i])) revert TokenNotDeposited();
+
+            _bucketCollateralTokenIds.unset(tokenIds_[i]);
 
             //slither-disable-next-line calls-loop
             collateral().safeTransferFrom(address(this), msg.sender, tokenIds_[i]);
@@ -201,7 +201,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        if (_borrowerCollateralization(borrower.debt, Maths.wad(lockedNFTs[borrower_].length()), lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
         //  which includes an array of the borrower's tokenIds being auctioned off.
@@ -218,21 +218,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /*** View Functions ***/
     /**********************/
 
-    function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256[] memory, uint256, uint256) {
-        uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
-
-        return (
-            borrowers[borrower_].debt,            // accrued debt (WAD)
-            pendingDebt,                          // current debt, accrued and pending accrual (WAD)
-            lockedNFTs[borrower_].values(),       // deposited collateral including encumbered (WAD)
-            borrowers[borrower_].mompFactor,      // MOMP / inflator, used in neutralPrice calc (WAD)
-            borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
-        );
-    }
-
-
     function isTokenIdAllowed(uint256 tokenId_) external view override returns (bool) {
-        return _tokenIdsAllowed.contains(tokenId_);
+        return _tokenIdsAllowed.get(tokenId_);
     }
 
     /************************/
