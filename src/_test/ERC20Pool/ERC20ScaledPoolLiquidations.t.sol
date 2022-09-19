@@ -16,19 +16,6 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
 
-    //uint256 HPB        = 1987;  // _p49910
-    //uint256 HPB_PRICE  =  _p49910;
-    //uint256 LEND_PRICE = 2309;  // _p10016
-    //uint256 START      = block.timestamp;
-
-
-    uint256 HPB;
-    uint256 HPB_PRICE;
-    uint256 LEND_PRICE;
-    uint256 START; 
-
-
-
     function setUp() external {
 
         _borrower  = makeAddr("borrower");
