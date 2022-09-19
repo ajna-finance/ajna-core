@@ -725,11 +725,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (numLoans != 0) momFactor_ = Maths.wdiv(Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans * 1e18))), inflator);
     }
 
-    /**
-     *  @notice Returns the proportion of interest rate which is awarded to lenders;
-     *          the remainder accumulates in reserves.
-    */
-    function _lenderInterestMargin(uint256 mau) internal view returns (uint256) {
+    function _lenderInterestMargin(uint256 mau) internal pure returns (uint256) {
         // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
         // cubic root of the percentage of meaningful unutilized deposit
         uint256 crpud = PRBMathUD60x18.pow(100 * 1e18 - Maths.wmul(Maths.min(mau, 1e18), 100 * 1e18), ONE_THIRD);
