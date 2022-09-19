@@ -10,8 +10,6 @@ import { BucketMath } from "../../libraries/BucketMath.sol";
 import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
 
-import "@std/console.sol";
-
 contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
     address internal _borrower;
@@ -165,20 +163,6 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         // Warp to make borrower undercollateralized
         vm.warp(START + 10 days);
 
-        (
-            uint256 borrowerDebt,
-            uint256 borrowerPendingDebt,
-            uint256 borrowerCollateral,
-            uint256 mompFactor,
-            uint256 borrowerInflator
-        ) = _pool.borrowerInfo(_borrower);
-
-        assertEq(borrowerDebt, 19.768990384615384625 * 1e18);
-        assertEq(borrowerPendingDebt, 19.796089750333109888 * 1e18);
-        assertEq(borrowerCollateral, 2e18);
-        assertEq(borrowerInflator, 1e18);
-        assertEq(mompFactor, 9.917184843435912074 * 1e18);
-
         _assertBorrower(
             BorrowerState({
                borrower: _borrower,
@@ -191,9 +175,14 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             })
         );
 
+        //TODO: assert lender state
+
 
         vm.startPrank(_lender);
         _pool.kick(_borrower, address(0));
+        vm.stopPrank();
+
+        //TODO: assert lender state
 
         _assertBorrower(
             BorrowerState({
@@ -220,10 +209,13 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         );
 
         skip(2 hours);
-        //skip(4 hours);
  
         bytes memory data = new bytes(0);
+        vm.startPrank(_lender);
         _pool.take(_borrower, 20e18, data);
+        vm.stopPrank();
+
+        //TODO: assert lender state
 
         _assertBorrower(
             BorrowerState({

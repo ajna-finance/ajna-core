@@ -14,7 +14,6 @@ import { Queue } from "../base/Queue.sol";
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
 
-import "@std/console.sol";
 
 contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
     using SafeERC20 for ERC20;
@@ -366,7 +365,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         }
 
         //// Reduce liquidation's remaining collateral
-
         borrower.collateral -= Maths.wdiv(amount_, price);
         borrowers[borrower_] = borrower;
 
