@@ -108,6 +108,16 @@ interface IERC20Pool is IScaledPool {
      */
     error TakeNotPastCooldown();
 
+    /**
+     *  @notice Auction is not in the auction Queue.
+     */
+    error AuctionNotActive();
+
+    /**
+     *  @notice Auction is already in the auction Queue.
+     */
+    error AuctionIsActive();
+
 
     /*********************************/
     /*** ERC20Pool State Variables ***/
@@ -135,8 +145,6 @@ interface IERC20Pool is IScaledPool {
      *  @param  borrower_  Address of the borrower.
      *  @return kickTime            Time the liquidation was initiated.
      *  @return referencePrice      Highest Price Bucket at time of liquidation.
-     *  @return collateral Amount of collateral which has not yet been taken.
-     *  @return debt       Amount of debt which has not been covered by the liquidation.
      *  @return bondFactor     BondFactor
      *  @return bondSize       Bond
      */
@@ -145,8 +153,6 @@ interface IERC20Pool is IScaledPool {
     function liquidations(address borrower_) external view returns (
         uint128 kickTime,
         uint256 referencePrice,
-        uint256 collateral,
-        uint256 debt,
         uint256 bondFactor,
         uint256 bondSize
     );
@@ -173,15 +179,12 @@ interface IERC20Pool is IScaledPool {
      *  @notice Maintains the state of a liquidation.
      *  @param  kickTime            Time the liquidation was initiated.
      *  @param  referencePrice      Highest Price Bucket at time of liquidation.
-     *  @param  remainingCollateral Amount of collateral which has not yet been taken.
-     *  @param  remainingDebt       Amount of debt which has not been covered by the liquidation.
-     *  @param  liquidationBond     Bond
+     *  @param  bondFactor     Bond
+     *  @param  bondSize     Bond
      */
     struct LiquidationInfo {
         uint128 kickTime;
         uint256 referencePrice;
-        uint256 collateral;
-        uint256 debt;
         uint256 bondFactor;
         uint256 bondSize;
     }

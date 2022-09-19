@@ -284,6 +284,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
+        (,,bool auctionActive) = getAuction(borrower_);
+        if (auctionActive == true) revert AuctionIsActive();
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
@@ -300,17 +302,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            kickTime,
             referencePrice:      _indexToPrice(_hpbIndex()),
-            collateral:          borrower.collateral,
-            debt:                borrower.debt,
             bondFactor:          bondFactor,
             bondSize:            bondSize
         });
 
         _addAuction(borrower_, kickTime, newPrev_);
-        liquidationDebt += borrower.debt;
 
         loans.remove(borrower_);
-        borrowerDebt -= borrower.debt;
 
         emit Kick(borrower_, borrower.debt, borrower.collateral);
         quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
@@ -329,13 +327,14 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         _updateInterestRateAndEMAs(curDebt, lup);
 
         // check liquidation process status
-        //TODO: check if loan is still in auction
+        (,,bool auctionActive) = getAuction(borrower_);
+        if (auctionActive != true) revert AuctionNotActive();
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
-        if (_borrowerCollateralization(liquidation.debt, liquidation.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: remove auction from queue if auctionDebt == 0;
         uint256 price = _auctionPrice(liquidation.referencePrice, liquidation.kickTime);
-        int256 thresholdPrice = int256(Maths.wdiv(borrower.debt, liquidation.collateral));
+        int256 thresholdPrice = int256(Maths.wdiv(borrower.debt, borrower.collateral));
         int256 neutralPrice = int256(Maths.wmul(borrower.mompFactor, borrower.inflatorSnapshot));
  
         int256 BPF = PRBMathSD59x18.mul(
@@ -354,7 +353,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
 
         uint256 repayAmount;
 
-        amount_ = Maths.min(Maths.wmul(price, liquidation.collateral), amount_);
+        amount_ = Maths.min(Maths.wmul(price, borrower.collateral), amount_);
         if (Maths.wmul(amount_, uint256(1e18 - BPF)) >= borrower.debt) {
             repayAmount = borrower.debt;
             amount_ = Maths.wdiv(borrower.debt, uint256(1e18 - BPF));
@@ -364,8 +363,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
                 1e18 - BPF)
             );
         }
-
-        uint256 collateralToTake = Maths.wdiv(amount_, price);
 
         if (BPF >= 0) {
             // Kicker is rewarded
@@ -385,10 +382,12 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         }
 
         //// Reduce liquidation's remaining collateral
-        liquidation.collateral -= collateralToTake;
-        borrower.collateral -= collateralToTake;
+        borrower.collateral -= Maths.wdiv(amount_, price);
 
-    
+        // if recollateralized remove loan from auction
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) {
+            _removeAuction(borrower_);
+        }
 
         //// TODO: implement flashloan functionality
         //// Flash loan full amount to liquidate to borrower
@@ -400,7 +399,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         //// Get current swap price
         //uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralToPurchase);
 
-        emit Take(borrower_, amount_, collateralToTake, 0);
+        emit Take(borrower_, amount_, Maths.wdiv(amount_, price), 0);
         quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
     }
 
@@ -441,9 +440,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
 
         // update borrower accounting
         //TODO: check if loan is in liquidation, remove loan from liquidation if repaymentsaves it.
-        console.log("borrower debt before", borrower.debt);
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        console.log("borrower debt after", borrower.debt);
         uint256 amount = Maths.min(borrower.debt, maxAmount_);
         borrower.debt -= amount;
         curDebt       -= amount;

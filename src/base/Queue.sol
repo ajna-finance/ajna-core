@@ -35,6 +35,7 @@ abstract contract Queue is IQueue {
             require(tailNode.next     == address(0), "Q:A:WRG_PREV");
 
             node.val      = val_;
+            node.active = true;
             tailNode.next = borrower_;
         } else {
             // first auction in queue
@@ -42,6 +43,7 @@ abstract contract Queue is IQueue {
 
             head     = borrower_;
             node.val = val_;
+            node.active = true;
         }
 
         // update loan with the new ordering
@@ -54,7 +56,7 @@ abstract contract Queue is IQueue {
      *  @param  borrower_        Borrower whose loan is being placed in queue.
      */
     function _removeAuction(address borrower_) internal {
-        queue[borrower_].removed = true;
+        queue[borrower_].active = false;
     }
 
     /**
@@ -63,7 +65,7 @@ abstract contract Queue is IQueue {
      */
     function _removeAuctionHead() internal {
         NodeInfo memory headNode = queue[head];
-        require(headNode.removed == true, "Q:RH:AUCT_NOT_REM");
+        require(headNode.active == false, "Q:RH:AUCT_NOT_REM");
         address oldHead = head;
         head = headNode.next;
         delete queue[oldHead];
@@ -73,8 +75,8 @@ abstract contract Queue is IQueue {
     /*** External Functions ***/
     /**************************/
 
-    function getAuction(address borrower_) external view returns (uint256, address, bool) {
+    function getAuction(address borrower_) public view returns (uint256, address, bool) {
         NodeInfo memory node = queue[borrower_];
-        return (node.val, node.next, node.removed);
+        return (node.val, node.next, node.active);
     }
 }

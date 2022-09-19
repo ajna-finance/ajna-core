@@ -115,11 +115,10 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         assertEq(_pool.borrowerCollateralization(borrowerPendingDebt, collateralDeposited, _pool.lup()), 0.998633861930247030 * 1e18);
         assertEq(borrowerInflator,     1e18);
 
-        (uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt, uint256 bondFactor, uint256 bondSize) = _pool.liquidations(_borrower2);
+        (uint256 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidations(_borrower2);
 
         assertEq(kickTime,            0);
         assertEq(referencePrice,      0);
-        assertEq(remainingCollateral, 0);
 
         /************/
         /*** Kick ***/
@@ -145,11 +144,9 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         assertEq(_pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _pool.lup()), 1 * 1e18);  // Unchanged because based off pending debt
         assertEq(borrowerInflator,   0);       // Inflator is updated to reflect new debt
 
-        (kickTime, referencePrice, remainingCollateral, remainingDebt, bondFactor, bondSize) = _pool.liquidations(_borrower2);
+        (kickTime, referencePrice, bondFactor, bondSize) = _pool.liquidations(_borrower2);
         assertEq(kickTime,            block.timestamp);
         assertEq(referencePrice,      HPB_PRICE);
-        assertEq(remainingCollateral, 1e18);
-        assertEq(remainingDebt, 10_030.204233142901661009 * 1e18);
         assertEq(bondSize, 100.302042331429016610 * 1e18);
 
         skip(2 hours);

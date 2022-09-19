@@ -11,7 +11,7 @@ interface IQueue {
     struct NodeInfo {
         uint256 val;
         address next;
-        bool removed;
+        bool active;
     }
 
     /**************************/

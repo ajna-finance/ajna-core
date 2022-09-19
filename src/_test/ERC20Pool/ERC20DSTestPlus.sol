@@ -370,4 +370,13 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
         assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, _pool.lup()), state_.collateralization);
     }
+
+//    function _assertAuction(AuctionState memory state_) internal {
+//
+//        (uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.reserveAuction();
+//        assertEq(claimableReservesRemaining, state_.claimableReservesRemaining);
+//        assertEq(auctionPrice, state_.auctionPrice);
+//        assertEq(timeRemaining, state_.timeRemaining);
+//    }
+
 }
