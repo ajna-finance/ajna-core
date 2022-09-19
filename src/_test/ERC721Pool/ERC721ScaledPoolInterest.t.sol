@@ -200,12 +200,12 @@ contract ERC721ScaledInterestTest is ERC721HelperContract {
     }
 
     function testNim() external {
-        assertEq(_collectionPool._nim(0),           0.15 * 1e18);
-        assertEq(_collectionPool._nim(0.01 * 1e18), 0.149498324011889454 * 1e18);
-        assertEq(_collectionPool._nim(0.23 * 1e18), 0.137484846814953343 * 1e18);
-        assertEq(_collectionPool._nim(0.67 * 1e18), 0.103656348450167764 * 1e18);
-        assertEq(_collectionPool._nim(0.88 * 1e18), 0.073986362229914103 * 1e18);
-        assertEq(_collectionPool._nim(1 * 1e18),    0);
-        assertEq(_collectionPool._nim(1.03 * 1e18), 0);
+        assertEq(_collectionPool._lenderInterestMargin(0),           0.85 * 1e18);
+        assertEq(_collectionPool._lenderInterestMargin(0.01 * 1e18), 0.850501675988110546 * 1e18);
+        assertEq(_collectionPool._lenderInterestMargin(0.23 * 1e18), 0.862515153185046657 * 1e18);
+        assertEq(_collectionPool._lenderInterestMargin(0.67 * 1e18), 0.896343651549832236 * 1e18);
+        assertEq(_collectionPool._lenderInterestMargin(0.88 * 1e18), 0.926013637770085897 * 1e18);
+        assertEq(_collectionPool._lenderInterestMargin(1 * 1e18),    1e18);
+        assertEq(_collectionPool._lenderInterestMargin(1.03 * 1e18), 1e18);
     }
 }

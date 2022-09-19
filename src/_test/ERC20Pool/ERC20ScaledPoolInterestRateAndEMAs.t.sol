@@ -120,7 +120,7 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
             PoolState({
                 htp:                  0,
                 lup:                  BucketMath.MAX_PRICE,
-                poolSize:             110_162.490615984432250000 * 1e18,
+                poolSize:             110_164.962888730221500000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 0,
                 borrowerDebt:         0,
@@ -338,11 +338,11 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
             PoolState({
                 htp:                  10.223528890139451939 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
-                poolSize:             20_001.234907804858360000 * 1e18,
+                poolSize:             20_001.169794343035540000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 3.094069767562214045 * 1e18,
                 borrowerDebt:         1012.343273629329809307 * 1e18,
-                actualUtilization:    0.050614038497907667 * 1e18,
+                actualUtilization:    0.050614203271033305 * 1e18,
                 targetUtilization:    0.030940697675622140 * 1e18,
                 minDebtAmount:        50.617163681466490465 * 1e18,
                 loans:                2,

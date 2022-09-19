@@ -208,13 +208,13 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(_lup(), _indexToPrice(2550));
 
         // check utilization changes make sense
-        assertEq(_poolSize(),              30_003.704723414575110000 * 1e18);
-        assertEq(_subsetPool.borrowerDebt(),          1507.000974734143274062 * 1e18);
-        assertEq(_poolTargetUtilization(), .166838815388013307 * 1e18);
-        assertEq(_poolActualUtilization(), .050227163232882224 * 1e18);
-        assertEq(_poolMinDebtAmount(),     150.700097473414327406 * 1e18);
-        assertEq(_poolMinDebtAmount(),     _subsetPool.borrowerDebt() / 10);
-        assertEq(_exchangeRate(2550),      1.000123490780485837000000000 * 1e27);
+        assertEq(_poolSize(),                30_003.520235392247040000 * 1e18);
+        assertEq(_subsetPool.borrowerDebt(), 1507.000974734143274062 * 1e18);
+        assertEq(_poolTargetUtilization(),   .166838815388013307 * 1e18);
+        assertEq(_poolActualUtilization(),   .050227472073642885 * 1e18);
+        assertEq(_poolMinDebtAmount(),       150.700097473414327406 * 1e18);
+        assertEq(_poolMinDebtAmount(),       _subsetPool.borrowerDebt() / 10);
+        assertEq(_exchangeRate(2550),        1.000117341179741568000000000 * 1e27);
 
         // check bucket state after partial repay
         (lpAccumulator, availableCollateral) = _subsetPool.buckets(2550);
@@ -265,15 +265,15 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_subsetPool)), 0);
 
         // check utilization changes make sense
-        assertEq(_poolSize(),              30_005.377906383285317363 * 1e18);
-        assertEq(_subsetPool.borrowerDebt(),          0);
+        assertEq(_poolSize(),                30_005.105213052294392423 * 1e18);
+        assertEq(_subsetPool.borrowerDebt(), 0);
+        assertEq(_subsetPool.debtEma(),      116.548760023014994270 * 1e18);
+        assertEq(_subsetPool.lupColEma(),    257_438_503.676217090117659874 * 1e18);
         // TODO: LUP=MAX_PRICE is causing a technically correct yet undesirable target utilization
-        assertEq(_subsetPool.debtEma(),               116.548760023014994270 * 1e18);
-        assertEq(_subsetPool.lupColEma(),             257_438_503.676217090117659874 * 1e18);
-        assertEq(_poolTargetUtilization(), .000000452724663788 * 1e18);
-        assertEq(_poolActualUtilization(), 0);
-        assertEq(_poolMinDebtAmount(),     0);
-        assertEq(_exchangeRate(2550),      1.000179263546109511000000000 * 1e27);
+        assertEq(_poolTargetUtilization(),   .000000452724663788 * 1e18);
+        assertEq(_poolActualUtilization(),   0);
+        assertEq(_poolMinDebtAmount(),       0);
+        assertEq(_exchangeRate(2550),        1.000170173768409813000000000 * 1e27);
 
         // check bucket state after fully repay
         (lpAccumulator, availableCollateral) = _subsetPool.buckets(2550);
