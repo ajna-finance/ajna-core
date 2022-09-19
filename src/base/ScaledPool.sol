@@ -46,7 +46,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     uint256 public override inflatorSnapshot;           // [WAD]
     uint256 public override lastInflatorSnapshotUpdate; // [SEC]
     uint256 public override minFee;                     // [WAD]
-    uint256 public override lenderInterestFactor;       // [WAD]
     uint256 public override interestRate;               // [WAD]
     uint256 public override interestRateUpdate;         // [SEC]
 
@@ -536,7 +535,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
                     uint256 depositAboveHtp = _prefixSum(htpIndex);
 
                     if (depositAboveHtp != 0) {
-                        uint256 newInterest  = Maths.wmul(lenderInterestFactor, Maths.wmul(factor - Maths.WAD, curDebt_));
+                        uint256 netInterestMargin = 0.9 * 1e18;
+                        uint256 newInterest  = Maths.wmul(netInterestMargin, Maths.wmul(factor - Maths.WAD, curDebt_));
                         uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
                         _mult(htpIndex, lenderFactor);
                     }
