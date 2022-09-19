@@ -168,9 +168,4 @@ library Maths {
     function minInt(int256 x, int256 y) internal pure returns (int256) {
         return x <= y ? x : y;
     }
-
-    function wdivInt(int256 x, int256 y) internal pure returns (int256) {
-        return (x * 10**18 + y / 2) / y;
-    }
-
 }

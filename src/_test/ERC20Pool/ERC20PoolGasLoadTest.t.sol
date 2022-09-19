@@ -174,9 +174,6 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
             vm.revertTo(snapshot);
         }
     }
-
->>>>>>> develop
-
     /*************************/
     /*** Utility Functions ***/
     /*************************/
