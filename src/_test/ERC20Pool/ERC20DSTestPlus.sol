@@ -143,6 +143,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 inflator;
     }
 
+    struct AuctionState {
+        address borrower;
+        uint256 kickTime;
+        uint256 referencePrice;
+        uint256 bondFactor;
+        uint256 bondSize;
+        address next;
+        bool active;
+    }
+
     struct PoolState {
         uint256 htp;
         uint256 lup;
@@ -371,12 +381,17 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, _pool.lup()), state_.collateralization);
     }
 
-//    function _assertAuction(AuctionState memory state_) internal {
-//
-//        (uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.reserveAuction();
-//        assertEq(claimableReservesRemaining, state_.claimableReservesRemaining);
-//        assertEq(auctionPrice, state_.auctionPrice);
-//        assertEq(timeRemaining, state_.timeRemaining);
-//    }
+    function _assertAuction(AuctionState memory state_) internal {
+        (uint256 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidationInfo(state_.borrower);
+        (uint256 val, address next, bool active) = _pool.getAuction(state_.borrower);
+        assertEq(val, state_.kickTime);
+        assertEq(kickTime, state_.kickTime);
+        assertEq(referencePrice, state_.referencePrice);
+        assertEq(bondFactor, state_.bondFactor);
+        assertEq(bondSize, state_.bondSize);
+        assertEq(next, state_.next);
+        assertEq(active, state_.active);
+        
+    }
 
 }

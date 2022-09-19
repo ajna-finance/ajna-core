@@ -177,16 +177,16 @@ interface IERC20Pool is IScaledPool {
 
     /**
      *  @notice Maintains the state of a liquidation.
-     *  @param  kickTime            Time the liquidation was initiated.
-     *  @param  referencePrice      Highest Price Bucket at time of liquidation.
+     *  @param  kickTime       Time the liquidation was initiated.
+     *  @param  referencePrice Highest Price Bucket at time of liquidation.
      *  @param  bondFactor     Bond
-     *  @param  bondSize     Bond
+     *  @param  bondSize       Bond
      */
-    struct LiquidationInfo {
-        uint128 kickTime;
-        uint256 referencePrice;
-        uint256 bondFactor;
-        uint256 bondSize;
+    struct Liquidation {
+        uint128 kickTime;       // [WAD]
+        uint256 referencePrice; // [WAD]
+        uint256 bondFactor;     // [WAD]
+        uint256 bondSize;       // [WAD]
     }
 
 
@@ -288,6 +288,24 @@ interface IERC20Pool is IScaledPool {
     /**********************/
     /*** View Functions ***/
     /**********************/
+
+    /**
+     *  @notice Get a liquidation struct for a given address.
+     *  @param  borrower_       The borrower address.
+     *  @return kickTime_       accrued debt (WAD)
+     *  @return referencePrice_ Borrower current debt, accrued and pending accrual (WAD)
+     *  @return bondFactor_     Deposited collateral including encumbered (WAD)
+     *  @return bondSize_       LUP / inflator, used in neutralPrice calc (WAD)
+     */
+    function liquidationInfo(address borrower_)
+        external
+        view
+        returns (
+            uint256 kickTime_,
+            uint256 referencePrice_,
+            uint256 bondFactor_,
+            uint256 bondSize_
+        );
 
     /**
      *  @notice Get a borrower info struct for a given address.

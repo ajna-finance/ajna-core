@@ -27,7 +27,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => Borrower) public override borrowers;
 
-    mapping(address => LiquidationInfo) public override liquidations;
+    mapping(address => Liquidation) public override liquidations;
 
     uint256 public override collateralScale;
 
@@ -291,7 +291,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
 
-        uint256 poolPrice = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
         uint256 momp = Maths.wmul(borrower.mompFactor, borrower.inflatorSnapshot);
 
         // bondFactor = min(30%, max(1%, (momp - thresholdPrice) / momp))
@@ -299,7 +298,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         uint256 bondSize   = Maths.wmul(bondFactor, borrower.debt);
 
         uint128 kickTime = uint128(block.timestamp);
-        liquidations[borrower_] = LiquidationInfo({
+        liquidations[borrower_] = Liquidation({
             kickTime:            kickTime,
             referencePrice:      _indexToPrice(_hpbIndex()),
             bondFactor:          bondFactor,
@@ -316,8 +315,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
 
     // TODO: Add reentrancy guard
     function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external override {
-        Borrower        memory borrower    = borrowers[borrower_];
-        LiquidationInfo memory liquidation = liquidations[borrower_];
+        Borrower    memory borrower    = borrowers[borrower_];
+        Liquidation memory liquidation = liquidations[borrower_];
 
 
         (uint256 curDebt) = _accruePoolInterest();
@@ -334,37 +333,22 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
 
         // TODO: remove auction from queue if auctionDebt == 0;
         uint256 price = _auctionPrice(liquidation.referencePrice, liquidation.kickTime);
-        int256 thresholdPrice = int256(Maths.wdiv(borrower.debt, borrower.collateral));
-        int256 neutralPrice = int256(Maths.wmul(borrower.mompFactor, borrower.inflatorSnapshot));
- 
-        int256 BPF = PRBMathSD59x18.mul(
-            int256(liquidation.bondFactor),
-            Maths.minInt(
-                1e18,
-                Maths.maxInt(
-                    -1 * 1e18,
-                    PRBMathSD59x18.div(
-                        neutralPrice - int256(price),
-                        neutralPrice - thresholdPrice
-                    )
-                )
-            )
-        );
+        int256 bpf = _bpf(borrower, liquidation, price);
 
         uint256 repayAmount;
 
         amount_ = Maths.min(Maths.wmul(price, borrower.collateral), amount_);
-        if (Maths.wmul(amount_, uint256(1e18 - BPF)) >= borrower.debt) {
+        if (Maths.wmul(amount_, uint256(1e18 - bpf)) >= borrower.debt) {
             repayAmount = borrower.debt;
-            amount_ = Maths.wdiv(borrower.debt, uint256(1e18 - BPF));
+            amount_ = Maths.wdiv(borrower.debt, uint256(1e18 - bpf));
         } else {
             repayAmount = uint256(PRBMathSD59x18.mul(
                 int256(amount_),
-                1e18 - BPF)
+                1e18 - bpf)
             );
         }
 
-        if (BPF >= 0) {
+        if (bpf >= 0) {
             // Kicker is rewarded
             uint256 reward = amount_ - repayAmount;
             liquidation.bondSize += reward;
@@ -374,7 +358,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
             // Kicker is penalized
             int256 penalty = PRBMathSD59x18.mul(
                     int256(amount_),
-                    BPF
+                    bpf
                 );
             liquidation.bondSize -= uint256(-penalty);
             // TODO: increase the reserves here somehow?
@@ -382,7 +366,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         }
 
         //// Reduce liquidation's remaining collateral
+
         borrower.collateral -= Maths.wdiv(amount_, price);
+        borrowers[borrower_] = borrower;
 
         // if recollateralized remove loan from auction
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) {
@@ -407,6 +393,25 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
+
+    function _bpf( Borrower memory borrower, Liquidation memory liquidation, uint256 price) internal pure returns (int256 bpf) {
+        int256 thresholdPrice = int256(Maths.wdiv(borrower.debt, borrower.collateral));
+        int256 neutralPrice = int256(Maths.wmul(borrower.mompFactor, borrower.inflatorSnapshot));
+ 
+        bpf = PRBMathSD59x18.mul(
+            int256(liquidation.bondFactor),
+            Maths.minInt(
+                1e18,
+                Maths.maxInt(
+                    -1 * 1e18,
+                    PRBMathSD59x18.div(
+                        neutralPrice - int256(price),
+                        neutralPrice - thresholdPrice
+                    )
+                )
+            )
+        );
+    }
 
     function _redeemLPForCollateral(
         Bucket memory bucket,
@@ -481,6 +486,16 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
             borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
             borrowers[borrower_].mompFactor,      // MOMP / inflator, used in neutralPrice calc (WAD)
             borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
+        );
+    }
+
+    function liquidationInfo(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
+
+        return (
+            liquidations[borrower_].kickTime,            // accrued debt (WAD)
+            liquidations[borrower_].referencePrice,      // deposited collateral including encumbered (WAD)
+            liquidations[borrower_].bondFactor,      // MOMP / inflator, used in neutralPrice calc (WAD)
+            liquidations[borrower_].bondSize // used to calculate pending interest (WAD)
         );
     }
 
