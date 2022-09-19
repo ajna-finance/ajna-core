@@ -32,7 +32,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     BitMaps.BitMap private _poolCollateralTokenIds;
 
     /// @dev Set of NFT Token Ids that have been deposited into any bucket
-    BitMaps.BitMap private _bucketCollateralTokenIds; // TODO do we really need this one?
+    BitMaps.BitMap private _bucketCollateralTokenIds;
 
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
@@ -111,6 +111,9 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         for (uint256 i = 0; i < tokenIds_.length;) {
             //slither-disable-next-line calls-loop
             if (collateral().ownerOf(tokenIds_[i]) != address(this)) revert TokenNotDeposited();
+            if (!_poolCollateralTokenIds.get(tokenIds_[i]))          revert RemoveTokenFailed(); // check if NFT token id in pool
+            if (!lockedNFTs[msg.sender].get(tokenIds_[i]))           revert RemoveTokenFailed(); // check if caller is the one that locked NFT token id
+
             _poolCollateralTokenIds.unset(tokenIds_[i]);
             lockedNFTs[msg.sender].unset(tokenIds_[i]);
 
@@ -155,7 +158,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit RemoveCollateralNFT(msg.sender, index_, tokenIds_);
         // move collateral from pool to lender
         for (uint256 i = 0; i < tokenIds_.length;) {
-            if (!_bucketCollateralTokenIds.get(tokenIds_[i])) revert TokenNotDeposited();
+            if (!_bucketCollateralTokenIds.get(tokenIds_[i])) revert TokenNotDeposited(); // check if NFT token deposited in buckets
 
             _bucketCollateralTokenIds.unset(tokenIds_[i]);
 
