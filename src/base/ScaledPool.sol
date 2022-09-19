@@ -535,7 +535,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
                     uint256 depositAboveHtp = _prefixSum(htpIndex);
 
                     if (depositAboveHtp != 0) {
-                        uint256 netInterestMargin = this._lenderInterestMargin(_poolActualUtilization(curDebt_, pledgedCollateral));
+                        uint256 netInterestMargin = _lenderInterestMargin(_poolActualUtilization(curDebt_, pledgedCollateral));
                         uint256 newInterest  = Maths.wmul(netInterestMargin, Maths.wmul(factor - Maths.WAD, curDebt_));
                         uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
                         _mult(htpIndex, lenderFactor);
@@ -729,7 +729,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
      *  @notice Returns the proportion of interest rate which is awarded to lenders;
      *          the remainder accumulates in reserves.
     */
-    function _lenderInterestMargin(uint256 mau) external pure returns (uint256) {
+    function _lenderInterestMargin(uint256 mau) internal view returns (uint256) {
         // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
         // cubic root of the percentage of meaningful unutilized deposit
         uint256 crpud = PRBMathUD60x18.pow(100 * 1e18 - Maths.wmul(Maths.min(mau, 1e18), 100 * 1e18), ONE_THIRD);

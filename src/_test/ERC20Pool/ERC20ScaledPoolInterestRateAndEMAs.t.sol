@@ -146,6 +146,8 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
                 inflator:          1.001507985182953253 * 1e18
             })
         );
+
+        assertEq(_pool.lenderInterestMargin(), 0.85 * 1e18);
     }
 
     function testPendingInflator() external {
