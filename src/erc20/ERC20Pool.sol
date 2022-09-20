@@ -135,12 +135,12 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             toBucketLPs_
         );
         // update buckets
-        buckets.removeFromBucket(
+        buckets.removeCollateral(
             fromIndex_,
             fromBucketLPs_,
             collateralAmountToMove_
         );
-        buckets.addToBucket(
+        buckets.addCollateral(
             toIndex_,
             toBucketLPs_,
             collateralAmountToMove_
@@ -175,7 +175,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             redeemedLenderLPs_
         );
         // update bucket accounting
-        buckets.removeFromBucket(
+        buckets.removeCollateral(
             index_,
             redeemedLenderLPs_,
             collateralAmountRemoved_

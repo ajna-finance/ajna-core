@@ -515,7 +515,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             msg.sender,
             bucketLPs_
         );
-        buckets.addToBucket(
+        buckets.addCollateral(
             index_,
             bucketLPs_,
             collateralAmountToAdd_
@@ -549,7 +549,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             msg.sender,
             bucketLPs_
         );
-        buckets.removeFromBucket(
+        buckets.removeCollateral(
             index_,
             bucketLPs_,
             collateralAmountToRemove_

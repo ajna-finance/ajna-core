@@ -43,6 +43,23 @@ library Lenders {
         self[index_][lender_].lps -= amount_;
     }
 
+    function transferLPs(
+        mapping(uint256 => mapping(address => Lender)) storage self,
+        uint256 index_,
+        address owner_,
+        address newOwner_,
+        uint256 amount_,
+        uint256 depositTime
+    ) internal {
+        // move lp tokens to the new owner address
+        Lender storage newOwner = self[index_][newOwner_];
+        newOwner.lps += amount_;
+        newOwner.ts  = Maths.max(depositTime, newOwner.ts);
+
+        // delete owner lp balance for this index
+        delete self[index_][owner_];
+    }
+
     function applyEarlyWithdrawalPenalty(
         uint256 feeRate_,
         uint256 depositTime_,
@@ -59,23 +76,6 @@ library Lenders {
             if (minIndex_ != 0) applyPenalty = applyPenalty && Book.indexToPrice(minIndex_) < ptp;
             if (applyPenalty) amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate_);
         }
-    }
-
-    function transferLPs(
-        mapping(uint256 => mapping(address => Lender)) storage self,
-        uint256 index_,
-        address owner_,
-        address newOwner_,
-        uint256 amount_,
-        uint256 depositTime
-    ) internal {
-        // move lp tokens to the new owner address
-        Lender storage newOwner = self[index_][newOwner_];
-        newOwner.lps += amount_;
-        newOwner.ts  = Maths.max(depositTime, newOwner.ts);
-
-        // delete owner lp balance for this index
-        delete self[index_][owner_];
     }
 
     function getLenderInfo(

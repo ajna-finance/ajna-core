@@ -28,7 +28,15 @@ library Book {
         self[index_].lps += amount_;
     }
 
-    function addToBucket(
+    function removeLPs(
+        mapping(uint256 => Bucket) storage self,
+        uint256 index_,
+        uint256 amount_
+    ) internal {
+        self[index_].lps -= amount_;
+    }
+
+    function addCollateral(
         mapping(uint256 => Bucket) storage self,
         uint256 index_,
         uint256 lps_,
@@ -38,7 +46,7 @@ library Book {
         self[index_].collateral += collateral_;
     }
 
-    function removeFromBucket(
+    function removeCollateral(
         mapping(uint256 => Bucket) storage self,
         uint256 index_,
         uint256 lps_,
@@ -47,14 +55,6 @@ library Book {
         Bucket storage bucket = self[index_];
         bucket.lps        -= Maths.min(bucket.lps, lps_);
         bucket.collateral -= Maths.min(bucket.collateral, collateral_);
-    }
-
-    function removeLPs(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 amount_
-    ) internal {
-        self[index_].lps -= amount_;
     }
 
     function getExchangeRate(
