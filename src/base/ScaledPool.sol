@@ -606,7 +606,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     function _claimableReserves() internal view returns (uint256 claimable_) {
         claimable_ = Maths.wmul(0.995 * 1e18, borrowerDebt) + quoteToken().balanceOf(address(this));
-        claimable_ -= Maths.min(claimable_, this.poolSize() + liquidationBondEscrowed + reserveAuctionUnclaimed);
+        claimable_ -= Maths.min(claimable_, _treeSum() + liquidationBondEscrowed + reserveAuctionUnclaimed);
     }
 
     function _redeemLPForQuoteToken(
@@ -764,138 +764,166 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         }
     }
 
+    function _mompFactor(uint256 inflator) internal view returns (uint256 momFactor_) {
+        uint256 numLoans = loans.count - 1;
+        if (numLoans != 0) momFactor_ = Maths.wdiv(Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans * 1e18))), inflator); 
+    }
+
 
     /**************************/
     /*** External Functions ***/
     /**************************/
 
     // TODO: Temporarily here for unit testing; move to accessor method when merging with current implementation.
-    function auctionPrice(uint256 referencePrice, uint256 kickTime) external view returns (uint256) {
-        return _auctionPrice(referencePrice, kickTime);
+    function auctionPrice(
+        uint256 referencePrice_,
+        uint256 kickTime_
+    ) external view returns (uint256) {
+        return _auctionPrice(referencePrice_, kickTime_);
     }
 
-    function borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) external pure override returns (uint256) {
+    function borrowerCollateralization(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) external pure override returns (uint256) {
         return _borrowerCollateralization(debt_, collateral_, price_);
     }
 
-    function bucketAt(uint256 index_) external view override returns (uint256, uint256, uint256, uint256) {
-        return (
-            _valueAt(index_),           // quote token in bucket, deposit + interest (WAD)
-            buckets[index_].collateral, // unencumbered collateral in bucket (WAD)
-            buckets[index_].lps,        // outstanding LP balance (WAD)
-            _scale(index_)              // lender interest multiplier (WAD)
-        );
+    function bucketAt(uint256 index_)
+        external
+        view
+        override
+        returns (
+            uint256 price_,
+            uint256 quoteTokens_,
+            uint256 collateral_,
+            uint256 bucketLPs_,
+            uint256 scale_,
+            uint256 exchangeRate_,
+            uint256 liquidityToPrice_
+        )
+    {
+        price_             = Book.indexToPrice(index_);
+        quoteTokens_       = _valueAt(index_);           // quote token in bucket, deposit + interest (WAD)
+        collateral_        = buckets[index_].collateral; // unencumbered collateral in bucket (WAD)
+        bucketLPs_         = buckets[index_].lps;       // outstanding LP balance (WAD)
+        scale_             = _scale(index_);            // lender interest multiplier (WAD)
+        exchangeRate_      = buckets.getExchangeRate(index_, quoteTokens_);
+        liquidityToPrice_  = _prefixSum(index_);
     }
 
-    function borrowerInfo(address borrower_) external view override returns (uint256, uint256, uint256, uint256, uint256) {
-        uint256 pendingDebt = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
-
-        return (
-            borrowers[borrower_].debt,            // accrued debt (WAD)
-            pendingDebt,                          // current debt, accrued and pending accrual (WAD)
-            borrowers[borrower_].collateral,      // deposited collateral including encumbered (WAD)
-            borrowers[borrower_].mompFactor,      // MOMP / inflator, used in neutralPrice calc (WAD)
-            borrowers[borrower_].inflatorSnapshot // used to calculate pending interest (WAD)
-        );
+    function borrowerInfo(address borrower_)
+        external
+        view
+        override
+        returns (
+            uint256 debt_,            // accrued debt (WAD)
+            uint256 pendingDebt_,     // current debt, accrued and pending accrual (WAD)
+            uint256 collateral_,      // deposited collateral including encumbered (WAD)
+            uint256 mompFactor_,      // MOMP / inflator, used in neutralPrice calc (WAD)
+            uint256 inflatorSnapshot_ // used to calculate pending interest (WAD)
+        )
+    {
+        debt_             = borrowers[borrower_].debt;
+        pendingDebt_      = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
+        collateral_       = borrowers[borrower_].collateral;
+        mompFactor_       = borrowers[borrower_].mompFactor;
+        inflatorSnapshot_ = borrowers[borrower_].inflatorSnapshot;
     }
 
-    function claimableReserves() external view override returns (uint256) {
-        return _claimableReserves();
-    }
-
-    function reserves() external view override returns (uint256) {
-        return borrowerDebt
-            + quoteToken().balanceOf(address(this))
-            - this.poolSize()
-            - liquidationBondEscrowed
-            - reserveAuctionUnclaimed;
-    }
-
-    function depositAt(uint256 index_) external view override returns (uint256) {
-        return _valueAt(index_);
-    }
-
-    function encumberedCollateral(uint256 debt_, uint256 price_) external pure override returns (uint256) {
+    function encumberedCollateral(
+        uint256 debt_,
+        uint256 price_
+    ) external pure override returns (uint256) {
         return _encumberedCollateral(debt_, price_);
     }
 
-    function exchangeRate(uint256 index_) external view override returns (uint256) {
-        return buckets.getExchangeRate(index_, _valueAt(index_));
-    }
-
-    function hpb() external view returns (uint256) {
-        return Book.indexToPrice(_hpbIndex());
-    }
-
-    function htp() external view returns (uint256) {
-        return _htp();
-    }
-
-    function indexToPrice(uint256 index_) external pure override returns (uint256) {
-        return Book.indexToPrice(index_);
-    }
-
-    function liquidityToPrice(uint256 index_) external view returns (uint256) {
-        return _prefixSum(index_);
-    }
-
-    function loansCount() external view override returns (uint256) {
-        return loans.count - 1;
-    }
-
-    function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view override returns (uint256) {
+    function lpsToQuoteTokens(
+        uint256 deposit_,
+        uint256 lpTokens_,
+        uint256 index_
+    ) external view override returns (uint256) {
         return _lpsToQuoteTokens(deposit_, lpTokens_, index_);
     }
 
-    function lup() external view override returns (uint256) {
-        return _lup();
-    }
-
-    function lupIndex() external view override returns (uint256) {
-        return _lupIndex(0);
-    }
-
-    function poolActualUtilization() external view override returns (uint256) {
-        return _poolActualUtilization(borrowerDebt, pledgedCollateral);
-    }
-
-    function poolCollateralization() external view override returns (uint256) {
-        return _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
-    }
-
-    function poolTargetUtilization() external view override returns (uint256) {
-        return _poolTargetUtilization(debtEma, lupColEma);
-    }
-
-    function priceToIndex(uint256 price_) external pure override returns (uint256) {
-        return _priceToIndex(price_);
-    }
-
-    function pendingInflator() external view override returns (uint256) {
-        return _pendingInflator();
-    }
-
-    function poolMinDebtAmount() external view returns (uint256) {
-        if (borrowerDebt != 0) return _poolMinDebtAmount(borrowerDebt);
-        return 0;
-    }
-
-    function poolSize() external view returns (uint256) {
-        return _treeSum();
-    }
-
-    function reserveAuction() external view override returns (
-        uint256 claimableReservesRemaining_,
-        uint256 auctionPrice_,
-        uint256 timeRemaining_)
+    function poolLoansInfo()
+        external
+        view
+        override
+        returns (
+            uint256 poolSize_,
+            uint256 loansCount_,
+            address maxBorrower_,
+            uint256 pendingInflator_
+        )
     {
+        poolSize_        = _treeSum();
+        loansCount_      = loans.count - 1;
+        maxBorrower_     = loans.getMax().id;
+        pendingInflator_ = _pendingInflator();
+    }
+
+    function poolPricesInfo()
+        external
+        view
+        override
+        returns (
+            uint256 hpb_,
+            uint256 htp_,
+            uint256 lup_,
+            uint256 lupIndex_
+        )
+    {
+        hpb_ = Book.indexToPrice(_hpbIndex());
+        htp_ = _htp();
+        lupIndex_ = _lupIndex(0);
+        lup_ = Book.indexToPrice(lupIndex_);
+    }
+
+    function poolReservesInfo()
+        external
+        view
+        override
+        returns (
+            uint256 reserves_,
+            uint256 claimableReserves_,
+            uint256 claimableReservesRemaining_,
+            uint256 auctionPrice_,
+            uint256 timeRemaining_
+        )
+    {
+        reserves_ = borrowerDebt
+            + quoteToken().balanceOf(address(this))
+            - _treeSum()
+            - liquidationBondEscrowed
+            - reserveAuctionUnclaimed;
+        claimableReserves_ = _claimableReserves();
+
         claimableReservesRemaining_ = reserveAuctionUnclaimed;
         auctionPrice_               = _reserveAuctionPrice();
         timeRemaining_              = 3 days - Maths.min(3 days, block.timestamp - reserveAuctionKicked);
     }
 
-    function maxBorrower() external view override returns (address) {
-        return loans.getMax().id;
+    function poolUtilizationInfo()
+        external
+        view
+        override
+        returns (
+            uint256 poolMinDebtAmount_,
+            uint256 poolCollateralization_,
+            uint256 poolActualUtilization_,
+            uint256 poolTargetUtilization_
+        )
+    {
+        if (borrowerDebt != 0) poolMinDebtAmount_ = _poolMinDebtAmount(borrowerDebt);
+        poolCollateralization_ = _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
+        poolActualUtilization_  = _poolActualUtilization(borrowerDebt, pledgedCollateral);
+        poolTargetUtilization_  = _poolTargetUtilization(debtEma, lupColEma);
+    }
+
+    function priceToIndex(uint256 price_) external pure override returns (uint256) {
+        return _priceToIndex(price_);
     }
 
     /************************/
@@ -915,14 +943,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     function quoteTokenAddress() external pure returns (address) {
         return _getArgAddress(0x14);
-    }
- 
-    function _mompFactor(uint256 inflator) internal view returns (uint256) {
-        uint256 numLoans = (loans.count - 1) * 1e18;
-        if (numLoans != 0) {
-            return Maths.wdiv(Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans))), inflator);
-        }
-        return 0;
     }
 
 }

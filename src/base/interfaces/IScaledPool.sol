@@ -333,12 +333,6 @@ interface IScaledPool {
     function liquidationBondEscrowed() external view returns (uint256 liquidationBondEscrowed_);
 
     /**
-     *  @notice Returns the amount of quote token in the book down to the specified bucket index.
-     *  @return quoteToken_ Amount of quote token (deposit + interest), regardless of pool debt.
-     */
-    function liquidityToPrice(uint256 index_) external view returns (uint256 quoteToken_);
-
-    /**
      *  @notice Returns the `lupColEma` state variable.
      *  @return lupColEma_ Exponential LUP * pledged collateral moving average.
      */
@@ -361,11 +355,6 @@ interface IScaledPool {
      *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
      */
     function quoteTokenScale() external view returns (uint256 quoteTokenScale_);
-
-    /**
-     *  @notice Returns the amount of excess quote tokens.
-     */
-    function reserves() external view returns (uint256 reserves_);
 
 
     /*********************************/
@@ -503,24 +492,34 @@ interface IScaledPool {
      *  @param  price_                     The price to calculate collateralization for.
      *  @return borrowerCollateralization_ Current borrower collateralization ratio.
      */
-    function borrowerCollateralization(uint256 debt_, uint256 collateral_, uint256 price_) external view returns (uint256 borrowerCollateralization_);
+    function borrowerCollateralization(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) external view returns (uint256 borrowerCollateralization_);
 
     /**
      *  @notice Get a bucket struct for a given index.
-     *  @param  index_          The index of the bucket to retrieve.
-     *  @return quoteTokens_    Amount of quote token in bucket, deposit + interest (WAD)
-     *  @return collateral_     Unencumbered collateral in bucket (WAD).
-     *  @return lpAccumulator_  Outstanding LP balance in bucket (WAD)
-     *  @return scale_          Lender interest multiplier (WAD).
+     *  @param  index_             The index of the bucket to retrieve.
+     *  @return price_             Bucket price (WAD)
+     *  @return quoteTokens_       Amount of quote token in bucket, deposit + interest (WAD)
+     *  @return collateral_        Unencumbered collateral in bucket (WAD).
+     *  @return bucketLPs_         Outstanding LP balance in bucket (WAD)
+     *  @return scale_             Lender interest multiplier (WAD).
+     *  @return exchangeRate_      The exchange rate of the bucket, in RAY units.
+     *  @return liquidityToPrice_  Amount of quote token (deposit + interest), regardless of pool debt.
      */
     function bucketAt(uint256 index_)
         external
         view
         returns (
+            uint256 price_,
             uint256 quoteTokens_,
             uint256 collateral_,
-            uint256 lpAccumulator_,
-            uint256 scale_
+            uint256 bucketLPs_,
+            uint256 scale_,
+            uint256 exchangeRate_,
+            uint256 liquidityToPrice_
         );
 
     /**
@@ -544,22 +543,9 @@ interface IScaledPool {
         );
 
     /**
-     *  @notice Calculates the amount of reserves which can be claimed through a Claimable Reserve Auction.
-     *  @return _claimableReserves Denominated in quote token, or 0 if no reserves can be auctioned.
-     */
-    function claimableReserves() external view returns (uint256 _claimableReserves);
-
-    /**
      *  @notice Returns the address of the pool's collateral token
      */
     function collateralTokenAddress() external pure returns (address);
-
-    /**
-     *  @notice Get a bucket deposit for a given index.
-     *  @param  index_   The index of the bucket to retrieve deposit for.
-     *  @return deposit_ Quote tokens deposit at specified index (WAD).
-     */
-    function depositAt(uint256 index_) external view returns (uint256 deposit_);
 
     /**
      *  @notice Returns the total encumbered collateral resulting from a given amount of debt at a specified price.
@@ -570,95 +556,89 @@ interface IScaledPool {
     function encumberedCollateral(uint256 debt_, uint256 price_) external view returns (uint256 encumbrance_);
 
     /**
-     *  @notice Returns exchange rate of the bucket.
-     *  @param  index_        The index of the bucket to calculate exchange rate for.
-     *  @return exchangeRate_ The exchange rate of the bucket, in RAY units.
-     */
-    function exchangeRate(uint256 index_) external view returns (uint256 exchangeRate_);
-
-    /**
-     *  @notice Returns the Highest Price Bucket (HPB).
-     *  @return hpb_ The price value of the current HPB bucket, in WAD units.
-     */
-    function hpb() external view returns (uint256 hpb_);
-
-    /**
-     *  @notice Returns the Highest Threshold Price (HTP).
-     *  @dev    If no loans in queue returns 0
-     *  @dev    Value is scaled by current pool inflator snapshot
-     *  @return htp_ The price value of the current HTP bucket, in WAD units.
-     */
-    function htp() external view returns (uint256 htp_);
-
-    /**
-     *  @notice Returns the bucket price of for a specific index.
-     *  @param  index_ Bucket index
-     *  @return price_ Bucket price, WAD units.
-     */
-    function indexToPrice(uint256 index_) external view returns (uint256 price_);
-
-    /**
-     *  @notice Returns the number of loans in pool
-     */
-    function loansCount() external view returns (uint256);
-
-    /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
      *  @param  deposit_     The amount of quote tokens available at this bucket index.
      *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
      *  @param  index_       The price bucket index for which the value should be calculated.
      *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
      */
-    function lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) external view returns (uint256 quoteAmount_);
+    function lpsToQuoteTokens(
+        uint256 deposit_,
+        uint256 lpTokens_,
+        uint256 index_
+    ) external view returns (uint256 quoteAmount_);
+
 
     /**
-     *  @notice Returns the Lowest Utilized Price (LUP).
-     *  @return lup_ The price value of the current LUP bucket, in WAD units.
+     *  @notice Returns info related to pool loans.
+     *  @return poolSize_        The total amount of quote tokens in pool (WAD).
+     *  @return loansCount_      The number of loans in pool.
+     *  @return maxBorrower_     The address with the highest TP in pool.
+     *  @return pendingInflator_ Pending inflator in pool
      */
-    function lup() external view returns (uint256 lup_);
+    function poolLoansInfo()
+        external
+        view
+        returns (
+            uint256 poolSize_,
+            uint256 loansCount_,
+            address maxBorrower_,
+            uint256 pendingInflator_
+        );
 
     /**
-     *  @notice Returns the Lowest Utilized Price (LUP) bucket index.
+     *  @notice Returns info related to pool prices.
+     *  @return hpb_      The price value of the current Highest Price Bucket (HPB), in WAD units.
+     *  @return htp_      The price value of the current Highest Threshold Price (HTP) bucket, in WAD units.
+     *  @return lup_      The price value of the current Lowest Utilized Price (LUP) bucket, in WAD units.
      *  @return lupIndex_ The index of the current LUP bucket.
      */
-    function lupIndex() external view returns (uint256 lupIndex_);
+    function poolPricesInfo()
+        external
+        view
+        returns (
+            uint256 hpb_,
+            uint256 htp_,
+            uint256 lup_,
+            uint256 lupIndex_
+        );
+
 
     /**
-     *  @notice Returns the address with the highest TP in pool.
-     *  @return borrower_ The address with the highest TP in pool.
+     *  @notice Returns info related to Claimaible Reserve Auction.
+     *  @return reserves_                   The amount of excess quote tokens.
+     *  @return claimableReserves_          Denominated in quote token, or 0 if no reserves can be auctioned.
+     *  @return claimableReservesRemaining_ Amount of claimable reserves which has not yet been taken.
+     *  @return auctionPrice_               Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return timeRemaining_              Seconds remaining before takes are no longer allowed.
      */
-    function maxBorrower() external view returns (address borrower_);
+    function poolReservesInfo()
+        external
+        view
+        returns (
+            uint256 reserves_,
+            uint256 claimableReserves_,
+            uint256 claimableReservesRemaining_,
+            uint256 auctionPrice_,
+            uint256 timeRemaining_
+        );
 
     /**
-     *  @notice Calculates the pending inflator in pool.
-     *  @return pendingInflator_ Pending inflator.
-     */
-    function pendingInflator() external view returns (uint256 pendingInflator_);
-
-    /**
-     *  @notice Gets the current utilization of the pool
-     *  @dev    Will return 0 unless the pool has been borrowed from.
-     *  @return poolActualUtilization_ The current pool actual utilization, in WAD units.
-     */
-    function poolActualUtilization() external view returns (uint256 poolActualUtilization_);
-
-    /**
-     *  @notice Calculate the current collateralization ratio of the pool, based on `totalDebt` and `totalCollateral`.
+     *  @notice Returns info related to Claimaible Reserve Auction.
+     *  @return poolMinDebtAmount_     Minimum debt amount.
      *  @return poolCollateralization_ Current pool collateralization ratio.
-     */
-    function poolCollateralization() external view returns (uint256 poolCollateralization_);
-
-    /**
-     *  @notice Returns the total amount of quote token (depsoit + accumulated interest) in the pool,
-     *          regardless of pool debt.
-     */
-    function poolSize() external view returns (uint256);
-
-    /**
-     *  @notice Gets the current target utilization of the pool
+     *  @return poolActualUtilization_ The current pool actual utilization, in WAD units.
      *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
      */
-    function poolTargetUtilization() external view returns (uint256 poolTargetUtilization_);
+    function poolUtilizationInfo()
+        external
+        view
+        returns (
+            uint256 poolMinDebtAmount_,
+            uint256 poolCollateralization_,
+            uint256 poolActualUtilization_,
+            uint256 poolTargetUtilization_
+        );
 
     /**
      *  @notice Returns the bucket index of for a specific price.
@@ -672,15 +652,4 @@ interface IScaledPool {
      */
     function quoteTokenAddress() external pure returns (address);
 
-    /**
-     *  @notice Returns the state of the Claimaible Reserve Auction.
-     *  @return claimableReservesRemaining_ Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice_               Current price at which 1 quote token may be purchased, denominated in Ajna.
-     *  @return timeRemaining_              Seconds remaining before takes are no longer allowed.
-     */
-    function reserveAuction() external view returns (
-        uint256 claimableReservesRemaining_,
-        uint256 auctionPrice_,
-        uint256 timeRemaining_
-    );
 }

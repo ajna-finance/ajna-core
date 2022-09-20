@@ -159,6 +159,13 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 interestRateUpdate;
     }
 
+    struct PoolPricesInfo {
+        uint256 hpb;
+        uint256 htp;
+        uint256 lup;
+        uint256 lupIndex;
+    }
+
     function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
         assertEq(address(erc1_), address(erc2_));
     }
@@ -321,22 +328,25 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _assertPool(PoolState memory state_) internal {
-        assertEq(_pool.htp(), state_.htp);
-        assertEq(_pool.lup(), state_.lup);
+        ( , uint256 htp, uint256 lup, ) = _pool.poolPricesInfo();
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator) = _pool.poolLoansInfo();
+        (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _pool.poolUtilizationInfo();
+        assertEq(htp, state_.htp);
+        assertEq(lup, state_.lup);
 
-        assertEq(_pool.poolSize(),              state_.poolSize);
+        assertEq(poolSize,              state_.poolSize);
         assertEq(_pool.pledgedCollateral(),     state_.pledgedCollateral);
         assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
         assertEq(_pool.borrowerDebt(),          state_.borrowerDebt);
-        assertEq(_pool.poolActualUtilization(), state_.actualUtilization);
-        assertEq(_pool.poolTargetUtilization(), state_.targetUtilization);
-        assertEq(_pool.poolMinDebtAmount(),     state_.minDebtAmount);
+        assertEq(poolActualUtilization, state_.actualUtilization);
+        assertEq(poolTargetUtilization, state_.targetUtilization);
+        assertEq(poolMinDebtAmount,     state_.minDebtAmount);
 
-        assertEq(_pool.loansCount(),  state_.loans);
-        assertEq(_pool.maxBorrower(), state_.maxBorrower);
+        assertEq(loansCount,  state_.loans);
+        assertEq(maxBorrower, state_.maxBorrower);
 
         assertEq(_pool.inflatorSnapshot(), state_.inflatorSnapshot);
-        assertEq(_pool.pendingInflator(), state_.pendingInflator);
+        assertEq(pendingInflator,          state_.pendingInflator);
 
         assertEq(_pool.interestRate(),       state_.interestRate);
         assertEq(_pool.interestRateUpdate(), state_.interestRateUpdate);
@@ -360,12 +370,49 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     function _assertBorrower(BorrowerState memory state_) internal {
         (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
+        (, , uint256 lup, ) = _pool.poolPricesInfo();
         assertEq(debt,        state_.debt);
         assertEq(pendingDebt, state_.pendingDebt);
         assertEq(col,         state_.collateral);
-        assertEq(mompFactor,   state_.mompFactor);
+        assertEq(mompFactor,  state_.mompFactor);
         assertEq(inflator,    state_.inflator);
 
-        assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, _pool.lup()), state_.collateralization);
+        assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, lup), state_.collateralization);
+    }
+
+    function _assertPoolPrices(PoolPricesInfo memory state_) internal {
+        (uint256 hpb, uint256 htp, uint256 lup, uint256 lupIndex) = _pool.poolPricesInfo();
+        assertEq(hpb,      state_.hpb);
+        assertEq(htp,      state_.htp);
+        assertEq(lup,      state_.lup);
+        assertEq(lupIndex, state_.lupIndex);
+    }
+
+    function _loansCount() internal view returns (uint256 loansCount_) {
+        ( , loansCount_, , ) = _pool.poolLoansInfo();
+    }
+
+    function _poolSize() internal view returns (uint256 poolSize_) {
+        (poolSize_, , , ) = _pool.poolLoansInfo();
+    }
+
+    function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
+        ( , , , , , exchangeRate_, ) = _pool.bucketAt(index_);
+    }
+
+    function _lup() internal view returns (uint256 lup_) {
+        (, , lup_, ) = _pool.poolPricesInfo();
+    }
+
+    function _htp() internal view returns (uint256 htp_) {
+        (, htp_, , ) = _pool.poolPricesInfo();
+    }
+
+    function _hpb() internal view returns (uint256 hpb_) {
+        (hpb_, , , ) = _pool.poolPricesInfo();
+    }
+
+    function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {
+        ( price_, , , , , , ) = _pool.bucketAt(index_);
     }
 }

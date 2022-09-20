@@ -106,8 +106,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
 
         IScaledPool pool = IScaledPool(params_.pool);
+        ( , uint256 bucketDeposit, , , , , ) = pool.bucketAt(params_.fromIndex);
         uint256 maxQuote = pool.lpsToQuoteTokens(
-            pool.depositAt(params_.fromIndex),  lps[params_.tokenId][params_.fromIndex], params_.fromIndex
+            bucketDeposit, lps[params_.tokenId][params_.fromIndex], params_.fromIndex
         );
 
         // update prices set at which a position has liquidity

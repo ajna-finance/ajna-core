@@ -35,8 +35,6 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
     function testPurchaseQuote() external {
         // test setup
         uint256 testIndex = 2550;
-        uint256 priceAtTestIndex = _pool.indexToPrice(testIndex);
-        assertEq(priceAtTestIndex, 3_010.892022197881557845 * 1e18);
 
         // lender adds initial quote to pool
         Liquidity[] memory amounts = new Liquidity[](1);
@@ -88,7 +86,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 index:    testIndex,
                 amount:   10_000 * 1e18,
                 penalty:  0,
-                newLup:   _pool.lup(),
+                newLup:   _lup(),
                 lpRedeem: 10_000 * 1e27
             })
         );
@@ -186,8 +184,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
      *  @notice 2 lenders, 1 borrower, 1 bidder tests purchasing quote token with collateral.
      */
     function testPurchaseQuoteWithDebt() external {
-        uint256 p2550 = _pool.indexToPrice(2550);
-        assertEq(p2550, 3_010.892022197881557845 * 1e18);
+        uint256 p2550 = 3_010.892022197881557845 * 1e18;
 
         // lenders add liquidity
         Liquidity[] memory amounts = new Liquidity[](3);
@@ -219,7 +216,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 pledgeAmount: 100 * 1e18,
                 borrowAmount: 15_000 * 1e18,
                 indexLimit:   3000,
-                price:        _pool.indexToPrice(2551)
+                price:        _indexToPrice(2551)
             })
         );
 
@@ -251,7 +248,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 index:    2550,
                 amount:   amountWithInterest,
-                newLup:   _pool.indexToPrice(2552),
+                newLup:   _indexToPrice(2552),
                 lpRedeem: 10_000 * 1e27
             })
         );

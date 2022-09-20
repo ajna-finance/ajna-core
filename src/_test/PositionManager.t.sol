@@ -376,7 +376,8 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(indexes[0], tokenId2), 0);
         assertEq(_positionManager.getLPTokens(indexes[3], tokenId2), 0);
 
-        assertEq(_pool.poolSize(), 15_000 * 1e18);
+        (uint256 poolSize, , , ) = _pool.poolLoansInfo();
+        assertEq(poolSize, 15_000 * 1e18);
 
         // construct memorialize lender 1 params struct
         uint256[] memory lender1Indexes = new uint256[](3);
@@ -425,7 +426,8 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[1]), 3_000 * 1e27);
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[2]), 3_000 * 1e27);
 
-        assertEq(_pool.poolSize(), 15_000 * 1e18);
+        (poolSize, , , ) = _pool.poolLoansInfo();
+        assertEq(poolSize, 15_000 * 1e18);
 
         // allow position manager to take ownership of lender 2's position
         vm.prank(testLender2);
@@ -471,7 +473,8 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(tokenId2, indexes[0]), 3_000 * 1e27);
         assertEq(_positionManager.getLPTokens(tokenId2, indexes[3]), 3_000 * 1e27);
 
-        assertEq(_pool.poolSize(), 15_000 * 1e18);
+        (poolSize, , , ) = _pool.poolLoansInfo();
+        assertEq(poolSize, 15_000 * 1e18);
     }
 
     function testMemorializeMultipleAndModifyLiquidity() external {
