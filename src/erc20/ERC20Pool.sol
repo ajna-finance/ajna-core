@@ -32,7 +32,10 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Initialize Functions ***/
     /****************************/
 
-    function initialize(uint256 rate_, address ajnaTokenAddress_) external {
+    function initialize(
+        uint256 rate_,
+        address ajnaTokenAddress_
+    ) external {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         collateralScale = 10**(18 - collateral().decimals());
@@ -56,60 +59,101 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     /*** Borrower External Functions ***/
     /***********************************/
 
-    function pledgeCollateral(address borrower_, uint256 amount_) external override {
-        _pledgeCollateral(borrower_, amount_);
+    function pledgeCollateral(
+        address borrower_,
+        uint256 collateralAmountToPledge_
+    ) external override {
+        _pledgeCollateral(borrower_, collateralAmountToPledge_);
 
         // move collateral from sender to pool
-        emit PledgeCollateral(borrower_, amount_);
-        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
+        emit PledgeCollateral(borrower_, collateralAmountToPledge_);
+        collateral().safeTransferFrom(msg.sender, address(this), collateralAmountToPledge_ / collateralScale);
     }
 
-    function pullCollateral(uint256 amount_) external override {
-        _pullCollateral(amount_);
+    function pullCollateral(
+        uint256 collateralAmountToPull_
+    ) external override {
+        _pullCollateral(collateralAmountToPull_);
 
         // move collateral from pool to sender
-        emit PullCollateral(msg.sender, amount_);
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+        emit PullCollateral(msg.sender, collateralAmountToPull_);
+        collateral().safeTransfer(msg.sender, collateralAmountToPull_ / collateralScale);
     }
 
     /*********************************/
     /*** Lender External Functions ***/
     /*********************************/
 
-    function addCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
-        lpbChange_ = _addCollateral(amount_, index_);
+    function addCollateral(
+        uint256 collateralAmountToAdd_,
+        uint256 index_
+    ) external override returns (uint256 bucketLPs_) {
+        bucketLPs_ = _addCollateral(collateralAmountToAdd_, index_);
 
         // move required collateral from sender to pool
-        emit AddCollateral(msg.sender, index_, amount_);
-        collateral().safeTransferFrom(msg.sender, address(this), amount_ / collateralScale);
+        emit AddCollateral(msg.sender, index_, collateralAmountToAdd_);
+        collateral().safeTransferFrom(msg.sender, address(this), collateralAmountToAdd_ / collateralScale);
     }
 
-    function moveCollateral(uint256 amount_, uint256 fromIndex_, uint256 toIndex_) external override returns (uint256 lpbAmountFrom_, uint256 lpbAmountTo_) {
+    function moveCollateral(
+        uint256 collateralAmountToMove_,
+        uint256 fromIndex_,
+        uint256 toIndex_
+    ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveCollateralToSamePrice();
 
-        if (buckets.getCollateral(fromIndex_) < amount_) revert MoveCollateralInsufficientCollateral();
+        if (buckets.getCollateral(fromIndex_) < collateralAmountToMove_) revert MoveCollateralInsufficientCollateral();
 
         uint256 curDebt = _accruePoolInterest();
 
-        lpbAmountFrom_ = buckets.collateralToLPs(fromIndex_, _valueAt(fromIndex_), amount_);
-        (uint256 lpBalance, ) = lenders.getLenderInfo(fromIndex_, msg.sender);
-        if (lpbAmountFrom_ > lpBalance) revert MoveCollateralInsufficientLP();
+        fromBucketLPs_ = buckets.collateralToLPs(
+            fromIndex_,
+            _valueAt(fromIndex_),
+            collateralAmountToMove_
+        );
+        (uint256 lpBalance, ) = lenders.getLenderInfo(
+            fromIndex_,
+            msg.sender
+        );
+        if (fromBucketLPs_ > lpBalance) revert MoveCollateralInsufficientLP();
 
-        lpbAmountTo_ = buckets.collateralToLPs(toIndex_, _valueAt(toIndex_), amount_);
+        toBucketLPs_ = buckets.collateralToLPs(
+            toIndex_,
+            _valueAt(toIndex_),
+            collateralAmountToMove_
+        );
 
-        // update buckets
-        buckets.removeFromBucket(fromIndex_, lpbAmountFrom_, amount_);
-        buckets.addToBucket(toIndex_, lpbAmountTo_, amount_);
         // update lender accounting
-        lenders.removeLPs(fromIndex_, msg.sender, lpbAmountFrom_);
-        lenders.addLPs(toIndex_, msg.sender, lpbAmountTo_);
+        lenders.removeLPs(
+            fromIndex_,
+            msg.sender,
+            fromBucketLPs_
+        );
+        lenders.addLPs(
+            toIndex_,
+            msg.sender,
+            toBucketLPs_
+        );
+        // update buckets
+        buckets.removeFromBucket(
+            fromIndex_,
+            fromBucketLPs_,
+            collateralAmountToMove_
+        );
+        buckets.addToBucket(
+            toIndex_,
+            toBucketLPs_,
+            collateralAmountToMove_
+        );
 
         _updateInterestRateAndEMAs(curDebt, _lup());
 
-        emit MoveCollateral(msg.sender, fromIndex_, toIndex_, amount_);
+        emit MoveCollateral(msg.sender, fromIndex_, toIndex_, collateralAmountToMove_);
     }
 
-    function removeAllCollateral(uint256 index_) external override returns (uint256 amount_, uint256 lpAmount_) {
+    function removeAllCollateral(
+        uint256 index_
+    ) external override returns (uint256 amount_, uint256 lpAmount_) {
         uint256 availableCollateral = buckets.getCollateral(index_);
         if (availableCollateral == 0) revert RemoveCollateralInsufficientCollateral();
 
@@ -127,11 +171,18 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             lpAmount_ = Maths.wrdivr(Maths.wmul(amount_, price), rate);
         } // else user is redeeming all of their LPs
 
-        // update bucket accounting
-        buckets.removeFromBucket(index_, lpAmount_, amount_);
-
         // update lender accounting
-        lenders.removeLPs(index_, msg.sender, lpAmount_);
+        lenders.removeLPs(
+            index_,
+            msg.sender,
+            lpAmount_
+        );
+        // update bucket accounting
+        buckets.removeFromBucket(
+            index_,
+            lpAmount_,
+            amount_
+        );
 
         _updateInterestRateAndEMAs(borrowerDebt, _lup());
 
@@ -140,12 +191,15 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransfer(msg.sender, amount_ / collateralScale);
     }
 
-    function removeCollateral(uint256 amount_, uint256 index_) external override returns (uint256 lpAmount_) {
-        lpAmount_ = _removeCollateral(amount_, index_);
+    function removeCollateral(
+        uint256 collateralAmountToRemove_,
+        uint256 index_
+    ) external override returns (uint256 bucketLPs_) {
+        bucketLPs_ = _removeCollateral(collateralAmountToRemove_, index_);
 
         // move collateral from pool to lender
-        emit RemoveCollateral(msg.sender, index_, amount_);
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+        emit RemoveCollateral(msg.sender, index_, collateralAmountToRemove_);
+        collateral().safeTransfer(msg.sender, collateralAmountToRemove_ / collateralScale);
     }
 
     /*******************************/

@@ -88,6 +88,24 @@ library Book {
         return Maths.rdiv(Maths.wadToRay(quoteTokens_), rate);
     }
 
+    function lpsToQuoteToken(
+        mapping(uint256 => Bucket) storage self,
+        uint256 index_,
+        uint256 deposit_,
+        uint256 lenderLPsBalance_,
+        uint256 maxQuoteToken_
+    ) internal view returns (uint256 quoteTokenAmount_, uint256 bucketLPs_, uint256 lenderLPs_) {
+        lenderLPs_ = lenderLPsBalance_;
+        uint256 rate  = getExchangeRate(self, index_, deposit_);
+        quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
+        if (quoteTokenAmount_ > deposit_) {
+            quoteTokenAmount_ = deposit_;
+            lenderLPs_        = Maths.wrdivr(quoteTokenAmount_, rate);
+        }
+        if (maxQuoteToken_ != quoteTokenAmount_) quoteTokenAmount_ = Maths.min(maxQuoteToken_,quoteTokenAmount_);
+        bucketLPs_ = Maths.wrdivr(quoteTokenAmount_, rate);
+    }
+
     function getCollateral(
         mapping(uint256 => Bucket) storage self,
         uint256 index_
