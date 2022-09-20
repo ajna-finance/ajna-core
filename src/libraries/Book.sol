@@ -106,6 +106,25 @@ library Book {
         bucketLPs_ = Maths.wrdivr(quoteTokenAmount_, rate);
     }
 
+    function lpsToCollateral(
+        mapping(uint256 => Bucket) storage self,
+        uint256 index_,
+        uint256 deposit_,
+        uint256 lenderLPsBalance_,
+        uint256 maxCollateral_
+    ) internal view returns (uint256 collateralAmount_, uint256 lenderLPs_) {
+        // max collateral to lps
+        lenderLPs_        = lenderLPsBalance_;
+        uint256 price      = Book.indexToPrice(index_);
+        uint256 rate       = getExchangeRate(self, index_, deposit_);
+        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), price);
+        if (collateralAmount_ > maxCollateral_) {
+            // user is owed more collateral than is available in the bucket
+            collateralAmount_ = maxCollateral_;
+            lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, price), rate);
+        }
+    }
+
     function getCollateral(
         mapping(uint256 => Bucket) storage self,
         uint256 index_

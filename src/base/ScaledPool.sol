@@ -738,11 +738,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
     }
 
-    function _lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) internal view returns (uint256 quoteAmount_) {
-        uint256 rate = buckets.getExchangeRate(index_, deposit_);
-        quoteAmount_ = Maths.min(deposit_, Maths.rayToWad(Maths.rmul(lpTokens_, rate))); // TODO optimize to calculate bucket size only once
-    }
-
     function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
         return PRBMathUD60x18.exp((interestRate * elapsed_) / 365 days);
     }
@@ -843,8 +838,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 deposit_,
         uint256 lpTokens_,
         uint256 index_
-    ) external view override returns (uint256) {
-        return _lpsToQuoteTokens(deposit_, lpTokens_, index_);
+    ) external view override returns (uint256 quoteTokenAmount_) {
+        (quoteTokenAmount_, , ) = buckets.lpsToQuoteToken(
+            index_,
+            deposit_,
+            lpTokens_,
+            deposit_
+        );
     }
 
     function poolLoansInfo()

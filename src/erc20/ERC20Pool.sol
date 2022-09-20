@@ -153,42 +153,39 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
     function removeAllCollateral(
         uint256 index_
-    ) external override returns (uint256 amount_, uint256 lpAmount_) {
+    ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
         uint256 availableCollateral = buckets.getCollateral(index_);
         if (availableCollateral == 0) revert RemoveCollateralInsufficientCollateral();
 
         _accruePoolInterest();
 
-        uint256 price = Book.indexToPrice(index_);
-        uint256 rate  = buckets.getExchangeRate(index_, _valueAt(index_));
-        (lpAmount_, ) = lenders.getLenderInfo(index_, msg.sender);
-        amount_       = Maths.rwdivw(Maths.rmul(lpAmount_, rate), price);
-        if (amount_ == 0) revert RemoveCollateralNoClaim();
-
-        if (amount_ > availableCollateral) {
-            // user is owed more collateral than is available in the bucket
-            amount_   = availableCollateral;
-            lpAmount_ = Maths.wrdivr(Maths.wmul(amount_, price), rate);
-        } // else user is redeeming all of their LPs
+        (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
+        (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
+            index_,
+            _valueAt(index_),
+            lenderLPsBalance,
+            availableCollateral
+        );
+        if (collateralAmountRemoved_ == 0) revert RemoveCollateralNoClaim();
 
         // update lender accounting
         lenders.removeLPs(
             index_,
             msg.sender,
-            lpAmount_
+            redeemedLenderLPs_
         );
         // update bucket accounting
         buckets.removeFromBucket(
             index_,
-            lpAmount_,
-            amount_
+            redeemedLenderLPs_,
+            collateralAmountRemoved_
         );
 
         _updateInterestRateAndEMAs(borrowerDebt, _lup());
 
         // move collateral from pool to lender
-        emit RemoveCollateral(msg.sender, index_, amount_);
-        collateral().safeTransfer(msg.sender, amount_ / collateralScale);
+        emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
+        collateral().safeTransfer(msg.sender, collateralAmountRemoved_ / collateralScale);
     }
 
     function removeCollateral(
