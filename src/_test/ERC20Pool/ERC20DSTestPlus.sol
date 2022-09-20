@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20 }      from "@solmate/tokens/ERC20.sol";
 
+import { IERC20Pool } from "../../erc20/interfaces/IERC20Pool.sol";
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
@@ -146,6 +147,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     struct AuctionState {
         address borrower;
         uint256 kickTime;
+        int256 bpf;
+        uint256 price;
         uint256 referencePrice;
         uint256 bondFactor;
         uint256 bondSize;
@@ -382,10 +385,28 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _assertAuction(AuctionState memory state_) internal {
-        (uint256 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidationInfo(state_.borrower);
-        (address next, bool active) = _pool.getAuction(state_.borrower);
+        (uint256 debt, , uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
+        (uint128 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidationInfo(state_.borrower);
+        (address next, , bool active) = _pool.getAuction(state_.borrower);
+        int256 bpf = _pool.bpf(
+            IERC20Pool.Borrower({
+               debt: debt,
+               collateral: col,
+               mompFactor: mompFactor,
+               inflatorSnapshot: inflator
+            }),
+            IERC20Pool.Liquidation({
+                kickTime: kickTime,
+                referencePrice: referencePrice,
+                bondFactor: bondFactor,
+                bondSize: bondSize
+            }),
+            _pool.auctionPrice(referencePrice, kickTime)
+        );
         assertEq(kickTime, state_.kickTime);
         assertEq(referencePrice, state_.referencePrice);
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), state_.price);
+        assertEq(bpf, state_.bpf);
         assertEq(bondFactor, state_.bondFactor);
         assertEq(bondSize, state_.bondSize);
         assertEq(next, state_.next);

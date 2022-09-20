@@ -308,12 +308,9 @@ contract QueueInstance is Queue, DSTestPlus {
         return _addAuction(borrower_);
     }
 
-    function deactivate(address borrower_) external {
-        return _deactivateAuction(borrower_);
+    function remove(address borrower_) external {
+        return _removeAuction(borrower_);
     }
 
-    function removeHead() external {
-        return _removeAuctionHead();
-    }
 
 }

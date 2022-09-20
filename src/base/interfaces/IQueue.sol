@@ -9,7 +9,7 @@ interface IQueue {
     /***************/
 
     struct NodeInfo {
-        uint256 val;
+        address prev;
         address next;
         bool active;
     }
@@ -26,6 +26,6 @@ interface IQueue {
      *  @dev    Used by SDK for offchain iteration through the queue.
      *  @return thresholdPrice, next
      */
-    function getAuction(address borrower_) external view returns (address, bool);
+    function getAuction(address borrower_) external view returns (address, address, bool);
     
 }

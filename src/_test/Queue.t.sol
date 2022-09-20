@@ -33,38 +33,43 @@ contract QueueTest is DSTestPlus {
         skip(100 seconds);
         auctions.add(_borrower); 
 
-        // check queue head was set correctly
+        // Check queue head was set correctly
         assertEq(_borrower, auctions.head());
-        (address next, bool active) = auctions.getAuction(auctions.head());
+        (address next, address prev, bool active) = auctions.getAuction(auctions.head());
         assertEq(next, address(0));
+        assertEq(prev, address(0));
         assertEq(active, true);
 
-        // insert borrower2 -- _borrower -> _borrower2
-        // check queue head remains, _borrower -> _borrower2
+        // Insert borrower2 -- _borrower -> _borrower2
+        // Check queue head remains, _borrower -> _borrower2
         skip(100 seconds);
         auctions.add(_borrower2); 
         assertEq(_borrower, auctions.head());
-        (next, active) = auctions.getAuction(auctions.head());
-        assertEq(address(_borrower2), next);
-        (next, active) = auctions.getAuction(_borrower2);
-        assertEq(address(0), next);
 
-        (next, active) = auctions.getAuction(_borrower);
+        (next, prev, active) = auctions.getAuction(_borrower);
         assertEq(_borrower2, next);
+        assertEq(address(0), prev);
+
+        (next, prev, active) = auctions.getAuction(_borrower2);
+        assertEq(address(0), next);
+        assertEq(_borrower, prev);
 
         // _borrower -> _borrower2 -> _borrower3
         // Don't adjust time, node should still be inserted at tail
         auctions.add(_borrower3);
 
         assertEq(_borrower, auctions.head());
-        (next, active) = auctions.getAuction(auctions.head());
-        assertEq(address(_borrower2), next);
+        (next, prev, active) = auctions.getAuction(auctions.head());
+        assertEq(_borrower2, next);
+        assertEq(address(0), prev);
 
-        (next, active) = auctions.getAuction(_borrower2);
-        assertEq(address(_borrower3), next);
+        (next, prev, active) = auctions.getAuction(_borrower2);
+        assertEq(_borrower3, next);
+        assertEq(_borrower, prev);
 
-        (next, active) = auctions.getAuction(_borrower3);
+        (next, prev, active) = auctions.getAuction(_borrower3);
         assertEq(address(0), next);
+        assertEq(_borrower2, prev);
     }
 
     function testQueueRemove() public {
@@ -76,31 +81,31 @@ contract QueueTest is DSTestPlus {
         skip(12 seconds);
         auctions.add(_borrower3);
 
-        // Deactivate _borrower then remove from head
-        vm.expectRevert("Q:RH:AUCT_NOT_DEACT");
-        auctions.removeHead();
-        auctions.deactivate(_borrower);
-        (address next, bool active) = auctions.getAuction(_borrower);
-        assertEq(next, _borrower2);
-        assertEq(active, false);
-
-        // remove _borrower from head
-        auctions.removeHead();
-        (next, active) = auctions.getAuction(_borrower);
-        assertEq(next, address(0));
+        // Remove _borrower from head
+        auctions.remove(_borrower);
+        (address next, address prev,  bool active) = auctions.getAuction(_borrower);
         assertEq(active, false);
 
         // assert new head
         assertEq(auctions.head(), _borrower2);
-
-        // Deactivate _borrower2
-        auctions.deactivate(_borrower2);
-        (next, active) = auctions.getAuction(_borrower2);
+        (next, prev, active) = auctions.getAuction(_borrower2);
+        assertEq(prev, address(0));
         assertEq(next, _borrower3);
+        assertEq(active, true);
+
+        // Remove _borrower2
+        auctions.remove(_borrower2);
+        (next, prev, active) = auctions.getAuction(_borrower2);
         assertEq(active, false);
+
+
+        (next, prev, active) = auctions.getAuction(_borrower3);
+        assertEq(active, true);
+        assertEq(_borrower3, auctions.head());
+
     }
     
-    function skiptestQueueAddRemoveAdd() public {
+    function testQueueAddRemoveAdd() public {
         // Fill Queue
         skip(12 seconds);
         auctions.add(_borrower);  
@@ -109,31 +114,29 @@ contract QueueTest is DSTestPlus {
         skip(12 seconds);
         auctions.add(_borrower3);
 
-        // Deactivate _borrower
-        vm.expectRevert("Q:RH:AUCT_NOT_DEACT");
-        auctions.removeHead();
-        auctions.deactivate(_borrower);
-        (address next, bool active) = auctions.getAuction(_borrower);
-        assertEq(active, false);
+        // Remove _borrower2
+        auctions.remove(_borrower2);
+        (address next, address prev, bool active) = auctions.getAuction(_borrower);
+        assertEq(active, true);
+        assertEq(prev, address(0));
+        assertEq(next, _borrower3);
+        assertEq(auctions.head(), _borrower);
+
+        (next, prev, active) = auctions.getAuction(_borrower3);
+        assertEq(active, true);
+        assertEq(next, address(0));
+        assertEq(prev, _borrower);
         assertEq(auctions.head(), _borrower);
 
         skip(1 hours);
 
         // Re-add _borrower by overwriting auctions mapping
-        auctions.add(_borrower);  
+        auctions.add(_borrower2);  
 
-        (next, active) = auctions.getAuction(_borrower);
+        (next, prev, active) = auctions.getAuction(_borrower2);
         assertEq(next, address(0));
+        assertEq(prev, _borrower3);
         assertEq(active, true);
-
-         // remove _borrower from head
-         // TODO: This case breaks when it shouldn't, this is a fault of the current design
-        auctions.removeHead();
-        (next, active) = auctions.getAuction(_borrower);
-        assertEq(next, address(0));
-        assertEq(active, false);
-        
-        // assert new head
-        assertEq(auctions.head(), _borrower2);
+        assertEq(auctions.head(), _borrower);
     }
 }

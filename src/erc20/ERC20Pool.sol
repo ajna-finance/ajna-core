@@ -283,22 +283,21 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        (,bool auctionActive) = getAuction(borrower_);
+        (,,bool auctionActive) = getAuction(borrower_);
         if (auctionActive == true) revert AuctionIsActive();
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
 
-        uint256 momp = Maths.wmul(borrower.mompFactor, borrower.inflatorSnapshot);
+        uint256 neutralPrice = Maths.wmul(borrower.mompFactor, borrower.inflatorSnapshot);
 
-        // bondFactor = min(30%, max(1%, (momp - thresholdPrice) / momp))
-        uint256 bondFactor = thresholdPrice >= momp ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, momp)));
-        uint256 bondSize   = Maths.wmul(bondFactor, borrower.debt);
+        // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
+        uint256 bondFactor = thresholdPrice >= neutralPrice ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, neutralPrice)));
+        uint256 bondSize = Maths.wmul(bondFactor, borrower.debt);
 
-        uint128 kickTime = uint128(block.timestamp);
         liquidations[borrower_] = Liquidation({
-            kickTime:            kickTime,
+            kickTime:            uint128(block.timestamp),
             referencePrice:      _indexToPrice(_hpbIndex()),
             bondFactor:          bondFactor,
             bondSize:            bondSize
@@ -325,13 +324,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         _updateInterestRateAndEMAs(curDebt, lup);
 
         // check liquidation process status
-        (,bool auctionActive) = getAuction(borrower_);
+        (,,bool auctionActive) = getAuction(borrower_);
         if (auctionActive != true) revert AuctionNotActive();
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: remove auction from queue if auctionDebt == 0;
-        uint256 price = _auctionPrice(liquidation.referencePrice, liquidation.kickTime);
+        uint256 price = _auctionPrice(liquidation.referencePrice, uint256(liquidation.kickTime));
         int256 bpf = _bpf(borrower, liquidation, price);
 
         uint256 repayAmount;
@@ -367,10 +366,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         //// Reduce liquidation's remaining collateral
         borrower.collateral -= Maths.wdiv(amount_, price);
         borrowers[borrower_] = borrower;
+        liquidations[borrower_] = liquidation;
 
         // if recollateralized remove loan from auction
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) {
-            _deactivateAuction(borrower_);
+            _removeAuction(borrower_);
         }
 
         //// TODO: implement flashloan functionality
@@ -387,29 +387,37 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
     }
 
+    // TODO: remove this method, it is for testing only.
+    function bpf( Borrower memory borrower_, Liquidation memory liquidation_, uint256 price_) public pure returns (int256) {
+        if (borrower_.collateral == 0) {
+            return 0;
+        }
+        return _bpf(borrower_, liquidation_, price_);
+    }
 
     /**************************/
     /*** Internal Functions ***/
     /**************************/
 
-    function _bpf( Borrower memory borrower, Liquidation memory liquidation, uint256 price) internal pure returns (int256 bpf) {
-        int256 thresholdPrice = int256(Maths.wdiv(borrower.debt, borrower.collateral));
-        int256 neutralPrice = int256(Maths.wmul(borrower.mompFactor, borrower.inflatorSnapshot));
+    function _bpf( Borrower memory borrower_, Liquidation memory liquidation_, uint256 price_) internal pure returns (int256 bpf_) {
+        int256 thresholdPrice = int256(Maths.wdiv(borrower_.debt, borrower_.collateral));
+        int256 neutralPrice = int256(Maths.wmul(borrower_.mompFactor, borrower_.inflatorSnapshot));
  
-        bpf = PRBMathSD59x18.mul(
-            int256(liquidation.bondFactor),
+        bpf_ = PRBMathSD59x18.mul(
+            int256(liquidation_.bondFactor),
             Maths.minInt(
                 1e18,
                 Maths.maxInt(
                     -1 * 1e18,
                     PRBMathSD59x18.div(
-                        neutralPrice - int256(price),
+                        neutralPrice - int256(price_),
                         neutralPrice - thresholdPrice
                     )
                 )
             )
         );
     }
+
 
     function _redeemLPForCollateral(
         Bucket memory bucket,
@@ -486,7 +494,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         );
     }
 
-    function liquidationInfo(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
+    function liquidationInfo(address borrower_) external view override returns (uint128, uint256, uint256, uint256) {
 
         return (
             liquidations[borrower_].kickTime,            // accrued debt (WAD)

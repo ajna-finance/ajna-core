@@ -301,7 +301,7 @@ interface IERC20Pool is IScaledPool {
         external
         view
         returns (
-            uint256 kickTime_,
+            uint128 kickTime_,
             uint256 referencePrice_,
             uint256 bondFactor_,
             uint256 bondSize_

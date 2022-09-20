@@ -83,6 +83,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             AuctionState({
                 borrower:       _borrower,
                 kickTime:       0,
+                price:          0,
+                bpf:            0,
                 referencePrice: 0,
                 bondFactor:     0,
                 bondSize:       0,
@@ -120,6 +122,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             AuctionState({
                 borrower:       _borrower,
                 kickTime:       block.timestamp,
+                price:          99.171848434359120740 * 1e18,
+                bpf:            int256(-0.015129883856262866 * 1e18),
                 referencePrice: 9.917184843435912074 * 1e18,
                 bondFactor:     0.015129883856262866 * 1e18,
                 bondSize:       0.295551357010191754 * 1e18,
@@ -131,7 +135,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
     }
 
-    function testTakeUsingQuoteTokenOutsidePoolAboveNeutral() external {
+    function testTakeGTNeutral() external {
 
         _assertBorrower(
             BorrowerState({
@@ -149,6 +153,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             AuctionState({
                 borrower:       _borrower,
                 kickTime:       0,
+                price:          0,
+                bpf:            0,
                 referencePrice: 0,
                 bondFactor:     0,
                 bondSize:       0,
@@ -157,10 +163,9 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             })
         );
 
+        //TODO: assert lender state
         // Skip to make borrower undercollateralized
         skip(100 days);
-
-        //TODO: assert lender state
 
 
         vm.startPrank(_lender);
@@ -185,6 +190,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             AuctionState({
                 borrower: _borrower,
                 kickTime:       block.timestamp,
+                price:          99.171848434359120740 * 1e18,
+                bpf:            int256(-0.015129883856262866 * 1e18),
                 referencePrice: 9.917184843435912074 * 1e18,
                 bondFactor:     0.015129883856262866 * 1e18,
                 bondSize:       0.295551357010191754 * 1e18,
@@ -218,9 +225,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             AuctionState({
                 borrower:       _borrower,
                 kickTime:       (block.timestamp - 2 hours),
+                price:          49.585924217179560370 * 1e18,
+                bpf:            int256(-0.015129883856262866 * 1e18),
                 referencePrice: 9.917184843435912074 * 1e18,
                 bondFactor:     0.015129883856262866 * 1e18,
-                bondSize:       0.295551357010191754 * 1e18,
+                bondSize:       0.004402019164293215 * 1e18,
                 next:           address(0),
                 active:         false
             })
@@ -228,7 +237,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         
     }
 
-    function testTakeUsingQuoteTokenOutsidePoolBelowNeutral() external {
+    function testTakeLTNeutral() external {
 
         _assertBorrower(
             BorrowerState({
@@ -246,6 +255,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             AuctionState({
                 borrower:       _borrower,
                 kickTime:       0,
+                price:          0,
+                bpf:            0,
                 referencePrice: 0,
                 bondFactor:     0,
                 bondSize:       0,
@@ -281,6 +292,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             AuctionState({
                 borrower: _borrower,
                 kickTime:       block.timestamp,
+                price:          99.171848434359120740 * 1e18,
+                bpf:            int256(-0.015129883856262866 * 1e18),
                 referencePrice: 9.917184843435912074 * 1e18,
                 bondFactor:     0.015129883856262866 * 1e18,
                 bondSize:       0.295551357010191754 * 1e18,
@@ -314,15 +327,17 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             AuctionState({
                 borrower:       _borrower,
                 kickTime:       (block.timestamp - 5 hours),
+                price:          6.198240527147445050 * 1e18,
+                bpf:            0,
                 referencePrice: 9.917184843435912074 * 1e18,
                 bondFactor:     0.015129883856262866 * 1e18,
-                bondSize:       0.295551357010191754 * 1e18,
+                bondSize:       0.483108675588036485 * 1e18,
                 next:           address(0),
                 active:         false
             })
         );
         
-    }
+    }        
 
 
     function testBondFactorFormula() external {
