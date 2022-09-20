@@ -41,3 +41,4 @@ jobs:
           slither src/erc721/.
         continue-on-error: true
         id: erc721-pool-analyzer
+    timeout-minutes: 5
