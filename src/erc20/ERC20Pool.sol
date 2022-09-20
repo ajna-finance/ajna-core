@@ -91,16 +91,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         uint256 curDebt = _accruePoolInterest();
 
-        // determine amount of amount of LP required
-        uint256 rate   = buckets.getExchangeRate(fromIndex_, _valueAt(fromIndex_));
-        lpbAmountFrom_ = (amount_ * Book.indexToPrice(fromIndex_) * 1e18 + rate / 2) / rate;
-
+        lpbAmountFrom_ = buckets.collateralToLPs(fromIndex_, _valueAt(fromIndex_), amount_);
         (uint256 lpBalance, ) = lenders.getLenderInfo(fromIndex_, msg.sender);
         if (lpbAmountFrom_ > lpBalance) revert MoveCollateralInsufficientLP();
 
-        // update "to" bucket accounting
-        rate         = buckets.getExchangeRate(toIndex_, _valueAt(toIndex_));
-        lpbAmountTo_ = (amount_ * Book.indexToPrice(toIndex_) * 1e18 + rate / 2) / rate;
+        lpbAmountTo_ = buckets.collateralToLPs(toIndex_, _valueAt(toIndex_), amount_);
 
         // update buckets
         buckets.removeFromBucket(fromIndex_, lpbAmountFrom_, amount_);

@@ -74,10 +74,8 @@ library Book {
         uint256 deposit_,
         uint256 collateral_
     ) internal view returns (uint256 lps_) {
-        uint256 price = indexToPrice(index_);
         uint256 rate  = getExchangeRate(self, index_, deposit_);
-        uint256 quote = collateral_ * price / 1e9;
-        lps_          = Maths.rdiv(quote, rate);
+        return (collateral_ * indexToPrice(index_) * 1e18 + rate / 2) / rate;
     }
 
     function getCollateral(
