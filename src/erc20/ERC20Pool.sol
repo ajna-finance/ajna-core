@@ -124,27 +124,11 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         );
 
         // update lender accounting
-        lenders.removeLPs(
-            fromIndex_,
-            msg.sender,
-            fromBucketLPs_
-        );
-        lenders.addLPs(
-            toIndex_,
-            msg.sender,
-            toBucketLPs_
-        );
+        lenders.removeLPs(fromIndex_, msg.sender, fromBucketLPs_);
+        lenders.addLPs(toIndex_, msg.sender, toBucketLPs_);
         // update buckets
-        buckets.removeCollateral(
-            fromIndex_,
-            fromBucketLPs_,
-            collateralAmountToMove_
-        );
-        buckets.addCollateral(
-            toIndex_,
-            toBucketLPs_,
-            collateralAmountToMove_
-        );
+        buckets.removeCollateral(fromIndex_, fromBucketLPs_, collateralAmountToMove_);
+        buckets.addCollateral(toIndex_, toBucketLPs_, collateralAmountToMove_);
 
         _updateInterestRateAndEMAs(curDebt, _lup());
 
@@ -169,17 +153,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         if (collateralAmountRemoved_ == 0) revert RemoveCollateralNoClaim();
 
         // update lender accounting
-        lenders.removeLPs(
-            index_,
-            msg.sender,
-            redeemedLenderLPs_
-        );
+        lenders.removeLPs(index_, msg.sender, redeemedLenderLPs_);
         // update bucket accounting
-        buckets.removeCollateral(
-            index_,
-            redeemedLenderLPs_,
-            collateralAmountRemoved_
-        );
+        buckets.removeCollateral(index_, redeemedLenderLPs_, collateralAmountRemoved_);
 
         _updateInterestRateAndEMAs(borrowerDebt, _lup());
 

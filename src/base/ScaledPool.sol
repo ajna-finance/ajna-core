@@ -113,14 +113,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
         _add(index_, quoteTokenAmountToAdd_);
 
-        lenders.deposit(
-            index_,
-            msg.sender,
-            bucketLPs_
-        );
-        buckets.addLPs(
-            index_,
-            bucketLPs_);
+        lenders.deposit(index_, msg.sender, bucketLPs_);
+        buckets.addLPs(index_, bucketLPs_);
 
         uint256 newLup = _lup();
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -183,24 +177,12 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 newLup = _lup(); // move lup if necessary and check loan book's htp against new lup
         if (fromIndex_ < toIndex_) if(_htp() > newLup) revert MoveQuoteLUPBelowHTP();
 
-        lenders.removeLPs(
-            fromIndex_,
-            msg.sender,
-            toBucketLPs_ // TODO check why moving toBucketLPs_ instead fromBucketLPs_
-        );
-        lenders.addLPs(
-            toIndex_,
-            msg.sender,
-            toBucketLPs_
-        );
-        buckets.removeLPs(
-            fromIndex_,
-            fromBucketLPs_
-        );
-        buckets.addLPs(
-            toIndex_,
-            toBucketLPs_
-        );
+        // update lender accounting
+        lenders.removeLPs(fromIndex_, msg.sender, toBucketLPs_); // TODO check why moving toBucketLPs_ instead fromBucketLPs_
+        lenders.addLPs(toIndex_, msg.sender, toBucketLPs_);
+        // update buckets
+        buckets.removeLPs(fromIndex_, fromBucketLPs_);
+        buckets.addLPs(toIndex_, toBucketLPs_);
 
         _updateInterestRateAndEMAs(curDebt, newLup);
 
@@ -246,10 +228,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             quoteTokenAmountToRemove_
         );
 
-        (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(
-            index_,
-            msg.sender
-        );
+        (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         if (lenderLPsBalance == 0 || bucketLPs_ > lenderLPsBalance) revert RemoveQuoteInsufficientLPB();
 
         _redeemLPForQuoteToken(bucketLPs_, quoteTokenAmountToRemove_, index_);
@@ -510,16 +489,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             collateralAmountToAdd_
         );
 
-        lenders.addLPs(
-            index_,
-            msg.sender,
-            bucketLPs_
-        );
-        buckets.addCollateral(
-            index_,
-            bucketLPs_,
-            collateralAmountToAdd_
-        );
+        lenders.addLPs(index_, msg.sender, bucketLPs_);
+        buckets.addCollateral(index_, bucketLPs_, collateralAmountToAdd_);
 
         _updateInterestRateAndEMAs(curDebt, _lup());
     }
@@ -538,22 +509,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             collateralAmountToRemove_
         );
 
-        (uint256 lenderLpBalance, ) = lenders.getLenderInfo(
-            index_,
-            msg.sender
-        );
+        (uint256 lenderLpBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
 
-        lenders.removeLPs(
-            index_,
-            msg.sender,
-            bucketLPs_
-        );
-        buckets.removeCollateral(
-            index_,
-            bucketLPs_,
-            collateralAmountToRemove_
-        );
+        lenders.removeLPs(index_, msg.sender, bucketLPs_);
+        buckets.removeCollateral(index_, bucketLPs_, collateralAmountToRemove_);
 
         _updateInterestRateAndEMAs(borrowerDebt, _lup());
     }
@@ -622,9 +582,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         // persist bucket changes
         buckets.removeLPs(index_, lpAmount_);
         lenders.removeLPs(index_,msg.sender, lpAmount_);
-        (, uint256 lastDeposit) = lenders.getLenderInfo(index_, msg.sender);
 
-        // apply early withdrawal penalty if quote token is withdrawn above the PTP
+        (, uint256 lastDeposit) = lenders.getLenderInfo(index_, msg.sender);
         uint256 curDebt = borrowerDebt;
         amount = Lenders.applyEarlyWithdrawalPenalty(
             _calculateFeeRate(),
