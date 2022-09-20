@@ -272,7 +272,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
-    function kick(address borrower_, address newPrev_) external override {
+    function kick(address borrower_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
         Borrower memory borrower = borrowers[borrower_];
@@ -283,7 +283,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        (,,bool auctionActive) = getAuction(borrower_);
+        (,bool auctionActive) = getAuction(borrower_);
         if (auctionActive == true) revert AuctionIsActive();
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
@@ -304,7 +304,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
             bondSize:            bondSize
         });
 
-        _addAuction(borrower_, kickTime, newPrev_);
+        _addAuction(borrower_);
 
         loans.remove(borrower_);
 
@@ -325,7 +325,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         _updateInterestRateAndEMAs(curDebt, lup);
 
         // check liquidation process status
-        (,,bool auctionActive) = getAuction(borrower_);
+        (,bool auctionActive) = getAuction(borrower_);
         if (auctionActive != true) revert AuctionNotActive();
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
@@ -370,7 +370,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
 
         // if recollateralized remove loan from auction
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) {
-            _removeAuction(borrower_);
+            _deactivateAuction(borrower_);
         }
 
         //// TODO: implement flashloan functionality

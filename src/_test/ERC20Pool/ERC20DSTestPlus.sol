@@ -383,8 +383,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     function _assertAuction(AuctionState memory state_) internal {
         (uint256 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidationInfo(state_.borrower);
-        (uint256 val, address next, bool active) = _pool.getAuction(state_.borrower);
-        assertEq(val, state_.kickTime);
+        (address next, bool active) = _pool.getAuction(state_.borrower);
         assertEq(kickTime, state_.kickTime);
         assertEq(referencePrice, state_.referencePrice);
         assertEq(bondFactor, state_.bondFactor);

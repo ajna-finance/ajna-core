@@ -89,7 +89,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         /*** Kick ***/
         /************/
         vm.startPrank(_lender);
-        _pool.kick(_borrower2, address(0));
+        _pool.kick(_borrower2);
         vm.stopPrank();
 
         /**********************/
@@ -166,7 +166,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
 
         vm.startPrank(_lender);
-        _pool.kick(_borrower, address(0));
+        _pool.kick(_borrower);
         vm.stopPrank();
 
         //TODO: assert lender state

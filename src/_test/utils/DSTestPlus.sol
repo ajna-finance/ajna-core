@@ -304,12 +304,12 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
 
 contract QueueInstance is Queue, DSTestPlus {
 
-    function add(address borrower_, uint256 kickTime_, address newPrev_) external {
-        return _addAuction(borrower_, kickTime_, newPrev_);
+    function add(address borrower_) external {
+        return _addAuction(borrower_);
     }
 
-    function remove(address borrower_) external {
-        return _removeAuction(borrower_);
+    function deactivate(address borrower_) external {
+        return _deactivateAuction(borrower_);
     }
 
     function removeHead() external {

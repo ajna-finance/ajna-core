@@ -20,10 +20,12 @@ interface IQueue {
 
     function head() external view returns (address head_);
 
+
     /**
      *  @notice Looks up the threshold price and next pointer for a borrower.
      *  @dev    Used by SDK for offchain iteration through the queue.
      *  @return thresholdPrice, next
      */
-    function getAuction(address borrower_) external view returns (uint256, address, bool);
+    function getAuction(address borrower_) external view returns (address, bool);
+    
 }

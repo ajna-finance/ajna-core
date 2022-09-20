@@ -433,9 +433,8 @@ interface IScaledPool {
     /**
      *  @notice Called by actors to initiate a liquidation.
      *  @param  borrower_ Identifies the loan to liquidate.
-     *  @param  newPrev_ Identifies new previous position in queue that a auction should be inserted behind.
      */
-    function kick(address borrower_, address newPrev_) external;
+    function kick(address borrower_) external;
 
     /**
      *  @notice Called by actor to start a Claimable Reserve Auction (CRA).
