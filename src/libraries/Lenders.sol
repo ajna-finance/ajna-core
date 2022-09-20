@@ -2,6 +2,7 @@
 pragma solidity 0.8.14;
 
 import './Maths.sol';
+import './Book.sol';
 
 library Lenders {
 
@@ -14,7 +15,7 @@ library Lenders {
         uint256 ts;  // timestamp
     }
 
-    function addLPsWithTime(
+    function deposit(
         mapping(uint256 => mapping(address => Lender)) storage self,
         uint256 index_,
         address lender_,
@@ -40,6 +41,24 @@ library Lenders {
         uint256 amount_
     ) internal {
         self[index_][lender_].lps -= amount_;
+    }
+
+    function applyEarlyWithdrawalPenalty(
+        uint256 feeRate_,
+        uint256 depositTime_,
+        uint256 curDebt_,
+        uint256 col_,
+        uint256 maxIndex_,
+        uint256 minIndex_,
+        uint256 amount_
+    ) internal view returns (uint256 amountWithPenalty_){
+        amountWithPenalty_ = amount_;
+        if (col_ != 0 && depositTime_ != 0 && block.timestamp - depositTime_ < 1 days) {
+            uint256 ptp = Maths.wdiv(curDebt_, col_);
+            bool applyPenalty = Book.indexToPrice(maxIndex_) > ptp;
+            if (minIndex_ != 0) applyPenalty = applyPenalty && Book.indexToPrice(minIndex_) < ptp;
+            if (applyPenalty) amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate_);
+        }
     }
 
     function transferLPs(

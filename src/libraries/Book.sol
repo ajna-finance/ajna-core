@@ -73,9 +73,19 @@ library Book {
         uint256 index_,
         uint256 deposit_,
         uint256 collateral_
-    ) internal view returns (uint256 lps_) {
+    ) internal view returns (uint256) {
         uint256 rate  = getExchangeRate(self, index_, deposit_);
         return (collateral_ * indexToPrice(index_) * 1e18 + rate / 2) / rate;
+    }
+
+    function quoteTokensToLPs(
+        mapping(uint256 => Bucket) storage self,
+        uint256 index_,
+        uint256 deposit_,
+        uint256 quoteTokens_
+    ) internal view returns (uint256) {
+        uint256 rate  = getExchangeRate(self, index_, deposit_);
+        return Maths.rdiv(Maths.wadToRay(quoteTokens_), rate);
     }
 
     function getCollateral(

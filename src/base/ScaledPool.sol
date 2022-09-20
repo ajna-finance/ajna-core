@@ -99,17 +99,22 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     /*** Lender External Functions ***/
     /*********************************/
 
-    function addQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256) {
+    function addQuoteToken(uint256 amount_, uint256 index_) external override returns (uint256 lpbChange_) {
         uint256 curDebt = _accruePoolInterest();
 
-        (uint256 lpbChange, uint256 newLup) = _addQuoteAcc(index_, amount_, curDebt);
+        lpbChange_ = buckets.quoteTokensToLPs(index_, _valueAt(index_), amount_);
 
-        lenders.addLPsWithTime(index_, msg.sender, lpbChange);
+        _add(index_, amount_);
+
+        buckets.addLPs(index_, lpbChange_);
+        lenders.deposit(index_, msg.sender, lpbChange_);
+
+        uint256 newLup = _lup();
+        _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move quote token amount from lender to pool
         emit AddQuoteToken(msg.sender, index_, amount_, newLup);
         quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
-        return lpbChange;
     }
 
     function approveLpOwnership(address allowedNewOwner_, uint256 index_, uint256 amount_) external {
@@ -128,32 +133,34 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         (uint256 lpBalance, uint256 lastDeposit) = lenders.getLenderInfo(fromIndex_, msg.sender);
         uint256 amount = Maths.min(maxAmount_, Maths.min(availableQuoteToken, Maths.rrdivw(lpBalance, rate)));
 
-        // calculate amount of LP required to move it
         lpbAmountFrom_ = Maths.wrdivr(amount, rate);
 
-        // update "from" bucket accounting
-        buckets.removeLPs(fromIndex_, lpbAmountFrom_);
         _remove(fromIndex_, amount);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        uint256 col = pledgedCollateral;
-        if (col != 0 && lastDeposit != 0 && block.timestamp - lastDeposit < 1 days) {
-            uint256 ptp = Maths.wdiv(curDebt, col);
-            if (Book.indexToPrice(fromIndex_) > ptp && Book.indexToPrice(toIndex_) < ptp) {
-                amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
-            }
-        }
+        amount = Lenders.applyEarlyWithdrawalPenalty(
+            _calculateFeeRate(),
+            lastDeposit,
+            curDebt,
+            pledgedCollateral,
+            fromIndex_,
+            toIndex_,
+            amount
+        );
 
-        // update "to" bucket accounting
-        uint256 newLup;
-        (lpbAmountTo_, newLup) = _addQuoteAcc(toIndex_, amount, curDebt);
+        lpbAmountTo_ = buckets.quoteTokensToLPs(toIndex_, _valueAt(toIndex_), amount);
 
-        // move lup if necessary and check loan book's htp against new lup
+        _add(toIndex_, amount);
+
+        uint256 newLup = _lup(); // move lup if necessary and check loan book's htp against new lup
         if (fromIndex_ < toIndex_) if(_htp() > newLup) revert MoveQuoteLUPBelowHTP();
 
-        // update lender accounting
+        buckets.removeLPs(fromIndex_, lpbAmountFrom_);
+        buckets.addLPs(toIndex_, lpbAmountTo_);
         lenders.removeLPs(fromIndex_, msg.sender, lpbAmountTo_); // TODO check why moving lpbAmountTo_ instead lpbAmountFrom_
         lenders.addLPs(toIndex_, msg.sender, lpbAmountTo_);
+
+        _updateInterestRateAndEMAs(curDebt, newLup);
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amount, newLup);
     }
@@ -182,11 +189,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         // scale the tree, accumulating interest owed to lenders
         _accruePoolInterest();
 
-        uint256 availableQuoteToken = _valueAt(index_);
-        if (amount_ > availableQuoteToken) revert RemoveQuoteInsufficientQuoteAvailable();
+        uint256 deposit = _valueAt(index_);
+        if (amount_ > deposit) revert RemoveQuoteInsufficientQuoteAvailable();
 
-        uint256 rate = buckets.getExchangeRate(index_, availableQuoteToken);
-        lpAmount_    = Maths.wrdivr(amount_, rate);
+        lpAmount_ = buckets.quoteTokensToLPs(index_, deposit, amount_);
 
         (uint256 lpBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         if (lpBalance == 0 || lpAmount_ > lpBalance) revert RemoveQuoteInsufficientLPB();
@@ -324,16 +330,18 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         (, uint256 lastDeposit) = lenders.getLenderInfo(index_, msg.sender);
 
         // apply early withdrawal penalty if quote token is withdrawn above the PTP
-        uint256 col  = pledgedCollateral;
-        uint256 debt = borrowerDebt;
-        if (col != 0 && lastDeposit != 0 && block.timestamp - lastDeposit < 1 days) {
-            uint256 ptp = Maths.wdiv(debt, col);
-            if (Book.indexToPrice(index_) > ptp) {
-                amount =  Maths.wmul(amount, Maths.WAD - _calculateFeeRate());
-            }
-        }
+        uint256 curDebt = borrowerDebt;
+        amount = Lenders.applyEarlyWithdrawalPenalty(
+            _calculateFeeRate(),
+            lastDeposit,
+            curDebt,
+            pledgedCollateral,
+            index_,
+            0,
+            amount
+        );
 
-        _updateInterestRateAndEMAs(debt, newLup);
+        _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move quote token amount from pool to lender
         emit RemoveQuoteToken(msg.sender, index_, amount, newLup);
@@ -438,17 +446,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     function _lpsToQuoteTokens(uint256 deposit_, uint256 lpTokens_, uint256 index_) internal view returns (uint256 quoteAmount_) {
         uint256 rate = buckets.getExchangeRate(index_, deposit_);
         quoteAmount_ = Maths.min(deposit_, Maths.rayToWad(Maths.rmul(lpTokens_, rate))); // TODO optimize to calculate bucket size only once
-    }
-
-    function _addQuoteAcc(uint256 index_, uint256 amount_, uint256 curDebt_) private returns (uint256 lpbChange_, uint256 lup_){
-        uint256 rate = buckets.getExchangeRate(index_, _valueAt(index_));
-        lpbChange_ = Maths.rdiv(Maths.wadToRay(amount_), rate);
-        buckets.addLPs(index_, lpbChange_);
-
-        _add(index_, amount_);
-
-        lup_ = _lup();
-        _updateInterestRateAndEMAs(curDebt_, lup_);
     }
 
     function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
