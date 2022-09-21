@@ -312,10 +312,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
     }
 
     // TODO: Add reentrancy guard
-    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external override {
+    function take(address borrower_, uint256 maxAmount_, bytes memory swapCalldata_) external override {
         Borrower    memory borrower    = borrowers[borrower_];
         Liquidation memory liquidation = liquidations[borrower_];
-
 
         (uint256 curDebt) = _accruePoolInterest();
         (borrower.debt,) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
@@ -327,49 +326,42 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         (,,bool auctionActive) = getAuction(borrower_);
         if (auctionActive != true) revert AuctionNotActive();
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
+        // Calculate BPF
         // TODO: remove auction from queue if auctionDebt == 0;
         uint256 price = _auctionPrice(liquidation.referencePrice, uint256(liquidation.kickTime));
         int256 bpf = _bpf(borrower, liquidation, price);
 
-        uint256 repayAmount;
-
-        amount_ = Maths.min(Maths.wmul(price, borrower.collateral), amount_);
-        if (Maths.wmul(amount_, uint256(1e18 - bpf)) >= borrower.debt) {
+        // Calculate amounts
+        uint256 amount = Maths.min(Maths.wmul(price, borrower.collateral), maxAmount_);
+        uint256 repayAmount = Maths.wmul(amount, uint256(1e18 - bpf));
+        if (repayAmount >= borrower.debt) {
             repayAmount = borrower.debt;
-            amount_ = Maths.wdiv(borrower.debt, uint256(1e18 - bpf));
-        } else {
-            repayAmount = uint256(PRBMathSD59x18.mul(
-                int256(amount_),
-                1e18 - bpf)
-            );
+            amount = Maths.wdiv(borrower.debt, uint256(1e18 - bpf));
         }
 
         if (bpf >= 0) {
-            // Kicker is rewarded
-            uint256 reward = amount_ - repayAmount;
+            // Take is below neutralPrice, Kicker is rewarded
+            uint256 reward = amount - repayAmount;
             liquidation.bondSize += reward;
             borrower.debt -= repayAmount;
  
         } else {     
-            // Kicker is penalized
-            int256 penalty = PRBMathSD59x18.mul(
-                    int256(amount_),
-                    bpf
-                );
-            liquidation.bondSize -= uint256(-penalty);
+            // Take is above neutralPrice, Kicker is penalized
             // TODO: increase the reserves here somehow?
+            int256 penalty = PRBMathSD59x18.mul(int256(amount), bpf);
+            liquidation.bondSize -= uint256(-penalty);
             borrower.debt -= repayAmount;
         }
 
-        //// Reduce liquidation's remaining collateral
-        borrower.collateral -= Maths.wdiv(amount_, price);
+        // Reduce liquidation's remaining collateral
+        borrower.collateral -= Maths.wdiv(amount, price);
         borrowers[borrower_] = borrower;
         liquidations[borrower_] = liquidation;
 
-        // if recollateralized remove loan from auction
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) {
+        // If recollateralized remove loan from auction
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) {
             _removeAuction(borrower_);
         }
 
@@ -383,8 +375,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool, Queue {
         //// Get current swap price
         //uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralToPurchase);
 
-        emit Take(borrower_, amount_, Maths.wdiv(amount_, price), 0);
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount_ / quoteTokenScale);
+        emit Take(borrower_, amount, Maths.wdiv(amount, price), 0);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 
     // TODO: remove this method, it is for testing only.
