@@ -100,9 +100,10 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // move collateral from sender to pool
         emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
+        bool subset = isSubset;
         for (uint256 i = 0; i < tokenIdsToPledge_.length;) {
             uint256 tokenId = tokenIdsToPledge_[i];
-            if (isSubset && !_tokenIdsAllowed.get(tokenId)) revert OnlySubset();
+            if (subset && !_tokenIdsAllowed.get(tokenId)) revert OnlySubset();
 
             _poolCollateralTokenIds.set(tokenId);
             lockedNFTs[borrower_].set(tokenId);
@@ -157,9 +158,10 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // move required collateral from sender to pool
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
+        bool subset = isSubset;
         for (uint256 i = 0; i < tokenIdsToAdd_.length;) {
             uint256 tokenId = tokenIdsToAdd_[i];
-            if (isSubset && !_tokenIdsAllowed.get(tokenId)) revert OnlySubset();
+            if (subset && !_tokenIdsAllowed.get(tokenId)) revert OnlySubset();
 
             _bucketCollateralTokenIds.set(tokenId);
 
