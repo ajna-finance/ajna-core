@@ -38,6 +38,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     /// @dev Defaults to length 0 if the whole collection is to be used
     BitMaps.BitMap private _tokenIdsAllowed;
 
+    /// @dev pledged collateral: borrower address -> Set of NFT Token Ids pledged by the borrower
     mapping(address => BitMaps.BitMap) private lockedNFTs;
 
     mapping(address => NFTLiquidationInfo) private liquidations;

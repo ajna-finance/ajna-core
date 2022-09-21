@@ -761,8 +761,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         price_             = Book.indexToPrice(index_);
         quoteTokens_       = _valueAt(index_);           // quote token in bucket, deposit + interest (WAD)
         collateral_        = buckets[index_].collateral; // unencumbered collateral in bucket (WAD)
-        bucketLPs_         = buckets[index_].lps;       // outstanding LP balance (WAD)
-        scale_             = _scale(index_);            // lender interest multiplier (WAD)
+        bucketLPs_         = buckets[index_].lps;        // outstanding LP balance (WAD)
+        scale_             = _scale(index_);             // lender interest multiplier (WAD)
         exchangeRate_      = buckets.getExchangeRate(index_, quoteTokens_);
         liquidityToPrice_  = _prefixSum(index_);
     }

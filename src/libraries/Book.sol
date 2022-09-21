@@ -61,11 +61,11 @@ library Book {
         mapping(uint256 => Bucket) storage self,
         uint256 index_,
         uint256 quoteToken_
-    ) internal view returns (uint256 rate) {
+    ) internal view returns (uint256) {
         Bucket memory bucket = self[index_];
-        uint256 bucketSize = quoteToken_ * 10**18;                          // 10^36
-        if (bucket.collateral != 0) bucketSize += indexToPrice(index_) * bucket.collateral; // 10^36 + // 10^36
-        return bucket.lps != 0 ? bucketSize * 10**18 / bucket.lps : Maths.RAY; // 10^27
+        if (bucket.lps == 0) return  Maths.RAY;
+        uint256 bucketSize = quoteToken_ * 10**18 + indexToPrice(index_) * bucket.collateral;  // 10^36 + // 10^36
+        return bucketSize * 10**18 / bucket.lps; // 10^27
     }
 
     function collateralToLPs(

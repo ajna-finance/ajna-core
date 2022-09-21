@@ -65,15 +65,15 @@ library Lenders {
         uint256 depositTime_,
         uint256 curDebt_,
         uint256 col_,
-        uint256 maxIndex_,
-        uint256 minIndex_,
+        uint256 fromIndex_,
+        uint256 toIndex_,
         uint256 amount_
     ) internal view returns (uint256 amountWithPenalty_){
         amountWithPenalty_ = amount_;
         if (col_ != 0 && depositTime_ != 0 && block.timestamp - depositTime_ < 1 days) {
             uint256 ptp = Maths.wdiv(curDebt_, col_);
-            bool applyPenalty = Book.indexToPrice(maxIndex_) > ptp;
-            if (minIndex_ != 0) applyPenalty = applyPenalty && Book.indexToPrice(minIndex_) < ptp;
+            bool applyPenalty = Book.indexToPrice(fromIndex_) > ptp;
+            if (toIndex_ != 0) applyPenalty = applyPenalty && Book.indexToPrice(toIndex_) < ptp;
             if (applyPenalty) amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate_);
         }
     }
