@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
 import './Maths.sol';
 import './Book.sol';
 
-library Lenders {
+library Actors {
 
     /***************/
     /*** Lenders ***/
@@ -84,5 +85,78 @@ library Lenders {
         address lender_
     ) internal view returns (uint256, uint256) {
         return (self[index_][lender_].lps, self[index_][lender_].ts);
+    }
+
+    /***************/
+    /*** Borrowers ***/
+    /***************/
+
+    /**
+     *  @notice Struct holding borrower related info.
+     *  @param  debt             Borrower debt, WAD units.
+     *  @param  collateral       Collateral deposited by borrower, WAD units.
+     *  @return mompFactor       Most Optimistic Matching Price (MOMP) / inflator, used in neutralPrice calc, WAD units.
+     *  @param  inflatorSnapshot Current borrower inflator snapshot, WAD units.
+     */
+    struct Borrower {
+        uint256 debt;             // [WAD]
+        uint256 collateral;       // [WAD]
+        uint256 mompFactor;       // [WAD]
+        uint256 inflatorSnapshot; // [WAD]
+    }
+
+    function getBorrowerInfo(
+        mapping(address => Borrower) storage self,
+        address borrower_,
+        uint256 poolInflator_
+    ) internal view returns (uint256 debt_, uint256 collateral_) {
+        debt_       = self[borrower_].debt;
+        collateral_ = self[borrower_].collateral;
+        if (debt_ != 0) {
+            debt_ = Maths.wmul(debt_, Maths.wdiv(poolInflator_, self[borrower_].inflatorSnapshot));
+        }
+    }
+
+    function collateralization(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) internal pure returns (uint256 collateralization_) {
+        uint256 encumbered =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        collateralization_ = collateral_ != 0 && encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+    }
+
+    function t0ThresholdPrice(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 inflator_
+    ) internal pure returns (uint256 tp_) {
+        if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
+    }
+
+    function update(
+        mapping(address => Borrower) storage self,
+        address borrower_,
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 mompFactor_,
+        uint256 inflator_
+    ) internal {
+        Borrower storage borrower = self[borrower_];
+        borrower.debt             = debt_;
+        borrower.collateral       = collateral_;
+        borrower.mompFactor       = mompFactor_;
+        borrower.inflatorSnapshot = inflator_;
+    }
+
+    function updateDebt(
+        mapping(address => Borrower) storage self,
+        address borrower_,
+        uint256 debt_,
+        uint256 inflator_
+    ) internal {
+        Borrower storage borrower = self[borrower_];
+        borrower.debt             = debt_;
+        borrower.inflatorSnapshot = inflator_;
     }
 }

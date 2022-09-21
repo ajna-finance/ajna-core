@@ -7,6 +7,7 @@ import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
 import { Maths } from "../../libraries/Maths.sol";
+import '../../libraries/Actors.sol';
 
 import { DSTestPlus } from "../utils/DSTestPlus.sol";
 import { Token }      from "../utils/Tokens.sol";
@@ -377,7 +378,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(mompFactor,  state_.mompFactor);
         assertEq(inflator,    state_.inflator);
 
-        assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, lup), state_.collateralization);
+        assertEq(Actors.collateralization(state_.debt, state_.collateral, lup), state_.collateralization);
     }
 
     function _assertPoolPrices(PoolPricesInfo memory state_) internal {

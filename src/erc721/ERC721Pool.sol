@@ -15,13 +15,14 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
 import '../libraries/Book.sol';
-import '../libraries/Lenders.sol';
+import '../libraries/Actors.sol';
 
 contract ERC721Pool is IERC721Pool, ScaledPool {
     using SafeERC20 for ERC20;
     using BitMaps   for BitMaps.BitMap;
     using Book      for mapping(uint256 => Book.Bucket);
-    using Lenders   for mapping(uint256 => mapping(address => Lenders.Lender));
+    using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
+    using Actors    for mapping(address => Actors.Borrower);
     using Heap      for Heap.Data;
 
     /***********************/
@@ -224,14 +225,16 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     function kick(address borrower_) external override {
         (uint256 curDebt) = _accruePoolInterest();
 
-        Borrower storage borrower = borrowers[borrower_];
-        if (borrower.debt == 0) revert KickNoDebt();
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+            borrower_,
+            inflatorSnapshot
+        );
+        if (borrowerAccruedDebt == 0) revert KickNoDebt();
 
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
         //  which includes an array of the borrower's tokenIds being auctioned off.

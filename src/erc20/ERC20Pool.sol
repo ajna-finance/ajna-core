@@ -12,12 +12,13 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
 import '../libraries/Book.sol';
-import '../libraries/Lenders.sol';
+import '../libraries/Actors.sol';
 
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
-    using Lenders   for mapping(uint256 => mapping(address => Lenders.Lender));
+    using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
+    using Actors    for mapping(address => Actors.Borrower);
     using Heap      for Heap.Data;
 
     /***********************/
@@ -196,49 +197,60 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     function kick(address borrower_) external override {
-        (uint256 curDebt) = _accruePoolInterest();
+        uint256 curDebt = _accruePoolInterest();
+        uint256 inflator = inflatorSnapshot;
 
-        Borrower memory borrower = borrowers[borrower_];
-        if (borrower.debt == 0) revert KickNoDebt();
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+            borrower_,
+            inflator
+        );
+        if (borrowerAccruedDebt == 0) revert KickNoDebt();
 
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
         uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
 
-        borrowers[borrower_] = borrower;
+        uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
+        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
+
+        borrowers.updateDebt(
+            borrower_,
+            borrowerAccruedDebt,
+            inflator
+        );
+
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),
             referencePrice:      uint128(_hpbIndex()),
-            remainingCollateral: borrower.collateral,
-            remainingDebt:       borrower.debt
+            remainingCollateral: borrowerPledgedCollateral,
+            remainingDebt:       borrowerAccruedDebt
         });
 
-        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         // TODO: Uncomment when needed
         // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
 
-        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
-
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
         // TODO: Account for repossessed collateral
-        liquidationBondEscrowed += Maths.wmul(borrower.debt, 0.01 * 1e18);
+        liquidationBondEscrowed += Maths.wmul(borrowerAccruedDebt, 0.01 * 1e18);
 
         // Post the liquidation bond
         // Repossess the borrowers collateral, initialize the auction cooldown timer
 
-        emit Kick(borrower_, borrower.debt, borrower.collateral);
+        emit Kick(borrower_, borrowerAccruedDebt, borrowerPledgedCollateral);
     }
 
     // TODO: Add reentrancy guard
     function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external override {
-        Borrower        memory borrower    = borrowers[borrower_];
         LiquidationInfo memory liquidation = liquidations[borrower_];
-
         // check liquidation process status
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
+
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+            borrower_,
+            inflatorSnapshot
+        );
+        if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: calculate using price decrease function and amount_
         uint256 liquidationPrice = Maths.WAD;

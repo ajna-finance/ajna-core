@@ -486,19 +486,6 @@ interface IScaledPool {
     /**********************/
 
     /**
-     *  @notice Calculate the current collateralization ratio of the borrower at a specified price, based on borrower debt and collateralization.
-     *  @param  debt_                      Borrower debt.
-     *  @param  collateral_                Borrower collateral.
-     *  @param  price_                     The price to calculate collateralization for.
-     *  @return borrowerCollateralization_ Current borrower collateralization ratio.
-     */
-    function borrowerCollateralization(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 price_
-    ) external view returns (uint256 borrowerCollateralization_);
-
-    /**
      *  @notice Get a bucket struct for a given index.
      *  @param  index_             The index of the bucket to retrieve.
      *  @return price_             Bucket price (WAD)
