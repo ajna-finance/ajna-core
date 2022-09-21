@@ -60,7 +60,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         // enforce EMA and target utilization update
@@ -192,7 +192,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1.000005707778846384 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -215,7 +215,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1.000011415590271509 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
     }
@@ -249,7 +249,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_pool.debtEma(),   0);
@@ -283,7 +283,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_pool.debtEma(),   0);
@@ -316,7 +316,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_pool.debtEma(),   0);

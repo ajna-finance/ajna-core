@@ -184,12 +184,14 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     Token         internal _quote;
     ERC20Pool     internal _pool;
     PoolInfoUtils internal _poolUtils;
+    uint256       internal _startTime;
 
     constructor() {
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolUtils  = new PoolInfoUtils();
+        _startTime  = block.timestamp;
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
