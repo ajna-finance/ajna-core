@@ -82,17 +82,17 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     Heap.Data internal loans;
 
-    uint256 internal poolInitializations = 0;
+    uint256 internal poolInitializations;
 
     /**
      *  @notice Time a Claimable Reserve Auction was last kicked.
      */
-    uint256 internal reserveAuctionKicked = 0;
+    uint256 internal reserveAuctionKicked;
 
     /**
      *  @notice Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
      */
-    uint256 internal reserveAuctionUnclaimed = 0;
+    uint256 internal reserveAuctionUnclaimed;
 
 
     /*********************************/

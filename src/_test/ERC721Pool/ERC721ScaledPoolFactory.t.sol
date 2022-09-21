@@ -110,6 +110,7 @@ contract ERC721ScaledPoolFactoryTest is DSTestPlus {
         assertEq(_NFTCollectionPool.interestRate(),               0.05 * 10**18);
         assertEq(_NFTCollectionPool.interestRateUpdate(),         0);
         assertEq(_NFTCollectionPool.minFee(),                     0.0005 * 10**18);
+        assertEq(_NFTCollectionPool.isSubset(),                   false);
     }
 
     /**************************************/
@@ -174,6 +175,7 @@ contract ERC721ScaledPoolFactoryTest is DSTestPlus {
         assertEq(_NFTSubsetOnePool.interestRate(),               0.05 * 10**18);
         assertEq(_NFTSubsetOnePool.interestRateUpdate(),         0);
         assertEq(_NFTSubsetOnePool.minFee(),                     0.0005 * 10**18);
+        assertEq(_NFTSubsetOnePool.isSubset(),                   true);
 
         assertTrue(_NFTSubsetOnePool.isTokenIdAllowed(1));
         assertTrue(_NFTSubsetOnePool.isTokenIdAllowed(5));

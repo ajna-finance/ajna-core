@@ -43,6 +43,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
     mapping(address => NFTLiquidationInfo) private liquidations;
 
+    bool public isSubset;
+
     /****************************/
     /*** Initialize Functions ***/
     /****************************/
@@ -75,6 +77,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         address ajnaTokenAddress_
     ) external override {
         this.initialize(rate_, ajnaTokenAddress_);
+        isSubset = true;
 
         // add subset of tokenIds allowed in the pool
         for (uint256 id = 0; id < tokenIds_.length;) {
@@ -99,7 +102,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
         for (uint256 i = 0; i < tokenIdsToPledge_.length;) {
             uint256 tokenId = tokenIdsToPledge_[i];
-            if (!_tokenIdsAllowed.get(tokenId)) revert OnlySubset();
+            if (isSubset && !_tokenIdsAllowed.get(tokenId)) revert OnlySubset();
 
             _poolCollateralTokenIds.set(tokenId);
             lockedNFTs[borrower_].set(tokenId);
@@ -156,7 +159,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
         for (uint256 i = 0; i < tokenIdsToAdd_.length;) {
             uint256 tokenId = tokenIdsToAdd_[i];
-            if (!_tokenIdsAllowed.get(tokenId)) revert OnlySubset();
+            if (isSubset && !_tokenIdsAllowed.get(tokenId)) revert OnlySubset();
 
             _bucketCollateralTokenIds.set(tokenId);
 
