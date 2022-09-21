@@ -67,8 +67,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
         assertEq(borrowerDebt,         10_009.615384615384620000 * 1e18);
         assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);
-        assertEq(_pool.encumberedCollateral(borrowerPendingDebt, _pool.lup()), 1.001368006956135433 * 1e18);
-        assertEq(_pool.borrowerCollateralization(borrowerPendingDebt, collateralDeposited, _pool.lup()), 0.998633861930247030 * 1e18);
+        assertEq(_pool.encumberedCollateral(borrowerPendingDebt, _lup()), 1.001368006956135433 * 1e18);
+        assertEq(_pool.borrowerCollateralization(borrowerPendingDebt, collateralDeposited, _lup()), 0.998633861930247030 * 1e18);
         assertEq(borrowerInflator,     1e18);
 
         ( uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt ) = _pool.liquidations(_borrower2);
@@ -98,8 +98,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         assertEq(borrowerDebt,         10_030.204233142901661009 * 1e18);  // Updated to reflect debt
         assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);  // Pending debt is unchanged
         assertEq(collateralDeposited,  1e18);                              // Unchanged
-        assertEq(_pool.encumberedCollateral(borrowerDebt, _pool.lup()), 1.001368006956135433 * 1e18);  // Unencumbered collateral is unchanged because based off pending debt
-        assertEq(_pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _pool.lup()), 0.998633861930247030 * 1e18);  // Unchanged because based off pending debt
+        assertEq(_pool.encumberedCollateral(borrowerDebt, _lup()), 1.001368006956135433 * 1e18);  // Unencumbered collateral is unchanged because based off pending debt
+        assertEq(_pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _lup()), 0.998633861930247030 * 1e18);  // Unchanged because based off pending debt
         assertEq(borrowerInflator,     1.002056907057504104 * 1e18);       // Inflator is updated to reflect new debt
 
         ( kickTime, referencePrice, remainingCollateral, remainingDebt ) = _pool.liquidations(_borrower2);
@@ -148,8 +148,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
         emit log_named_uint("collateralDeposited ", collateralDeposited);
         emit log_named_uint("mompFactor ",           mompFactor);
-        emit log_named_uint("collateralEncumbered", _pool.encumberedCollateral(borrowerDebt, _pool.lup()));
-        emit log_named_uint("collateralization   ", _pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _pool.lup()));
+        emit log_named_uint("collateralEncumbered", _pool.encumberedCollateral(borrowerDebt, _lup()));
+        emit log_named_uint("collateralization   ", _pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _lup()));
         emit log_named_uint("borrowerInflator    ", borrowerInflator);
     }
 }

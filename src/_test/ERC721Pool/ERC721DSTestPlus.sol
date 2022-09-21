@@ -148,19 +148,21 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     
     function _assertPool(PoolState memory state_) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        
-        assertEq(pool.htp(), state_.htp);
-        assertEq(pool.lup(), state_.lup);
+        ( , uint256 htp, uint256 lup, ) = pool.poolPricesInfo();
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = pool.poolLoansInfo();
+        (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = pool.poolUtilizationInfo();
+        assertEq(htp, state_.htp);
+        assertEq(lup, state_.lup);
 
-        assertEq(pool.poolSize(),              state_.poolSize);
-        assertEq(pool.pledgedCollateral(),     state_.pledgedCollateral);
-        assertEq(pool.borrowerDebt(),          state_.borrowerDebt);
-        assertEq(pool.poolActualUtilization(), state_.actualUtilization);
-        assertEq(pool.poolTargetUtilization(), state_.targetUtilization);
-        assertEq(pool.poolMinDebtAmount(),     state_.minDebtAmount);
+        assertEq(poolSize,                 state_.poolSize);
+        assertEq(pool.pledgedCollateral(), state_.pledgedCollateral);
+        assertEq(pool.borrowerDebt(),      state_.borrowerDebt);
+        assertEq(poolActualUtilization,    state_.actualUtilization);
+        assertEq(poolTargetUtilization,    state_.targetUtilization);
+        assertEq(poolMinDebtAmount,        state_.minDebtAmount);
 
-        assertEq(pool.loansCount(),  state_.loans);
-        assertEq(pool.maxBorrower(), state_.maxBorrower);
+        assertEq(loansCount,  state_.loans);
+        assertEq(maxBorrower, state_.maxBorrower);
 
         assertEq(pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
     }
@@ -168,7 +170,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
 
-        (uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.reserveAuction();
+        ( , , uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.poolReservesInfo();
         assertEq(claimableReservesRemaining, state_.claimableReservesRemaining);
         assertEq(auctionPrice, state_.auctionPrice);
         assertEq(timeRemaining, state_.timeRemaining);
@@ -176,7 +178,48 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _assertReserveAuctionPrice(uint256 expectedPrice) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        (, uint256 auctionPrice, ) = pool.reserveAuction();
+        ( , , , uint256 auctionPrice, ) = pool.poolReservesInfo();
         assertEq(auctionPrice, expectedPrice);
+    }
+
+    function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {
+        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
+        ( price_, , , , , , ) = pool.bucketAt(index_);
+    }
+
+    function _htp() internal view returns (uint256 htp_) {
+        (, htp_, , ) = _subsetPool.poolPricesInfo();
+    }
+
+    function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
+        ( , , , , , exchangeRate_, ) = _subsetPool.bucketAt(index_);
+    }
+
+    function _lup() internal view returns (uint256 lup_) {
+        (, , lup_, ) = _subsetPool.poolPricesInfo();
+    }
+
+    function _poolSize() internal view returns (uint256 poolSize_) {
+        (poolSize_, , , ) = _subsetPool.poolLoansInfo();
+    }
+
+    function _poolTargetUtilization() internal view returns (uint256 utilization_) {
+        ( , , , utilization_) = _subsetPool.poolUtilizationInfo();
+    }
+
+    function _poolActualUtilization() internal view returns (uint256 utilization_) {
+        ( , , utilization_, ) = _subsetPool.poolUtilizationInfo();
+    }
+
+    function _poolMinDebtAmount() internal view returns (uint256 minDebt_) {
+        ( minDebt_, , , ) = _subsetPool.poolUtilizationInfo();
+    }
+
+    function _loansCount() internal view returns (uint256 loansCount_) {
+        ( , loansCount_, , ) = _subsetPool.poolLoansInfo();
+    }
+
+    function _maxBorrower() internal view returns (address maxBorrower_) {
+        ( , , maxBorrower_, ) = _subsetPool.poolLoansInfo();
     }
 }

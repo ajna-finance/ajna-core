@@ -22,7 +22,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
     }
 
     function testMulticallDepostQuoteToken() external {
-        assertEq(_pool.poolSize(), 0);
+        assertEq(_poolSize(), 0);
 
         bytes[] memory callsToExecute = new bytes[](3);
 
@@ -59,27 +59,33 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);                
         _pool.multicall(callsToExecute);
 
-        assertEq(_pool.htp(), 0);
-        assertEq(_pool.lup(), BucketMath.MAX_PRICE);
-        assertEq(_pool.hpb(), _pool.indexToPrice(2550));
+
+        _assertPoolPrices(
+            PoolPricesInfo({
+                htp: 0,
+                hpb: 3_010.892022197881557845 * 1e18,
+                lup: BucketMath.MAX_PRICE,
+                lupIndex: 0
+            })
+        );
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 30_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        170_000 * 1e18);
-        assertEq(_pool.poolSize(),                 30_000 * 1e18);
+        assertEq(_poolSize(),                      30_000 * 1e18);
 
         // check buckets
-        (uint256 lpBalance, ) = _pool.bucketLenders(2550, _lender);
-        assertEq(lpBalance,                10_000 * 1e27);
-        assertEq(_pool.exchangeRate(2550), 1 * 1e27);
+        (uint256 lpBalance, ) = _pool.lenders(2550, _lender);
+        assertEq(lpBalance,           10_000 * 1e27);
+        assertEq(_exchangeRate(2550), 1 * 1e27);
 
-        (lpBalance, ) = _pool.bucketLenders(2551, _lender);
-        assertEq(lpBalance,                10_000 * 1e27);
-        assertEq(_pool.exchangeRate(2551), 1 * 1e27);
+        (lpBalance, ) = _pool.lenders(2551, _lender);
+        assertEq(lpBalance,           10_000 * 1e27);
+        assertEq(_exchangeRate(2551), 1 * 1e27);
 
-        (lpBalance, ) = _pool.bucketLenders(2552, _lender);
-        assertEq(lpBalance,                10_000 * 1e27);
-        assertEq(_pool.exchangeRate(2552), 1 * 1e27);
+        (lpBalance, ) = _pool.lenders(2552, _lender);
+        assertEq(lpBalance,           10_000 * 1e27);
+        assertEq(_exchangeRate(2552), 1 * 1e27);
     }
 
     function testMulticallRevertString() public {

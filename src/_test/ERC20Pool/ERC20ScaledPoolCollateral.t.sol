@@ -160,7 +160,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         _pullCollateral(
             PullSpecs({
                 from:   _borrower,
-                amount: 50 * 1e18 - _pool.encumberedCollateral(21_049.006823139002918431 * 1e18, _pool.lup())
+                amount: 50 * 1e18 - _pool.encumberedCollateral(21_049.006823139002918431 * 1e18, _lup())
             })
         );
 
@@ -238,8 +238,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _bidder,
                 amount: 4 * 1e18,
-                index:  2550,
-                price: _pool.indexToPrice(2550)
+                index:  2550
             })
         );
 
@@ -266,7 +265,6 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   1.53 * 1e18,
                 index:    2550,
-                price:    _pool.indexToPrice(2550),
                 lpRedeem: 4_606.664793962758783502850000000 * 1e27
             })
         );
@@ -291,7 +289,6 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   2.47 * 1e18,
                 index:    2550,
-                price:    _pool.indexToPrice(2550),
                 lpRedeem: 7_436.90329482876744787715 * 1e27
             })
         );
@@ -320,8 +317,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _bidder,
                 amount: 1 * 1e18,
-                index:  1530,
-                price: _pool.indexToPrice(1530)
+                index:  1530
             })
         );
 
@@ -330,7 +326,6 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   0.5 * 1e18,
                 index:    1530,
-                price:    _pool.indexToPrice(1530),
                 lpRedeem: 243_808.1263305875209909205 * 1e27
             })
         );
@@ -357,7 +352,6 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   0.5 * 1e18,
                 index:    1530,
-                price:    _pool.indexToPrice(1530),
                 lpRedeem: 243_808.1263305875209909205 * 1e27
             })
         );
@@ -412,16 +406,14 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _lender,
                 amount: 16.3 * 1e18,
-                index:  3333,
-                price: _pool.indexToPrice(3333)
+                index:  3333
             })
         );
         _addCollateral(
             AddCollateralSpecs({
                 from:   _lender,
                 amount: 3.7 * 1e18,
-                index:  3334,
-                price: _pool.indexToPrice(3334)
+                index:  3334
             })
         );
 
@@ -439,8 +431,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _borrower,
                 amount: 1.3 * 1e18,
-                index:  3334,
-                price: _pool.indexToPrice(3334)
+                index:  3334
             })
         );
         // should revert if actor doesn't have enough LP to move specified amount
@@ -455,19 +446,19 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
                 amount:       3.7 * 1e18,
                 fromIndex:    3334,
                 toIndex:      3333,
-                lpRedeemFrom: 223.205292406408929929926000068 * 1e27,
-                lpRedeemTo:   224.321318868440972760613496942 * 1e27
+                lpRedeemFrom: 223.2052924064089299299 * 1e27,
+                lpRedeemTo:   224.3213188684409727605 * 1e27
             })
         );
 
         // check bucket state and bidder's LPs
         BucketState[] memory bucketStates = new BucketState[](2);
-        bucketStates[0] = BucketState({index: 3333, LPs: 1_212.547669559140393300613496942 * 1e27, collateral: 20 * 1e18});
-        bucketStates[1] = BucketState({index: 3334, LPs: 78.423481115765299705109135142 * 1e27, collateral: 1.3 * 1e18});
+        bucketStates[0] = BucketState({index: 3333, LPs: 1_212.5476695591403933 * 1e27, collateral: 20 * 1e18});
+        bucketStates[1] = BucketState({index: 3334, LPs: 78.4234811157652997051 * 1e27, collateral: 1.3 * 1e18});
         _assertBuckets(bucketStates);
         BucketLP[] memory lps = new BucketLP[](2);
-        lps[0] = BucketLP({index: 3334, balance: 73999932, time: 0}); // FIXME: optimized LP calculation leaves 73999932 LP here
-        lps[1] = BucketLP({index: 3333, balance: 1_212.547669559140393300613496942 * 1e27, time: 0});
+        lps[0] = BucketLP({index: 3334, balance: 0, time: 0});
+        lps[1] = BucketLP({index: 3333, balance: 1_212.5476695591403933 * 1e27, time: 0});
         _assertLPs(
             LenderLPs({
                 lender:    _lender,
@@ -487,8 +478,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
             AddCollateralSpecs({
                 from:   _lender,
                 amount: 1 * 1e18,
-                index:  fromBucket,
-                price: _pool.indexToPrice(1369)
+                index:  fromBucket
             })
         );
         skip(2 hours);

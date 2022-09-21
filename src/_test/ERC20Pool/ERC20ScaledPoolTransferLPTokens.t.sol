@@ -114,19 +114,19 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.addQuoteToken(30_000 * 1e18, indexes[2]);
 
         // check lenders lp balance
-        (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.bucketLenders(indexes[0], _lender1);
+        (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.lenders(indexes[0], _lender1);
         assertEq(lpBalance, 10_000 * 1e27);
         assertEq(lastQuoteDeposit, 3600);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
         assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
         assertEq(lpBalance, 30_000 * 1e27);
 
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], _lender2);
+        (lpBalance, ) = _pool.lenders(indexes[0], _lender2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], _lender2);
+        (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], _lender2);
+        (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
         assertEq(lpBalance, 0);
 
         // set allowed owner to lender2 address
@@ -145,19 +145,19 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check lenders lp balance
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[0], _lender1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
         assertEq(lpBalance, 0);
 
-        (lpBalance, lastQuoteDeposit) = _pool.bucketLenders(indexes[0], _lender2);
+        (lpBalance, lastQuoteDeposit) = _pool.lenders(indexes[0], _lender2);
         assertEq(lpBalance, 10_000 * 1e27);
         assertEq(lastQuoteDeposit, 3600);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], _lender2);
+        (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
         assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], _lender2);
+        (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
         assertEq(lpBalance, 30_000 * 1e27);
     }
 
@@ -177,18 +177,18 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.addQuoteToken(30_000 * 1e18, depositIndexes[2]);
 
         // check lenders lp balance
-        (uint256 lpBalance, ) = _pool.bucketLenders(depositIndexes[0], _lender1);
+        (uint256 lpBalance, ) = _pool.lenders(depositIndexes[0], _lender1);
         assertEq(lpBalance, 10_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[1], _lender1);
+        (lpBalance, ) = _pool.lenders(depositIndexes[1], _lender1);
         assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[2], _lender1);
+        (lpBalance, ) = _pool.lenders(depositIndexes[2], _lender1);
         assertEq(lpBalance, 30_000 * 1e27);
 
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[0], _lender2);
+        (lpBalance, ) = _pool.lenders(depositIndexes[0], _lender2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[1], _lender2);
+        (lpBalance, ) = _pool.lenders(depositIndexes[1], _lender2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[2], _lender2);
+        (lpBalance, ) = _pool.lenders(depositIndexes[2], _lender2);
         assertEq(lpBalance, 0);
 
         // set allowed owner to lender2 address
@@ -206,18 +206,18 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.transferLPTokens(_lender1, _lender2, transferIndexes);
 
         // check lenders lp balance
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[0], _lender1);
+        (lpBalance, ) = _pool.lenders(depositIndexes[0], _lender1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[1], _lender1);
+        (lpBalance, ) = _pool.lenders(depositIndexes[1], _lender1);
         assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[2], _lender1);
+        (lpBalance, ) = _pool.lenders(depositIndexes[2], _lender1);
         assertEq(lpBalance, 0);
 
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[0], _lender2);
+        (lpBalance, ) = _pool.lenders(depositIndexes[0], _lender2);
         assertEq(lpBalance, 10_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[1], _lender2);
+        (lpBalance, ) = _pool.lenders(depositIndexes[1], _lender2);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(depositIndexes[2], _lender2);
+        (lpBalance, ) = _pool.lenders(depositIndexes[2], _lender2);
         assertEq(lpBalance, 30_000 * 1e27);
     }
 
@@ -240,20 +240,20 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.addQuoteToken(15_000 * 1e18, indexes[2]);
 
         // check lenders lp balance
-        (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.bucketLenders(indexes[0], _lender1);
+        (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.lenders(indexes[0], _lender1);
         assertEq(lpBalance, 10_000 * 1e27);
         assertEq(lastQuoteDeposit, 3600);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
         assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
         assertEq(lpBalance, 30_000 * 1e27);
 
-        (lpBalance, lastQuoteDeposit) = _pool.bucketLenders(indexes[0], _lender2);
+        (lpBalance, lastQuoteDeposit) = _pool.lenders(indexes[0], _lender2);
         assertEq(lpBalance, 5_000 * 1e27);
         assertEq(lastQuoteDeposit, 7200);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], _lender2);
+        (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
         assertEq(lpBalance, 10_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], _lender2);
+        (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
         assertEq(lpBalance, 15_000 * 1e27);
 
         // set allowed owner to lender2 address
@@ -273,19 +273,19 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check lenders lp balance
-        (lpBalance, ) = _pool.bucketLenders(indexes[0], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[0], _lender1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
         assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], _lender1);
+        (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
         assertEq(lpBalance, 0);
 
-        (lpBalance, lastQuoteDeposit) = _pool.bucketLenders(indexes[0], _lender2);
+        (lpBalance, lastQuoteDeposit) = _pool.lenders(indexes[0], _lender2);
         assertEq(lpBalance, 15_000 * 1e27);
         assertEq(lastQuoteDeposit, 7200);
-        (lpBalance, ) = _pool.bucketLenders(indexes[1], _lender2);
+        (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
         assertEq(lpBalance, 30_000 * 1e27);
-        (lpBalance, ) = _pool.bucketLenders(indexes[2], _lender2);
+        (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
         assertEq(lpBalance, 45_000 * 1e27);
     }
 }

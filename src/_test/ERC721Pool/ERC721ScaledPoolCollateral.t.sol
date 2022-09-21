@@ -68,13 +68,13 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
+        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 5);
-        vm.expectEmit(true, true, false, true);
-        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // check token balances after add
@@ -102,10 +102,10 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower2),           53);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 0);
 
-        (, , uint256[] memory col, , ) = _subsetPool.borrowerInfo(_borrower);
-        assertEq(col.length,  0);
+        (, , uint256 col, , ) = _subsetPool.borrowerInfo(_borrower);
+        assertEq(col,  0);
         (, , col, , ) = _subsetPool.borrowerInfo(_borrower2);
-        assertEq(col.length,  0);
+        assertEq(col,  0);
 
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
@@ -114,9 +114,9 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         changePrank(_borrower2);
         _collateral.setApprovalForAll(address(_subsetPool), true);
         vm.expectEmit(true, true, false, true);
-        emit Transfer(_borrower2, address(_subsetPool), 53);
-        vm.expectEmit(true, true, false, true);
         emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
+        emit Transfer(_borrower2, address(_subsetPool), 53);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // check token balances after add
@@ -126,15 +126,16 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_subsetPool)), 1);
 
         (, , col, , ) = _subsetPool.borrowerInfo(_borrower);
-        assertEq(col.length,  1);
+        assertEq(col,  1 * 1e18);
         (, , col, , ) = _subsetPool.borrowerInfo(_borrower2);
-        assertEq(col.length,  0);
+        assertEq(col,  0);
     }
 
     function testPullCollateral() external {
         // check initial token balances
         assertEq(_subsetPool.pledgedCollateral(),             0);
         assertEq(_collateral.balanceOf(_borrower),            52);
+        assertEq(_collateral.balanceOf(_borrower2),           53);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 0);
 
         uint256[] memory tokenIdsToAdd = new uint256[](3);
@@ -145,37 +146,66 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
+        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 5);
-        vm.expectEmit(true, true, false, true);
-        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // check token balances after add
         assertEq(_subsetPool.pledgedCollateral(),             Maths.wad(3));
         assertEq(_collateral.balanceOf(_borrower),            49);
+        assertEq(_collateral.balanceOf(_borrower2),           53);
         assertEq(_collateral.balanceOf(address(_subsetPool)), 3);
 
-        uint256[] memory tokenIdsToRemove = new uint256[](2);
+        uint256[] memory tokenIdsToRemove = new uint256[](1);
+        tokenIdsToRemove[0] = 3;
+
+        // should fail if trying to pull collateral by an address without pledged collateral
+        changePrank(_lender);
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        _subsetPool.pullCollateral(tokenIdsToRemove);
+
+        changePrank(_borrower2);
+        tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 53;
+        _subsetPool.pledgeCollateral(_borrower2, tokenIdsToAdd);
+
+        // check token balances after add
+        assertEq(_subsetPool.pledgedCollateral(),             Maths.wad(4));
+        assertEq(_collateral.balanceOf(_borrower),            49);
+        assertEq(_collateral.balanceOf(_borrower2),           52);
+        assertEq(_collateral.balanceOf(address(_subsetPool)), 4);
+
+        // should fail if trying to pull collateral by an address that pledged different collateral
+        vm.expectRevert(IERC721Pool.RemoveTokenFailed.selector);
+        _subsetPool.pullCollateral(tokenIdsToRemove);
+
+        tokenIdsToRemove = new uint256[](2);
         tokenIdsToRemove[0] = 3;
         tokenIdsToRemove[1] = 5;
 
         // borrower removes some of their deposted NFTS from the pool
+        changePrank(_borrower);
+        vm.expectEmit(true, true, false, true);
+        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 5);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
         _subsetPool.pullCollateral(tokenIdsToRemove);
 
         // check token balances after remove
-        assertEq(_subsetPool.pledgedCollateral(),             Maths.wad(1));
+        assertEq(_subsetPool.pledgedCollateral(),             Maths.wad(2));
         assertEq(_collateral.balanceOf(_borrower),            51);
-        assertEq(_collateral.balanceOf(address(_subsetPool)), 1);
+        assertEq(_collateral.balanceOf(address(_subsetPool)), 2);
+
+        // should fail if borrower tries to pull again same NFTs
+        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        _subsetPool.pullCollateral(tokenIdsToRemove);
     }
 
     // TODO: finish implementing
@@ -202,13 +232,13 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         tokenIdsToRemove[2] = 5;
 
         vm.expectEmit(true, true, false, true);
+        vm.expectEmit(true, true, false, true);
+        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
         emit Transfer(address(_subsetPool), _borrower, 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 5);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
         _subsetPool.pullCollateral(tokenIdsToRemove);
     }
 
@@ -228,11 +258,11 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower),            0);
 
         // check pool state
-        assertEq(_subsetPool.htp(), 0);
-        assertEq(_subsetPool.lup(), BucketMath.MAX_PRICE);
+        assertEq(_htp(), 0);
+        assertEq(_lup(), BucketMath.MAX_PRICE);
 
-        assertEq(_subsetPool.poolSize(),         30_000 * 1e18);
-        assertEq(_subsetPool.exchangeRate(2550), 1 * 1e27);
+        assertEq(_poolSize(),         30_000 * 1e18);
+        assertEq(_exchangeRate(2550), 1 * 1e27);
 
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
@@ -242,19 +272,19 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
+        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 5);
-        vm.expectEmit(true, true, false, true);
-        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // TODO: determine how to handle checking both token types of Transfer
         // emit Transfer(_borrower, address(_subsetPool), 5);
         vm.expectEmit(true, true, false, true);
-        emit Borrow(_borrower, _subsetPool.indexToPrice(2550), 3_000 * 1e18);
+        emit Borrow(_borrower, _indexToPrice(2550), 3_000 * 1e18);
         _subsetPool.borrow(3_000 * 1e18, 2551);
 
         // check token balances after borrow
@@ -266,11 +296,11 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower),            3_000 * 1e18);
 
         // check pool state
-        assertEq(_subsetPool.htp(), 1000.961538461538462000 * 1e18);
-        assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2550));
+        assertEq(_htp(), 1000.961538461538462000 * 1e18);
+        assertEq(_lup(), _indexToPrice(2550));
 
-        assertEq(_subsetPool.poolSize(),         30_000 * 1e18);
-        assertEq(_subsetPool.exchangeRate(2550), 1 * 1e27);
+        assertEq(_poolSize(),         30_000 * 1e18);
+        assertEq(_exchangeRate(2550), 1 * 1e27);
 
         // remove some unencumbered collateral
         uint256[] memory tokenIdsToRemove = new uint256[](2);
@@ -279,11 +309,11 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // borrower removes some of their deposted NFTS from the pool
         vm.expectEmit(true, true, false, true);
+        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _borrower, 5);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateralNFT(_borrower, tokenIdsToRemove);
         _subsetPool.pullCollateral(tokenIdsToRemove);
 
         // check token balances after remove
@@ -295,11 +325,11 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower),            3_000 * 1e18);
 
         // check pool state
-        assertEq(_subsetPool.htp(), 3002.884615384615386000 * 1e18);
-        assertEq(_subsetPool.lup(), _subsetPool.indexToPrice(2550));
+        assertEq(_htp(), 3002.884615384615386000 * 1e18);
+        assertEq(_lup(), _indexToPrice(2550));
 
-        assertEq(_subsetPool.poolSize(),         30_000 * 1e18);
-        assertEq(_subsetPool.exchangeRate(2550), 1 * 1e27);
+        assertEq(_poolSize(),         30_000 * 1e18);
+        assertEq(_exchangeRate(2550), 1 * 1e27);
 
     }
 
@@ -318,25 +348,25 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
         vm.expectEmit(true, true, false, true);
+        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
+        vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 1);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 3);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_subsetPool), 5);
-        vm.expectEmit(true, true, false, true);
-        emit PledgeCollateralNFT(_borrower, tokenIdsToAdd);
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // check collateralization after pledge
-        assertEq(_subsetPool.encumberedCollateral(_subsetPool.borrowerDebt(), _subsetPool.lup()), 0);
+        assertEq(_subsetPool.encumberedCollateral(_subsetPool.borrowerDebt(), _lup()), 0);
 
         // borrower borrows some quote
         vm.expectEmit(true, true, false, true);
-        emit Borrow(_borrower, _subsetPool.indexToPrice(2550), 9_000 * 1e18);
+        emit Borrow(_borrower, _indexToPrice(2550), 9_000 * 1e18);
         _subsetPool.borrow(9_000 * 1e18, 2551);
 
         // check collateralization after borrow
-        assertEq(_subsetPool.encumberedCollateral(_subsetPool.borrowerDebt(), _subsetPool.lup()), 2.992021560300836411 * 1e18);
+        assertEq(_subsetPool.encumberedCollateral(_subsetPool.borrowerDebt(), _lup()), 2.992021560300836411 * 1e18);
 
         // should revert if borrower attempts to pull more collateral than is unencumbered
         uint256[] memory tokenIdsToRemove = new uint256[](2);
@@ -378,24 +408,24 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // remove one token
         tokenIds[0] = 5;
-        emit RemoveCollateralNFT(_borrower, _subsetPool.indexToPrice(1530), tokenIds);
+        emit RemoveCollateralNFT(_borrower, _indexToPrice(1530), tokenIds);
         _subsetPool.removeCollateral(tokenIds, 1530);
-        (, uint256 collateral, , ) = _subsetPool.bucketAt(1530);
+        (, , uint256 collateral, , , , ) = _subsetPool.bucketAt(1530);
         assertEq(collateral, 1 * 1e18);
 
         // remove another token
         tokenIds[0] = 1;
-        emit RemoveCollateralNFT(_borrower, _subsetPool.indexToPrice(1530), tokenIds);
+        emit RemoveCollateralNFT(_borrower, _indexToPrice(1530), tokenIds);
         _subsetPool.removeCollateral(tokenIds, 1530);
-        (, collateral, , ) = _subsetPool.bucketAt(1530);
+        (, , collateral, , , , ) = _subsetPool.bucketAt(1530);
         assertEq(collateral, 0);
-        (uint256 lpb, ) = _subsetPool.bucketLenders(1530, _borrower);
+        (uint256 lpb, ) = _subsetPool.lenders(1530, _borrower);
         assertEq(lpb, 0);
 
         // lender removes quote token
         changePrank(_lender);
         _subsetPool.removeAllQuoteToken(1530);
-        (, collateral, lpb, ) = _subsetPool.bucketAt(1530);
+        (, , collateral, lpb, , , ) = _subsetPool.bucketAt(1530);
         assertEq(collateral, 0);
         assertEq(lpb, 0);
     }
