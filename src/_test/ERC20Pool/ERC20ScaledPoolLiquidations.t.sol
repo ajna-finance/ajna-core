@@ -58,7 +58,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
     function testKick() external {
 
         vm.startPrank(_lender);
-        vm.expectRevert(IScaledPool.LiquidateBorrowerOk.selector);
+        vm.expectRevert(IScaledPool.KickBorrowerSafe.selector);
         _pool.kick(_borrower);
         vm.stopPrank();
 

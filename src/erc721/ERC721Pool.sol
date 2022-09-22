@@ -106,7 +106,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // accrue interest to borrower
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 numLoans = (loans.count - 1) * 1e18;
+        borrower.mompFactor = numLoans != 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         // update loan queue
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
         if (borrower.debt != 0) loans.upsert(borrower_, thresholdPrice);
@@ -120,10 +121,11 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
 
         // update pool interest
         uint256 curDebt = _accruePoolInterest();
+        uint256 numLoans = (loans.count - 1) * 1e18;
 
         // borrower accounting
         NFTBorrower storage borrower = borrowers[msg.sender];
-        if (loans.count - 1 != 0) if (borrower.debt + amount_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
+        if (numLoans != 0) if (borrower.debt + amount_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
@@ -137,7 +139,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
         if (_poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) < Maths.WAD) revert BorrowPoolUnderCollateralized();
 
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        borrower.mompFactor = numLoans != 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
 
         curDebt += debt;
         borrowerDebt = curDebt;
@@ -166,7 +168,8 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 curLup = _lup();
         if (Maths.wad(borrower.collateralDeposited.length()) - _encumberedCollateral(borrower.debt, curLup) < Maths.wad(tokenIds_.length)) revert RemoveCollateralInsufficientCollateral();
 
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 numLoans = (loans.count - 1) * 1e18;
+        borrower.mompFactor = numLoans != 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
 
         // update pool state
         pledgedCollateral -= Maths.wad(tokenIds_.length);
@@ -199,6 +202,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         if (borrower.debt == 0) revert RepayNoDebt();
 
         uint256 curDebt = _accruePoolInterest();
+        uint256 numLoans = (loans.count - 1) * 1e18;
 
         // update borrower accounting
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
@@ -210,7 +214,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         if (borrower.debt == 0) {
             loans.remove(borrower_);
         } else {
-            if (loans.count - 1 != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
+            if (numLoans != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
             uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), borrower.inflatorSnapshot);
             loans.upsert(borrower_, thresholdPrice);
         }
@@ -218,7 +222,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         // update pool state
         borrowerDebt = curDebt;
         uint256 newLup = _lup();
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        borrower.mompFactor = numLoans != 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
 
@@ -337,22 +341,6 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit DepositTake(borrower_, index_, amount_, 0, 0);
-    }
-
-    function kick(address borrower_) external override {
-        (uint256 curDebt) = _accruePoolInterest();
-
-        NFTBorrower storage borrower = borrowers[borrower_];
-        if (borrower.debt == 0) revert KickNoDebt();
-
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        uint256 lup = _lup();
-        _updateInterestRateAndEMAs(curDebt, lup);
-
-        if (_borrowerCollateralization(borrower.debt, Maths.wad(borrower.collateralDeposited.length()), lup) >= Maths.WAD) revert LiquidateBorrowerOk();
-
-        // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
-        //  which includes an array of the borrower's tokenIds being auctioned off.
     }
 
     function take(address borrower_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external override {

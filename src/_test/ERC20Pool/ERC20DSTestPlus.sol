@@ -144,18 +144,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 inflator;
     }
 
-    struct AuctionState {
-        address borrower;
-        uint256 kickTime;
-        int256 bpf;
-        uint256 price;
-        uint256 referencePrice;
-        uint256 bondFactor;
-        uint256 bondSize;
-        address next;
-        bool active;
-    }
-
     struct PoolState {
         uint256 htp;
         uint256 lup;
@@ -384,34 +372,6 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, _pool.lup()), state_.collateralization);
     }
 
-    function _assertAuction(AuctionState memory state_) internal {
-        (uint256 debt, , uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
-        (uint128 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidationInfo(state_.borrower);
-        (address next, , bool active) = _pool.getAuction(state_.borrower);
-        int256 bpf = _pool.bpf(
-            IERC20Pool.Borrower({
-               debt: debt,
-               collateral: col,
-               mompFactor: mompFactor,
-               inflatorSnapshot: inflator
-            }),
-            IERC20Pool.Liquidation({
-                kickTime: kickTime,
-                referencePrice: referencePrice,
-                bondFactor: bondFactor,
-                bondSize: bondSize
-            }),
-            _pool.auctionPrice(referencePrice, kickTime)
-        );
-        assertEq(kickTime, state_.kickTime);
-        assertEq(referencePrice, state_.referencePrice);
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), state_.price);
-        assertEq(bpf, state_.bpf);
-        assertEq(bondFactor, state_.bondFactor);
-        assertEq(bondSize, state_.bondSize);
-        assertEq(next, state_.next);
-        assertEq(active, state_.active);
-        
-    }
+
 
 }

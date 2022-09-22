@@ -108,31 +108,9 @@ interface IERC20Pool is IScaledPool {
      */
     error TakeNotPastCooldown();
 
-    /**
-     *  @notice Auction is not in the auction Queue.
-     */
-    error AuctionNotActive();
-
-    /**
-     *  @notice Auction is already in the auction Queue.
-     */
-    error AuctionIsActive();
-
-
     /*********************************/
     /*** ERC20Pool State Variables ***/
     /*********************************/
-
-    /**
-     *  @notice Mapping of borrower addresses to {Borrower} structs.
-     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
-     *  @param  borrower_  Address of the borrower.
-     *  @return debt       Amount of debt that the borrower has, in quote token.
-     *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
-     *  @return mompFactor Momp / borrowerInflatorSnapshot factor used.
-     *  @return inflator   Snapshot of inflator value used to track interest on loans.
-     */
-    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 mompFactor, uint256 inflator);
 
     /**
      *  @notice Returns the `collateralScale` state variable.
@@ -140,26 +118,10 @@ interface IERC20Pool is IScaledPool {
      */
     function collateralScale() external view returns (uint256 collateralScale_);
 
-    /**
-     *  @notice Mapping of borrower under liquidation to {LiquidationInfo} structs.
-     *  @param  borrower_  Address of the borrower.
-     *  @return kickTime            Time the liquidation was initiated.
-     *  @return referencePrice      Highest Price Bucket at time of liquidation.
-     *  @return bondFactor     BondFactor
-     *  @return bondSize       Bond
-     */
-    // TODO: Instead of just returning the struct, should also calculate and include auction price.
-    // TODO: Need to implement this for NFT pool.
-    function liquidations(address borrower_) external view returns (
-        uint128 kickTime,
-        uint256 referencePrice,
-        uint256 bondFactor,
-        uint256 bondSize
-    );
-
     /*************************/
     /*** ERC20Pool Structs ***/
     /*************************/
+
 
     /**
      *  @notice Struct holding borrower related info.
@@ -173,20 +135,6 @@ interface IERC20Pool is IScaledPool {
         uint256 collateral;       // [WAD]
         uint256 mompFactor;       // [WAD]
         uint256 inflatorSnapshot; // [WAD]
-    }
-
-    /**
-     *  @notice Maintains the state of a liquidation.
-     *  @param  kickTime       Time the liquidation was initiated.
-     *  @param  referencePrice Highest Price Bucket at time of liquidation.
-     *  @param  bondFactor     Bond
-     *  @param  bondSize       Bond
-     */
-    struct Liquidation {
-        uint128 kickTime;       // [WAD]
-        uint256 referencePrice; // [WAD]
-        uint256 bondFactor;     // [WAD]
-        uint256 bondSize;       // [WAD]
     }
 
 

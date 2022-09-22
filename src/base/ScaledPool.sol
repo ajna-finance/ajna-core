@@ -13,6 +13,7 @@ import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 import { IScaledPool }    from "./interfaces/IScaledPool.sol";
 
 import { FenwickTree }    from "./FenwickTree.sol";
+import { Queue }          from "./Queue.sol";
 
 import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
@@ -20,7 +21,7 @@ import { Heap }           from "../libraries/Heap.sol";
 
 import "@std/console.sol";
 
-abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
+abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPool {
     using SafeERC20 for ERC20;
     using Heap      for Heap.Data;
 
@@ -70,6 +71,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
      *  @dev    owner address -> new owner address -> deposit index -> allowed amount
      */
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances;
+    
 
     /**
      *  @notice Address of the Ajna token, needed for Claimable Reserve Auctions.
@@ -506,9 +508,48 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
 
+
+
     /**************************/
     /*** External Functions ***/
     /**************************/
+
+    function kick(address borrower_) external override {
+        (uint256 curDebt) = _accruePoolInterest();
+
+        Borrower memory borrower = borrowers[borrower_];
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        if (borrower.debt == 0) revert KickNoDebt();
+
+        uint256 lup = _lup();
+        _updateInterestRateAndEMAs(curDebt, lup);
+
+        (,,bool auctionActive) = getAuction(borrower_);
+        if (auctionActive == true) revert AuctionActive();
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert KickBorrowerSafe();
+
+        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
+        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
+        uint256 numLoans = (loans.count - 1) * 1e18;
+
+        // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
+        uint256 bondFactor = Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, _momp(numLoans))));
+        uint256 bondSize = Maths.wmul(bondFactor, borrower.debt);
+
+        liquidations[borrower_] = Liquidation({
+            kickTime:            uint128(block.timestamp),
+            referencePrice:      _indexToPrice(_hpbIndex()),
+            bondFactor:          bondFactor,
+            bondSize:            bondSize
+        });
+
+        _addAuction(borrower_);
+
+        loans.remove(borrower_);
+
+        emit Kick(borrower_, borrower.debt, borrower.collateral);
+        quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
+    }
 
     // TODO: Temporarily here for unit testing; move to accessor method when merging with current implementation.
     function auctionPrice(uint256 referencePrice, uint256 kickTime) external view returns (uint256) {
@@ -646,11 +687,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return _getArgAddress(0x14);
     }
  
-    function _mompFactor(uint256 inflator) internal view returns (uint256) {
-        uint256 numLoans = (loans.count - 1) * 1e18;
-        if (numLoans != 0) {
-            return Maths.wdiv(_indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans))), inflator);
-        }
-        return 0;
+    function _momp(uint256 numLoans) internal view returns (uint256) {
+        return _indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans)));
     }
 }
