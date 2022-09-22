@@ -802,6 +802,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return _encumberedCollateral(debt_, price_);
     }
 
+    function lenderInterestMargin() external view returns (uint256 lenderInterestMargin_) {
+        return _lenderInterestMargin(_poolActualUtilization(borrowerDebt, pledgedCollateral));
+    }
+
     function lpsToQuoteTokens(
         uint256 deposit_,
         uint256 lpTokens_,

@@ -260,7 +260,7 @@ contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
                 from:     _bidder,
                 amount:   expectedCollateral,
                 index:    2550,
-                lpRedeem: 200.344335561364860742236645388 * 1e27
+                lpRedeem: 200.358188812263475078370320348 * 1e27
             })
         );
         BucketLP[] memory lps = new BucketLP[](1);

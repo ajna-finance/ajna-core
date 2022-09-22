@@ -550,6 +550,12 @@ interface IScaledPool {
     function encumberedCollateral(uint256 debt_, uint256 price_) external view returns (uint256 encumbrance_);
 
     /**
+     *  @notice Returns the proportion of interest rate which is awarded to lenders;
+     *          the remainder accumulates in reserves.
+    */
+    function lenderInterestMargin() external view returns (uint256 lenderInterestMargin_);
+
+    /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
      *  @param  deposit_     The amount of quote tokens available at this bucket index.
      *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
