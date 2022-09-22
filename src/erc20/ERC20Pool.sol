@@ -13,6 +13,8 @@ import { ScaledPool } from "../base/ScaledPool.sol";
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
 
+import "@std/console.sol";
+
 
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
@@ -88,10 +90,9 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         if (lupId > limitIndex_) revert BorrowLimitIndexReached();
 
         uint256 curDebt = _accruePoolInterest();
-        uint256 numLoans = (loans.count - 1) * 1e18;
 
         Borrower memory borrower = borrowers[msg.sender];
-        if (numLoans != 0) if (borrower.debt + amount_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
+        if ((loans.count - 1)!= 0) if (borrower.debt + amount_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
 
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
 
@@ -113,6 +114,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 thresholdPrice = _t0ThresholdPrice(borrower.debt, borrower.collateral, borrower.inflatorSnapshot);
         loans.upsert(msg.sender, thresholdPrice);
 
+        uint256 numLoans = (loans.count - 1) * 1e18;
         borrower.mompFactor = numLoans != 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         borrowers[msg.sender] = borrower;
 
@@ -272,6 +274,43 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit DepositTake(borrower_, index_, amount_, 0, 0);
+    }
+
+    function kick(address borrower_) external override {
+        (uint256 curDebt) = _accruePoolInterest();
+
+        Borrower memory borrower = borrowers[borrower_];
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        if (borrower.debt == 0) revert KickNoDebt();
+
+        uint256 lup = _lup();
+        _updateInterestRateAndEMAs(curDebt, lup);
+
+        (,,bool auctionActive) = getAuction(borrower_);
+        if (auctionActive == true) revert AuctionActive();
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert KickBorrowerSafe();
+
+        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
+        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
+        uint256 numLoans = (loans.count - 1) * 1e18;
+
+        // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
+        uint256 bondFactor = Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, _momp(numLoans))));
+        uint256 bondSize = Maths.wmul(bondFactor, borrower.debt);
+
+        liquidations[borrower_] = Liquidation({
+            kickTime:            uint128(block.timestamp),
+            referencePrice:      _indexToPrice(_hpbIndex()),
+            bondFactor:          bondFactor,
+            bondSize:            bondSize
+        });
+
+        _addAuction(borrower_);
+
+        loans.remove(borrower_);
+
+        emit Kick(borrower_, borrower.debt, borrower.collateral);
+        quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
     }
 
     // TODO: Add reentrancy guard

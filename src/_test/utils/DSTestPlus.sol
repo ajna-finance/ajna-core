@@ -15,8 +15,6 @@ import { ERC20 }       from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 abstract contract DSTestPlus is Test {
 
-    ERC20Pool internal _pool;
-
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
 
@@ -139,35 +137,7 @@ abstract contract DSTestPlus is Test {
         difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
     }
 
-    function _assertAuction(AuctionState memory state_) internal {
-        (uint256 debt, , uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
-        (uint128 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidationInfo(state_.borrower);
-        (address next, , bool active) = _pool.getAuction(state_.borrower);
-        int256 bpf = _pool.bpf(
-            IScaledPool.Borrower({
-               debt: debt,
-               collateral: col,
-               mompFactor: mompFactor,
-               inflatorSnapshot: inflator
-            }),
-            IScaledPool.Liquidation({
-                kickTime: kickTime,
-                referencePrice: referencePrice,
-                bondFactor: bondFactor,
-                bondSize: bondSize
-            }),
-            _pool.auctionPrice(referencePrice, kickTime)
-        );
-        assertEq(kickTime, state_.kickTime);
-        assertEq(referencePrice, state_.referencePrice);
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), state_.price);
-        assertEq(bpf, state_.bpf);
-        assertEq(bondFactor, state_.bondFactor);
-        assertEq(bondSize, state_.bondSize);
-        assertEq(next, state_.next);
-        assertEq(active, state_.active);
-        
-    }
+
 
 }
 

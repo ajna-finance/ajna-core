@@ -138,6 +138,21 @@ interface IERC20Pool is IScaledPool {
     }
 
 
+       /**
+     *  @notice Maintains the state of a liquidation.
+     *  @param  kickTime       Time the liquidation was initiated.
+     *  @param  referencePrice Highest Price Bucket at time of liquidation.
+     *  @param  bondFactor     Bond
+     *  @param  bondSize       Bond
+     */
+    struct Liquidation {
+        uint128 kickTime;       // [WAD]
+        uint256 referencePrice; // [WAD]
+        uint256 bondFactor;     // [WAD]
+        uint256 bondSize;       // [WAD]
+    }
+
+
     /*********************************************/
     /*** ERC20Pool Borrower External Functions ***/
     /*********************************************/
@@ -222,6 +237,40 @@ interface IERC20Pool is IScaledPool {
     /*******************************/
     /*** Pool External Functions ***/
     /*******************************/
+
+    /**
+     *  @notice Called by actors to initiate a liquidation.
+     *  @param  borrower_ Identifies the loan to liquidate.
+     */
+    function kick(address borrower_) external;
+
+     /**
+     *  @notice Mapping of borrower addresses to {Borrower} structs.
+     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
+     *  @param  borrower_  Address of the borrower.
+     *  @return debt       Amount of debt that the borrower has, in quote token.
+     *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
+     *  @return mompFactor Momp / borrowerInflatorSnapshot factor used.
+     *  @return inflator   Snapshot of inflator value used to track interest on loans.
+     */
+    function borrowers(address borrower_) external view returns (uint256 debt, uint256 collateral, uint256 mompFactor, uint256 inflator);
+
+    /**
+     *  @notice Mapping of borrower under liquidation to {LiquidationInfo} structs.
+     *  @param  borrower_  Address of the borrower.
+     *  @return kickTime            Time the liquidation was initiated.
+     *  @return referencePrice      Highest Price Bucket at time of liquidation.
+     *  @return bondFactor     BondFactor
+     *  @return bondSize       Bond
+     */
+    // TODO: Instead of just returning the struct, should also calculate and include auction price.
+    // TODO: Need to implement this for NFT pool.
+    function liquidations(address borrower_) external view returns (
+        uint128 kickTime,
+        uint256 referencePrice,
+        uint256 bondFactor,
+        uint256 bondSize
+    );
 
     /**
      *  @notice Called by actors to purchase collateral using quote token they provide themselves.

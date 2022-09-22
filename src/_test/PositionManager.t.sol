@@ -16,6 +16,7 @@ import { IScaledPool }      from "../base/interfaces/IScaledPool.sol";
 
 // TODO: test this against ERC721Pool
 abstract contract PositionManagerHelperContract is DSTestPlus {
+    ERC20Pool        internal _pool;
     ERC20PoolFactory internal _factory;
     PositionManager  internal _positionManager;
     Token            internal _collateral;
