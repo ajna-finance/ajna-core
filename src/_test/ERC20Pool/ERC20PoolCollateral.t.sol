@@ -66,7 +66,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_collateral.balanceOf(_borrower), 150 * 1e18);
@@ -99,7 +99,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         _assertBorrower(
@@ -142,7 +142,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 inflatorSnapshot:     1.001370801704613834 * 1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.055 * 1e18,
-                interestRateUpdate:   864000
+                interestRateUpdate:   _startTime + 864000
             })
         );
         _assertBorrower(
@@ -182,7 +182,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 inflatorSnapshot:     1.001370801704613834 * 1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.055 * 1e18,
-                interestRateUpdate:   864000
+                interestRateUpdate:   _startTime + 864000
             })
         );
         _assertBorrower(
@@ -569,7 +569,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_collateral.balanceOf(_borrower),  150 * 1e18);
@@ -601,7 +601,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_collateral.balanceOf(_borrower),  150 * 1e18);

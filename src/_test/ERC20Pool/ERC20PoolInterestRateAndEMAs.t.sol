@@ -90,7 +90,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1.001507985182953253 * 1e18,
                 interestRate:         0.055 * 1e18,
-                interestRateUpdate:   864000
+                interestRateUpdate:   _startTime + 864000
             })
         );
 
@@ -132,7 +132,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1.001507985182953253 * 1e18,
                 pendingInflator:      1.003018244385218513 * 1e18,
                 interestRate:         0.055 * 1e18, // FIXME here it should decrease
-                interestRateUpdate:   864000
+                interestRateUpdate:   _startTime + 864000
             })
         );
         _assertBorrower(
@@ -352,7 +352,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1.001370801704613834 * 1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   864000
+                interestRateUpdate:   _startTime + 864000
             })
         );
         assertEq(_pool.debtEma(),   95.440014344854493304 * 1e18);
