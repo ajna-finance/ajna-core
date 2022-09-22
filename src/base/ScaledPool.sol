@@ -450,7 +450,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         address borrower_,
         uint256 maxQuoteTokenAmountToRepay_
     ) internal {
-        if (borrowers[borrower_].debt == 0) revert RepayNoDebt();
 
         uint256 curDebt  = _accruePoolInterest();
         uint256 inflator = inflatorSnapshot;
@@ -459,6 +458,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             borrower_,
             inflator
         );
+        if (borrowerAccruedDebt == 0) revert RepayNoDebt();
 
         uint256 quoteTokenAmountToRepay = Maths.min(borrowerAccruedDebt, maxQuoteTokenAmountToRepay_);
         borrowerAccruedDebt -= quoteTokenAmountToRepay;
