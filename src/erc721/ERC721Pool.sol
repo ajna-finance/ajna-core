@@ -21,6 +21,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     using SafeERC20 for ERC20;
     using BitMaps   for BitMaps.BitMap;
     using Book      for mapping(uint256 => Book.Bucket);
+    using Book      for Book.Deposits;
     using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
     using Actors    for mapping(address => Actors.Borrower);
     using Heap      for Heap.Data;
@@ -214,7 +215,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256[] memory tokenIdsReturned = new uint256[](1);
         tokenIdsReturned[0] = 0;
         uint256 debtCleared = maxDepth_ * 10_000;
-        emit ClearNFT(borrower_, _hpbIndex(), debtCleared, tokenIdsReturned, 0);
+        emit ClearNFT(borrower_, deposits.hpbIndex(), debtCleared, tokenIdsReturned, 0);
     }
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
@@ -231,10 +232,15 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         );
         if (borrowerAccruedDebt == 0) revert KickNoDebt();
 
-        uint256 lup = _lup();
+        uint256 lup = deposits.lup(curDebt);
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (
+            Actors.collateralization(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                lup
+            ) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
         //  which includes an array of the borrower's tokenIds being auctioned off.

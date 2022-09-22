@@ -156,6 +156,49 @@ library Book {
         uint256[8193] scaling; // Array of values in the nested scaling FenwickTree.
     }
 
+    function lup(
+        Deposits storage self,
+        uint256 debt_
+    ) internal view returns (uint256) {
+        return indexToPrice(findIndexOfSum(self, debt_));
+    }
+
+    function lupIndex(
+        Deposits storage self,
+        uint256 debt_
+    ) internal view returns (uint256) {
+        return findIndexOfSum(self, debt_);
+    }
+
+    function hpb(
+        Deposits storage self
+    ) internal view returns (uint256) {
+        return indexToPrice(findIndexOfSum(self, 1));
+    }
+
+    function hpbIndex(
+        Deposits storage self
+    ) internal view returns (uint256) {
+        return findIndexOfSum(self, 1);
+    }
+
+    function getMompFactor(
+        Deposits storage self,
+        uint256 inflator_,
+        uint256 debt_,
+        uint256 numLoans_)
+    internal view returns (uint256 momFactor_) {
+        if (numLoans_ != 0) {
+            momFactor_ = Maths.wdiv(
+                indexToPrice(
+                    findIndexOfSum(self, Maths.wdiv(debt_, numLoans_ * 1e18))
+                )
+                ,
+                inflator_
+            );
+        }
+    }
+
     /**
      *  @notice increase a value in the FenwickTree at an index.
      *  @dev    Starts at tree root and decrements through range parent nodes until index, i_, is reached.
