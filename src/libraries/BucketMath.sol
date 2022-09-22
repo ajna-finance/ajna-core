@@ -20,8 +20,6 @@ library BucketMath {
 
     using PRBMathSD59x18 for int256;
 
-    uint256 public constant WAD = 10**18;
-
     /**
         @dev constant price indices defining the min and max of the potential price range
      */

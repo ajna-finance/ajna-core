@@ -142,9 +142,11 @@ library Book {
         bucketIndex_ = (index_ != 8191) ? 4156 - int256(index_) : BucketMath.MIN_PRICE_INDEX;
     }
 
-    /***************/
+    /****************/
     /*** Deposits ***/
-    /***************/
+    /****************/
+
+    uint256 internal constant SIZE = 8192;
 
     error InvalidIndex();
     error InvalidScalingFactor();
@@ -165,12 +167,12 @@ library Book {
         uint256 i_,
         uint256 x_
     ) internal {
-        if (i_ >= 8192) revert InvalidIndex();
+        if (i_ >= SIZE) revert InvalidIndex();
 
-        uint256 j     = 8192;       // Binary index, 1 << 13
+        uint256 j     = SIZE;       // Binary index, 1 << 13
         uint256 ii    = 0;          // Binary index offset
         uint256 sc    = Maths.WAD;
-        uint256 index = 8192;
+        uint256 index = SIZE;
 
         uint256 scaled;
 
@@ -254,7 +256,7 @@ library Book {
         uint256 i_,
         uint256 f_
     ) internal {
-        if (i_ >= 8192) revert InvalidIndex();
+        if (i_ >= SIZE) revert InvalidIndex();
         if (f_ == 0) revert InvalidScalingFactor();
 
         i_          += 1;
@@ -282,7 +284,7 @@ library Book {
 
             // Execute while i is a range parent of j (zero is the highest parent).
             //slither-disable-next-line incorrect-equality
-            while ((lsbJ < lsb(i_)) || (i_ == 0 && j <= 8192)) {
+            while ((lsbJ < lsb(i_)) || (i_ == 0 && j <= SIZE)) {
 
                 // Sum > 0 only when j is a range parent of starting node, i_.
                 self.values[j] += sum;
@@ -306,13 +308,13 @@ library Book {
 
         i_            += 1;              // Translate from 0 -> 1 indexed array
         uint256 sc    =  Maths.WAD;
-        uint256 j     =  8192;           // Binary index, 1 << 13
+        uint256 j     =  SIZE;           // Binary index, 1 << 13
         uint256 ii    =  0;              // Binary index offset
-        uint256 index =  8192;
+        uint256 index =  SIZE;
 
         uint256 scaled;
         
-        while (j > 0 && index <= 8192) {
+        while (j > 0 && index <= SIZE) {
 
             scaled = self.scaling[index];
 
@@ -345,12 +347,12 @@ library Book {
         uint256 i_,
         uint256 x_
     ) internal {
-        if (i_ >= 8192) revert InvalidIndex();
+        if (i_ >= SIZE) revert InvalidIndex();
 
-        uint256 j     = 8192;       // Binary index, 1 << 13
+        uint256 j     = SIZE;       // Binary index, 1 << 13
         uint256 ii    = 0;          // Binary index offset
         uint256 sc    = Maths.WAD;
-        uint256 index = 8192;
+        uint256 index = SIZE;
 
         uint256 scaled;
 
@@ -377,11 +379,11 @@ library Book {
         Deposits storage self,
         uint256 i_
     ) internal view returns (uint256 a_) {
-        if (i_ >= 8192) revert InvalidIndex();
+        if (i_ >= SIZE) revert InvalidIndex();
 
         a_ = Maths.WAD;
         uint256 scaled;
-        while (i_ <= 8192) {
+        while (i_ <= SIZE) {
             scaled = self.scaling[i_];
             if (scaled != 0) a_ = Maths.wmul(a_, scaled);
             i_ += lsb(i_);
@@ -391,14 +393,14 @@ library Book {
     function treeSum(
         Deposits storage self
     ) internal view returns (uint256) {
-        return self.values[8192];
+        return self.values[SIZE];
     }
 
     function valueAt(
         Deposits storage self,
         uint256 i_
     ) internal view returns (uint256 s_) {
-        if (i_ >= 8192) revert InvalidIndex();
+        if (i_ >= SIZE) revert InvalidIndex();
 
         uint256 j  =  i_;
         uint256 k  =  1;
@@ -413,7 +415,7 @@ library Book {
             j  = j - k;
             k  = k << 1;
         }
-        while (i_ <= 8192) {
+        while (i_ <= SIZE) {
             scaled = self.scaling[i_];
             if (scaled != 0) s_ = Maths.wmul(scaled, s_);
             i_ += lsb(i_);
