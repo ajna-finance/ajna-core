@@ -17,6 +17,7 @@ import '../libraries/Actors.sol';
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
+    using Book      for Book.Deposits;
     using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
     using Actors    for mapping(address => Actors.Borrower);
     using Heap      for Heap.Data;
@@ -109,7 +110,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         fromBucketLPs_ = buckets.collateralToLPs(
             fromIndex_,
-            _valueAt(fromIndex_),
+            deposits.valueAt(fromIndex_),
             collateralAmountToMove_
         );
         (uint256 lpBalance, ) = lenders.getLenderInfo(
@@ -120,7 +121,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         toBucketLPs_ = buckets.collateralToLPs(
             toIndex_,
-            _valueAt(toIndex_),
+            deposits.valueAt(toIndex_),
             collateralAmountToMove_
         );
 
@@ -147,7 +148,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
             index_,
-            _valueAt(index_),
+            deposits.valueAt(index_),
             lenderLPsBalance,
             availableCollateral
         );

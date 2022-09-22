@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { Maths }       from "../../libraries/Maths.sol";
 import { Heap}         from "../../libraries/Heap.sol";
-import { FenwickTree } from "../../base/FenwickTree.sol";
+import '../../libraries/Book.sol';
 
 import { Test } from "@std/Test.sol";
 import { Vm }   from "@std/Vm.sol";
@@ -197,7 +197,10 @@ contract HeapInstance is DSTestPlus {
 }
 
 
-contract FenwickTreeInstance is FenwickTree, DSTestPlus {
+contract FenwickTreeInstance is DSTestPlus {
+    using Book for Book.Deposits;
+
+    Book.Deposits private deposits;
 
     /**
      *  @notice used to track fuzzing test insertions.
@@ -213,35 +216,35 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
     }
 
     function add(uint256 i_, uint256 x_) public {
-        _add(i_, x_);
+        deposits.add(i_, x_);
     }
 
     function remove(uint256 i_, uint256 x_) public {
-        _remove(i_, x_);
+        deposits.remove(i_, x_);
     }
 
     function mult(uint256 i_, uint256 f_) public {
-        _mult(i_, f_);
+        deposits.mult(i_, f_);
     }
 
     function treeSum() external view returns (uint256) {
-        return _treeSum();
+        return deposits.treeSum();
     }
 
     function get(uint256 i_) external view returns (uint256 m_) {
-        return _valueAt(i_);
+        return deposits.valueAt(i_);
     }
 
     function scale(uint256 i_) external view returns (uint256 a_) {
-        return _scale(i_);
+        return deposits.scale(i_);
     }
 
     function findIndexOfSum(uint256 x_) external view returns (uint256 m_) {
-        return _findIndexOfSum(x_);
+        return deposits.findIndexOfSum(x_);
     }
 
     function prefixSum(uint256 i_) external view returns (uint256 s_) {
-        return _prefixSum(i_);
+        return deposits.prefixSum(i_);
     }
 
     /**
@@ -278,12 +281,12 @@ contract FenwickTreeInstance is FenwickTree, DSTestPlus {
             insertsDec      -=  1;
 
             // Verify tree sum
-            assertEq(_treeSum(), totalAmount - totalAmountDec);
+            assertEq(deposits.treeSum(), totalAmount - totalAmountDec);
 
             if (trackInserts)  inserts.push(i);
         }
 
-        assertEq(_treeSum(), totalAmount);
+        assertEq(deposits.treeSum(), totalAmount);
     }
 
 }
