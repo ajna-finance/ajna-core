@@ -55,8 +55,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     NFTCollateralToken internal _collateral;
     Token              internal _quote;
     ERC20              internal _ajna;
-    ERC721Pool         internal _collectionPool;
-    ERC721Pool         internal _subsetPool;
+    ERC721Pool         internal _pool;
 
     // TODO: bool for pool type
     constructor() {
@@ -80,51 +79,27 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         return ERC721Pool(new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
-    function _getPoolAddresses() internal view returns (address[] memory poolAddresses_) {
-        poolAddresses_ = new address[](2);
-        poolAddresses_[0] = address(_collectionPool);
-        poolAddresses_[1] = address(_subsetPool);
-    }
-
     // TODO: finish implementing
     function _approveQuoteMultipleUserMultiplePool() internal {
 
     }
 
-    function _mintAndApproveQuoteTokens(address[] memory pools_, address operator_, uint256 mintAmount_) internal {
+    function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
-
-        for (uint i; i < pools_.length;) {
-            vm.prank(operator_);
-            _quote.approve(address(pools_[i]), type(uint256).max);
-            unchecked {
-                ++i;
-            }
-        }
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
     }
 
-    function _mintAndApproveCollateralTokens(address[] memory pools_, address operator_, uint256 mintAmount_) internal {
+    function _mintAndApproveCollateralTokens(address operator_, uint256 mintAmount_) internal {
         _collateral.mint(operator_, mintAmount_);
-
-        for (uint i; i < pools_.length;) {
-            vm.prank(operator_);
-            _collateral.setApprovalForAll(address(pools_[i]), true);
-            unchecked {
-                ++i;
-            }
-        }
+        vm.prank(operator_);
+        _collateral.setApprovalForAll(address(_pool), true);
     }
 
-    function _mintAndApproveAjnaTokens(address[] memory pools_, address operator_, uint256 mintAmount_) internal {
+    function _mintAndApproveAjnaTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_ajna), operator_, mintAmount_);
-
-        for (uint i; i < pools_.length;) {
-            vm.prank(operator_);
-            _ajna.approve(address(pools_[i]), type(uint256).max);
-            unchecked {
-                ++i;
-            }
-        }
+        vm.prank(operator_);
+        _ajna.approve(address(_pool), type(uint256).max);
     }
 
     // TODO: implement this
@@ -147,79 +122,74 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     // TODO: implement _pullCollateral()
     
     function _assertPool(PoolState memory state_) internal {
-        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        ( , uint256 htp, uint256 lup, ) = pool.poolPricesInfo();
-        (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = pool.poolLoansInfo();
-        (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = pool.poolUtilizationInfo();
+        ( , uint256 htp, uint256 lup, ) = _pool.poolPricesInfo();
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = _pool.poolLoansInfo();
+        (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _pool.poolUtilizationInfo();
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
 
-        assertEq(poolSize,                 state_.poolSize);
-        assertEq(pool.pledgedCollateral(), state_.pledgedCollateral);
-        assertEq(pool.borrowerDebt(),      state_.borrowerDebt);
-        assertEq(poolActualUtilization,    state_.actualUtilization);
-        assertEq(poolTargetUtilization,    state_.targetUtilization);
-        assertEq(poolMinDebtAmount,        state_.minDebtAmount);
+        assertEq(poolSize,                  state_.poolSize);
+        assertEq(_pool.pledgedCollateral(), state_.pledgedCollateral);
+        assertEq(_pool.borrowerDebt(),      state_.borrowerDebt);
+        assertEq(poolActualUtilization,     state_.actualUtilization);
+        assertEq(poolTargetUtilization,     state_.targetUtilization);
+        assertEq(poolMinDebtAmount,         state_.minDebtAmount);
 
         assertEq(loansCount,  state_.loans);
         assertEq(maxBorrower, state_.maxBorrower);
 
-        assertEq(pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+        assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
     }
 
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {
-        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-
-        ( , , uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.poolReservesInfo();
+        ( , , uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = _pool.poolReservesInfo();
         assertEq(claimableReservesRemaining, state_.claimableReservesRemaining);
         assertEq(auctionPrice, state_.auctionPrice);
         assertEq(timeRemaining, state_.timeRemaining);
     }
 
     function _assertReserveAuctionPrice(uint256 expectedPrice) internal {
-        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        ( , , , uint256 auctionPrice, ) = pool.poolReservesInfo();
+        ( , , , uint256 auctionPrice, ) = _pool.poolReservesInfo();
         assertEq(auctionPrice, expectedPrice);
     }
 
     function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {
-        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        ( price_, , , , , , ) = pool.bucketAt(index_);
+        ( price_, , , , , , ) = _pool.bucketAt(index_);
     }
 
     function _htp() internal view returns (uint256 htp_) {
-        (, htp_, , ) = _subsetPool.poolPricesInfo();
+        (, htp_, , ) = _pool.poolPricesInfo();
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
-        ( , , , , , exchangeRate_, ) = _subsetPool.bucketAt(index_);
+        ( , , , , , exchangeRate_, ) = _pool.bucketAt(index_);
     }
 
     function _lup() internal view returns (uint256 lup_) {
-        (, , lup_, ) = _subsetPool.poolPricesInfo();
+        (, , lup_, ) = _pool.poolPricesInfo();
     }
 
     function _poolSize() internal view returns (uint256 poolSize_) {
-        (poolSize_, , , ) = _subsetPool.poolLoansInfo();
+        (poolSize_, , , ) = _pool.poolLoansInfo();
     }
 
     function _poolTargetUtilization() internal view returns (uint256 utilization_) {
-        ( , , , utilization_) = _subsetPool.poolUtilizationInfo();
+        ( , , , utilization_) = _pool.poolUtilizationInfo();
     }
 
     function _poolActualUtilization() internal view returns (uint256 utilization_) {
-        ( , , utilization_, ) = _subsetPool.poolUtilizationInfo();
+        ( , , utilization_, ) = _pool.poolUtilizationInfo();
     }
 
     function _poolMinDebtAmount() internal view returns (uint256 minDebt_) {
-        ( minDebt_, , , ) = _subsetPool.poolUtilizationInfo();
+        ( minDebt_, , , ) = _pool.poolUtilizationInfo();
     }
 
     function _loansCount() internal view returns (uint256 loansCount_) {
-        ( , loansCount_, , ) = _subsetPool.poolLoansInfo();
+        ( , loansCount_, , ) = _pool.poolLoansInfo();
     }
 
     function _maxBorrower() internal view returns (address maxBorrower_) {
-        ( , , maxBorrower_, ) = _subsetPool.poolLoansInfo();
+        ( , , maxBorrower_, ) = _pool.poolLoansInfo();
     }
 }
