@@ -502,7 +502,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     ) internal returns (uint256 bucketLPs_) {
         uint256 curDebt = _accruePoolInterest();
 
-        bucketLPs_ = buckets.collateralToLPs(
+        (bucketLPs_, ) = buckets.collateralToLPs(
             index_,
             deposits.valueAt(index_),
             collateralAmountToAdd_
@@ -518,15 +518,16 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         uint256 collateralAmountToRemove_,
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
-        if (collateralAmountToRemove_ > buckets.getCollateral(index_)) revert RemoveCollateralInsufficientCollateral();
 
         _accruePoolInterest();
 
-        bucketLPs_ = buckets.collateralToLPs(
+        uint256 bucketCollateral;
+        (bucketLPs_, bucketCollateral) = buckets.collateralToLPs(
             index_,
             deposits.valueAt(index_),
             collateralAmountToRemove_
         );
+        if (collateralAmountToRemove_ > bucketCollateral) revert RemoveCollateralInsufficientCollateral();
 
         (uint256 lenderLpBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
@@ -753,10 +754,12 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     {
         price_             = Book.indexToPrice(index_);
         quoteTokens_       = deposits.valueAt(index_);           // quote token in bucket, deposit + interest (WAD)
-        collateral_        = buckets[index_].collateral;         // unencumbered collateral in bucket (WAD)
         bucketLPs_         = buckets[index_].lps;                // outstanding LP balance (WAD)
         scale_             = deposits.scale(index_);             // lender interest multiplier (WAD)
-        exchangeRate_      = buckets.getExchangeRate(index_, quoteTokens_);
+        (
+            exchangeRate_,
+            collateral_                                           // unencumbered collateral in bucket (WAD)
+        )                   = buckets.getExchangeRate(index_, quoteTokens_);
         liquidityToPrice_  = deposits.prefixSum(index_);
     }
 

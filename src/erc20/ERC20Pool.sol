@@ -104,22 +104,23 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveCollateralToSamePrice();
 
-        if (buckets.getCollateral(fromIndex_) < collateralAmountToMove_) revert MoveCollateralInsufficientCollateral();
-
         uint256 curDebt = _accruePoolInterest();
 
-        fromBucketLPs_ = buckets.collateralToLPs(
+        uint256 fromBucketCollateral;
+        (fromBucketLPs_, fromBucketCollateral) = buckets.collateralToLPs(
             fromIndex_,
             deposits.valueAt(fromIndex_),
             collateralAmountToMove_
         );
+        if (fromBucketCollateral < collateralAmountToMove_) revert MoveCollateralInsufficientCollateral();
+
         (uint256 lpBalance, ) = lenders.getLenderInfo(
             fromIndex_,
             msg.sender
         );
         if (fromBucketLPs_ > lpBalance) revert MoveCollateralInsufficientLP();
 
-        toBucketLPs_ = buckets.collateralToLPs(
+        (toBucketLPs_, ) = buckets.collateralToLPs(
             toIndex_,
             deposits.valueAt(toIndex_),
             collateralAmountToMove_
@@ -140,8 +141,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function removeAllCollateral(
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
-        uint256 availableCollateral = buckets.getCollateral(index_);
-        if (availableCollateral == 0) revert RemoveCollateralInsufficientCollateral();
 
         _accruePoolInterest();
 
@@ -149,8 +148,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
             index_,
             deposits.valueAt(index_),
-            lenderLPsBalance,
-            availableCollateral
+            lenderLPsBalance
         );
         if (collateralAmountRemoved_ == 0) revert RemoveCollateralNoClaim();
 

@@ -61,11 +61,14 @@ library Book {
         mapping(uint256 => Bucket) storage self,
         uint256 index_,
         uint256 quoteToken_
-    ) internal view returns (uint256) {
+    ) internal view returns (uint256, uint256) {
         Bucket memory bucket = self[index_];
-        if (bucket.lps == 0) return  Maths.RAY;
+        uint256 bucketCollateral = bucket.collateral;
+        if (bucket.lps == 0) {
+            return  (Maths.RAY, bucketCollateral);
+        }
         uint256 bucketSize = quoteToken_ * 10**18 + indexToPrice(index_) * bucket.collateral;  // 10^36 + // 10^36
-        return bucketSize * 10**18 / bucket.lps; // 10^27
+        return (bucketSize * 10**18 / bucket.lps, bucketCollateral); // 10^27
     }
 
     function collateralToLPs(
@@ -73,9 +76,10 @@ library Book {
         uint256 index_,
         uint256 deposit_,
         uint256 collateral_
-    ) internal view returns (uint256) {
-        uint256 rate  = getExchangeRate(self, index_, deposit_);
-        return (collateral_ * indexToPrice(index_) * 1e18 + rate / 2) / rate;
+    ) internal view returns (uint256, uint256) {
+        (uint256 rate, uint256 bucketCollateral)  = getExchangeRate(self, index_, deposit_);
+        uint256 lps = (collateral_ * indexToPrice(index_) * 1e18 + rate / 2) / rate;
+        return (lps, bucketCollateral);
     }
 
     function quoteTokensToLPs(
@@ -84,7 +88,7 @@ library Book {
         uint256 deposit_,
         uint256 quoteTokens_
     ) internal view returns (uint256) {
-        uint256 rate  = getExchangeRate(self, index_, deposit_);
+        (uint256 rate, )  = getExchangeRate(self, index_, deposit_);
         return Maths.rdiv(Maths.wadToRay(quoteTokens_), rate);
     }
 
@@ -96,7 +100,7 @@ library Book {
         uint256 maxQuoteToken_
     ) internal view returns (uint256 quoteTokenAmount_, uint256 bucketLPs_, uint256 lenderLPs_) {
         lenderLPs_ = lenderLPsBalance_;
-        uint256 rate  = getExchangeRate(self, index_, deposit_);
+        (uint256 rate, )  = getExchangeRate(self, index_, deposit_);
         quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
         if (quoteTokenAmount_ > deposit_) {
             quoteTokenAmount_ = deposit_;
@@ -110,26 +114,18 @@ library Book {
         mapping(uint256 => Bucket) storage self,
         uint256 index_,
         uint256 deposit_,
-        uint256 lenderLPsBalance_,
-        uint256 maxCollateral_
+        uint256 lenderLPsBalance_
     ) internal view returns (uint256 collateralAmount_, uint256 lenderLPs_) {
         // max collateral to lps
         lenderLPs_        = lenderLPsBalance_;
         uint256 price      = Book.indexToPrice(index_);
-        uint256 rate       = getExchangeRate(self, index_, deposit_);
+        (uint256 rate, uint256 bucketCollateral) = getExchangeRate(self, index_, deposit_);
         collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), price);
-        if (collateralAmount_ > maxCollateral_) {
+        if (collateralAmount_ > bucketCollateral) {
             // user is owed more collateral than is available in the bucket
-            collateralAmount_ = maxCollateral_;
+            collateralAmount_ = bucketCollateral;
             lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, price), rate);
         }
-    }
-
-    function getCollateral(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_
-    ) internal view returns (uint256) {
-        return self[index_].collateral;
     }
 
     function indexToPrice(uint256 index_) internal pure returns (uint256) {

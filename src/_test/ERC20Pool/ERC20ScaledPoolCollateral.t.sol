@@ -376,7 +376,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
 
         // should revert if no collateral in the bucket
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IERC20Pool.RemoveCollateralNoClaim.selector);
         _pool.removeAllCollateral(testIndex);
         vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
         _pool.removeCollateral(3.50 * 1e18, testIndex);
