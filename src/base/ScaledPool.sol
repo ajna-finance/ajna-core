@@ -26,8 +26,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     using Actors    for mapping(address => Actors.Borrower);
     using Heap      for Heap.Data;
 
-    int256  public constant INDEX_OFFSET = 3232;
-
     uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
     uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
 
