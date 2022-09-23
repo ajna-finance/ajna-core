@@ -115,7 +115,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         lenders.deposit(index_, msg.sender, bucketLPs_);
         buckets.addLPs(index_, bucketLPs_);
 
-        uint256 newLup = _lup();
+        uint256 newLup = _lup(curDebt);
         _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move quote token amount from lender to pool
@@ -173,7 +173,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
 
         deposits.add(toIndex_, quoteTokenAmountToMove);
 
-        uint256 newLup = _lup(); // move lup if necessary and check loan book's htp against new lup
+        uint256 newLup = _lup(curDebt); // move lup if necessary and check loan book's htp against new lup
         if (fromIndex_ < toIndex_) if(_htp() > newLup) revert MoveQuoteLUPBelowHTP();
 
         // update lender accounting
@@ -192,7 +192,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         uint256 index_
     ) external returns (uint256 quoteTokenAmountRemoved_, uint256 redeemedLenderLPs_) {
         // scale the tree, accumulating interest owed to lenders
-        _accruePoolInterest();
+        uint256 curDebt = _accruePoolInterest();
 
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(
             index_,
@@ -208,7 +208,12 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             deposit
         );
 
-        _redeemLPForQuoteToken(redeemedLenderLPs_, quoteTokenAmountRemoved_, index_);
+        _redeemLPForQuoteToken(
+            index_,
+            curDebt,
+            redeemedLenderLPs_,
+            quoteTokenAmountRemoved_
+        );
     }
 
     function removeQuoteToken(
@@ -216,7 +221,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
         // scale the tree, accumulating interest owed to lenders
-        _accruePoolInterest();
+        uint256 curDebt = _accruePoolInterest();
 
         uint256 deposit = deposits.valueAt(index_);
         if (quoteTokenAmountToRemove_ > deposit) revert RemoveQuoteInsufficientQuoteAvailable();
@@ -230,17 +235,23 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         if (lenderLPsBalance == 0 || bucketLPs_ > lenderLPsBalance) revert RemoveQuoteInsufficientLPB();
 
-        _redeemLPForQuoteToken(bucketLPs_, quoteTokenAmountToRemove_, index_);
+        _redeemLPForQuoteToken(
+            index_,
+            curDebt,
+            bucketLPs_,
+            quoteTokenAmountToRemove_
+        );
     }
 
     function borrow(
         uint256 amountToBorrow_,
         uint256 limitIndex_
     ) external override {
-        uint256 lupId = _lupIndex(amountToBorrow_);
+        uint256 curDebt  = _accruePoolInterest();
+
+        uint256 lupId = _lupIndex(curDebt + amountToBorrow_);
         if (lupId > limitIndex_) revert BorrowLimitIndexReached();
 
-        uint256 curDebt  = _accruePoolInterest();
         uint256 inflator = inflatorSnapshot;
 
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
@@ -402,7 +413,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         );
 
         pledgedCollateral += collateralAmountToPledge_;
-        _updateInterestRateAndEMAs(curDebt, _lup());
+        _updateInterestRateAndEMAs(curDebt, _lup(curDebt));
     }
 
     function _pullCollateral(
@@ -417,7 +428,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             inflator
         );
 
-        uint256 curLup = _lup();
+        uint256 curLup = _lup(curDebt);
         if (borrowerPledgedCollateral - _encumberedCollateral(borrowerAccruedDebt, curLup) < collateralAmountToPull_) revert RemoveCollateralInsufficientCollateral();
         borrowerPledgedCollateral -= collateralAmountToPull_;
 
@@ -486,7 +497,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             inflator
         );
 
-        uint256 newLup = _lup();
+        uint256 newLup = _lup(curDebt);
         _updateInterestRateAndEMAs(curDebt, newLup);
 
         // move amount to repay from sender to pool
@@ -509,7 +520,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         lenders.addLPs(index_, msg.sender, bucketLPs_);
         buckets.addCollateral(index_, bucketLPs_, collateralAmountToAdd_);
 
-        _updateInterestRateAndEMAs(curDebt, _lup());
+        _updateInterestRateAndEMAs(curDebt, _lup(curDebt));
     }
 
     function _removeCollateral(
@@ -517,7 +528,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
 
-        _accruePoolInterest();
+        uint256 curDebt = _accruePoolInterest();
 
         uint256 bucketCollateral;
         (bucketLPs_, bucketCollateral) = buckets.collateralToLPs(
@@ -533,7 +544,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         lenders.removeLPs(index_, msg.sender, bucketLPs_);
         buckets.removeCollateral(index_, bucketLPs_, collateralAmountToRemove_);
 
-        _updateInterestRateAndEMAs(borrowerDebt, _lup());
+        _updateInterestRateAndEMAs(curDebt, _lup(curDebt));
     }
 
     function _accruePoolInterest() internal returns (uint256 curDebt_) {
@@ -579,13 +590,14 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     }
 
     function _redeemLPForQuoteToken(
+        uint256 index_,
+        uint256 debt_,
         uint256 lpAmount_,
-        uint256 amount,
-        uint256 index_
+        uint256 amount
     ) internal {
         deposits.remove(index_, amount);  // update FenwickTree
 
-        uint256 newLup = _lup();
+        uint256 newLup = _lup(debt_);
         if (_htp() > newLup) revert RemoveQuoteLUPBelowHTP();
 
         // persist bucket changes
@@ -593,18 +605,17 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         lenders.removeLPs(index_,msg.sender, lpAmount_);
 
         (, uint256 lastDeposit) = lenders.getLenderInfo(index_, msg.sender);
-        uint256 curDebt = borrowerDebt;
         amount = Actors.applyEarlyWithdrawalPenalty(
             _calculateFeeRate(),
             lastDeposit,
-            curDebt,
+            debt_,
             pledgedCollateral,
             index_,
             0,
             amount
         );
 
-        _updateInterestRateAndEMAs(curDebt, newLup);
+        _updateInterestRateAndEMAs(debt_, newLup);
 
         // move quote token amount from pool to lender
         emit RemoveQuoteToken(msg.sender, index_, amount, newLup);
@@ -680,8 +691,8 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         return Maths.wmul(loans.getMax().val, inflatorSnapshot);
     }
 
-    function _lupIndex(uint256 additionalDebt_) internal view returns (uint256) {
-        return deposits.findIndexOfSum(borrowerDebt + additionalDebt_);
+    function _lupIndex(uint256 debt_) internal view returns (uint256) {
+        return deposits.findIndexOfSum(debt_);
     }
 
     function _priceToIndex(uint256 price_) internal pure returns (uint256) {
@@ -692,8 +703,8 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(loans.count - 1)), 10**19);
     }
 
-    function _lup() internal view returns (uint256) {
-        return Book.indexToPrice(_lupIndex(0));
+    function _lup(uint256 debt_) internal view returns (uint256) {
+        return Book.indexToPrice(_lupIndex(debt_));
     }
 
     function _calculateFeeRate() internal view returns (uint256) {
@@ -830,7 +841,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     {
         hpb_ = Book.indexToPrice(_hpbIndex());
         htp_ = _htp();
-        lupIndex_ = _lupIndex(0);
+        lupIndex_ = _lupIndex(borrowerDebt);
         lup_ = Book.indexToPrice(lupIndex_);
     }
 
@@ -870,7 +881,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         )
     {
         if (borrowerDebt != 0) poolMinDebtAmount_ = _poolMinDebtAmount(borrowerDebt);
-        poolCollateralization_ = _poolCollateralization(borrowerDebt, pledgedCollateral, _lup());
+        poolCollateralization_ = _poolCollateralization(borrowerDebt, pledgedCollateral, _lup(borrowerDebt));
         poolActualUtilization_  = _poolActualUtilization(borrowerDebt, pledgedCollateral);
         poolTargetUtilization_  = _poolTargetUtilization(debtEma, lupColEma);
     }

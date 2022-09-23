@@ -231,7 +231,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         );
         if (borrowerAccruedDebt == 0) revert KickNoDebt();
 
-        uint256 lup = _lup();
+        uint256 lup = _lup(curDebt);
         _updateInterestRateAndEMAs(curDebt, lup);
 
         if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
