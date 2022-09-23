@@ -37,7 +37,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
      *              attempts to addQuoteToken at invalid price.
      */
     function testScaledPoolDepositQuoteToken() external {
-        assertEq(_pool.hpb(), BucketMath.MIN_PRICE);
+        assertEq(_hpb(), BucketMath.MIN_PRICE);
 
         // test 10_000 deposit at price of 3_010.892022197881557845
         Liquidity[] memory amounts = new Liquidity[](1);
@@ -417,7 +417,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 index:    4990,
                 amount:   10_000 * 1e18,
                 penalty:  0,
-                newLup:   _pool.indexToPrice(4551),
+                newLup:   _indexToPrice(4551),
                 lpRedeem: 10_000 * 1e27
             })
         );
@@ -452,7 +452,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 bucketLPs: lps
             })
         );
-        uint256 exchangeRateBefore = _pool.exchangeRate(1606);
+        uint256 exchangeRateBefore = _exchangeRate(1606);
 
         skip(59 minutes);
 
@@ -462,7 +462,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 bucketLPs: lps
             })
         );
-        assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
+        assertEq(exchangeRateBefore, _exchangeRate(1606));
         uint256 lenderBalanceBefore = _quote.balanceOf(_lender);
 
         // borrower takes a loan of 3000 quote token
@@ -486,7 +486,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 bucketLPs: lps
             })
         );
-        assertEq(exchangeRateBefore, _pool.exchangeRate(1606));
+        assertEq(exchangeRateBefore, _exchangeRate(1606));
 
         // lender makes a partial withdrawal, paying an early withdrawal penalty
         uint256 penalty = Maths.WAD - Maths.wdiv(_pool.interestRate(), _pool.WAD_WEEKS_PER_YEAR());
@@ -498,21 +498,21 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 index:    1606,
                 amount:   1_700 * 1e18,
                 penalty:  penalty,
-                newLup:   _pool.indexToPrice(1663),
+                newLup:   _indexToPrice(1663),
                 lpRedeem: 1_699.988430646832348876473462074 * 1e27
             })
         );
 
         // lender removes all quote token, including interest, from the bucket
         skip(1 days);
-        assertGt(_pool.indexToPrice(1606), _pool.htp());
+        assertGt(_indexToPrice(1606), _htp());
         uint256 expectedWithdrawal2 = 1_700.146556206967894132 * 1e18;
         _removeAllLiquidity(
             RemoveAllLiquiditySpecs({
                 from:     _lender,
                 index:    1606,
                 amount:   expectedWithdrawal2,
-                newLup:   _pool.indexToPrice(1663),
+                newLup:   _indexToPrice(1663),
                 lpRedeem: 1_700.011569353167651123526537926 * 1e27
             })
         );
@@ -678,7 +678,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 amount:       10_000 * 1e18,
                 fromIndex:    4549,
                 toIndex:      4550,
-                newLup:       _pool.indexToPrice(4551),
+                newLup:       _indexToPrice(4551),
                 lpRedeemFrom: 10_000 * 1e27,
                 lpRedeemTo:   10_000 * 1e27
             })
@@ -721,7 +721,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 amount:       2_500 * 1e18,
                 fromIndex:    2873,
                 toIndex:      2954,
-                newLup:       _pool.lup(),
+                newLup:       _lup(),
                 lpRedeemFrom: 2_499.877878608019467246904020519 * 1e27,
                 lpRedeemTo:   2_497.596153846153845 * 1e27
             })
@@ -745,7 +745,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 amount:       2_500 * 1e18,
                 fromIndex:    2873,
                 toIndex:      2954,
-                newLup:       _pool.lup(),
+                newLup:       _lup(),
                 lpRedeemFrom: 2_499.778568979414622058441434089 * 1e27,
                 lpRedeemTo:   2_500 * 1e27
             })

@@ -470,8 +470,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
         emit log_named_uint("collateralDeposited ", collateralDeposited);
         emit log_named_uint("mompFactor ",           mompFactor);
-        emit log_named_uint("collateralEncumbered", _pool.encumberedCollateral(borrowerDebt, _pool.lup()));
-        emit log_named_uint("collateralization   ", _pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _pool.lup()));
+        emit log_named_uint("collateralEncumbered", _pool.encumberedCollateral(borrowerDebt, _lup()));
+        emit log_named_uint("collateralization   ", _pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _lup()));
         emit log_named_uint("borrowerInflator    ", borrowerInflator);
     }
 }
