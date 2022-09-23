@@ -154,7 +154,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     
     function _assertPool(PoolState memory state_) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        ( , uint256 htp, uint256 lup, ) = pool.poolPricesInfo();
+        ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(pool));
         (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = _poolUtils.poolLoansInfo(address(pool));
         (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = pool.poolUtilizationInfo();
         assertEq(htp, state_.htp);
@@ -194,7 +194,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _htp() internal view returns (uint256 htp_) {
-        (, htp_, , ) = _subsetPool.poolPricesInfo();
+        ( , , htp_, , , ) = _poolUtils.poolPricesInfo(address(_subsetPool));
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
@@ -202,7 +202,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _lup() internal view returns (uint256 lup_) {
-        (, , lup_, ) = _subsetPool.poolPricesInfo();
+        ( , , , , lup_, ) = _poolUtils.poolPricesInfo(address(_subsetPool));
     }
 
     function _poolSize() internal view returns (uint256 poolSize_) {

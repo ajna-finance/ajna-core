@@ -332,7 +332,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _assertPool(PoolState memory state_) internal {
-        ( , uint256 htp, uint256 lup, ) = _pool.poolPricesInfo();
+        ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator) = _poolUtils.poolLoansInfo(address(_pool));
         (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _pool.poolUtilizationInfo();
         assertEq(htp, state_.htp);
@@ -374,7 +374,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     function _assertBorrower(BorrowerState memory state_) internal {
         (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
-        (, , uint256 lup, ) = _pool.poolPricesInfo();
+        ( , , , , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         assertEq(debt,        state_.debt);
         assertEq(pendingDebt, state_.pendingDebt);
         assertEq(col,         state_.collateral);
@@ -392,7 +392,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _assertPoolPrices(PoolPricesInfo memory state_) internal {
-        (uint256 hpb, uint256 htp, uint256 lup, uint256 lupIndex) = _pool.poolPricesInfo();
+        (uint256 hpb, , uint256 htp, , uint256 lup, uint256 lupIndex) = _poolUtils.poolPricesInfo(address(_pool));
         assertEq(hpb,      state_.hpb);
         assertEq(htp,      state_.htp);
         assertEq(lup,      state_.lup);
@@ -412,15 +412,15 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _lup() internal view returns (uint256 lup_) {
-        (, , lup_, ) = _pool.poolPricesInfo();
+        ( , , , , lup_, ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
     function _htp() internal view returns (uint256 htp_) {
-        (, htp_, , ) = _pool.poolPricesInfo();
+        ( , , htp_, , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
     function _hpb() internal view returns (uint256 hpb_) {
-        (hpb_, , , ) = _pool.poolPricesInfo();
+        (hpb_, , , , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
     function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {

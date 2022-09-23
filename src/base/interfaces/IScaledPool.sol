@@ -523,6 +523,8 @@ interface IScaledPool {
 
     function depositSize() external view returns (uint256);
 
+    function depositIndex(uint256 debt_) external view returns (uint256);
+
     /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
      *  @param  deposit_     The amount of quote tokens available at this bucket index.
@@ -541,22 +543,7 @@ interface IScaledPool {
 
     function maxBorrower() external view returns (address);
 
-    /**
-     *  @notice Returns info related to pool prices.
-     *  @return hpb_      The price value of the current Highest Price Bucket (HPB), in WAD units.
-     *  @return htp_      The price value of the current Highest Threshold Price (HTP) bucket, in WAD units.
-     *  @return lup_      The price value of the current Lowest Utilized Price (LUP) bucket, in WAD units.
-     *  @return lupIndex_ The index of the current LUP bucket.
-     */
-    function poolPricesInfo()
-        external
-        view
-        returns (
-            uint256 hpb_,
-            uint256 htp_,
-            uint256 lup_,
-            uint256 lupIndex_
-        );
+    function maxThresholdPrice() external view returns (uint256);
 
     /**
      *  @notice Returns info related to Claimaible Reserve Auction.

@@ -699,12 +699,20 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         return deposits.treeSum();
     }
 
+    function depositIndex(uint256 debt_) external view override returns (uint256) {
+        return deposits.findIndexOfSum(debt_);
+    }
+
     function noOfLoans() external view override returns (uint256) {
         return loans.count - 1;
     }
 
     function maxBorrower() external view override returns (address) {
         return loans.getMax().id;
+    }
+
+    function maxThresholdPrice() external view override returns (uint256) {
+        return loans.getMax().val;
     }
 
     function lpsToQuoteTokens(
@@ -718,23 +726,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             lpTokens_,
             deposit_
         );
-    }
-
-    function poolPricesInfo()
-        external
-        view
-        override
-        returns (
-            uint256 hpb_,
-            uint256 htp_,
-            uint256 lup_,
-            uint256 lupIndex_
-        )
-    {
-        hpb_ = PoolUtils.indexToPrice(_hpbIndex());
-        htp_ = _htp();
-        lupIndex_ = _lupIndex(borrowerDebt);
-        lup_ = PoolUtils.indexToPrice(lupIndex_);
     }
 
     function poolUtilizationInfo()

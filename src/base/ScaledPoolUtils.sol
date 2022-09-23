@@ -104,4 +104,34 @@ contract ScaledPoolUtils {
         pendingInflator_ = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
     }
 
+    /**
+     *  @notice Returns info related to pool prices.
+     *  @return hpb_      The price value of the current Highest Price Bucket (HPB), in WAD units.
+     *  @return hpbIndex_ The index of the current Highest Price Bucket (HPB), in WAD units.
+     *  @return htp_      The price value of the current Highest Threshold Price (HTP) bucket, in WAD units.
+     *  @return htpIndex_ The index of the current Highest Threshold Price (HTP) bucket, in WAD units.
+     *  @return lup_      The price value of the current Lowest Utilized Price (LUP) bucket, in WAD units.
+     *  @return lupIndex_ The index of the current Lowest Utilized Price (LUP) bucket, in WAD units.
+     */
+    function poolPricesInfo(address ajnaPool_)
+        external
+        view
+        returns (
+            uint256 hpb_,
+            uint256 hpbIndex_,
+            uint256 htp_,
+            uint256 htpIndex_,
+            uint256 lup_,
+            uint256 lupIndex_
+        )
+    {
+        IScaledPool pool = IScaledPool(ajnaPool_);
+        hpbIndex_ = pool.depositIndex(1);
+        hpb_      = PoolUtils.indexToPrice(hpbIndex_);
+        htp_      = Maths.wmul(pool.maxThresholdPrice(), pool.inflatorSnapshot());
+        if (htp_ != 0) htpIndex_ = PoolUtils.priceToIndex(htp_);
+        lupIndex_ = pool.depositIndex(pool.borrowerDebt());
+        lup_      = PoolUtils.indexToPrice(lupIndex_);
+    }
+
 }

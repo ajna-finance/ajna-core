@@ -91,7 +91,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_quote.balanceOf(_lender),        50_000 * _quotePrecision);
 
         // check initial pool state
-        ( , uint256 htp, uint256 lup, ) = _pool.poolPricesInfo();
+        ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         assertEq(htp, 0);
         assertEq(lup, BucketMath.MAX_PRICE);
 
@@ -119,7 +119,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_quote.balanceOf(_lender),        75_000 * _quotePrecision);
 
         // check pool state
-        ( , htp, lup, ) = _pool.poolPricesInfo();
+        ( , , htp, , lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         assertEq(htp, 0);
         assertEq(lup, BucketMath.MAX_PRICE);
 
@@ -165,7 +165,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_quote.balanceOf(_borrower), 0);
 
         // check pool state
-        ( , uint256 htp, uint256 lup, ) = _pool.poolPricesInfo();
+        ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(htp, 0);
         assertEq(lup, BucketMath.MAX_PRICE);
@@ -194,7 +194,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
 
         // check pool state
         (uint256 debt, , uint256 col, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        ( , htp, lup, ) = _pool.poolPricesInfo();
+        ( , , htp, , lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         (poolSize, loansCount, maxBorrower, ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(htp, Maths.wdiv(debt, col));
         assertEq(lup, price);
@@ -225,7 +225,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
 
         // check pool state
         (debt, , col, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        ( , htp, lup, ) = _pool.poolPricesInfo();
+        ( , , htp, , lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         (poolSize, loansCount, maxBorrower, ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(htp, Maths.wdiv(debt, col));
         assertEq(lup, price);
@@ -242,7 +242,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         assertEq(exchangeRate, 1 * _lpPoolPrecision);
 
         // remove all of the remaining unencumbered collateral
-        ( , htp, lup, ) = _pool.poolPricesInfo();
+        ( , , htp, , lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         uint256 unencumberedCollateral = col - _encumberedCollateral(debt, lup);
         vm.expectEmit(true, true, false, true);
         emit PullCollateral(_borrower, unencumberedCollateral);
@@ -258,7 +258,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
 
         // check pool state
         (debt, , col, , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        ( , htp, lup, ) = _pool.poolPricesInfo();
+        ( , , htp, , lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         (poolSize, loansCount, maxBorrower, ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(htp, Maths.wdiv(debt, col));
         assertEq(lup, price);
@@ -313,7 +313,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_quote.balanceOf(_bidder),             500 * _quotePrecision);
 
         // check pool state
-        ( , uint256 htp, uint256 lup, ) = _pool.poolPricesInfo();
+        ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         assertEq(htp, 0);
         assertEq(lup, BucketMath.MAX_PRICE);
 
@@ -346,7 +346,7 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
         assertEq(_quote.balanceOf(_bidder),             500 * _quotePrecision);
 
         // check pool state
-        ( , htp, lup, ) = _pool.poolPricesInfo();
+        ( , , htp, , lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         (poolSize, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(htp,      0);
         assertEq(lup,      BucketMath.MAX_PRICE);
