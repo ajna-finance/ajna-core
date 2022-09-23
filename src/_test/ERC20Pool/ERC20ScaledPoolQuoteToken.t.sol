@@ -8,6 +8,7 @@ import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
+import '../../libraries/PoolUtils.sol';
 
 import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
@@ -489,7 +490,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         assertEq(exchangeRateBefore, _exchangeRate(1606));
 
         // lender makes a partial withdrawal, paying an early withdrawal penalty
-        uint256 penalty = Maths.WAD - Maths.wdiv(_pool.interestRate(), _pool.WAD_WEEKS_PER_YEAR());
+        uint256 penalty = Maths.WAD - Maths.wdiv(_pool.interestRate(), PoolUtils.WAD_WEEKS_PER_YEAR);
         assertLt(penalty, Maths.WAD);
         uint256 expectedWithdrawal1 = Maths.wmul(1_700 * 1e18, penalty);
         _removeLiquidity(

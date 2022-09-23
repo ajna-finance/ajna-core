@@ -545,8 +545,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         );
 
         changePrank(_borrower);
-        // should revert if borrow would result in pool under collateralization
-        vm.expectRevert(IScaledPool.BorrowPoolUnderCollateralized.selector);
+        // should revert if borrower didn't pledged any collateral
+        vm.expectRevert(IScaledPool.BorrowBorrowerUnderCollateralized.selector);
         _pool.borrow(500 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after adding sufficient collateral

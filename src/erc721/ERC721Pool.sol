@@ -234,7 +234,13 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         uint256 lup = _lup(curDebt);
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (
+            PoolUtils.collateralizationAtPrice(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                lup
+            ) >= Maths.WAD
+        ) revert LiquidateBorrowerOk();
 
         // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
         //  which includes an array of the borrower's tokenIds being auctioned off.

@@ -12,11 +12,11 @@ import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { IScaledPool }    from "./interfaces/IScaledPool.sol";
 
-import { BucketMath }     from "../libraries/BucketMath.sol";
 import { Maths }          from "../libraries/Maths.sol";
 import { Heap }           from "../libraries/Heap.sol";
 import '../libraries/Book.sol';
 import '../libraries/Actors.sol';
+import '../libraries/PoolUtils.sol';
 
 abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     using SafeERC20 for ERC20;
@@ -25,9 +25,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
     using Actors    for mapping(address => Actors.Borrower);
     using Heap      for Heap.Data;
-
-    uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
-    uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
 
     uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
@@ -155,8 +152,9 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         deposits.remove(fromIndex_, quoteTokenAmountToMove);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        quoteTokenAmountToMove = Actors.applyEarlyWithdrawalPenalty(
-            _calculateFeeRate(),
+        quoteTokenAmountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
+            interestRate,
+            minFee,
             lenderLastDepositTime,
             curDebt,
             pledgedCollateral,
@@ -258,16 +256,34 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             msg.sender,
             inflator
         );
-        if (loans.count - 1 != 0) if (borrowerAccruedDebt + amountToBorrow_ < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
+        uint256 loansCount = loans.count - 1;
+        if (
+            loansCount != 0
+            &&
+            (borrowerAccruedDebt + amountToBorrow_ < PoolUtils.minDebtAmount(curDebt, loansCount))
+        )  revert BorrowAmountLTMinDebt();
 
-        uint256 debt  = Maths.wmul(amountToBorrow_, _calculateFeeRate() + Maths.WAD);
+        uint256 debt  = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
         borrowerAccruedDebt += debt;
 
-        uint256 newLup = Book.indexToPrice(lupId);
+        uint256 newLup = PoolUtils.indexToPrice(lupId);
 
         // check borrow won't push borrower or pool into a state of under-collateralization
-        if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, newLup) < Maths.WAD) revert BorrowBorrowerUnderCollateralized();
-        if (_poolCollateralizationAtPrice(curDebt, debt, pledgedCollateral, newLup) < Maths.WAD) revert BorrowPoolUnderCollateralized();
+        if (
+            PoolUtils.collateralizationAtPrice(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                newLup
+            ) < Maths.WAD || borrowerPledgedCollateral == 0
+        ) revert BorrowBorrowerUnderCollateralized();
+
+        if (
+            PoolUtils.collateralizationAtPrice(
+                curDebt + debt,
+                pledgedCollateral,
+                newLup
+            ) < Maths.WAD
+        ) revert BorrowPoolUnderCollateralized();
 
         curDebt += debt;
 
@@ -275,7 +291,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         borrowerDebt = curDebt;
 
         // update loan queue
-        uint256 thresholdPrice = Actors.t0ThresholdPrice(
+        uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
             inflator
@@ -286,7 +302,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             msg.sender,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            _mompFactor(inflator),
+            deposits.mompFactor(inflator, curDebt, loans.count - 1),
             inflator
         );
 
@@ -313,7 +329,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         uint256 indexesLength = indexes_.length;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            if (!BucketMath.isValidIndex(Book.indexToBucketIndex(indexes_[i]))) revert TransferLPInvalidIndex();
+            if (!Book.isDepositIndex(indexes_[i])) revert TransferLPInvalidIndex();
 
             uint256 transferAmount = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
             if (transferAmount == 0) revert TransferLPNoAllowance();
@@ -350,13 +366,21 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     /*******************************/
 
     function startClaimableReserveAuction() external override {
-        uint256 claimable = _claimableReserves();
+        uint256 curUnclaimedAuctionReserve = reserveAuctionUnclaimed;
+        uint256 claimable = PoolUtils.claimableReserves(
+            borrowerDebt,
+            deposits.treeSum(),
+            liquidationBondEscrowed,
+            curUnclaimedAuctionReserve,
+            quoteToken().balanceOf(address(this))
+        );
         uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
-        reserveAuctionUnclaimed += claimable - kickerAward;
-        if (reserveAuctionUnclaimed == 0) revert KickNoReserves();
+        curUnclaimedAuctionReserve += claimable - kickerAward;
+        if (curUnclaimedAuctionReserve == 0) revert KickNoReserves();
 
-        reserveAuctionKicked = block.timestamp;
-        emit ReserveAuction(reserveAuctionUnclaimed, _reserveAuctionPrice());
+        reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
+        reserveAuctionKicked    = block.timestamp;
+        emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
         quoteToken().safeTransfer(msg.sender, kickerAward / quoteTokenScale);
     }
 
@@ -365,7 +389,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         if (kicked == 0 || block.timestamp - kicked > 72 hours) revert NoAuction();
 
         amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
-        uint256 price = _reserveAuctionPrice();
+        uint256 price = PoolUtils.reserveAuctionPrice(kicked);
         uint256 ajnaRequired = Maths.wmul(amount_, price);
         reserveAuctionUnclaimed -= amount_;
 
@@ -396,7 +420,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
 
         // update loan queue
         if (borrowerAccruedDebt != 0) {
-            uint256 thresholdPrice = Actors.t0ThresholdPrice(
+            uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
                 inflator
@@ -408,7 +432,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             borrower_,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            _mompFactor(inflator),
+            deposits.mompFactor(inflator, curDebt, loans.count - 1),
             inflator
         );
 
@@ -429,12 +453,12 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         );
 
         uint256 curLup = _lup(curDebt);
-        if (borrowerPledgedCollateral - _encumberedCollateral(borrowerAccruedDebt, curLup) < collateralAmountToPull_) revert RemoveCollateralInsufficientCollateral();
+        if (borrowerPledgedCollateral - PoolUtils.encumberedCollateral(borrowerAccruedDebt, curLup) < collateralAmountToPull_) revert RemoveCollateralInsufficientCollateral();
         borrowerPledgedCollateral -= collateralAmountToPull_;
 
         // update loan queue
         if (borrowerAccruedDebt != 0) {
-            uint256 thresholdPrice = Actors.t0ThresholdPrice(
+            uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
                 inflator
@@ -446,7 +470,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             msg.sender,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            _mompFactor(inflator),
+            deposits.mompFactor(inflator, curDebt, loans.count - 1),
             inflator
         );
 
@@ -477,8 +501,13 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         if (borrowerAccruedDebt == 0) {
             loans.remove(borrower_);
         } else {
-            if (loans.count - 1 != 0) if (borrowerAccruedDebt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
-            uint256 thresholdPrice = Actors.t0ThresholdPrice(
+            uint256 loansCount = loans.count - 1;
+            if (loansCount != 0
+                &&
+                (borrowerAccruedDebt < PoolUtils.minDebtAmount(curDebt, loansCount))
+            ) revert BorrowAmountLTMinDebt();
+
+            uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
                 inflator
@@ -493,7 +522,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             msg.sender,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            _mompFactor(inflator),
+            deposits.mompFactor(inflator, curDebt, loans.count - 1),
             inflator
         );
 
@@ -552,7 +581,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         if (curDebt_ != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
             if (elapsed != 0 ) {
-                uint256 factor = _pendingInterestFactor(elapsed);
+                uint256 factor = PoolUtils.pendingInterestFactor(interestRate, elapsed);
                 inflatorSnapshot = Maths.wmul(inflatorSnapshot, factor);
                 lastInflatorSnapshotUpdate = block.timestamp;
 
@@ -567,19 +596,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
                 borrowerDebt = curDebt_;
             }
         }
-    }
-
-    function _auctionPrice(uint256 referencePrice, uint256 kickTime) internal view returns (uint256 price_) {
-        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime) * 1e18, 1 hours * 1e18);
-        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
-
-        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
-        price_ = 10 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
-    }
-
-    function _claimableReserves() internal view returns (uint256 claimable_) {
-        claimable_ = Maths.wmul(0.995 * 1e18, borrowerDebt) + quoteToken().balanceOf(address(this));
-        claimable_ -= Maths.min(claimable_, deposits.treeSum() + liquidationBondEscrowed + reserveAuctionUnclaimed);
     }
 
     function _redeemLPForQuoteToken(
@@ -598,8 +614,9 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         lenders.removeLPs(index_,msg.sender, lpAmount_);
 
         (, uint256 lastDeposit) = lenders.getLenderInfo(index_, msg.sender);
-        amount = Actors.applyEarlyWithdrawalPenalty(
-            _calculateFeeRate(),
+        amount = PoolUtils.applyEarlyWithdrawalPenalty(
+            interestRate,
+            minFee,
             lastDeposit,
             debt_,
             pledgedCollateral,
@@ -626,7 +643,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
-            if (_poolCollateralization(curDebt_, col, lup_) != Maths.WAD) {
+            if (PoolUtils.poolCollateralization(curDebt_, col, lup_) != Maths.WAD) {
                 uint256 oldRate = interestRate;
 
                 int256 actualUtilization = int256(_poolActualUtilization(curDebt_, col));
@@ -648,31 +665,13 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         }
     }
 
-    // TODO: Check if price and debt checks here are really needed
-    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
-        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
-    }
-
-    function _poolCollateralizationAtPrice(
-        uint256 borrowerDebt_, uint256 additionalDebt_, uint256 collateral_, uint256 price_
-    ) internal pure returns (uint256) {
-        uint256 encumbered = _encumberedCollateral(borrowerDebt_ + additionalDebt_, price_);
-        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
-    }
-
-    function _poolCollateralization(uint256 borrowerDebt_, uint256 pledgedCollateral_, uint256 lup_) internal pure returns (uint256) {
-        uint256 encumbered = _encumberedCollateral(borrowerDebt_, lup_);
-        return encumbered != 0 ? Maths.wdiv(pledgedCollateral_, encumbered) : Maths.WAD;
-    }
-
-    function _poolTargetUtilization(uint256 debtEma_, uint256 lupColEma_) internal pure returns (uint256) {
-        return (debtEma_ != 0 && lupColEma_ != 0) ? Maths.wdiv(debtEma_, lupColEma_) : Maths.WAD;
-    }
-
     function _poolActualUtilization(uint256 borrowerDebt_, uint256 pledgedCollateral_) internal view returns (uint256 utilization_) {
         if (pledgedCollateral_ != 0) {
             uint256 ptp = Maths.wdiv(borrowerDebt_, pledgedCollateral_);
-            if (ptp != 0) utilization_ = Maths.wdiv(borrowerDebt_, deposits.prefixSum(_priceToIndex(ptp)));
+            if (ptp != 0) utilization_ = Maths.wdiv(
+                borrowerDebt_,
+                deposits.prefixSum(PoolUtils.priceToIndex(ptp))
+            );
         }
     }
 
@@ -688,57 +687,14 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         return deposits.findIndexOfSum(debt_);
     }
 
-    function _priceToIndex(uint256 price_) internal pure returns (uint256) {
-        return uint256(7388 - (BucketMath.priceToIndex(price_) + 3232));
-    }
-
-    function _poolMinDebtAmount(uint256 debt_) internal view returns (uint256) {
-        return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(loans.count - 1)), 10**19);
-    }
-
     function _lup(uint256 debt_) internal view returns (uint256) {
-        return Book.indexToPrice(_lupIndex(debt_));
-    }
-
-    function _calculateFeeRate() internal view returns (uint256) {
-        // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
-        return Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
-    }
-
-    function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
-        return PRBMathUD60x18.exp((interestRate * elapsed_) / 365 days);
-    }
-
-    function _pendingInflator() internal view returns (uint256) {
-        return Maths.wmul(inflatorSnapshot, _pendingInterestFactor(block.timestamp - lastInflatorSnapshotUpdate));
-    }
-
-    function _reserveAuctionPrice() internal view returns (uint256 _price) {
-        if (reserveAuctionKicked != 0) {
-            uint256 secondsElapsed = block.timestamp - reserveAuctionKicked;
-            uint256 hoursComponent = 1e27 >> secondsElapsed / 3600;
-            uint256 minutesComponent = Maths.rpow(MINUTE_HALF_LIFE, secondsElapsed % 3600 / 60);
-            _price = Maths.rayToWad(1_000_000_000 * Maths.rmul(hoursComponent, minutesComponent));
-        }
-    }
-
-    function _mompFactor(uint256 inflator) internal view returns (uint256 momFactor_) {
-        uint256 numLoans = loans.count - 1;
-        if (numLoans != 0) momFactor_ = Maths.wdiv(Book.indexToPrice(deposits.findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans * 1e18))), inflator); 
+        return PoolUtils.indexToPrice(_lupIndex(debt_));
     }
 
 
     /**************************/
     /*** External Functions ***/
     /**************************/
-
-    // TODO: Temporarily here for unit testing; move to accessor method when merging with current implementation.
-    function auctionPrice(
-        uint256 referencePrice_,
-        uint256 kickTime_
-    ) external view returns (uint256) {
-        return _auctionPrice(referencePrice_, kickTime_);
-    }
 
     function bucketInfo(uint256 index_)
         external
@@ -754,7 +710,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             uint256 liquidityToPrice_
         )
     {
-        price_             = Book.indexToPrice(index_);
+        price_             = PoolUtils.indexToPrice(index_);
         quoteTokens_       = deposits.valueAt(index_);           // quote token in bucket, deposit + interest (WAD)
         bucketLPs_         = buckets[index_].lps;                // outstanding LP balance (WAD)
         scale_             = deposits.scale(index_);             // lender interest multiplier (WAD)
@@ -778,7 +734,8 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         )
     {
         (debt_, collateral_, mompFactor_, inflatorSnapshot_) = borrowers.getBorrower(borrower_);
-        pendingDebt_ = Maths.wmul(debt_, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
+        uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        pendingDebt_ = Maths.wmul(debt_, Maths.wdiv(pendingInflator, inflatorSnapshot));
     }
 
     function lpsToQuoteTokens(
@@ -808,7 +765,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         poolSize_        = deposits.treeSum();
         loansCount_      = loans.count - 1;
         maxBorrower_     = loans.getMax().id;
-        pendingInflator_ = _pendingInflator();
+        pendingInflator_ = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
     }
 
     function poolPricesInfo()
@@ -822,10 +779,10 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             uint256 lupIndex_
         )
     {
-        hpb_ = Book.indexToPrice(_hpbIndex());
+        hpb_ = PoolUtils.indexToPrice(_hpbIndex());
         htp_ = _htp();
         lupIndex_ = _lupIndex(borrowerDebt);
-        lup_ = Book.indexToPrice(lupIndex_);
+        lup_ = PoolUtils.indexToPrice(lupIndex_);
     }
 
     function poolReservesInfo()
@@ -840,15 +797,25 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             uint256 timeRemaining_
         )
     {
-        reserves_ = borrowerDebt
-            + quoteToken().balanceOf(address(this))
-            - deposits.treeSum()
-            - liquidationBondEscrowed
-            - reserveAuctionUnclaimed;
-        claimableReserves_ = _claimableReserves();
+        uint256 poolDebt = borrowerDebt;
+        uint256 poolSize = deposits.treeSum();
 
-        claimableReservesRemaining_ = reserveAuctionUnclaimed;
-        auctionPrice_               = _reserveAuctionPrice();
+        uint256 quoteTokenBalance = quoteToken().balanceOf(address(this));
+
+        uint256 bondEscrowed     = liquidationBondEscrowed;
+        uint256 unclaimedReserve = reserveAuctionUnclaimed;
+
+        reserves_ = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
+        claimableReserves_ = PoolUtils.claimableReserves(
+            poolDebt,
+            poolSize,
+            bondEscrowed,
+            unclaimedReserve,
+            quoteTokenBalance
+        );
+
+        claimableReservesRemaining_ = unclaimedReserve;
+        auctionPrice_               = PoolUtils.reserveAuctionPrice(reserveAuctionKicked);
         timeRemaining_              = 3 days - Maths.min(3 days, block.timestamp - reserveAuctionKicked);
     }
 
@@ -863,10 +830,12 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             uint256 poolTargetUtilization_
         )
     {
-        if (borrowerDebt != 0) poolMinDebtAmount_ = _poolMinDebtAmount(borrowerDebt);
-        poolCollateralization_ = _poolCollateralization(borrowerDebt, pledgedCollateral, _lup(borrowerDebt));
-        poolActualUtilization_  = _poolActualUtilization(borrowerDebt, pledgedCollateral);
-        poolTargetUtilization_  = _poolTargetUtilization(debtEma, lupColEma);
+        uint256 poolDebt = borrowerDebt;
+        uint256 poolCollateral = pledgedCollateral;
+        if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, loans.count - 1);
+        poolCollateralization_ = PoolUtils.poolCollateralization(poolDebt, poolCollateral, _lup(poolDebt));
+        poolActualUtilization_  = _poolActualUtilization(poolDebt, poolCollateral);
+        poolTargetUtilization_  = PoolUtils.poolTargetUtilization(debtEma, lupColEma);
     }
 
     /************************/

@@ -208,7 +208,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 lup = _lup(curDebt);
         _updateInterestRateAndEMAs(curDebt, lup);
 
-        if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (
+            PoolUtils.collateralizationAtPrice(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                lup
+            ) >= Maths.WAD
+        ) revert LiquidateBorrowerOk();
 
         uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
         if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
@@ -249,7 +255,13 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             borrower_,
             inflatorSnapshot
         );
-        if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, _lup(borrowerDebt)) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (
+            PoolUtils.collateralizationAtPrice(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                _lup(borrowerDebt)
+            ) >= Maths.WAD
+        ) revert LiquidateBorrowerOk();
 
         // TODO: calculate using price decrease function and amount_
         uint256 liquidationPrice = Maths.WAD;

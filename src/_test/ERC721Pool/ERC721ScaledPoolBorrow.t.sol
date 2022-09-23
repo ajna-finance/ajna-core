@@ -249,7 +249,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
         // should revert if borrow would result in pool under collateralization
         changePrank(_borrower);
-        vm.expectRevert(IScaledPool.BorrowPoolUnderCollateralized.selector);
+        vm.expectRevert(IScaledPool.BorrowBorrowerUnderCollateralized.selector);
         _subsetPool.borrow(500 * 1e18, 4000);
     }
 

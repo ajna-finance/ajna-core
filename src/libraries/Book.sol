@@ -2,7 +2,7 @@
 pragma solidity 0.8.14;
 
 import './Maths.sol';
-import './BucketMath.sol';
+import './PoolUtils.sol';
 
 library Book {
 
@@ -67,7 +67,7 @@ library Book {
         if (bucketLPs == 0) {
             return  (Maths.RAY, bucketCollateral);
         }
-        uint256 bucketSize = quoteToken_ * 10**18 + indexToPrice(index_) * bucketCollateral;  // 10^36 + // 10^36
+        uint256 bucketSize = quoteToken_ * 10**18 + PoolUtils.indexToPrice(index_) * bucketCollateral;  // 10^36 + // 10^36
         return (bucketSize * 10**18 / bucketLPs, bucketCollateral); // 10^27
     }
 
@@ -78,7 +78,7 @@ library Book {
         uint256 collateral_
     ) internal view returns (uint256, uint256) {
         (uint256 rate, uint256 bucketCollateral)  = getExchangeRate(self, index_, deposit_);
-        uint256 lps = (collateral_ * indexToPrice(index_) * 1e18 + rate / 2) / rate;
+        uint256 lps = (collateral_ * PoolUtils.indexToPrice(index_) * 1e18 + rate / 2) / rate;
         return (lps, bucketCollateral);
     }
 
@@ -118,7 +118,7 @@ library Book {
     ) internal view returns (uint256 collateralAmount_, uint256 lenderLPs_) {
         // max collateral to lps
         lenderLPs_        = lenderLPsBalance_;
-        uint256 price      = Book.indexToPrice(index_);
+        uint256 price      = PoolUtils.indexToPrice(index_);
         (uint256 rate, uint256 bucketCollateral) = getExchangeRate(self, index_, deposit_);
         collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), price);
         if (collateralAmount_ > bucketCollateral) {
@@ -126,24 +126,6 @@ library Book {
             collateralAmount_ = bucketCollateral;
             lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, price), rate);
         }
-    }
-
-    function indexToPrice(uint256 index_) internal pure returns (uint256) {
-        return BucketMath.indexToPrice(indexToBucketIndex(index_));
-    }
-
-    function priceToIndex(uint256 price_) internal pure returns (uint256) {
-        return uint256(7388 - (BucketMath.priceToIndex(price_) + 3232));
-    }
-
-    /**
-     *  @dev Fenwick index to bucket index conversion
-     *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
-     *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
-     *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
-     */
-    function indexToBucketIndex(uint256 index_) internal pure returns (int256 bucketIndex_) {
-        bucketIndex_ = (index_ != 8191) ? 4156 - int256(index_) : BucketMath.MIN_PRICE_INDEX;
     }
 
     /****************/
@@ -160,6 +142,12 @@ library Book {
         uint256[8193] scaling; // Array of values in the nested scaling FenwickTree.
     }
 
+    function isDepositIndex(
+        uint256 index_
+    ) public pure returns (bool) {
+        return index_ <= SIZE;
+    }
+
     function accrueInterest(
         Deposits storage self,
         uint256 debt_,
@@ -167,7 +155,7 @@ library Book {
         uint256 curentInterestFactor_,
         uint256 pendingInterestFactor_
     ) internal {
-        uint256 htpIndex        = priceToIndex(htp_);
+        uint256 htpIndex        = PoolUtils.priceToIndex(htp_);
         uint256 depositAboveHtp = prefixSum(self, htpIndex);
 
         if (depositAboveHtp != 0) {
@@ -181,6 +169,18 @@ library Book {
             uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
             mult(self, htpIndex, lenderFactor);
         }
+    }
+
+    function mompFactor(
+        Deposits storage self,
+        uint256 inflator_,
+        uint256 curDebt_,
+        uint256 numLoans_
+    ) internal view returns (uint256 factor_) {
+        if (numLoans_ != 0) factor_ = Maths.wdiv(
+            PoolUtils.indexToPrice(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18))),
+            inflator_
+        ); 
     }
 
     /**

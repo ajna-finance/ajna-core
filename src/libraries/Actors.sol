@@ -3,7 +3,7 @@
 pragma solidity 0.8.14;
 
 import './Maths.sol';
-import './Book.sol';
+import './PoolUtils.sol';
 
 library Actors {
 
@@ -61,24 +61,6 @@ library Actors {
         delete self[index_][owner_];
     }
 
-    function applyEarlyWithdrawalPenalty(
-        uint256 feeRate_,
-        uint256 depositTime_,
-        uint256 curDebt_,
-        uint256 col_,
-        uint256 fromIndex_,
-        uint256 toIndex_,
-        uint256 amount_
-    ) internal view returns (uint256 amountWithPenalty_){
-        amountWithPenalty_ = amount_;
-        if (col_ != 0 && depositTime_ != 0 && block.timestamp - depositTime_ < 1 days) {
-            uint256 ptp = Maths.wdiv(curDebt_, col_);
-            bool applyPenalty = Book.indexToPrice(fromIndex_) > ptp;
-            if (toIndex_ != 0) applyPenalty = applyPenalty && Book.indexToPrice(toIndex_) < ptp;
-            if (applyPenalty) amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate_);
-        }
-    }
-
     function getLenderInfo(
         mapping(uint256 => mapping(address => Lender)) storage self,
         uint256 index_,
@@ -115,23 +97,6 @@ library Actors {
         if (debt_ != 0) {
             debt_ = Maths.wmul(debt_, Maths.wdiv(poolInflator_, self[borrower_].inflatorSnapshot));
         }
-    }
-
-    function collateralization(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 price_
-    ) internal pure returns (uint256 collateralization_) {
-        uint256 encumbered =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
-        collateralization_ = collateral_ != 0 && encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
-    }
-
-    function t0ThresholdPrice(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 inflator_
-    ) internal pure returns (uint256 tp_) {
-        if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
     }
 
     function update(
