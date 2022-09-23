@@ -521,24 +521,6 @@ interface IScaledPool {
             uint256 liquidityToPrice_
         );
 
-    /**
-     *  @notice Get a borrower info struct for a given address.
-     *  @param  borrower_         The borrower address.
-     *  @return debt_             Borrower accrued debt (WAD)
-     *  @return collateral_       Deposited collateral including encumbered (WAD)
-     *  @return mompFactor_        LUP / inflator, used in neutralPrice calc (WAD)
-     *  @return inflatorSnapshot_ Inflator used to calculate pending interest (WAD)
-     */
-    function borrower(address borrower_)
-        external
-        view
-        returns (
-            uint256 debt_,
-            uint256 collateral_,
-            uint256 mompFactor_,
-            uint256 inflatorSnapshot_
-        );
-
     function depositSize() external view returns (uint256);
 
     /**

@@ -695,20 +695,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         liquidityToPrice_  = deposits.prefixSum(index_);
     }
 
-    function borrower(address borrower_)
-        external
-        view
-        override
-        returns (
-            uint256 debt_,             // accrued debt (WAD)
-            uint256 collateral_,       // deposited collateral including encumbered (WAD)
-            uint256 mompFactor_,       // MOMP / inflator, used in neutralPrice calc (WAD)
-            uint256 inflatorSnapshot_  // used to calculate pending interest (WAD)
-        )
-    {
-        return borrowers.getBorrower(borrower_);
-    }
-
     function depositSize() external view override returns (uint256) {
         return deposits.treeSum();
     }

@@ -70,7 +70,7 @@ contract ScaledPoolUtils {
         uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
         uint256 interestRate               = pool.interestRate();
 
-        (debt_, collateral_, mompFactor_, inflatorSnapshot_) = pool.borrower(borrower_);
+        (debt_, collateral_, mompFactor_, inflatorSnapshot_) = pool.borrowers(borrower_);
         uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         pendingDebt_ = Maths.wmul(debt_, Maths.wdiv(pendingInflator, inflatorSnapshot));
     }
