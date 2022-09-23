@@ -13,6 +13,7 @@ import { PositionManager } from "../base/PositionManager.sol";
 
 import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
 import { IScaledPool }      from "../base/interfaces/IScaledPool.sol";
+import { ScaledPoolUtils }  from "../base/ScaledPoolUtils.sol";
 
 // TODO: test this against ERC721Pool
 abstract contract PositionManagerHelperContract is DSTestPlus {
@@ -21,6 +22,7 @@ abstract contract PositionManagerHelperContract is DSTestPlus {
     PositionManager  internal _positionManager;
     Token            internal _collateral;
     Token            internal _quote;
+    ScaledPoolUtils  internal _poolUtils;
 
     constructor() {
         _collateral      = new Token("Collateral", "C");
@@ -28,6 +30,7 @@ abstract contract PositionManagerHelperContract is DSTestPlus {
         _factory         = new ERC20PoolFactory();
         _positionManager = new PositionManager();
         _pool            = ERC20Pool(_factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _poolUtils       = new ScaledPoolUtils();
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
@@ -376,7 +379,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(indexes[0], tokenId2), 0);
         assertEq(_positionManager.getLPTokens(indexes[3], tokenId2), 0);
 
-        (uint256 poolSize, , , ) = _pool.poolLoansInfo();
+        (uint256 poolSize, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
 
         // construct memorialize lender 1 params struct
@@ -426,7 +429,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[1]), 3_000 * 1e27);
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[2]), 3_000 * 1e27);
 
-        (poolSize, , , ) = _pool.poolLoansInfo();
+        (poolSize, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
 
         // allow position manager to take ownership of lender 2's position
@@ -473,7 +476,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(tokenId2, indexes[0]), 3_000 * 1e27);
         assertEq(_positionManager.getLPTokens(tokenId2, indexes[3]), 3_000 * 1e27);
 
-        (poolSize, , , ) = _pool.poolLoansInfo();
+        (poolSize, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
     }
 

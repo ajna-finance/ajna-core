@@ -65,7 +65,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             uint256 collateralDeposited,
             uint256 mompFactor,
             uint256 borrowerInflator
-        ) = _pool.borrowerInfo(_borrower2);
+        ) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
 
         assertEq(borrowerDebt,         10_009.615384615384620000 * 1e18);
         assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);
@@ -102,7 +102,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             collateralDeposited,
             mompFactor,
             borrowerInflator
-        ) = _pool.borrowerInfo(_borrower2);
+        ) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
 
         assertEq(borrowerDebt,         10_030.204233142901661009 * 1e18);  // Updated to reflect debt
         assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);  // Pending debt is unchanged
@@ -151,7 +151,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             uint256 mompFactor,
             uint256 borrowerInflator
 
-        ) = _pool.borrowerInfo(address(borrower_));
+        ) = _poolUtils.borrowerInfo(address(_pool), borrower_);
 
         emit log_named_uint("borrowerDebt        ", borrowerDebt);
         emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);

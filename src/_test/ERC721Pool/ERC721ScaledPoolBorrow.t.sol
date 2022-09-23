@@ -80,7 +80,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.borrow(5_000 * 1e18, 2551);
 
         assertEq(_subsetPool.borrowerDebt(), 5_004.807692307692310000 * 1e18);
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         assertEq(debt,        5_004.807692307692310000 * 1e18);
         assertEq(pendingDebt, 5_012.354868151222773335 * 1e18);
         assertEq(col       ,  3 * 1e18);
@@ -93,7 +93,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToAdd[0] = 51;
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
         assertEq(_subsetPool.borrowerDebt(), 5_019.913425024098425550 * 1e18);
-        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         assertEq(debt,        5_019.913425024098425550 * 1e18);
         assertEq(pendingDebt, 5_019.913425024098425550 * 1e18);
         assertEq(col,         4 * 1e18);
@@ -106,7 +106,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 1;
         _subsetPool.pullCollateral(tokenIdsToRemove);
         assertEq(_subsetPool.borrowerDebt(), 5_028.241003157279922662 * 1e18);
-        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         assertEq(debt,        5_028.241003157279922662 * 1e18);
         assertEq(pendingDebt, 5_028.241003157279922662 * 1e18);
         assertEq(col,         3 * 1e18);
@@ -117,7 +117,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         skip(864000);
         _subsetPool.borrow(1_000 * 1e18, 3000);
         assertEq(_subsetPool.borrowerDebt(), 6_038.697103647272763112 * 1e18);
-        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         assertEq(debt,        6_038.697103647272763112 * 1e18);
         assertEq(pendingDebt, 6_038.697103647272763112 * 1e18);
         assertEq(col       ,  3 * 1e18);
@@ -129,10 +129,10 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
         // borrower repays their loan after some additional time
         skip(864000);
-        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         _subsetPool.repay(_borrower, pendingDebt);
         assertEq(_subsetPool.borrowerDebt(), 0);
-        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(mompFactor,  0 * 1e18);
@@ -192,13 +192,13 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
 
         // check pool and borrower debt to confirm interest has accumulated
         assertEq(_subsetPool.borrowerDebt(), 13_263.563121817930264782 * 1e18);
-        (uint256 debt, uint256 pendingDebt, , , ) = _subsetPool.borrowerInfo(_borrower);
+        (uint256 debt, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         assertEq(debt,        8_007.692307692307696000 * 1e18);
         assertEq(pendingDebt, 8_007.692307692307696000 * 1e18);
-        (debt, pendingDebt, , , ) = _subsetPool.borrowerInfo(_borrower2);
+        (debt, pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower2);
         assertEq(debt,        2_752.644230769230770500 * 1e18);
         assertEq(pendingDebt, 2_752.644230769230770500 * 1e18);
-        (debt, pendingDebt, , , ) = _subsetPool.borrowerInfo(_borrower3);
+        (debt, pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower3);
         assertEq(debt,        2_502.403846153846155000 * 1e18);
         assertEq(pendingDebt, 2_502.403846153846155000 * 1e18);
     }
@@ -324,7 +324,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(availableCollateral, 0);
 
         // check borrower info after borrow
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _subsetPool.borrowerInfo(_borrower);
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         assertEq(debt,        3_002.884615384615386000 * 1e18);
         assertEq(pendingDebt, 3_002.884615384615386000 * 1e18);
         assertEq(col       ,  3 * 1e18);
@@ -366,7 +366,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(availableCollateral, 0);
 
         // check borrower info after partial repay
-        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         assertEq(debt,        1_507.000974734143274062 * 1e18);
         assertEq(pendingDebt, 1_507.000974734143274062 * 1e18);
         assertEq(col,         3 * 1e18);
@@ -377,7 +377,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         skip(10 days);
 
         // find pending debt after interest accumulation
-        (, pendingDebt, , , ) = _subsetPool.borrowerInfo(_borrower);
+        (, pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
 
         // mint additional quote to allow borrower to repay their loan plus interest
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 1_000 * 1e18);
@@ -425,7 +425,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(availableCollateral, 0);
 
         // check borrower info after fully repay
-        (debt, pendingDebt, col, mompFactor, inflator) = _subsetPool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_subsetPool), _borrower);
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(col,         0);

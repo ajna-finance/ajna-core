@@ -2,18 +2,16 @@
 
 pragma solidity 0.8.14;
 
-import { Clone }          from "@clones/Clone.sol";
-import { ERC20 }          from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ERC20Burnable }  from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
-import { SafeERC20 }      from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { Multicall }      from "@openzeppelin/contracts/utils/Multicall.sol";
-import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
-import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
+import '@clones/Clone.sol';
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/utils/Multicall.sol';
 
-import { IScaledPool }    from "./interfaces/IScaledPool.sol";
+import './interfaces/IScaledPool.sol';
 
-import { Maths }          from "../libraries/Maths.sol";
-import { Heap }           from "../libraries/Heap.sol";
+import '../libraries/Maths.sol';
+import '../libraries/Heap.sol';
 import '../libraries/Book.sol';
 import '../libraries/Actors.sol';
 import '../libraries/PoolUtils.sol';
@@ -51,45 +49,21 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     uint256 public override debtEma;      // [WAD]
     uint256 public override lupColEma;    // [WAD]
 
-    /**
-     *  @notice Mapping of buckets for a given pool
-     *  @dev    deposit index -> bucket
-     */
-    mapping(uint256 => Book.Bucket) public override buckets;
+    uint256 public override reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
+    uint256 public override reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+
+
+    mapping(uint256 => Book.Bucket)                       public override buckets;   // deposit index -> bucket
+    mapping(uint256 => mapping(address => Actors.Lender)) public override lenders;   // deposit index -> lender address -> lender lp [RAY] and deposit timestamp
+    mapping(address => Actors.Borrower)                   public override borrowers; // borrowers book: borrower address -> BorrowerInfo
+
+    mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
+
+    address       internal ajnaTokenAddress; //  Address of the Ajna token, needed for Claimable Reserve Auctions.
     Book.Deposits internal deposits;
-
-    /**
-     *  @dev deposit index -> lender address -> lender lp [RAY] and deposit timestamp
-     */
-    mapping(uint256 => mapping(address => Actors.Lender)) public override lenders;
-    // borrowers book: borrower address -> BorrowerInfo
-    mapping(address => Actors.Borrower) public override borrowers;
-
-    /**
-     *  @notice Used for tracking LP token ownership address for transferLPTokens access control
-     *  @dev    owner address -> new owner address -> deposit index -> allowed amount
-     */
-    mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances;
-
-    /**
-     *  @notice Address of the Ajna token, needed for Claimable Reserve Auctions.
-     */
-    address internal ajnaTokenAddress;
-
-    Heap.Data internal loans;
+    Heap.Data     internal loans;
 
     uint256 internal poolInitializations;
-
-    /**
-     *  @notice Time a Claimable Reserve Auction was last kicked.
-     */
-    uint256 internal reserveAuctionKicked;
-
-    /**
-     *  @notice Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
-     */
-    uint256 internal reserveAuctionUnclaimed;
-
 
     /*********************************/
     /*** Lender External Functions ***/
@@ -721,21 +695,30 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         liquidityToPrice_  = deposits.prefixSum(index_);
     }
 
-    function borrowerInfo(address borrower_)
+    function borrower(address borrower_)
         external
         view
         override
         returns (
             uint256 debt_,             // accrued debt (WAD)
-            uint256 pendingDebt_,      // current debt, accrued and pending accrual (WAD)
             uint256 collateral_,       // deposited collateral including encumbered (WAD)
             uint256 mompFactor_,       // MOMP / inflator, used in neutralPrice calc (WAD)
             uint256 inflatorSnapshot_  // used to calculate pending interest (WAD)
         )
     {
-        (debt_, collateral_, mompFactor_, inflatorSnapshot_) = borrowers.getBorrower(borrower_);
-        uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        pendingDebt_ = Maths.wmul(debt_, Maths.wdiv(pendingInflator, inflatorSnapshot));
+        return borrowers.getBorrower(borrower_);
+    }
+
+    function depositSize() external view override returns (uint256) {
+        return deposits.treeSum();
+    }
+
+    function noOfLoans() external view override returns (uint256) {
+        return loans.count - 1;
+    }
+
+    function maxBorrower() external view override returns (address) {
+        return loans.getMax().id;
     }
 
     function lpsToQuoteTokens(
@@ -749,23 +732,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             lpTokens_,
             deposit_
         );
-    }
-
-    function poolLoansInfo()
-        external
-        view
-        override
-        returns (
-            uint256 poolSize_,
-            uint256 loansCount_,
-            address maxBorrower_,
-            uint256 pendingInflator_
-        )
-    {
-        poolSize_        = deposits.treeSum();
-        loansCount_      = loans.count - 1;
-        maxBorrower_     = loans.getMax().id;
-        pendingInflator_ = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
     }
 
     function poolPricesInfo()
@@ -785,40 +751,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         lup_ = PoolUtils.indexToPrice(lupIndex_);
     }
 
-    function poolReservesInfo()
-        external
-        view
-        override
-        returns (
-            uint256 reserves_,
-            uint256 claimableReserves_,
-            uint256 claimableReservesRemaining_,
-            uint256 auctionPrice_,
-            uint256 timeRemaining_
-        )
-    {
-        uint256 poolDebt = borrowerDebt;
-        uint256 poolSize = deposits.treeSum();
-
-        uint256 quoteTokenBalance = quoteToken().balanceOf(address(this));
-
-        uint256 bondEscrowed     = liquidationBondEscrowed;
-        uint256 unclaimedReserve = reserveAuctionUnclaimed;
-
-        reserves_ = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
-        claimableReserves_ = PoolUtils.claimableReserves(
-            poolDebt,
-            poolSize,
-            bondEscrowed,
-            unclaimedReserve,
-            quoteTokenBalance
-        );
-
-        claimableReservesRemaining_ = unclaimedReserve;
-        auctionPrice_               = PoolUtils.reserveAuctionPrice(reserveAuctionKicked);
-        timeRemaining_              = 3 days - Maths.min(3 days, block.timestamp - reserveAuctionKicked);
-    }
-
     function poolUtilizationInfo()
         external
         view
@@ -836,6 +768,10 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         poolCollateralization_ = PoolUtils.poolCollateralization(poolDebt, poolCollateral, _lup(poolDebt));
         poolActualUtilization_  = _poolActualUtilization(poolDebt, poolCollateral);
         poolTargetUtilization_  = PoolUtils.poolTargetUtilization(debtEma, lupColEma);
+    }
+
+    function quoteTokenAddress() external pure override returns (address) {
+        return _getArgAddress(0x14);
     }
 
     /************************/

@@ -900,7 +900,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
             })
         );
 
-        (, uint256 pendingDebt, , , ) = _pool.borrowerInfo(_borrower);
+        (, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert("H:I:VAL_EQ_0");

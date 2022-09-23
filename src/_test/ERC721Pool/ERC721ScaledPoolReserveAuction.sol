@@ -77,7 +77,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         // ensure cannot take when no auction was started
         vm.expectRevert(IScaledPool.NoAuction.selector);
         _collectionPool.takeReserves(555 * 1e18);
-        (uint256 reserves, , , , ) = _collectionPool.poolReservesInfo();
+        (uint256 reserves, , , , ) = _poolUtils.poolReservesInfo(address(_collectionPool));
         assertEq(reserves, 168.26923076923085 * 1e18);
     }
 
@@ -85,7 +85,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         // borrower repays partial debt, ensure cannot kick when there are no claimable reserves
         changePrank(_borrower);
         _collectionPool.repay(_borrower, 50_000 * 1e18);
-        (uint256 reserves, uint256 claimableReserves, , , ) = _collectionPool.poolReservesInfo();
+        (uint256 reserves, uint256 claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_collectionPool));
         assertEq(reserves, 610.479702351371553626 * 1e18);
         changePrank(_bidder);
         assertEq(claimableReserves, 0);
@@ -97,7 +97,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         // borrower repays all debt (auction for full reserves)
         changePrank(_borrower);
         _collectionPool.repay(_borrower, 205_000 * 1e18);
-        (uint256 reserves, , , , ) = _collectionPool.poolReservesInfo();
+        (uint256 reserves, , , , ) = _poolUtils.poolReservesInfo(address(_collectionPool));
         assertEq(reserves, 610.479702351371553626 * 1e18);
 
         // kick off a new auction
@@ -144,7 +144,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         // borrower repays all debt (auction for full reserves)
         changePrank(_borrower);
         _collectionPool.repay(_borrower, 205_000 * 1e18);
-        (uint256 reserves, uint256 claimableReserves, , , ) = _collectionPool.poolReservesInfo();
+        (uint256 reserves, uint256 claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_collectionPool));
         assertEq(reserves, 610.479702351371553626 * 1e18);
 
         // kick off a new auction
@@ -166,7 +166,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
                 timeRemaining:              3 days
             })
         );
-        (reserves, claimableReserves, , , ) = _collectionPool.poolReservesInfo();
+        (reserves, claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_collectionPool));
         assertEq(reserves, 0);
         assertEq(_quote.balanceOf(_bidder), expectedQuoteBalance);
 
@@ -231,7 +231,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
                 timeRemaining:              0
             })
         );
-        (reserves, claimableReserves, , , ) = _collectionPool.poolReservesInfo();
+        (reserves, claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_collectionPool));
         assertEq(reserves, 0);
     }
 
@@ -239,7 +239,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         // borrower repays partial debt (auction for full reserves)
         changePrank(_borrower);
         _collectionPool.repay(_borrower, 100_000 * 1e18);
-        (uint256 reserves, uint256 claimableReserves, , , ) = _collectionPool.poolReservesInfo();
+        (uint256 reserves, uint256 claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_collectionPool));
         assertEq(reserves, 610.479702351371553626 * 1e18);
         uint256 expectedReserves = claimableReserves;
         assertEq(expectedReserves, 212.527832618418361858 * 1e18);
@@ -259,7 +259,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
                 timeRemaining:              3 days
             })
         );
-        (reserves, claimableReserves, , , ) = _collectionPool.poolReservesInfo();
+        (reserves, claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_collectionPool));
         assertEq(reserves, 610.479702351371553626 * 1e18 - 212.527832618418361858 * 1e18);
 
         // partial take
@@ -295,7 +295,7 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
         // start an auction, confirm old claimable reserves are included alongside new claimable reserves
         skip(1 days);
         changePrank(_bidder);
-        (reserves, claimableReserves, , , ) = _collectionPool.poolReservesInfo();
+        (reserves, claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_collectionPool));
         assertEq(reserves, 432.917381525917306905 * 1e18);
         uint256 newClaimableReserves = claimableReserves;
         assertEq(newClaimableReserves, 432.917381525917306905 * 1e18);

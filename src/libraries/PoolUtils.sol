@@ -94,7 +94,7 @@ library PoolUtils {
     function minDebtAmount(
         uint256 debt_,
         uint256 loansCount_
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         return Maths.wdiv(Maths.wdiv(debt_, Maths.wad(loansCount_)), 10**19);
     }
 

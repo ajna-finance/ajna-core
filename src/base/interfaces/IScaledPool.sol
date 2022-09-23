@@ -351,6 +351,18 @@ interface IScaledPool {
     function pledgedCollateral() external view returns (uint256 pledgedCollateral_);
 
     /**
+     *  @notice Returns the amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+     *  @return reserve_ Unclaimed Auction Reserve.
+     */
+    function reserveAuctionUnclaimed() external view returns (uint256 reserve_);
+
+    /**
+     *  @notice Returns the Time a Claimable Reserve Auction was last kicked.
+     *  @return time_ Time a Claimable Reserve Auction was last kicked.
+     */
+    function reserveAuctionKicked() external view returns (uint256 time_);
+
+    /**
      *  @notice Returns the `quoteTokenScale` state variable.
      *  @return quoteTokenScale_ The precision of the quote ERC-20 token based on decimals.
      */
@@ -513,21 +525,21 @@ interface IScaledPool {
      *  @notice Get a borrower info struct for a given address.
      *  @param  borrower_         The borrower address.
      *  @return debt_             Borrower accrued debt (WAD)
-     *  @return pendingDebt_      Borrower current debt, accrued and pending accrual (WAD)
      *  @return collateral_       Deposited collateral including encumbered (WAD)
      *  @return mompFactor_        LUP / inflator, used in neutralPrice calc (WAD)
      *  @return inflatorSnapshot_ Inflator used to calculate pending interest (WAD)
      */
-    function borrowerInfo(address borrower_)
+    function borrower(address borrower_)
         external
         view
         returns (
             uint256 debt_,
-            uint256 pendingDebt_,
             uint256 collateral_,
             uint256 mompFactor_,
             uint256 inflatorSnapshot_
         );
+
+    function depositSize() external view returns (uint256);
 
     /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
@@ -543,22 +555,9 @@ interface IScaledPool {
     ) external view returns (uint256 quoteAmount_);
 
 
-    /**
-     *  @notice Returns info related to pool loans.
-     *  @return poolSize_        The total amount of quote tokens in pool (WAD).
-     *  @return loansCount_      The number of loans in pool.
-     *  @return maxBorrower_     The address with the highest TP in pool.
-     *  @return pendingInflator_ Pending inflator in pool
-     */
-    function poolLoansInfo()
-        external
-        view
-        returns (
-            uint256 poolSize_,
-            uint256 loansCount_,
-            address maxBorrower_,
-            uint256 pendingInflator_
-        );
+    function noOfLoans() external view returns (uint256);
+
+    function maxBorrower() external view returns (address);
 
     /**
      *  @notice Returns info related to pool prices.
@@ -577,26 +576,6 @@ interface IScaledPool {
             uint256 lupIndex_
         );
 
-
-    /**
-     *  @notice Returns info related to Claimaible Reserve Auction.
-     *  @return reserves_                   The amount of excess quote tokens.
-     *  @return claimableReserves_          Denominated in quote token, or 0 if no reserves can be auctioned.
-     *  @return claimableReservesRemaining_ Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice_               Current price at which 1 quote token may be purchased, denominated in Ajna.
-     *  @return timeRemaining_              Seconds remaining before takes are no longer allowed.
-     */
-    function poolReservesInfo()
-        external
-        view
-        returns (
-            uint256 reserves_,
-            uint256 claimableReserves_,
-            uint256 claimableReservesRemaining_,
-            uint256 auctionPrice_,
-            uint256 timeRemaining_
-        );
-
     /**
      *  @notice Returns info related to Claimaible Reserve Auction.
      *  @return poolMinDebtAmount_     Minimum debt amount.
@@ -613,5 +592,10 @@ interface IScaledPool {
             uint256 poolActualUtilization_,
             uint256 poolTargetUtilization_
         );
+
+    /**
+     *  @notice Returns the address of the pools quote token
+     */
+    function quoteTokenAddress() external pure returns (address);
 
 }

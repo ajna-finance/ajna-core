@@ -5,6 +5,7 @@ import { ERC20 }             from "@openzeppelin/contracts/token/ERC20/ERC20.sol
 
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
+import { ScaledPoolUtils }   from "../../base/ScaledPoolUtils.sol";
 
 import { DSTestPlus }                from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
@@ -59,6 +60,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     ERC20              internal _ajna;
     ERC721Pool         internal _collectionPool;
     ERC721Pool         internal _subsetPool;
+    ScaledPoolUtils    internal _poolUtils;
 
     // TODO: bool for pool type
     constructor() {
@@ -70,6 +72,8 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.makePersistent(address(_quote));
         _ajna       = ERC20(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079));
         vm.makePersistent(address(_ajna));
+        _poolUtils  = new ScaledPoolUtils();
+        vm.makePersistent(address(_poolUtils));
     }
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
@@ -151,7 +155,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     function _assertPool(PoolState memory state_) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
         ( , uint256 htp, uint256 lup, ) = pool.poolPricesInfo();
-        (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = pool.poolLoansInfo();
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = _poolUtils.poolLoansInfo(address(pool));
         (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = pool.poolUtilizationInfo();
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
@@ -172,7 +176,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
 
-        ( , , uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = pool.poolReservesInfo();
+        ( , , uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = _poolUtils.poolReservesInfo(address(pool));
         assertEq(claimableReservesRemaining, state_.claimableReservesRemaining);
         assertEq(auctionPrice, state_.auctionPrice);
         assertEq(timeRemaining, state_.timeRemaining);
@@ -180,7 +184,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _assertReserveAuctionPrice(uint256 expectedPrice) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        ( , , , uint256 auctionPrice, ) = pool.poolReservesInfo();
+        ( , , , uint256 auctionPrice, ) = _poolUtils.poolReservesInfo(address(pool));
         assertEq(auctionPrice, expectedPrice);
     }
 
@@ -202,7 +206,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _poolSize() internal view returns (uint256 poolSize_) {
-        (poolSize_, , , ) = _subsetPool.poolLoansInfo();
+        (poolSize_, , , ) = _poolUtils.poolLoansInfo(address(_subsetPool));
     }
 
     function _poolTargetUtilization() internal view returns (uint256 utilization_) {
@@ -218,11 +222,11 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _loansCount() internal view returns (uint256 loansCount_) {
-        ( , loansCount_, , ) = _subsetPool.poolLoansInfo();
+        ( , loansCount_, , ) = _poolUtils.poolLoansInfo(address(_subsetPool));
     }
 
     function _maxBorrower() internal view returns (address maxBorrower_) {
-        ( , , maxBorrower_, ) = _subsetPool.poolLoansInfo();
+        ( , , maxBorrower_, ) = _poolUtils.poolLoansInfo(address(_subsetPool));
     }
 
     function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {

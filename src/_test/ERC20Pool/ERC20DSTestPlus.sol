@@ -5,6 +5,7 @@ import { ERC20 }      from "@solmate/tokens/ERC20.sol";
 
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ScaledPoolUtils }   from "../../base/ScaledPoolUtils.sol";
 
 import { Maths } from "../../libraries/Maths.sol";
 import '../../libraries/Actors.sol';
@@ -178,14 +179,16 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
-    Token     internal _collateral;
-    Token     internal _quote;
-    ERC20Pool internal _pool;
+    Token           internal _collateral;
+    Token           internal _quote;
+    ERC20Pool       internal _pool;
+    ScaledPoolUtils internal _poolUtils;
 
     constructor() {
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _poolUtils  = new ScaledPoolUtils();
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
@@ -330,7 +333,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     function _assertPool(PoolState memory state_) internal {
         ( , uint256 htp, uint256 lup, ) = _pool.poolPricesInfo();
-        (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator) = _pool.poolLoansInfo();
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator) = _poolUtils.poolLoansInfo(address(_pool));
         (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _pool.poolUtilizationInfo();
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
@@ -370,7 +373,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _assertBorrower(BorrowerState memory state_) internal {
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (, , uint256 lup, ) = _pool.poolPricesInfo();
         assertEq(debt,        state_.debt);
         assertEq(pendingDebt, state_.pendingDebt);
@@ -397,11 +400,11 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _loansCount() internal view returns (uint256 loansCount_) {
-        ( , loansCount_, , ) = _pool.poolLoansInfo();
+        ( , loansCount_, , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _poolSize() internal view returns (uint256 poolSize_) {
-        (poolSize_, , , ) = _pool.poolLoansInfo();
+        (poolSize_, , , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
