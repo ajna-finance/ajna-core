@@ -193,7 +193,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToAdd[3] = 74;
         uint256 amountToPurchase = 10_100 * 1e18;
         assertGt(_quote.balanceOf(address(_subsetPool)), amountToPurchase);
-        uint256 amountWithInterest = 24_001.511204352939432000 * 1e18;
+        uint256 amountWithInterest = 24_001.477919844844176000 * 1e18;
         vm.expectEmit(true, true, true, true);
         emit AddCollateralNFT(_bidder, 2350, tokenIdsToAdd);
         vm.expectEmit(true, true, true, true);
@@ -209,7 +209,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         ( , quote, collateral, lpb, , , ) = _subsetPool.bucketAt(2350);
         assertEq(quote,      0);
         assertEq(collateral, Maths.wad(4));
-        assertEq(lpb,        32_654.284956525291224787239794566 * 1e27);
+        assertEq(lpb,        32_654.330240478871500328243823671 * 1e27);
 
         // bidder withdraws unused collateral
         uint256[] memory tokenIdsToRemove = new uint256[](1);
@@ -218,7 +218,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         emit RemoveCollateralNFT(_bidder, 2350, tokenIdsToRemove);
         (uint256 amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
         (uint256 lpBalance, ) = _subsetPool.lenders(2350, _bidder);
-        assertEq(lpBalance, 490.713717393968418590429839925 * 1e27);
+        assertEq(lpBalance, 490.747680359153625246182861754 * 1e27);
         skip(7200);
 
         // should revert if lender attempts to remove more collateral than available in the bucket
@@ -244,14 +244,14 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         emit RemoveCollateralNFT(_lender, 2350, tokenIdsToRemove);
         (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
         (lpBalance, ) = _subsetPool.lenders(2350, _lender);
-        assertEq(lpBalance, 11_836.428760868677193803190045359 * 1e27);
+        assertEq(lpBalance, 11_836.417439880282124917939038083 * 1e27);
         skip(3600);
 
         // check bucket state
         ( , quote, collateral, lpb, , , ) = _subsetPool.bucketAt(2350);
         assertEq(quote,      0);
         assertEq(collateral, Maths.wad(2));
-        assertEq(lpb,        16_327.142478262645612393619885284 * 1e27);
+        assertEq(lpb,        16_327.165120239435750164121899837 * 1e27);
 
         // should revert if lender2 attempts to remove more collateral than lp is available for
         changePrank(_lender2);

@@ -499,21 +499,21 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 amount:   1_700 * 1e18,
                 penalty:  penalty,
                 newLup:   _indexToPrice(1663),
-                lpRedeem: 1_699.988430646832348876473462074 * 1e27
+                lpRedeem: 1_699.988732998890538932348791152 * 1e27
             })
         );
 
         // lender removes all quote token, including interest, from the bucket
         skip(1 days);
         assertGt(_indexToPrice(1606), _htp());
-        uint256 expectedWithdrawal2 = 1_700.146556206967894132 * 1e18;
+        uint256 expectedWithdrawal2 = 1_700.144368656943031197 * 1e18;
         _removeAllLiquidity(
             RemoveAllLiquiditySpecs({
                 from:     _lender,
                 index:    1606,
                 amount:   expectedWithdrawal2,
                 newLup:   _indexToPrice(1663),
-                lpRedeem: 1_700.011569353167651123526537926 * 1e27
+                lpRedeem: 1_700.011267001109461067651208848 * 1e27
             })
         );
         assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + expectedWithdrawal1 + expectedWithdrawal2);
@@ -722,7 +722,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 fromIndex:    2873,
                 toIndex:      2954,
                 newLup:       _lup(),
-                lpRedeemFrom: 2_499.877878608019467246904020519 * 1e27,
+                lpRedeemFrom: 2_499.880458897159855582175961109 * 1e27,
                 lpRedeemTo:   2_497.596153846153845 * 1e27
             })
         );
@@ -746,7 +746,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 fromIndex:    2873,
                 toIndex:      2954,
                 newLup:       _lup(),
-                lpRedeemFrom: 2_499.778568979414622058441434089 * 1e27,
+                lpRedeemFrom: 2_499.782349950471454569645355799 * 1e27,
                 lpRedeemTo:   2_500 * 1e27
             })
         );
@@ -767,7 +767,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
             RemoveAllLiquiditySpecs({
                 from:     _lender,
                 index:    2873,
-                amount:   5_006.457978117347442734 * 1e18,
+                amount:   5_006.520576360073735059 * 1e18,
                 newLup:   601.252968524772188572 * 1e18,
                 lpRedeem: 5_002.403846153846155 * 1e27
             })

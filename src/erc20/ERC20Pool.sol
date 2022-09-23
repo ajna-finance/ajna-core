@@ -44,7 +44,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
-        lenderInterestFactor       = 0.9 * 10**18;
         interestRate               = rate_;
         interestRateUpdate         = block.timestamp;
         minFee                     = 0.0005 * 10**18;

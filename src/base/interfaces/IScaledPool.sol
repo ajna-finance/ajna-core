@@ -321,12 +321,6 @@ interface IScaledPool {
     function lastInflatorSnapshotUpdate() external view returns (uint256 lastInflatorSnapshotUpdate_);
 
     /**
-     *  @notice Returns the `lenderInterestFactor` state variable.
-     *  @return lenderInterestFactor_ TODO
-     */
-    function lenderInterestFactor() external view returns (uint256 lenderInterestFactor_);
-
-    /**
      *  @notice Returns the amount of liquidation bond across all liquidators.
      *  @return liquidationBondEscrowed_ Total amount of quote token being escrowed.
      */
@@ -554,6 +548,12 @@ interface IScaledPool {
      *  @return encumbrance_ The current encumbrance of a given debt balance, in WAD units.
      */
     function encumberedCollateral(uint256 debt_, uint256 price_) external view returns (uint256 encumbrance_);
+
+    /**
+     *  @notice Returns the proportion of interest rate which is awarded to lenders;
+     *          the remainder accumulates in reserves.
+    */
+    function lenderInterestMargin() external view returns (uint256 lenderInterestMargin_);
 
     /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
