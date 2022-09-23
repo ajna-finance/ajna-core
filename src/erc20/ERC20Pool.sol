@@ -133,7 +133,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         buckets.removeCollateral(fromIndex_, fromBucketLPs_, collateralAmountToMove_);
         buckets.addCollateral(toIndex_, toBucketLPs_, collateralAmountToMove_);
 
-        _updateInterestRateAndEMAs(curDebt, deposits.lup(curDebt));
+        _updateInterestRateAndEMAs(curDebt, _lup());
 
         emit MoveCollateral(msg.sender, fromIndex_, toIndex_, collateralAmountToMove_);
     }
@@ -142,7 +142,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
 
-        uint256 curDebt = _accruePoolInterest();
+        _accruePoolInterest();
 
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
@@ -157,7 +157,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // update bucket accounting
         buckets.removeCollateral(index_, redeemedLenderLPs_, collateralAmountRemoved_);
 
-        _updateInterestRateAndEMAs(curDebt, deposits.lup(curDebt));
+        _updateInterestRateAndEMAs(borrowerDebt, _lup());
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
@@ -187,7 +187,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function clear(address borrower_, uint256 maxDepth_) external override {
         // TODO: implement
         uint256 debtCleared = maxDepth_ * 10_000;
-        emit Clear(borrower_, deposits.hpbIndex(), debtCleared, 0, 0);
+        emit Clear(borrower_, _hpbIndex(), debtCleared, 0, 0);
     }
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
@@ -205,7 +205,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         );
         if (borrowerAccruedDebt == 0) revert KickNoDebt();
 
-        uint256 lup = deposits.lup(curDebt);
+        uint256 lup = _lup();
         _updateInterestRateAndEMAs(curDebt, lup);
 
         if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
@@ -221,7 +221,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),
-            referencePrice:      uint128(deposits.hpbIndex()),
+            referencePrice:      uint128(_hpbIndex()),
             remainingCollateral: borrowerPledgedCollateral,
             remainingDebt:       borrowerAccruedDebt
         });
@@ -249,11 +249,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             borrower_,
             inflatorSnapshot
         );
-        if (Actors.collateralization(
-            borrowerAccruedDebt,
-            borrowerPledgedCollateral,
-            deposits.lup(borrowerDebt)
-        ) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (Actors.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
 
         // TODO: calculate using price decrease function and amount_
         uint256 liquidationPrice = Maths.WAD;
