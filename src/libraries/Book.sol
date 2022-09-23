@@ -132,6 +132,10 @@ library Book {
         return BucketMath.indexToPrice(indexToBucketIndex(index_));
     }
 
+    function priceToIndex(uint256 price_) internal pure returns (uint256) {
+        return uint256(7388 - (BucketMath.priceToIndex(price_) + 3232));
+    }
+
     /**
      *  @dev Fenwick index to bucket index conversion
      *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
@@ -154,6 +158,29 @@ library Book {
     struct Deposits {
         uint256[8193] values;  // Array of values in the FenwickTree.
         uint256[8193] scaling; // Array of values in the nested scaling FenwickTree.
+    }
+
+    function accrueInterest(
+        Deposits storage self,
+        uint256 debt_,
+        uint256 htp_,
+        uint256 curentInterestFactor_,
+        uint256 pendingInterestFactor_
+    ) internal {
+        uint256 htpIndex        = priceToIndex(htp_);
+        uint256 depositAboveHtp = prefixSum(self, htpIndex);
+
+        if (depositAboveHtp != 0) {
+            uint256 newInterest  = Maths.wmul(
+                curentInterestFactor_,
+                Maths.wmul(
+                    pendingInterestFactor_ - Maths.WAD,
+                    debt_
+                )
+            );
+            uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
+            mult(self, htpIndex, lenderFactor);
+        }
     }
 
     /**
