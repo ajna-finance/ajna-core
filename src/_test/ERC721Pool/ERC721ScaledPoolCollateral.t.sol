@@ -358,7 +358,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // check collateralization after pledge
-        assertEq(_subsetPool.encumberedCollateral(_subsetPool.borrowerDebt(), _lup()), 0);
+        assertEq(_encumberedCollateral(_subsetPool.borrowerDebt(), _lup()), 0);
 
         // borrower borrows some quote
         vm.expectEmit(true, true, false, true);
@@ -366,7 +366,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         _subsetPool.borrow(9_000 * 1e18, 2551);
 
         // check collateralization after borrow
-        assertEq(_subsetPool.encumberedCollateral(_subsetPool.borrowerDebt(), _lup()), 2.992021560300836411 * 1e18);
+        assertEq(_encumberedCollateral(_subsetPool.borrowerDebt(), _lup()), 2.992021560300836411 * 1e18);
 
         // should revert if borrower attempts to pull more collateral than is unencumbered
         uint256[] memory tokenIdsToRemove = new uint256[](2);
@@ -410,14 +410,14 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         tokenIds[0] = 5;
         emit RemoveCollateralNFT(_borrower, _indexToPrice(1530), tokenIds);
         _subsetPool.removeCollateral(tokenIds, 1530);
-        (, , uint256 collateral, , , , ) = _subsetPool.bucketAt(1530);
+        (, , uint256 collateral, , , , ) = _subsetPool.bucketInfo(1530);
         assertEq(collateral, 1 * 1e18);
 
         // remove another token
         tokenIds[0] = 1;
         emit RemoveCollateralNFT(_borrower, _indexToPrice(1530), tokenIds);
         _subsetPool.removeCollateral(tokenIds, 1530);
-        (, , collateral, , , , ) = _subsetPool.bucketAt(1530);
+        (, , collateral, , , , ) = _subsetPool.bucketInfo(1530);
         assertEq(collateral, 0);
         (uint256 lpb, ) = _subsetPool.lenders(1530, _borrower);
         assertEq(lpb, 0);
@@ -425,7 +425,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // lender removes quote token
         changePrank(_lender);
         _subsetPool.removeAllQuoteToken(1530);
-        (, , collateral, lpb, , , ) = _subsetPool.bucketAt(1530);
+        (, , collateral, lpb, , , ) = _subsetPool.bucketInfo(1530);
         assertEq(collateral, 0);
         assertEq(lpb, 0);
     }

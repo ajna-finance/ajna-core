@@ -60,7 +60,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(priceAtTestIndex, 3_010.892022197881557845 * 1e18);
 
         // check bucket state
-        ( , uint256 quote, uint256 collateral, uint256 lpb, , , ) = _subsetPool.bucketAt(2550);
+        ( , uint256 quote, uint256 collateral, uint256 lpb, , , ) = _subsetPool.bucketInfo(2550);
         assertEq(quote,      0);
         assertEq(collateral, 0);
         assertEq(lpb,        0);
@@ -77,7 +77,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _subsetPool.addQuoteToken(10_000 * 1e18, testIndex);
 
         // check bucket state
-        (, quote, collateral, lpb, , , ) = _subsetPool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , , ) = _subsetPool.bucketInfo(testIndex);
         assertEq(quote,      10_000 * 1e18);
         assertEq(collateral, 0);
         assertEq(lpb,        10_000 * 1e27);
@@ -95,7 +95,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         uint256 lpBalanceChange = _subsetPool.addCollateral(tokenIdsToAdd, testIndex);
 
         // check bucket state
-        (, quote, collateral, lpb, , , ) = _subsetPool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , , ) = _subsetPool.bucketInfo(testIndex);
         assertEq(quote,      10_000 * 1e18);
         assertEq(collateral, Maths.wad(3));
         (uint256 lpBalance, ) = _subsetPool.lenders(testIndex, _bidder);
@@ -116,7 +116,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_bidder), qtToRemove);
         (lpBalance, ) = _subsetPool.lenders(testIndex, _bidder);
         assertEq(lpBalance, 0);
-        (, quote, collateral, lpb, , , ) = _subsetPool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , , ) = _subsetPool.bucketInfo(testIndex);
         assertEq(quote,      10_000 * 1e18 - qtToRemove);
         assertEq(collateral, 3 * 1e18);
 
@@ -133,7 +133,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_subsetPool), _lender, tokenIdsToRemove[2]);
         _subsetPool.removeCollateral(tokenIdsToRemove, testIndex);
-        (, quote, collateral, lpb, , , ) = _subsetPool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , , ) = _subsetPool.bucketInfo(testIndex);
         assertEq(quote,      967.323933406355326465 * 1e18);
         assertEq(collateral, 0);
 
@@ -141,7 +141,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(_lender, testIndex, quote, _lup());
         _subsetPool.removeAllQuoteToken(testIndex);
-        (, quote, collateral, lpb, , , ) = _subsetPool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , , ) = _subsetPool.bucketInfo(testIndex);
         assertEq(quote,      0);
         assertEq(collateral, 0);
         assertEq(lpb,        0);
@@ -179,7 +179,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         skip(86400);
 
         // check bucket state
-        ( , uint256 quote, uint256 collateral, uint256 lpb, , , ) = _subsetPool.bucketAt(2350);
+        ( , uint256 quote, uint256 collateral, uint256 lpb, , , ) = _subsetPool.bucketInfo(2350);
         assertEq(quote,      24_000 * 1e18);
         assertEq(collateral, 0);
         assertEq(lpb,        24_000 * 1e27);
@@ -206,7 +206,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_bidder), amountWithInterest);
 
         // check bucket state
-        ( , quote, collateral, lpb, , , ) = _subsetPool.bucketAt(2350);
+        ( , quote, collateral, lpb, , , ) = _subsetPool.bucketInfo(2350);
         assertEq(quote,      0);
         assertEq(collateral, Maths.wad(4));
         assertEq(lpb,        32_654.284956525291224787239794566 * 1e27);
@@ -248,7 +248,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         skip(3600);
 
         // check bucket state
-        ( , quote, collateral, lpb, , , ) = _subsetPool.bucketAt(2350);
+        ( , quote, collateral, lpb, , , ) = _subsetPool.bucketInfo(2350);
         assertEq(quote,      0);
         assertEq(collateral, Maths.wad(2));
         assertEq(lpb,        16_327.142478262645612393619885284 * 1e27);

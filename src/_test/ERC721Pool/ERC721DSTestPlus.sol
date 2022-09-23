@@ -9,6 +9,8 @@ import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 import { DSTestPlus }                from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
 
+import { Maths } from "../../libraries/Maths.sol";
+
 abstract contract ERC721DSTestPlus is DSTestPlus {
 
     // ERC721 events
@@ -164,7 +166,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         assertEq(loansCount,  state_.loans);
         assertEq(maxBorrower, state_.maxBorrower);
 
-        assertEq(pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+        assertEq(_encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
     }
 
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {
@@ -184,7 +186,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        ( price_, , , , , , ) = pool.bucketAt(index_);
+        ( price_, , , , , , ) = pool.bucketInfo(index_);
     }
 
     function _htp() internal view returns (uint256 htp_) {
@@ -192,7 +194,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
-        ( , , , , , exchangeRate_, ) = _subsetPool.bucketAt(index_);
+        ( , , , , , exchangeRate_, ) = _subsetPool.bucketInfo(index_);
     }
 
     function _lup() internal view returns (uint256 lup_) {
@@ -221,5 +223,9 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _maxBorrower() internal view returns (address maxBorrower_) {
         ( , , maxBorrower_, ) = _subsetPool.poolLoansInfo();
+    }
+
+    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
+        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 }

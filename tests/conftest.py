@@ -358,7 +358,7 @@ class TestUtils:
                     bucket_collateral,
                     bucket_lpAccumulator,
                     bucket_scale
-                ) = pool.bucketAt(i)
+                ) = pool.bucketInfo(i)
             except VirtualMachineError as ex:
                 lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
                 continue

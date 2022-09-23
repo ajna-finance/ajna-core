@@ -472,7 +472,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 borrower:     _borrower,
                 pledgeAmount: 100 * 1e18,
                 borrowAmount: 3_000 * 1e18,
-                indexLimit:   _pool.priceToIndex(4_000 * 1e18),
+                indexLimit:   2_000,
                 price:        333_777.824045947762079231 * 1e18
             })
         );

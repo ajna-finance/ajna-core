@@ -159,4 +159,16 @@ library Actors {
         borrower.debt             = debt_;
         borrower.inflatorSnapshot = inflator_;
     }
+
+    function getBorrower(
+        mapping(address => Borrower) storage self,
+        address borrower_
+    ) internal view returns (uint256, uint256, uint256, uint256) {
+        return (
+            self[borrower_].debt,
+            self[borrower_].collateral,
+            self[borrower_].mompFactor,
+            self[borrower_].inflatorSnapshot
+        );
+    }
 }

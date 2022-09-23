@@ -160,7 +160,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         _pullCollateral(
             PullSpecs({
                 from:   _borrower,
-                amount: 50 * 1e18 - _pool.encumberedCollateral(21_049.006823139002918431 * 1e18, _lup())
+                amount: 50 * 1e18 - _encumberedCollateral(21_049.006823139002918431 * 1e18, _lup())
             })
         );
 

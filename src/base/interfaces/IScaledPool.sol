@@ -496,7 +496,7 @@ interface IScaledPool {
      *  @return exchangeRate_      The exchange rate of the bucket, in RAY units.
      *  @return liquidityToPrice_  Amount of quote token (deposit + interest), regardless of pool debt.
      */
-    function bucketAt(uint256 index_)
+    function bucketInfo(uint256 index_)
         external
         view
         returns (
@@ -528,19 +528,6 @@ interface IScaledPool {
             uint256 mompFactor_,
             uint256 inflatorSnapshot_
         );
-
-    /**
-     *  @notice Returns the address of the pool's collateral token
-     */
-    function collateralTokenAddress() external pure returns (address);
-
-    /**
-     *  @notice Returns the total encumbered collateral resulting from a given amount of debt at a specified price.
-     *  @param  debt_        Amount of debt for corresponding collateral encumbrance.
-     *  @param  price_       Price to use for calculating the collateral encumbrance, in WAD units.
-     *  @return encumbrance_ The current encumbrance of a given debt balance, in WAD units.
-     */
-    function encumberedCollateral(uint256 debt_, uint256 price_) external view returns (uint256 encumbrance_);
 
     /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
@@ -626,17 +613,5 @@ interface IScaledPool {
             uint256 poolActualUtilization_,
             uint256 poolTargetUtilization_
         );
-
-    /**
-     *  @notice Returns the bucket index of for a specific price.
-     *  @param  price_ Bucket price, WAD units.
-     *  @return index_ Bucket index
-     */
-    function priceToIndex(uint256 price_) external view returns (uint256 index_);
-
-    /**
-     *  @notice Returns the address of the pools quote token
-     */
-    function quoteTokenAddress() external pure returns (address);
 
 }

@@ -337,7 +337,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
         assertEq(poolSize,              state_.poolSize);
         assertEq(_pool.pledgedCollateral(),     state_.pledgedCollateral);
-        assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+        assertEq(_encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
         assertEq(_pool.borrowerDebt(),          state_.borrowerDebt);
         assertEq(poolActualUtilization, state_.actualUtilization);
         assertEq(poolTargetUtilization, state_.targetUtilization);
@@ -398,7 +398,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
-        ( , , , , , exchangeRate_, ) = _pool.bucketAt(index_);
+        ( , , , , , exchangeRate_, ) = _pool.bucketInfo(index_);
     }
 
     function _lup() internal view returns (uint256 lup_) {
@@ -414,6 +414,10 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {
-        ( price_, , , , , , ) = _pool.bucketAt(index_);
+        ( price_, , , , , , ) = _pool.bucketInfo(index_);
+    }
+
+    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
+        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 }

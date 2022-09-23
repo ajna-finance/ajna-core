@@ -62,13 +62,13 @@ library Book {
         uint256 index_,
         uint256 quoteToken_
     ) internal view returns (uint256, uint256) {
-        Bucket memory bucket = self[index_];
-        uint256 bucketCollateral = bucket.collateral;
-        if (bucket.lps == 0) {
+        uint256 bucketCollateral = self[index_].collateral;
+        uint256 bucketLPs        = self[index_].lps;
+        if (bucketLPs == 0) {
             return  (Maths.RAY, bucketCollateral);
         }
-        uint256 bucketSize = quoteToken_ * 10**18 + indexToPrice(index_) * bucket.collateral;  // 10^36 + // 10^36
-        return (bucketSize * 10**18 / bucket.lps, bucketCollateral); // 10^27
+        uint256 bucketSize = quoteToken_ * 10**18 + indexToPrice(index_) * bucketCollateral;  // 10^36 + // 10^36
+        return (bucketSize * 10**18 / bucketLPs, bucketCollateral); // 10^27
     }
 
     function collateralToLPs(

@@ -133,12 +133,12 @@ def get_cumulative_bucket_deposit(pool, bucket_depth) -> int:  # WAD
     # Iterates through number of buckets passed as parameter, adding deposit to determine what loan size will be
     # required to utilize the buckets.
     index = pool.lupIndex()
-    (quote, _, _, _) = pool.bucketAt(index)
+    (quote, _, _, _) = pool.bucketInfo(index)
     cumulative_deposit = quote
     while bucket_depth > 0 and index > MIN_BUCKET:
         index += 1
         # TODO: This ignores partially-utilized buckets; difficult to calculate in v10
-        (quote, _, _, _) = pool.bucketAt(index)
+        (quote, _, _, _) = pool.bucketInfo(index)
         cumulative_deposit += quote
         bucket_depth -= 1
     return cumulative_deposit

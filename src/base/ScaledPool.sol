@@ -747,7 +747,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         return _auctionPrice(referencePrice_, kickTime_);
     }
 
-    function bucketAt(uint256 index_)
+    function bucketInfo(uint256 index_)
         external
         view
         override
@@ -784,18 +784,8 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             uint256 inflatorSnapshot_  // used to calculate pending interest (WAD)
         )
     {
-        debt_             = borrowers[borrower_].debt;
-        pendingDebt_      = Maths.wmul(borrowers[borrower_].debt, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
-        collateral_       = borrowers[borrower_].collateral;
-        mompFactor_       = borrowers[borrower_].mompFactor;
-        inflatorSnapshot_ = borrowers[borrower_].inflatorSnapshot;
-    }
-
-    function encumberedCollateral(
-        uint256 debt_,
-        uint256 price_
-    ) external pure override returns (uint256) {
-        return _encumberedCollateral(debt_, price_);
+        (debt_, collateral_, mompFactor_, inflatorSnapshot_) = borrowers.getBorrower(borrower_);
+        pendingDebt_ = Maths.wmul(debt_, Maths.wdiv(_pendingInflator(), inflatorSnapshot));
     }
 
     function lpsToQuoteTokens(
@@ -886,27 +876,15 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         poolTargetUtilization_  = _poolTargetUtilization(debtEma, lupColEma);
     }
 
-    function priceToIndex(uint256 price_) external pure override returns (uint256) {
-        return _priceToIndex(price_);
-    }
-
     /************************/
     /*** Helper Functions ***/
     /************************/
-
-    function collateralTokenAddress() external pure returns (address) {
-        return _getArgAddress(0);
-    }
 
     /**
      *  @dev Pure function used to facilitate accessing token via clone state.
      */
     function quoteToken() public pure returns (ERC20) {
         return ERC20(_getArgAddress(0x14));
-    }
-
-    function quoteTokenAddress() external pure returns (address) {
-        return _getArgAddress(0x14);
     }
 
 }
