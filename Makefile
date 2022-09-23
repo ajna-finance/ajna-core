@@ -17,8 +17,7 @@ build   :; forge clean && forge build
 test                 :; forge clean && forge test -v --no-match-test testLoad # --ffi # enable if you need the `ffi` cheat code on HEVM
 test-with-gas-report :; forge clean && forge build && forge test -v --no-match-test testLoad --gas-report # --ffi # enable if you need the `ffi` cheat code on HEVM
 test-load            :; forge clean && forge build && forge test -vv --match-test testLoad --gas-report
-# TODO: should be able to fork from block 15478978, a block after Ajna token contract was created
-test-with-cache      :; forge clean && forge test -vv --no-match-test testLoad --fork-url $(ETH_RPC_URL) --fork-block-number 15576176
+test-with-cache      :; forge clean && forge test -vv --no-match-test testLoad --fork-url $(ETH_RPC_URL) --fork-block-number 15478978
 coverage             :; forge coverage --no-match-test testLoad
 
 # Generate Gas Snapshots
