@@ -645,25 +645,28 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // approve and transfer NFT by permit to different address
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            minterPrivateKey,
-            keccak256(
-                abi.encodePacked(
-                    "\x19\x01",
-                    _positionManager.DOMAIN_SEPARATOR(),
-                    keccak256(
-                        abi.encode(
-                            _positionManager.PERMIT_TYPEHASH(),
-                            testReceiver,
-                            tokenId,
-                            0,
-                            1 days
+        {
+            uint256 deadline = block.timestamp + 1 days;
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+                minterPrivateKey,
+                keccak256(
+                    abi.encodePacked(
+                        "\x19\x01",
+                        _positionManager.DOMAIN_SEPARATOR(),
+                        keccak256(
+                            abi.encode(
+                                _positionManager.PERMIT_TYPEHASH(),
+                                testReceiver,
+                                tokenId,
+                                0,
+                                deadline
+                            )
                         )
                     )
                 )
-            )
-        );
-        _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, 1 days, v, r, s );
+            );
+            _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, deadline, v, r, s );
+        }
 
         // check owner
         assertEq(_positionManager.ownerOf(tokenId), testReceiver);
