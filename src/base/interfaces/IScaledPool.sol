@@ -192,7 +192,7 @@ interface IScaledPool {
     /**
      *  @notice User is attempting to pull more collateral than is available.
      */
-    error RemoveCollateralInsufficientCollateral();
+    error PullCollateralInsufficientCollateral();
 
     /**
      *  @notice Lender is attempting to remove more collateral they have claim to in the bucket.

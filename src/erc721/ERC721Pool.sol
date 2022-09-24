@@ -235,7 +235,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
         _updateInterestRateAndEMAs(curDebt, lup);
 
         if (
-            PoolUtils.collateralizationAtPrice(
+            PoolUtils.collateralization(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
                 lup

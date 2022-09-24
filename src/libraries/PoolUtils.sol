@@ -33,29 +33,20 @@ library PoolUtils {
         claimable_ -= Maths.min(claimable_, poolSize_ + liquidationBondEscrowed_ + reserveAuctionUnclaimed_);
     }
 
-    function encumberedCollateral(
+    function encumberance(
         uint256 debt_,
         uint256 price_
     ) internal pure returns (uint256 encumberance_) {
-        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        return price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 
-    function collateralizationAtPrice(
+    function collateralization(
         uint256 debt_,
         uint256 collateral_,
         uint256 price_
     ) internal pure returns (uint256) {
-        uint256 encumbered = encumberedCollateral(debt_, price_);
+        uint256 encumbered = encumberance(debt_, price_);
         return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
-    }
-
-    function poolCollateralization(
-        uint256 borrowerDebt_,
-        uint256 pledgedCollateral_,
-        uint256 lup_
-    ) internal pure returns (uint256) {
-        uint256 encumbered = encumberedCollateral(borrowerDebt_, lup_);
-        return encumbered != 0 ? Maths.wdiv(pledgedCollateral_, encumbered) : Maths.WAD;
     }
 
     function poolTargetUtilization(

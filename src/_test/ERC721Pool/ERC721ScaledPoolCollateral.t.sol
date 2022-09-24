@@ -166,7 +166,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
 
         // should fail if trying to pull collateral by an address without pledged collateral
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IScaledPool.PullCollateralInsufficientCollateral.selector);
         _subsetPool.pullCollateral(tokenIdsToRemove);
 
         changePrank(_borrower2);
@@ -204,7 +204,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_subsetPool)), 2);
 
         // should fail if borrower tries to pull again same NFTs
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IScaledPool.PullCollateralInsufficientCollateral.selector);
         _subsetPool.pullCollateral(tokenIdsToRemove);
     }
 
@@ -373,7 +373,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 3;
         tokenIdsToRemove[1] = 5;
 
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IScaledPool.PullCollateralInsufficientCollateral.selector);
         _subsetPool.pullCollateral(tokenIdsToRemove);
     }
 
@@ -403,7 +403,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // should revert if we try to remove a token from a bucket with no collateral
         changePrank(_borrower);
         tokenIds[0] = 1;
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IScaledPool.PullCollateralInsufficientCollateral.selector);
         _subsetPool.removeCollateral(tokenIds, 1692);
 
         // remove one token

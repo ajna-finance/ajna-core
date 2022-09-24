@@ -244,25 +244,21 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
 
         // check borrow won't push borrower or pool into a state of under-collateralization
         if (
-            PoolUtils.collateralizationAtPrice(
+            PoolUtils.collateralization(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
                 newLup
             ) < Maths.WAD || borrowerPledgedCollateral == 0
         ) revert BorrowBorrowerUnderCollateralized();
 
+        curDebt += debt;
         if (
-            PoolUtils.collateralizationAtPrice(
-                curDebt + debt,
+            PoolUtils.collateralization(
+                curDebt,
                 pledgedCollateral,
                 newLup
             ) < Maths.WAD
         ) revert BorrowPoolUnderCollateralized();
-
-        curDebt += debt;
-
-        // update actor accounting
-        borrowerDebt = curDebt;
 
         // update loan queue
         uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
@@ -281,6 +277,9 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         );
 
         _updateInterestRateAndEMAs(curDebt, newLup);
+
+        // update pool state
+        borrowerDebt = curDebt;
 
         // move borrowed amount from pool to sender
         emit Borrow(msg.sender, newLup, amountToBorrow_);
@@ -427,7 +426,11 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         );
 
         uint256 curLup = _lup(curDebt);
-        if (borrowerPledgedCollateral - PoolUtils.encumberedCollateral(borrowerAccruedDebt, curLup) < collateralAmountToPull_) revert RemoveCollateralInsufficientCollateral();
+        if (
+            borrowerPledgedCollateral - PoolUtils.encumberance(borrowerAccruedDebt, curLup)
+            <
+            collateralAmountToPull_
+        ) revert PullCollateralInsufficientCollateral();
         borrowerPledgedCollateral -= collateralAmountToPull_;
 
         // update loan queue
@@ -539,7 +542,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             deposits.valueAt(index_),
             collateralAmountToRemove_
         );
-        if (collateralAmountToRemove_ > bucketCollateral) revert RemoveCollateralInsufficientCollateral();
+        if (collateralAmountToRemove_ > bucketCollateral) revert PullCollateralInsufficientCollateral();
 
         (uint256 lenderLpBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
@@ -617,7 +620,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
-            if (PoolUtils.poolCollateralization(curDebt_, col, lup_) != Maths.WAD) {
+            if (PoolUtils.collateralization(curDebt_, col, lup_) != Maths.WAD) {
                 uint256 oldRate = interestRate;
 
                 int256 actualUtilization = int256(_poolActualUtilization(curDebt_, col));
@@ -742,7 +745,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
         uint256 poolDebt = borrowerDebt;
         uint256 poolCollateral = pledgedCollateral;
         if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, loans.count - 1);
-        poolCollateralization_ = PoolUtils.poolCollateralization(poolDebt, poolCollateral, _lup(poolDebt));
+        poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, _lup(poolDebt));
         poolActualUtilization_  = _poolActualUtilization(poolDebt, poolCollateral);
         poolTargetUtilization_  = PoolUtils.poolTargetUtilization(debtEma, lupColEma);
     }

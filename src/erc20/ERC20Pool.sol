@@ -209,7 +209,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         _updateInterestRateAndEMAs(curDebt, lup);
 
         if (
-            PoolUtils.collateralizationAtPrice(
+            PoolUtils.collateralization(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
                 lup
@@ -256,7 +256,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             inflatorSnapshot
         );
         if (
-            PoolUtils.collateralizationAtPrice(
+            PoolUtils.collateralization(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
                 _lup(borrowerDebt)

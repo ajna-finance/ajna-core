@@ -205,7 +205,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
     function testPullCollateralRequireEnoughCollateral() external {
         changePrank(_borrower);
         // should revert if trying to remove more collateral than is available
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IScaledPool.PullCollateralInsufficientCollateral.selector);
         _pool.pullCollateral(100 * 1e18);
 
         // borrower deposits 100 collateral
@@ -378,7 +378,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         changePrank(_lender);
         vm.expectRevert(IERC20Pool.RemoveCollateralNoClaim.selector);
         _pool.removeAllCollateral(testIndex);
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IScaledPool.PullCollateralInsufficientCollateral.selector);
         _pool.removeCollateral(3.50 * 1e18, testIndex);
 
         // another actor deposits some collateral
@@ -389,7 +389,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
 
         // should revert if insufficient collateral in the bucket
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IScaledPool.PullCollateralInsufficientCollateral.selector);
         _pool.removeCollateral(1.25 * 1e18, testIndex);
 
         // should revert if actor does not have LP

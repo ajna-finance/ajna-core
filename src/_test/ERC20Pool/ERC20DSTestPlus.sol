@@ -382,7 +382,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(inflator,    state_.inflator);
 
         assertEq(
-            PoolUtils.collateralizationAtPrice(
+            PoolUtils.collateralization(
                 state_.debt,
                 state_.collateral,
                 lup

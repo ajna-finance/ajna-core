@@ -228,7 +228,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToRemove[1] = 3;
         tokenIdsToRemove[2] = 5;
         tokenIdsToRemove[3] = 51;
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IScaledPool.PullCollateralInsufficientCollateral.selector);
         (amount) = _subsetPool.removeCollateral(tokenIdsToRemove, 2350);
 
         // should revert if lender attempts to remove collateral not available in the bucket
