@@ -27,9 +27,6 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _lender    = makeAddr("lender");
         _lender2   = makeAddr("lender2");
 
-        // deploy collection pool
-        ERC721Pool collectionPool = _deployCollectionPool();
-
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](9);
         subsetTokenIds[0] = 1;

@@ -45,9 +45,6 @@ abstract contract ERC721ScaledInterestTest is ERC721HelperContract {
 
 contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
     function createPool() external override returns (ERC721Pool) {
-        // deploy collection pool
-        ERC721Pool collectionPool = _deployCollectionPool();
-
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](6);
         subsetTokenIds[0] = 1;
