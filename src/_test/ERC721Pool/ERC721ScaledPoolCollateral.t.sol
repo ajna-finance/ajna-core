@@ -410,14 +410,14 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         tokenIds[0] = 5;
         emit RemoveCollateralNFT(_borrower, _indexToPrice(1530), tokenIds);
         _subsetPool.removeCollateral(tokenIds, 1530);
-        (, , uint256 collateral, , , , ) = _subsetPool.bucketInfo(1530);
+        (, , uint256 collateral, , , ) = _poolUtils.bucketInfo(address(_subsetPool), 1530);
         assertEq(collateral, 1 * 1e18);
 
         // remove another token
         tokenIds[0] = 1;
         emit RemoveCollateralNFT(_borrower, _indexToPrice(1530), tokenIds);
         _subsetPool.removeCollateral(tokenIds, 1530);
-        (, , collateral, , , , ) = _subsetPool.bucketInfo(1530);
+        (, , collateral, , , ) = _poolUtils.bucketInfo(address(_subsetPool), 1530);
         assertEq(collateral, 0);
         (uint256 lpb, ) = _subsetPool.lenders(1530, _borrower);
         assertEq(lpb, 0);
@@ -425,7 +425,7 @@ contract ERC721ScaledCollateralTest is ERC721HelperContract {
         // lender removes quote token
         changePrank(_lender);
         _subsetPool.removeAllQuoteToken(1530);
-        (, , collateral, lpb, , , ) = _subsetPool.bucketInfo(1530);
+        (, , collateral, lpb, , ) = _poolUtils.bucketInfo(address(_subsetPool), 1530);
         assertEq(collateral, 0);
         assertEq(lpb, 0);
     }

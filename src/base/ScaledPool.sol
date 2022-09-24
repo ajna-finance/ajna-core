@@ -673,37 +673,20 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     /*** External Functions ***/
     /**************************/
 
-    function bucketInfo(uint256 index_)
-        external
-        view
-        override
-        returns (
-            uint256 price_,
-            uint256 quoteTokens_,
-            uint256 collateral_,
-            uint256 bucketLPs_,
-            uint256 scale_,
-            uint256 exchangeRate_,
-            uint256 liquidityToPrice_
-        )
-    {
-        price_             = PoolUtils.indexToPrice(index_);
-        quoteTokens_       = deposits.valueAt(index_);           // quote token in bucket, deposit + interest (WAD)
-        bucketLPs_         = buckets[index_].lps;                // outstanding LP balance (WAD)
-        scale_             = deposits.scale(index_);             // lender interest multiplier (WAD)
-        (
-            exchangeRate_,
-            collateral_                                           // unencumbered collateral in bucket (WAD)
-        )                   = buckets.getExchangeRate(index_, quoteTokens_);
-        liquidityToPrice_  = deposits.prefixSum(index_);
-    }
-
     function depositSize() external view override returns (uint256) {
         return deposits.treeSum();
     }
 
     function depositIndex(uint256 debt_) external view override returns (uint256) {
         return deposits.findIndexOfSum(debt_);
+    }
+
+    function bucketDeposit(uint256 index_) external view override returns (uint256) {
+        return deposits.valueAt(index_);
+    }
+
+    function bucketScale(uint256 index_) external view override returns (uint256) {
+        return deposits.scale(index_);
     }
 
     function noOfLoans() external view override returns (uint256) {

@@ -190,7 +190,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-        ( price_, , , , , , ) = pool.bucketInfo(index_);
+        ( price_, , , , , ) = _poolUtils.bucketInfo(address(pool), index_);
     }
 
     function _htp() internal view returns (uint256 htp_) {
@@ -198,7 +198,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
-        ( , , , , , exchangeRate_, ) = _subsetPool.bucketInfo(index_);
+        ( , , , , , exchangeRate_) = _poolUtils.bucketInfo(address(_subsetPool), index_);
     }
 
     function _lup() internal view returns (uint256 lup_) {

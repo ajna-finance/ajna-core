@@ -497,29 +497,9 @@ interface IScaledPool {
     /*** View Functions ***/
     /**********************/
 
-    /**
-     *  @notice Get a bucket struct for a given index.
-     *  @param  index_             The index of the bucket to retrieve.
-     *  @return price_             Bucket price (WAD)
-     *  @return quoteTokens_       Amount of quote token in bucket, deposit + interest (WAD)
-     *  @return collateral_        Unencumbered collateral in bucket (WAD).
-     *  @return bucketLPs_         Outstanding LP balance in bucket (WAD)
-     *  @return scale_             Lender interest multiplier (WAD).
-     *  @return exchangeRate_      The exchange rate of the bucket, in RAY units.
-     *  @return liquidityToPrice_  Amount of quote token (deposit + interest), regardless of pool debt.
-     */
-    function bucketInfo(uint256 index_)
-        external
-        view
-        returns (
-            uint256 price_,
-            uint256 quoteTokens_,
-            uint256 collateral_,
-            uint256 bucketLPs_,
-            uint256 scale_,
-            uint256 exchangeRate_,
-            uint256 liquidityToPrice_
-        );
+    function bucketDeposit(uint256 index_) external view returns (uint256);
+
+    function bucketScale(uint256 index_) external view returns (uint256);
 
     function depositSize() external view returns (uint256);
 

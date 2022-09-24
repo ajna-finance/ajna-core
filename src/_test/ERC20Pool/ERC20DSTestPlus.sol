@@ -408,7 +408,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
-        ( , , , , , exchangeRate_, ) = _pool.bucketInfo(index_);
+        ( , , , , , exchangeRate_) = _poolUtils.bucketInfo(address(_pool), index_);
     }
 
     function _lup() internal view returns (uint256 lup_) {
@@ -424,7 +424,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {
-        ( price_, , , , , , ) = _pool.bucketInfo(index_);
+        ( price_, , , , , ) = _poolUtils.bucketInfo(address(_pool), index_);
     }
 
     function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
