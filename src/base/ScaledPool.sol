@@ -623,7 +623,7 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             if (PoolUtils.collateralization(curDebt_, col, lup_) != Maths.WAD) {
                 uint256 oldRate = interestRate;
 
-                int256 actualUtilization = int256(_poolActualUtilization(curDebt_, col));
+                int256 actualUtilization = int256(deposits.utilization(curDebt_, col));
                 int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
 
                 int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
@@ -639,16 +639,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
 
                 emit UpdateInterestRate(oldRate, interestRate);
             }
-        }
-    }
-
-    function _poolActualUtilization(uint256 borrowerDebt_, uint256 pledgedCollateral_) internal view returns (uint256 utilization_) {
-        if (pledgedCollateral_ != 0) {
-            uint256 ptp = Maths.wdiv(borrowerDebt_, pledgedCollateral_);
-            if (ptp != 0) utilization_ = Maths.wdiv(
-                borrowerDebt_,
-                deposits.prefixSum(PoolUtils.priceToIndex(ptp))
-            );
         }
     }
 
@@ -679,6 +669,13 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
 
     function depositIndex(uint256 debt_) external view override returns (uint256) {
         return deposits.findIndexOfSum(debt_);
+    }
+
+    function depositUtilization(
+        uint256 debt_,
+        uint256 collateral_
+    ) external view override returns (uint256) {
+        return deposits.utilization(debt_, collateral_);
     }
 
     function bucketDeposit(uint256 index_) external view override returns (uint256) {
@@ -712,25 +709,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
             lpTokens_,
             deposit_
         );
-    }
-
-    function poolUtilizationInfo()
-        external
-        view
-        override
-        returns (
-            uint256 poolMinDebtAmount_,
-            uint256 poolCollateralization_,
-            uint256 poolActualUtilization_,
-            uint256 poolTargetUtilization_
-        )
-    {
-        uint256 poolDebt = borrowerDebt;
-        uint256 poolCollateral = pledgedCollateral;
-        if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, loans.count - 1);
-        poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, _lup(poolDebt));
-        poolActualUtilization_  = _poolActualUtilization(poolDebt, poolCollateral);
-        poolTargetUtilization_  = PoolUtils.poolTargetUtilization(debtEma, lupColEma);
     }
 
     function quoteTokenAddress() external pure override returns (address) {

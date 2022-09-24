@@ -171,4 +171,33 @@ contract ScaledPoolUtils {
         timeRemaining_              = 3 days - Maths.min(3 days, block.timestamp - auctionKickTime);
     }
 
+    /**
+     *  @notice Returns info related to Claimaible Reserve Auction.
+     *  @return poolMinDebtAmount_     Minimum debt amount.
+     *  @return poolCollateralization_ Current pool collateralization ratio.
+     *  @return poolActualUtilization_ The current pool actual utilization, in WAD units.
+     *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
+     */
+    function poolUtilizationInfo(address ajnaPool_)
+        external
+        view
+        returns (
+            uint256 poolMinDebtAmount_,
+            uint256 poolCollateralization_,
+            uint256 poolActualUtilization_,
+            uint256 poolTargetUtilization_
+        )
+    {
+        IScaledPool pool = IScaledPool(ajnaPool_);
+
+        uint256 poolDebt       = pool.borrowerDebt();
+        uint256 poolCollateral = pool.pledgedCollateral();
+
+        if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, pool.noOfLoans());
+        uint256 lup = PoolUtils.indexToPrice(pool.depositIndex(poolDebt));
+        poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, lup);
+        poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
+        poolTargetUtilization_ = PoolUtils.poolTargetUtilization(pool.debtEma(), pool.lupColEma());
+    }
+
 }

@@ -171,6 +171,20 @@ library Book {
         }
     }
 
+    function utilization(
+        Deposits storage self,
+        uint256 debt_,
+        uint256 collateral_
+    ) internal view returns (uint256 utilization_) {
+        if (collateral_ != 0) {
+            uint256 ptp = Maths.wdiv(debt_, collateral_);
+            if (ptp != 0) utilization_ = Maths.wdiv(
+                debt_,
+                prefixSum(self, PoolUtils.priceToIndex(ptp))
+            );
+        }
+    }
+
     function mompFactor(
         Deposits storage self,
         uint256 inflator_,
