@@ -61,7 +61,6 @@ contract ERC20ScaledPoolFactoryTest is ERC20HelperContract {
         assertEq(pool.quoteTokenScale(),            1);
         assertEq(pool.inflatorSnapshot(),           10**18);
         assertEq(pool.lastInflatorSnapshotUpdate(), 333);
-        assertEq(pool.lenderInterestFactor(),       0.9 * 10**18);
         assertEq(pool.interestRate(),               0.0543 * 10**18);
         assertEq(pool.interestRateUpdate(),         333);
         assertEq(pool.minFee(),                     0.0005 * 10**18);

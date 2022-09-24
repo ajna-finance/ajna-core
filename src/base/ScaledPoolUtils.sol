@@ -200,4 +200,23 @@ contract ScaledPoolUtils {
         poolTargetUtilization_ = PoolUtils.poolTargetUtilization(pool.debtEma(), pool.lupColEma());
     }
 
+    /**
+     *  @notice Returns the proportion of interest rate which is awarded to lenders;
+     *          the remainder accumulates in reserves.
+     *          TODO: move in poolUtilizationInfo
+    */
+    function lenderInterestMargin(address ajnaPool_)
+        external
+        view
+        returns (uint256 lenderInterestMargin_)
+    {
+        IScaledPool pool = IScaledPool(ajnaPool_);
+
+        uint256 poolDebt       = pool.borrowerDebt();
+        uint256 poolCollateral = pool.pledgedCollateral();
+        uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
+
+        lenderInterestMargin_ = PoolUtils.lenderInterestMargin(utilization);
+    }
+
 }

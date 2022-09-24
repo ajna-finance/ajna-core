@@ -151,21 +151,17 @@ library Book {
     function accrueInterest(
         Deposits storage self,
         uint256 debt_,
+        uint256 collateral_,
         uint256 htp_,
-        uint256 curentInterestFactor_,
         uint256 pendingInterestFactor_
     ) internal {
         uint256 htpIndex        = PoolUtils.priceToIndex(htp_);
         uint256 depositAboveHtp = prefixSum(self, htpIndex);
 
         if (depositAboveHtp != 0) {
-            uint256 newInterest  = Maths.wmul(
-                curentInterestFactor_,
-                Maths.wmul(
-                    pendingInterestFactor_ - Maths.WAD,
-                    debt_
-                )
-            );
+            uint256 netInterestMargin = PoolUtils.lenderInterestMargin(utilization(self, debt_, collateral_));
+            uint256 newInterest       = Maths.wmul(netInterestMargin, Maths.wmul(pendingInterestFactor_ - Maths.WAD, debt_));
+
             uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
             mult(self, htpIndex, lenderFactor);
         }

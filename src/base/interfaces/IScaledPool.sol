@@ -321,12 +321,6 @@ interface IScaledPool {
     function lastInflatorSnapshotUpdate() external view returns (uint256 lastInflatorSnapshotUpdate_);
 
     /**
-     *  @notice Returns the `lenderInterestFactor` state variable.
-     *  @return lenderInterestFactor_ TODO
-     */
-    function lenderInterestFactor() external view returns (uint256 lenderInterestFactor_);
-
-    /**
      *  @notice Returns the amount of liquidation bond across all liquidators.
      *  @return liquidationBondEscrowed_ Total amount of quote token being escrowed.
      */

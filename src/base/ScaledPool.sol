@@ -37,7 +37,6 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
     uint256 public override inflatorSnapshot;           // [WAD]
     uint256 public override lastInflatorSnapshotUpdate; // [SEC]
     uint256 public override minFee;                     // [WAD]
-    uint256 public override lenderInterestFactor;       // [WAD]
     uint256 public override interestRate;               // [WAD]
     uint256 public override interestRateUpdate;         // [SEC]
 
@@ -565,7 +564,12 @@ abstract contract ScaledPool is Clone, Multicall, IScaledPool {
                 // Scale the fenwick tree to update amount of debt owed to lenders
                 uint256 newHtp = _htp();
                 if (newHtp != 0) {
-                    deposits.accrueInterest(curDebt_, newHtp, lenderInterestFactor, factor);
+                    deposits.accrueInterest(
+                        curDebt_,
+                        pledgedCollateral,
+                        newHtp,
+                        factor
+                    );
                 }
 
                 // Scale the borrower inflator to update amount of interest owed by borrowers
