@@ -265,7 +265,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 indexLimit:   3_010,
                 price:        327.188250324085203338 * 1e18
             })
-        ); 
+        );
 
         _assertPool(
             PoolState({

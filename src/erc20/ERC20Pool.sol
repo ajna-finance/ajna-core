@@ -103,7 +103,7 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveCollateralToSamePrice();
 
-        uint256 curDebt = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         uint256 fromBucketCollateral;
         (fromBucketLPs_, fromBucketCollateral) = buckets.collateralToLPs(
@@ -132,7 +132,7 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
         buckets.removeCollateral(fromIndex_, fromBucketLPs_, collateralAmountToMove_);
         buckets.addCollateral(toIndex_, toBucketLPs_, collateralAmountToMove_);
 
-        _updateInterestRateAndEMAs(curDebt, _lup(curDebt));
+        _updatePool(poolState, _lup(poolState.accruedDebt));
 
         emit MoveCollateral(msg.sender, fromIndex_, toIndex_, collateralAmountToMove_);
     }
@@ -141,7 +141,7 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
 
-        uint256 curDebt = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
@@ -156,7 +156,7 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
         // update bucket accounting
         buckets.removeCollateral(index_, redeemedLenderLPs_, collateralAmountRemoved_);
 
-        _updateInterestRateAndEMAs(curDebt, _lup(curDebt));
+        _updatePool(poolState, _lup(poolState.accruedDebt));
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
@@ -195,17 +195,15 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
     }
 
     function kick(address borrower_) external override {
-        uint256 curDebt = _accruePoolInterest();
-        uint256 inflator = inflatorSnapshot;
+        PoolState memory poolState = _getPoolState();
 
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
             borrower_,
-            inflator
+            poolState.inflator
         );
         if (borrowerAccruedDebt == 0) revert KickNoDebt();
 
-        uint256 lup = _lup(curDebt);
-        _updateInterestRateAndEMAs(curDebt, lup);
+        uint256 lup = _lup(poolState.accruedDebt);
 
         if (
             PoolUtils.collateralization(
@@ -221,8 +219,10 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
         borrowers.updateDebt(
             borrower_,
             borrowerAccruedDebt,
-            inflator
+            poolState.inflator
         );
+
+        _updatePool(poolState, lup);
 
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),

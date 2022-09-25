@@ -51,7 +51,6 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     uint256 public override reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 public override reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
 
-
     mapping(uint256 => Book.Bucket)                       public override buckets;   // deposit index -> bucket
     mapping(uint256 => mapping(address => Actors.Lender)) public override lenders;   // deposit index -> lender address -> lender lp [RAY] and deposit timestamp
     mapping(address => Actors.Borrower)                   public override borrowers; // borrowers book: borrower address -> BorrowerInfo
@@ -64,6 +63,14 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
 
     uint256 internal poolInitializations;
 
+    struct PoolState {
+        uint256 accruedDebt;
+        uint256 collateral;
+        bool    isNewInterestAccrued;
+        uint256 rate;
+        uint256 inflator;
+    }
+
     /*********************************/
     /*** Lender External Functions ***/
     /*********************************/
@@ -72,7 +79,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        uint256 curDebt = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         bucketLPs_ = buckets.quoteTokensToLPs(
             index_,
@@ -85,8 +92,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         lenders.deposit(index_, msg.sender, bucketLPs_);
         buckets.addLPs(index_, bucketLPs_);
 
-        uint256 newLup = _lup(curDebt);
-        _updateInterestRateAndEMAs(curDebt, newLup);
+        uint256 newLup = _lup(poolState.accruedDebt);
+        _updatePool(poolState, newLup);
 
         // move quote token amount from lender to pool
         emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, newLup);
@@ -108,7 +115,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveQuoteToSamePrice();
 
-        uint256 curDebt = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = lenders.getLenderInfo(
             fromIndex_,
@@ -126,11 +133,11 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         quoteTokenAmountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
-            interestRate,
+            poolState.rate,
             minFee,
             lenderLastDepositTime,
-            curDebt,
-            pledgedCollateral,
+            poolState.accruedDebt,
+            poolState.collateral,
             fromIndex_,
             toIndex_,
             quoteTokenAmountToMove
@@ -144,8 +151,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
 
         deposits.add(toIndex_, quoteTokenAmountToMove);
 
-        uint256 newLup = _lup(curDebt); // move lup if necessary and check loan book's htp against new lup
-        if (fromIndex_ < toIndex_) if(_htp() > newLup) revert MoveQuoteLUPBelowHTP();
+        uint256 newLup = _lup(poolState.accruedDebt); // move lup if necessary and check loan book's htp against new lup
+        if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert MoveQuoteLUPBelowHTP();
 
         // update lender accounting
         lenders.removeLPs(fromIndex_, msg.sender, toBucketLPs_); // TODO check why moving toBucketLPs_ instead fromBucketLPs_
@@ -154,7 +161,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         buckets.removeLPs(fromIndex_, fromBucketLPs_);
         buckets.addLPs(toIndex_, toBucketLPs_);
 
-        _updateInterestRateAndEMAs(curDebt, newLup);
+        _updatePool(poolState, newLup);
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, quoteTokenAmountToMove, newLup);
     }
@@ -162,8 +169,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     function removeAllQuoteToken(
         uint256 index_
     ) external returns (uint256 quoteTokenAmountRemoved_, uint256 redeemedLenderLPs_) {
-        // scale the tree, accumulating interest owed to lenders
-        uint256 curDebt = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(
             index_,
@@ -181,7 +187,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
 
         _redeemLPForQuoteToken(
             index_,
-            curDebt,
+            poolState,
             redeemedLenderLPs_,
             quoteTokenAmountRemoved_
         );
@@ -191,8 +197,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         uint256 quoteTokenAmountToRemove_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        // scale the tree, accumulating interest owed to lenders
-        uint256 curDebt = _accruePoolInterest();
+
+        PoolState memory poolState = _getPoolState();
 
         uint256 deposit = deposits.valueAt(index_);
         if (quoteTokenAmountToRemove_ > deposit) revert RemoveQuoteInsufficientQuoteAvailable();
@@ -208,88 +214,10 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
 
         _redeemLPForQuoteToken(
             index_,
-            curDebt,
+            poolState,
             bucketLPs_,
             quoteTokenAmountToRemove_
         );
-    }
-
-    function borrow(
-        uint256 amountToBorrow_,
-        uint256 limitIndex_
-    ) external override {
-        uint256 curDebt  = _accruePoolInterest();
-
-        uint256 lupId = _lupIndex(curDebt + amountToBorrow_);
-        if (lupId > limitIndex_) revert BorrowLimitIndexReached();
-
-        uint256 inflator = inflatorSnapshot;
-
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
-            msg.sender,
-            inflator
-        );
-        uint256 loansCount = loans.count - 1;
-        if (
-            loansCount != 0
-            &&
-            (borrowerAccruedDebt + amountToBorrow_ < PoolUtils.minDebtAmount(curDebt, loansCount))
-        )  revert BorrowAmountLTMinDebt();
-
-        uint256 debt  = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
-        borrowerAccruedDebt += debt;
-
-        uint256 newLup = PoolUtils.indexToPrice(lupId);
-
-        // check borrow won't push borrower or pool into a state of under-collateralization
-        if (
-            PoolUtils.collateralization(
-                borrowerAccruedDebt,
-                borrowerPledgedCollateral,
-                newLup
-            ) < Maths.WAD || borrowerPledgedCollateral == 0
-        ) revert BorrowBorrowerUnderCollateralized();
-
-        curDebt += debt;
-        if (
-            PoolUtils.collateralization(
-                curDebt,
-                pledgedCollateral,
-                newLup
-            ) < Maths.WAD
-        ) revert BorrowPoolUnderCollateralized();
-
-        // update loan queue
-        uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
-            borrowerAccruedDebt,
-            borrowerPledgedCollateral,
-            inflator
-        );
-        loans.upsert(msg.sender, thresholdPrice);
-
-        borrowers.update(
-            msg.sender,
-            borrowerAccruedDebt,
-            borrowerPledgedCollateral,
-            deposits.mompFactor(inflator, curDebt, loans.count - 1),
-            inflator
-        );
-
-        _updateInterestRateAndEMAs(curDebt, newLup);
-
-        // update pool state
-        borrowerDebt = curDebt;
-
-        // move borrowed amount from pool to sender
-        emit Borrow(msg.sender, newLup, amountToBorrow_);
-        quoteToken().safeTransfer(msg.sender, amountToBorrow_ / quoteTokenScale);
-    }
-
-    function repay(
-        address borrower_,
-        uint256 maxQuoteTokenAmountToRepay_
-    ) external override {
-        _repayDebt(borrower_, maxQuoteTokenAmountToRepay_);
     }
 
     function transferLPTokens(
@@ -333,9 +261,88 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     }
 
 
-    /*******************************/
-    /*** Pool External Functions ***/
-    /*******************************/
+    /***********************************/
+    /*** Borrower External Functions ***/
+    /***********************************/
+
+    function borrow(
+        uint256 amountToBorrow_,
+        uint256 limitIndex_
+    ) external override {
+
+        PoolState memory poolState = _getPoolState();
+
+        uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
+        if (lupId > limitIndex_) revert BorrowLimitIndexReached();
+
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+            msg.sender,
+            poolState.inflator
+        );
+        uint256 loansCount = loans.count - 1;
+        if (
+            loansCount != 0
+            &&
+            (borrowerAccruedDebt + amountToBorrow_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
+        )  revert BorrowAmountLTMinDebt();
+
+        uint256 debt  = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
+        borrowerAccruedDebt += debt;
+
+        uint256 newLup = PoolUtils.indexToPrice(lupId);
+
+        // check borrow won't push borrower or pool into a state of under-collateralization
+        if (
+            PoolUtils.collateralization(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                newLup
+            ) < Maths.WAD || borrowerPledgedCollateral == 0
+        ) revert BorrowBorrowerUnderCollateralized();
+
+        poolState.accruedDebt += debt;
+        if (
+            PoolUtils.collateralization(
+                poolState.accruedDebt,
+                poolState.collateral,
+                newLup
+            ) < Maths.WAD
+        ) revert BorrowPoolUnderCollateralized();
+
+        // update loan queue
+        uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
+            borrowerAccruedDebt,
+            borrowerPledgedCollateral,
+            poolState.inflator
+        );
+        loans.upsert(msg.sender, thresholdPrice);
+
+        borrowers.update(
+            msg.sender,
+            borrowerAccruedDebt,
+            borrowerPledgedCollateral,
+            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.count - 1),
+            poolState.inflator
+        );
+
+        _updatePool(poolState, newLup);
+
+        // move borrowed amount from pool to sender
+        emit Borrow(msg.sender, newLup, amountToBorrow_);
+        quoteToken().safeTransfer(msg.sender, amountToBorrow_ / quoteTokenScale);
+    }
+
+    function repay(
+        address borrower_,
+        uint256 maxQuoteTokenAmountToRepay_
+    ) external override {
+        _repayDebt(borrower_, maxQuoteTokenAmountToRepay_);
+    }
+
+
+    /*************************/
+    /*** Buyback Functions ***/
+    /*************************/
 
     function startClaimableReserveAuction() external override {
         uint256 curUnclaimedAuctionReserve = reserveAuctionUnclaimed;
@@ -372,21 +379,21 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     }
 
 
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
+    /***********************************/
+    /*** Borrower Internal Functions ***/
+    /***********************************/
 
     function _pledgeCollateral(
         address borrower_,
         uint256 collateralAmountToPledge_
     ) internal {
-        uint256 curDebt = _accruePoolInterest();
-        uint256 inflator = inflatorSnapshot;
+
+        PoolState memory poolState = _getPoolState();
 
         // borrower accounting
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
             borrower_,
-            inflator
+            poolState.inflator
         );
         borrowerPledgedCollateral += collateralAmountToPledge_;
 
@@ -395,7 +402,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
             uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
-                inflator
+                poolState.inflator
             );
             loans.upsert(borrower_, thresholdPrice);
         }
@@ -404,27 +411,27 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
             borrower_,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            deposits.mompFactor(inflator, curDebt, loans.count - 1),
-            inflator
+            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.count - 1),
+            poolState.inflator
         );
 
-        pledgedCollateral += collateralAmountToPledge_;
-        _updateInterestRateAndEMAs(curDebt, _lup(curDebt));
+        poolState.collateral += collateralAmountToPledge_;
+        _updatePool(poolState, _lup(poolState.accruedDebt));
     }
 
     function _pullCollateral(
         uint256 collateralAmountToPull_
     ) internal {
-        uint256 curDebt  = _accruePoolInterest();
-        uint256 inflator = inflatorSnapshot;
+
+        PoolState memory poolState = _getPoolState();
 
         // borrower accounting
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
             msg.sender,
-            inflator
+            poolState.inflator
         );
 
-        uint256 curLup = _lup(curDebt);
+        uint256 curLup = _lup(poolState.accruedDebt);
         if (
             borrowerPledgedCollateral - PoolUtils.encumberance(borrowerAccruedDebt, curLup)
             <
@@ -437,7 +444,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
             uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
-                inflator
+                poolState.inflator
             );
             loans.upsert(msg.sender, thresholdPrice);
         }
@@ -446,13 +453,13 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
             msg.sender,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            deposits.mompFactor(inflator, curDebt, loans.count - 1),
-            inflator
+            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.count - 1),
+            poolState.inflator
         );
 
         // update pool state
-        pledgedCollateral -= collateralAmountToPull_;
-        _updateInterestRateAndEMAs(curDebt, curLup);
+        poolState.collateral -= collateralAmountToPull_;
+        _updatePool(poolState, curLup);
     }
 
     function _repayDebt(
@@ -460,18 +467,17 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         uint256 maxQuoteTokenAmountToRepay_
     ) internal {
 
-        uint256 curDebt  = _accruePoolInterest();
-        uint256 inflator = inflatorSnapshot;
+        PoolState memory poolState = _getPoolState();
 
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
             borrower_,
-            inflator
+            poolState.inflator
         );
         if (borrowerAccruedDebt == 0) revert RepayNoDebt();
 
         uint256 quoteTokenAmountToRepay = Maths.min(borrowerAccruedDebt, maxQuoteTokenAmountToRepay_);
-        borrowerAccruedDebt -= quoteTokenAmountToRepay;
-        curDebt             -= quoteTokenAmountToRepay;
+        borrowerAccruedDebt   -= quoteTokenAmountToRepay;
+        poolState.accruedDebt -= quoteTokenAmountToRepay;
 
         // update loan queue
         if (borrowerAccruedDebt == 0) {
@@ -480,41 +486,43 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
             uint256 loansCount = loans.count - 1;
             if (loansCount != 0
                 &&
-                (borrowerAccruedDebt < PoolUtils.minDebtAmount(curDebt, loansCount))
+                (borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
             ) revert BorrowAmountLTMinDebt();
 
             uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
-                inflator
+                poolState.inflator
             );
             loans.upsert(borrower_, thresholdPrice);
         }
-
-        // update pool state
-        borrowerDebt = curDebt;
 
         borrowers.update(
             msg.sender,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            deposits.mompFactor(inflator, curDebt, loans.count - 1),
-            inflator
+            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.count - 1),
+            poolState.inflator
         );
 
-        uint256 newLup = _lup(curDebt);
-        _updateInterestRateAndEMAs(curDebt, newLup);
+        uint256 newLup = _lup(poolState.accruedDebt);
+        _updatePool(poolState, newLup);
 
         // move amount to repay from sender to pool
         emit Repay(borrower_, newLup, quoteTokenAmountToRepay);
         quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenAmountToRepay / quoteTokenScale);
     }
 
+
+    /*********************************/
+    /*** Lender Internal Functions ***/
+    /*********************************/
+
     function _addCollateral(
         uint256 collateralAmountToAdd_,
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
-        uint256 curDebt = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         (bucketLPs_, ) = buckets.collateralToLPs(
             index_,
@@ -525,7 +533,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         lenders.addLPs(index_, msg.sender, bucketLPs_);
         buckets.addCollateral(index_, bucketLPs_, collateralAmountToAdd_);
 
-        _updateInterestRateAndEMAs(curDebt, _lup(curDebt));
+        _updatePool(poolState, _lup(poolState.accruedDebt));
     }
 
     function _removeCollateral(
@@ -533,7 +541,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
 
-        uint256 curDebt = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         uint256 bucketCollateral;
         (bucketLPs_, bucketCollateral) = buckets.collateralToLPs(
@@ -549,46 +557,19 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         lenders.removeLPs(index_, msg.sender, bucketLPs_);
         buckets.removeCollateral(index_, bucketLPs_, collateralAmountToRemove_);
 
-        _updateInterestRateAndEMAs(curDebt, _lup(curDebt));
-    }
-
-    function _accruePoolInterest() internal returns (uint256 curDebt_) {
-        curDebt_ = borrowerDebt;
-        if (curDebt_ != 0) {
-            uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
-            if (elapsed != 0 ) {
-                uint256 factor = PoolUtils.pendingInterestFactor(interestRate, elapsed);
-                inflatorSnapshot = Maths.wmul(inflatorSnapshot, factor);
-                lastInflatorSnapshotUpdate = block.timestamp;
-
-                // Scale the fenwick tree to update amount of debt owed to lenders
-                uint256 newHtp = _htp();
-                if (newHtp != 0) {
-                    deposits.accrueInterest(
-                        curDebt_,
-                        pledgedCollateral,
-                        newHtp,
-                        factor
-                    );
-                }
-
-                // Scale the borrower inflator to update amount of interest owed by borrowers
-                curDebt_ = Maths.wmul(curDebt_, factor);
-                borrowerDebt = curDebt_;
-            }
-        }
+        _updatePool(poolState, _lup(poolState.accruedDebt));
     }
 
     function _redeemLPForQuoteToken(
         uint256 index_,
-        uint256 debt_,
+        PoolState memory poolState_,
         uint256 lpAmount_,
         uint256 amount
     ) internal {
         deposits.remove(index_, amount);  // update FenwickTree
 
-        uint256 newLup = _lup(debt_);
-        if (_htp() > newLup) revert RemoveQuoteLUPBelowHTP();
+        uint256 newLup = _lup(poolState_.accruedDebt);
+        if (_htp(poolState_.inflator) > newLup) revert RemoveQuoteLUPBelowHTP();
 
         // persist bucket changes
         buckets.removeLPs(index_, lpAmount_);
@@ -599,50 +580,110 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
             interestRate,
             minFee,
             lastDeposit,
-            debt_,
-            pledgedCollateral,
+            poolState_.accruedDebt,
+            poolState_.collateral,
             index_,
             0,
             amount
         );
 
-        _updateInterestRateAndEMAs(debt_, newLup);
+        _updatePool(poolState_, newLup);
 
         // move quote token amount from pool to lender
         emit RemoveQuoteToken(msg.sender, index_, amount, newLup);
         quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
     }
 
-    function _updateInterestRateAndEMAs(uint256 curDebt_, uint256 lup_) internal {
+
+    /*****************************/
+    /*** Pool Helper Functions ***/
+    /*****************************/
+
+    function _getPoolState() internal returns (PoolState memory poolState_) {
+        poolState_.accruedDebt  = borrowerDebt;
+        poolState_.collateral   = pledgedCollateral;
+        poolState_.inflator = inflatorSnapshot;
+
+        if (poolState_.accruedDebt != 0) {
+            uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
+            poolState_.isNewInterestAccrued = elapsed != 0;
+            if (poolState_.isNewInterestAccrued) {
+                poolState_.rate = interestRate;
+                uint256 factor = PoolUtils.pendingInterestFactor(poolState_.rate, elapsed);
+                poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
+
+                // Scale the fenwick tree to update amount of debt owed to lenders
+                uint256 newHtp = _htp(poolState_.inflator);
+                if (newHtp != 0) {
+                    deposits.accrueInterest(
+                        poolState_.accruedDebt,
+                        poolState_.collateral,
+                        newHtp,
+                        factor
+                    );
+                }
+
+                // Scale the borrower inflator to update amount of interest owed by borrowers
+                poolState_.accruedDebt = Maths.wmul(poolState_.accruedDebt, factor);
+            }
+        }
+    }
+
+    function _updatePool(PoolState memory poolState_, uint256 lup_) internal {
         if (block.timestamp - interestRateUpdate > 12 hours) {
             // Update EMAs for target utilization
-            uint256 col = pledgedCollateral;
 
-            uint256 curDebtEma   = Maths.wmul(curDebt_,              EMA_7D_RATE_FACTOR) + Maths.wmul(debtEma,   LAMBDA_EMA_7D);
-            uint256 curLupColEma = Maths.wmul(Maths.wmul(lup_, col), EMA_7D_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA_7D);
+            uint256 curDebtEma   = Maths.wmul(
+                poolState_.accruedDebt,
+                EMA_7D_RATE_FACTOR) + Maths.wmul(debtEma,   LAMBDA_EMA_7D
+            );
+            uint256 curLupColEma = Maths.wmul(
+                Maths.wmul(lup_, poolState_.collateral),
+                EMA_7D_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA_7D
+            );
 
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
-            if (PoolUtils.collateralization(curDebt_, col, lup_) != Maths.WAD) {
-                uint256 oldRate = interestRate;
+            if (
+                PoolUtils.collateralization(
+                    poolState_.accruedDebt,
+                    poolState_.collateral,
+                    lup_
+                ) != Maths.WAD) {
 
-                int256 actualUtilization = int256(deposits.utilization(curDebt_, col));
+                int256 actualUtilization = int256(
+                    deposits.utilization(
+                        poolState_.accruedDebt,
+                        poolState_.collateral
+                    )
+                );
                 int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
 
                 int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
                 int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
 
-                if (decreaseFactor < increaseFactor - 10**18) {
-                    interestRate = Maths.wmul(interestRate, INCREASE_COEFFICIENT);
-                } else if (decreaseFactor > 10**18 - increaseFactor) {
-                    interestRate = Maths.wmul(interestRate, DECREASE_COEFFICIENT);
-                }
+                if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate;
 
+                uint256 newInterestRate = poolState_.rate;
+                if (decreaseFactor < increaseFactor - 10**18) {
+                    newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
+                } else if (decreaseFactor > 10**18 - increaseFactor) {
+                    newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
+                }
+                interestRate       = newInterestRate;
                 interestRateUpdate = block.timestamp;
 
-                emit UpdateInterestRate(oldRate, interestRate);
+                emit UpdateInterestRate(poolState_.rate, newInterestRate);
             }
+        }
+
+        borrowerDebt      = poolState_.accruedDebt;
+        pledgedCollateral = poolState_.collateral;
+
+        if (poolState_.isNewInterestAccrued) {
+            inflatorSnapshot           = poolState_.inflator;
+            lastInflatorSnapshotUpdate = block.timestamp;
         }
     }
 
@@ -650,8 +691,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         return deposits.findIndexOfSum(1);
     }
 
-    function _htp() internal view returns (uint256) {
-        return Maths.wmul(loans.getMax().val, inflatorSnapshot);
+    function _htp(uint256 inflator_) internal view returns (uint256) {
+        return Maths.wmul(loans.getMax().val, inflator_);
     }
 
     function _lupIndex(uint256 debt_) internal view returns (uint256) {

@@ -222,17 +222,15 @@ contract ERC721Pool is IERC721Pool, AjnaPool {
     }
 
     function kick(address borrower_) external override {
-        (uint256 curDebt) = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
             borrower_,
-            inflatorSnapshot
+            poolState.inflator
         );
         if (borrowerAccruedDebt == 0) revert KickNoDebt();
 
-        uint256 lup = _lup(curDebt);
-        _updateInterestRateAndEMAs(curDebt, lup);
-
+        uint256 lup = _lup(poolState.accruedDebt);
         if (
             PoolUtils.collateralization(
                 borrowerAccruedDebt,
@@ -240,6 +238,8 @@ contract ERC721Pool is IERC721Pool, AjnaPool {
                 lup
             ) >= Maths.WAD
         ) revert LiquidateBorrowerOk();
+
+        _updatePool(poolState, lup);
 
         // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
         //  which includes an array of the borrower's tokenIds being auctioned off.
