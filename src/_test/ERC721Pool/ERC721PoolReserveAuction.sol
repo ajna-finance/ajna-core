@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+
 pragma solidity 0.8.14;
 
-import { ERC721Pool }           from "../../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory }    from "../../erc721/ERC721PoolFactory.sol";
+import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import { IERC721Pool }     from "../../erc721/interfaces/IERC721Pool.sol";
-import { IAjnaPool }       from "../../base/interfaces/IAjnaPool.sol";
-import { IAjnaPoolErrors } from "../../base/interfaces/pool/IAjnaPoolErrors.sol";
+import '../../erc721/ERC721Pool.sol';
+import '../../erc721/ERC721PoolFactory.sol';
 
-import { BucketMath } from "../../libraries/BucketMath.sol";
-import { Maths }      from "../../libraries/Maths.sol";
+import '../../erc721/interfaces/IERC721Pool.sol';
+import '../../erc721/interfaces/pool/IERC721PoolErrors.sol';
+import '../../base/interfaces/IAjnaPool.sol';
+import '../../base/interfaces/pool/IAjnaPoolErrors.sol';
 
-import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
+import '../../libraries/BucketMath.sol';
+import '../../libraries/Maths.sol';
 
 contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 

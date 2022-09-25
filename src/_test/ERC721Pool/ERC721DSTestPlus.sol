@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
-import { ERC20 }             from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
-import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
-import { AjnaPoolUtils }   from "../../base/AjnaPoolUtils.sol";
+import { DSTestPlus }                from '../utils/DSTestPlus.sol';
+import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 
-import { DSTestPlus }                from "../utils/DSTestPlus.sol";
-import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
+import { ERC721Pool }        from '../../erc721/ERC721Pool.sol';
+import { ERC721PoolFactory } from '../../erc721/ERC721PoolFactory.sol';
 
-import { Maths } from "../../libraries/Maths.sol";
+import { AjnaPoolUtils } from '../../base/AjnaPoolUtils.sol';
+
+import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
 
 abstract contract ERC721DSTestPlus is DSTestPlus {

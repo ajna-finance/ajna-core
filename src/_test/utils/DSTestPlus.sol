@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
+
 pragma solidity 0.8.14;
 
-import { Maths }       from "../../libraries/Maths.sol";
-import { Heap}         from "../../libraries/Heap.sol";
-import '../../libraries/Book.sol';
+import '@std/Test.sol';
+import '@std/Vm.sol';
 
-import { Test } from "@std/Test.sol";
-import { Vm }   from "@std/Vm.sol";
-import { ERC20 }  from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+
+import '../../libraries/Maths.sol';
+import '../../libraries/Heap.sol';
+import '../../libraries/Book.sol';
 
 abstract contract DSTestPlus is Test {
 

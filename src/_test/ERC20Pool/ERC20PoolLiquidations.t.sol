@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
+
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
 import '../../libraries/Actors.sol';
-import { Maths } from "../../libraries/Maths.sol";
+import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
-
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
 contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 

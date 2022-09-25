@@ -2,15 +2,15 @@
 
 pragma solidity 0.8.14;
 
-import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IERC20Pool } from "./interfaces/IERC20Pool.sol";
+import './interfaces/IERC20Pool.sol';
 
-import { AjnaPool } from "../base/AjnaPool.sol";
+import '../base/AjnaPool.sol';
 
-import { Heap }  from "../libraries/Heap.sol";
-import { Maths } from "../libraries/Maths.sol";
+import '../libraries/Heap.sol';
+import '../libraries/Maths.sol';
 import '../libraries/Book.sol';
 import '../libraries/Actors.sol';
 

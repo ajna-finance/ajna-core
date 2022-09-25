@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { BucketMath } from "../libraries/BucketMath.sol";
+import './utils/DSTestPlus.sol';
 
-import { DSTestPlus } from "./utils/DSTestPlus.sol";
+import '../libraries/BucketMath.sol';
 
 contract BucketMathTest is DSTestPlus {
 

@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
-import { ERC20 }           from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ERC721 }          from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { EnumerableSet }   from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { Multicall }       from "@openzeppelin/contracts/utils/Multicall.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import '@openzeppelin/contracts/utils/Multicall.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IAjnaPool }        from "./interfaces/IAjnaPool.sol";
-import { IPositionManager } from "./interfaces/IPositionManager.sol";
+import './interfaces/IAjnaPool.sol';
+import './interfaces/IPositionManager.sol';
 
-import { IERC20Pool }  from "../erc20/interfaces/IERC20Pool.sol";
-import { IERC721Pool } from "../erc721/interfaces/IERC721Pool.sol";
+import '../erc20/interfaces/IERC20Pool.sol';
+import '../erc721/interfaces/IERC721Pool.sol';
 
-import { PermitERC20 } from "./PermitERC20.sol";
-import { PositionNFT } from "./PositionNFT.sol";
+import './PermitERC20.sol';
+import './PositionNFT.sol';
 
-import { Maths } from "../libraries/Maths.sol";
+import '../libraries/Maths.sol';
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;

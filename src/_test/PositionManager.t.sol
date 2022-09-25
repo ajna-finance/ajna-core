@@ -1,23 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { Token } from "./utils/Tokens.sol";
-import { DSTestPlus }                                      from "./utils/DSTestPlus.sol";
+import './utils/Tokens.sol';
+import './utils/DSTestPlus.sol';
 
-import { Maths } from "../libraries/Maths.sol";
+import '../base/interfaces/IPositionManager.sol';
+import '../base/interfaces/IAjnaPool.sol';
 
-import { ERC20Pool }       from "../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
+import '../erc20/ERC20Pool.sol';
+import '../erc20/ERC20PoolFactory.sol';
 
-import { PositionManager } from "../base/PositionManager.sol";
+import '../base/AjnaPoolUtils.sol';
+import '../base/PositionManager.sol';
 
-import { IPositionManager }             from "../base/interfaces/IPositionManager.sol";
-import { IPositionManagerOwnerActions } from "../base/interfaces/position/IPositionManagerOwnerActions.sol";
-
-import { IAjnaPool }        from "../base/interfaces/IAjnaPool.sol";
-import { IAjnaPoolErrors }  from "../base/interfaces/pool/IAjnaPoolErrors.sol";
-
-import { AjnaPoolUtils }  from "../base/AjnaPoolUtils.sol";
+import '../libraries/Maths.sol';
 
 // TODO: test this against ERC721Pool
 abstract contract PositionManagerHelperContract is DSTestPlus {

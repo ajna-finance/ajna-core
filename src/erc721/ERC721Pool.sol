@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { Clone } from "@clones/Clone.sol";
+import { Clone } from '@clones/Clone.sol';
 
-import { ERC20 }         from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/structs/BitMaps.sol';
 
-import { IERC721Pool } from "./interfaces/IERC721Pool.sol";
+import './interfaces/IERC721Pool.sol';
 
-import { AjnaPool } from "../base/AjnaPool.sol";
+import '../base/AjnaPool.sol';
 
-import { Heap }  from "../libraries/Heap.sol";
-import { Maths } from "../libraries/Maths.sol";
+import '../libraries/Heap.sol';
+import '../libraries/Maths.sol';
 import '../libraries/Book.sol';
 import '../libraries/Actors.sol';
 
