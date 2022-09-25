@@ -173,13 +173,6 @@ interface IERC20Pool is IScaledPool {
     /*******************************/
 
     /**
-     *  @notice Called by actors to initiate a liquidation.
-     *  @param  borrower_ Identifies the loan to liquidate.
-     */
-    function kick(address borrower_) external;
-
-
-    /**
      *  @notice Called by actors to purchase collateral using quote token they provide themselves.
      *  @param  borrower_     Identifies the loan under liquidation.
      *  @param  amount_       Amount of quote token which will be used to purchase collateral at the auction price.

@@ -98,7 +98,25 @@ abstract contract DSTestPlus is Test {
 
     // Pool deployer events
     event PoolCreated(address pool_);
-    
+
+    struct PoolState {
+        uint256 htp;
+        uint256 lup;
+        uint256 poolSize;
+        uint256 pledgedCollateral;
+        uint256 encumberedCollateral;
+        uint256 borrowerDebt;
+        uint256 actualUtilization;
+        uint256 targetUtilization;
+        uint256 minDebtAmount;
+        uint256 loans;
+        address maxBorrower;
+        uint256 inflatorSnapshot;
+        uint256 pendingInflator;
+        uint256 interestRate;
+        uint256 interestRateUpdate;
+    }
+
     struct AuctionState {
         address borrower;
         uint256 kickTime;
@@ -109,6 +127,16 @@ abstract contract DSTestPlus is Test {
         uint256 bondSize;
         address next;
         bool active;
+    }
+
+    struct BorrowerState {
+        address borrower;
+        uint256 debt;
+        uint256 pendingDebt;
+        uint256 collateral;
+        uint256 collateralization;
+        uint256 mompFactor;
+        uint256 inflator;
     }
 
     function assertERC20Eq(ERC20 erc1_, ERC20 erc2_) internal {
@@ -136,7 +164,6 @@ abstract contract DSTestPlus is Test {
     function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
         difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
     }
-
 
 
 }

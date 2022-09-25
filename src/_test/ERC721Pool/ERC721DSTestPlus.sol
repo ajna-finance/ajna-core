@@ -5,6 +5,7 @@ import { ERC20 }             from "@openzeppelin/contracts/token/ERC20/ERC20.sol
 
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
+import { IScaledPool}        from "../../base/interfaces/IScaledPool.sol";
 
 import { DSTestPlus }                from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
@@ -27,19 +28,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     /*** Utilities ***/
     /*****************/
 
-    struct PoolState {
-        uint256 htp;
-        uint256 lup;
-        uint256 poolSize;
-        uint256 pledgedCollateral;
-        uint256 encumberedCollateral;
-        uint256 borrowerDebt;
-        uint256 actualUtilization;
-        uint256 targetUtilization;
-        uint256 minDebtAmount;
-        uint256 loans;
-        address maxBorrower;
-    }
+    
 
     struct ReserveAuctionState {
         uint256 claimableReservesRemaining;
@@ -148,6 +137,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     
     function _assertPool(PoolState memory state_) internal {
         ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
+
         ( , uint256 htp, uint256 lup, ) = pool.poolPricesInfo();
         (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = pool.poolLoansInfo();
         (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = pool.poolUtilizationInfo();
@@ -165,6 +155,52 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         assertEq(maxBorrower, state_.maxBorrower);
 
         assertEq(pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+    }
+
+    function _assertAuction(AuctionState memory state_) internal {
+        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
+
+        (uint256 debt, , uint256 col, uint256 mompFactor, uint256 inflator) = pool.borrowerInfo(state_.borrower);
+        (uint128 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = pool.liquidations(state_.borrower);
+        (address next, , bool active) = pool.getAuction(state_.borrower);
+        int256 bpf = pool.bpf(
+            IScaledPool.Borrower({
+               debt: debt,
+               collateral: col,
+               mompFactor: mompFactor,
+               inflatorSnapshot: inflator
+            }),
+            IScaledPool.Liquidation({
+                kickTime: kickTime,
+                referencePrice: referencePrice,
+                bondFactor: bondFactor,
+                bondSize: bondSize
+            }),
+            pool.auctionPrice(referencePrice, kickTime)
+        );
+        assertEq(kickTime, state_.kickTime);
+        assertEq(referencePrice, state_.referencePrice);
+        assertEq(pool.auctionPrice(referencePrice, kickTime), state_.price);
+        assertEq(bpf, state_.bpf);
+        assertEq(bondFactor, state_.bondFactor);
+        assertEq(bondSize, state_.bondSize);
+        assertEq(next, state_.next);
+        assertEq(active, state_.active);
+        
+    }
+
+    function _assertBorrower(BorrowerState memory state_) internal {
+        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
+
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = pool.borrowerInfo(state_.borrower);
+        (, , uint256 lup, ) = pool.poolPricesInfo();
+        assertEq(debt,        state_.debt);
+        assertEq(pendingDebt, state_.pendingDebt);
+        assertEq(col,         state_.collateral);
+        assertEq(mompFactor,  state_.mompFactor);
+        assertEq(inflator,    state_.inflator);
+
+        assertEq(pool.borrowerCollateralization(state_.debt, state_.collateral, lup), state_.collateralization);
     }
 
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {

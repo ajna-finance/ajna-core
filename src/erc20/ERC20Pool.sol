@@ -197,42 +197,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
-    function kick(address borrower_) external override {
-        (uint256 curDebt) = _accruePoolInterest();
-
-        Borrower memory borrower = borrowers[borrower_];
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        if (borrower.debt == 0) revert KickNoDebt();
-
-        uint256 lup = _lup();
-        _updateInterestRateAndEMAs(curDebt, lup);
-
-        (,,bool auctionActive) = getAuction(borrower_);
-        if (auctionActive == true) revert AuctionActive();
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert KickBorrowerSafe();
-
-        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
-        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
-        uint256 numLoans = (loans.count - 1) * 1e18;
-
-        // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
-        uint256 bondFactor = Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, _momp(numLoans))));
-        uint256 bondSize = Maths.wmul(bondFactor, borrower.debt);
-
-        liquidations[borrower_] = Liquidation({
-            kickTime:            uint128(block.timestamp),
-            referencePrice:      Book.indexToPrice(_hpbIndex()),
-            bondFactor:          bondFactor,
-            bondSize:            bondSize
-        });
-
-        _addAuction(borrower_);
-
-        loans.remove(borrower_);
-
-        emit Kick(borrower_, borrower.debt, borrower.collateral);
-        quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
-    }
+    
 
     // TODO: Add reentrancy guard
     function take(address borrower_, uint256 maxAmount_, bytes memory swapCalldata_) external override {
@@ -269,25 +234,40 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
             // Take is below neutralPrice, Kicker is rewarded
             uint256 reward = amount - repayAmount;
             liquidation.bondSize += reward;
-            borrower.debt -= repayAmount;
  
         } else {     
             // Take is above neutralPrice, Kicker is penalized
             // TODO: increase the reserves here somehow?
             int256 penalty = PRBMathSD59x18.mul(int256(amount), bpf);
             liquidation.bondSize -= uint256(-penalty);
-            borrower.debt -= repayAmount;
         }
+
+        borrowerDebt  -= repayAmount;
+        borrower.debt -= repayAmount;
 
         // Reduce liquidation's remaining collateral
         borrower.collateral -= Maths.wdiv(amount, price);
-        borrowers[borrower_] = borrower;
-        liquidations[borrower_] = liquidation;
 
         // If recollateralized remove loan from auction
         if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) {
             _removeAuction(borrower_);
+
+            if (borrower.debt != 0) {
+                if (loans.count - 1 != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
+                uint256 thresholdPrice = _t0ThresholdPrice(
+                    borrower.debt,
+                    borrower.collateral,
+                    borrower.inflatorSnapshot
+                );
+                loans.upsert(borrower_, thresholdPrice);
+
+                uint256 numLoans     = (loans.count - 1) * 1e18;
+                borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
+            }
         }
+
+        borrowers[borrower_] = borrower;
+        liquidations[borrower_] = liquidation;
 
         // TODO: implement flashloan functionality
         // Flash loan full amount to liquidate to borrower
@@ -300,46 +280,6 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         collateral().safeTransfer(msg.sender, collateralToPurchase);
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
-
-    // TODO: remove this method, it is for testing only.
-    function bpf( Borrower memory borrower_, Liquidation memory liquidation_, uint256 price_) public pure returns (int256) {
-        if (borrower_.collateral == 0) {
-            return 0;
-        }
-        return _bpf(borrower_, liquidation_, price_);
-    }
-
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
-
-    function _bpf( Borrower memory borrower_, Liquidation memory liquidation_, uint256 price_) internal pure returns (int256) {
-        int256 thresholdPrice = int256(Maths.wdiv(borrower_.debt, borrower_.collateral));
-        int256 neutralPrice = int256(Maths.wmul(borrower_.mompFactor, borrower_.inflatorSnapshot));
-         
-        if (thresholdPrice <= neutralPrice) {
-            return PRBMathSD59x18.mul(
-                int256(liquidation_.bondFactor),
-                Maths.minInt(
-                    1e18,
-                    Maths.maxInt(
-                        -1 * 1e18,
-                        PRBMathSD59x18.div(
-                            neutralPrice - int256(price_),
-                            neutralPrice - thresholdPrice
-                        )
-                    )
-                )
-            );
-        }
-     
-        return PRBMathSD59x18.mul(int256(liquidation_.bondFactor), _sign(neutralPrice - int256(price_)));
-    }
-
-    /**********************/
-    /*** View Functions ***/
-    /**********************/
-
 
     
 
@@ -354,9 +294,4 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         return ERC20(_getArgAddress(0));
     }
 
-    function _sign(int256 val_) private pure returns (int256) {
-        if ((val_) < 0 )     return -1;
-        else if ((val_) > 0) return 1;
-        else                 return 0;
-    }
 }

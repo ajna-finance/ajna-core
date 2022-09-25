@@ -56,9 +56,13 @@ contract ERC721ScaledReserveAuctionTest is ERC721HelperContract {
                 borrowerDebt:         175_168.269230769230850000 * 1e18,
                 actualUtilization:    0.875841346153846154 * 1e18,
                 targetUtilization:    1 * 1e18,
-                minDebtAmount:        17_516.826923076923085000 * 1e18,
                 loans:                1,
-                maxBorrower:          _borrower
+                maxBorrower:          _borrower,
+                inflatorSnapshot:      0.875841346153846154 * 1e18,
+                pendingInflator:      0.875841346153846154 * 1e18,
+                interestRate:         0.875841346153846154 * 1e18,
+                interestRateUpdate:   0.875841346153846154 * 1e18,
+                minDebtAmount:        17_516.826923076923085000 * 1e18
             })
         );
         skip(26 weeks);

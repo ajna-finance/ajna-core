@@ -484,6 +484,12 @@ interface IScaledPool {
      */
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external;
 
+    /**
+     *  @notice Called by actors to initiate a liquidation.
+     *  @param  borrower_ Identifies the loan to liquidate.
+     */
+    function kick(address borrower_) external;
+
 
     /**
      *  @notice Called by actor to start a Claimable Reserve Auction (CRA).

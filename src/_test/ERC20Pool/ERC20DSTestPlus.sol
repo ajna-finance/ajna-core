@@ -133,34 +133,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 collateral;
     }
 
-    struct BorrowerState {
-        address borrower;
-        uint256 debt;
-        uint256 pendingDebt;
-        uint256 collateral;
-        uint256 collateralization;
-        uint256 mompFactor;
-        uint256 inflator;
-    }
-
-    struct PoolState {
-        uint256 htp;
-        uint256 lup;
-        uint256 poolSize;
-        uint256 pledgedCollateral;
-        uint256 encumberedCollateral;
-        uint256 borrowerDebt;
-        uint256 actualUtilization;
-        uint256 targetUtilization;
-        uint256 minDebtAmount;
-        uint256 loans;
-        address maxBorrower;
-        uint256 inflatorSnapshot;
-        uint256 pendingInflator;
-        uint256 interestRate;
-        uint256 interestRateUpdate;
-    }
-
     struct PoolPricesInfo {
         uint256 hpb;
         uint256 htp;
@@ -354,23 +326,8 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(_pool.interestRateUpdate(), state_.interestRateUpdate);
     }
 
-    function _assertLPs(LenderLPs memory specs_) internal {
-        for (uint256 i = 0; i < specs_.bucketLPs.length; ++i) {
-            (uint256 lpBalance, uint256 time) = _pool.lenders(specs_.bucketLPs[i].index, specs_.lender);
-            assertEq(lpBalance, specs_.bucketLPs[i].balance);
-            assertEq(time,      specs_.bucketLPs[i].time);
-        }
-    }
-
-    function _assertBuckets(BucketState[] memory state_) internal {
-        for (uint256 i = 0; i < state_.length; ++i) {
-            (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(state_[i].index);
-            assertEq(lpAccumulator,       state_[i].LPs);
-            assertEq(availableCollateral, state_[i].collateral);
-        }
-    }
-
     function _assertAuction(AuctionState memory state_) internal {
+
         (uint256 debt, , uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
         (uint128 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidations(state_.borrower);
         (address next, , bool active) = _pool.getAuction(state_.borrower);
@@ -398,6 +355,22 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(next, state_.next);
         assertEq(active, state_.active);
         
+    }
+
+    function _assertLPs(LenderLPs memory specs_) internal {
+        for (uint256 i = 0; i < specs_.bucketLPs.length; ++i) {
+            (uint256 lpBalance, uint256 time) = _pool.lenders(specs_.bucketLPs[i].index, specs_.lender);
+            assertEq(lpBalance, specs_.bucketLPs[i].balance);
+            assertEq(time,      specs_.bucketLPs[i].time);
+        }
+    }
+
+    function _assertBuckets(BucketState[] memory state_) internal {
+        for (uint256 i = 0; i < state_.length; ++i) {
+            (uint256 lpAccumulator, uint256 availableCollateral) = _pool.buckets(state_[i].index);
+            assertEq(lpAccumulator,       state_[i].LPs);
+            assertEq(availableCollateral, state_[i].collateral);
+        }
     }
 
     function _assertBorrower(BorrowerState memory state_) internal {

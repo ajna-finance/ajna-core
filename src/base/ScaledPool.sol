@@ -281,7 +281,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
         );
         loans.upsert(msg.sender, thresholdPrice);
 
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 numLoans     = (loans.count - 1) * 1e18;
+        borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         borrowers[msg.sender] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -369,6 +370,43 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
         quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
     }
 
+    function kick(address borrower_) external override {
+        (uint256 curDebt) = _accruePoolInterest();
+
+        Borrower memory borrower = borrowers[borrower_];
+        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        if (borrower.debt == 0) revert KickNoDebt();
+
+        uint256 lup = _lup();
+        _updateInterestRateAndEMAs(curDebt, lup);
+
+        (,,bool auctionActive) = getAuction(borrower_);
+        if (auctionActive == true) revert AuctionActive();
+        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert KickBorrowerSafe();
+
+        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
+        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
+        uint256 numLoans = (loans.count - 1) * 1e18;
+
+        // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
+        uint256 bondFactor = Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, _momp(numLoans))));
+        uint256 bondSize = Maths.wmul(bondFactor, borrower.debt);
+
+        liquidations[borrower_] = Liquidation({
+            kickTime:            uint128(block.timestamp),
+            referencePrice:      Book.indexToPrice(_hpbIndex()),
+            bondFactor:          bondFactor,
+            bondSize:            bondSize
+        });
+
+        _addAuction(borrower_);
+
+        loans.remove(borrower_);
+
+        emit Kick(borrower_, borrower.debt, borrower.collateral);
+        quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
+    }
+
 
     /**************************/
     /*** Internal Functions ***/
@@ -397,8 +435,9 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
         );
         if (borrower.debt != 0) loans.upsert(borrower_, thresholdPrice);
 
-        uint256 newLup = _lup();
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 newLup       = _lup();
+        uint256 numLoans     = (loans.count - 1) * 1e18;
+        borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         borrowers[borrower_] = borrower;
 
         pledgedCollateral += collateralAmountToPledge_;
@@ -430,7 +469,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
         );
         if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
 
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 numLoans     = (loans.count - 1) * 1e18;
+        borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         borrowers[msg.sender] = borrower;
 
         // update pool state
@@ -474,7 +514,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
         borrowerDebt = curDebt;
 
         uint256 newLup = _lup();
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 numLoans     = (loans.count - 1) * 1e18;
+        borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         borrowers[borrower_] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -725,17 +766,44 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
         }
     }
 
-    function _mompFactor(uint256 inflator) internal view returns (uint256 momFactor_) {
-        uint256 numLoans = loans.count - 1;
-        if (numLoans != 0) momFactor_ = Maths.wdiv(Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans * 1e18))), inflator); 
-    }
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
 
+    function _bpf( Borrower memory borrower_, Liquidation memory liquidation_, uint256 price_) internal pure returns (int256) {
+        int256 thresholdPrice = int256(Maths.wdiv(borrower_.debt, borrower_.collateral));
+        int256 neutralPrice = int256(Maths.wmul(borrower_.mompFactor, borrower_.inflatorSnapshot));
+         
+        if (thresholdPrice <= neutralPrice) {
+            return PRBMathSD59x18.mul(
+                int256(liquidation_.bondFactor),
+                Maths.minInt(
+                    1e18,
+                    Maths.maxInt(
+                        -1 * 1e18,
+                        PRBMathSD59x18.div(
+                            neutralPrice - int256(price_),
+                            neutralPrice - thresholdPrice
+                        )
+                    )
+                )
+            );
+        }
+     
+        return PRBMathSD59x18.mul(int256(liquidation_.bondFactor), _sign(neutralPrice - int256(price_)));
+    }
 
 
 
     /**************************/
     /*** External Functions ***/
     /**************************/
+
+    // TODO: Temporarily here for unit testing; move to accessor method when merging with current implementation.
+    function bpf( Borrower memory borrower_, Liquidation memory liquidation_, uint256 price_) public pure returns (int256) {
+        if (borrower_.collateral == 0) return 0;
+        return _bpf(borrower_, liquidation_, price_);
+    }
 
 
     // TODO: Temporarily here for unit testing; move to accessor method when merging with current implementation.
@@ -928,5 +996,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
  
     function _momp(uint256 numLoans) internal view returns (uint256) {
         return Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans)));
+    }
+
+    function _sign(int256 val_) private pure returns (int256) {
+        if ((val_) < 0 )     return -1;
+        else if ((val_) > 0) return 1;
+        else                 return 0;
     }
 }

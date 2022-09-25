@@ -150,20 +150,15 @@ interface IERC721Pool is IScaledPool {
     /*******************************/
     /*** Pool External Functions ***/
     /*******************************/
-    /**
-     *  @notice Called by actors to initiate a liquidation.
-     *  @param  borrower_ Identifies the loan to liquidate.
-     */
-    function kick(address borrower_) external;
 
-    /**
-     *  @notice Called by actors to purchase collateral using quote token they provide themselves.
-     *  @param  borrower_     Identifies the loan being liquidated.
-     *  @param  tokenIds_     NFT token ids caller wishes to purchase from the liquidation.
-     *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
-     *                        such that sender will have a sufficient quote token balance prior to payment.
-     */
-    function take(address borrower_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external;
+    // /**
+    //  *  @notice Called by actors to purchase collateral using quote token they provide themselves.
+    //  *  @param  borrower_     Identifies the loan being liquidated.
+    //  *  @param  tokenIds_     NFT token ids caller wishes to purchase from the liquidation.
+    //  *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
+    //  *                        such that sender will have a sufficient quote token balance prior to payment.
+    //  */
+    // function take(address borrower_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external;
 
 
     /**********************/

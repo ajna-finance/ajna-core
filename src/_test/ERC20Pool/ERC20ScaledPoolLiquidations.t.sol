@@ -243,11 +243,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 lup:                  _p9_72,
                 poolSize:             73_099.470009578439232996 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
-                encumberedCollateral: 835.018698340672036186 * 1e18,
-                borrowerDebt:         8_117.463819403393991095 * 1e18,
-                actualUtilization:    0.111046821794190009 * 1e18,
+                encumberedCollateral: 833.009246211652698536 * 1e18,
+                borrowerDebt:         8_097.929340730578997898 * 1e18,
+                actualUtilization:    0.110779590326297625 * 1e18,
                 targetUtilization:    0.833343432560391572 * 1e18,
-                minDebtAmount:        811.746381940339399110 * 1e18,
+                minDebtAmount:        809.792934073057899790 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
                 inflatorSnapshot:     1.013803302006192493 * 1e18,
@@ -401,8 +401,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             })
         );
         
-    }        
-
+    }
 
     function testBondFactorFormula() external {
         // threshold price (100) greater than the pool price (50)
@@ -426,8 +425,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         assertEq(_bondFactorFormula(30 * 1e18, 100 * 1e18), 0.3 * 1e18);
     }
 
-    function _bondFactorFormula(uint256 thresholdPrice_, uint256 poolPrice_) internal pure returns (uint256 bondFactor_) {
-        bondFactor_= thresholdPrice_ >= poolPrice_ ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1 * 1e18 - Maths.wdiv(thresholdPrice_, poolPrice_)));
+    function _bondFactorFormula(uint256 thresholdPrice_, uint256 momp_) internal pure returns (uint256 bondFactor_) {
+        bondFactor_= thresholdPrice_ >= momp_ ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1 * 1e18 - Maths.wdiv(thresholdPrice_, momp_)));
     }
 
 
@@ -455,23 +454,4 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         assertEq(_pool.auctionPrice(referencePrice, kickTime), 0);
     }
 
-    // TODO: move to DSTestPlus?
-    function _logBorrowerInfo(address borrower_) internal {
-        (
-            uint256 borrowerDebt,
-            uint256 borrowerPendingDebt,
-            uint256 collateralDeposited,
-            uint256 mompFactor,
-            uint256 borrowerInflator
-
-        ) = _pool.borrowerInfo(address(borrower_));
-
-        emit log_named_uint("borrowerDebt        ", borrowerDebt);
-        emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
-        emit log_named_uint("collateralDeposited ", collateralDeposited);
-        emit log_named_uint("mompFactor ",           mompFactor);
-        emit log_named_uint("collateralEncumbered", _pool.encumberedCollateral(borrowerDebt, _lup()));
-        emit log_named_uint("collateralization   ", _pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _lup()));
-        emit log_named_uint("borrowerInflator    ", borrowerInflator);
-    }
 }
