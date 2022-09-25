@@ -10,14 +10,14 @@ import '@openzeppelin/contracts/utils/structs/BitMaps.sol';
 
 import { IERC721Pool } from "./interfaces/IERC721Pool.sol";
 
-import { ScaledPool } from "../base/ScaledPool.sol";
+import { AjnaPool } from "../base/AjnaPool.sol";
 
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
 import '../libraries/Book.sol';
 import '../libraries/Actors.sol';
 
-contract ERC721Pool is IERC721Pool, ScaledPool {
+contract ERC721Pool is IERC721Pool, AjnaPool {
     using SafeERC20 for ERC20;
     using BitMaps   for BitMaps.BitMap;
     using Book      for mapping(uint256 => Book.Bucket);

@@ -5,14 +5,14 @@ import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
 import { IERC721Pool } from "../../erc721/interfaces/IERC721Pool.sol";
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import { IAjnaPool } from "../../base/interfaces/IAjnaPool.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
 
 import { ERC721HelperContract }           from "./ERC721DSTestPlus.sol";
 
-contract ERC721ScaledBorrowTest is ERC721HelperContract {
+contract ERC721PoolBorrowTest is ERC721HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -223,7 +223,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToRemove[1] = 3;
         tokenIdsToRemove[2] = 5;
         tokenIdsToRemove[3] = 51;
-        vm.expectRevert(IScaledPool.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IAjnaPool.PullCollateralInsufficientCollateral.selector);
         (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
 
         // should revert if lender attempts to remove collateral not available in the bucket
@@ -252,7 +252,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         changePrank(_lender2);
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 74;
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientLP.selector);
+        vm.expectRevert(IAjnaPool.RemoveCollateralInsufficientLP.selector);
         (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
     }
 

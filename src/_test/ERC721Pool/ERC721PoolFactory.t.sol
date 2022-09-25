@@ -9,7 +9,7 @@ import { PoolDeployer } from "../../base/PoolDeployer.sol";
 import { DSTestPlus }                     from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
 
-contract ERC721ScaledPoolFactoryTest is DSTestPlus {
+contract ERC721PoolFactoryTest is DSTestPlus {
     address            internal _NFTCollectionPoolAddress;
     address            internal _NFTSubsetOnePoolAddress;
     address            internal _NFTSubsetTwoPoolAddress;

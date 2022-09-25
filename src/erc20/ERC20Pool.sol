@@ -7,14 +7,14 @@ import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.s
 
 import { IERC20Pool } from "./interfaces/IERC20Pool.sol";
 
-import { ScaledPool } from "../base/ScaledPool.sol";
+import { AjnaPool } from "../base/AjnaPool.sol";
 
 import { Heap }  from "../libraries/Heap.sol";
 import { Maths } from "../libraries/Maths.sol";
 import '../libraries/Book.sol';
 import '../libraries/Actors.sol';
 
-contract ERC20Pool is IERC20Pool, ScaledPool {
+contract ERC20Pool is IERC20Pool, AjnaPool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
     using Book      for Book.Deposits;

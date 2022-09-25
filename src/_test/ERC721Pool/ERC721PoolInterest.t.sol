@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import { IAjnaPool } from "../../base/interfaces/IAjnaPool.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
@@ -12,7 +12,7 @@ import '../../libraries/PoolUtils.sol';
 
 import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
 
-abstract contract ERC721ScaledInterestTest is ERC721HelperContract {
+abstract contract ERC721PoolInterestTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _borrower3;
@@ -43,7 +43,7 @@ abstract contract ERC721ScaledInterestTest is ERC721HelperContract {
     }
 }
 
-contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
+contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
     function createPool() external override returns (ERC721Pool) {
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](6);
@@ -201,7 +201,7 @@ contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
     }
 }
 
-contract ERC721ScaledCollectionInterestTest is ERC721ScaledInterestTest {
+contract ERC721PoolCollectionInterestTest is ERC721PoolInterestTest {
 
     function createPool() external override returns (ERC721Pool) {
         return _deployCollectionPool();

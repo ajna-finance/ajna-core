@@ -4,11 +4,11 @@ pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
-import './interfaces/IScaledPool.sol';
+import './interfaces/IAjnaPool.sol';
 
 import '../libraries/PoolUtils.sol';
 
-contract ScaledPoolUtils {
+contract AjnaPoolUtils {
 
     function borrowerInfo(address ajnaPool_, address borrower_)
         external
@@ -21,7 +21,7 @@ contract ScaledPoolUtils {
             uint256 inflatorSnapshot_  // used to calculate pending interest (WAD)
         )
     {
-        IScaledPool pool = IScaledPool(ajnaPool_);
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
 
         uint256 inflatorSnapshot           = pool.inflatorSnapshot();
         uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
@@ -54,7 +54,7 @@ contract ScaledPoolUtils {
             uint256 exchangeRate_
         )
     {
-        IScaledPool pool = IScaledPool(ajnaPool_);
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
 
         price_                        = PoolUtils.indexToPrice(index_);
         quoteTokens_                  = pool.bucketDeposit(index_); // quote token in bucket, deposit + interest (WAD)
@@ -86,7 +86,7 @@ contract ScaledPoolUtils {
             uint256 pendingInflator_
         )
     {
-        IScaledPool pool = IScaledPool(ajnaPool_);
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
         poolSize_    = pool.depositSize();
         loansCount_  = pool.noOfLoans();
         maxBorrower_ = pool.maxBorrower();
@@ -119,7 +119,7 @@ contract ScaledPoolUtils {
             uint256 lupIndex_
         )
     {
-        IScaledPool pool = IScaledPool(ajnaPool_);
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
         hpbIndex_ = pool.depositIndex(1);
         hpb_      = PoolUtils.indexToPrice(hpbIndex_);
         htp_      = Maths.wmul(pool.maxThresholdPrice(), pool.inflatorSnapshot());
@@ -147,7 +147,7 @@ contract ScaledPoolUtils {
             uint256 timeRemaining_
         )
     {
-        IScaledPool pool = IScaledPool(ajnaPool_);
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
         uint256 poolDebt = pool.borrowerDebt();
         uint256 poolSize = pool.depositSize();
 
@@ -188,7 +188,7 @@ contract ScaledPoolUtils {
             uint256 poolTargetUtilization_
         )
     {
-        IScaledPool pool = IScaledPool(ajnaPool_);
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
 
         uint256 poolDebt       = pool.borrowerDebt();
         uint256 poolCollateral = pool.pledgedCollateral();
@@ -210,7 +210,7 @@ contract ScaledPoolUtils {
         view
         returns (uint256 lenderInterestMargin_)
     {
-        IScaledPool pool = IScaledPool(ajnaPool_);
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
 
         uint256 poolDebt       = pool.borrowerDebt();
         uint256 poolCollateral = pool.pledgedCollateral();

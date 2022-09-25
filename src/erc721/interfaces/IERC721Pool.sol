@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import { IAjnaPool } from "../../base/interfaces/IAjnaPool.sol";
 
 import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 /**
  * @title Ajna ERC20 Pool
  */
-interface IERC721Pool is IScaledPool {
+interface IERC721Pool is IAjnaPool {
 
     /*************************/
     /*** ERC721Pool Events ***/

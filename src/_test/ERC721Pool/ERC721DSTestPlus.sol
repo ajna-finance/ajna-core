@@ -5,7 +5,7 @@ import { ERC20 }             from "@openzeppelin/contracts/token/ERC20/ERC20.sol
 
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
-import { ScaledPoolUtils }   from "../../base/ScaledPoolUtils.sol";
+import { AjnaPoolUtils }   from "../../base/AjnaPoolUtils.sol";
 
 import { DSTestPlus }                from "../utils/DSTestPlus.sol";
 import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
@@ -60,7 +60,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     Token              internal _quote;
     ERC20              internal _ajna;
     ERC721Pool         internal _pool;
-    ScaledPoolUtils    internal _poolUtils;
+    AjnaPoolUtils    internal _poolUtils;
 
     // TODO: bool for pool type
     constructor() {
@@ -72,7 +72,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.makePersistent(address(_quote));
         _ajna       = ERC20(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079));
         vm.makePersistent(address(_ajna));
-        _poolUtils  = new ScaledPoolUtils();
+        _poolUtils  = new AjnaPoolUtils();
         vm.makePersistent(address(_poolUtils));
     }
 

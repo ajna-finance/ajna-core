@@ -9,7 +9,7 @@ import { Maths }      from "../../libraries/Maths.sol";
 
 import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
 
-contract ERC20ScaledPurchaseQuoteTokenTest is ERC20HelperContract {
+contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _bidder;

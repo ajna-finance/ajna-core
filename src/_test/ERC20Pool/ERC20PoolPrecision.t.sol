@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
-import { ScaledPoolUtils }  from "../../base/ScaledPoolUtils.sol";
+import { AjnaPoolUtils }  from "../../base/AjnaPoolUtils.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
@@ -11,7 +11,7 @@ import { Maths }      from "../../libraries/Maths.sol";
 import { ERC20DSTestPlus }    from "./ERC20DSTestPlus.sol";
 import { TokenWithNDecimals } from "../utils/Tokens.sol";
 
-contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
+contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
     uint256 internal _lpPoolPrecision         = 10**27;
     uint256 internal _quotePoolPrecision      = 10**18;
@@ -28,13 +28,13 @@ contract ERC20ScaledPoolPrecisionTest is ERC20DSTestPlus {
     TokenWithNDecimals internal _collateral;
     TokenWithNDecimals internal _quote;
     ERC20Pool          internal _pool;
-    ScaledPoolUtils    internal _poolUtils;
+    AjnaPoolUtils    internal _poolUtils;
 
     function init(uint256 collateralPrecisionDecimals_, uint256 quotePrecisionDecimals_) internal {
         _collateral = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
         _quote      = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-        _poolUtils  = new ScaledPoolUtils();
+        _poolUtils  = new AjnaPoolUtils();
 
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");

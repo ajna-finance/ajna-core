@@ -8,7 +8,7 @@ import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
-import './interfaces/IScaledPool.sol';
+import './interfaces/IAjnaPool.sol';
 
 import '../libraries/Maths.sol';
 import '../libraries/Heap.sol';
@@ -16,7 +16,7 @@ import '../libraries/Book.sol';
 import '../libraries/Actors.sol';
 import '../libraries/PoolUtils.sol';
 
-abstract contract ScaledPool is Clone, Multicall, IScaledPool {
+abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
     using Book      for Book.Deposits;

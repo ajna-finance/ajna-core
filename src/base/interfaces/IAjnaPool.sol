@@ -5,7 +5,7 @@ pragma solidity 0.8.14;
  * @title Ajna Pool
  * @dev   Used to manage lender and borrower positions.
  */
-interface IScaledPool {
+interface IAjnaPool {
 
     /*********************/
     /*** Common Events ***/

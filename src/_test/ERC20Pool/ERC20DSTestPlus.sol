@@ -5,7 +5,7 @@ import { ERC20 }      from "@solmate/tokens/ERC20.sol";
 
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
-import { ScaledPoolUtils }   from "../../base/ScaledPoolUtils.sol";
+import { AjnaPoolUtils }   from "../../base/AjnaPoolUtils.sol";
 
 import { Maths } from "../../libraries/Maths.sol";
 import '../../libraries/Actors.sol';
@@ -182,13 +182,13 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     Token           internal _collateral;
     Token           internal _quote;
     ERC20Pool       internal _pool;
-    ScaledPoolUtils internal _poolUtils;
+    AjnaPoolUtils internal _poolUtils;
 
     constructor() {
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-        _poolUtils  = new ScaledPoolUtils();
+        _poolUtils  = new AjnaPoolUtils();
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {

@@ -12,8 +12,8 @@ import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
 import { PositionManager } from "../base/PositionManager.sol";
 
 import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
-import { IScaledPool }      from "../base/interfaces/IScaledPool.sol";
-import { ScaledPoolUtils }  from "../base/ScaledPoolUtils.sol";
+import { IAjnaPool }      from "../base/interfaces/IAjnaPool.sol";
+import { AjnaPoolUtils }  from "../base/AjnaPoolUtils.sol";
 
 // TODO: test this against ERC721Pool
 abstract contract PositionManagerHelperContract is DSTestPlus {
@@ -22,7 +22,7 @@ abstract contract PositionManagerHelperContract is DSTestPlus {
     PositionManager  internal _positionManager;
     Token            internal _collateral;
     Token            internal _quote;
-    ScaledPoolUtils  internal _poolUtils;
+    AjnaPoolUtils  internal _poolUtils;
 
     constructor() {
         _collateral      = new Token("Collateral", "C");
@@ -30,7 +30,7 @@ abstract contract PositionManagerHelperContract is DSTestPlus {
         _factory         = new ERC20PoolFactory();
         _positionManager = new PositionManager();
         _pool            = ERC20Pool(_factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-        _poolUtils       = new ScaledPoolUtils();
+        _poolUtils       = new AjnaPoolUtils();
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
@@ -127,7 +127,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IAjnaPool.TransferLPNoAllowance.selector);
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 

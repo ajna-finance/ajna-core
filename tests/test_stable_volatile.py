@@ -7,7 +7,7 @@ from decimal import *
 from brownie import Contract
 from brownie.exceptions import VirtualMachineError
 from sdk import AjnaProtocol, DAI_ADDRESS, MKR_ADDRESS
-from conftest import LoansHeapUtils, MAX_PRICE, ScaledPoolUtils, TestUtils
+from conftest import LoansHeapUtils, MAX_PRICE, AjnaPoolUtils, TestUtils
 
 
 MAX_BUCKET = 2532  # 3293.70191, highest bucket for initial deposits, is exceeded after initialization
@@ -170,7 +170,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
 
     # draw debt
     (_, pending_debt, collateral_deposited, _, _) = pool.borrowerInfo(borrower.address)
-    new_total_debt = pending_debt + borrow_amount + ScaledPoolUtils.get_origination_fee(pool, borrow_amount)
+    new_total_debt = pending_debt + borrow_amount + AjnaPoolUtils.get_origination_fee(pool, borrow_amount)
     threshold_price = new_total_debt * 10**18 / collateral_deposited
     print(f" borrower {borrower_index:>4} drawing {borrow_amount / 1e18:>8.1f} from bucket {pool.lup() / 1e18:>6.3f} "
           f"with {collateral_deposited / 1e18:>6.1f} collateral deposited, "

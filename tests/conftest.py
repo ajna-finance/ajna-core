@@ -98,7 +98,7 @@ def borrowers(ajna_protocol, scaled_pool):
     return borrowers
 
 
-class ScaledPoolUtils:
+class AjnaPoolUtils:
     def __init__(self, ajna_protocol: AjnaProtocol):
         self.bucket_math = ajna_protocol.bucket_math
 
@@ -121,7 +121,7 @@ class ScaledPoolUtils:
 
 @pytest.fixture
 def scaled_pool_utils(ajna_protocol):
-    return ScaledPoolUtils(ajna_protocol)
+    return AjnaPoolUtils(ajna_protocol)
 
 
 class LoansHeapUtils:
@@ -298,7 +298,7 @@ class TestUtils:
     @staticmethod
     def validate_pool(pool):
         # if pool is collateralized...
-        if pool.lupIndex() > ScaledPoolUtils.price_to_index_safe(pool, pool.htp()):
+        if pool.lupIndex() > AjnaPoolUtils.price_to_index_safe(pool, pool.htp()):
             # ...ensure debt is less than the size of the pool
             assert pool.borrowerDebt() <= pool.poolSize()
 
@@ -335,8 +335,8 @@ class TestUtils:
             return f"{ny(ray):>{w}.3f}"
 
         lup_index = pool.lupIndex()
-        htp_index = ScaledPoolUtils.price_to_index_safe(pool, pool.htp())
-        ptp_index = ScaledPoolUtils.price_to_index_safe(pool, int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
+        htp_index = AjnaPoolUtils.price_to_index_safe(pool, pool.htp())
+        ptp_index = AjnaPoolUtils.price_to_index_safe(pool, int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
 
         min_bucket_index = max(0, pool.priceToIndex(pool.hpb()) - 3)  # HPB
         max_bucket_index = max(lup_index, htp_index, ptp_index) + 3
