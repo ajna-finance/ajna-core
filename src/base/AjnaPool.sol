@@ -715,6 +715,10 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
         );
     }
 
+    function collateralAddress() external pure override returns (address) {
+        return _getArgAddress(0);
+    }
+
     function quoteTokenAddress() external pure override returns (address) {
         return _getArgAddress(0x14);
     }

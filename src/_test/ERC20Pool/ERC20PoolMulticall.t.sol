@@ -5,7 +5,8 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { IAjnaPool } from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPool }       from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPoolErrors } from "../../base/interfaces/pool/IAjnaPoolErrors.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 
@@ -98,7 +99,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         );
 
         changePrank(_lender);
-        vm.expectRevert(IAjnaPool.BorrowLimitIndexReached.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowLimitIndexReached.selector);
         _pool.multicall(callsToExecute);
     }
 

@@ -12,7 +12,9 @@ import { ERC20PoolFactory} from "../erc20/ERC20PoolFactory.sol";
 import { PositionManager } from "../base/PositionManager.sol";
 
 import { IPositionManager } from "../base/interfaces/IPositionManager.sol";
-import { IAjnaPool }      from "../base/interfaces/IAjnaPool.sol";
+import { IAjnaPool }        from "../base/interfaces/IAjnaPool.sol";
+import { IAjnaPoolErrors }  from "../base/interfaces/pool/IAjnaPoolErrors.sol";
+
 import { AjnaPoolUtils }  from "../base/AjnaPoolUtils.sol";
 
 // TODO: test this against ERC721Pool
@@ -127,7 +129,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert(IAjnaPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 

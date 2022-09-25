@@ -4,7 +4,8 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { IAjnaPool } from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPool }       from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPoolErrors } from "../../base/interfaces/pool/IAjnaPoolErrors.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 
@@ -38,7 +39,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         // should fail if allowed owner is not set
         changePrank(_lender);
-        vm.expectRevert(IAjnaPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // should fail if allowed owner is set to 0x
@@ -46,7 +47,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(address(0), indexes[0], 1_000 * 1e18);
 
         changePrank(_lender);
-        vm.expectRevert(IAjnaPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
     }
 
@@ -63,7 +64,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
 
         changePrank(_lender);
-        vm.expectRevert(IAjnaPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender, indexes);
     }
 
@@ -80,7 +81,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
 
         changePrank(_lender);
-        vm.expectRevert(IAjnaPool.TransferLPInvalidIndex.selector);
+        vm.expectRevert(IAjnaPoolErrors.TransferLPInvalidIndex.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
     }
 
@@ -97,7 +98,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[1], 30_000 * 1e27);
 
         changePrank(_lender2);
-        vm.expectRevert(IAjnaPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
     }
 
@@ -141,7 +142,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check that old token ownership was removed - a new transfer should fail
-        vm.expectRevert(IAjnaPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check lenders lp balance
@@ -202,7 +203,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.transferLPTokens(_lender1, _lender2, transferIndexes);
 
         // check that old token ownership was removed - transfer with same indexes should fail
-        vm.expectRevert(IAjnaPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, transferIndexes);
 
         // check lenders lp balance
@@ -269,7 +270,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check that old token ownership was removed - transfer with same indexes should fail
-        vm.expectRevert(IAjnaPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check lenders lp balance

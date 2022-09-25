@@ -13,59 +13,85 @@ interface IPositionManager {
 
     /**
      *  @notice Emitted when an existing NFT was burned.
-     *  @param  lender_  Lender address.
-     *  @param  tokenId_ The token id of the NFT that was burned.
+     *  @param  lender  Lender address.
+     *  @param  tokenId The token id of the NFT that was burned.
      */
-    event Burn(address indexed lender_, uint256 indexed tokenId_);
+    event Burn(
+        address indexed lender,
+        uint256 indexed tokenId
+    );
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
-     *  @param  lender_     Lender address.
-     *  @param  price_      The price at quote tokens were added.
+     *  @param  lender Lender address.
+     *  @param  price  The price at quote tokens were added.
      */
-    event DecreaseLiquidity(address indexed lender_, uint256 indexed price_);
+    event DecreaseLiquidity(
+        address indexed lender,
+        uint256 indexed price
+    );
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
-     *  @param  lender_     Lender address.
-     *  @param  price_      The price at quote tokens were added.
+     *  @param  lender Lender address.
+     *  @param  price  The price at quote tokens were added.
      */
-    event DecreaseLiquidityNFT(address indexed lender_, uint256 indexed price_);
+    event DecreaseLiquidityNFT(
+        address indexed lender,
+        uint256 indexed price
+    );
 
     /**
      *  @notice Emitted when liquidity of the pool was increased.
-     *  @param  lender_ Lender address.
-     *  @param  price_  The price at quote tokens were added.
-     *  @param  amount_ The amount of quote tokens added to the pool.
+     *  @param  lender Lender address.
+     *  @param  price  The price at quote tokens were added.
+     *  @param  amount The amount of quote tokens added to the pool.
      */
-    event IncreaseLiquidity(address indexed lender_, uint256 indexed price_, uint256 amount_);
+    event IncreaseLiquidity(
+        address indexed lender,
+        uint256 indexed price,
+        uint256 amount
+    );
 
     /**
      *  @notice Emitted when existing positions were memorialized for a given NFT.
-     *  @param  tokenId_ The tokenId of the NFT.
+     *  @param  tokenId The tokenId of the NFT.
      */
-    event MemorializePosition(address indexed lender_, uint256 tokenId_);
+    event MemorializePosition(
+        address indexed lender,
+        uint256 tokenId
+    );
 
     /**
      *  @notice Emitted when representative NFT minted.
-     *  @param  lender_  Lender address.
-     *  @param  pool_    Pool address.
-     *  @param  tokenId_ The tokenId of the newly minted NFT.
+     *  @param  lender  Lender address.
+     *  @param  pool    Pool address.
+     *  @param  tokenId The tokenId of the newly minted NFT.
      */
-    event Mint(address indexed lender_, address indexed pool_, uint256 tokenId_);
+    event Mint(
+        address indexed lender,
+        address indexed pool,
+        uint256 tokenId
+    );
 
     /**
      *  @notice Emitted when a position's liquidity is moved between prices.
-     *  @param  lender_  Lender address.
-     *  @param  tokenId_ The tokenId of the newly minted NFT.
+     *  @param  lender  Lender address.
+     *  @param  tokenId The tokenId of the newly minted NFT.
      */
-    event MoveLiquidity(address indexed lender_, uint256 tokenId_);
+    event MoveLiquidity(
+        address indexed lender,
+        uint256 tokenId
+    );
 
     /**
      *  @notice Emitted when existing positions were redeemed for a given NFT.
-     *  @param  tokenId_ The tokenId of the NFT.
+     *  @param  tokenId The tokenId of the NFT.
      */
-    event RedeemPosition(address indexed lender_, uint256 tokenId_);
+    event RedeemPosition(
+        address indexed lender_,
+        uint256 tokenId
+    );
 
     /***************/
     /*** Structs ***/
@@ -148,15 +174,17 @@ interface IPositionManager {
     }
 
     /************************/
-    /*** Lender Functions ***/
+    /*** Owner Functions ***/
     /************************/
 
     /**
-     *  @notice Called by lenders to burn an existing NFT.
+     *  @notice Called by owners to burn an existing NFT.
      *  @dev    Requires that all lp tokens have been removed from the NFT prior to calling.
-     *  @param  params_ Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
+     *  @param  params Calldata struct supplying inputs required to update the underlying assets owed to an NFT.
      */
-    function burn(BurnParams calldata params_) external payable;
+    function burn(
+        BurnParams calldata params
+    ) external payable;
 
     /**
      *  @notice Called to memorialize existing positions with a given NFT.
@@ -164,22 +192,28 @@ interface IPositionManager {
      *  @dev    The NFT must have already been created, and only TODO: (X) prices can be memorialized at a time.
      *  @dev    An additional call is made to the pool to transfer the LP tokens from their previous owner, to the Position Manager.
      *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
-     *  @param  params_ Calldata struct supplying inputs required to conduct the memorialization.
+     *  @param  params Calldata struct supplying inputs required to conduct the memorialization.
      */
-    function memorializePositions(MemorializePositionsParams calldata params_) external;
+    function memorializePositions(
+        MemorializePositionsParams calldata params
+    ) external;
 
     /**
-     *  @notice Called by lenders to add quote tokens and receive a representative NFT.
-     *  @param  params_  Calldata struct supplying inputs required to mint a position NFT.
-     *  @return tokenId_ The tokenId of the newly minted NFT.
+     *  @notice Called by owners to add quote tokens and receive a representative NFT.
+     *  @param  params  Calldata struct supplying inputs required to mint a position NFT.
+     *  @return tokenId The tokenId of the newly minted NFT.
      */
-    function mint(MintParams calldata params_) external payable returns (uint256 tokenId_);
+    function mint(
+        MintParams calldata params
+    ) external payable returns (uint256 tokenId);
 
     /**
-     *  @notice Called by lenders to move liquidity between two price buckets.
-     *  @param  params_  Calldata struct supplying inputs required to move liquidity tokens.
+     *  @notice Called by owners to move liquidity between two price buckets.
+     *  @param  params  Calldata struct supplying inputs required to move liquidity tokens.
      */
-    function moveLiquidity(MoveLiquidityParams calldata params_) external;
+    function moveLiquidity(
+        MoveLiquidityParams calldata params
+    ) external;
 
     /**
      *  @notice Called to reedem existing positions with a given NFT.
@@ -187,9 +221,11 @@ interface IPositionManager {
      *  @dev    The NFT must have already been created, and only TODO: (X) prices can be redeemed at a time.
      *  @dev    An additional call is made to the pool to transfer the LP tokens Position Manager to owner.
      *  @dev    Pool.setPositionOwner() must be called prior to calling this method.
-     *  @param  params_ Calldata struct supplying inputs required to conduct the redeem.
+     *  @param  params Calldata struct supplying inputs required to conduct the redeem.
      */
-    function reedemPositions(RedeemPositionsParams calldata params_) external;
+    function reedemPositions(
+        RedeemPositionsParams calldata params
+    ) external;
 
 
     /**********************/
@@ -199,18 +235,24 @@ interface IPositionManager {
     /**
      *  @notice Returns the lpTokens accrued to a given tokenId, price pairing.
      *  @dev    Nested mappings aren't returned normally as part of the default getter for a mapping.
-     *  @param  tokenId_  Unique ID of token.
-     *  @param  index_    Index of price bucket to check LP balance of.
-     *  @return lpTokens_ Balance of lpTokens in the price bucket for this position.
+     *  @param  tokenId  Unique ID of token.
+     *  @param  index    Index of price bucket to check LP balance of.
+     *  @return lpTokens Balance of lpTokens in the price bucket for this position.
     */
-    function getLPTokens(uint256 tokenId_, uint256 index_) external view returns (uint256 lpTokens_);
+    function getLPTokens(
+        uint256 tokenId,
+        uint256 index
+    ) external view returns (uint256 lpTokens);
 
     /**
      *  @notice Checks if a given tokenId has a given position price
-     *  @param  tokenId_          Unique ID of token.
-     *  @param  index_            Index of price bucket to check if in position prices.
-     *  @return priceInPostition_ True if tokenId has the position price
+     *  @param  tokenId          Unique ID of token.
+     *  @param  index            Index of price bucket to check if in position prices.
+     *  @return priceInPostition True if tokenId has the position price
     */
-    function isIndexInPosition(uint256 tokenId_, uint256 index_) external view returns (bool priceInPostition_);
+    function isIndexInPosition(
+        uint256 tokenId,
+        uint256 index
+    ) external view returns (bool priceInPostition);
 
 }

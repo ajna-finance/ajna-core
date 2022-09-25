@@ -4,7 +4,8 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
-import { IAjnaPool } from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPool }       from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPoolErrors } from "../../base/interfaces/pool/IAjnaPoolErrors.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
@@ -73,7 +74,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // should revert if insufficient quote available before limit price
-        vm.expectRevert(IAjnaPool.BorrowLimitIndexReached.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowLimitIndexReached.selector);
         _pool.borrow(21_000 * 1e18, 2551);
     }
 
@@ -91,7 +92,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
 
         // should revert if borrower did not deposit enough collateral
-        vm.expectRevert(IAjnaPool.BorrowBorrowerUnderCollateralized.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowBorrowerUnderCollateralized.selector);
         _pool.borrow(40 * 1e18, 4000);
     }
 
@@ -103,7 +104,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
 
         // should revert if borrow would result in pool under collateralization
         changePrank(_borrower);
-        vm.expectRevert(IAjnaPool.BorrowBorrowerUnderCollateralized.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowBorrowerUnderCollateralized.selector);
         _pool.borrow(500 * 1e18, 4000);
     }
 
@@ -296,7 +297,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         // should revert if borrower has no debt
         deal(address(_quote), _borrower, _quote.balanceOf(_borrower) + 10_000 * 1e18);
         changePrank(_borrower);
-        vm.expectRevert(IAjnaPool.RepayNoDebt.selector);
+        vm.expectRevert(IAjnaPoolErrors.RepayNoDebt.selector);
         _pool.repay(_borrower, 10_000 * 1e18);
 
         // borrower 1 borrows 1000 quote from the pool
@@ -322,7 +323,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
 
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
-        vm.expectRevert(IAjnaPool.BorrowAmountLTMinDebt.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowAmountLTMinDebt.selector);
         _pool.repay(_borrower, 900 * 1e18);
 
         // should be able to repay loan if properly specified

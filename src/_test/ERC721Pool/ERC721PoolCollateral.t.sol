@@ -4,8 +4,10 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
-import { IERC721Pool } from "../../erc721/interfaces/IERC721Pool.sol";
-import { IAjnaPool } from "../../base/interfaces/IAjnaPool.sol";
+import { IERC721Pool }       from "../../erc721/interfaces/IERC721Pool.sol";
+import { IERC721PoolErrors } from "../../erc721/interfaces/pool/IERC721PoolErrors.sol";
+import { IAjnaPool }         from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPoolErrors }   from "../../base/interfaces/pool/IAjnaPoolErrors.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
@@ -87,7 +89,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // should revert if borrower attempts to add tokens not in the pool subset
         changePrank(_borrower);
-        vm.expectRevert(IERC721Pool.OnlySubset.selector);
+        vm.expectRevert(IERC721PoolErrors.OnlySubset.selector);
         _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
     }
 
@@ -162,7 +164,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // should fail if trying to pull collateral by an address without pledged collateral
         changePrank(_lender);
-        vm.expectRevert(IAjnaPool.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.pullCollateral(tokenIdsToRemove);
 
         changePrank(_borrower2);
@@ -177,7 +179,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 4);
 
         // should fail if trying to pull collateral by an address that pledged different collateral
-        vm.expectRevert(IERC721Pool.RemoveTokenFailed.selector);
+        vm.expectRevert(IERC721PoolErrors.RemoveTokenFailed.selector);
         _pool.pullCollateral(tokenIdsToRemove);
 
         tokenIdsToRemove = new uint256[](2);
@@ -200,7 +202,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 2);
 
         // should fail if borrower tries to pull again same NFTs
-        vm.expectRevert(IAjnaPool.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.pullCollateral(tokenIdsToRemove);
     }
 
@@ -218,7 +220,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 51;
 
-        vm.expectRevert(IERC721Pool.TokenNotDeposited.selector);
+        vm.expectRevert(IERC721PoolErrors.TokenNotDeposited.selector);
         _pool.pullCollateral(tokenIdsToRemove);
 
         // borrower should be able to remove collateral in the pool
@@ -369,7 +371,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 3;
         tokenIdsToRemove[1] = 5;
 
-        vm.expectRevert(IAjnaPool.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.pullCollateral(tokenIdsToRemove);
     }
 
@@ -393,13 +395,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         changePrank(_borrower2);
         tokenIds = new uint256[](1);
         tokenIds[0] = 1;
-        vm.expectRevert(IAjnaPool.RemoveCollateralInsufficientLP.selector);
+        vm.expectRevert(IAjnaPoolErrors.RemoveCollateralInsufficientLP.selector);
         _pool.removeCollateral(tokenIds, 1530);
 
         // should revert if we try to remove a token from a bucket with no collateral
         changePrank(_borrower);
         tokenIds[0] = 1;
-        vm.expectRevert(IAjnaPool.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.removeCollateral(tokenIds, 1692);
 
         // remove one token

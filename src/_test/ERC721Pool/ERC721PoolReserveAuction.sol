@@ -3,11 +3,13 @@ pragma solidity 0.8.14;
 
 import { ERC721Pool }           from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory }    from "../../erc721/ERC721PoolFactory.sol";
-import { IERC721Pool }          from "../../erc721/interfaces/IERC721Pool.sol";
-import { IAjnaPool }          from "../../base/interfaces/IAjnaPool.sol";
 
-import { BucketMath }           from "../../libraries/BucketMath.sol";
-import { Maths }                from "../../libraries/Maths.sol";
+import { IERC721Pool }     from "../../erc721/interfaces/IERC721Pool.sol";
+import { IAjnaPool }       from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPoolErrors } from "../../base/interfaces/pool/IAjnaPoolErrors.sol";
+
+import { BucketMath } from "../../libraries/BucketMath.sol";
+import { Maths }      from "../../libraries/Maths.sol";
 
 import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
 
@@ -74,7 +76,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         );
 
         // ensure cannot take when no auction was started
-        vm.expectRevert(IAjnaPool.NoAuction.selector);
+        vm.expectRevert(IAjnaPoolErrors.NoAuction.selector);
         _pool.takeReserves(555 * 1e18);
         (uint256 reserves, , , , ) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(reserves, 168.26923076923085 * 1e18);
@@ -88,7 +90,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         assertEq(reserves, 499.181304561658553626 * 1e18);
         changePrank(_bidder);
         assertEq(claimableReserves, 0);
-        vm.expectRevert(IAjnaPool.KickNoReserves.selector);
+        vm.expectRevert(IAjnaPoolErrors.KickNoReserves.selector);
         _pool.startClaimableReserveAuction();
     }
 
@@ -221,7 +223,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         // ensure take reverts after auction ends
         skip(72 hours);
-        vm.expectRevert(IAjnaPool.NoAuction.selector);
+        vm.expectRevert(IAjnaPoolErrors.NoAuction.selector);
         _pool.takeReserves(777 * 1e18);
         _assertReserveAuction(
             ReserveAuctionState({

@@ -4,8 +4,10 @@ pragma solidity 0.8.14;
 import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
 import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
 
-import { IERC721Pool } from "../../erc721/interfaces/IERC721Pool.sol";
-import { IAjnaPool } from "../../base/interfaces/IAjnaPool.sol";
+import { IERC721Pool }       from "../../erc721/interfaces/IERC721Pool.sol";
+import { IERC721PoolErrors } from "../../erc721/interfaces/pool/IERC721PoolErrors.sol";
+import { IAjnaPool }         from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPoolErrors }   from "../../base/interfaces/pool/IAjnaPoolErrors.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 import { Maths }      from "../../libraries/Maths.sol";
@@ -223,13 +225,13 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         tokenIdsToRemove[1] = 3;
         tokenIdsToRemove[2] = 5;
         tokenIdsToRemove[3] = 51;
-        vm.expectRevert(IAjnaPool.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
         (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
 
         // should revert if lender attempts to remove collateral not available in the bucket
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 1;
-        vm.expectRevert(IERC721Pool.TokenNotDeposited.selector);
+        vm.expectRevert(IERC721PoolErrors.TokenNotDeposited.selector);
         (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
 
         // lender exchanges their lp for collateral
@@ -252,7 +254,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         changePrank(_lender2);
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 74;
-        vm.expectRevert(IAjnaPool.RemoveCollateralInsufficientLP.selector);
+        vm.expectRevert(IAjnaPoolErrors.RemoveCollateralInsufficientLP.selector);
         (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
     }
 

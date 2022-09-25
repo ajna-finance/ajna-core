@@ -4,8 +4,9 @@ pragma solidity 0.8.14;
 import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
 import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
 
-import { IERC20Pool }  from "../../erc20/interfaces/IERC20Pool.sol";
-import { IAjnaPool } from "../../base/interfaces/IAjnaPool.sol";
+import { IERC20Pool }      from "../../erc20/interfaces/IERC20Pool.sol";
+import { IAjnaPool }       from "../../base/interfaces/IAjnaPool.sol";
+import { IAjnaPoolErrors } from "../../base/interfaces/pool/IAjnaPoolErrors.sol";
 
 import { BucketMath } from "../../libraries/BucketMath.sol";
 
@@ -530,7 +531,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     function testAjnaPoolBorrowRequireChecks() external {
         // should revert if borrower attempts to borrow with an out of bounds limitIndex
         changePrank(_borrower);
-        vm.expectRevert(IAjnaPool.BorrowLimitIndexReached.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowLimitIndexReached.selector);
         _pool.borrow(1_000 * 1e18, 5000);
 
         // add initial quote to the pool
@@ -546,7 +547,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         changePrank(_borrower);
         // should revert if borrower didn't pledged any collateral
-        vm.expectRevert(IAjnaPool.BorrowBorrowerUnderCollateralized.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowBorrowerUnderCollateralized.selector);
         _pool.borrow(500 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after adding sufficient collateral
@@ -575,11 +576,11 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         changePrank(_borrower);
         // should revert if borrower attempts to borrow more than minimum amount
-        vm.expectRevert(IAjnaPool.BorrowAmountLTMinDebt.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowAmountLTMinDebt.selector);
         _pool.borrow(10 * 1e18, 3000);
 
         changePrank(_borrower2);
-        vm.expectRevert(IAjnaPool.BorrowBorrowerUnderCollateralized.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowBorrowerUnderCollateralized.selector);
         _pool.borrow(2_976 * 1e18, 3000);
 
         // should be able to borrow if properly specified
@@ -617,7 +618,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         changePrank(_borrower);
         // should revert if borrower has no debt
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
-        vm.expectRevert(IAjnaPool.RepayNoDebt.selector);
+        vm.expectRevert(IAjnaPoolErrors.RepayNoDebt.selector);
         _pool.repay(_borrower, 10_000 * 1e18);
 
         // borrower 1 borrows 1000 quote from the pool
@@ -686,7 +687,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
-        vm.expectRevert(IAjnaPool.BorrowAmountLTMinDebt.selector);
+        vm.expectRevert(IAjnaPoolErrors.BorrowAmountLTMinDebt.selector);
         _pool.repay(_borrower, 750 * 1e18);
 
         // should be able to repay loan if properly specified
