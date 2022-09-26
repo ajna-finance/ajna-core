@@ -219,4 +219,60 @@ contract AjnaPoolUtils {
         lenderInterestMargin_ = PoolUtils.lenderInterestMargin(utilization);
     }
 
+    function indexToPrice(
+        uint256 index_
+    ) external view returns (uint256)
+    {
+        return PoolUtils.indexToPrice(index_);
+    }
+
+    function priceToIndex(
+        uint256 price_
+    ) external view returns (uint256)
+    {
+        return PoolUtils.priceToIndex(price_);
+    }
+
+    function lup(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
+
+        uint256 lupIndex = pool.depositIndex(pool.borrowerDebt());
+        return PoolUtils.indexToPrice(lupIndex);
+    }
+
+    function lupIndex(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
+
+        return pool.depositIndex(pool.borrowerDebt());
+    }
+
+    function hpb(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
+
+        uint256 hbpIndex = pool.depositIndex(1);
+        return PoolUtils.indexToPrice(hbpIndex);
+    }
+
+    function hpbIndex(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
+
+        return pool.depositIndex(1);
+    }
+
+    function htp(
+        address ajnaPool_
+    ) external view returns (uint256) {
+        IAjnaPool pool = IAjnaPool(ajnaPool_);
+
+        return Maths.wmul(pool.maxThresholdPrice(), pool.inflatorSnapshot());
+    }
+
 }
