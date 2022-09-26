@@ -446,8 +446,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         bucketStates[1] = BucketState({index: 1663, LPs: 3_400 * 1e27, collateral: 0});
         _assertBuckets(bucketStates);
         BucketLP[] memory lps = new BucketLP[](2);
-        lps[0] = BucketLP({index: 1606, balance: 3_400 * 1e27, time: _startTime + 60});
-        lps[1] = BucketLP({index: 1663, balance: 3_400 * 1e27, time: _startTime + 60});
+        lps[0] = BucketLP({index: 1606, balance: 3_400 * 1e27, time: _startTime + 1 minutes});
+        lps[1] = BucketLP({index: 1663, balance: 3_400 * 1e27, time: _startTime + 1 minutes});
         _assertLPs(
             LenderLPs({
                 lender:    _lender,
@@ -480,8 +480,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
 
         skip(2 hours);
-        lps[0] = BucketLP({index: 1606, balance: 3_400 * 1e27, time: _startTime + 60});
-        lps[1] = BucketLP({index: 1663, balance: 3_400 * 1e27, time: _startTime + 60});
+        lps[0] = BucketLP({index: 1606, balance: 3_400 * 1e27, time: _startTime + 1 minutes});
+        lps[1] = BucketLP({index: 1663, balance: 3_400 * 1e27, time: _startTime + 1 minutes});
         _assertLPs(
             LenderLPs({
                 lender:    _lender,
@@ -525,8 +525,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         bucketStates[1] = BucketState({index: 1663, LPs: 3_400 * 1e27, collateral: 0});
         _assertBuckets(bucketStates);
         lps = new BucketLP[](2);
-        lps[0] = BucketLP({index: 1606, balance: 0, time: _startTime + 60});
-        lps[1] = BucketLP({index: 1663, balance: 3_400 * 1e27, time: _startTime + 60});
+        lps[0] = BucketLP({index: 1606, balance: 0, time: _startTime + 1 minutes});
+        lps[1] = BucketLP({index: 1663, balance: 3_400 * 1e27, time: _startTime + 1 minutes});
         _assertLPs(
             LenderLPs({
                 lender:    _lender,

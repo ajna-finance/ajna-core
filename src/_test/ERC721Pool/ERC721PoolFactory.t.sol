@@ -107,7 +107,7 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         assertEq(address(_NFTCollectionPool.quoteToken()),        address(_quote));
         assertEq(_NFTCollectionPool.quoteTokenScale(),            1);
         assertEq(_NFTCollectionPool.inflatorSnapshot(),           10**18);
-        assertEq(_NFTCollectionPool.lastInflatorSnapshotUpdate(), _startTime + 0);
+        assertEq(_NFTCollectionPool.lastInflatorSnapshotUpdate(), _startTime);
         assertEq(_NFTCollectionPool.interestRate(),               0.05 * 10**18);
         assertEq(_NFTCollectionPool.interestRateUpdate(),         _startTime);
         assertEq(_NFTCollectionPool.minFee(),                     0.0005 * 10**18);

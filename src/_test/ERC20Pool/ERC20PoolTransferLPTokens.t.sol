@@ -117,7 +117,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         // check lenders lp balance
         (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.lenders(indexes[0], _lender1);
         assertEq(lpBalance, 10_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 3600);
+        assertEq(lastQuoteDeposit, _startTime + 1 hours);
         (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
         assertEq(lpBalance, 20_000 * 1e27);
         (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
@@ -155,7 +155,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         (lpBalance, lastQuoteDeposit) = _pool.lenders(indexes[0], _lender2);
         assertEq(lpBalance, 10_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 3600);
+        assertEq(lastQuoteDeposit, _startTime + 1 hours);
         (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
         assertEq(lpBalance, 20_000 * 1e27);
         (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
@@ -243,7 +243,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         // check lenders lp balance
         (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.lenders(indexes[0], _lender1);
         assertEq(lpBalance, 10_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 3600);
+        assertEq(lastQuoteDeposit, _startTime + 1 hours);
         (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
         assertEq(lpBalance, 20_000 * 1e27);
         (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
@@ -251,7 +251,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         (lpBalance, lastQuoteDeposit) = _pool.lenders(indexes[0], _lender2);
         assertEq(lpBalance, 5_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 7200);
+        assertEq(lastQuoteDeposit, _startTime + 2 hours);
         (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
         assertEq(lpBalance, 10_000 * 1e27);
         (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
@@ -283,7 +283,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         (lpBalance, lastQuoteDeposit) = _pool.lenders(indexes[0], _lender2);
         assertEq(lpBalance, 15_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 7200);
+        assertEq(lastQuoteDeposit, _startTime + 2 hours);
         (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
         assertEq(lpBalance, 30_000 * 1e27);
         (lpBalance, ) = _pool.lenders(indexes[2], _lender2);

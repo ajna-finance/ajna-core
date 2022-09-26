@@ -116,7 +116,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         assertEq(_collateral.balanceOf(_borrower), 50 * 1e18);
 
         // pass time to allow interest to accrue
-        skip(864000);
+        skip(10 days);
 
         // remove some of the collateral
         _pullCollateral(
@@ -142,7 +142,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 inflatorSnapshot:     1.001370801704613834 * 1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.055 * 1e18,
-                interestRateUpdate:   _startTime + 864000
+                interestRateUpdate:   _startTime + 10 days
             })
         );
         _assertBorrower(
@@ -182,7 +182,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 inflatorSnapshot:     1.001370801704613834 * 1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.055 * 1e18,
-                interestRateUpdate:   _startTime + 864000
+                interestRateUpdate:   _startTime + 10 days
             })
         );
         _assertBorrower(

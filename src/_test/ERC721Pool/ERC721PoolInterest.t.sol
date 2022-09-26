@@ -65,7 +65,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         _pool.addQuoteToken(10_000 * 1e18, 2553);
         _pool.addQuoteToken(10_000 * 1e18, 2554);
 
-        skip(864000);
+        skip(10 days);
 
         // borrower adds collateral and borrows initial amount
         changePrank(_borrower);
@@ -85,7 +85,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         assertEq(inflator,    1 * 1e18);
 
         // borrower pledge additional collateral after some time has passed
-        skip(864000);
+        skip(10 days);
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 51;
         _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
@@ -98,7 +98,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         assertEq(inflator,    1.003018244385218513 * 1e18);
 
         // borrower pulls some of their collateral after some time has passed
-        skip(864000);
+        skip(10 days);
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 1;
         _pool.pullCollateral(tokenIdsToRemove);
@@ -111,7 +111,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         assertEq(inflator,    1.004682160092905114 * 1e18);
 
         // borrower borrows some additional quote after some time has passed
-        skip(864000);
+        skip(10 days);
         _pool.borrow(1_000 * 1e18, 3000);
         assertEq(_pool.borrowerDebt(), 6_038.697103647272763112 * 1e18);
         (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
@@ -125,7 +125,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         deal(address(_quote), _borrower, 20_000 * 1e18);
 
         // borrower repays their loan after some additional time
-        skip(864000);
+        skip(10 days);
         (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         _pool.repay(_borrower, pendingDebt);
         assertEq(_pool.borrowerDebt(), 0);
