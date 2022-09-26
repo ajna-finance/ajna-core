@@ -218,7 +218,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
             emit AddQuoteToken(specs_.from, specs_.amounts[i].index, specs_.amounts[i].amount, specs_.amounts[i].newLup);
             vm.expectEmit(true, true, false, true);
             emit Transfer(specs_.from, address(_pool), specs_.amounts[i].amount);
-            _pool.addQuoteToken(specs_.amounts[i].amount, specs_.amounts[i].index);
+            _pool.addQuoteToken(specs_.amounts[i].index, specs_.amounts[i].amount);
         }
     }
 
@@ -228,7 +228,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         emit AddCollateral(specs_.from, specs_.index, specs_.amount);
         vm.expectEmit(true, true, false, true);
         emit Transfer(specs_.from, address(_pool), specs_.amount);
-        _pool.addCollateral(specs_.amount, specs_.index);
+        _pool.addCollateral(specs_.index, specs_.amount);
     }
 
     function _removeAllCollateral(RemoveCollateralSpecs memory specs_) internal {
@@ -260,7 +260,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         emit RemoveCollateral(specs_.from, specs_.index, specs_.amount);
         vm.expectEmit(true, true, true, true);
         emit Transfer(address(_pool), specs_.from, specs_.amount);
-        uint256 lpRedeemed = _pool.removeCollateral(specs_.amount, specs_.index);
+        uint256 lpRedeemed = _pool.removeCollateral(specs_.index, specs_.amount);
         assertEq(lpRedeemed, specs_.lpRedeem);
     }
 
@@ -273,7 +273,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         emit RemoveQuoteToken(specs_.from, specs_.index, expectedWithdrawal, specs_.newLup);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), specs_.from, expectedWithdrawal);
-        uint256 lpRedeemed = _pool.removeQuoteToken(specs_.amount, specs_.index);
+        uint256 lpRedeemed = _pool.removeQuoteToken(specs_.index, specs_.amount);
         assertEq(lpRedeemed, specs_.lpRedeem);
     }
 
@@ -281,7 +281,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         changePrank(specs_.from);
         vm.expectEmit(true, true, true, true);
         emit MoveCollateral(specs_.from, specs_.fromIndex, specs_.toIndex, specs_.amount);
-        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveCollateral(specs_.amount, specs_.fromIndex, specs_.toIndex);
+        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveCollateral(specs_.fromIndex, specs_.toIndex, specs_.amount);
         assertEq(lpbFrom, specs_.lpRedeemFrom);
         assertEq(lpbTo, specs_.lpRedeemTo);
     }
@@ -290,20 +290,20 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         changePrank(specs_.from);
         vm.expectEmit(true, true, true, true);
         emit MoveQuoteToken(specs_.from, specs_.fromIndex, specs_.toIndex, specs_.lpRedeemTo / 1e9, specs_.newLup);
-        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(specs_.amount, specs_.fromIndex, specs_.toIndex);
+        (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(specs_.fromIndex, specs_.toIndex, specs_.amount);
         assertEq(lpbFrom, specs_.lpRedeemFrom);
         assertEq(lpbTo, specs_.lpRedeemTo);
     }
 
     function _borrow(BorrowSpecs memory specs_) internal {
         changePrank(specs_.from);
-        if (specs_.pledgeAmount != 0) _pool.pledgeCollateral(specs_.borrower, specs_.pledgeAmount);
+        if (specs_.pledgeAmount != 0) _pool.pledgeCollateral(specs_.pledgeAmount, specs_.borrower);
 
         vm.expectEmit(true, true, false, true);
         emit Borrow(specs_.borrower, specs_.price, specs_.borrowAmount);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), specs_.from, specs_.borrowAmount);
-        _pool.borrow(specs_.borrowAmount, specs_.indexLimit);
+        _pool.borrow(specs_.indexLimit, specs_.borrowAmount);
     }
 
     function _pledgeCollateral(PledgeSpecs memory specs_) internal {
@@ -312,7 +312,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         emit PledgeCollateral(specs_.from, specs_.amount);
         vm.expectEmit(true, true, false, true);
         emit Transfer(specs_.from, address(_pool), specs_.amount);
-        _pool.pledgeCollateral(specs_.borrower, specs_.amount);
+        _pool.pledgeCollateral(specs_.amount, specs_.borrower);
     }
 
     function _pullCollateral(PullSpecs memory specs_) internal {
@@ -329,7 +329,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         emit Repay(specs_.borrower, specs_.price, specs_.repayAmount);
         vm.expectEmit(true, true, false, true);
         emit Transfer(specs_.from, address(_pool), specs_.repayAmount);
-        _pool.repay(specs_.borrower, specs_.repayAmount);
+        _pool.repay(specs_.repayAmount, specs_.borrower);
     }
 
     function _assertPool(PoolState memory state_) internal {

@@ -79,13 +79,13 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         init(boundColPrecision, boundQuotePrecision);
 
         // deposit 50_000 quote tokens into each of 3 buckets
-        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2549);
-        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2550);
+        _pool.addQuoteToken(2549, 50_000 * _quotePoolPrecision);
+        _pool.addQuoteToken(2550, 50_000 * _quotePoolPrecision);
         vm.expectEmit(true, true, false, true);
         emit AddQuoteToken(_lender, 2551, 50_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 50_000 * _quotePrecision);
-        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2551);
+        _pool.addQuoteToken(2551, 50_000 * _quotePoolPrecision);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 150_000 * _quotePrecision);
@@ -113,7 +113,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         emit RemoveQuoteToken(_lender, 2549, 25_000 * _quotePoolPrecision, BucketMath.MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _lender, 25_000 * _quotePrecision);
-        _pool.removeQuoteToken(25_000 * _quotePoolPrecision, 2549);
+        _pool.removeQuoteToken(2549, 25_000 * _quotePoolPrecision);
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 125_000 * _quotePrecision);
@@ -147,9 +147,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         init(boundColPrecision, boundQuotePrecision);
 
         // deposit 50_000 quote tokens into each of 3 buckets
-        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2549);
-        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2550);
-        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2551);
+        _pool.addQuoteToken(2549, 50_000 * _quotePoolPrecision);
+        _pool.addQuoteToken(2550, 50_000 * _quotePoolPrecision);
+        _pool.addQuoteToken(2551, 50_000 * _quotePoolPrecision);
 
         // borrowers adds collateral
         changePrank(_borrower);
@@ -157,7 +157,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         emit PledgeCollateral(_borrower, 50 * _collateralPoolPrecision);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_pool), 50 * _collateralPrecision);
-        _pool.pledgeCollateral(_borrower, 50 * _collateralPoolPrecision);
+        _pool.pledgeCollateral(50 * _collateralPoolPrecision, _borrower);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -185,7 +185,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         emit Borrow(_borrower, price, 10_000 * _quotePoolPrecision);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _borrower, 10_000 * _quotePrecision);
-        _pool.borrow(10_000 * _quotePoolPrecision, 3000);
+        _pool.borrow(3000, 10_000 * _quotePoolPrecision);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -216,7 +216,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         emit Repay(_borrower, price, 5_000 * _quotePoolPrecision);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_borrower, address(_pool), 5_000 * _quotePrecision);
-        _pool.repay(_borrower, 5_000 * _quotePoolPrecision);
+        _pool.repay(5_000 * _quotePoolPrecision, _borrower);
 
         // check balances
         assertEq(_collateral.balanceOf(address(_pool)),   50 * _collateralPrecision);
@@ -281,9 +281,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         init(boundColPrecision, boundQuotePrecision);
 
         // deposit 50_000 quote tokens into each of 3 buckets
-        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2549);
-        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2550);
-        _pool.addQuoteToken(50_000 * _quotePoolPrecision, 2551);
+        _pool.addQuoteToken(2549, 50_000 * _quotePoolPrecision);
+        _pool.addQuoteToken(2550, 50_000 * _quotePoolPrecision);
+        _pool.addQuoteToken(2551, 50_000 * _quotePoolPrecision);
 
         // bidder purchases quote with collateral
         changePrank(_bidder);
@@ -329,7 +329,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         emit Transfer(address(_pool), address(_lender), adjustedCollateralReq);
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(address(_lender), price, availableCollateral);
-       _pool.removeCollateral(availableCollateral, 2549);
+       _pool.removeCollateral(2549, availableCollateral);
 
         // check bucket state
         (uint256 lpAccumulatorStateTwo, uint256 availableCollateralStateTwo) = _pool.buckets(2549);

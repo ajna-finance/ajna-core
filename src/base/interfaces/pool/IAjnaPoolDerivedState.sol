@@ -27,15 +27,15 @@ interface IAjnaPoolDerivedState {
 
     /**
      *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
+     *  @param  index       The price bucket index for which the value should be calculated.
      *  @param  deposit     The amount of quote tokens available at this bucket index.
      *  @param  lpTokens    The number of lpTokens to calculate amounts for.
-     *  @param  index       The price bucket index for which the value should be calculated.
      *  @return quoteAmount The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
      */
     function lpsToQuoteTokens(
+        uint256 index,
         uint256 deposit,
-        uint256 lpTokens,
-        uint256 index
+        uint256 lpTokens
     ) external view returns (uint256 quoteAmount);
 
 

@@ -399,18 +399,18 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         // should revert if insufficient quote token
         changePrank(_lender);
         vm.expectRevert(IAjnaPoolErrors.RemoveQuoteInsufficientQuoteAvailable.selector);
-        _pool.removeQuoteToken(20_000 * 1e18, 4550);
+        _pool.removeQuoteToken(4550, 20_000 * 1e18);
 
         // should revert if removing quote token from higher price buckets would drive lup below htp
         vm.expectRevert(IAjnaPoolErrors.RemoveQuoteLUPBelowHTP.selector);
-        _pool.removeQuoteToken(20_000 * 1e18, 4551);
+        _pool.removeQuoteToken(4551, 20_000 * 1e18);
 
         // should revert if bucket has enough quote token, but lender has insufficient LP
         changePrank(_lender1);
-        _pool.addQuoteToken(20_000 * 1e18, 4550);
+        _pool.addQuoteToken(4550, 20_000 * 1e18);
         changePrank(_lender);
         vm.expectRevert(IAjnaPoolErrors.RemoveQuoteInsufficientLPB.selector);
-        _pool.removeQuoteToken(15_000 * 1e18, 4550);
+        _pool.removeQuoteToken(4550, 15_000 * 1e18);
 
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
         _removeLiquidity(
@@ -654,7 +654,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         // should revert if moving quote token to the existing price
         vm.expectRevert(IAjnaPoolErrors.MoveQuoteToSamePrice.selector);
-        _pool.moveQuoteToken(5_000 * 1e18, 4549, 4549);
+        _pool.moveQuoteToken(4549, 4549, 5_000 * 1e18);
 
         // borrow all available quote in the higher priced original 3 buckets, as well as some of the new lowest price bucket
         _borrow(
@@ -671,7 +671,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         // should revert if movement would drive lup below htp
         changePrank(_lender);
         vm.expectRevert(IAjnaPoolErrors.MoveQuoteLUPBelowHTP.selector);
-        _pool.moveQuoteToken(40_000 * 1e18, 4549, 6000);
+        _pool.moveQuoteToken(4549, 6000,40_000 * 1e18);
 
         // should be able to moveQuoteToken if properly specified
         _moveLiquidity(

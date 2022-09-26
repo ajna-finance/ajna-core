@@ -7,14 +7,14 @@ pragma solidity 0.8.14;
 interface IAjnaPoolLiquidationsActions {
     /**
      *  @notice Called by actors to use quote token to arb higher-priced deposit off the book.
-     *  @param  borrower Identifies the loan to liquidate.
-     *  @param  amount   Amount of bucket deposit to use to exchange for collateral.
      *  @param  index    Index of a bucket, likely the HPB, in which collateral will be deposited.
+     *  @param  amount   Amount of bucket deposit to use to exchange for collateral.
+     *  @param  borrower Identifies the loan to liquidate.
      */
     function arbTake(
-        address borrower,
+        uint256 index,
         uint256 amount,
-        uint256 index
+        address borrower
     ) external;
 
     /**
@@ -30,14 +30,14 @@ interface IAjnaPoolLiquidationsActions {
 
     /**
      *  @notice Called by actors to purchase collateral using quote token already on the book.
-     *  @param  borrower Identifies the loan under liquidation.
-     *  @param  amount   Amount of bucket deposit to use to exchange for collateral.
      *  @param  index    Index of the bucket which has amount_ quote token available.
+     *  @param  amount   Amount of bucket deposit to use to exchange for collateral.
+     *  @param  borrower Identifies the loan under liquidation.
      */
     function depositTake(
-        address borrower,
+        uint256 index,
         uint256 amount,
-        uint256 index
+        address borrower
     ) external;
 
     /**

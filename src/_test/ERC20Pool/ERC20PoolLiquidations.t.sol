@@ -29,8 +29,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
         // Lender adds quote token in two price buckets
         vm.startPrank(_lender);
-        _pool.addQuoteToken(10_000e18, HPB);
-        _pool.addQuoteToken(11_000e18, LEND_PRICE);
+        _pool.addQuoteToken(HPB, 10_000e18);
+        _pool.addQuoteToken(LEND_PRICE, 11_000e18);
         vm.stopPrank();
 
         _mintCollateralAndApproveTokens(_borrower,  1 * 1e18);
@@ -39,15 +39,15 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         // Borrower adds collateral token and borrows at HPB
         vm.startPrank(_borrower);
         _collateral.approve(address(_pool), 10_000e18);
-        _pool.pledgeCollateral(_borrower, 1e18);
-        _pool.borrow(10_000e18, HPB);
+        _pool.pledgeCollateral(1e18, _borrower);
+        _pool.borrow(HPB, 10_000e18);
         vm.stopPrank();
 
         // Borrower adds collateral token and borrows at LEND_PRICE
         vm.startPrank(_borrower2);
         _collateral.approve(address(_pool), 10_000e18);
-        _pool.pledgeCollateral(_borrower2, 1e18);
-        _pool.borrow(10_000e18, LEND_PRICE);
+        _pool.pledgeCollateral(1e18, _borrower2);
+        _pool.borrow(LEND_PRICE, 10_000e18);
         vm.stopPrank();
 
         // Warp to make borrower undercollateralized

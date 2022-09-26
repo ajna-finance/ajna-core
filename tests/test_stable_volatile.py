@@ -86,7 +86,7 @@ def add_initial_liquidity(lenders, pool, scaled_pool_utils):
             price_index = price_position + MAX_BUCKET
             print(f" lender {i} depositing {deposit_amount/1e18} into bucket {price_index} "
                   f"({pool.indexToPrice(price_index) / 1e18:.1f})")
-            pool.addQuoteToken(deposit_amount, price_index, {"from": lenders[i]})
+            pool.addQuoteToken(price_index, deposit_amount, {"from": lenders[i]})
 
 
 def draw_initial_debt(borrowers, pool, test_utils, chain, target_utilization):
@@ -176,7 +176,7 @@ def pledge_and_borrow(pool, borrower, borrower_index, collateral_to_deposit, bor
           f"with {collateral_deposited / 1e18:>6.1f} collateral deposited, "
           f"with {new_total_debt/1e18:>9.1f} total debt "
           f"at a TP of {threshold_price/1e18:8.1f}")
-    tx = pool.borrow(borrow_amount, MIN_BUCKET, {"from": borrower})
+    tx = pool.borrow(MIN_BUCKET, borrow_amount, {"from": borrower})
     test_utils.validate_pool(pool)
     return tx
 
@@ -268,7 +268,7 @@ def add_quote_token(lender, lender_index, pool):
 
     print(f" lender   {lender_index:>4} adding {quantity / 10**18:.1f} liquidity at {deposit_price / 10**18:.1f}")
     # try:
-    tx = pool.addQuoteToken(quantity, deposit_index, {"from": lender})
+    tx = pool.addQuoteToken(deposit_index, quantity, {"from": lender})
     return deposit_price
 
 

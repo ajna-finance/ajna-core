@@ -40,15 +40,15 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         // should fail if allowed owner is not set
         changePrank(_lender);
         vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _pool.transferLPTokens(indexes, _lender1, _lender2);
 
         // should fail if allowed owner is set to 0x
         changePrank(_lender1);
-        _pool.approveLpOwnership(address(0), indexes[0], 1_000 * 1e18);
+        _pool.approveLpOwnership(indexes[0], 1_000 * 1e18, address(0));
 
         changePrank(_lender);
         vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _pool.transferLPTokens(indexes, _lender1, _lender2);
     }
 
     function testTransferLPTokensToUnallowedAddress() external {
@@ -59,13 +59,13 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         // should fail if allowed owner is set to lender2 address but trying to transfer to lender address
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender2, indexes[0], 1_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
+        _pool.approveLpOwnership(indexes[0], 1_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(indexes[1], 1_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(indexes[2], 1_000 * 1e27, _lender2);
 
         changePrank(_lender);
         vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender, indexes);
+        _pool.transferLPTokens(indexes, _lender1, _lender);
     }
 
     function testTransferLPTokensToInvalidIndex() external {
@@ -76,13 +76,13 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         // should fail since 9999 is not a valid index
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender2, indexes[0], 1_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
+        _pool.approveLpOwnership(indexes[0], 1_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(indexes[1], 1_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(indexes[2], 1_000 * 1e27, _lender2);
 
         changePrank(_lender);
         vm.expectRevert(IAjnaPoolErrors.TransferLPInvalidIndex.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _pool.transferLPTokens(indexes, _lender1, _lender2);
     }
 
     function testTransferLPTokensGreaterThanBalance() external {
@@ -91,15 +91,15 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         indexes[1] = 2551;
 
         changePrank(_lender1);
-        _pool.addQuoteToken(10_000 * 1e18, indexes[0]);
-        _pool.addQuoteToken(20_000 * 1e18, indexes[1]);
+        _pool.addQuoteToken(indexes[0], 10_000 * 1e18);
+        _pool.addQuoteToken(indexes[1], 20_000 * 1e18);
         // set allowed owner to lender2 address
-        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 30_000 * 1e27);
+        _pool.approveLpOwnership(indexes[0], 10_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(indexes[1], 30_000 * 1e27, _lender2);
 
         changePrank(_lender2);
         vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _pool.transferLPTokens(indexes, _lender1, _lender2);
     }
 
     function testTransferLPTokensForAllIndexes() external {
@@ -110,9 +110,9 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         skip(1 hours);
         changePrank(_lender1);
-        _pool.addQuoteToken(10_000 * 1e18, indexes[0]);
-        _pool.addQuoteToken(20_000 * 1e18, indexes[1]);
-        _pool.addQuoteToken(30_000 * 1e18, indexes[2]);
+        _pool.addQuoteToken(indexes[0], 10_000 * 1e18);
+        _pool.addQuoteToken(indexes[1], 20_000 * 1e18);
+        _pool.addQuoteToken(indexes[2], 30_000 * 1e18);
 
         // check lenders lp balance
         (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.lenders(indexes[0], _lender1);
@@ -131,19 +131,19 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         assertEq(lpBalance, 0);
 
         // set allowed owner to lender2 address
-        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 20_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e27);
+        _pool.approveLpOwnership(indexes[0], 10_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(indexes[1], 20_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(indexes[2], 30_000 * 1e27, _lender2);
 
         // transfer LP tokens for all indexes
         changePrank(_lender);
         vm.expectEmit(true, true, true, true);
         emit TransferLPTokens(_lender1, _lender2, indexes, 60_000 * 1e27);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _pool.transferLPTokens(indexes, _lender1, _lender2);
 
         // check that old token ownership was removed - a new transfer should fail
         vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _pool.transferLPTokens(indexes, _lender1, _lender2);
 
         // check lenders lp balance
         (lpBalance, ) = _pool.lenders(indexes[0], _lender1);
@@ -173,9 +173,9 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         transferIndexes[1] = 2552;
 
         changePrank(_lender1);
-        _pool.addQuoteToken(10_000 * 1e18, depositIndexes[0]);
-        _pool.addQuoteToken(20_000 * 1e18, depositIndexes[1]);
-        _pool.addQuoteToken(30_000 * 1e18, depositIndexes[2]);
+        _pool.addQuoteToken(depositIndexes[0], 10_000 * 1e18);
+        _pool.addQuoteToken(depositIndexes[1], 20_000 * 1e18);
+        _pool.addQuoteToken(depositIndexes[2], 30_000 * 1e18);
 
         // check lenders lp balance
         (uint256 lpBalance, ) = _pool.lenders(depositIndexes[0], _lender1);
@@ -193,18 +193,18 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         assertEq(lpBalance, 0);
 
         // set allowed owner to lender2 address
-        _pool.approveLpOwnership(_lender2, transferIndexes[0], 10_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, transferIndexes[1], 30_000 * 1e27);
+        _pool.approveLpOwnership(transferIndexes[0], 10_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(transferIndexes[1], 30_000 * 1e27, _lender2);
 
         // transfer LP tokens for 2 indexes
         changePrank(_lender);
         vm.expectEmit(true, true, true, true);
         emit TransferLPTokens(_lender1, _lender2, transferIndexes, 40_000 * 1e27);
-        _pool.transferLPTokens(_lender1, _lender2, transferIndexes);
+        _pool.transferLPTokens(transferIndexes, _lender1, _lender2);
 
         // check that old token ownership was removed - transfer with same indexes should fail
         vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, transferIndexes);
+        _pool.transferLPTokens(transferIndexes, _lender1, _lender2);
 
         // check lenders lp balance
         (lpBalance, ) = _pool.lenders(depositIndexes[0], _lender1);
@@ -230,15 +230,15 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         skip(1 hours);
         changePrank(_lender1);
-        _pool.addQuoteToken(10_000 * 1e18, indexes[0]);
-        _pool.addQuoteToken(20_000 * 1e18, indexes[1]);
-        _pool.addQuoteToken(30_000 * 1e18, indexes[2]);
+        _pool.addQuoteToken(indexes[0], 10_000 * 1e18);
+        _pool.addQuoteToken(indexes[1], 20_000 * 1e18);
+        _pool.addQuoteToken(indexes[2], 30_000 * 1e18);
 
         skip(1 hours);
         changePrank(_lender2);
-        _pool.addQuoteToken(5_000 * 1e18, indexes[0]);
-        _pool.addQuoteToken(10_000 * 1e18, indexes[1]);
-        _pool.addQuoteToken(15_000 * 1e18, indexes[2]);
+        _pool.addQuoteToken(indexes[0], 5_000 * 1e18);
+        _pool.addQuoteToken(indexes[1], 10_000 * 1e18);
+        _pool.addQuoteToken(indexes[2], 15_000 * 1e18);
 
         // check lenders lp balance
         (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.lenders(indexes[0], _lender1);
@@ -259,19 +259,19 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
         // set allowed owner to lender2 address
         changePrank(_lender1);
-        _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[1], 20_000 * 1e27);
-        _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e27);
+        _pool.approveLpOwnership(indexes[0], 10_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(indexes[1], 20_000 * 1e27, _lender2);
+        _pool.approveLpOwnership(indexes[2], 30_000 * 1e27, _lender2);
 
         // transfer LP tokens for all indexes
         changePrank(_lender);
         vm.expectEmit(true, true, true, true);
         emit TransferLPTokens(_lender1, _lender2, indexes, 60_000 * 1e27);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _pool.transferLPTokens(indexes, _lender1, _lender2);
 
         // check that old token ownership was removed - transfer with same indexes should fail
         vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _pool.transferLPTokens(indexes, _lender1, _lender2);
 
         // check lenders lp balance
         (lpBalance, ) = _pool.lenders(indexes[0], _lender1);

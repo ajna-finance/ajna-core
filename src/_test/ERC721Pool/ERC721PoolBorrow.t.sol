@@ -62,9 +62,9 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
     function testBorrowLimitReached() external {
         // lender deposits 10000 Quote into 3 buckets
         changePrank(_lender);
-        _pool.addQuoteToken(10_000 * 1e18, 2550);
-        _pool.addQuoteToken(10_000 * 1e18, 2551);
-        _pool.addQuoteToken(10_000 * 1e18, 2552);
+        _pool.addQuoteToken(2550, 10_000 * 1e18);
+        _pool.addQuoteToken(2551, 10_000 * 1e18);
+        _pool.addQuoteToken(2552, 10_000 * 1e18);
 
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
@@ -72,49 +72,49 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
 
         // should revert if insufficient quote available before limit price
         vm.expectRevert(IAjnaPoolErrors.BorrowLimitIndexReached.selector);
-        _pool.borrow(21_000 * 1e18, 2551);
+        _pool.borrow(2551, 21_000 * 1e18);
     }
 
     function testBorrowBorrowerUnderCollateralized() external {
         // add initial quote to the pool
         changePrank(_lender);
         assertEq(_indexToPrice(3575), 18.133510183516748631 * 1e18);
-        _pool.addQuoteToken(1_000 * 1e18, 3575);
+        _pool.addQuoteToken(3575, 1_000 * 1e18);
 
         // borrower pledges some collateral
         changePrank(_borrower);
         uint256[] memory tokenIdsToAdd = new uint256[](2);
         tokenIdsToAdd[0] = 5;
         tokenIdsToAdd[1] = 3;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
 
         // should revert if borrower did not deposit enough collateral
         vm.expectRevert(IAjnaPoolErrors.BorrowBorrowerUnderCollateralized.selector);
-        _pool.borrow(40 * 1e18, 4000);
+        _pool.borrow(4000, 40 * 1e18);
     }
 
     function testBorrowPoolUnderCollateralized() external {
         // add initial quote to the pool
         changePrank(_lender);
         assertEq(_indexToPrice(3232), 100.332368143282009890 * 1e18);
-        _pool.addQuoteToken(1_000 * 1e18, 3232);
+        _pool.addQuoteToken(3232, 1_000 * 1e18);
 
         // should revert if borrow would result in pool under collateralization
         changePrank(_borrower);
         vm.expectRevert(IAjnaPoolErrors.BorrowBorrowerUnderCollateralized.selector);
-        _pool.borrow(500 * 1e18, 4000);
+        _pool.borrow(4000, 500 * 1e18);
     }
 
     function testBorrowAndRepay() external {
         // lender deposits 10000 Quote into 3 buckets
         vm.startPrank(_lender);
-        _pool.addQuoteToken(10_000 * 1e18, 2550);
-        _pool.addQuoteToken(10_000 * 1e18, 2551);
-        _pool.addQuoteToken(10_000 * 1e18, 2552);
+        _pool.addQuoteToken(2550, 10_000 * 1e18);
+        _pool.addQuoteToken(2551, 10_000 * 1e18);
+        _pool.addQuoteToken(2552, 10_000 * 1e18);
 
         // check initial token balances
         assertEq(_pool.pledgedCollateral(), 0);
@@ -146,13 +146,13 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
 
         // borrower borrows from the pool
         uint256 borrowAmount = 3_000 * 1e18;
         vm.expectEmit(true, true, false, true);
         emit Borrow(_borrower, _indexToPrice(2550), borrowAmount);
-        _pool.borrow(borrowAmount, 2551);
+        _pool.borrow(2551, borrowAmount);
 
         // check token balances after borrow
         assertEq(_pool.pledgedCollateral(), Maths.wad(3));
@@ -193,7 +193,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         // borrower partially repays half their loan
         vm.expectEmit(true, true, false, true);
         emit Repay(_borrower, _indexToPrice(2550), borrowAmount / 2);
-        _pool.repay(_borrower, borrowAmount / 2);
+        _pool.repay(borrowAmount / 2, _borrower);
 
         // check token balances after partial repay
         assertEq(_pool.pledgedCollateral(), Maths.wad(3));
@@ -241,7 +241,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         // borrower repays their remaining loan balance
         vm.expectEmit(true, true, false, true);
         emit Repay(_borrower, BucketMath.MAX_PRICE, pendingDebt);
-        _pool.repay(_borrower, pendingDebt);
+        _pool.repay(pendingDebt, _borrower);
 
         // check token balances after fully repay
         assertEq(_pool.pledgedCollateral(), Maths.wad(3));
@@ -292,22 +292,22 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         // add initial quote to the pool
         changePrank(_lender);
         assertEq(_indexToPrice(2550), 3_010.892022197881557845 * 1e18);
-        _pool.addQuoteToken(10_000 * 1e18, 2550);
-        _pool.addQuoteToken(10_000 * 1e18, 2551);
+        _pool.addQuoteToken(2550, 10_000 * 1e18);
+        _pool.addQuoteToken(2551, 10_000 * 1e18);
 
         // should revert if borrower has no debt
         deal(address(_quote), _borrower, _quote.balanceOf(_borrower) + 10_000 * 1e18);
         changePrank(_borrower);
         vm.expectRevert(IAjnaPoolErrors.RepayNoDebt.selector);
-        _pool.repay(_borrower, 10_000 * 1e18);
+        _pool.repay(10_000 * 1e18, _borrower);
 
         // borrower 1 borrows 1000 quote from the pool
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
-        _pool.borrow(1_000 * 1e18, 3000);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
+        _pool.borrow(3000, 1_000 * 1e18);
 
         assertEq(_maxBorrower(), _borrower);
         assertEq(_loansCount(),  1);
@@ -316,8 +316,8 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         changePrank(_borrower2);
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
-        _pool.pledgeCollateral(_borrower2, tokenIdsToAdd);
-        _pool.borrow(3_000 * 1e18, 3000);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower2);
+        _pool.borrow(3000, 3_000 * 1e18);
 
         assertEq(_maxBorrower(), _borrower2);
         assertEq(_loansCount(),  2);
@@ -325,19 +325,19 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
         vm.expectRevert(IAjnaPoolErrors.BorrowAmountLTMinDebt.selector);
-        _pool.repay(_borrower, 900 * 1e18);
+        _pool.repay(900 * 1e18, _borrower);
 
         // should be able to repay loan if properly specified
         vm.expectEmit(true, true, false, true);
         emit Repay(_borrower, _lup(), 1_000.961538461538462000 * 1e18);
-        _pool.repay(_borrower, 1_100 * 1e18);
+        _pool.repay(1_100 * 1e18, _borrower);
     }
 
     function testRepayLoanFromDifferentActor() external {
         changePrank(_lender);
-        _pool.addQuoteToken(10_000 * 1e18, 2550);
-        _pool.addQuoteToken(10_000 * 1e18, 2551);
-        _pool.addQuoteToken(10_000 * 1e18, 2552);
+        _pool.addQuoteToken(2550, 10_000 * 1e18);
+        _pool.addQuoteToken(2551, 10_000 * 1e18);
+        _pool.addQuoteToken(2552, 10_000 * 1e18);
 
         // borrower deposits three NFTs into the subset pool
         changePrank(_borrower);
@@ -345,10 +345,10 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
 
         // borrower borrows from the pool
-        _pool.borrow(3_000 * 1e18, 2551);
+        _pool.borrow(2551, 3_000 * 1e18);
 
         // check token balances after borrow
         assertEq(_pool.pledgedCollateral(), Maths.wad(3));
@@ -364,7 +364,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
 
         // lender partially repays borrower's loan
         changePrank(_lender);
-        _pool.repay(_borrower, 1_500 * 1e18);
+        _pool.repay(1_500 * 1e18, _borrower);
 
         // check token balances after partial repay
         assertEq(_pool.pledgedCollateral(), Maths.wad(3));

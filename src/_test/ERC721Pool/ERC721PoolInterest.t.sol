@@ -59,11 +59,11 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
     // TODO: skip block number ahead as well
     function testBorrowerInterestAccumulation() external {
         changePrank(_lender);
-        _pool.addQuoteToken(10_000 * 1e18, 2550);
-        _pool.addQuoteToken(10_000 * 1e18, 2551);
-        _pool.addQuoteToken(10_000 * 1e18, 2552);
-        _pool.addQuoteToken(10_000 * 1e18, 2553);
-        _pool.addQuoteToken(10_000 * 1e18, 2554);
+        _pool.addQuoteToken(2550, 10_000 * 1e18);
+        _pool.addQuoteToken(2551, 10_000 * 1e18);
+        _pool.addQuoteToken(2552, 10_000 * 1e18);
+        _pool.addQuoteToken(2553, 10_000 * 1e18);
+        _pool.addQuoteToken(2554, 10_000 * 1e18);
 
         skip(864000);
 
@@ -73,8 +73,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
-        _pool.borrow(5_000 * 1e18, 2551);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
+        _pool.borrow(2551, 5_000 * 1e18);
 
         assertEq(_pool.borrowerDebt(), 5_004.807692307692310000 * 1e18);
         (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
@@ -88,7 +88,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         skip(864000);
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 51;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
         assertEq(_pool.borrowerDebt(), 5_019.913425024098425550 * 1e18);
         (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        5_019.913425024098425550 * 1e18);
@@ -112,7 +112,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
 
         // borrower borrows some additional quote after some time has passed
         skip(864000);
-        _pool.borrow(1_000 * 1e18, 3000);
+        _pool.borrow(3000, 1_000 * 1e18);
         assertEq(_pool.borrowerDebt(), 6_038.697103647272763112 * 1e18);
         (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        6_038.697103647272763112 * 1e18);
@@ -127,7 +127,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // borrower repays their loan after some additional time
         skip(864000);
         (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
-        _pool.repay(_borrower, pendingDebt);
+        _pool.repay(pendingDebt, _borrower);
         assertEq(_pool.borrowerDebt(), 0);
         (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        0);
@@ -142,10 +142,10 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         // lender deposits 10000 Quote into 3 buckets
         changePrank(_lender);
         assertEq(_indexToPrice(2550), 3_010.892022197881557845 * 1e18);
-        _pool.addQuoteToken(10_000 * 1e18, 2550);
+        _pool.addQuoteToken(2550, 10_000 * 1e18);
         assertEq(_indexToPrice(2551), 2_995.912459898389633881 * 1e18);
-        _pool.addQuoteToken(10_000 * 1e18, 2551);
-        _pool.addQuoteToken(10_000 * 1e18, 2552);
+        _pool.addQuoteToken(2551, 10_000 * 1e18);
+        _pool.addQuoteToken(2552, 10_000 * 1e18);
         skip(2 hours);
 
         // borrower pledges three NFTs and takes out a loan with TP around 2666
@@ -154,38 +154,38 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
         uint256 borrowAmount = 8_000 * 1e18;
         vm.expectEmit(true, true, false, true);
         emit Borrow(_borrower, _indexToPrice(2550), borrowAmount);
-        _pool.borrow(borrowAmount, 2551);
+        _pool.borrow(2551, borrowAmount);
         skip(4 hours);
 
         // borrower 2 pledges one NFT and takes out a loan with TP around 2750
         changePrank(_borrower2);
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
-        _pool.pledgeCollateral(_borrower2, tokenIdsToAdd);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower2);
         borrowAmount = 2_750 * 1e18;
         vm.expectEmit(true, true, false, true);
         emit Borrow(_borrower2, _indexToPrice(2551), borrowAmount);
-        _pool.borrow(borrowAmount, 3000);
+        _pool.borrow(3000, borrowAmount);
         skip(4 hours);
 
         // borrower 3 pledges one NFT and takes out a loan with TP around 2500
         changePrank(_borrower3);
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 73;
-        _pool.pledgeCollateral(_borrower3, tokenIdsToAdd);
+        _pool.pledgeCollateral(tokenIdsToAdd, _borrower3);
         borrowAmount = 2_500 * 1e18;
         vm.expectEmit(true, true, false, true);
         emit Borrow(_borrower3, _indexToPrice(2551), borrowAmount);
-        _pool.borrow(borrowAmount, 3000);
+        _pool.borrow(3000, borrowAmount);
         skip(4 hours);
 
         // trigger an interest accumulation
         changePrank(_lender);
-        _pool.addQuoteToken(1 * 1e18, 2550);
+        _pool.addQuoteToken(2550, 1 * 1e18);
 
         // check pool and borrower debt to confirm interest has accumulated
         assertEq(_pool.borrowerDebt(), 13_263.563121817930264782 * 1e18);

@@ -8,14 +8,14 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Struct holding parameters for constructing the NFT token URI.
+     *  @param  indexes The array of price buckets index with LP tokens to be tracked by the NFT.
      *  @param  tokenId The tokenId of the NFT.
      *  @param  pool    The pool address.
-     *  @param  indexes The array of price buckets index with LP tokens to be tracked by the NFT.
      */
     struct ConstructTokenURIParams {
+        uint256[] indexes;
         uint256 tokenId;
         address pool;
-        uint256[] indexes;
     }
 
 
@@ -43,14 +43,14 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Struct holding parameters for tracking positions.
+     *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
      *  @param  tokenId The tokenId of the NFT.
      *  @param  owner   The NFT owner address.
-     *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
      */
     struct MemorializePositionsParams {
+        uint256[] indexes;
         uint256 tokenId;
         address owner;
-        uint256[] indexes;
     }
 
     /**
@@ -88,18 +88,18 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Struct holding parameters for moving the liquidity of a position.
-     *  @param  owner     The NFT owner address.
-     *  @param  tokenId   The tokenId of the NFT.
-     *  @param  pool      The pool address to move quote tokens.
      *  @param  fromIndex The price bucket index from which liquidity should be moved.
      *  @param  toIndex   The price bucket index to which liquidity should be moved.
+     *  @param  tokenId   The tokenId of the NFT.
+     *  @param  owner     The NFT owner address.
+     *  @param  pool      The pool address to move quote tokens.
      */
     struct MoveLiquidityParams {
-        address owner;
-        uint256 tokenId;
-        address pool;
         uint256 fromIndex;
         uint256 toIndex;
+        uint256 tokenId;
+        address owner;
+        address pool;
     }
 
     /**
@@ -113,16 +113,16 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Struct holding parameters for tracking positions.
+     *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
      *  @param  tokenId The tokenId of the NFT.
      *  @param  owner   The NFT owner address.
      *  @param  pool    The pool address to reedem positions.
-     *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
      */
     struct RedeemPositionsParams {
-        address owner;
-        uint256 tokenId;
-        address pool;
         uint256[] indexes;
+        uint256 tokenId;
+        address owner;
+        address pool;
     }
 
     /**

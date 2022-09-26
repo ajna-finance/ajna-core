@@ -29,20 +29,20 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
 
         callsToExecute[0] = abi.encodeWithSignature(
             "addQuoteToken(uint256,uint256)",
-            10_000 * 1e18,
-            2550
+            2550,
+            10_000 * 1e18
         );
 
         callsToExecute[1] = abi.encodeWithSignature(
             "addQuoteToken(uint256,uint256)",
-            10_000 * 1e18,
-            2551
+            2551,
+            10_000 * 1e18
         );
 
         callsToExecute[2] = abi.encodeWithSignature(
             "addQuoteToken(uint256,uint256)",
-            10_000 * 1e18,
-            2552
+            2552,
+            10_000 * 1e18
         );
 
         changePrank(_lender);
@@ -94,8 +94,8 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
 
         callsToExecute[0] = abi.encodeWithSignature(
             "borrow(uint256,uint256)",
-            10_000 * 1e18,
-            2550
+            2550,
+            10_000 * 1e18
         );
 
         changePrank(_lender);

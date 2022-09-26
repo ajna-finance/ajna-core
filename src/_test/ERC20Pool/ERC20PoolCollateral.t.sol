@@ -381,24 +381,24 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         vm.expectRevert(IERC20PoolErrors.RemoveCollateralNoClaim.selector);
         _pool.removeAllCollateral(testIndex);
         vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
-        _pool.removeCollateral(3.50 * 1e18, testIndex);
+        _pool.removeCollateral(testIndex, 3.50 * 1e18);
 
         // another actor deposits some collateral
         deal(address(_collateral), _bidder,  100 * 1e18);
         changePrank(_bidder);
         _collateral.approve(address(_pool), 100 * 1e18);
-        _pool.addCollateral(0.65 * 1e18, testIndex);
+        _pool.addCollateral(testIndex, 0.65 * 1e18);
 
         // should revert if insufficient collateral in the bucket
         changePrank(_lender);
         vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
-        _pool.removeCollateral(1.25 * 1e18, testIndex);
+        _pool.removeCollateral(testIndex, 1.25 * 1e18);
 
         // should revert if actor does not have LP
         vm.expectRevert(IERC20PoolErrors.RemoveCollateralNoClaim.selector);
         _pool.removeAllCollateral(testIndex);
         vm.expectRevert(IAjnaPoolErrors.RemoveCollateralInsufficientLP.selector);
-        _pool.removeCollateral(0.32 * 1e18, testIndex);
+        _pool.removeCollateral(testIndex, 0.32 * 1e18);
     }
 
     function testMoveCollateral() external {
@@ -423,11 +423,11 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         // should revert if trying to move into same bucket
         vm.expectRevert(IAjnaPoolErrors.MoveCollateralToSamePrice.selector);
-        _pool.moveCollateral(5 * 1e18, 3334, 3334);
+        _pool.moveCollateral(3334, 3334, 5 * 1e18);
 
         // should revert if bucket doesn't have enough collateral to move
         vm.expectRevert(IAjnaPoolErrors.MoveCollateralInsufficientCollateral.selector);
-        _pool.moveCollateral(5 * 1e18, 3334, 3333);
+        _pool.moveCollateral(3334, 3333, 5 * 1e18);
 
         _addCollateral(
             AddCollateralSpecs({
@@ -439,7 +439,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         // should revert if actor doesn't have enough LP to move specified amount
         changePrank(_lender);
         vm.expectRevert(IAjnaPoolErrors.MoveCollateralInsufficientLP.selector);
-        _pool.moveCollateral(5 * 1e18, 3334, 3333);
+        _pool.moveCollateral(3334, 3333, 5 * 1e18);
 
         // actor moves all their LP into one bucket
         _moveCollateral(

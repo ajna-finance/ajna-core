@@ -13,7 +13,7 @@ def test_quote_deposit_move_remove_scaled(
     with test_utils.GasWatcher(["addQuoteToken"]):
         add_txes = []
         for i in range(2530, 2550):
-            tx = scaled_pool.addQuoteToken(100 * 10**18, i, {"from": lenders[0]})
+            tx = scaled_pool.addQuoteToken(i, 100 * 10**18, {"from": lenders[0]})
             add_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
@@ -24,7 +24,7 @@ def test_quote_deposit_move_remove_scaled(
 
         move_txes = []
         for i in range(2530, 2550):
-            tx = scaled_pool.moveQuoteToken(100 * 10**18, i, i + 30, {"from": lenders[0]})
+            tx = scaled_pool.moveQuoteToken(i, i + 30, 100 * 10**18, {"from": lenders[0]})
             move_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
@@ -35,7 +35,7 @@ def test_quote_deposit_move_remove_scaled(
 
         remove_txes = []
         for i in range(2560, 2570):
-            tx = scaled_pool.removeQuoteToken(100 * 10**18, i, {"from": lenders[0]})
+            tx = scaled_pool.removeQuoteToken(i, 100 * 10**18, {"from": lenders[0]})
             remove_txes.append(tx)
         with capsys.disabled():
             print("\n==================================")
@@ -54,9 +54,9 @@ def test_borrow_repay_scaled(
 ):
     with test_utils.GasWatcher(["borrow"]):
 
-        scaled_pool.addQuoteToken(100 * 10**18, 2550, {"from": lenders[0]})
-        scaled_pool.addQuoteToken(100 * 10**18, 2560, {"from": lenders[0]})
-        scaled_pool.addQuoteToken(100 * 10**18, 2570, {"from": lenders[0]})
+        scaled_pool.addQuoteToken(2550, 100 * 10**18, {"from": lenders[0]})
+        scaled_pool.addQuoteToken(2560, 100 * 10**18, {"from": lenders[0]})
+        scaled_pool.addQuoteToken(2570, 100 * 10**18, {"from": lenders[0]})
 
         col_txes = []
         for i in range(10):
@@ -70,11 +70,11 @@ def test_borrow_repay_scaled(
                 print(f"Transaction: {i} | {test_utils.get_usage(col_txes[i].gas_used)}")
         
         txes = []
-        tx1 = scaled_pool.borrow(110 * 10**18, 5000, {"from": borrowers[0]})
+        tx1 = scaled_pool.borrow(5000, 110 * 10**18, {"from": borrowers[0]})
         txes.append(tx1)
-        tx2 = scaled_pool.borrow(110 * 10**18, 5000, {"from": borrowers[0]})
+        tx2 = scaled_pool.borrow(5000, 110 * 10**18, {"from": borrowers[0]})
         txes.append(tx2)
-        tx3 = scaled_pool.borrow(50 * 10**18, 5000, {"from": borrowers[0]})
+        tx3 = scaled_pool.borrow(5000, 50 * 10**18, {"from": borrowers[0]})
         txes.append(tx3)
 
         with capsys.disabled():
