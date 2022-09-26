@@ -17,8 +17,8 @@ MIN_UTILIZATION = 0.4
 MAX_UTILIZATION = 0.8
 GOAL_UTILIZATION = 0.6      # borrowers should collateralize such that target utilization approaches this
 MIN_PARTICIPATION = 10000   # in quote token, the minimum amount to lend
-NUM_LENDERS = 100
-NUM_BORROWERS = 100
+NUM_LENDERS = 50
+NUM_BORROWERS = 50
 
 
 # set of buckets deposited into, indexed by lender index
@@ -211,7 +211,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, durati
                     # except VirtualMachineError as ex:
                     #     print(f" ERROR removing liquidity at {price / 10**18:.1f}, "
                     #           f"collateralized at {pool.poolCollateralization() / 10**18:.1%}: {ex}")
-                    #     print(test_utils.dump_book(pool1, MAX_BUCKET, MIN_BUCKET))
+                    #     print(test_utils.dump_book(pool1))
                     #     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
                 else:
                     price = add_quote_token(lenders[user_index], user_index, pool)
@@ -222,7 +222,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, test_utils, durati
                 test_utils.validate_pool(pool)
             except AssertionError as ex:
                 print("Pool state became invalid:")
-                print(TestUtils.dump_book(pool, MAX_BUCKET, MIN_BUCKET))
+                print(TestUtils.dump_book(pool))
                 raise ex
             chain.sleep(14)
 
@@ -326,10 +326,9 @@ def repay(borrower, borrower_index, pool, test_utils):
         print(f" borrower {borrower_index:>4} will not repay dusty {pending_debt/1e18:.1f} debt")
 
 
-@pytest.mark.skip
 def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_utils, chain):
     # Validate test set-up
-    print("Before test:\n" + test_utils.dump_book(pool1, MAX_BUCKET, MIN_BUCKET))
+    print("Before test:\n" + test_utils.dump_book(pool1))
     assert pool1.collateral() == MKR_ADDRESS
     assert pool1.quoteToken() == DAI_ADDRESS
     assert len(lenders) == NUM_LENDERS
@@ -351,9 +350,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
 
     # Validate test ended with the pool in a meaningful state
     test_utils.validate_pool(pool1)
-    hpb = max(0, pool1.priceToIndex(pool1.hpb()) - 1)
-    lpb = min(max(MIN_BUCKET, pool1.priceToIndex(pool1.htp())) + 2, 4156)
-    print("After test:\n" + test_utils.dump_book(pool1, hpb, lpb))
+    print("After test:\n" + test_utils.dump_book(pool1))
     utilization = pool1.poolActualUtilization() / 10**18
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")
     assert MIN_UTILIZATION * 0.9 < utilization < MAX_UTILIZATION * 1.1

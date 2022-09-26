@@ -311,7 +311,7 @@ class TestUtils:
             assert pool.borrowerDebt() > 0
 
     @staticmethod
-    def dump_book(pool, min_bucket_index, max_bucket_index, with_headers=True, csv=False) -> str:
+    def dump_book(pool, with_headers=True, csv=False) -> str:
         """
         :param pool:             pool contract for which report shall be generated
         :param min_bucket_index: highest-priced bucket from which to iterate downward in price
@@ -320,7 +320,6 @@ class TestUtils:
         :param csv:              export as CSV for importing into a spreadsheet
         :return:                 multi-line string
         """
-        assert min_bucket_index < max_bucket_index
 
         # formatting shortcuts
         w = 15
@@ -337,6 +336,11 @@ class TestUtils:
 
         lup_index = pool.lupIndex()
         htp_index = ScaledPoolUtils.price_to_index_safe(pool, pool.htp())
+        ptp_index = ScaledPoolUtils.price_to_index_safe(pool, int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
+
+        min_bucket_index = max(0, pool.priceToIndex(pool.hpb()) - 3)  # HPB
+        max_bucket_index = max(lup_index, htp_index, ptp_index) + 3
+        assert min_bucket_index < max_bucket_index
 
         lines = []
         if with_headers:
@@ -352,6 +356,8 @@ class TestUtils:
                 pointer += "LUP"
             if i == htp_index:
                 pointer += "HTP"
+            if i == ptp_index:
+                pointer += "PTP"
             try:
                 (
                     bucket_quote,
