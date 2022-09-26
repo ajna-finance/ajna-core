@@ -24,9 +24,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     event PullCollateral(address indexed borrower_, uint256 amount_);
     event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
-
     event Take(address indexed borrower_, uint256 amount_, uint256 collateral_, int256 bondChange_);
-
 
     /*****************/
     /*** Utilities ***/

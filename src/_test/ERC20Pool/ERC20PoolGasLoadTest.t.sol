@@ -182,7 +182,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         for (uint256 i; i < count_; i++) {
             address lender = address(uint160(uint256(keccak256(abi.encodePacked(i, 'lender')))));
 
-            _mintQuoteAndApproveTokens(lender, 300_000_000_000 * 1e18);
+            _mintQuoteAndApproveTokens(lender, 200_000 * 1e18);
 
             vm.startPrank(lender);
             _pool.addQuoteToken(100_000 * 1e18, 7388 - i);
