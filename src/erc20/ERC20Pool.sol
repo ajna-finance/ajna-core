@@ -244,6 +244,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         // Reduce liquidation's remaining collateral
         borrower.collateral -= Maths.wdiv(amount, price);
+        pledgedCollateral -= Maths.wdiv(amount, price);
 
         // If recollateralized remove loan from auction
         if (borrower.collateral != 0 && _borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) {

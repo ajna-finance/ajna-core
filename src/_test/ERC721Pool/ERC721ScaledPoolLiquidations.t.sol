@@ -24,6 +24,10 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
 
+
+        // deploy collection pool
+        ERC721Pool collectionPool = _deployCollectionPool();
+
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](6);
         subsetTokenIds[0] = 1;
@@ -32,33 +36,33 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
         subsetTokenIds[3] = 51;
         subsetTokenIds[4] = 53;
         subsetTokenIds[5] = 73;
-        _subsetPool = _deploySubsetPool(subsetTokenIds);
+        _pool = _deploySubsetPool(subsetTokenIds);
 
         address[] memory _poolAddresses = new address[](1);
-        _poolAddresses[0] = address(_subsetPool);
+        _poolAddresses[0] = address(_pool);
 
-       _mintAndApproveQuoteTokens(_poolAddresses, _lender, 120_000 * 1e18);
-       _mintAndApproveQuoteTokens(_poolAddresses, _borrower, 100 * 1e18);
-       _mintAndApproveQuoteTokens(_poolAddresses, _borrower2, 8_000 * 1e18);
+       _mintAndApproveQuoteTokens(_lender, 120_000 * 1e18);
+       _mintAndApproveQuoteTokens(_borrower, 100 * 1e18);
+       _mintAndApproveQuoteTokens(_borrower2, 8_000 * 1e18);
 
-       _mintAndApproveCollateralTokens(_poolAddresses, _borrower, 6);
-       _mintAndApproveCollateralTokens(_poolAddresses, _borrower2, 74);
+       _mintAndApproveCollateralTokens(_borrower, 6);
+       _mintAndApproveCollateralTokens(_borrower2, 74);
 
        vm.prank(_borrower);
-       _quote.approve(address(_subsetPool), 200_000 * 1e18);
+       _quote.approve(address(_pool), 200_000 * 1e18);
        vm.stopPrank();
 
        vm.prank(_borrower2);
-       _quote.approve(address(_subsetPool), 200_000 * 1e18);
+       _quote.approve(address(_pool), 200_000 * 1e18);
        vm.stopPrank();
 
        // Lender adds Quote token accross 5 prices
        vm.startPrank(_lender);
-       _subsetPool.addQuoteToken(2_000 * 1e18,  _i9_91);
-       _subsetPool.addQuoteToken(5_000 * 1e18,  _i9_81);
-       _subsetPool.addQuoteToken(11_000 * 1e18, _i9_72);
-       _subsetPool.addQuoteToken(25_000 * 1e18, _i9_62);
-       _subsetPool.addQuoteToken(30_000 * 1e18, _i9_52);
+       _pool.addQuoteToken(2_000 * 1e18,  _i9_91);
+       _pool.addQuoteToken(5_000 * 1e18,  _i9_81);
+       _pool.addQuoteToken(11_000 * 1e18, _i9_72);
+       _pool.addQuoteToken(25_000 * 1e18, _i9_62);
+       _pool.addQuoteToken(30_000 * 1e18, _i9_52);
        vm.stopPrank();
 
        // Borrower adds collateral token and borrows
@@ -66,8 +70,8 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
        uint256[] memory tokenIdsToAdd = new uint256[](2);
        tokenIdsToAdd[0] = 1;
        tokenIdsToAdd[1] = 3;
-       _subsetPool.pledgeCollateral(_borrower, tokenIdsToAdd);
-       _subsetPool.borrow(19.8 * 1e18, _i9_91);
+       _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+       _pool.borrow(19.8 * 1e18, _i9_91);
        vm.stopPrank();
         
 
@@ -77,8 +81,8 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
        tokenIdsToAdd[0] = 51;
        tokenIdsToAdd[1] = 53;
        tokenIdsToAdd[2] = 73;
-       _subsetPool.pledgeCollateral(_borrower2, tokenIdsToAdd);
-       _subsetPool.borrow(15 * 1e18, _i9_72);
+       _pool.pledgeCollateral(_borrower2, tokenIdsToAdd);
+       _pool.borrow(15 * 1e18, _i9_72);
        vm.stopPrank();
 
        ///**********************/
@@ -143,7 +147,7 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
         /*** Kick ***/
         /************/
         vm.startPrank(_lender);
-        _subsetPool.kick(_borrower);
+        _pool.kick(_borrower);
         vm.stopPrank();
 
         /**********************/
@@ -204,7 +208,7 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
 
 
         vm.startPrank(_lender);
-        _subsetPool.kick(_borrower);
+        _pool.kick(_borrower);
         vm.stopPrank();
 
         //TODO: assert lender state
@@ -262,7 +266,7 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
         tokenIdsToTake[0] = 1;
         tokenIdsToTake[1] = 3;
         vm.startPrank(_lender);
-        _subsetPool.take(_borrower, tokenIdsToTake, data);
+        _pool.take(_borrower, tokenIdsToTake, data);
         vm.stopPrank();
 
 
@@ -325,7 +329,7 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
 //         //TODO: assert lender state
 
 //         vm.startPrank(_lender);
-//         _subsetPool.kick(_borrower);
+//         _pool.kick(_borrower);
 //         vm.stopPrank();
 
 //         //TODO: assert lender state
@@ -380,7 +384,7 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
  
 //         bytes memory data = new bytes(0);
 //         //vm.startPrank(_lender);
-//         //_subsetPool.take(_borrower, 20e18, data);
+//         //_pool.take(_borrower, 20e18, data);
 //         //vm.stopPrank();
 
 //         ////TODO: assert lender state

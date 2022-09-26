@@ -137,11 +137,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             PoolState({
                 htp:                  8.097846143253778448 * 1e18,
                 lup:                  _p9_72,
-                poolSize:             73_099.394951223217762000 * 1e18,
+                poolSize:             73_094.502279691716022000 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
                 encumberedCollateral: 835.010119425512354679 * 1e18,
                 borrowerDebt:         8_117.380421230925720814 * 1e18,
-                actualUtilization:    0.111045794929593908 * 1e18,
+                actualUtilization:    0.111053227918158028 * 1e18,
                 targetUtilization:    0.833343432560391572 * 1e18,
                 minDebtAmount:        811.738042123092572081 * 1e18,
                 loans:                1,
@@ -199,11 +199,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             PoolState({
                 htp:                  8.097846143253778448 * 1e18,
                 lup:                  _p9_72,
-                poolSize:             73_099.394951223217762000 * 1e18,
+                poolSize:             73_094.502279691716022000 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
                 encumberedCollateral: 835.010119425512354679 * 1e18,
                 borrowerDebt:         8_117.380421230925720814 * 1e18,
-                actualUtilization:    0.111045794929593908 * 1e18,
+                actualUtilization:    0.111053227918158028 * 1e18,
                 targetUtilization:    0.833343432560391572 * 1e18,
                 minDebtAmount:        811.738042123092572081 * 1e18,
                 loans:                1,
@@ -258,11 +258,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             PoolState({
                 htp:                  8.097929340730578998 * 1e18,
                 lup:                  _p9_72,
-                poolSize:             73_099.470009578439232996 * 1e18,
+                poolSize:             73_094.573649505265010718 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
                 encumberedCollateral: 833.009246211652698536 * 1e18,
                 borrowerDebt:         8_097.929340730578997898 * 1e18,
-                actualUtilization:    0.110779590326297625 * 1e18,
+                actualUtilization:    0.110787011079110237 * 1e18,
                 targetUtilization:    0.833343432560391572 * 1e18,
                 minDebtAmount:        809.792934073057899790 * 1e18,
                 loans:                1,
@@ -309,7 +309,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
        
         // Borrower2 adds collateral token and borrows
         vm.startPrank(_borrower2);
-        _collateral.approve(address(_pool), 7_000 * 1e18);
+        _collateral.approve(address(_pool), 2_000 * 1e18);
         _pool.borrow(1_730 * 1e18, _i9_72);
         vm.stopPrank();
 
@@ -329,11 +329,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             PoolState({
                 htp:                  9.767138988573636287 * 1e18,
                 lup:                  _p9_72,
-                poolSize:             73_120.891124691501254000 * 1e18,
+                poolSize:             73_118.781595119199960000 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
                 encumberedCollateral: 1_015.597987863945504486 * 1e18,
                 borrowerDebt:         9_872.928519956368918239 * 1e18,
-                actualUtilization:    4.655085027710914115 * 1e18,
+                actualUtilization:    4.659719785512357401 * 1e18,
                 targetUtilization:    1.013570846171602300 * 1e18,
                 minDebtAmount:        987.292851995636891824 * 1e18,
                 loans:                1,
@@ -388,11 +388,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             PoolState({
                 htp:                  9.767445610192598576 * 1e18,
                 lup:                  _p9_72,
-                poolSize:             73_121.170073112037351930 * 1e18,
-                pledgedCollateral:    1_002.0 * 1e18,
+                poolSize:             73_119.091537808684512392 * 1e18,
+                pledgedCollateral:    998.773277849995859673 * 1e18,
                 encumberedCollateral: 1_013.572531835871918275* 1e18,
                 borrowerDebt:         9_853.238462645853472494 * 1e18,
-                actualUtilization:    4.645619183239965057 * 1e18,
+                actualUtilization:    4.650224216860730195 * 1e18,
                 targetUtilization:    1.013570846171602300 * 1e18,
                 minDebtAmount:        985.323846264585347249 * 1e18,
                 loans:                1,
@@ -447,11 +447,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             PoolState({
                 htp:                  9.767445610192598576 * 1e18,
                 lup:                  _p9_81,
-                poolSize:             73_121.170073112037351930 * 1e18,
+                poolSize:             73_119.091537808684512392 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
                 encumberedCollateral: 374.283614594378611622* 1e18,
                 borrowerDebt:         3_674.997935498408422495 * 1e18,
-                actualUtilization:    0.050259014343231509 * 1e18,
+                actualUtilization:    0.050260443041720878* 1e18,
                 targetUtilization:    1.013570846171602300 * 1e18,
                 minDebtAmount:        367.499793549840842250 * 1e18,
                 loans:                1,

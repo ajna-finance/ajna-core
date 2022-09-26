@@ -131,12 +131,10 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _assertAuction(AuctionState memory state_) internal {
-        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-
-        (uint256 debt, , uint256 col, uint256 mompFactor, uint256 inflator) = pool.borrowerInfo(state_.borrower);
-        (uint128 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = pool.liquidations(state_.borrower);
-        (address next, , bool active) = pool.getAuction(state_.borrower);
-        int256 bpf = pool.bpf(
+        (uint256 debt, , uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
+        (uint128 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidations(state_.borrower);
+        (address next, , bool active) = _pool.getAuction(state_.borrower);
+        int256 bpf = _pool.bpf(
             IScaledPool.Borrower({
                debt: debt,
                collateral: col,
@@ -149,11 +147,11 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
                 bondFactor: bondFactor,
                 bondSize: bondSize
             }),
-            pool.auctionPrice(referencePrice, kickTime)
+            _pool.auctionPrice(referencePrice, kickTime)
         );
         assertEq(kickTime, state_.kickTime);
         assertEq(referencePrice, state_.referencePrice);
-        assertEq(pool.auctionPrice(referencePrice, kickTime), state_.price);
+        assertEq(_pool.auctionPrice(referencePrice, kickTime), state_.price);
         assertEq(bpf, state_.bpf);
         assertEq(bondFactor, state_.bondFactor);
         assertEq(bondSize, state_.bondSize);
@@ -163,17 +161,15 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _assertBorrower(BorrowerState memory state_) internal {
-        ERC721Pool pool = address(_collectionPool) == address(0) ? _subsetPool : _collectionPool;
-
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = pool.borrowerInfo(state_.borrower);
-        (, , uint256 lup, ) = pool.poolPricesInfo();
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
+        (, , uint256 lup, ) = _pool.poolPricesInfo();
         assertEq(debt,        state_.debt);
         assertEq(pendingDebt, state_.pendingDebt);
         assertEq(col,         state_.collateral);
         assertEq(mompFactor,  state_.mompFactor);
         assertEq(inflator,    state_.inflator);
 
-        assertEq(pool.borrowerCollateralization(state_.debt, state_.collateral, lup), state_.collateralization);
+        assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, lup), state_.collateralization);
     }
 
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {
