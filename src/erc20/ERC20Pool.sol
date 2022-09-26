@@ -15,9 +15,6 @@ import { Maths } from "../libraries/Maths.sol";
 import '../libraries/Book.sol';
 import '../libraries/Lenders.sol';
 
-import "@std/console.sol";
-
-
 contract ERC20Pool is IERC20Pool, ScaledPool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
@@ -75,7 +72,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function pullCollateral(
         uint256 collateralAmountToPull_
     ) external override {
-        _pullCollateral(collateralAmountToPull_);
+        _pullCollateral(msg.sender, collateralAmountToPull_);
 
         // move collateral from pool to sender
         emit PullCollateral(msg.sender, collateralAmountToPull_);
@@ -224,7 +221,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Calculate amounts
         uint256 amount = Maths.min(Maths.wmul(price, borrower.collateral), maxAmount_);
         uint256 repayAmount = Maths.wmul(amount, uint256(1e18 - bpf));
-        uint256 collateralToPurchase = Maths.wdiv(amount, price);
+        int256 rewardOrPenalty;
+
         if (repayAmount >= borrower.debt) {
             repayAmount = borrower.debt;
             amount = Maths.wdiv(borrower.debt, uint256(1e18 - bpf));
@@ -232,15 +230,15 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
 
         if (bpf >= 0) {
             // Take is below neutralPrice, Kicker is rewarded
-            uint256 reward = amount - repayAmount;
-            liquidation.bondSize += reward;
+            rewardOrPenalty = int256(amount - repayAmount);
+            liquidation.bondSize += amount - repayAmount;
  
         } else {     
             // Take is above neutralPrice, Kicker is penalized
-            // TODO: increase the reserves here somehow?
-            int256 penalty = PRBMathSD59x18.mul(int256(amount), bpf);
-            liquidation.bondSize -= uint256(-penalty);
+            rewardOrPenalty = PRBMathSD59x18.mul(int256(amount), bpf);
+            liquidation.bondSize -= uint256(-rewardOrPenalty);
         }
+
 
         borrowerDebt  -= repayAmount;
         borrower.debt -= repayAmount;
@@ -249,7 +247,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         borrower.collateral -= Maths.wdiv(amount, price);
 
         // If recollateralized remove loan from auction
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) {
+        if (borrower.collateral != 0 && _borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) {
             _removeAuction(borrower_);
 
             if (borrower.debt != 0) {
@@ -276,8 +274,8 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // Get current swap price
         //uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralToPurchase);
 
-        emit Take(borrower_, amount, collateralToPurchase, 0);
-        collateral().safeTransfer(msg.sender, collateralToPurchase);
+        emit Take(borrower_, amount, Maths.wdiv(amount, price), rewardOrPenalty);
+        collateral().safeTransfer(msg.sender, Maths.wdiv(amount, price));
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 

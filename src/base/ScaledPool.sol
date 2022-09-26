@@ -387,9 +387,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
         uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
         uint256 numLoans = (loans.count - 1) * 1e18;
+        uint256 momp = _momp(numLoans);
 
         // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
-        uint256 bondFactor = Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, _momp(numLoans))));
+        uint256 bondFactor = thresholdPrice >= momp ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, momp)));
         uint256 bondSize = Maths.wmul(bondFactor, borrower.debt);
 
         liquidations[borrower_] = Liquidation({
@@ -400,7 +401,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
         });
 
         _addAuction(borrower_);
-
         loans.remove(borrower_);
 
         emit Kick(borrower_, borrower.debt, borrower.collateral);
@@ -445,12 +445,13 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
     }
 
     function _pullCollateral(
+        address borrower_,
         uint256 collateralAmountToPull_
     ) internal {
         uint256 curDebt = _accruePoolInterest();
 
         // borrower accounting
-        Borrower memory borrower = borrowers[msg.sender];
+        Borrower memory borrower = borrowers[borrower_];
         (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(
             borrower.debt,
             borrower.inflatorSnapshot,
@@ -467,11 +468,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
             borrower.collateral,
             borrower.inflatorSnapshot
         );
-        if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
+        if (borrower.debt != 0) loans.upsert(borrower_, thresholdPrice);
 
         uint256 numLoans     = (loans.count - 1) * 1e18;
         borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
-        borrowers[msg.sender] = borrower;
+        borrowers[borrower_] = borrower;
 
         // update pool state
         pledgedCollateral -= collateralAmountToPull_;
@@ -773,8 +774,11 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
     function _bpf( Borrower memory borrower_, Liquidation memory liquidation_, uint256 price_) internal pure returns (int256) {
         int256 thresholdPrice = int256(Maths.wdiv(borrower_.debt, borrower_.collateral));
         int256 neutralPrice = int256(Maths.wmul(borrower_.mompFactor, borrower_.inflatorSnapshot));
+
          
         if (thresholdPrice <= neutralPrice) {
+
+            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
             return PRBMathSD59x18.mul(
                 int256(liquidation_.bondFactor),
                 Maths.minInt(
@@ -790,6 +794,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
             );
         }
      
+        // BPF = BondFactor * sign(neutralPrice - price)
         return PRBMathSD59x18.mul(int256(liquidation_.bondFactor), _sign(neutralPrice - int256(price_)));
     }
 

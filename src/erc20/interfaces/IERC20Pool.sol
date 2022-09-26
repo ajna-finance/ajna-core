@@ -87,11 +87,6 @@ interface IERC20Pool is IScaledPool {
      */
     error RemoveCollateralNoClaim();
 
-    /**
-     *  @notice Take was called before 1 hour had passed from kick time.
-     */
-    error TakeNotPastCooldown();
-
     /*********************************/
     /*** ERC20Pool State Variables ***/
     /*********************************/

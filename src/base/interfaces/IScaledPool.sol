@@ -160,6 +160,11 @@ interface IScaledPool {
     error KickBorrowerSafe();
 
     /**
+     *  @notice Take was called before 1 hour had passed from kick time.
+     */
+    error TakeNotPastCooldown();
+
+    /**
      *  @notice User is attempting to move more collateral than is available.
      */
     error MoveCollateralInsufficientCollateral();

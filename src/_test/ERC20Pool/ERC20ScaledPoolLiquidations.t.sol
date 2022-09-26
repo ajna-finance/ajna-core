@@ -78,6 +78,18 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
         _assertBorrower(
             BorrowerState({
+               borrower:          _borrower2,
+               debt:              7_987.673076923076926760 * 1e18,
+               pendingDebt:       7_987.673076923076926760 * 1e18,
+               collateral:        1000 * 1e18,
+               collateralization: 1.217037273735858713 * 1e18,
+               mompFactor:        9.818751856078723036 * 1e18,
+               inflator:          1e18
+            })
+        );
+        
+        _assertBorrower(
+            BorrowerState({
                borrower:          _borrower,
                debt:              19.268509615384615394 * 1e18,
                pendingDebt:       19.268509615384615394 * 1e18,
@@ -233,6 +245,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
  
         bytes memory data = new bytes(0);
         vm.startPrank(_lender);
+        vm.expectEmit(true, true, false, true);
+        emit Take(_borrower, 
+                19.341067992886131878 * 1e18,
+                0.390051578108636266 * 1e18,
+                -0.193410679928861319 * 1e18);
         _pool.take(_borrower, 20e18, data);
         vm.stopPrank();
 
@@ -289,6 +306,13 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
     function testTakeLTNeutral() external {
         
+       
+        // Borrower2 adds collateral token and borrows
+        vm.startPrank(_borrower2);
+        _collateral.approve(address(_pool), 7_000 * 1e18);
+        _pool.borrow(1_730 * 1e18, _i9_72);
+        vm.stopPrank();
+
 
         // Skip to make borrower undercollateralized
         skip(100 days);
@@ -296,52 +320,52 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         //TODO: assert lender state
 
         vm.startPrank(_lender);
-        _pool.kick(_borrower);
+        _pool.kick(_borrower2);
         vm.stopPrank();
 
         //TODO: assert lender state
 
         _assertPool(
             PoolState({
-                htp:                  8.097846143253778448 * 1e18,
+                htp:                  9.767138988573636287 * 1e18,
                 lup:                  _p9_72,
-                poolSize:             73_099.394951223217762000 * 1e18,
+                poolSize:             73_120.891124691501254000 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
-                encumberedCollateral: 835.010119425512354679 * 1e18,
-                borrowerDebt:         8_117.380421230925720814 * 1e18,
-                actualUtilization:    0.111045794929593908 * 1e18,
-                targetUtilization:    0.833343432560391572 * 1e18,
-                minDebtAmount:        811.738042123092572081 * 1e18,
+                encumberedCollateral: 1_015.597987863945504486 * 1e18,
+                borrowerDebt:         9_872.928519956368918239 * 1e18,
+                actualUtilization:    4.655085027710914115 * 1e18,
+                targetUtilization:    1.013570846171602300 * 1e18,
+                minDebtAmount:        987.292851995636891824 * 1e18,
                 loans:                1,
-                maxBorrower:          address(_borrower2),
+                maxBorrower:          address(_borrower),
                 inflatorSnapshot:     1.013792886272348689 * 1e18,
                 pendingInflator:      1.013792886272348689 * 1e18,
-                interestRate:         0.045 * 1e18,
+                interestRate:         0.055 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
         );
 
         _assertBorrower(
             BorrowerState({
-               borrower:          _borrower,
-               debt:              19.268509615384615394 * 1e18,
-               pendingDebt:       19.268509615384615394 * 1e18,
-               collateral:        2 * 1e18,
-               collateralization: 1.009034539679184679 * 1e18,
-               mompFactor:        9.917184843435912074 * 1e18,
+               borrower:          _borrower2,
+               debt:              9_719.336538461538466020 * 1e18,
+               pendingDebt:       9_719.336538461538466020 * 1e18,
+               collateral:        1000.0 * 1e18,
+               collateralization: 1.000201590567677913 * 1e18,
+               mompFactor:        9.818751856078723036 * 1e18,
                inflator:          1e18
             })
         );
 
         _assertAuction(
             AuctionState({
-                borrower: _borrower,
+                borrower:       _borrower2,
                 kickTime:       block.timestamp,
                 price:          99.171848434359120740 * 1e18,
                 bpf:            int256(-0.01 * 1e18),
                 referencePrice: 9.917184843435912074 * 1e18,
                 bondFactor:     0.01 * 1e18,
-                bondSize:       0.195342779771472726 * 1e18,
+                bondSize:       98.533942419792216457 * 1e18,
                 next:           address(0),
                 active:         true
             })
@@ -351,56 +375,124 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
  
         bytes memory data = new bytes(0);
         vm.startPrank(_lender);
-        _pool.take(_borrower, 20e18, data);
+        vm.expectEmit(true, true, false, true);
+        emit Take(_borrower2, 
+                20.0 * 1e18,
+                3.226722150004140327 * 1e18,
+                0);
+        _pool.take(_borrower2, 20e18, data);
         vm.stopPrank();
 
         //TODO: assert lender state
         _assertPool(
             PoolState({
-                htp:                  8.098054138548481935 * 1e18,
+                htp:                  9.767445610192598576 * 1e18,
                 lup:                  _p9_72,
-                poolSize:             73_099.582598557182807882 * 1e18,
+                poolSize:             73_121.170073112037351930 * 1e18,
                 pledgedCollateral:    1_002.0 * 1e18,
-                encumberedCollateral: 835.031566878674328063 * 1e18,
-                borrowerDebt:         8_117.588918268664675439 * 1e18,
-                actualUtilization:    0.111048362106911499 * 1e18,
-                targetUtilization:    0.833343432560391572 * 1e18,
-                minDebtAmount:        811.758891826866467544 * 1e18,
+                encumberedCollateral: 1_013.572531835871918275* 1e18,
+                borrowerDebt:         9_853.238462645853472494 * 1e18,
+                actualUtilization:    4.645619183239965057 * 1e18,
+                targetUtilization:    1.013570846171602300 * 1e18,
+                minDebtAmount:        985.323846264585347249 * 1e18,
                 loans:                1,
-                maxBorrower:          address(_borrower2),
-                inflatorSnapshot:     1.013818925807605133 * 1e18,
-                pendingInflator:      1.013818925807605133 * 1e18,
-                interestRate:         0.045 * 1e18,
+                maxBorrower:          address(_borrower),
+                inflatorSnapshot:     1.013824712461823922 * 1e18,
+                pendingInflator:      1.013824712461823922 * 1e18,
+                interestRate:         0.055 * 1e18,
                 interestRateUpdate:   block.timestamp - 5 hours
             })
         );
 
         _assertBorrower(
             BorrowerState({
-               borrower:          _borrower,
-               debt:              7.262263476430800312 * 1e18,
-               pendingDebt:       7.262263476430800312 * 1e18,
-               collateral:        0,
-               collateralization: 1e18,
-               mompFactor:        9.917184843435912074 * 1e18,
+               borrower:          _borrower2,
+               debt:              9_833.703571425468277820 * 1e18,
+               pendingDebt:       9_833.703571425468277820 * 1e18,
+               collateral:        996.773277849995859673 * 1e18,
+               collateralization: 0.985379300276458401 * 1e18,
+               mompFactor:        9.818751856078723036 * 1e18,
                inflator:          1e18
             })
         );
 
         _assertAuction(
             AuctionState({
-                borrower:       _borrower,
+                borrower:       _borrower2,
                 kickTime:       (block.timestamp - 5 hours),
                 price:          6.198240527147445050 * 1e18,
                 bpf:            0,
                 referencePrice: 9.917184843435912074 * 1e18,
                 bondFactor:     0.01 * 1e18,
-                bondSize:       0.319307590314421627 * 1e18,
+                bondSize:       98.533942419792216457 * 1e18,
                 next:           address(0),
-                active:         false
+                active:         true
+            })
+        );
+
+        // perform take, _borrower2 has no debt but the auction remains active.
+        vm.startPrank(_lender);
+
+        vm.expectEmit(true, true, false, true);
+
+        emit Take(_borrower2, 
+                6_178.240527147445049999 * 1e18,
+                996.773277849995859673 * 1e18,
+                0);
+
+        _pool.take(_borrower2, 8_000 * 1e18, data);
+        vm.stopPrank();
+
+        _assertPool(
+            PoolState({
+                htp:                  9.767445610192598576 * 1e18,
+                lup:                  _p9_81,
+                poolSize:             73_121.170073112037351930 * 1e18,
+                pledgedCollateral:    1_002.0 * 1e18,
+                encumberedCollateral: 374.283614594378611622* 1e18,
+                borrowerDebt:         3_674.997935498408422495 * 1e18,
+                actualUtilization:    0.050259014343231509 * 1e18,
+                targetUtilization:    1.013570846171602300 * 1e18,
+                minDebtAmount:        367.499793549840842250 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                inflatorSnapshot:     1.013824712461823922 * 1e18,
+                pendingInflator:      1.013824712461823922 * 1e18,
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   block.timestamp - 5 hours
+            })
+        );
+
+        _assertBorrower(
+            BorrowerState({
+               borrower:          _borrower2,
+               debt:              3_791.411168587791307368 * 1e18,
+               pendingDebt:       3_791.411168587791307368 * 1e18,
+               collateral:        0 * 1e18,
+               collateralization: 1e18,
+               mompFactor:        9.818751856078723036 * 1e18,
+               inflator:          1e18
+            })
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:       _borrower2,
+                kickTime:       (block.timestamp - 5 hours),
+                price:          6.198240527147445050 * 1e18,
+                bpf:            0,
+                referencePrice: 9.917184843435912074 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                bondSize:       98.533942419792216457 * 1e18,
+                next:           address(0),
+                active:         true
             })
         );
         
+    }
+    function testTakeInterestBig() external {
+        //TODO: This is breaking something
+        //skip(200 days);
     }
 
     function testBondFactorFormula() external {
