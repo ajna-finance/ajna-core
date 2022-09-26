@@ -53,7 +53,7 @@ contract ERC721Pool is IERC721Pool, AjnaPool {
     function initialize(
         uint256 rate_,
         address ajnaTokenAddress_
-    ) external {
+    ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         quoteTokenScale = 10**(18 - quoteToken().decimals());

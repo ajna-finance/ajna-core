@@ -37,7 +37,7 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
     function initialize(
         uint256 rate_,
         address ajnaTokenAddress_
-    ) external {
+    ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         collateralScale = 10**(18 - collateral().decimals());

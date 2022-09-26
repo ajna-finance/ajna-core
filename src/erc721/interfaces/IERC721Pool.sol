@@ -23,9 +23,6 @@ interface IERC721Pool is
     IERC721PoolErrors
 {
 
-    /*****************************/
-    /*** Initialize Functions ***/
-    /*****************************/
 
     /**
      *  @notice Called by deployNFTSubsetPool()
