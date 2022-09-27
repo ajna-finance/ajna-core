@@ -233,7 +233,7 @@ contract ERC721ScaledCollectionInterestTest is ERC721ScaledInterestTest {
             .target(address(_pool))
             .sig("borrowerDebt()")
             .find();
-        assertEq(slotBorrowerDebt, 16391);
+        assertEq(slotBorrowerDebt, 16394);
 
         //test lender interest margin for various amounts of utilization
         vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(100 * 1e18)));

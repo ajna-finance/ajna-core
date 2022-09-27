@@ -259,7 +259,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 htp:                  8.097929340730578998 * 1e18,
                 lup:                  _p9_72,
                 poolSize:             73_094.573649505265010718 * 1e18,
-                pledgedCollateral:    1_002.0 * 1e18,
+                pledgedCollateral:    1_001.609948421891363734 * 1e18,
                 encumberedCollateral: 833.009246211652698536 * 1e18,
                 borrowerDebt:         8_097.929340730578997898 * 1e18,
                 actualUtilization:    0.110787011079110237 * 1e18,
@@ -448,10 +448,10 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 htp:                  9.767445610192598576 * 1e18,
                 lup:                  _p9_81,
                 poolSize:             73_119.091537808684512392 * 1e18,
-                pledgedCollateral:    1_002.0 * 1e18,
+                pledgedCollateral:    2.0 * 1e18,
                 encumberedCollateral: 374.283614594378611622* 1e18,
                 borrowerDebt:         3_674.997935498408422495 * 1e18,
-                actualUtilization:    0.050260443041720878* 1e18,
+                actualUtilization:    0.0 * 1e18,
                 targetUtilization:    1.013570846171602300 * 1e18,
                 minDebtAmount:        367.499793549840842250 * 1e18,
                 loans:                1,
@@ -490,7 +490,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         );
         
     }
-    function testTakeInterestBig() external {
+
+    function testTakeInterestIncreaseBig() external {
         //TODO: This is breaking something
         //skip(200 days);
     }

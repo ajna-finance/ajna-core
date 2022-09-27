@@ -23,6 +23,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     event RemoveCollateralNFT(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_);
     event Repay(address indexed borrower_, uint256 lup_, uint256 amount_);
     event ReserveAuction(uint256 claimableReservesRemaining_, uint256 auctionPrice_);
+    event Take(address indexed borrower_, uint256 amount_, uint256[] tokenIds_, int256 bondChange_);
 
     /*****************/
     /*** Utilities ***/
