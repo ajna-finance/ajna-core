@@ -342,7 +342,7 @@ def test_stable_volatile_one(pool1, pool_utils, lenders, borrowers, scaled_pool_
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
-    end_time = start_time + SECONDS_PER_DAY * 7
+    end_time = start_time + SECONDS_PER_DAY * 3
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeAllQuoteToken', 'repay']):
         while chain.time() < end_time:
