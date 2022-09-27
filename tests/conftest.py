@@ -109,14 +109,16 @@ class ScaledPoolUtils:
         assert fee_rate < (100 * 10**18)
         return fee_rate * amount / 10**18
 
-    @staticmethod
-    def price_to_index_safe(pool, price):
+    def price_to_index_safe(self, price):
         if price < MIN_PRICE:
-            return pool.priceToIndex(MIN_PRICE)
+            return self.bucket_math.priceToIndex(MIN_PRICE)
         elif price > MAX_PRICE:
-            return pool.priceToIndex(MAX_PRICE)
+            return self.bucket_math.priceToIndex(MAX_PRICE)
         else:
-            return pool.priceToIndex(price)
+            return self.bucket_math.priceToIndex(price)
+
+    def index_to_price(self, index):
+        return self.bucket_math.indexToPrice(index)
 
 
 @pytest.fixture
@@ -296,22 +298,24 @@ class TestUtils:
             )
 
     @staticmethod
-    def validate_pool(pool):
+    def validate_pool(pool, scaled_pool_utils):
         # if pool is collateralized...
-        if pool.lupIndex() > ScaledPoolUtils.price_to_index_safe(pool, pool.htp()):
+        (hpb, htp, lup, lup_index) = pool.poolPricesInfo()
+        (poolSize, loansCount, _, _) = pool.poolLoansInfo()
+        if lup_index > scaled_pool_utils.price_to_index_safe(htp):
             # ...ensure debt is less than the size of the pool
-            assert pool.borrowerDebt() <= pool.poolSize()
+            assert pool.borrowerDebt() <= poolSize
 
         # if there are no borrowers in the pool, ensure there is no debt
-        if pool.loansCount() == 0:
+        if loansCount == 0:
             assert pool.borrowerDebt() == 0
 
         # loan count should be decremented as borrowers repay debt
-        if pool.loansCount() > 0:
+        if loansCount > 0:
             assert pool.borrowerDebt() > 0
 
     @staticmethod
-    def dump_book(pool, with_headers=True, csv=False) -> str:
+    def dump_book(pool, scaled_pool_utils, with_headers=True, csv=False) -> str:
         """
         :param pool:             pool contract for which report shall be generated
         :param min_bucket_index: highest-priced bucket from which to iterate downward in price
@@ -334,11 +338,11 @@ class TestUtils:
         def fy(ray):
             return f"{ny(ray):>{w}.3f}"
 
-        lup_index = pool.lupIndex()
-        htp_index = ScaledPoolUtils.price_to_index_safe(pool, pool.htp())
-        ptp_index = ScaledPoolUtils.price_to_index_safe(pool, int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
+        (hpb, htp, lup, lup_index) = pool.poolPricesInfo()
+        htp_index = scaled_pool_utils.price_to_index_safe(htp)
+        ptp_index = scaled_pool_utils.price_to_index_safe(int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
 
-        min_bucket_index = max(0, pool.priceToIndex(pool.hpb()) - 3)  # HPB
+        min_bucket_index = max(0, pool.priceToIndex(hpb) - 3)  # HPB
         max_bucket_index = max(lup_index, htp_index, ptp_index) + 3
         assert min_bucket_index < max_bucket_index
 
@@ -350,7 +354,7 @@ class TestUtils:
                 lines.append(j('Index') + j('Price') + j('Pointer') + j('Quote') + j('Collateral')
                              + j('LP Outstanding') + j('Scale'))
         for i in range(min_bucket_index, max_bucket_index):
-            price = pool.indexToPrice(i)
+            price = scaled_pool_utils.index_to_price(i)
             pointer = ""
             if i == lup_index:
                 pointer += "LUP"
@@ -359,12 +363,7 @@ class TestUtils:
             if i == ptp_index:
                 pointer += "PTP"
             try:
-                (
-                    bucket_quote,
-                    bucket_collateral,
-                    bucket_lpAccumulator,
-                    bucket_scale
-                ) = pool.bucketAt(i)
+                (bucket_quote, bucket_collateral, bucket_lpAccumulator, _, bucket_scale, _, _) = pool.bucketAt(i)
             except VirtualMachineError as ex:
                 lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
                 continue
@@ -378,28 +377,28 @@ class TestUtils:
 
     @staticmethod
     def summarize_pool(pool):
-        print(f"actual utlzn:   {pool.poolActualUtilization()/1e18:>12.1%}  "
-              f"target utlzn: {pool.poolTargetUtilization()/1e18:>10.1%}   "
-              f"collateralization: {pool.poolCollateralization()/1e18:>7.1%}  "
+        (minDebtAmount, collateralization, mau, tu) = pool.poolUtilizationInfo()
+        (poolSize, loansCount, maxBorrower, pendingInflator) = pool.poolLoansInfo()
+        print(f"actual utlzn:   {mau/1e18:>12.1%}  "
+              f"target utlzn: {tu/1e18:>10.1%}   "
+              f"collateralization: {collateralization/1e18:>7.1%}  "
               f"borrowerDebt: {pool.borrowerDebt()/1e18:>12.1f}  "
-              f"pendingInf: {pool.pendingInflator()/1e18:>20.18f}")
+              f"pendingInf: {pendingInflator/1e18:>20.18f}")
 
         contract_quote_balance = Contract(pool.quoteToken()).balanceOf(pool)
-        reserves = contract_quote_balance + pool.borrowerDebt() - pool.poolSize()
+        (poolSize, _, _, _) = pool.poolLoansInfo()
+        reserves = contract_quote_balance + pool.borrowerDebt() - poolSize
         pledged_collateral = pool.pledgedCollateral()
         if pledged_collateral > 0:
             ptp = pool.borrowerDebt() * 10 ** 18 / pledged_collateral
             ptp_index = pool.priceToIndex(ptp)
-            ru = pool.depositAt(ptp_index)  # FIXME: saw this revert with under/overflow once
         else:
             ptp = 0
-            ru = 0
         print(f"contract q bal: {contract_quote_balance/1e18:>12.1f}  "
               f"reserves:   {reserves/1e18:>12.1f}   "
               f"pledged collaterl: {pool.pledgedCollateral()/1e18:>7.1f}  "
               f"ptp: {ptp/1e18:>10.3f}  "
-              f"ru: {ru/1e18:>12.1f}  "
-              f"sum: {pool.poolSize()/1e18:>12.1f}  "
+              f"sum: {poolSize/1e18:>12.1f}  "
               f"rate:     {pool.interestRate()/1e18:>10.6f}")
 
 
