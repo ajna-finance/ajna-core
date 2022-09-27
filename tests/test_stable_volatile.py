@@ -201,7 +201,10 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, scaled_pool_utils,
                 utilization = mau / 10**18
                 if interest_rate < 0.10 and utilization < MAX_UTILIZATION:
                     target_collateralization = max(1.1, 1/GOAL_UTILIZATION)
-                    draw_debt(borrowers[user_index], user_index, pool, scaled_pool_utils, test_utils, collateralization=target_collateralization)
+                    try:
+                        draw_debt(borrowers[user_index], user_index, pool, scaled_pool_utils, test_utils, collateralization=target_collateralization)
+                    except VirtualMachineError as ex:
+                        print(f" ERROR drawing debt: {ex}")
                 elif utilization > MIN_UTILIZATION:  # start repaying debt if interest grows too high
                     repay(borrowers[user_index], user_index, pool, test_utils)
                 chain.sleep(14)
@@ -349,7 +352,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
-    end_time = start_time + SECONDS_PER_DAY * 3
+    end_time = start_time + SECONDS_PER_DAY * 7
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeAllQuoteToken', 'repay']):
         while chain.time() < end_time:
