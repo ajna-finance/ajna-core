@@ -343,7 +343,7 @@ class TestUtils:
         ptp_index = PoolUtils.price_to_index_safe(pool_utils, int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
 
         min_bucket_index = max(0, pool_utils.priceToIndex(pool_utils.hpb(pool.address)) - 3)  # HPB
-        max_bucket_index = max(lup_index, htp_index, ptp_index) + 3
+        max_bucket_index = min(7388, max(lup_index, htp_index, ptp_index) + 3)
         assert min_bucket_index < max_bucket_index
 
         lines = []
