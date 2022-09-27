@@ -194,8 +194,8 @@ contract AjnaPoolUtils {
         uint256 poolCollateral = pool.pledgedCollateral();
 
         if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, pool.noOfLoans());
-        uint256 lup = PoolUtils.indexToPrice(pool.depositIndex(poolDebt));
-        poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, lup);
+        uint256 currentLup      = PoolUtils.indexToPrice(pool.depositIndex(poolDebt));
+        poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, currentLup);
         poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
         poolTargetUtilization_ = PoolUtils.poolTargetUtilization(pool.debtEma(), pool.lupColEma());
     }
@@ -221,14 +221,14 @@ contract AjnaPoolUtils {
 
     function indexToPrice(
         uint256 index_
-    ) external view returns (uint256)
+    ) external pure returns (uint256)
     {
         return PoolUtils.indexToPrice(index_);
     }
 
     function priceToIndex(
         uint256 price_
-    ) external view returns (uint256)
+    ) external pure returns (uint256)
     {
         return PoolUtils.priceToIndex(price_);
     }
@@ -238,8 +238,8 @@ contract AjnaPoolUtils {
     ) external view returns (uint256) {
         IAjnaPool pool = IAjnaPool(ajnaPool_);
 
-        uint256 lupIndex = pool.depositIndex(pool.borrowerDebt());
-        return PoolUtils.indexToPrice(lupIndex);
+        uint256 currentLupIndex = pool.depositIndex(pool.borrowerDebt());
+        return PoolUtils.indexToPrice(currentLupIndex);
     }
 
     function lupIndex(

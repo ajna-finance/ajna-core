@@ -166,7 +166,7 @@ def pledge_and_borrow(pool, pool_utils, borrower, borrower_index, collateral_to_
     if debug:
         print(f" borrower {borrower_index:>4} pledging {collateral_to_deposit / 1e18:.8f} collateral")
     assert collateral_to_deposit > 0.001 * 10**18
-    pool.pledgeCollateral(collateral_to_deposit, borrower, {"from": borrower})
+    pool.pledgeCollateral(borrower, collateral_to_deposit, {"from": borrower})
 
     # draw debt
     (_, pending_debt, collateral_deposited, _, _) = pool_utils.borrowerInfo(pool.address, borrower.address)
@@ -311,7 +311,7 @@ def repay(borrower, borrower_index, pool, pool_utils, test_utils):
         # do the repayment
         repay_amount = int(repay_amount * 1.01)
         print(f" borrower {borrower_index:>4} repaying {repay_amount/1e18:.1f} of {pending_debt/1e18:.1f} debt")
-        tx = pool.repay(repay_amount, borrower, {"from": borrower})
+        tx = pool.repay(borrower, repay_amount, {"from": borrower})
 
         # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
         (_, pending_debt, collateral_deposited, _, _) = pool_utils.borrowerInfo(pool.address, borrower)
