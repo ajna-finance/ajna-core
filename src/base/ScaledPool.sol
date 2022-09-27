@@ -715,16 +715,14 @@ abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPoo
     }
 
     function _poolActualUtilization(uint256 borrowerDebt_, uint256 pledgedCollateral_) internal view returns (uint256 utilization_) {
-        console.log("pledged", pledgedCollateral_);
-        console.log("debt", borrowerDebt_);
         if (pledgedCollateral_ != 0) {
             uint256 ptp = Maths.wdiv(borrowerDebt_, pledgedCollateral_);
-            console.log("ptp", ptp);
-            console.log("ptp", _priceToIndex(ptp));
-            console.log("ptp", _prefixSum(_priceToIndex(ptp)));
             if (ptp != 0) utilization_ = Maths.wdiv(borrowerDebt_, _prefixSum(_priceToIndex(ptp)));
         }
     }
+            //console.log("ptp", ptp);
+            //console.log("ptp", _priceToIndex(ptp));
+            //console.log("ptp", _prefixSum(_priceToIndex(ptp)));
 
     function _hpbIndex() internal view returns (uint256) {
         return _findIndexOfSum(1);

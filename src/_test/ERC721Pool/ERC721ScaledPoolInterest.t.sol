@@ -220,7 +220,7 @@ contract ERC721ScaledCollectionInterestTest is ERC721ScaledInterestTest {
         _pool.addQuoteToken(10_000 * 1e18, 0);  // all deposit above the PTP
         assertEq(_poolActualUtilization(), 0);
 
-        // borrower pledges a single NFT
+        //borrower pledges a single NFT
         changePrank(_borrower);
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 1;
@@ -228,14 +228,14 @@ contract ERC721ScaledCollectionInterestTest is ERC721ScaledInterestTest {
         assertEq(_poolActualUtilization(), 0);
         assertEq(_pool.pledgedCollateral(), 1 * 1e18);
 
-        // to minimize test complexity and maintenance cost, manipulate utilization by writing debt to storage
+        //to minimize test complexity and maintenance cost, manipulate utilization by writing debt to storage
         uint256 slotBorrowerDebt = stdstore
             .target(address(_pool))
             .sig("borrowerDebt()")
             .find();
         assertEq(slotBorrowerDebt, 16391);
 
-        // test lender interest margin for various amounts of utilization
+        //test lender interest margin for various amounts of utilization
         vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(100 * 1e18)));
         assertEq(_poolActualUtilization(), 0.01 * 1e18);
         assertEq(_pool.lenderInterestMargin(),  0.850501675988110546 * 1e18);
