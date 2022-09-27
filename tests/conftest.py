@@ -111,14 +111,15 @@ class ScaledPoolUtils:
 
     def price_to_index_safe(self, price):
         if price < MIN_PRICE:
-            return self.bucket_math.priceToIndex(MIN_PRICE)
+            bucket_math_index = self.bucket_math.priceToIndex(MIN_PRICE)
         elif price > MAX_PRICE:
-            return self.bucket_math.priceToIndex(MAX_PRICE)
+            bucket_math_index = self.bucket_math.priceToIndex(MAX_PRICE)
         else:
-            return self.bucket_math.priceToIndex(price)
+            bucket_math_index = self.bucket_math.priceToIndex(price)
+        return 7388 - (bucket_math_index + 3232)
 
     def index_to_price(self, index):
-        return self.bucket_math.indexToPrice(index)
+        return self.bucket_math.indexToPrice(4156 - index)
 
 
 @pytest.fixture
@@ -342,7 +343,7 @@ class TestUtils:
         htp_index = scaled_pool_utils.price_to_index_safe(htp)
         ptp_index = scaled_pool_utils.price_to_index_safe(int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
 
-        min_bucket_index = max(0, pool.priceToIndex(hpb) - 3)  # HPB
+        min_bucket_index = max(0, scaled_pool_utils.price_to_index_safe(hpb) - 3)  # HPB
         max_bucket_index = max(lup_index, htp_index, ptp_index) + 3
         assert min_bucket_index < max_bucket_index
 
@@ -363,7 +364,8 @@ class TestUtils:
             if i == ptp_index:
                 pointer += "PTP"
             try:
-                (bucket_quote, bucket_collateral, bucket_lpAccumulator, _, bucket_scale, _, _) = pool.bucketAt(i)
+                (price_at, bucket_quote, bucket_collateral, bucket_lpAccumulator, bucket_scale, _, _) = pool.bucketAt(i)
+                assert price == price_at
             except VirtualMachineError as ex:
                 lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
                 continue
@@ -376,7 +378,7 @@ class TestUtils:
         return '\n'.join(lines)
 
     @staticmethod
-    def summarize_pool(pool):
+    def summarize_pool(pool, scaled_pool_utils):
         (minDebtAmount, collateralization, mau, tu) = pool.poolUtilizationInfo()
         (poolSize, loansCount, maxBorrower, pendingInflator) = pool.poolLoansInfo()
         print(f"actual utlzn:   {mau/1e18:>12.1%}  "
@@ -391,7 +393,7 @@ class TestUtils:
         pledged_collateral = pool.pledgedCollateral()
         if pledged_collateral > 0:
             ptp = pool.borrowerDebt() * 10 ** 18 / pledged_collateral
-            ptp_index = pool.priceToIndex(ptp)
+            ptp_index = scaled_pool_utils.price_to_index_safe(ptp)
         else:
             ptp = 0
         print(f"contract q bal: {contract_quote_balance/1e18:>12.1f}  "

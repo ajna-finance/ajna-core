@@ -17,8 +17,8 @@ MIN_UTILIZATION = 0.4
 MAX_UTILIZATION = 0.8
 GOAL_UTILIZATION = 0.6      # borrowers should collateralize such that target utilization approaches this
 MIN_PARTICIPATION = 10000   # in quote token, the minimum amount to lend
-NUM_LENDERS = 25
-NUM_BORROWERS = 25
+NUM_LENDERS = 50
+NUM_BORROWERS = 50
 
 
 # set of buckets deposited into, indexed by lender index
@@ -213,7 +213,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, chain, scaled_pool_utils,
                 if utilization < MAX_UTILIZATION and len(buckets_deposited[user_index]) > 0:
                     price = buckets_deposited[user_index].pop()
                     # try:
-                    remove_quote_token(lenders[user_index], user_index, price, pool)
+                    remove_quote_token(lenders[user_index], user_index, price, pool, scaled_pool_utils)
                     # except VirtualMachineError as ex:
                     #     print(f" ERROR removing liquidity at {price / 10**18:.1f}, "
                     #           f"collateralized at {collateralization / 10**18:.1%}: {ex}")
@@ -281,11 +281,11 @@ def add_quote_token(lender, lender_index, pool, scaled_pool_utils):
     return deposit_price
 
 
-def remove_quote_token(lender, lender_index, price, pool):
-    price_index = pool.priceToIndex(price)
+def remove_quote_token(lender, lender_index, price, pool, scaled_pool_utils):
+    price_index = scaled_pool_utils.price_to_index_safe(price)
     (lp_balance, _) = pool.lenders(price_index, lender)
     if lp_balance > 0:
-        exchange_rate = pool.exchangeRate(price_index)
+        (_, _, _, _, _, exchange_rate, _) = pool.bucketAt(price_index)
         claimable_quote = lp_balance * exchange_rate / 10**36
         print(f" lender   {lender_index:>4} removing {claimable_quote / 10**18:.1f} quote"
               f" from bucket {price_index} ({price / 10**18:.1f}); exchange rate is {exchange_rate/1e27:.8f}")
@@ -299,8 +299,8 @@ def remove_quote_token(lender, lender_index, price, pool):
 def repay(borrower, borrower_index, pool, test_utils):
     dai = Contract(pool.quoteToken())
     (_, pending_debt, collateral_deposited, _, _) = pool.borrowerInfo(borrower)
+    (min_debt, _, _, _) = pool.poolUtilizationInfo()
     quote_balance = dai.balanceOf(borrower)
-    min_debt = pool.poolMinDebtAmount()
 
     if quote_balance < 100 * 10**18:
         print(f" borrower {borrower_index:>4} only has {quote_balance/1e18:.1f} quote token and will not repay debt")
@@ -355,7 +355,7 @@ def test_stable_volatile_one(pool1, lenders, borrowers, scaled_pool_utils, test_
         while chain.time() < end_time:
             # hit the pool an hour at a time, calculating interest and then sending transactions
             actor_id = draw_and_bid(lenders, borrowers, actor_id, pool1, chain, scaled_pool_utils, test_utils)
-            test_utils.summarize_pool(pool1)
+            test_utils.summarize_pool(pool1, scaled_pool_utils)
             print(f"days remaining: {(end_time - chain.time()) / 3600 / 24:.3f}\n")
 
     # Validate test ended with the pool in a meaningful state
