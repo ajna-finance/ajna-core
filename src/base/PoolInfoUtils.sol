@@ -4,11 +4,11 @@ pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
-import './interfaces/IAjnaPool.sol';
+import './interfaces/IPool.sol';
 
 import '../libraries/PoolUtils.sol';
 
-contract AjnaPoolUtils {
+contract PoolInfoUtils {
 
     function borrowerInfo(address ajnaPool_, address borrower_)
         external
@@ -21,7 +21,7 @@ contract AjnaPoolUtils {
             uint256 inflatorSnapshot_  // used to calculate pending interest (WAD)
         )
     {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
 
         uint256 inflatorSnapshot           = pool.inflatorSnapshot();
         uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
@@ -54,7 +54,7 @@ contract AjnaPoolUtils {
             uint256 exchangeRate_
         )
     {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
 
         price_                        = PoolUtils.indexToPrice(index_);
         quoteTokens_                  = pool.bucketDeposit(index_); // quote token in bucket, deposit + interest (WAD)
@@ -86,7 +86,7 @@ contract AjnaPoolUtils {
             uint256 pendingInflator_
         )
     {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
         poolSize_    = pool.depositSize();
         loansCount_  = pool.noOfLoans();
         maxBorrower_ = pool.maxBorrower();
@@ -119,7 +119,7 @@ contract AjnaPoolUtils {
             uint256 lupIndex_
         )
     {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
         hpbIndex_ = pool.depositIndex(1);
         hpb_      = PoolUtils.indexToPrice(hpbIndex_);
         htp_      = Maths.wmul(pool.maxThresholdPrice(), pool.inflatorSnapshot());
@@ -147,7 +147,7 @@ contract AjnaPoolUtils {
             uint256 timeRemaining_
         )
     {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
         uint256 poolDebt = pool.borrowerDebt();
         uint256 poolSize = pool.depositSize();
 
@@ -188,7 +188,7 @@ contract AjnaPoolUtils {
             uint256 poolTargetUtilization_
         )
     {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
 
         uint256 poolDebt       = pool.borrowerDebt();
         uint256 poolCollateral = pool.pledgedCollateral();
@@ -210,7 +210,7 @@ contract AjnaPoolUtils {
         view
         returns (uint256 lenderInterestMargin_)
     {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
 
         uint256 poolDebt       = pool.borrowerDebt();
         uint256 poolCollateral = pool.pledgedCollateral();
@@ -236,7 +236,7 @@ contract AjnaPoolUtils {
     function lup(
         address ajnaPool_
     ) external view returns (uint256) {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
 
         uint256 currentLupIndex = pool.depositIndex(pool.borrowerDebt());
         return PoolUtils.indexToPrice(currentLupIndex);
@@ -245,7 +245,7 @@ contract AjnaPoolUtils {
     function lupIndex(
         address ajnaPool_
     ) external view returns (uint256) {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
 
         return pool.depositIndex(pool.borrowerDebt());
     }
@@ -253,7 +253,7 @@ contract AjnaPoolUtils {
     function hpb(
         address ajnaPool_
     ) external view returns (uint256) {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
 
         uint256 hbpIndex = pool.depositIndex(1);
         return PoolUtils.indexToPrice(hbpIndex);
@@ -262,7 +262,7 @@ contract AjnaPoolUtils {
     function hpbIndex(
         address ajnaPool_
     ) external view returns (uint256) {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
 
         return pool.depositIndex(1);
     }
@@ -270,7 +270,7 @@ contract AjnaPoolUtils {
     function htp(
         address ajnaPool_
     ) external view returns (uint256) {
-        IAjnaPool pool = IAjnaPool(ajnaPool_);
+        IPool pool = IPool(ajnaPool_);
 
         return Maths.wmul(pool.maxThresholdPrice(), pool.inflatorSnapshot());
     }

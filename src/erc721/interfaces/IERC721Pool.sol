@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
-import '../../base/interfaces/IAjnaPool.sol';
+import '../../base/interfaces/IPool.sol';
 
 import './pool/IERC721PoolBorrowerActions.sol';
 import './pool/IERC721PoolLenderActions.sol';
@@ -11,10 +12,10 @@ import './pool/IERC721PoolEvents.sol';
 import './pool/IERC721PoolErrors.sol';
 
 /**
- * @title Ajna ERC20 Pool
+ * @title ERC721 Pool
  */
 interface IERC721Pool is
-    IAjnaPool,
+    IPool,
     IERC721PoolLenderActions,
     IERC721PoolBorrowerActions,
     IERC721PoolLiquidationActions,

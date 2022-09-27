@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool Lender Actions
+ * @title Pool Lender Actions
  */
-interface IAjnaPoolLenderActions {
+interface IPoolLenderActions {
     /**
      *  @notice Called by lenders to add an amount of credit at a specified price bucket.
      *  @param  amount    The amount of quote token to be added by a lender.

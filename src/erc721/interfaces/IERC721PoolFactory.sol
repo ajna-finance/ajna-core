@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
-import { IPoolFactory } from "../../base/interfaces/IPoolFactory.sol";
+import '../../base/interfaces/IPoolFactory.sol';
 
 /**
- *  @title Ajna Pool Factory
+ *  @title ERC721 Pool Factory
  *  @dev   Used to deploy non fungible pools.
  */
 interface IERC721PoolFactory is IPoolFactory {

@@ -9,7 +9,7 @@ import '@openzeppelin/contracts/utils/Multicall.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import './interfaces/IAjnaPool.sol';
+import './interfaces/IPool.sol';
 import './interfaces/IPositionManager.sol';
 
 import '../erc20/interfaces/IERC20Pool.sol';
@@ -73,7 +73,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
-        IAjnaPool pool = IAjnaPool(poolKey[params_.tokenId]);
+        IPool pool = IPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // record price at which a position has added liquidity
@@ -106,7 +106,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
 
-        IAjnaPool pool = IAjnaPool(params_.pool);
+        IPool pool = IPool(params_.pool);
         uint256 bucketDeposit = pool.bucketDeposit(params_.fromIndex);
         uint256 maxQuote      = pool.lpsToQuoteTokens(
             bucketDeposit,
@@ -131,7 +131,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function reedemPositions(RedeemPositionsParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
-        IAjnaPool pool = IAjnaPool(poolKey[params_.tokenId]);
+        IPool pool = IPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // remove price at which a position has added liquidity

@@ -3,9 +3,9 @@
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool Errors
+ * @title Pool Errors
  */
-interface IAjnaPoolErrors {
+interface IPoolErrors {
     /**************************/
     /*** Common Pool Errors ***/
     /**************************/

@@ -7,7 +7,7 @@ import { TokenWithNDecimals } from '../utils/Tokens.sol';
 import '../../erc20/ERC20Pool.sol';
 import '../../erc20/ERC20PoolFactory.sol';
 
-import '../../base/AjnaPoolUtils.sol';
+import '../../base/PoolInfoUtils.sol';
 
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
@@ -29,13 +29,13 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
     TokenWithNDecimals internal _collateral;
     TokenWithNDecimals internal _quote;
     ERC20Pool          internal _pool;
-    AjnaPoolUtils    internal _poolUtils;
+    PoolInfoUtils      internal _poolUtils;
 
     function init(uint256 collateralPrecisionDecimals_, uint256 quotePrecisionDecimals_) internal {
         _collateral = new TokenWithNDecimals("Collateral", "C", uint8(collateralPrecisionDecimals_));
         _quote      = new TokenWithNDecimals("Quote", "Q", uint8(quotePrecisionDecimals_));
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-        _poolUtils  = new AjnaPoolUtils();
+        _poolUtils  = new PoolInfoUtils();
 
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");

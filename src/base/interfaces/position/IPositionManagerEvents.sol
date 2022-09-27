@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Positions Manager Events
+ * @title Positions Manager Events
  */
 interface IPositionManagerEvents {
 

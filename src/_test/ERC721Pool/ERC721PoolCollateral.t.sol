@@ -8,8 +8,8 @@ import '../../erc721/ERC721PoolFactory.sol';
 
 import '../../erc721/interfaces/IERC721Pool.sol';
 import '../../erc721/interfaces/pool/IERC721PoolErrors.sol';
-import '../../base/interfaces/IAjnaPool.sol';
-import '../../base/interfaces/pool/IAjnaPoolErrors.sol';
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
@@ -164,7 +164,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // should fail if trying to pull collateral by an address without pledged collateral
         changePrank(_lender);
-        vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.pullCollateral(tokenIdsToRemove);
 
         changePrank(_borrower2);
@@ -202,7 +202,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 2);
 
         // should fail if borrower tries to pull again same NFTs
-        vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.pullCollateral(tokenIdsToRemove);
     }
 
@@ -371,7 +371,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 3;
         tokenIdsToRemove[1] = 5;
 
-        vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.pullCollateral(tokenIdsToRemove);
     }
 
@@ -395,13 +395,13 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         changePrank(_borrower2);
         tokenIds = new uint256[](1);
         tokenIds[0] = 1;
-        vm.expectRevert(IAjnaPoolErrors.RemoveCollateralInsufficientLP.selector);
+        vm.expectRevert(IPoolErrors.RemoveCollateralInsufficientLP.selector);
         _pool.removeCollateral(tokenIds, 1530);
 
         // should revert if we try to remove a token from a bucket with no collateral
         changePrank(_borrower);
         tokenIds[0] = 1;
-        vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.removeCollateral(tokenIds, 1692);
 
         // remove one token

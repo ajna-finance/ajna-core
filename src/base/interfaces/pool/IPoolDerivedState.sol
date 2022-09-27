@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool Derived State
+ * @title Pool Derived State
  */
-interface IAjnaPoolDerivedState {
+interface IPoolDerivedState {
 
     /**
      *  @notice Returns the amount of quote tokens deposited at a given bucket.

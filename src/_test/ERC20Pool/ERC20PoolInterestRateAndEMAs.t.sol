@@ -28,7 +28,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
     }
 
-    function testAjnaPoolInterestRateIncreaseDecrease() external {
+    function testPoolInterestRateIncreaseDecrease() external {
         Liquidity[] memory amounts = new Liquidity[](5);
         amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
         amounts[1] = Liquidity({amount: 20_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
@@ -220,7 +220,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testAjnaPoolEMAAndTargetUtilizationUpdate() external {
+    function testPoolEMAAndTargetUtilizationUpdate() external {
 
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);

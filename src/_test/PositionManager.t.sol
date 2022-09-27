@@ -5,12 +5,12 @@ import './utils/Tokens.sol';
 import './utils/DSTestPlus.sol';
 
 import '../base/interfaces/IPositionManager.sol';
-import '../base/interfaces/IAjnaPool.sol';
+import '../base/interfaces/IPool.sol';
 
 import '../erc20/ERC20Pool.sol';
 import '../erc20/ERC20PoolFactory.sol';
 
-import '../base/AjnaPoolUtils.sol';
+import '../base/PoolInfoUtils.sol';
 import '../base/PositionManager.sol';
 
 import '../libraries/Maths.sol';
@@ -22,7 +22,7 @@ abstract contract PositionManagerHelperContract is DSTestPlus {
     PositionManager  internal _positionManager;
     Token            internal _collateral;
     Token            internal _quote;
-    AjnaPoolUtils  internal _poolUtils;
+    PoolInfoUtils    internal _poolUtils;
 
     constructor() {
         _collateral      = new Token("Collateral", "C");
@@ -30,7 +30,7 @@ abstract contract PositionManagerHelperContract is DSTestPlus {
         _factory         = new ERC20PoolFactory();
         _positionManager = new PositionManager();
         _pool            = ERC20Pool(_factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-        _poolUtils       = new AjnaPoolUtils();
+        _poolUtils       = new PoolInfoUtils();
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
@@ -127,7 +127,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
-        vm.expectRevert(IAjnaPoolErrors.TransferLPNoAllowance.selector);
+        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
         vm.prank(testAddress);
         _positionManager.memorializePositions(memorializeParams);
 

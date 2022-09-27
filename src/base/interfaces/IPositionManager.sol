@@ -6,7 +6,7 @@ import './position/IPositionManagerOwnerActions.sol';
 import './position/IPositionManagerDerivedState.sol';
 import './position/IPositionManagerEvents.sol';
 /**
- *  @title Ajna Position Manager
+ *  @title Position Manager Interface
  */
 interface IPositionManager is
     IPositionManagerOwnerActions,

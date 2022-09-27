@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool Liquidation Actions
+ * @title Pool Liquidation Actions
  */
-interface IAjnaPoolLiquidationActions {
+interface IPoolLiquidationActions {
     /**
      *  @notice Called by actors to use quote token to arb higher-priced deposit off the book.
      *  @param  borrower Identifies the loan to liquidate.

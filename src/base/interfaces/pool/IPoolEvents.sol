@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool Events
+ * @title Pool Events
  */
-interface IAjnaPoolEvents {
+interface IPoolEvents {
     /**
      *  @notice Emitted when lender adds quote token to the pool.
      *  @param  lender Recipient that added quote tokens.

@@ -9,7 +9,7 @@ import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 import { ERC721Pool }        from '../../erc721/ERC721Pool.sol';
 import { ERC721PoolFactory } from '../../erc721/ERC721PoolFactory.sol';
 
-import { AjnaPoolUtils } from '../../base/AjnaPoolUtils.sol';
+import { PoolInfoUtils } from '../../base/PoolInfoUtils.sol';
 
 import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
@@ -61,7 +61,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     Token              internal _quote;
     ERC20              internal _ajna;
     ERC721Pool         internal _pool;
-    AjnaPoolUtils    internal _poolUtils;
+    PoolInfoUtils      internal _poolUtils;
 
     // TODO: bool for pool type
     constructor() {
@@ -73,7 +73,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.makePersistent(address(_quote));
         _ajna       = ERC20(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079));
         vm.makePersistent(address(_ajna));
-        _poolUtils  = new AjnaPoolUtils();
+        _poolUtils  = new PoolInfoUtils();
         vm.makePersistent(address(_poolUtils));
     }
 

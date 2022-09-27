@@ -3,7 +3,7 @@
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Positions Manager Derived State
+ * @title Positions Manager Derived State
  */
 interface IPositionManagerDerivedState {
 

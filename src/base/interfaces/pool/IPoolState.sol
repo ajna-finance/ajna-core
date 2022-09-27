@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool State
+ * @title Pool State
  */
-interface IAjnaPoolState {
+interface IPoolState {
 
     /**
      *  @notice Returns the `borrowerDebt` state variable.

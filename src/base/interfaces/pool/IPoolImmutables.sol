@@ -2,9 +2,9 @@
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool Immutables
+ * @title Pool Immutables
  */
-interface IAjnaPoolImmutables {
+interface IPoolImmutables {
 
     /**
      *  @notice Returns the address of the pool's collateral token

@@ -1,7 +1,7 @@
 import math
 import pytest
 from sdk import *
-from brownie import test, network, Contract, ERC20PoolFactory, ERC20Pool, AjnaPoolUtils
+from brownie import test, network, Contract, ERC20PoolFactory, ERC20Pool, PoolInfoUtils
 from brownie.exceptions import VirtualMachineError
 from brownie.network.state import TxHistory
 from brownie.utils import color
@@ -63,7 +63,7 @@ def scaled_pool(deployer):
 
 @pytest.fixture
 def pool_utils(deployer):
-    return AjnaPoolUtils.deploy({"from": deployer})
+    return PoolInfoUtils.deploy({"from": deployer})
 
 @pytest.fixture
 def lenders(ajna_protocol, scaled_pool):

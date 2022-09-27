@@ -9,8 +9,8 @@ import '../../erc721/ERC721PoolFactory.sol';
 
 import '../../erc721/interfaces/IERC721Pool.sol';
 import '../../erc721/interfaces/pool/IERC721PoolErrors.sol';
-import '../../base/interfaces/IAjnaPool.sol';
-import '../../base/interfaces/pool/IAjnaPoolErrors.sol';
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
@@ -78,7 +78,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         );
 
         // ensure cannot take when no auction was started
-        vm.expectRevert(IAjnaPoolErrors.NoAuction.selector);
+        vm.expectRevert(IPoolErrors.NoAuction.selector);
         _pool.takeReserves(555 * 1e18);
         (uint256 reserves, , , , ) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(reserves, 168.26923076923085 * 1e18);
@@ -92,7 +92,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         assertEq(reserves, 499.181304561658553626 * 1e18);
         changePrank(_bidder);
         assertEq(claimableReserves, 0);
-        vm.expectRevert(IAjnaPoolErrors.KickNoReserves.selector);
+        vm.expectRevert(IPoolErrors.KickNoReserves.selector);
         _pool.startClaimableReserveAuction();
     }
 
@@ -225,7 +225,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 
         // ensure take reverts after auction ends
         skip(72 hours);
-        vm.expectRevert(IAjnaPoolErrors.NoAuction.selector);
+        vm.expectRevert(IPoolErrors.NoAuction.selector);
         _pool.takeReserves(777 * 1e18);
         _assertReserveAuction(
             ReserveAuctionState({

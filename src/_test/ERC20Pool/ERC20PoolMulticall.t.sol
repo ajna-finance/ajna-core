@@ -7,8 +7,8 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import '../../erc20/ERC20Pool.sol';
 import '../../erc20/ERC20PoolFactory.sol';
 
-import '../../base/interfaces/IAjnaPool.sol';
-import '../../base/interfaces/pool/IAjnaPoolErrors.sol';
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
 import '../../libraries/BucketMath.sol';
 
@@ -99,7 +99,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         );
 
         changePrank(_lender);
-        vm.expectRevert(IAjnaPoolErrors.BorrowLimitIndexReached.selector);
+        vm.expectRevert(IPoolErrors.BorrowLimitIndexReached.selector);
         _pool.multicall(callsToExecute);
     }
 

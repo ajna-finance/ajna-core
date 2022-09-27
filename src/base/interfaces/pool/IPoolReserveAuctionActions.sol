@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool Reserve Auction Actions
+ * @title Pool Reserve Auction Actions
  */
-interface IAjnaPoolReserveAuctionActions {
+interface IPoolReserveAuctionActions {
     /**
      *  @notice Called by actor to start a Claimable Reserve Auction (CRA).
      */

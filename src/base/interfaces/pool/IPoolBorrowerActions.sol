@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool Borrower Actions
+ * @title Pool Borrower Actions
  */
-interface IAjnaPoolBorrowerActions {
+interface IPoolBorrowerActions {
     /**
      *  @notice Called by a borrower to open or expand a position.
      *  @dev    Can only be called if quote tokens have already been added to the pool.

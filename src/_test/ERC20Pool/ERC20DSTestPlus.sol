@@ -9,7 +9,7 @@ import { Token }      from '../utils/Tokens.sol';
 import { ERC20Pool }        from '../../erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from '../../erc20/ERC20PoolFactory.sol';
 
-import { AjnaPoolUtils } from '../../base/AjnaPoolUtils.sol';
+import { PoolInfoUtils } from '../../base/PoolInfoUtils.sol';
 
 import '../../libraries/Maths.sol';
 import '../../libraries/Actors.sol';
@@ -183,13 +183,13 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     Token         internal _collateral;
     Token         internal _quote;
     ERC20Pool     internal _pool;
-    AjnaPoolUtils internal _poolUtils;
+    PoolInfoUtils internal _poolUtils;
 
     constructor() {
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
-        _poolUtils  = new AjnaPoolUtils();
+        _poolUtils  = new PoolInfoUtils();
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {

@@ -6,7 +6,7 @@ import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 import '../../erc721/ERC721Pool.sol';
 import '../../erc721/ERC721PoolFactory.sol';
 
-import '../../base/interfaces/IAjnaPool.sol';
+import '../../base/interfaces/IPool.sol';
 
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';

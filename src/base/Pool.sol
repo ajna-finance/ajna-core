@@ -8,7 +8,7 @@ import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
-import './interfaces/IAjnaPool.sol';
+import './interfaces/IPool.sol';
 
 import '../libraries/Maths.sol';
 import '../libraries/Heap.sol';
@@ -16,7 +16,7 @@ import '../libraries/Book.sol';
 import '../libraries/Actors.sol';
 import '../libraries/PoolUtils.sol';
 
-abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
+abstract contract Pool is Clone, Multicall, IPool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
     using Book      for Book.Deposits;
@@ -53,7 +53,7 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
 
     mapping(uint256 => Book.Bucket)                       public override buckets;   // deposit index -> bucket
     mapping(uint256 => mapping(address => Actors.Lender)) public override lenders;   // deposit index -> lender address -> lender lp [RAY] and deposit timestamp
-    mapping(address => Actors.Borrower)                   public override borrowers; // borrowers book: borrower address -> BorrowerInfo
+    mapping(address => Actors.Borrower)                   public override borrowers; // borrowers book: borrower address -> Borrower struct
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 

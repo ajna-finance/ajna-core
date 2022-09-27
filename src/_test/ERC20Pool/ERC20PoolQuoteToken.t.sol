@@ -6,8 +6,8 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import '../../erc20/ERC20Pool.sol';
 import '../../erc20/ERC20PoolFactory.sol';
 
-import '../../base/interfaces/IAjnaPool.sol';
-import '../../base/interfaces/pool/IAjnaPoolErrors.sol';
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
@@ -38,7 +38,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *          Lender reverts:
      *              attempts to addQuoteToken at invalid price.
      */
-    function testAjnaPoolDepositQuoteToken() external {
+    function testPoolDepositQuoteToken() external {
         assertEq(_hpb(), BucketMath.MIN_PRICE);
 
         // test 10_000 deposit at price of 3_010.892022197881557845
@@ -180,7 +180,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender),        130_000 * 1e18);
     }
 
-    function testAjnaPoolRemoveQuoteToken() external {
+    function testPoolRemoveQuoteToken() external {
         Liquidity[] memory amounts = new Liquidity[](3);
         amounts[0] = Liquidity({amount: 40_000 * 1e18, index: 2549, newLup: BucketMath.MAX_PRICE});
         amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
@@ -331,7 +331,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to remove more quote tokens than available in bucket.
      */
-    function testAjnaPoolRemoveQuoteTokenNotAvailable() external {
+    function testPoolRemoveQuoteTokenNotAvailable() external {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         // lender adds initial quote token
         Liquidity[] memory amounts = new Liquidity[](1);
@@ -355,7 +355,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
 
         changePrank(_lender);
-        vm.expectRevert(IAjnaPoolErrors.RemoveQuoteLUPBelowHTP.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteLUPBelowHTP.selector);
         _pool.removeAllQuoteToken(4550);
     }
 
@@ -365,7 +365,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              Attempts to remove more quote tokens than available from lpBalance.
      *              Attempts to remove quote token when doing so would drive lup below htp.
      */
-    function testAjnaPoolRemoveQuoteTokenRequireChecks() external {
+    function testPoolRemoveQuoteTokenRequireChecks() external {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         // lender adds initial quote token
         Liquidity[] memory amounts = new Liquidity[](4);
@@ -393,23 +393,23 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         // ensure lender cannot withdraw from a bucket with no deposit
         changePrank(_lender1);
         // ensure lender with no LP cannot remove anything
-        vm.expectRevert(IAjnaPoolErrors.RemoveQuoteNoClaim.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteNoClaim.selector);
         _pool.removeAllQuoteToken(4550);
 
         // should revert if insufficient quote token
         changePrank(_lender);
-        vm.expectRevert(IAjnaPoolErrors.RemoveQuoteInsufficientQuoteAvailable.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteInsufficientQuoteAvailable.selector);
         _pool.removeQuoteToken(20_000 * 1e18, 4550);
 
         // should revert if removing quote token from higher price buckets would drive lup below htp
-        vm.expectRevert(IAjnaPoolErrors.RemoveQuoteLUPBelowHTP.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteLUPBelowHTP.selector);
         _pool.removeQuoteToken(20_000 * 1e18, 4551);
 
         // should revert if bucket has enough quote token, but lender has insufficient LP
         changePrank(_lender1);
         _pool.addQuoteToken(20_000 * 1e18, 4550);
         changePrank(_lender);
-        vm.expectRevert(IAjnaPoolErrors.RemoveQuoteInsufficientLPB.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteInsufficientLPB.selector);
         _pool.removeQuoteToken(15_000 * 1e18, 4550);
 
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
@@ -425,7 +425,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
     }
 
-    function testAjnaPoolRemoveQuoteTokenWithDebt() external {
+    function testPoolRemoveQuoteTokenWithDebt() external {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 100 * 1e18);
 
         // lender adds initial quote token
@@ -535,7 +535,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
     }
 
-    function testAjnaPoolMoveQuoteToken() external {
+    function testPoolMoveQuoteToken() external {
         Liquidity[] memory amounts = new Liquidity[](3);
         amounts[0] = Liquidity({amount: 40_000 * 1e18, index: 2549, newLup: BucketMath.MAX_PRICE});
         amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
@@ -634,7 +634,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              Attempts to move quote token from bucket with available collateral.
      *              Attempts to move quote token when doing so would drive lup below htp.
      */
-    function testAjnaPoolMoveQuoteTokenRequireChecks() external {
+    function testPoolMoveQuoteTokenRequireChecks() external {
         // test setup
         _mintCollateralAndApproveTokens(_lender1, _collateral.balanceOf(_lender1) + 100_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_lender1) + 1_500_000 * 1e18);
@@ -653,7 +653,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
 
         // should revert if moving quote token to the existing price
-        vm.expectRevert(IAjnaPoolErrors.MoveQuoteToSamePrice.selector);
+        vm.expectRevert(IPoolErrors.MoveQuoteToSamePrice.selector);
         _pool.moveQuoteToken(5_000 * 1e18, 4549, 4549);
 
         // borrow all available quote in the higher priced original 3 buckets, as well as some of the new lowest price bucket
@@ -670,7 +670,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
         // should revert if movement would drive lup below htp
         changePrank(_lender);
-        vm.expectRevert(IAjnaPoolErrors.MoveQuoteLUPBelowHTP.selector);
+        vm.expectRevert(IPoolErrors.MoveQuoteLUPBelowHTP.selector);
         _pool.moveQuoteToken(40_000 * 1e18, 4549, 6000);
 
         // should be able to moveQuoteToken if properly specified

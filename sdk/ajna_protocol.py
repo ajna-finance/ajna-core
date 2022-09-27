@@ -63,7 +63,7 @@ class AjnaProtocol:
             interest_rate: default interest rate of pool
 
         Returns:
-            AjnaPool
+            Pool
         """
 
         deploy_tx = self.ajna_factory.deployPool(
@@ -83,7 +83,7 @@ class AjnaProtocol:
             quote_token_address
         )
 
-        return AjnaPool.at(pool_address)
+        return Pool.at(pool_address)
 
     def add_token(self, token_address: str, reserve_address: str) -> None:
         """
@@ -143,7 +143,7 @@ class AjnaProtocol:
             force_deploy: if True, pool is deployed if it is not found.
 
         Returns:
-            AjnaPool
+            Pool
         """
 
         pool_address = self.ajna_factory.deployedPools(
@@ -159,7 +159,7 @@ class AjnaProtocol:
         )
 
         if is_deployed:
-            return AjnaPool.at(pool_address)
+            return Pool.at(pool_address)
 
         if force_deploy:
             return self.deploy_erc20_pool(collateral_address, quote_token_address)
