@@ -7,8 +7,6 @@ import { ERC20 }          from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import { ERC20Burnable }  from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import { SafeERC20 }      from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Multicall }      from "@openzeppelin/contracts/utils/Multicall.sol";
-import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
-import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { IScaledPool }    from "./interfaces/IScaledPool.sol";
 
@@ -30,8 +28,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
 
     uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
     uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
-    uint256 public constant CUBIC_ROOT_100      = 4.641588833612778892 * 1e18;
-    uint256 public constant ONE_THIRD           = 0.333333333333333334 * 1e18;
 
     uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
@@ -524,7 +520,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (curDebt_ != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
             if (elapsed != 0 ) {
-                uint256 factor = _pendingInterestFactor(elapsed);
+                uint256 factor = BucketMath.pendingInterestFactor(elapsed, interestRate);
                 inflatorSnapshot = Maths.wmul(inflatorSnapshot, factor);
                 lastInflatorSnapshotUpdate = block.timestamp;
 
@@ -535,7 +531,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
                     uint256 depositAboveHtp = _prefixSum(htpIndex);
 
                     if (depositAboveHtp != 0) {
-                        uint256 netInterestMargin = _lenderInterestMargin(_poolActualUtilization(curDebt_, pledgedCollateral));
+                        uint256 netInterestMargin = BucketMath.lenderInterestMargin(_poolActualUtilization(curDebt_, pledgedCollateral));
                         uint256 newInterest  = Maths.wmul(netInterestMargin, Maths.wmul(factor - Maths.WAD, curDebt_));
                         uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;
                         _mult(htpIndex, lenderFactor);
@@ -556,14 +552,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
             newDebt_ = Maths.wmul(borrowerDebt_, Maths.wdiv(poolInflator_, borrowerInflator_));
         }
         newInflator_ = poolInflator_;
-    }
-
-    function _auctionPrice(uint256 referencePrice, uint256 kickTime) internal view returns (uint256 price_) {
-        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime) * 1e18, 1 hours * 1e18);
-        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
-
-        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
-        price_ = 10 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
     }
 
     function _claimableReserves() internal view returns (uint256 claimable_) {
@@ -699,12 +687,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         return Maths.max(Maths.wdiv(interestRate, WAD_WEEKS_PER_YEAR), minFee);
     }
 
-    function _pendingInterestFactor(uint256 elapsed_) internal view returns (uint256) {
-        return PRBMathUD60x18.exp((interestRate * elapsed_) / 365 days);
-    }
-
     function _pendingInflator() internal view returns (uint256) {
-        return Maths.wmul(inflatorSnapshot, _pendingInterestFactor(block.timestamp - lastInflatorSnapshotUpdate));
+        return Maths.wmul(inflatorSnapshot, BucketMath.pendingInterestFactor(block.timestamp - lastInflatorSnapshotUpdate, interestRate));
     }
 
     function _t0ThresholdPrice(uint256 debt_, uint256 collateral_, uint256 inflator_) internal pure returns (uint256 tp_) {
@@ -725,13 +709,6 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (numLoans != 0) momFactor_ = Maths.wdiv(Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans * 1e18))), inflator);
     }
 
-    function _lenderInterestMargin(uint256 mau) internal pure returns (uint256) {
-        // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
-        // cubic root of the percentage of meaningful unutilized deposit
-        uint256 crpud = PRBMathUD60x18.pow(100 * 1e18 - Maths.wmul(Maths.min(mau, 1e18), 100 * 1e18), ONE_THIRD);
-        return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_100), 0.15 * 1e18);
-    }
-
 
     /**************************/
     /*** External Functions ***/
@@ -742,7 +719,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         uint256 referencePrice_,
         uint256 kickTime_
     ) external view returns (uint256) {
-        return _auctionPrice(referencePrice_, kickTime_);
+        return BucketMath.auctionPrice(referencePrice_, kickTime_);
     }
 
     function borrowerCollateralization(
@@ -803,7 +780,7 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     }
 
     function lenderInterestMargin() external view returns (uint256 lenderInterestMargin_) {
-        return _lenderInterestMargin(_poolActualUtilization(borrowerDebt, pledgedCollateral));
+        return BucketMath.lenderInterestMargin(_poolActualUtilization(borrowerDebt, pledgedCollateral));
     }
 
     function lpsToQuoteTokens(

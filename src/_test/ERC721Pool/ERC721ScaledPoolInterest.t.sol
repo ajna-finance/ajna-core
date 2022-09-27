@@ -45,8 +45,6 @@ abstract contract ERC721ScaledInterestTest is ERC721HelperContract {
 
 contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
     function createPool() external override returns (ERC721Pool) {
-        // deploy collection pool
-        ERC721Pool collectionPool = _deployCollectionPool();
 
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](6);
@@ -213,51 +211,13 @@ contract ERC721ScaledCollectionInterestTest is ERC721ScaledInterestTest {
 
     function testLenderInterestMargin() external {
         // check empty pool
-        assertEq(_pool.lenderInterestMargin(), 0.85 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(0), 0.85 * 1e18);
 
-        // lender adds liquidity
-        changePrank(_lender);
-        _pool.addQuoteToken(10_000 * 1e18, 0);  // all deposit above the PTP
-        assertEq(_poolActualUtilization(), 0);
-
-        // borrower pledges a single NFT
-        changePrank(_borrower);
-        uint256[] memory tokenIdsToAdd = new uint256[](1);
-        tokenIdsToAdd[0] = 1;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
-        assertEq(_poolActualUtilization(), 0);
-        assertEq(_pool.pledgedCollateral(), 1 * 1e18);
-
-        // to minimize test complexity and maintenance cost, manipulate utilization by writing debt to storage
-        uint256 slotBorrowerDebt = stdstore
-            .target(address(_pool))
-            .sig("borrowerDebt()")
-            .find();
-        assertEq(slotBorrowerDebt, 16391);
-
-        // test lender interest margin for various amounts of utilization
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(100 * 1e18)));
-        assertEq(_poolActualUtilization(), 0.01 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  0.850501675988110546 * 1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(2_300 * 1e18)));
-        assertEq(_poolActualUtilization(), 0.23 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  0.862515153185046657 * 1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(6_700 * 1e18)));
-        assertEq(_poolActualUtilization(), 0.67 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  0.896343651549832236 * 1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(8_800 * 1e18)));
-        assertEq(_poolActualUtilization(), 0.88 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  0.926013637770085897 * 1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(10_000 * 1e18)));
-        assertEq(_poolActualUtilization(), 1 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(10_300 * 1e18)));
-        assertEq(_poolActualUtilization(), 1.03 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  1e18);
+        assertEq(BucketMath.lenderInterestMargin(0.01 * 1e18),  0.850501675988110546 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(0.23 * 1e18),  0.862515153185046657 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(0.67 * 1e18),  0.896343651549832236 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(0.88 * 1e18),  0.926013637770085897 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(1 * 1e18),  1e18);
+        assertEq(BucketMath.lenderInterestMargin(1.03 * 1e18),  1e18);
     }
 }
