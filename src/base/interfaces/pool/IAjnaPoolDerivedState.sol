@@ -38,10 +38,4 @@ interface IAjnaPoolDerivedState {
         uint256 index
     ) external view returns (uint256 quoteAmount);
 
-
-    function noOfLoans() external view returns (uint256);
-
-    function maxBorrower() external view returns (address);
-
-    function maxThresholdPrice() external view returns (uint256);
 }

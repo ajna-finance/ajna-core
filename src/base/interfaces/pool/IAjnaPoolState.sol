@@ -47,25 +47,6 @@ interface IAjnaPoolState {
         );
 
     /**
-     *  @notice Mapping of buckets indexes and owner addresses to {Lender} structs.
-     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
-     *  @param  index            Bucket index.
-     *  @param  lp               Address of the liquidity provider.
-     *  @return lpBalance        Amount of LPs owner has in current bucket.
-     *  @return lastQuoteDeposit Time the user last deposited quote token.
-     */
-    function lenders(
-        uint256 index,
-        address lp
-    )
-        external
-        view
-        returns (
-            uint256 lpBalance,
-            uint256 lastQuoteDeposit
-    );
-
-    /**
      *  @notice Returns the `debtEma` state variable.
      *  @return Exponential debt moving average.
      */
@@ -96,6 +77,25 @@ interface IAjnaPoolState {
     function lastInflatorSnapshotUpdate() external view returns (uint256);
 
     /**
+     *  @notice Mapping of buckets indexes and owner addresses to {Lender} structs.
+     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
+     *  @param  index            Bucket index.
+     *  @param  lp               Address of the liquidity provider.
+     *  @return lpBalance        Amount of LPs owner has in current bucket.
+     *  @return lastQuoteDeposit Time the user last deposited quote token.
+     */
+    function lenders(
+        uint256 index,
+        address lp
+    )
+        external
+        view
+        returns (
+            uint256 lpBalance,
+            uint256 lastQuoteDeposit
+    );
+
+    /**
      *  @notice Returns the amount of liquidation bond across all liquidators.
      *  @return Total amount of quote token being escrowed.
      */
@@ -106,6 +106,24 @@ interface IAjnaPoolState {
      *  @return Exponential LUP * pledged collateral moving average.
      */
     function lupColEma() external view returns (uint256);
+
+    /**
+     *  @notice Returns the borrower address with highest threshold price in pool.
+     *  @return Borrower address with highest threshold price.
+     */
+    function maxBorrower() external view returns (address);
+
+    /**
+     *  @notice Returns the highest threshold price in pool.
+     *  @return Highest threshold price in pool.
+     */
+    function maxThresholdPrice() external view returns (uint256);
+
+    /**
+     *  @notice Returns the total number of loans within pool.
+     *  @return Total number of loans.
+     */
+    function noOfLoans() external view returns (uint256);
 
     /**
      *  @notice Returns the `pledgedCollateral` state variable.
@@ -124,4 +142,5 @@ interface IAjnaPoolState {
      *  @return Time a Claimable Reserve Auction was last kicked.
      */
     function reserveAuctionKicked() external view returns (uint256);
+
 }
