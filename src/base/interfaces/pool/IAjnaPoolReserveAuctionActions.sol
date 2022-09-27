@@ -2,9 +2,9 @@
 pragma solidity 0.8.14;
 
 /**
- * @title Ajna Pool Buy and Burn Actions
+ * @title Ajna Pool Reserve Auction Actions
  */
-interface IAjnaPoolBuybackActions {
+interface IAjnaPoolReserveAuctionActions {
     /**
      *  @notice Called by actor to start a Claimable Reserve Auction (CRA).
      */

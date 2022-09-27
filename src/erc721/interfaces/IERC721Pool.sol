@@ -5,7 +5,7 @@ import '../../base/interfaces/IAjnaPool.sol';
 
 import './pool/IERC721PoolBorrowerActions.sol';
 import './pool/IERC721PoolLenderActions.sol';
-import './pool/IERC721PoolLiquidationsActions.sol';
+import './pool/IERC721PoolLiquidationActions.sol';
 import './pool/IERC721PoolState.sol';
 import './pool/IERC721PoolEvents.sol';
 import './pool/IERC721PoolErrors.sol';
@@ -17,7 +17,7 @@ interface IERC721Pool is
     IAjnaPool,
     IERC721PoolLenderActions,
     IERC721PoolBorrowerActions,
-    IERC721PoolLiquidationsActions,
+    IERC721PoolLiquidationActions,
     IERC721PoolState,
     IERC721PoolEvents,
     IERC721PoolErrors

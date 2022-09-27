@@ -4,8 +4,8 @@ pragma solidity 0.8.14;
 
 import './pool/IAjnaPoolLenderActions.sol';
 import './pool/IAjnaPoolBorrowerActions.sol';
-import './pool/IAjnaPoolLiquidationsActions.sol';
-import './pool/IAjnaPoolBuybackActions.sol';
+import './pool/IAjnaPoolLiquidationActions.sol';
+import './pool/IAjnaPoolReserveAuctionActions.sol';
 import './pool/IAjnaPoolImmutables.sol';
 import './pool/IAjnaPoolState.sol';
 import './pool/IAjnaPoolDerivedState.sol';
@@ -18,8 +18,8 @@ import './pool/IAjnaPoolErrors.sol';
 interface IAjnaPool is
     IAjnaPoolLenderActions,
     IAjnaPoolBorrowerActions,
-    IAjnaPoolLiquidationsActions,
-    IAjnaPoolBuybackActions,
+    IAjnaPoolLiquidationActions,
+    IAjnaPoolReserveAuctionActions,
     IAjnaPoolImmutables,
     IAjnaPoolState,
     IAjnaPoolDerivedState,

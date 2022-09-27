@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 /**
  * @title Ajna Pool Liquidation Actions
  */
-interface IAjnaPoolLiquidationsActions {
+interface IAjnaPoolLiquidationActions {
     /**
      *  @notice Called by actors to use quote token to arb higher-priced deposit off the book.
      *  @param  borrower Identifies the loan to liquidate.
