@@ -73,7 +73,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
-        IAjnaPool pool      = IAjnaPool(poolKey[params_.tokenId]);
+        IAjnaPool pool = IAjnaPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // record price at which a position has added liquidity
@@ -106,7 +106,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
 
-        IAjnaPool pool      = IAjnaPool(params_.pool);
+        IAjnaPool pool = IAjnaPool(params_.pool);
         uint256 bucketDeposit = pool.bucketDeposit(params_.fromIndex);
         uint256 maxQuote      = pool.lpsToQuoteTokens(
             bucketDeposit,
@@ -131,7 +131,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function reedemPositions(RedeemPositionsParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
-        IAjnaPool pool      = IAjnaPool(poolKey[params_.tokenId]);
+        IAjnaPool pool = IAjnaPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // remove price at which a position has added liquidity

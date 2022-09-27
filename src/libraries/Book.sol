@@ -139,7 +139,7 @@ library Book {
 
     struct Deposits {
         uint256[8193] values;  // Array of values in the FenwickTree.
-        uint256[8193] scaling; // Array of values in the nested scaling FenwickTree.
+        uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
     }
 
     function isDepositIndex(
