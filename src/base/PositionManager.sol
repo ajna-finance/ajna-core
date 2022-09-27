@@ -91,7 +91,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // update pool lp token accounting and transfer ownership of lp tokens to PositionManager contract
         emit MemorializePosition(params_.owner, params_.tokenId);
-        pool.transferLPTokens(params_.indexes, params_.owner, address(this));
+        pool.transferLPTokens(params_.owner, address(this), params_.indexes);
     }
 
     function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
@@ -109,9 +109,9 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         IAjnaPool pool      = IAjnaPool(params_.pool);
         uint256 bucketDeposit = pool.bucketDeposit(params_.fromIndex);
         uint256 maxQuote      = pool.lpsToQuoteTokens(
-            params_.fromIndex,
             bucketDeposit,
-            lps[params_.tokenId][params_.fromIndex]
+            lps[params_.tokenId][params_.fromIndex],
+            params_.fromIndex
         );
 
         // update prices set at which a position has liquidity
@@ -121,7 +121,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // move quote tokens in pool
         emit MoveLiquidity(params_.owner, params_.tokenId);
-        (uint256 lpbAmountFrom, uint256 lpbAmountTo) = pool.moveQuoteToken(params_.fromIndex, params_.toIndex, maxQuote);
+        (uint256 lpbAmountFrom, uint256 lpbAmountTo) = pool.moveQuoteToken(maxQuote, params_.fromIndex, params_.toIndex);
 
         // update tracked LPs
         lps[params_.tokenId][params_.fromIndex] -= lpbAmountFrom;
@@ -141,7 +141,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             uint256 lpAmount = lps[params_.tokenId][params_.indexes[i]];
             delete lps[params_.tokenId][params_.indexes[i]];
 
-            pool.approveLpOwnership(params_.indexes[i], lpAmount, params_.owner);
+            pool.approveLpOwnership(params_.owner, params_.indexes[i], lpAmount);
 
             // increment call counter in gas efficient way by skipping safemath checks
             unchecked {
@@ -151,7 +151,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // update pool lp token accounting and transfer ownership of lp tokens from PositionManager contract
         emit RedeemPosition(params_.owner, params_.tokenId);
-        pool.transferLPTokens(params_.indexes, address(this), params_.owner);
+        pool.transferLPTokens(address(this), params_.owner, params_.indexes);
     }
 
     /**************************/
@@ -167,18 +167,18 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /*** View Functions ***/
     /**********************/
 
-    function getLPTokens(uint256 index_, uint256 tokenId_) external override view returns (uint256) {
+    function getLPTokens(uint256 tokenId_, uint256 index_) external override view returns (uint256) {
         return lps[tokenId_][index_];
     }
 
-    function isIndexInPosition(uint256 index_, uint256 tokenId_) external override view returns (bool) {
+    function isIndexInPosition(uint256 tokenId_, uint256 index_) external override view returns (bool) {
         return positionPrices[tokenId_].contains(index_);
     }
 
     function tokenURI(uint256 tokenId_) public view override(ERC721) returns (string memory) {
         require(_exists(tokenId_));
 
-        ConstructTokenURIParams memory params = ConstructTokenURIParams(positionPrices[tokenId_].values(), tokenId_, poolKey[tokenId_]);
+        ConstructTokenURIParams memory params = ConstructTokenURIParams(tokenId_, poolKey[tokenId_], positionPrices[tokenId_].values());
         return constructTokenURI(params);
     }
 

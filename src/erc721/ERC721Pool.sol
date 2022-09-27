@@ -93,10 +93,10 @@ contract ERC721Pool is IERC721Pool, AjnaPool {
     /***********************************/
 
     function pledgeCollateral(
-        uint256[] calldata tokenIdsToPledge_,
-        address borrower_
+        address borrower_,
+        uint256[] calldata tokenIdsToPledge_
     ) external override {
-        _pledgeCollateral(Maths.wad(tokenIdsToPledge_.length), borrower_);
+        _pledgeCollateral(borrower_, Maths.wad(tokenIdsToPledge_.length));
 
         // move collateral from sender to pool
         emit PledgeCollateralNFT(borrower_, tokenIdsToPledge_);
@@ -151,10 +151,10 @@ contract ERC721Pool is IERC721Pool, AjnaPool {
 
     // TODO: does pool state need to be updated with collateral deposited as well?
     function addCollateral(
-        uint256 index_,
-        uint256[] calldata tokenIdsToAdd_
+        uint256[] calldata tokenIdsToAdd_,
+        uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        bucketLPs_ = _addCollateral(index_, Maths.wad(tokenIdsToAdd_.length));
+        bucketLPs_ = _addCollateral(Maths.wad(tokenIdsToAdd_.length), index_);
 
         // move required collateral from sender to pool
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
@@ -177,10 +177,10 @@ contract ERC721Pool is IERC721Pool, AjnaPool {
     // TODO: finish implementing
     // TODO: check for reentrancy
     function removeCollateral(
-        uint256 index_,
-        uint256[] calldata tokenIdsToRemove_
+        uint256[] calldata tokenIdsToRemove_,
+        uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        bucketLPs_ = _removeCollateral(index_, Maths.wad(tokenIdsToRemove_.length));
+        bucketLPs_ = _removeCollateral(Maths.wad(tokenIdsToRemove_.length), index_);
 
         emit RemoveCollateralNFT(msg.sender, index_, tokenIdsToRemove_);
         // move collateral from pool to lender
@@ -203,7 +203,7 @@ contract ERC721Pool is IERC721Pool, AjnaPool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function arbTake(uint256 index_, uint256 amount_, address borrower_) external override {
+    function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit ArbTake(borrower_, index_, amount_, 0, 0);
     }
@@ -216,7 +216,7 @@ contract ERC721Pool is IERC721Pool, AjnaPool {
         emit ClearNFT(borrower_, _hpbIndex(), debtCleared, tokenIdsReturned, 0);
     }
 
-    function depositTake(uint256 index_, uint256 amount_, address borrower_) external override {
+    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }

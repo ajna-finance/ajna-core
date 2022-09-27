@@ -40,14 +40,14 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         uint16 bucketId = 1663;
         uint256 bucketPrice = _indexToPrice(bucketId);
         assertEq(bucketPrice, 251_183.992399245533703810 * 1e18);
-        _pool.addQuoteToken(bucketId, 200_000 * 1e18);
+        _pool.addQuoteToken(200_000 * 1e18, bucketId);
 
         // borrower draws debt
         changePrank(_borrower);
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 1;
-        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
-        _pool.borrow(bucketId, 175_000 * 1e18);
+        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+        _pool.borrow(175_000 * 1e18, bucketId);
 
         _assertPool(
             PoolState({
@@ -87,7 +87,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
     function testUnclaimableReserves() external {
         // borrower repays partial debt, ensure cannot kick when there are no claimable reserves
         changePrank(_borrower);
-        _pool.repay(50_000 * 1e18, _borrower);
+        _pool.repay(_borrower, 50_000 * 1e18);
         (uint256 reserves, uint256 claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(reserves, 499.181304561658553626 * 1e18);
         changePrank(_bidder);
@@ -99,7 +99,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
     function testReserveAuctionPricing() external {
         // borrower repays all debt (auction for full reserves)
         changePrank(_borrower);
-        _pool.repay(205_000 * 1e18, _borrower);
+        _pool.repay(_borrower, 205_000 * 1e18);
         (uint256 reserves, , , , ) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(reserves, 499.181304561658553626 * 1e18);
 
@@ -146,7 +146,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
     function testClaimableReserveAuction() external {
         // borrower repays all debt (auction for full reserves)
         changePrank(_borrower);
-        _pool.repay(205_000 * 1e18, _borrower);
+        _pool.repay(_borrower, 205_000 * 1e18);
         (uint256 reserves, uint256 claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(reserves, 499.181304561658553626 * 1e18);
 
@@ -241,7 +241,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
     function testReserveAuctionPartiallyTaken() external {
         // borrower repays partial debt (auction for full reserves)
         changePrank(_borrower);
-        _pool.repay(100_000 * 1e18, _borrower);
+        _pool.repay(_borrower, 100_000 * 1e18);
         (uint256 reserves, uint256 claimableReserves, , , ) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(reserves, 499.181304561658553626 * 1e18);
         uint256 expectedReserves = claimableReserves;
@@ -293,7 +293,7 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
         // after more interest accumulates, borrower repays remaining debt
         skip(4 weeks);
         changePrank(_borrower);
-        _pool.repay(105_000 * 1e18, _borrower);
+        _pool.repay(_borrower, 105_000 * 1e18);
 
         // start an auction, confirm old claimable reserves are included alongside new claimable reserves
         skip(1 days);

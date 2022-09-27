@@ -8,12 +8,12 @@ interface IERC721PoolBorrowerActions {
 
     /**
      *  @notice Emitted when borrower locks collateral in the pool.
-     *  @param  tokenIds Array of tokenIds to be added to the pool.
      *  @param  borrower The address of borrower to pledge collateral for.
+     *  @param  tokenIds Array of tokenIds to be added to the pool.
      */
     function pledgeCollateral(
-        uint256[] calldata tokenIds,
-        address borrower
+        address borrower,
+        uint256[] calldata tokenIds
     ) external;
 
     /**

@@ -72,7 +72,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
 
         // lender adds initial quote to pool
         changePrank(_lender);
-        _pool.addQuoteToken(testIndex, 10_000 * 1e18);
+        _pool.addQuoteToken(10_000 * 1e18, testIndex);
 
         // check bucket state
         (, quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), testIndex);
@@ -90,7 +90,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         emit AddCollateralNFT(_bidder, testIndex, tokenIdsToAdd);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_bidder, address(_pool), tokenIdsToAdd[0]);
-        uint256 lpBalanceChange = _pool.addCollateral(testIndex, tokenIdsToAdd);
+        uint256 lpBalanceChange = _pool.addCollateral(tokenIdsToAdd, testIndex);
 
         // check bucket state
         (, quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), testIndex);
@@ -130,7 +130,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         emit Transfer(address(_pool), _lender, tokenIdsToRemove[1]);
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _lender, tokenIdsToRemove[2]);
-        _pool.removeCollateral(testIndex, tokenIdsToRemove);
+        _pool.removeCollateral(tokenIdsToRemove, testIndex);
         (, quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), testIndex);
         assertEq(quote,      967.323933406355326465 * 1e18);
         assertEq(collateral, 0);
@@ -155,13 +155,13 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
     function testSubsetPurchaseQuoteWithDebt() external {
         // lenders add liquidity
         changePrank(_lender);
-        _pool.addQuoteToken(2350, 20_000 * 1e18);
-        _pool.addQuoteToken(2351, 10_000 * 1e18);
-        _pool.addQuoteToken(2352, 10_000 * 1e18);
+        _pool.addQuoteToken(20_000 * 1e18, 2350);
+        _pool.addQuoteToken(10_000 * 1e18, 2351);
+        _pool.addQuoteToken(10_000 * 1e18, 2352);
 
         changePrank(_lender2);
-        _pool.addQuoteToken(2350, 4_000 * 1e18);
-        _pool.addQuoteToken(2352, 5_000 * 1e18);
+        _pool.addQuoteToken(4_000 * 1e18, 2350);
+        _pool.addQuoteToken(5_000 * 1e18, 2352);
         skip(3600);
 
         // borrower draws debt
@@ -171,8 +171,8 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
         tokenIdsToAdd[3] = 51;
-        _pool.pledgeCollateral(tokenIdsToAdd, _borrower);
-        _pool.borrow(2351, 24_000 * 1e18);
+        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+        _pool.borrow(24_000 * 1e18, 2351);
         assertEq(_lup(), _indexToPrice(2351));
         skip(86400);
 
@@ -196,7 +196,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         emit AddCollateralNFT(_bidder, 2350, tokenIdsToAdd);
         vm.expectEmit(true, true, true, true);
         emit Transfer(_bidder, address(_pool), tokenIdsToAdd[0]);
-        _pool.addCollateral(2350, tokenIdsToAdd);
+        _pool.addCollateral(tokenIdsToAdd, 2350);
         
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(_bidder, 2350, amountWithInterest, _indexToPrice(2352));
@@ -214,7 +214,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 65;
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateralNFT(_bidder, 2350, tokenIdsToRemove);
-        (uint256 amount) = _pool.removeCollateral(2350, tokenIdsToRemove);
+        (uint256 amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
         (uint256 lpBalance, ) = _pool.lenders(2350, _bidder);
         assertEq(lpBalance, 490.747680359153625246182861754 * 1e27);
         skip(7200);
@@ -227,20 +227,20 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         tokenIdsToRemove[2] = 5;
         tokenIdsToRemove[3] = 51;
         vm.expectRevert(IAjnaPoolErrors.PullCollateralInsufficientCollateral.selector);
-        (amount) = _pool.removeCollateral(2350, tokenIdsToRemove);
+        (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
 
         // should revert if lender attempts to remove collateral not available in the bucket
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 1;
         vm.expectRevert(IERC721PoolErrors.TokenNotDeposited.selector);
-        (amount) = _pool.removeCollateral(2350, tokenIdsToRemove);
+        (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
 
         // lender exchanges their lp for collateral
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 73;
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateralNFT(_lender, 2350, tokenIdsToRemove);
-        (amount) = _pool.removeCollateral(2350, tokenIdsToRemove);
+        (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
         (lpBalance, ) = _pool.lenders(2350, _lender);
         assertEq(lpBalance, 11_836.417439880282124917939038083 * 1e27);
         skip(3600);
@@ -256,7 +256,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 74;
         vm.expectRevert(IAjnaPoolErrors.RemoveCollateralInsufficientLP.selector);
-        (amount) = _pool.removeCollateral(2350, tokenIdsToRemove);
+        (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
     }
 
 }

@@ -76,8 +76,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     /*********************************/
 
     function addQuoteToken(
-        uint256 index_,
-        uint256 quoteTokenAmountToAdd_
+        uint256 quoteTokenAmountToAdd_,
+        uint256 index_
     ) external override returns (uint256 bucketLPs_) {
         PoolState memory poolState = _getPoolState();
 
@@ -101,17 +101,17 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     }
 
     function approveLpOwnership(
+        address allowedNewOwner_,
         uint256 index_,
-        uint256 lpsAmountToApprove_,
-        address allowedNewOwner_
+        uint256 lpsAmountToApprove_
     ) external {
         _lpTokenAllowances[msg.sender][allowedNewOwner_][index_] = lpsAmountToApprove_;
     }
 
     function moveQuoteToken(
+        uint256 maxQuoteTokenAmountToMove_,
         uint256 fromIndex_,
-        uint256 toIndex_,
-        uint256 maxQuoteTokenAmountToMove_
+        uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveQuoteToSamePrice();
 
@@ -194,8 +194,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     }
 
     function removeQuoteToken(
-        uint256 index_,
-        uint256 quoteTokenAmountToRemove_
+        uint256 quoteTokenAmountToRemove_,
+        uint256 index_
     ) external override returns (uint256 bucketLPs_) {
 
         PoolState memory poolState = _getPoolState();
@@ -221,10 +221,10 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     }
 
     function transferLPTokens(
-        uint256[] calldata indexes_,
         address owner_,
-        address newOwner_
-    ) external {
+        address newOwner_,
+        uint256[] calldata indexes_)
+    external {
         uint256 tokensTransferred;
         uint256 indexesLength = indexes_.length;
 
@@ -266,8 +266,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     /***********************************/
 
     function borrow(
-        uint256 limitIndex_,
-        uint256 amountToBorrow_
+        uint256 amountToBorrow_,
+        uint256 limitIndex_
     ) external override {
 
         PoolState memory poolState = _getPoolState();
@@ -333,10 +333,10 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     }
 
     function repay(
-        uint256 maxQuoteTokenAmountToRepay_,
-        address borrower_
+        address borrower_,
+        uint256 maxQuoteTokenAmountToRepay_
     ) external override {
-        _repayDebt(maxQuoteTokenAmountToRepay_, borrower_);
+        _repayDebt(borrower_, maxQuoteTokenAmountToRepay_);
     }
 
 
@@ -384,8 +384,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     /***********************************/
 
     function _pledgeCollateral(
-        uint256 collateralAmountToPledge_,
-        address borrower_
+        address borrower_,
+        uint256 collateralAmountToPledge_
     ) internal {
 
         PoolState memory poolState = _getPoolState();
@@ -463,8 +463,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     }
 
     function _repayDebt(
-        uint256 maxQuoteTokenAmountToRepay_,
-        address borrower_
+        address borrower_,
+        uint256 maxQuoteTokenAmountToRepay_
     ) internal {
 
         PoolState memory poolState = _getPoolState();
@@ -519,8 +519,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     /*********************************/
 
     function _addCollateral(
-        uint256 index_,
-        uint256 collateralAmountToAdd_
+        uint256 collateralAmountToAdd_,
+        uint256 index_
     ) internal returns (uint256 bucketLPs_) {
         PoolState memory poolState = _getPoolState();
 
@@ -537,8 +537,8 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     }
 
     function _removeCollateral(
-        uint256 index_,
-        uint256 collateralAmountToRemove_
+        uint256 collateralAmountToRemove_,
+        uint256 index_
     ) internal returns (uint256 bucketLPs_) {
 
         PoolState memory poolState = _getPoolState();
@@ -744,9 +744,9 @@ abstract contract AjnaPool is Clone, Multicall, IAjnaPool {
     }
 
     function lpsToQuoteTokens(
-        uint256 index_,
         uint256 deposit_,
-        uint256 lpTokens_
+        uint256 lpTokens_,
+        uint256 index_
     ) external view override returns (uint256 quoteTokenAmount_) {
         (quoteTokenAmount_, , ) = buckets.lpsToQuoteToken(
             index_,

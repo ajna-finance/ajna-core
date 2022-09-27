@@ -61,10 +61,10 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
     /***********************************/
 
     function pledgeCollateral(
-        uint256 collateralAmountToPledge_,
-        address borrower_
+        address borrower_,
+        uint256 collateralAmountToPledge_
     ) external override {
-        _pledgeCollateral(collateralAmountToPledge_, borrower_);
+        _pledgeCollateral(borrower_, collateralAmountToPledge_);
 
         // move collateral from sender to pool
         emit PledgeCollateral(borrower_, collateralAmountToPledge_);
@@ -86,10 +86,10 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
     /*********************************/
 
     function addCollateral(
-        uint256 index_,
-        uint256 collateralAmountToAdd_
+        uint256 collateralAmountToAdd_,
+        uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        bucketLPs_ = _addCollateral(index_, collateralAmountToAdd_);
+        bucketLPs_ = _addCollateral(collateralAmountToAdd_, index_);
 
         // move required collateral from sender to pool
         emit AddCollateral(msg.sender, index_, collateralAmountToAdd_);
@@ -97,9 +97,9 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
     }
 
     function moveCollateral(
+        uint256 collateralAmountToMove_,
         uint256 fromIndex_,
-        uint256 toIndex_,
-        uint256 collateralAmountToMove_
+        uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveCollateralToSamePrice();
 
@@ -164,10 +164,10 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
     }
 
     function removeCollateral(
-        uint256 index_,
-        uint256 collateralAmountToRemove_
+        uint256 collateralAmountToRemove_,
+        uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        bucketLPs_ = _removeCollateral(index_, collateralAmountToRemove_);
+        bucketLPs_ = _removeCollateral(collateralAmountToRemove_, index_);
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountToRemove_);
@@ -178,7 +178,7 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function arbTake(uint256 index_, uint256 amount_, address borrower_) external override {
+    function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit ArbTake(borrower_, index_, amount_, 0, 0);
     }
@@ -189,7 +189,7 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
         emit Clear(borrower_, _hpbIndex(), debtCleared, 0, 0);
     }
 
-    function depositTake(uint256 index_, uint256 amount_, address borrower_) external override {
+    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
@@ -280,7 +280,7 @@ contract ERC20Pool is IERC20Pool, AjnaPool {
         uint256 currentPrice   = 10 * uint256(liquidation.referencePrice) * 2 ** (hoursSinceKick - 1 hours);
         uint256 quoteTokenReturnAmount = collateralToPurchase * currentPrice * quoteTokenScale / collateralScale;
 
-        _repayDebt(quoteTokenReturnAmount, borrower_);
+        _repayDebt(borrower_, quoteTokenReturnAmount);
 
         emit Take(borrower_, amount_, collateralToPurchase, 0);
     }

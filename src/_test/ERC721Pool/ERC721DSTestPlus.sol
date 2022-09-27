@@ -124,7 +124,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
             }
         }
         emit PledgeCollateralNFT(address(borrower_), tokenIdsToAdd_);
-        pool_.pledgeCollateral(tokenIdsToAdd_, borrower_);
+        pool_.pledgeCollateral(borrower_, tokenIdsToAdd_);
     }
 
     // TODO: implement _pullCollateral()

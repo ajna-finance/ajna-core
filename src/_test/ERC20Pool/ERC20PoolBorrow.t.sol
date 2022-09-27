@@ -532,7 +532,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // should revert if borrower attempts to borrow with an out of bounds limitIndex
         changePrank(_borrower);
         vm.expectRevert(IAjnaPoolErrors.BorrowLimitIndexReached.selector);
-        _pool.borrow(5000, 1_000 * 1e18);
+        _pool.borrow(1_000 * 1e18, 5000);
 
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
@@ -548,7 +548,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         changePrank(_borrower);
         // should revert if borrower didn't pledged any collateral
         vm.expectRevert(IAjnaPoolErrors.BorrowBorrowerUnderCollateralized.selector);
-        _pool.borrow(3000, 500 * 1e18);
+        _pool.borrow(500 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after adding sufficient collateral
         _borrow(
@@ -577,11 +577,11 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         changePrank(_borrower);
         // should revert if borrower attempts to borrow more than minimum amount
         vm.expectRevert(IAjnaPoolErrors.BorrowAmountLTMinDebt.selector);
-        _pool.borrow(3000, 10 * 1e18);
+        _pool.borrow(10 * 1e18, 3000);
 
         changePrank(_borrower2);
         vm.expectRevert(IAjnaPoolErrors.BorrowBorrowerUnderCollateralized.selector);
-        _pool.borrow(3000, 2_976 * 1e18);
+        _pool.borrow(2_976 * 1e18, 3000);
 
         // should be able to borrow if properly specified
         _borrow(
@@ -619,7 +619,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // should revert if borrower has no debt
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         vm.expectRevert(IAjnaPoolErrors.RepayNoDebt.selector);
-        _pool.repay(10_000 * 1e18, _borrower);
+        _pool.repay(_borrower, 10_000 * 1e18);
 
         // borrower 1 borrows 1000 quote from the pool
         _borrow(
@@ -688,7 +688,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
         vm.expectRevert(IAjnaPoolErrors.BorrowAmountLTMinDebt.selector);
-        _pool.repay(750 * 1e18, _borrower);
+        _pool.repay(_borrower, 750 * 1e18);
 
         // should be able to repay loan if properly specified
         _repay(
@@ -814,9 +814,9 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
         changePrank(_borrower);
-        _pool.pledgeCollateral(50 * 1e18, _borrower);
+        _pool.pledgeCollateral(_borrower, 50 * 1e18);
         vm.expectRevert("H:I:VAL_EQ_0");
-        _pool.borrow(3000, 0.00000000000000001 * 1e18);
+        _pool.borrow(0.00000000000000001 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
         _borrow(
@@ -905,7 +905,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert("H:I:VAL_EQ_0");
-        _pool.repay(pendingDebt - 1, _borrower);
+        _pool.repay(_borrower, pendingDebt - 1);
 
         // should be able to pay back all pendingDebt
         _repay(

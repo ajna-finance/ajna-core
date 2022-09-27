@@ -8,12 +8,12 @@ interface IERC20PoolBorrowerActions {
 
     /**
      *  @notice Called by borrowers to add collateral to the pool.
-     *  @param  amount   The amount of collateral in deposit tokens to be added to the pool.
      *  @param  borrower The address of borrower to pledge collateral for.
+     *  @param  amount   The amount of collateral in deposit tokens to be added to the pool.
      */
     function pledgeCollateral(
-        uint256 amount,
-        address borrower
+        address borrower,
+        uint256 amount
     ) external;
 
     /**
