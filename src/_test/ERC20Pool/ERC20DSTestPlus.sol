@@ -180,9 +180,9 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
-    Token           internal _collateral;
-    Token           internal _quote;
-    ERC20Pool       internal _pool;
+    Token         internal _collateral;
+    Token         internal _quote;
+    ERC20Pool     internal _pool;
     AjnaPoolUtils internal _poolUtils;
 
     constructor() {

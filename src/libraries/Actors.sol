@@ -69,9 +69,9 @@ library Actors {
         return (self[index_][lender_].lps, self[index_][lender_].ts);
     }
 
-    /***************/
+    /*****************/
     /*** Borrowers ***/
-    /***************/
+    /*****************/
 
     /**
      *  @notice Struct holding borrower related info.

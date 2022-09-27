@@ -20,30 +20,6 @@ interface IAjnaPoolEvents {
     );
 
     /**
-     *  @notice Emitted when borrower borrows quote tokens from pool.
-     *  @param  borrower `msg.sender`.
-     *  @param  lup      LUP after borrow.
-     *  @param  amount   Amount of quote tokens borrowed from the pool.
-     */
-    event Borrow(
-        address indexed borrower,
-        uint256 lup,
-        uint256 amount
-    );
-
-    /**
-     *  @notice Emitted when borrower repays quote tokens to the pool.
-     *  @param  borrower `msg.sender` or on behalf of sender.
-     *  @param  lup      LUP after repay.
-     *  @param  amount   Amount of quote tokens repayed to the pool.
-     */
-    event Repay(
-        address indexed borrower,
-        uint256 lup,
-        uint256 amount
-    );
-
-    /**
      *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
      *  @param  borrower   Identifies the loan being liquidated.
      *  @param  index      The index of the Highest Price Bucket used for this take.
@@ -58,6 +34,18 @@ interface IAjnaPoolEvents {
         uint256 amount,
         uint256 collateral,
         int256 bondChange
+    );
+
+    /**
+     *  @notice Emitted when borrower borrows quote tokens from pool.
+     *  @param  borrower `msg.sender`.
+     *  @param  lup      LUP after borrow.
+     *  @param  amount   Amount of quote tokens borrowed from the pool.
+     */
+    event Borrow(
+        address indexed borrower,
+        uint256 lup,
+        uint256 amount
     );
 
     /**
@@ -117,6 +105,18 @@ interface IAjnaPoolEvents {
         uint256 indexed price,
         uint256 amount,
         uint256 lup
+    );
+
+    /**
+     *  @notice Emitted when borrower repays quote tokens to the pool.
+     *  @param  borrower `msg.sender` or on behalf of sender.
+     *  @param  lup      LUP after repay.
+     *  @param  amount   Amount of quote tokens repayed to the pool.
+     */
+    event Repay(
+        address indexed borrower,
+        uint256 lup,
+        uint256 amount
     );
 
     /**

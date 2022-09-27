@@ -121,6 +121,11 @@ interface IAjnaPoolErrors {
     error RepayNoDebt();
 
     /**
+     *  @notice Take was called before 1 hour had passed from kick time.
+     */
+    error TakeNotPastCooldown();
+
+    /**
      *  @notice When transferring LP tokens between indices, the new index must be a valid index.
      */
     error TransferLPInvalidIndex();
