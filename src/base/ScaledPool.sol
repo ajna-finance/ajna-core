@@ -11,6 +11,7 @@ import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
 import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
 
 import { IScaledPool }    from "./interfaces/IScaledPool.sol";
+import { Queue } from "./Queue.sol";
 
 import { FenwickTree }    from "./FenwickTree.sol";
 
@@ -20,7 +21,7 @@ import { Heap }           from "../libraries/Heap.sol";
 import '../libraries/Book.sol';
 import '../libraries/Lenders.sol';
 
-abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
+abstract contract ScaledPool is Clone, FenwickTree, Queue, Multicall, IScaledPool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
     using Lenders   for mapping(uint256 => mapping(address => Lenders.Lender));
@@ -69,6 +70,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
     mapping(uint256 => mapping(address => Lenders.Lender)) public override lenders;
     // borrowers book: borrower address -> BorrowerInfo
     mapping(address => Borrower) public override borrowers;
+
+    //mapping(address => Liquidation) public override liquidations;
 
     /**
      *  @notice Used for tracking LP token ownership address for transferLPTokens access control
@@ -275,8 +278,10 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         );
         loans.upsert(msg.sender, thresholdPrice);
 
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 numLoans     = (loans.count - 1) * 1e18;
+        borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         borrowers[msg.sender] = borrower;
+
 
         _updateInterestRateAndEMAs(curDebt, newLup);
 
@@ -392,7 +397,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         if (borrower.debt != 0) loans.upsert(borrower_, thresholdPrice);
 
         uint256 newLup = _lup();
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 numLoans     = (loans.count - 1) * 1e18;
+        borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         borrowers[borrower_] = borrower;
 
         pledgedCollateral += collateralAmountToPledge_;
@@ -424,7 +430,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         );
         if (borrower.debt != 0) loans.upsert(msg.sender, thresholdPrice);
 
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 numLoans     = (loans.count - 1) * 1e18;
+        borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         borrowers[msg.sender] = borrower;
 
         // update pool state
@@ -468,7 +475,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         borrowerDebt = curDebt;
 
         uint256 newLup = _lup();
-        borrower.mompFactor = _mompFactor(borrower.inflatorSnapshot);
+        uint256 numLoans     = (loans.count - 1) * 1e18;
+        borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
         borrowers[borrower_] = borrower;
 
         _updateInterestRateAndEMAs(curDebt, newLup);
@@ -720,9 +728,8 @@ abstract contract ScaledPool is Clone, FenwickTree, Multicall, IScaledPool {
         }
     }
 
-    function _mompFactor(uint256 inflator) internal view returns (uint256 momFactor_) {
-        uint256 numLoans = loans.count - 1;
-        if (numLoans != 0) momFactor_ = Maths.wdiv(Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans * 1e18))), inflator);
+    function _momp(uint256 numLoans) internal view returns (uint256) {
+        return Book.indexToPrice(_findIndexOfSum(Maths.wdiv(borrowerDebt, numLoans)));
     }
 
     function _lenderInterestMargin(uint256 mau) internal pure returns (uint256) {
