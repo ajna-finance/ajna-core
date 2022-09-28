@@ -50,7 +50,7 @@ jobs:
         run: |
           mkdir -p size-reports-${{ github.run_id }}
           ./check-size.sh | tee size-reports-${{github.run_id}}/size-report
-          echo "##[set-output name=size-report;]$(echo $(cat size-reports-${{github.run_id}}/size-report|tail -1| sed -e 's/, /\…/g)')"
+          echo "##[set-output name=size-report;]$(echo $(cat size-reports-${{github.run_id}}/size-report|tail -1| sed -e 's/, /\…/g'))"
         id: check-size
 
       - name: Send size report to Discord
