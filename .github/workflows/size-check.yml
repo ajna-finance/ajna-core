@@ -49,7 +49,7 @@ jobs:
       - name: Run check-size script
         run: |
           ./check-size.sh >> ${{github.run_id}}/.size-check
-          echo $(cat size-check | tail -1) >> $GITHUB_STEP_SUMMARY
+          echo $(cat ${{github.run_id}}/.size-check | tail -1) >> $GITHUB_STEP_SUMMARY
         id: check-size
 
       - name: Send size report to Discord
