@@ -59,6 +59,6 @@ jobs:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
           username: "Contract Size Reporter"
-          message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.check-size.outputs.size-report }}```
+          message: "https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.check-size.outputs.size-report }}```"
 
     timeout-minutes: 2

@@ -1,6 +1,6 @@
 name: Forge Tests
 
-on: [push]
+on: [fork]
 
 env:
   ## Loads environment from secrets
