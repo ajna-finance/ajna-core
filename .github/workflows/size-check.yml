@@ -50,7 +50,7 @@ jobs:
         run: |
           mkdir -p size-reports-${{ github.run_id }}
           ./check-size.sh | tee size-reports-${{github.run_id}}/size-report
-          echo "##[set-output name=size-report;]$(echo $(cat size-reports-${{github.run_id}}/size-report|tail -1| sed -e 's/, /\…/g'))"
+          echo "##[set-output name=size-report;]$(echo $(cat size-reports-${{github.run_id}}/size-report|tail -1))"
         id: check-size
 
       - name: Send size report to Discord
@@ -59,6 +59,6 @@ jobs:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
           username: "Contract Size Reporter"
-          message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.check-size.outputs.size-report }}```
+          message: ${{ steps.check-size.outputs.size-report }}
 
     timeout-minutes: 2
