@@ -7,14 +7,9 @@ largest_contract=${BASH_REMATCH[1]}
 largest_size=$(echo "${BASH_REMATCH[2]}" | sed -e 's/,//g' -e 's/B//g')
 
 limit=24576
-exitcode=0
-message=    # to make shellcheck happy
 if (( largest_size > limit)); then
-  message="$largest_contract is $largest_size bytes, over size limit of $limit bytes."
-  exitcode=1
+  echo "$largest_contract is $largest_size bytes (over size limit of $limit bytes)."
+  exit 1
 else
-  message="$largest_contract is $largest_size bytes, under size limit of $limit bytes."
+  echo "$largest_contract is $largest_size bytes, (under size limit of $limit bytes)."
 fi;
-
-echo "$message"
-exit $exitcode
