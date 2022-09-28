@@ -11,5 +11,5 @@ if (( largest_size > limit)); then
   echo "$largest_contract is $largest_size bytes (over size limit of $limit bytes)."
   exit 1
 else
-  echo "$largest_contract is $largest_size bytes, (under size limit of $limit bytes)."
+  echo "$largest_contract is $largest_size bytes (under size limit of $limit bytes)."
 fi;
