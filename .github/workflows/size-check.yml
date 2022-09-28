@@ -47,7 +47,9 @@ jobs:
         run: pip install -r requirements-dev.txt
 
       - name: Run check-size script
-        run: ./check-size.sh
+        run: |
+          ./check-size.sh >> ${{github.run_id}}/.size-check
+          echo $(cat size-check | tail -1) >> $GITHUB_STEP_SUMMARY
         id: check-size
 
       - name: Send size report to Discord
@@ -56,6 +58,6 @@ jobs:
           webhook_id: ${{ secrets.DISCORD_ID }}
           webhook_token: ${{ secrets.DISCORD_TOKEN }}
           username: "Contract Size Reporter"
-          message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.check-size.outputs.message }}```
+          message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.check-size.outputs.core.summary }}```
 
     timeout-minutes: 2
