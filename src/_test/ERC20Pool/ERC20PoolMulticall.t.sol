@@ -2,14 +2,15 @@
 
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
-import { BucketMath } from "../../libraries/BucketMath.sol";
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
+import '../../libraries/BucketMath.sol';
 
 contract ERC20PoolMulticallTest is ERC20HelperContract {
 
@@ -98,7 +99,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         );
 
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.BorrowLimitIndexReached.selector);
+        vm.expectRevert(IPoolErrors.BorrowLimitIndexReached.selector);
         _pool.multicall(callsToExecute);
     }
 

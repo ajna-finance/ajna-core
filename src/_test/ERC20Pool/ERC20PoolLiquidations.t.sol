@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { Maths } from "../../libraries/Maths.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
+import '../../libraries/Actors.sol';
+import '../../libraries/Maths.sol';
+import '../../libraries/PoolUtils.sol';
 
 contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
@@ -63,12 +65,19 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             uint256 collateralDeposited,
             uint256 mompFactor,
             uint256 borrowerInflator
-        ) = _pool.borrowerInfo(_borrower2);
+        ) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
 
         assertEq(borrowerDebt,         10_009.615384615384620000 * 1e18);
         assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);
-        assertEq(_pool.encumberedCollateral(borrowerPendingDebt, _lup()), 1.001368006956135433 * 1e18);
-        assertEq(_pool.borrowerCollateralization(borrowerPendingDebt, collateralDeposited, _lup()), 0.998633861930247030 * 1e18);
+        assertEq(_encumberedCollateral(borrowerPendingDebt, _lup()), 1.001368006956135433 * 1e18);
+        assertEq(
+            PoolUtils.collateralization(
+                borrowerPendingDebt,
+                collateralDeposited,
+                _lup()
+            ),
+            0.998633861930247030 * 1e18
+        );
         assertEq(borrowerInflator,     1e18);
 
         ( uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt ) = _pool.liquidations(_borrower2);
@@ -93,13 +102,13 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             collateralDeposited,
             mompFactor,
             borrowerInflator
-        ) = _pool.borrowerInfo(_borrower2);
+        ) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
 
         assertEq(borrowerDebt,         10_030.204233142901661009 * 1e18);  // Updated to reflect debt
         assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);  // Pending debt is unchanged
         assertEq(collateralDeposited,  1e18);                              // Unchanged
-        assertEq(_pool.encumberedCollateral(borrowerDebt, _lup()), 1.001368006956135433 * 1e18);  // Unencumbered collateral is unchanged because based off pending debt
-        assertEq(_pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _lup()), 0.998633861930247030 * 1e18);  // Unchanged because based off pending debt
+        assertEq(_encumberedCollateral(borrowerDebt, _lup()), 1.001368006956135433 * 1e18);  // Unencumbered collateral is unchanged because based off pending debt
+        assertEq(PoolUtils.collateralization(borrowerDebt, collateralDeposited, _lup()), 0.998633861930247030 * 1e18);  // Unchanged because based off pending debt
         assertEq(borrowerInflator,     1.002056907057504104 * 1e18);       // Inflator is updated to reflect new debt
 
         ( kickTime, referencePrice, remainingCollateral, remainingDebt ) = _pool.liquidations(_borrower2);
@@ -113,24 +122,24 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         skip(6238);
         uint256 referencePrice = 8_678.5 * 1e18;
         uint256 kickTime = block.timestamp;
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
         skip(1444); // price should not change in the first hour
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
 
         skip(5756);     // 2 hours
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 43_392.5 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 43_392.5 * 1e18);
         skip(2394);     // 2 hours, 39 minutes, 54 seconds
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 27_367.159606354998613290 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 27_367.159606354998613290 * 1e18);
         skip(2586);     // 3 hours, 23 minutes
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 16_633.737549018910661740 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 16_633.737549018910661740 * 1e18);
         skip(3);        // 3 seconds later
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 16_624.132299820494703920 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 16_624.132299820494703920 * 1e18);
         skip(20153);    // 8 hours, 35 minutes, 53 seconds
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 343.207165783609045700 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 343.207165783609045700 * 1e18);
         skip(97264);    // 36 hours
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 0.00000252577588655 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 0.00000252577588655 * 1e18);
         skip(129600);   // 72 hours
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 0);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 0);
     }
 
     // TODO: move to DSTestPlus?
@@ -142,14 +151,14 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             uint256 mompFactor,
             uint256 borrowerInflator
 
-        ) = _pool.borrowerInfo(address(borrower_));
+        ) = _poolUtils.borrowerInfo(address(_pool), borrower_);
 
         emit log_named_uint("borrowerDebt        ", borrowerDebt);
         emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
         emit log_named_uint("collateralDeposited ", collateralDeposited);
         emit log_named_uint("mompFactor ",           mompFactor);
-        emit log_named_uint("collateralEncumbered", _pool.encumberedCollateral(borrowerDebt, _lup()));
-        emit log_named_uint("collateralization   ", _pool.borrowerCollateralization(borrowerDebt, collateralDeposited, _lup()));
+        emit log_named_uint("collateralEncumbered", _encumberedCollateral(borrowerDebt, _lup()));
+        emit log_named_uint("collateralization   ", PoolUtils.collateralization(borrowerDebt, collateralDeposited, _lup()));
         emit log_named_uint("borrowerInflator    ", borrowerInflator);
     }
 }

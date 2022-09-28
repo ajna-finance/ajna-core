@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
-import { IERC1271 } from "@openzeppelin/contracts/interfaces/IERC1271.sol";
-import { ERC721 }   from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { Address }  from "@openzeppelin/contracts/utils/Address.sol";
+import '@openzeppelin/contracts/interfaces/IERC1271.sol';
+import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import '@openzeppelin/contracts/utils/Address.sol';
 
 interface IPermit {
     function permit(

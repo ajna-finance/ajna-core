@@ -1,18 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+
 pragma solidity 0.8.14;
 
-import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
+import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import { IERC721Pool } from "../../erc721/interfaces/IERC721Pool.sol";
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import '../../erc721/ERC721Pool.sol';
+import '../../erc721/ERC721PoolFactory.sol';
 
-import { BucketMath } from "../../libraries/BucketMath.sol";
-import { Maths }      from "../../libraries/Maths.sol";
+import '../../erc721/interfaces/IERC721Pool.sol';
+import '../../erc721/interfaces/pool/IERC721PoolErrors.sol';
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
-import { ERC721HelperContract }           from "./ERC721DSTestPlus.sol";
+import '../../libraries/BucketMath.sol';
+import '../../libraries/Maths.sol';
 
-contract ERC721ScaledBorrowTest is ERC721HelperContract {
+contract ERC721PoolBorrowTest is ERC721HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -26,9 +29,6 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _bidder    = makeAddr("bidder");
         _lender    = makeAddr("lender");
         _lender2   = makeAddr("lender2");
-
-        // deploy collection pool
-        ERC721Pool collectionPool = _deployCollectionPool();
 
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](9);
@@ -58,7 +58,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(priceAtTestIndex, 3_010.892022197881557845 * 1e18);
 
         // check bucket state
-        ( , uint256 quote, uint256 collateral, uint256 lpb, , , ) = _pool.bucketAt(2550);
+        ( , uint256 quote, uint256 collateral, uint256 lpb, , ) = _poolUtils.bucketInfo(address(_pool), 2550);
         assertEq(quote,      0);
         assertEq(collateral, 0);
         assertEq(lpb,        0);
@@ -75,7 +75,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         _pool.addQuoteToken(10_000 * 1e18, testIndex);
 
         // check bucket state
-        (, quote, collateral, lpb, , , ) = _pool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), testIndex);
         assertEq(quote,      10_000 * 1e18);
         assertEq(collateral, 0);
         assertEq(lpb,        10_000 * 1e27);
@@ -93,7 +93,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         uint256 lpBalanceChange = _pool.addCollateral(tokenIdsToAdd, testIndex);
 
         // check bucket state
-        (, quote, collateral, lpb, , , ) = _pool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), testIndex);
         assertEq(quote,      10_000 * 1e18);
         assertEq(collateral, Maths.wad(3));
         (uint256 lpBalance, ) = _pool.lenders(testIndex, _bidder);
@@ -114,7 +114,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_bidder), qtToRemove);
         (lpBalance, ) = _pool.lenders(testIndex, _bidder);
         assertEq(lpBalance, 0);
-        (, quote, collateral, lpb, , , ) = _pool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), testIndex);
         assertEq(quote,      10_000 * 1e18 - qtToRemove);
         assertEq(collateral, 3 * 1e18);
 
@@ -131,7 +131,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         vm.expectEmit(true, true, false, true);
         emit Transfer(address(_pool), _lender, tokenIdsToRemove[2]);
         _pool.removeCollateral(tokenIdsToRemove, testIndex);
-        (, quote, collateral, lpb, , , ) = _pool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), testIndex);
         assertEq(quote,      967.323933406355326465 * 1e18);
         assertEq(collateral, 0);
 
@@ -139,7 +139,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(_lender, testIndex, quote, _lup());
         _pool.removeAllQuoteToken(testIndex);
-        (, quote, collateral, lpb, , , ) = _pool.bucketAt(testIndex);
+        (, quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), testIndex);
         assertEq(quote,      0);
         assertEq(collateral, 0);
         assertEq(lpb,        0);
@@ -177,7 +177,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         skip(86400);
 
         // check bucket state
-        ( , uint256 quote, uint256 collateral, uint256 lpb, , , ) = _pool.bucketAt(2350);
+        ( , uint256 quote, uint256 collateral, uint256 lpb, , ) = _poolUtils.bucketInfo(address(_pool), 2350);
         assertEq(quote,      24_000 * 1e18);
         assertEq(collateral, 0);
         assertEq(lpb,        24_000 * 1e27);
@@ -204,7 +204,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_bidder), amountWithInterest);
 
         // check bucket state
-        ( , quote, collateral, lpb, , , ) = _pool.bucketAt(2350);
+        ( , quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), 2350);
         assertEq(quote,      0);
         assertEq(collateral, Maths.wad(4));
         assertEq(lpb,        32_654.330240478871500328243823671 * 1e27);
@@ -226,13 +226,13 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         tokenIdsToRemove[1] = 3;
         tokenIdsToRemove[2] = 5;
         tokenIdsToRemove[3] = 51;
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IPoolErrors.PullCollateralInsufficientCollateral.selector);
         (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
 
         // should revert if lender attempts to remove collateral not available in the bucket
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 1;
-        vm.expectRevert(IERC721Pool.TokenNotDeposited.selector);
+        vm.expectRevert(IERC721PoolErrors.TokenNotDeposited.selector);
         (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
 
         // lender exchanges their lp for collateral
@@ -246,7 +246,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         skip(3600);
 
         // check bucket state
-        ( , quote, collateral, lpb, , , ) = _pool.bucketAt(2350);
+        ( , quote, collateral, lpb, , ) = _poolUtils.bucketInfo(address(_pool), 2350);
         assertEq(quote,      0);
         assertEq(collateral, Maths.wad(2));
         assertEq(lpb,        16_327.165120239435750164121899837 * 1e27);
@@ -255,7 +255,7 @@ contract ERC721ScaledBorrowTest is ERC721HelperContract {
         changePrank(_lender2);
         tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 74;
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientLP.selector);
+        vm.expectRevert(IPoolErrors.RemoveCollateralInsufficientLP.selector);
         (amount) = _pool.removeCollateral(tokenIdsToRemove, 2350);
     }
 

@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { PoolDeployer } from "../../base/PoolDeployer.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
+import '../../base/PoolDeployer.sol';
 
-contract ERC20ScaledPoolFactoryTest is ERC20HelperContract {
+contract ERC20PoolFactoryTest is ERC20HelperContract {
     ERC20PoolFactory internal _poolFactory;
 
     function setUp() external {
@@ -49,7 +50,7 @@ contract ERC20ScaledPoolFactoryTest is ERC20HelperContract {
     function testDeployERC20Pool() external {
         skip(333);
 
-        address poolAddress = 0x9FE92fe72Ae1Bc5f008C3f405606717d43Fc468D;
+        address poolAddress = 0x8b233290C5458EdF1a03e2303Abc8aDCB52d5286;
         vm.expectEmit(true, true, false, true);
         emit PoolCreated(poolAddress);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.0543 * 10**18));

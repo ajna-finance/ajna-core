@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
-import { ERC20 }           from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ERC721 }          from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import { EnumerableSet }   from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import { Multicall }       from "@openzeppelin/contracts/utils/Multicall.sol";
-import { ReentrancyGuard } from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import { SafeERC20 }       from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import '@openzeppelin/contracts/utils/Multicall.sol';
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IScaledPool }      from "./interfaces/IScaledPool.sol";
-import { IPositionManager } from "./interfaces/IPositionManager.sol";
+import './interfaces/IPool.sol';
+import './interfaces/IPositionManager.sol';
 
-import { IERC20Pool }  from "../erc20/interfaces/IERC20Pool.sol";
-import { IERC721Pool } from "../erc721/interfaces/IERC721Pool.sol";
+import '../erc20/interfaces/IERC20Pool.sol';
+import '../erc721/interfaces/IERC721Pool.sol';
 
-import { PermitERC20 } from "./PermitERC20.sol";
-import { PositionNFT } from "./PositionNFT.sol";
+import './PermitERC20.sol';
+import './PositionNFT.sol';
 
-import { Maths } from "../libraries/Maths.sol";
+import '../libraries/Maths.sol';
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -72,7 +73,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
-        IScaledPool pool      = IScaledPool(poolKey[params_.tokenId]);
+        IPool pool = IPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // record price at which a position has added liquidity
@@ -105,10 +106,12 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
 
-        IScaledPool pool = IScaledPool(params_.pool);
-        ( , uint256 bucketDeposit, , , , , ) = pool.bucketAt(params_.fromIndex);
-        uint256 maxQuote = pool.lpsToQuoteTokens(
-            bucketDeposit, lps[params_.tokenId][params_.fromIndex], params_.fromIndex
+        IPool pool = IPool(params_.pool);
+        uint256 bucketDeposit = pool.bucketDeposit(params_.fromIndex);
+        uint256 maxQuote      = pool.lpsToQuoteTokens(
+            bucketDeposit,
+            lps[params_.tokenId][params_.fromIndex],
+            params_.fromIndex
         );
 
         // update prices set at which a position has liquidity
@@ -128,7 +131,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function reedemPositions(RedeemPositionsParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
-        IScaledPool pool      = IScaledPool(poolKey[params_.tokenId]);
+        IPool pool = IPool(poolKey[params_.tokenId]);
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // remove price at which a position has added liquidity

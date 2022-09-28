@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
+import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import '../../erc721/ERC721Pool.sol';
+import '../../erc721/ERC721PoolFactory.sol';
 
-import { BucketMath } from "../../libraries/BucketMath.sol";
-import { Maths }      from "../../libraries/Maths.sol";
+import '../../base/interfaces/IPool.sol';
 
-import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
-import "forge-std/Test.sol";
+import '../../libraries/BucketMath.sol';
+import '../../libraries/Maths.sol';
+import '../../libraries/PoolUtils.sol';
 
-abstract contract ERC721ScaledInterestTest is ERC721HelperContract {
+abstract contract ERC721PoolInterestTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _borrower3;
@@ -43,11 +43,8 @@ abstract contract ERC721ScaledInterestTest is ERC721HelperContract {
     }
 }
 
-contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
+contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
     function createPool() external override returns (ERC721Pool) {
-        // deploy collection pool
-        ERC721Pool collectionPool = _deployCollectionPool();
-
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](6);
         subsetTokenIds[0] = 1;
@@ -80,7 +77,7 @@ contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
         _pool.borrow(5_000 * 1e18, 2551);
 
         assertEq(_pool.borrowerDebt(), 5_004.807692307692310000 * 1e18);
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(_borrower);
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        5_004.807692307692310000 * 1e18);
         assertEq(pendingDebt, 5_012.354868151222773335 * 1e18);
         assertEq(col       ,  3 * 1e18);
@@ -93,7 +90,7 @@ contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
         tokenIdsToAdd[0] = 51;
         _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
         assertEq(_pool.borrowerDebt(), 5_019.913425024098425550 * 1e18);
-        (debt, pendingDebt, col, mompFactor, inflator) = _pool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        5_019.913425024098425550 * 1e18);
         assertEq(pendingDebt, 5_019.913425024098425550 * 1e18);
         assertEq(col,         4 * 1e18);
@@ -106,7 +103,7 @@ contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
         tokenIdsToRemove[0] = 1;
         _pool.pullCollateral(tokenIdsToRemove);
         assertEq(_pool.borrowerDebt(), 5_028.241003157279922662 * 1e18);
-        (debt, pendingDebt, col, mompFactor, inflator) = _pool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        5_028.241003157279922662 * 1e18);
         assertEq(pendingDebt, 5_028.241003157279922662 * 1e18);
         assertEq(col,         3 * 1e18);
@@ -117,7 +114,7 @@ contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
         skip(864000);
         _pool.borrow(1_000 * 1e18, 3000);
         assertEq(_pool.borrowerDebt(), 6_038.697103647272763112 * 1e18);
-        (debt, pendingDebt, col, mompFactor, inflator) = _pool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        6_038.697103647272763112 * 1e18);
         assertEq(pendingDebt, 6_038.697103647272763112 * 1e18);
         assertEq(col       ,  3 * 1e18);
@@ -129,10 +126,10 @@ contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
 
         // borrower repays their loan after some additional time
         skip(864000);
-        (debt, pendingDebt, col, mompFactor, inflator) = _pool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         _pool.repay(_borrower, pendingDebt);
         assertEq(_pool.borrowerDebt(), 0);
-        (debt, pendingDebt, col, mompFactor, inflator) = _pool.borrowerInfo(_borrower);
+        (debt, pendingDebt, col, mompFactor, inflator) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        0);
         assertEq(pendingDebt, 0);
         assertEq(mompFactor,  0 * 1e18);
@@ -192,20 +189,19 @@ contract ERC721ScaledSubsetInterestTest is ERC721ScaledInterestTest {
 
         // check pool and borrower debt to confirm interest has accumulated
         assertEq(_pool.borrowerDebt(), 13_263.563121817930264782 * 1e18);
-        (uint256 debt, uint256 pendingDebt, , , ) = _pool.borrowerInfo(_borrower);
+        (uint256 debt, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        8_007.692307692307696000 * 1e18);
         assertEq(pendingDebt, 8_007.692307692307696000 * 1e18);
-        (debt, pendingDebt, , , ) = _pool.borrowerInfo(_borrower2);
+        (debt, pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
         assertEq(debt,        2_752.644230769230770500 * 1e18);
         assertEq(pendingDebt, 2_752.644230769230770500 * 1e18);
-        (debt, pendingDebt, , , ) = _pool.borrowerInfo(_borrower3);
+        (debt, pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), _borrower3);
         assertEq(debt,        2_502.403846153846155000 * 1e18);
         assertEq(pendingDebt, 2_502.403846153846155000 * 1e18);
     }
 }
 
-contract ERC721ScaledCollectionInterestTest is ERC721ScaledInterestTest {
-    using stdStorage for StdStorage;
+contract ERC721PoolCollectionInterestTest is ERC721PoolInterestTest {
 
     function createPool() external override returns (ERC721Pool) {
         return _deployCollectionPool();
@@ -213,51 +209,14 @@ contract ERC721ScaledCollectionInterestTest is ERC721ScaledInterestTest {
 
     function testLenderInterestMargin() external {
         // check empty pool
-        assertEq(_pool.lenderInterestMargin(), 0.85 * 1e18);
-
-        // lender adds liquidity
-        changePrank(_lender);
-        _pool.addQuoteToken(10_000 * 1e18, 0);  // all deposit above the PTP
-        assertEq(_poolActualUtilization(), 0);
-
-        // borrower pledges a single NFT
-        changePrank(_borrower);
-        uint256[] memory tokenIdsToAdd = new uint256[](1);
-        tokenIdsToAdd[0] = 1;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
-        assertEq(_poolActualUtilization(), 0);
-        assertEq(_pool.pledgedCollateral(), 1 * 1e18);
-
-        // to minimize test complexity and maintenance cost, manipulate utilization by writing debt to storage
-        uint256 slotBorrowerDebt = stdstore
-            .target(address(_pool))
-            .sig("borrowerDebt()")
-            .find();
-        assertEq(slotBorrowerDebt, 16391);
+        assertEq(_poolUtils.lenderInterestMargin(address(_pool)), 0.85 * 1e18);
 
         // test lender interest margin for various amounts of utilization
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(100 * 1e18)));
-        assertEq(_poolActualUtilization(), 0.01 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  0.850501675988110546 * 1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(2_300 * 1e18)));
-        assertEq(_poolActualUtilization(), 0.23 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  0.862515153185046657 * 1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(6_700 * 1e18)));
-        assertEq(_poolActualUtilization(), 0.67 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  0.896343651549832236 * 1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(8_800 * 1e18)));
-        assertEq(_poolActualUtilization(), 0.88 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  0.926013637770085897 * 1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(10_000 * 1e18)));
-        assertEq(_poolActualUtilization(), 1 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  1e18);
-
-        vm.store(address(_pool), bytes32(slotBorrowerDebt), bytes32(uint256(10_300 * 1e18)));
-        assertEq(_poolActualUtilization(), 1.03 * 1e18);
-        assertEq(_pool.lenderInterestMargin(),  1e18);
+        assertEq(PoolUtils.lenderInterestMargin(0.01 * 1e18), 0.850501675988110546 * 1e18);
+        assertEq(PoolUtils.lenderInterestMargin(0.23 * 1e18), 0.862515153185046657 * 1e18);
+        assertEq(PoolUtils.lenderInterestMargin(0.67 * 1e18), 0.896343651549832236 * 1e18);
+        assertEq(PoolUtils.lenderInterestMargin(0.88 * 1e18), 0.926013637770085897 * 1e18);
+        assertEq(PoolUtils.lenderInterestMargin(1 * 1e18),    1e18);
+        assertEq(PoolUtils.lenderInterestMargin(1.03 * 1e18), 1e18);
     }
 }

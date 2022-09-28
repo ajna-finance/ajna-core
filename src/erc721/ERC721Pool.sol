@@ -1,27 +1,28 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { Clone } from "@clones/Clone.sol";
+import { Clone } from '@clones/Clone.sol';
 
-import { ERC20 }         from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 }     from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import { ERC721 }        from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
+import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 import '@openzeppelin/contracts/utils/structs/BitMaps.sol';
 
-import { IERC721Pool } from "./interfaces/IERC721Pool.sol";
+import './interfaces/IERC721Pool.sol';
 
-import { ScaledPool } from "../base/ScaledPool.sol";
+import '../base/Pool.sol';
 
-import { Heap }  from "../libraries/Heap.sol";
-import { Maths } from "../libraries/Maths.sol";
+import '../libraries/Heap.sol';
+import '../libraries/Maths.sol';
 import '../libraries/Book.sol';
-import '../libraries/Lenders.sol';
+import '../libraries/Actors.sol';
 
-contract ERC721Pool is IERC721Pool, ScaledPool {
+contract ERC721Pool is IERC721Pool, Pool {
     using SafeERC20 for ERC20;
     using BitMaps   for BitMaps.BitMap;
     using Book      for mapping(uint256 => Book.Bucket);
-    using Lenders   for mapping(uint256 => mapping(address => Lenders.Lender));
+    using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
+    using Actors    for mapping(address => Actors.Borrower);
     using Heap      for Heap.Data;
 
     /***********************/
@@ -52,7 +53,7 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     function initialize(
         uint256 rate_,
         address ajnaTokenAddress_
-    ) external {
+    ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         quoteTokenScale = 10**(18 - quoteToken().decimals());
@@ -221,16 +222,24 @@ contract ERC721Pool is IERC721Pool, ScaledPool {
     }
 
     function kick(address borrower_) external override {
-        (uint256 curDebt) = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
-        Borrower storage borrower = borrowers[borrower_];
-        if (borrower.debt == 0) revert KickNoDebt();
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+            borrower_,
+            poolState.inflator
+        );
+        if (borrowerAccruedDebt == 0) revert KickNoDebt();
 
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        uint256 lup = _lup();
-        _updateInterestRateAndEMAs(curDebt, lup);
+        uint256 lup = _lup(poolState.accruedDebt);
+        if (
+            PoolUtils.collateralization(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                lup
+            ) >= Maths.WAD
+        ) revert LiquidateBorrowerOk();
 
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+        _updatePool(poolState, lup);
 
         // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
         //  which includes an array of the borrower's tokenIds being auctioned off.

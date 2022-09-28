@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
-import { ERC20 }             from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 
-import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
+import { DSTestPlus }                from '../utils/DSTestPlus.sol';
+import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 
-import { DSTestPlus }                from "../utils/DSTestPlus.sol";
-import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
+import { ERC721Pool }        from '../../erc721/ERC721Pool.sol';
+import { ERC721PoolFactory } from '../../erc721/ERC721PoolFactory.sol';
+
+import { PoolInfoUtils } from '../../base/PoolInfoUtils.sol';
+
+import '../../libraries/Maths.sol';
+import '../../libraries/PoolUtils.sol';
 
 abstract contract ERC721DSTestPlus is DSTestPlus {
 
@@ -56,6 +61,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     Token              internal _quote;
     ERC20              internal _ajna;
     ERC721Pool         internal _pool;
+    PoolInfoUtils      internal _poolUtils;
 
     // TODO: bool for pool type
     constructor() {
@@ -67,6 +73,8 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.makePersistent(address(_quote));
         _ajna       = ERC20(address(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079));
         vm.makePersistent(address(_ajna));
+        _poolUtils  = new PoolInfoUtils();
+        vm.makePersistent(address(_poolUtils));
     }
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
@@ -122,9 +130,9 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     // TODO: implement _pullCollateral()
     
     function _assertPool(PoolState memory state_) internal {
-        ( , uint256 htp, uint256 lup, ) = _pool.poolPricesInfo();
-        (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = _pool.poolLoansInfo();
-        (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _pool.poolUtilizationInfo();
+        ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = _poolUtils.poolLoansInfo(address(_pool));
+        (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
 
@@ -138,58 +146,58 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         assertEq(loansCount,  state_.loans);
         assertEq(maxBorrower, state_.maxBorrower);
 
-        assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+        assertEq(PoolUtils.encumberance(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
     }
 
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {
-        ( , , uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = _pool.poolReservesInfo();
+        ( , , uint256 claimableReservesRemaining, uint256 auctionPrice, uint256 timeRemaining) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(claimableReservesRemaining, state_.claimableReservesRemaining);
         assertEq(auctionPrice, state_.auctionPrice);
         assertEq(timeRemaining, state_.timeRemaining);
     }
 
     function _assertReserveAuctionPrice(uint256 expectedPrice) internal {
-        ( , , , uint256 auctionPrice, ) = _pool.poolReservesInfo();
+        ( , , , uint256 auctionPrice, ) = _poolUtils.poolReservesInfo(address(_pool));
         assertEq(auctionPrice, expectedPrice);
     }
 
     function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {
-        ( price_, , , , , , ) = _pool.bucketAt(index_);
+        ( price_, , , , , ) = _poolUtils.bucketInfo(address(_pool), index_);
     }
 
     function _htp() internal view returns (uint256 htp_) {
-        (, htp_, , ) = _pool.poolPricesInfo();
+        ( , , htp_, , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
-        ( , , , , , exchangeRate_, ) = _pool.bucketAt(index_);
+        ( , , , , , exchangeRate_) = _poolUtils.bucketInfo(address(_pool), index_);
     }
 
     function _lup() internal view returns (uint256 lup_) {
-        (, , lup_, ) = _pool.poolPricesInfo();
+        ( , , , , lup_, ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
     function _poolSize() internal view returns (uint256 poolSize_) {
-        (poolSize_, , , ) = _pool.poolLoansInfo();
+        (poolSize_, , , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _poolTargetUtilization() internal view returns (uint256 utilization_) {
-        ( , , , utilization_) = _pool.poolUtilizationInfo();
+        ( , , , utilization_) = _poolUtils.poolUtilizationInfo(address(_pool));
     }
 
     function _poolActualUtilization() internal view returns (uint256 utilization_) {
-        ( , , utilization_, ) = _pool.poolUtilizationInfo();
+        ( , , utilization_, ) = _poolUtils.poolUtilizationInfo(address(_pool));
     }
 
     function _poolMinDebtAmount() internal view returns (uint256 minDebt_) {
-        ( minDebt_, , , ) = _pool.poolUtilizationInfo();
+        ( minDebt_, , , ) = _poolUtils.poolUtilizationInfo(address(_pool));
     }
 
     function _loansCount() internal view returns (uint256 loansCount_) {
-        ( , loansCount_, , ) = _pool.poolLoansInfo();
+        ( , loansCount_, , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _maxBorrower() internal view returns (address maxBorrower_) {
-        ( , , maxBorrower_, ) = _pool.poolLoansInfo();
+        ( , , maxBorrower_, ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 }

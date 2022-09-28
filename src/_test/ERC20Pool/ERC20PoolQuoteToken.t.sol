@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
-import { BucketMath } from "../../libraries/BucketMath.sol";
-import { Maths }      from "../../libraries/Maths.sol";
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
+import '../../libraries/BucketMath.sol';
+import '../../libraries/Maths.sol';
+import '../../libraries/PoolUtils.sol';
 
-contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
+contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -36,7 +38,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
      *          Lender reverts:
      *              attempts to addQuoteToken at invalid price.
      */
-    function testScaledPoolDepositQuoteToken() external {
+    function testPoolDepositQuoteToken() external {
         assertEq(_hpb(), BucketMath.MIN_PRICE);
 
         // test 10_000 deposit at price of 3_010.892022197881557845
@@ -178,7 +180,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender),        130_000 * 1e18);
     }
 
-    function testScaledPoolRemoveQuoteToken() external {
+    function testPoolRemoveQuoteToken() external {
         Liquidity[] memory amounts = new Liquidity[](3);
         amounts[0] = Liquidity({amount: 40_000 * 1e18, index: 2549, newLup: BucketMath.MAX_PRICE});
         amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
@@ -329,7 +331,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to remove more quote tokens than available in bucket.
      */
-    function testScaledPoolRemoveQuoteTokenNotAvailable() external {
+    function testPoolRemoveQuoteTokenNotAvailable() external {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         // lender adds initial quote token
         Liquidity[] memory amounts = new Liquidity[](1);
@@ -353,7 +355,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         );
 
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.RemoveQuoteLUPBelowHTP.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteLUPBelowHTP.selector);
         _pool.removeAllQuoteToken(4550);
     }
 
@@ -363,7 +365,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
      *              Attempts to remove more quote tokens than available from lpBalance.
      *              Attempts to remove quote token when doing so would drive lup below htp.
      */
-    function testScaledPoolRemoveQuoteTokenRequireChecks() external {
+    function testPoolRemoveQuoteTokenRequireChecks() external {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         // lender adds initial quote token
         Liquidity[] memory amounts = new Liquidity[](4);
@@ -391,23 +393,23 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         // ensure lender cannot withdraw from a bucket with no deposit
         changePrank(_lender1);
         // ensure lender with no LP cannot remove anything
-        vm.expectRevert(IScaledPool.RemoveQuoteNoClaim.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteNoClaim.selector);
         _pool.removeAllQuoteToken(4550);
 
         // should revert if insufficient quote token
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.RemoveQuoteInsufficientQuoteAvailable.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteInsufficientQuoteAvailable.selector);
         _pool.removeQuoteToken(20_000 * 1e18, 4550);
 
         // should revert if removing quote token from higher price buckets would drive lup below htp
-        vm.expectRevert(IScaledPool.RemoveQuoteLUPBelowHTP.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteLUPBelowHTP.selector);
         _pool.removeQuoteToken(20_000 * 1e18, 4551);
 
         // should revert if bucket has enough quote token, but lender has insufficient LP
         changePrank(_lender1);
         _pool.addQuoteToken(20_000 * 1e18, 4550);
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.RemoveQuoteInsufficientLPB.selector);
+        vm.expectRevert(IPoolErrors.RemoveQuoteInsufficientLPB.selector);
         _pool.removeQuoteToken(15_000 * 1e18, 4550);
 
         // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
@@ -423,7 +425,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         );
     }
 
-    function testScaledPoolRemoveQuoteTokenWithDebt() external {
+    function testPoolRemoveQuoteTokenWithDebt() external {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 100 * 1e18);
 
         // lender adds initial quote token
@@ -472,7 +474,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
                 borrower:     _borrower,
                 pledgeAmount: 100 * 1e18,
                 borrowAmount: 3_000 * 1e18,
-                indexLimit:   _pool.priceToIndex(4_000 * 1e18),
+                indexLimit:   2_000,
                 price:        333_777.824045947762079231 * 1e18
             })
         );
@@ -489,7 +491,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         assertEq(exchangeRateBefore, _exchangeRate(1606));
 
         // lender makes a partial withdrawal, paying an early withdrawal penalty
-        uint256 penalty = Maths.WAD - Maths.wdiv(_pool.interestRate(), _pool.WAD_WEEKS_PER_YEAR());
+        uint256 penalty = Maths.WAD - Maths.wdiv(_pool.interestRate(), PoolUtils.WAD_WEEKS_PER_YEAR);
         assertLt(penalty, Maths.WAD);
         uint256 expectedWithdrawal1 = Maths.wmul(1_700 * 1e18, penalty);
         _removeLiquidity(
@@ -533,7 +535,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         );
     }
 
-    function testScaledPoolMoveQuoteToken() external {
+    function testPoolMoveQuoteToken() external {
         Liquidity[] memory amounts = new Liquidity[](3);
         amounts[0] = Liquidity({amount: 40_000 * 1e18, index: 2549, newLup: BucketMath.MAX_PRICE});
         amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
@@ -632,7 +634,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
      *              Attempts to move quote token from bucket with available collateral.
      *              Attempts to move quote token when doing so would drive lup below htp.
      */
-    function testScaledPoolMoveQuoteTokenRequireChecks() external {
+    function testPoolMoveQuoteTokenRequireChecks() external {
         // test setup
         _mintCollateralAndApproveTokens(_lender1, _collateral.balanceOf(_lender1) + 100_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_lender1) + 1_500_000 * 1e18);
@@ -651,7 +653,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
         );
 
         // should revert if moving quote token to the existing price
-        vm.expectRevert(IScaledPool.MoveQuoteToSamePrice.selector);
+        vm.expectRevert(IPoolErrors.MoveQuoteToSamePrice.selector);
         _pool.moveQuoteToken(5_000 * 1e18, 4549, 4549);
 
         // borrow all available quote in the higher priced original 3 buckets, as well as some of the new lowest price bucket
@@ -668,7 +670,7 @@ contract ERC20ScaledQuoteTokenTest is ERC20HelperContract {
 
         // should revert if movement would drive lup below htp
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.MoveQuoteLUPBelowHTP.selector);
+        vm.expectRevert(IPoolErrors.MoveQuoteLUPBelowHTP.selector);
         _pool.moveQuoteToken(40_000 * 1e18, 4549, 6000);
 
         // should be able to moveQuoteToken if properly specified

@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity 0.8.14;
 
-import { ERC20 }      from "@solmate/tokens/ERC20.sol";
+import { ERC20 } from '@solmate/tokens/ERC20.sol';
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { DSTestPlus } from '../utils/DSTestPlus.sol';
+import { Token }      from '../utils/Tokens.sol';
 
-import { Maths } from "../../libraries/Maths.sol";
+import { ERC20Pool }        from '../../erc20/ERC20Pool.sol';
+import { ERC20PoolFactory } from '../../erc20/ERC20PoolFactory.sol';
 
-import { DSTestPlus } from "../utils/DSTestPlus.sol";
-import { Token }      from "../utils/Tokens.sol";
+import { PoolInfoUtils } from '../../base/PoolInfoUtils.sol';
+
+import '../../libraries/Maths.sol';
+import '../../libraries/Actors.sol';
 
 abstract contract ERC20DSTestPlus is DSTestPlus {
 
@@ -177,14 +180,16 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
-    Token     internal _collateral;
-    Token     internal _quote;
-    ERC20Pool internal _pool;
+    Token         internal _collateral;
+    Token         internal _quote;
+    ERC20Pool     internal _pool;
+    PoolInfoUtils internal _poolUtils;
 
     constructor() {
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _poolUtils  = new PoolInfoUtils();
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
@@ -328,15 +333,15 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _assertPool(PoolState memory state_) internal {
-        ( , uint256 htp, uint256 lup, ) = _pool.poolPricesInfo();
-        (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator) = _pool.poolLoansInfo();
-        (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _pool.poolUtilizationInfo();
+        ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator) = _poolUtils.poolLoansInfo(address(_pool));
+        (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
 
         assertEq(poolSize,              state_.poolSize);
         assertEq(_pool.pledgedCollateral(),     state_.pledgedCollateral);
-        assertEq(_pool.encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
+        assertEq(_encumberedCollateral(state_.borrowerDebt, state_.lup), state_.encumberedCollateral);
         assertEq(_pool.borrowerDebt(),          state_.borrowerDebt);
         assertEq(poolActualUtilization, state_.actualUtilization);
         assertEq(poolTargetUtilization, state_.targetUtilization);
@@ -369,19 +374,26 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _assertBorrower(BorrowerState memory state_) internal {
-        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
-        (, , uint256 lup, ) = _pool.poolPricesInfo();
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
+        ( , , , , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
         assertEq(debt,        state_.debt);
         assertEq(pendingDebt, state_.pendingDebt);
         assertEq(col,         state_.collateral);
         assertEq(mompFactor,  state_.mompFactor);
         assertEq(inflator,    state_.inflator);
 
-        assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, lup), state_.collateralization);
+        assertEq(
+            PoolUtils.collateralization(
+                state_.debt,
+                state_.collateral,
+                lup
+            ),
+            state_.collateralization
+        );
     }
 
     function _assertPoolPrices(PoolPricesInfo memory state_) internal {
-        (uint256 hpb, uint256 htp, uint256 lup, uint256 lupIndex) = _pool.poolPricesInfo();
+        (uint256 hpb, , uint256 htp, , uint256 lup, uint256 lupIndex) = _poolUtils.poolPricesInfo(address(_pool));
         assertEq(hpb,      state_.hpb);
         assertEq(htp,      state_.htp);
         assertEq(lup,      state_.lup);
@@ -389,30 +401,34 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _loansCount() internal view returns (uint256 loansCount_) {
-        ( , loansCount_, , ) = _pool.poolLoansInfo();
+        ( , loansCount_, , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _poolSize() internal view returns (uint256 poolSize_) {
-        (poolSize_, , , ) = _pool.poolLoansInfo();
+        (poolSize_, , , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
-        ( , , , , , exchangeRate_, ) = _pool.bucketAt(index_);
+        ( , , , , , exchangeRate_) = _poolUtils.bucketInfo(address(_pool), index_);
     }
 
     function _lup() internal view returns (uint256 lup_) {
-        (, , lup_, ) = _pool.poolPricesInfo();
+        ( , , , , lup_, ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
     function _htp() internal view returns (uint256 htp_) {
-        (, htp_, , ) = _pool.poolPricesInfo();
+        ( , , htp_, , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
     function _hpb() internal view returns (uint256 hpb_) {
-        (hpb_, , , ) = _pool.poolPricesInfo();
+        (hpb_, , , , , ) = _poolUtils.poolPricesInfo(address(_pool));
     }
 
     function _indexToPrice(uint256 index_) internal view returns (uint256 price_) {
-        ( price_, , , , , , ) = _pool.bucketAt(index_);
+        ( price_, , , , , ) = _poolUtils.bucketInfo(address(_pool), index_);
+    }
+
+    function _encumberedCollateral(uint256 debt_, uint256 price_) internal pure returns (uint256 encumberance_) {
+        encumberance_ =  price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
     }
 }

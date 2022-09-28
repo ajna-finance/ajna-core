@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
-import { BucketMath } from "../../libraries/BucketMath.sol";
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
+import '../../libraries/BucketMath.sol';
 
-contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
+contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
 
     address internal _lender;
     address internal _lender1;
@@ -38,7 +39,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
 
         // should fail if allowed owner is not set
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // should fail if allowed owner is set to 0x
@@ -46,7 +47,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(address(0), indexes[0], 1_000 * 1e18);
 
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
     }
 
@@ -63,7 +64,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
 
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender, indexes);
     }
 
@@ -80,7 +81,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
 
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.TransferLPInvalidIndex.selector);
+        vm.expectRevert(IPoolErrors.TransferLPInvalidIndex.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
     }
 
@@ -97,7 +98,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[1], 30_000 * 1e27);
 
         changePrank(_lender2);
-        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
     }
 
@@ -141,7 +142,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check that old token ownership was removed - a new transfer should fail
-        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check lenders lp balance
@@ -202,7 +203,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.transferLPTokens(_lender1, _lender2, transferIndexes);
 
         // check that old token ownership was removed - transfer with same indexes should fail
-        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, transferIndexes);
 
         // check lenders lp balance
@@ -269,7 +270,7 @@ contract ERC20ScaledPoolTransferLPTokensTest is ERC20HelperContract {
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check that old token ownership was removed - transfer with same indexes should fail
-        vm.expectRevert(IScaledPool.TransferLPNoAllowance.selector);
+        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
         _pool.transferLPTokens(_lender1, _lender2, indexes);
 
         // check lenders lp balance

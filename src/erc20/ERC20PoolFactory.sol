@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { IPoolFactory } from "../base/interfaces/IPoolFactory.sol";
+import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 
-import { ERC20Pool } from "./ERC20Pool.sol";
+import '../base/interfaces/IPoolFactory.sol';
+import '../base/PoolDeployer.sol';
 
-import { PoolDeployer } from "../base/PoolDeployer.sol";
-
-import { ClonesWithImmutableArgs } from "@clones/ClonesWithImmutableArgs.sol";
+import './ERC20Pool.sol';
 
 contract ERC20PoolFactory is IPoolFactory, PoolDeployer {
 

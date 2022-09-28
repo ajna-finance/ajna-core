@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { BucketMath } from "../../libraries/BucketMath.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
+import '../../libraries/BucketMath.sol';
 
-contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
+contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -28,7 +28,7 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
     }
 
-    function testScaledPoolInterestRateIncreaseDecrease() external {
+    function testPoolInterestRateIncreaseDecrease() external {
         Liquidity[] memory amounts = new Liquidity[](5);
         amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
         amounts[1] = Liquidity({amount: 20_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
@@ -147,7 +147,7 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
 
-        assertEq(_pool.lenderInterestMargin(), 0.85 * 1e18);
+        assertEq(_poolUtils.lenderInterestMargin(address(_pool)), 0.85 * 1e18);
     }
 
     function testPendingInflator() external {
@@ -220,7 +220,7 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testScaledPoolEMAAndTargetUtilizationUpdate() external {
+    function testPoolEMAAndTargetUtilizationUpdate() external {
 
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
@@ -265,7 +265,7 @@ contract ERC20ScaledInterestRateTestAndEMAs is ERC20HelperContract {
                 indexLimit:   3_010,
                 price:        327.188250324085203338 * 1e18
             })
-        ); 
+        );
 
         _assertPool(
             PoolState({

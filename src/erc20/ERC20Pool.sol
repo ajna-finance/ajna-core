@@ -2,22 +2,24 @@
 
 pragma solidity 0.8.14;
 
-import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IERC20Pool } from "./interfaces/IERC20Pool.sol";
+import './interfaces/IERC20Pool.sol';
 
-import { ScaledPool } from "../base/ScaledPool.sol";
+import '../base/Pool.sol';
 
-import { Heap }  from "../libraries/Heap.sol";
-import { Maths } from "../libraries/Maths.sol";
+import '../libraries/Heap.sol';
+import '../libraries/Maths.sol';
 import '../libraries/Book.sol';
-import '../libraries/Lenders.sol';
+import '../libraries/Actors.sol';
 
-contract ERC20Pool is IERC20Pool, ScaledPool {
+contract ERC20Pool is IERC20Pool, Pool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
-    using Lenders   for mapping(uint256 => mapping(address => Lenders.Lender));
+    using Book      for Book.Deposits;
+    using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
+    using Actors    for mapping(address => Actors.Borrower);
     using Heap      for Heap.Data;
 
     /***********************/
@@ -35,7 +37,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function initialize(
         uint256 rate_,
         address ajnaTokenAddress_
-    ) external {
+    ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         collateralScale = 10**(18 - collateral().decimals());
@@ -101,24 +103,25 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveCollateralToSamePrice();
 
-        if (buckets.getCollateral(fromIndex_) < collateralAmountToMove_) revert MoveCollateralInsufficientCollateral();
+        PoolState memory poolState = _getPoolState();
 
-        uint256 curDebt = _accruePoolInterest();
-
-        fromBucketLPs_ = buckets.collateralToLPs(
+        uint256 fromBucketCollateral;
+        (fromBucketLPs_, fromBucketCollateral) = buckets.collateralToLPs(
             fromIndex_,
-            _valueAt(fromIndex_),
+            deposits.valueAt(fromIndex_),
             collateralAmountToMove_
         );
+        if (fromBucketCollateral < collateralAmountToMove_) revert MoveCollateralInsufficientCollateral();
+
         (uint256 lpBalance, ) = lenders.getLenderInfo(
             fromIndex_,
             msg.sender
         );
         if (fromBucketLPs_ > lpBalance) revert MoveCollateralInsufficientLP();
 
-        toBucketLPs_ = buckets.collateralToLPs(
+        (toBucketLPs_, ) = buckets.collateralToLPs(
             toIndex_,
-            _valueAt(toIndex_),
+            deposits.valueAt(toIndex_),
             collateralAmountToMove_
         );
 
@@ -129,7 +132,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         buckets.removeCollateral(fromIndex_, fromBucketLPs_, collateralAmountToMove_);
         buckets.addCollateral(toIndex_, toBucketLPs_, collateralAmountToMove_);
 
-        _updateInterestRateAndEMAs(curDebt, _lup());
+        _updatePool(poolState, _lup(poolState.accruedDebt));
 
         emit MoveCollateral(msg.sender, fromIndex_, toIndex_, collateralAmountToMove_);
     }
@@ -137,17 +140,14 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function removeAllCollateral(
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
-        uint256 availableCollateral = buckets.getCollateral(index_);
-        if (availableCollateral == 0) revert RemoveCollateralInsufficientCollateral();
 
-        _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
             index_,
-            _valueAt(index_),
-            lenderLPsBalance,
-            availableCollateral
+            deposits.valueAt(index_),
+            lenderLPsBalance
         );
         if (collateralAmountRemoved_ == 0) revert RemoveCollateralNoClaim();
 
@@ -156,7 +156,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // update bucket accounting
         buckets.removeCollateral(index_, redeemedLenderLPs_, collateralAmountRemoved_);
 
-        _updateInterestRateAndEMAs(borrowerDebt, _lup());
+        _updatePool(poolState, _lup(poolState.accruedDebt));
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
@@ -195,49 +195,72 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     }
 
     function kick(address borrower_) external override {
-        (uint256 curDebt) = _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
-        Borrower memory borrower = borrowers[borrower_];
-        if (borrower.debt == 0) revert KickNoDebt();
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+            borrower_,
+            poolState.inflator
+        );
+        if (borrowerAccruedDebt == 0) revert KickNoDebt();
 
-        (borrower.debt, borrower.inflatorSnapshot) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
-        uint256 lup = _lup();
-        _updateInterestRateAndEMAs(curDebt, lup);
+        uint256 lup = _lup(poolState.accruedDebt);
 
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert LiquidateBorrowerOk();
+        if (
+            PoolUtils.collateralization(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                lup
+            ) >= Maths.WAD
+        ) revert LiquidateBorrowerOk();
 
-        borrowers[borrower_] = borrower;
+        uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
+        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
+
+        borrowers.updateDebt(
+            borrower_,
+            borrowerAccruedDebt,
+            poolState.inflator
+        );
+
+        _updatePool(poolState, lup);
+
         liquidations[borrower_] = LiquidationInfo({
             kickTime:            uint128(block.timestamp),
             referencePrice:      uint128(_hpbIndex()),
-            remainingCollateral: borrower.collateral,
-            remainingDebt:       borrower.debt
+            remainingCollateral: borrowerPledgedCollateral,
+            remainingDebt:       borrowerAccruedDebt
         });
 
-        uint256 thresholdPrice = borrower.debt * Maths.WAD / borrower.collateral;
         // TODO: Uncomment when needed
         // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
 
-        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
-
         // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
         // TODO: Account for repossessed collateral
-        liquidationBondEscrowed += Maths.wmul(borrower.debt, 0.01 * 1e18);
+        liquidationBondEscrowed += Maths.wmul(borrowerAccruedDebt, 0.01 * 1e18);
 
         // Post the liquidation bond
         // Repossess the borrowers collateral, initialize the auction cooldown timer
 
-        emit Kick(borrower_, borrower.debt, borrower.collateral);
+        emit Kick(borrower_, borrowerAccruedDebt, borrowerPledgedCollateral);
     }
 
     // TODO: Add reentrancy guard
     function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external override {
-        Borrower        memory borrower    = borrowers[borrower_];
         LiquidationInfo memory liquidation = liquidations[borrower_];
-
         // check liquidation process status
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, _lup()) >= Maths.WAD) revert LiquidateBorrowerOk();
+
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+            borrower_,
+            inflatorSnapshot
+        );
+        if (
+            PoolUtils.collateralization(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                _lup(borrowerDebt)
+            ) >= Maths.WAD
+        ) revert LiquidateBorrowerOk();
 
         // TODO: calculate using price decrease function and amount_
         uint256 liquidationPrice = Maths.WAD;
