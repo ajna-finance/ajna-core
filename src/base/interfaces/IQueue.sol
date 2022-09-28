@@ -8,11 +8,6 @@ interface IQueue {
     /*** Structs ***/
     /***************/
 
-    struct NodeInfo {
-        address prev;
-        address next;
-        bool active;
-    }
 
     /**************************/
     /*** External Functions ***/

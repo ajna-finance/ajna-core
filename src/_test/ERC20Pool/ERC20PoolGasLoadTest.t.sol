@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { BucketMath }  from "../../libraries/BucketMath.sol";
+import '../utils/Tokens.sol';
 
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
-import { Token }               from "../utils/Tokens.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
+
+import '../../libraries/BucketMath.sol';
 
 contract ERC20PoolGasLoadTest is ERC20HelperContract {
     address[] private _lenders;
@@ -38,7 +39,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         vm.assume(borrowerId_ <= LOANS_COUNT);
         skip(15 hours);
         address borrower = _borrowers[borrowerId_];
-        (, uint256 pendingDebt, , , ) = _pool.borrowerInfo(borrower);
+        (, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
         vm.prank(borrower);
         _pool.repay(borrower, pendingDebt);
 
@@ -108,7 +109,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
             assertEq(_loansCount(), LOANS_COUNT);
 
             address borrower = _borrowers[i];
-            (, uint256 pendingDebt, , , ) = _pool.borrowerInfo(borrower);
+            (, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
             vm.prank(borrower);
             _pool.repay(borrower, pendingDebt);
 

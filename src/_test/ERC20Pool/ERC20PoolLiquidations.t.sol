@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
-import { Maths } from "../../libraries/Maths.sol";
-import { BucketMath } from "../../libraries/BucketMath.sol";
-
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
+import '../../libraries/Actors.sol';
+import '../../libraries/Maths.sol';
+import '../../libraries/PoolUtils.sol';
 
 
 contract ERC20PoolKickSuccessTest is ERC20HelperContract {
@@ -527,24 +526,24 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         skip(6238);
         uint256 referencePrice = 8_678.5 * 1e18;
         uint256 kickTime = block.timestamp;
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
         skip(1444); // price should not change in the first hour
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
 
         skip(5756);     // 2 hours
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 43_392.5 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 43_392.5 * 1e18);
         skip(2394);     // 2 hours, 39 minutes, 54 seconds
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 27_367.159606354998613290 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 27_367.159606354998613290 * 1e18);
         skip(2586);     // 3 hours, 23 minutes
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 16_633.737549018910661740 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 16_633.737549018910661740 * 1e18);
         skip(3);        // 3 seconds later
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 16_624.132299820494703920 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 16_624.132299820494703920 * 1e18);
         skip(20153);    // 8 hours, 35 minutes, 53 seconds
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 343.207165783609045700 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 343.207165783609045700 * 1e18);
         skip(97264);    // 36 hours
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 0.00000252577588655 * 1e18);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 0.00000252577588655 * 1e18);
         skip(129600);   // 72 hours
-        assertEq(_pool.auctionPrice(referencePrice, kickTime), 0);
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 0);
     }
 
 }

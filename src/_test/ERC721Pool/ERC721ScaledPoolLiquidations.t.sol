@@ -1,15 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
-
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
-
-import { Maths } from "../../libraries/Maths.sol";
-import { BucketMath } from "../../libraries/BucketMath.sol";
-
 import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
+
+import '../../erc721/ERC721Pool.sol';
+import '../../erc721/ERC721PoolFactory.sol';
+
+import '../../libraries/Actors.sol';
+import '../../libraries/Maths.sol';
+import '../../libraries/PoolUtils.sol';
 
 
 contract ERC721PoolKickSuccessTest is ERC721HelperContract {

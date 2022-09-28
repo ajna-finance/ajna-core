@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC721Pool }        from "../../erc721/ERC721Pool.sol";
-import { ERC721PoolFactory } from "../../erc721/ERC721PoolFactory.sol";
+import { DSTestPlus }                from '../utils/DSTestPlus.sol';
+import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 
-import { PoolDeployer } from "../../base/PoolDeployer.sol";
+import '../../erc721/ERC721Pool.sol';
+import '../../erc721/ERC721PoolFactory.sol';
 
-import { DSTestPlus }                     from "../utils/DSTestPlus.sol";
-import { NFTCollateralToken, Token } from "../utils/Tokens.sol";
+import '../../base/PoolDeployer.sol';
 
-contract ERC721ScaledPoolFactoryTest is DSTestPlus {
+contract ERC721PoolFactoryTest is DSTestPlus {
     address            internal _NFTCollectionPoolAddress;
     address            internal _NFTSubsetOnePoolAddress;
     address            internal _NFTSubsetTwoPoolAddress;

@@ -2,24 +2,26 @@
 
 pragma solidity 0.8.14;
 
-import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
-import { ERC20 }     from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
-import { IERC20Pool } from "./interfaces/IERC20Pool.sol";
+import './interfaces/IERC20Pool.sol';
 
-import { ScaledPool } from "../base/ScaledPool.sol";
+import '../base/Pool.sol';
 
-import { Heap }  from "../libraries/Heap.sol";
-import { Maths } from "../libraries/Maths.sol";
+import '../libraries/Heap.sol';
+import '../libraries/Maths.sol';
 import '../libraries/Book.sol';
-import '../libraries/Lenders.sol';
+import '../libraries/Actors.sol';
 
-contract ERC20Pool is IERC20Pool, ScaledPool {
+contract ERC20Pool is IERC20Pool, Pool {
     using SafeERC20 for ERC20;
     using Book      for mapping(uint256 => Book.Bucket);
-    using Lenders   for mapping(uint256 => mapping(address => Lenders.Lender));
+    using Book      for Book.Deposits;
+    using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
+    using Actors    for mapping(address => Actors.Borrower);
     using Heap      for Heap.Data;
+    using Queue     for Queue.Data;
 
     /***********************/
     /*** State Variables ***/
@@ -34,7 +36,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function initialize(
         uint256 rate_,
         address ajnaTokenAddress_
-    ) external {
+    ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
         collateralScale = 10**(18 - collateral().decimals());
@@ -100,24 +102,25 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveCollateralToSamePrice();
 
-        if (buckets.getCollateral(fromIndex_) < collateralAmountToMove_) revert MoveCollateralInsufficientCollateral();
+        PoolState memory poolState = _getPoolState();
 
-        uint256 curDebt = _accruePoolInterest();
-
-        fromBucketLPs_ = buckets.collateralToLPs(
+        uint256 fromBucketCollateral;
+        (fromBucketLPs_, fromBucketCollateral) = buckets.collateralToLPs(
             fromIndex_,
-            _valueAt(fromIndex_),
+            deposits.valueAt(fromIndex_),
             collateralAmountToMove_
         );
+        if (fromBucketCollateral < collateralAmountToMove_) revert MoveCollateralInsufficientCollateral();
+
         (uint256 lpBalance, ) = lenders.getLenderInfo(
             fromIndex_,
             msg.sender
         );
         if (fromBucketLPs_ > lpBalance) revert MoveCollateralInsufficientLP();
 
-        toBucketLPs_ = buckets.collateralToLPs(
+        (toBucketLPs_, ) = buckets.collateralToLPs(
             toIndex_,
-            _valueAt(toIndex_),
+            deposits.valueAt(toIndex_),
             collateralAmountToMove_
         );
 
@@ -128,7 +131,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         buckets.removeCollateral(fromIndex_, fromBucketLPs_, collateralAmountToMove_);
         buckets.addCollateral(toIndex_, toBucketLPs_, collateralAmountToMove_);
 
-        _updateInterestRateAndEMAs(curDebt, _lup());
+        _updatePool(poolState, _lup(poolState.accruedDebt));
 
         emit MoveCollateral(msg.sender, fromIndex_, toIndex_, collateralAmountToMove_);
     }
@@ -136,17 +139,14 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
     function removeAllCollateral(
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
-        uint256 availableCollateral = buckets.getCollateral(index_);
-        if (availableCollateral == 0) revert RemoveCollateralInsufficientCollateral();
 
-        _accruePoolInterest();
+        PoolState memory poolState = _getPoolState();
 
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
         (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
             index_,
-            _valueAt(index_),
-            lenderLPsBalance,
-            availableCollateral
+            deposits.valueAt(index_),
+            lenderLPsBalance
         );
         if (collateralAmountRemoved_ == 0) revert RemoveCollateralNoClaim();
 
@@ -155,7 +155,7 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         // update bucket accounting
         buckets.removeCollateral(index_, redeemedLenderLPs_, collateralAmountRemoved_);
 
-        _updateInterestRateAndEMAs(borrowerDebt, _lup());
+        _updatePool(poolState, _lup(poolState.accruedDebt));
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
@@ -193,79 +193,123 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
-    
 
     // TODO: Add reentrancy guard
-    function take(address borrower_, uint256 maxAmount_, bytes memory swapCalldata_) external override {
-        Borrower    memory borrower    = borrowers[borrower_];
-        Liquidation memory liquidation = liquidations[borrower_];
+    function take(address borrower_, uint256 maxCollateral, bytes memory swapCalldata_) external override {
 
-        (uint256 curDebt) = _accruePoolInterest();
-        (borrower.debt,) = _accrueBorrowerInterest(borrower.debt, borrower.inflatorSnapshot, inflatorSnapshot);
+        (
+            uint256 borrowerAccruedDebt,
+            uint256 borrowerPledgedCollateral,
+            uint256 borrowerMompFactor,
+            uint256 liquidationBondSize,
+            int256  rewardOrPenalty,
+            uint256 poolStateInflator,
+            uint256 poolStateAccruedDebt,
+            uint256 amount,
+            uint256 price
+        ) = _take(borrower_, maxCollateral_);
 
-        uint256 lup = _lup();
-        _updateInterestRateAndEMAs(curDebt, lup);
+        // PoolState memory poolState = _getPoolState();
+        // Liquidation memory liquidation = liquidations[borrower_];
+        
+        // // check liquidation process status
+        // (,,bool auctionActive) = auctions.get(borrower_);
+        // if (auctionActive != true) revert NoAuction();
+        // if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
 
-        // check liquidation process status
-        (,,bool auctionActive) = getAuction(borrower_);
-        if (auctionActive != true) revert NoAuction();
-        if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
-        if (_borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert TakeBorrowerSafe();
+        // (
+        // uint256 borrowerAccruedDebt,
+        // uint256 borrowerPledgedCollateral,
+        // uint256 borrowerMompFactor,
+        // uint256 borrowerInflatorSnapshot
+        // ) = borrowers.getBorrower(borrower_);
 
-        // Calculate BPF
-        // TODO: remove auction from queue if auctionDebt == 0;
-        uint256 price = _auctionPrice(liquidation.referencePrice, uint256(liquidation.kickTime));
-        int256 bpf = _bpf(borrower, liquidation, price);
+        // (borrowerAccruedDebt, borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+        //     borrower_,
+        //     inflatorSnapshot
+        // );
+        // if (
+        //     PoolUtils.collateralization(
+        //         borrowerAccruedDebt,
+        //         borrowerPledgedCollateral,
+        //         _lup(borrowerDebt)
+        //     ) >= Maths.WAD
+        // ) revert LiquidateBorrowerOk();
 
-        // Calculate amounts
-        uint256 amount = Maths.min(Maths.wmul(price, borrower.collateral), maxAmount_);
-        uint256 repayAmount = Maths.wmul(amount, uint256(1e18 - bpf));
-        int256 rewardOrPenalty;
+        // // Calculate BPF
+        // // TODO: remove auction from queue if auctionDebt == 0;
+        // uint256 price = PoolUtils.auctionPrice(liquidation.referencePrice, uint256(liquidation.kickTime));
+        // int256 bpf = PoolUtils._bpf(
+        //     borrowerAccruedDebt,
+        //     borrowerPledgedCollateral,
+        //     borrowerMompFactor,
+        //     borrowerInflatorSnapshot,
+        //     liquidation.bondFactor,
+        //     price);
 
-        if (repayAmount >= borrower.debt) {
-            repayAmount = borrower.debt;
-            amount = Maths.wdiv(borrower.debt, uint256(1e18 - bpf));
-        }
+        // // Calculate amounts
+        // uint256 amount = Maths.min(Maths.wmul(price, borrowerPledgedCollateral), maxAmount_);
+        // uint256 repayAmount = Maths.wmul(amount, uint256(1e18 - bpf));
+        // int256 rewardOrPenalty;
 
-        if (bpf >= 0) {
-            // Take is below neutralPrice, Kicker is rewarded
-            rewardOrPenalty = int256(amount - repayAmount);
-            liquidation.bondSize += amount - repayAmount;
+        // if (repayAmount >= borrowerAccruedDebt) {
+        //     repayAmount = borrowerAccruedDebt;
+        //     amount = Maths.wdiv(borrowerAccruedDebt, uint256(1e18 - bpf));
+        // }
+
+        // if (bpf >= 0) {
+        //     // Take is below neutralPrice, Kicker is rewarded
+        //     rewardOrPenalty = int256(amount - repayAmount);
+        //     liquidation.bondSize += amount - repayAmount;
  
-        } else {     
-            // Take is above neutralPrice, Kicker is penalized
-            rewardOrPenalty = PRBMathSD59x18.mul(int256(amount), bpf);
-            liquidation.bondSize -= uint256(-rewardOrPenalty);
-        }
+        // } else {     
+        //     // Take is above neutralPrice, Kicker is penalized
+        //     rewardOrPenalty = PRBMathSD59x18.mul(int256(amount), bpf);
+        //     liquidation.bondSize -= uint256(-rewardOrPenalty);
+        // }
 
 
-        borrowerDebt  -= repayAmount;
-        borrower.debt -= repayAmount;
+        // poolState.accruedDebt -= repayAmount;
+        // borrowerAccruedDebt   -= repayAmount;
 
         // Reduce liquidation's remaining collateral
-        borrower.collateral -= Maths.wdiv(amount, price);
-        pledgedCollateral -= Maths.wdiv(amount, price);
+        // TODO: refactor collateral
+        pledgedCollateral         -= maxCollateral;
+        borrowerPledgedCollateral -= Maths.wdiv(amount, price);
 
-        // If recollateralized remove loan from auction
-        if (borrower.collateral != 0 && _borrowerCollateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) {
-            _removeAuction(borrower_);
+        uint256 newLup = _lup(pledgedCollateral);
+        // update loan queue
+        if (borrowerPledgedCollateral != 0 && PoolUtils.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, newLup) >= Maths.WAD) {
+            auctions.remove(borrower_);
 
-            if (borrower.debt != 0) {
-                if (loans.count - 1 != 0) if (borrower.debt < _poolMinDebtAmount(curDebt)) revert BorrowAmountLTMinDebt();
-                uint256 thresholdPrice = _t0ThresholdPrice(
-                    borrower.debt,
-                    borrower.collateral,
-                    borrower.inflatorSnapshot
+            if (borrowerAccruedDebt > 0) {
+                uint256 loansCount = loans.count - 1;
+                if (loansCount != 0
+                    &&
+                    (borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
+                ) revert BorrowAmountLTMinDebt();
+
+                uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
+                    borrowerAccruedDebt,
+                    borrowerPledgedCollateral,
+                    poolState.inflator
                 );
                 loans.upsert(borrower_, thresholdPrice);
-
-                uint256 numLoans     = (loans.count - 1) * 1e18;
-                borrower.mompFactor  = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrower.inflatorSnapshot): 0;
-            }
+            } 
         }
 
-        borrowers[borrower_] = borrower;
-        liquidations[borrower_] = liquidation;
+        uint256 numLoans   = (loans.count - 1) * 1e18;
+        borrowerMompFactor = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrowerInflatorSnapshot): 0;
+
+        borrowers.update(
+            borrower_,
+            borrowerAccruedDebt,
+            borrowerPledgedCollateral,
+            borrowerMompFactor,
+            poolStateInflator);
+        
+        _updatePool(poolState, newLup);
+        liquidations[borrower_].bondSize = liquidationBondSize;
 
         // TODO: implement flashloan functionality
         // Flash loan full amount to liquidate to borrower
@@ -279,6 +323,55 @@ contract ERC20Pool is IERC20Pool, ScaledPool {
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
     }
 
+    //function kick(address borrower_) external override {
+    //    PoolState memory poolState = _getPoolState();
+
+    //    (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+    //        borrower_,
+    //        poolState.inflator
+    //    );
+    //    if (borrowerAccruedDebt == 0) revert KickNoDebt();
+
+    //    uint256 lup = _lup(poolState.accruedDebt);
+
+    //    if (
+    //        PoolUtils.collateralization(
+    //            borrowerAccruedDebt,
+    //            borrowerPledgedCollateral,
+    //            lup
+    //        ) >= Maths.WAD
+    //    ) revert LiquidateBorrowerOk();
+
+    //    uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
+    //    if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
+
+    //    borrowers.updateDebt(
+    //        borrower_,
+    //        borrowerAccruedDebt,
+    //        poolState.inflator
+    //    );
+
+    //    _updatePool(poolState, lup);
+
+    //    liquidations[borrower_] = Liquidation({
+    //        kickTime:            uint128(block.timestamp),
+    //        referencePrice:      uint128(_hpbIndex()),
+    //        remainingCollateral: borrowerPledgedCollateral,
+    //        remainingDebt:       borrowerAccruedDebt
+    //    });
+
+    //    // TODO: Uncomment when needed
+    //    // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
+
+    //    // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
+    //    // TODO: Account for repossessed collateral
+    //    liquidationBondEscrowed += Maths.wmul(borrowerAccruedDebt, 0.01 * 1e18);
+
+    //    // Post the liquidation bond
+    //    // Repossess the borrowers collateral, initialize the auction cooldown timer
+
+    //    emit Kick(borrower_, borrowerAccruedDebt, borrowerPledgedCollateral);
+    //}
     
 
     /************************/

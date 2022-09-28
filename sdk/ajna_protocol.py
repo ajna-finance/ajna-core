@@ -7,6 +7,10 @@ from brownie import (
     ERC20Pool,
     BucketMath,
     Maths,
+    Book,
+    Actors,
+    Heap,
+    PoolUtils,
 )
 from brownie.network.account import Accounts, LocalAccount
 
@@ -27,6 +31,10 @@ class AjnaProtocol:
 
         self.bucket_math = BucketMath.deploy({"from": self.deployer})
         self.maths = Maths.deploy({"from": self.deployer})
+        self.book = Book.deploy({"from": self.deployer})
+        self.actors = Actors.deploy({"from": self.deployer})
+        self.heap = Heap.deploy({"from": self.deployer})
+        self.pool_utils = PoolUtils.deploy({"from": self.deployer})
 
         self.ajna_factory = ERC20PoolFactory.deploy({"from": self.deployer})
 
@@ -55,7 +63,7 @@ class AjnaProtocol:
             interest_rate: default interest rate of pool
 
         Returns:
-            ScaledPool
+            Pool
         """
 
         deploy_tx = self.ajna_factory.deployPool(
@@ -75,7 +83,7 @@ class AjnaProtocol:
             quote_token_address
         )
 
-        return ScaledPool.at(pool_address)
+        return Pool.at(pool_address)
 
     def add_token(self, token_address: str, reserve_address: str) -> None:
         """
@@ -135,7 +143,7 @@ class AjnaProtocol:
             force_deploy: if True, pool is deployed if it is not found.
 
         Returns:
-            ScaledPool
+            Pool
         """
 
         pool_address = self.ajna_factory.deployedPools(
@@ -151,7 +159,7 @@ class AjnaProtocol:
         )
 
         if is_deployed:
-            return ScaledPool.at(pool_address)
+            return Pool.at(pool_address)
 
         if force_deploy:
             return self.deploy_erc20_pool(collateral_address, quote_token_address)

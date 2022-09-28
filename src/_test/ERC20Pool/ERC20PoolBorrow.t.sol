@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { IERC20Pool }  from "../../erc20/interfaces/IERC20Pool.sol";
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import '../../erc20/interfaces/IERC20Pool.sol';
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
-import { BucketMath } from "../../libraries/BucketMath.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
+import '../../libraries/BucketMath.sol';
 
-contract ERC20ScaledBorrowTest is ERC20HelperContract {
+contract ERC20PoolBorrowTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -31,7 +32,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
     }
 
-    function testScaledPoolBorrowAndRepay() external {
+    function testPoolBorrowAndRepay() external {
         uint256 highest = 2550;
         uint256 high    = 2551;
         uint256 med     = 2552;
@@ -240,7 +241,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
     }
 
-    function testScaledPoolBorrowerInterestAccumulation() external {
+    function testPoolBorrowerInterestAccumulation() external {
         uint256 highest = 2550;
         uint256 high    = 2551;
         uint256 med     = 2552;
@@ -527,10 +528,10 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
      *              Attempts to borrow when result would be borrower under collateralization.
      *              Attempts to borrow when result would be pool under collateralization.
      */
-    function testScaledPoolBorrowRequireChecks() external {
+    function testPoolBorrowRequireChecks() external {
         // should revert if borrower attempts to borrow with an out of bounds limitIndex
         changePrank(_borrower);
-        vm.expectRevert(IScaledPool.BorrowLimitIndexReached.selector);
+        vm.expectRevert(IPoolErrors.BorrowLimitIndexReached.selector);
         _pool.borrow(1_000 * 1e18, 5000);
 
         // add initial quote to the pool
@@ -545,8 +546,8 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         );
 
         changePrank(_borrower);
-        // should revert if borrow would result in pool under collateralization
-        vm.expectRevert(IScaledPool.BorrowPoolUnderCollateralized.selector);
+        // should revert if borrower didn't pledged any collateral
+        vm.expectRevert(IPoolErrors.BorrowBorrowerUnderCollateralized.selector);
         _pool.borrow(500 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after adding sufficient collateral
@@ -575,11 +576,11 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         changePrank(_borrower);
         // should revert if borrower attempts to borrow more than minimum amount
-        vm.expectRevert(IScaledPool.BorrowAmountLTMinDebt.selector);
+        vm.expectRevert(IPoolErrors.BorrowAmountLTMinDebt.selector);
         _pool.borrow(10 * 1e18, 3000);
 
         changePrank(_borrower2);
-        vm.expectRevert(IScaledPool.BorrowBorrowerUnderCollateralized.selector);
+        vm.expectRevert(IPoolErrors.BorrowBorrowerUnderCollateralized.selector);
         _pool.borrow(2_976 * 1e18, 3000);
 
         // should be able to borrow if properly specified
@@ -602,7 +603,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
      *              Attempts to repay without debt.
      *              Attempts to repay when bucket would be left with amount less than averge debt.
      */
-    function testScaledPoolRepayRequireChecks() external {
+    function testPoolRepayRequireChecks() external {
         // add initial quote to the pool
         Liquidity[] memory amounts = new Liquidity[](2);
         amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
@@ -617,7 +618,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
         changePrank(_borrower);
         // should revert if borrower has no debt
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
-        vm.expectRevert(IScaledPool.RepayNoDebt.selector);
+        vm.expectRevert(IPoolErrors.RepayNoDebt.selector);
         _pool.repay(_borrower, 10_000 * 1e18);
 
         // borrower 1 borrows 1000 quote from the pool
@@ -686,7 +687,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
 
         // should revert if amount left after repay is less than the average debt
         changePrank(_borrower);
-        vm.expectRevert(IScaledPool.BorrowAmountLTMinDebt.selector);
+        vm.expectRevert(IPoolErrors.BorrowAmountLTMinDebt.selector);
         _pool.repay(_borrower, 750 * 1e18);
 
         // should be able to repay loan if properly specified
@@ -900,7 +901,7 @@ contract ERC20ScaledBorrowTest is ERC20HelperContract {
             })
         );
 
-        (, uint256 pendingDebt, , , ) = _pool.borrowerInfo(_borrower);
+        (, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert("H:I:VAL_EQ_0");

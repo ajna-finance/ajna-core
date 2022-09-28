@@ -1,18 +1,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20Pool }        from "../../erc20/ERC20Pool.sol";
-import { ERC20PoolFactory } from "../../erc20/ERC20PoolFactory.sol";
+import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import { IERC20Pool }  from "../../erc20/interfaces/IERC20Pool.sol";
-import { IScaledPool } from "../../base/interfaces/IScaledPool.sol";
+import '../../erc20/ERC20Pool.sol';
+import '../../erc20/ERC20PoolFactory.sol';
 
-import { BucketMath } from "../../libraries/BucketMath.sol";
-import { Maths }      from "../../libraries/Maths.sol";
+import '../../erc20/interfaces/IERC20Pool.sol';
+import '../../erc20/interfaces/pool/IERC20PoolErrors.sol';
+import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/pool/IPoolErrors.sol';
 
-import { ERC20HelperContract } from "./ERC20DSTestPlus.sol";
+import '../../libraries/BucketMath.sol';
+import '../../libraries/Maths.sol';
 
-contract ERC20ScaledCollateralTest is ERC20HelperContract {
+contract ERC20PoolCollateralTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -160,7 +162,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         _pullCollateral(
             PullSpecs({
                 from:   _borrower,
-                amount: 50 * 1e18 - _pool.encumberedCollateral(21_049.006823139002918431 * 1e18, _lup())
+                amount: 50 * 1e18 - _encumberedCollateral(21_049.006823139002918431 * 1e18, _lup())
             })
         );
 
@@ -205,7 +207,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
     function testPullCollateralRequireEnoughCollateral() external {
         changePrank(_borrower);
         // should revert if trying to remove more collateral than is available
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.pullCollateral(100 * 1e18);
 
         // borrower deposits 100 collateral
@@ -376,9 +378,9 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
 
         // should revert if no collateral in the bucket
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IERC20PoolErrors.RemoveCollateralNoClaim.selector);
         _pool.removeAllCollateral(testIndex);
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.removeCollateral(3.50 * 1e18, testIndex);
 
         // another actor deposits some collateral
@@ -389,13 +391,13 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
 
         // should revert if insufficient collateral in the bucket
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IPoolErrors.PullCollateralInsufficientCollateral.selector);
         _pool.removeCollateral(1.25 * 1e18, testIndex);
 
         // should revert if actor does not have LP
-        vm.expectRevert(IERC20Pool.RemoveCollateralNoClaim.selector);
+        vm.expectRevert(IERC20PoolErrors.RemoveCollateralNoClaim.selector);
         _pool.removeAllCollateral(testIndex);
-        vm.expectRevert(IScaledPool.RemoveCollateralInsufficientLP.selector);
+        vm.expectRevert(IPoolErrors.RemoveCollateralInsufficientLP.selector);
         _pool.removeCollateral(0.32 * 1e18, testIndex);
     }
 
@@ -420,11 +422,11 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         skip(2 hours);
 
         // should revert if trying to move into same bucket
-        vm.expectRevert(IScaledPool.MoveCollateralToSamePrice.selector);
+        vm.expectRevert(IPoolErrors.MoveCollateralToSamePrice.selector);
         _pool.moveCollateral(5 * 1e18, 3334, 3334);
 
         // should revert if bucket doesn't have enough collateral to move
-        vm.expectRevert(IScaledPool.MoveCollateralInsufficientCollateral.selector);
+        vm.expectRevert(IPoolErrors.MoveCollateralInsufficientCollateral.selector);
         _pool.moveCollateral(5 * 1e18, 3334, 3333);
 
         _addCollateral(
@@ -436,7 +438,7 @@ contract ERC20ScaledCollateralTest is ERC20HelperContract {
         );
         // should revert if actor doesn't have enough LP to move specified amount
         changePrank(_lender);
-        vm.expectRevert(IScaledPool.MoveCollateralInsufficientLP.selector);
+        vm.expectRevert(IPoolErrors.MoveCollateralInsufficientLP.selector);
         _pool.moveCollateral(5 * 1e18, 3334, 3333);
 
         // actor moves all their LP into one bucket

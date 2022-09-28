@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { DSTestPlus, QueueInstance }   from "./utils/DSTestPlus.sol";
-
+import './utils/DSTestPlus.sol';
 
 contract QueueTest is DSTestPlus {
 
@@ -34,8 +33,8 @@ contract QueueTest is DSTestPlus {
         auctions.add(_borrower); 
 
         // Check queue head was set correctly
-        assertEq(_borrower, auctions.head());
-        (address next, address prev, bool active) = auctions.getAuction(auctions.head());
+        assertEq(_borrower, auctions.getHead());
+        (address next, address prev, bool active) = auctions.get(auctions.getHead());
         assertEq(next, address(0));
         assertEq(prev, address(0));
         assertEq(active, true);
@@ -44,13 +43,13 @@ contract QueueTest is DSTestPlus {
         // Check queue head remains, _borrower -> _borrower2
         skip(100 seconds);
         auctions.add(_borrower2); 
-        assertEq(_borrower, auctions.head());
+        assertEq(_borrower, auctions.getHead());
 
-        (next, prev, active) = auctions.getAuction(_borrower);
+        (next, prev, active) = auctions.get(_borrower);
         assertEq(_borrower2, next);
         assertEq(address(0), prev);
 
-        (next, prev, active) = auctions.getAuction(_borrower2);
+        (next, prev, active) = auctions.get(_borrower2);
         assertEq(address(0), next);
         assertEq(_borrower, prev);
 
@@ -58,16 +57,16 @@ contract QueueTest is DSTestPlus {
         // Don't adjust time, node should still be inserted at tail
         auctions.add(_borrower3);
 
-        assertEq(_borrower, auctions.head());
-        (next, prev, active) = auctions.getAuction(auctions.head());
+        assertEq(_borrower, auctions.getHead());
+        (next, prev, active) = auctions.get(auctions.getHead());
         assertEq(_borrower2, next);
         assertEq(address(0), prev);
 
-        (next, prev, active) = auctions.getAuction(_borrower2);
+        (next, prev, active) = auctions.get(_borrower2);
         assertEq(_borrower3, next);
         assertEq(_borrower, prev);
 
-        (next, prev, active) = auctions.getAuction(_borrower3);
+        (next, prev, active) = auctions.get(_borrower3);
         assertEq(address(0), next);
         assertEq(_borrower2, prev);
     }
@@ -83,25 +82,25 @@ contract QueueTest is DSTestPlus {
 
         // Remove _borrower from head
         auctions.remove(_borrower);
-        (address next, address prev,  bool active) = auctions.getAuction(_borrower);
+        (address next, address prev,  bool active) = auctions.get(_borrower);
         assertEq(active, false);
 
         // assert new head
-        assertEq(auctions.head(), _borrower2);
-        (next, prev, active) = auctions.getAuction(_borrower2);
+        assertEq(auctions.getHead(), _borrower2);
+        (next, prev, active) = auctions.get(_borrower2);
         assertEq(prev, address(0));
         assertEq(next, _borrower3);
         assertEq(active, true);
 
         // Remove _borrower2
         auctions.remove(_borrower2);
-        (next, prev, active) = auctions.getAuction(_borrower2);
+        (next, prev, active) = auctions.get(_borrower2);
         assertEq(active, false);
 
 
-        (next, prev, active) = auctions.getAuction(_borrower3);
+        (next, prev, active) = auctions.get(_borrower3);
         assertEq(active, true);
-        assertEq(_borrower3, auctions.head());
+        assertEq(_borrower3, auctions.getHead());
 
     }
     
@@ -116,27 +115,27 @@ contract QueueTest is DSTestPlus {
 
         // Remove _borrower2
         auctions.remove(_borrower2);
-        (address next, address prev, bool active) = auctions.getAuction(_borrower);
+        (address next, address prev, bool active) = auctions.get(_borrower);
         assertEq(active, true);
         assertEq(prev, address(0));
         assertEq(next, _borrower3);
-        assertEq(auctions.head(), _borrower);
+        assertEq(auctions.getHead(), _borrower);
 
-        (next, prev, active) = auctions.getAuction(_borrower3);
+        (next, prev, active) = auctions.get(_borrower3);
         assertEq(active, true);
         assertEq(next, address(0));
         assertEq(prev, _borrower);
-        assertEq(auctions.head(), _borrower);
+        assertEq(auctions.getHead(), _borrower);
 
         skip(1 hours);
 
         // Re-add _borrower by overwriting auctions mapping
         auctions.add(_borrower2);  
 
-        (next, prev, active) = auctions.getAuction(_borrower2);
+        (next, prev, active) = auctions.get(_borrower2);
         assertEq(next, address(0));
         assertEq(prev, _borrower3);
         assertEq(active, true);
-        assertEq(auctions.head(), _borrower);
+        assertEq(auctions.getHead(), _borrower);
     }
 }

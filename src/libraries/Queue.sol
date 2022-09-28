@@ -1,14 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import { IQueue } from "./interfaces/IQueue.sol";
 
-abstract contract Queue is IQueue {
+library Queue {
 
-    address public override head;
-    address internal tail;
+    struct Data {
+        address head;
+        address tail;
+        mapping(address => Node) nodes;
+    }
 
-    mapping(address => NodeInfo) internal queue;
+    struct Node {
+        address prev;
+        address next;
+        bool active;
+    }
+
+
 
     /************************/
     /***  Queue functions ***/
@@ -18,30 +26,30 @@ abstract contract Queue is IQueue {
      *  @notice Called by borrower methods to update loan position.
      *  @param  borrower_        Borrower whose loan is being placed
      */
-    function _addAuction(address borrower_) internal {
+    function add(Data storage self_, address borrower_) internal {
 
-        NodeInfo memory node = queue[borrower_];
+        Node memory node = self_.nodes[borrower_];
         require(node.active == false, "Q:RH:AUCT_ALRDY_EXISTS");
 
-        if (head != address(0)) {
+        if (self_.head != address(0)) {
             // other auctions in queue, node doesn't exist or overwriting.
-            NodeInfo storage tailNode = queue[tail];
+            Node storage tailNode = self_.nodes[self_.tail];
 
             node.next     = address(0);
             node.active   = true;
-            node.prev     = tail;
+            node.prev     = self_.tail;
             tailNode.next = borrower_;
         } else {
             // first auction in queue
-            head          = borrower_;
+            self_.head          = borrower_;
             node.next     = address(0);
             node.prev     = address(0);
             node.active   = true;
         }
 
         // update loan with the new ordering
-        tail = borrower_;
-        queue[borrower_] = node;
+        self_.tail = borrower_;
+        self_.nodes[borrower_] = node;
     }
 
     /**
@@ -49,27 +57,27 @@ abstract contract Queue is IQueue {
      *  @dev    Called by _updateLoanQueue if borrower.debt == 0.
      *  @param  borrower_        Borrower whose loan is being placed in queue.
      */
-    function _removeAuction(address borrower_) internal {
-        NodeInfo memory node = queue[borrower_];
-        NodeInfo storage nextNode = queue[node.next];
-        NodeInfo storage prevNode = queue[node.prev];
+    function remove(Data storage self_, address borrower_) internal {
+        Node memory  node     = self_.nodes[borrower_];
+        Node storage nextNode = self_.nodes[node.next];
+        Node storage prevNode = self_.nodes[node.prev];
 
         require(node.active == true, "Q:RH:AUCT_NOT_DEACT");
 
-        if (head == borrower_ && tail == borrower_) {
+        if (self_.head == borrower_ && self_.tail == borrower_) {
             // node is the head and tail
-            head = address(0);
-            tail = address(0);
+            self_.head = address(0);
+            self_.tail = address(0);
 
-        } else if(head == borrower_) {
+        } else if(self_.head == borrower_) {
             // node is the head
             nextNode.prev = address(0);
-            head = node.next;
+            self_.head = node.next;
 
-        } else if(tail == borrower_) {
+        } else if(self_.tail == borrower_) {
             // node is the tail
             prevNode.next = address(0);
-            tail = node.prev;
+            self_.tail = node.prev;
 
         } else {
             // node is in the middle
@@ -78,7 +86,7 @@ abstract contract Queue is IQueue {
         }
 
         node.active = false;
-        queue[borrower_] = node;
+        self_.nodes[borrower_] = node;
     }
 
 
@@ -86,8 +94,12 @@ abstract contract Queue is IQueue {
     /*** External Functions ***/
     /**************************/
 
-    function getAuction(address borrower_) public view returns (address, address, bool) {
-        NodeInfo memory node = queue[borrower_];
+    function getHead(Data storage self_) public view returns (address) {
+        return self_.head;
+    }
+
+    function get(Data storage self_, address borrower_) public view returns (address, address, bool) {
+        Node memory node = self_.nodes[borrower_];
         return (node.next, node.prev, node.active);
     }
 }
