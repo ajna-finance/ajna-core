@@ -48,4 +48,14 @@ jobs:
 
       - name: Run check-size script
         run: ./check-size.sh
+        id: check-size
+
+      - name: Send size report to Discord
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.DISCORD_ID }}
+          webhook_token: ${{ secrets.DISCORD_TOKEN }}
+          username: "Contract Size Reporter"
+          message: https://github.com/ajna-finance/contracts/commit/${{ github.sha }}  ```${{ steps.check-size.outputs.message }}```
+
     timeout-minutes: 2
