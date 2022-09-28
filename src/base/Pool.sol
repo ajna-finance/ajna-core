@@ -155,7 +155,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert MoveQuoteLUPBelowHTP();
 
         // update lender accounting
-        lenders.removeLPs(fromIndex_, msg.sender, toBucketLPs_); // TODO check why moving toBucketLPs_ instead fromBucketLPs_
+        lenders.removeLPs(fromIndex_, msg.sender, fromBucketLPs_);
         lenders.addLPs(toIndex_, msg.sender, toBucketLPs_);
         // update buckets
         buckets.removeLPs(fromIndex_, fromBucketLPs_);
