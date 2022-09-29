@@ -28,7 +28,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
     }
 
-    function testPoolInterestRateIncreaseDecrease() external {
+    function testPoolInterestRateIncrease() external {
         Liquidity[] memory amounts = new Liquidity[](5);
         amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
         amounts[1] = Liquidity({amount: 20_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
@@ -63,17 +63,15 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   0
             })
         );
-        // enforce EMA and target utilization update
-        _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 100 * 1e18,
-                borrowAmount: 46_000 * 1e18,
-                indexLimit:   4300,
-                price:        2_981.007422784467321543 * 1e18
-            })
-        );
+
+        // enforce EMA and target utilization update, increasing interest rate from 0.05 to 0.055
+        changePrank(_borrower);
+        _pool.pledgeCollateral(_borrower, 100 * 1e18);
+
+        vm.expectEmit(true, true, false, true);
+        emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18);
+        _pool.borrow(46_000 * 1e18, 4_300);
+
         _assertPool(
             PoolState({
                 htp:                  460.442307692307692520 * 1e18,
@@ -93,61 +91,78 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   864000
             })
         );
+    }
 
-        // repay entire loan
-        deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
-        _repay(
-            RepaySpecs({
-                from:        _borrower,
-                borrower:    _borrower,
-                repayAmount: 46_113.664786991249514684 * 1e18,
-                price:       BucketMath.MAX_PRICE
-            })
-        );
-
-        skip(864000);
-
-        // enforce EMA and target utilization update
-        amounts = new Liquidity[](1);
-        amounts[0] = Liquidity({amount: 100 * 1e18, index: 5, newLup: BucketMath.MAX_PRICE});
+    function testPoolInterestRateDecrease() external {
+        // lender makes an initial deposit
+        skip(1 hours);
+        Liquidity[] memory amounts = new Liquidity[](1);
+        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2873, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
             AddLiquiditySpecs({
                 from:    _lender,
                 amounts: amounts
             })
         );
-        _assertPool(
-            PoolState({
-                htp:                  0,
-                lup:                  BucketMath.MAX_PRICE,
-                poolSize:             110_164.962888730221500000 * 1e18,
-                pledgedCollateral:    100 * 1e18,
-                encumberedCollateral: 0,
-                borrowerDebt:         0,
-                actualUtilization:    0,
-                targetUtilization:    0.000000227963980381 * 1e18,
-                minDebtAmount:        0,
-                loans:                0,
-                maxBorrower:          address(0),
-                inflatorSnapshot:     1.001507985182953253 * 1e18,
-                pendingInflator:      1.003018244385218513 * 1e18,
-                interestRate:         0.055 * 1e18, // FIXME here it should decrease
-                interestRateUpdate:   864000
+        // borrower draws debt
+        skip(2 hours);
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 10 * 1e18,
+                borrowAmount: 5_000 * 1e18,
+                indexLimit:   3000,
+                price:        601.252968524772188572 * 1e18
             })
         );
-        _assertBorrower(
-            BorrowerState({
-                borrower:          _borrower,
-                debt:              0,
-                pendingDebt:       0,
-                collateral:        100 * 1e18,
-                collateralization: 1e18,
-                mompFactor:        0 * 1e18,
-                inflator:          1.001507985182953253 * 1e18
+        _assertPool(
+            PoolState({
+                htp:                  500.480769230769231000 * 1e18,
+                lup:                  601.252968524772188572 * 1e18,
+                poolSize:             10_000 * 1e18,
+                pledgedCollateral:    10 * 1e18,
+                encumberedCollateral: 8.323963380317995918 * 1e18,
+                borrowerDebt:         5_004.80769230769231 * 1e18,
+                actualUtilization:    0.500480769230769231 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        500.480769230769231 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1e18,
+                pendingInflator:      1.000017123434275559 * 1e18,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
             })
         );
 
-        assertEq(_poolUtils.lenderInterestMargin(address(_pool)), 0.85 * 1e18);
+        // another lender provides liquidity, decresing interest rate from 0.05 to 0.045
+        skip(12 hours);
+
+        changePrank(_lender1);
+        vm.expectEmit(true, true, false, true);
+        emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18);
+        _pool.addQuoteToken(1_000 * 1e18, 2873);
+
+        _assertPool(
+            PoolState({
+                htp:                  500.523620446054562664 * 1e18,
+                lup:                  601.252968524772188572 * 1e18,
+                poolSize:             11_000.377511961388180000 * 1e18,
+                pledgedCollateral:    10 * 1e18,
+                encumberedCollateral: 8.324676078924548679 * 1e18,
+                borrowerDebt:         5_005.23620446054562664 * 1e18,
+                actualUtilization:    0.455005857664252335 * 1e18,
+                targetUtilization:    0.832467607892454868 * 1e18,
+                minDebtAmount:        500.523620446054562664 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                inflatorSnapshot:     1.000085620103548021 * 1e18,
+                pendingInflator:      1.000085620103548021 * 1e18,
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   54000
+            })
+        );
     }
 
     function testPendingInflator() external {
@@ -352,7 +367,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1.001370801704613834 * 1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   864000
+                interestRateUpdate:   0
             })
         );
         assertEq(_pool.debtEma(),   95.440014344854493304 * 1e18);

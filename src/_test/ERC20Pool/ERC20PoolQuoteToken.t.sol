@@ -748,8 +748,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 fromIndex:    2873,
                 toIndex:      2954,
                 newLup:       _lup(),
-                lpRedeemFrom: 2_499.782349950471454569645355799 * 1e27,
-                lpRedeemTo:   2_500 * 1e27
+                lpRedeemFrom: 2_499.791307594218224136823992573 * 1e27,
+                lpRedeemTo:   2_500.000000000000000000 * 1e27
             })
         );
 
@@ -769,9 +769,9 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             RemoveAllLiquiditySpecs({
                 from:     _lender,
                 index:    2873,
-                amount:   5_004.452220604052636859 * 1e18,
+                amount:   5_004.057192447017367276 * 1e18,
                 newLup:   601.252968524772188572 * 1e18,
-                lpRedeem: 5_000.337191152368689848178683092 * 1e27
+                lpRedeem: 5_000.328233508621920281000046318 * 1e27
             })
         );
         _removeAllLiquidity(
