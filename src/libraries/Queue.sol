@@ -98,6 +98,11 @@ library Queue {
         return self_.head;
     }
 
+    function isActive(Data storage self_, address borrower_) public view returns (bool) {
+        Node memory node = self_.nodes[borrower_];
+        return node.active;
+    }
+
     function get(Data storage self_, address borrower_) public view returns (address, address, bool) {
         Node memory node = self_.nodes[borrower_];
         return (node.next, node.prev, node.active);

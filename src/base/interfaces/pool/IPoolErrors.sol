@@ -53,7 +53,12 @@ interface IPoolErrors {
     /**
      *  @notice Borrower has a healthy over-collateralized position.
      */
-    error LiquidateBorrowerOk();
+    error KickBorrowerOk();
+
+    /**
+     *  @notice Borrower has a healthy over-collateralized position.
+     */
+    error TakeBorrowerOk();
 
     /**
      *  @notice User is attempting to move more collateral than is available.

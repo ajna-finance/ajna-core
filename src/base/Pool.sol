@@ -378,7 +378,7 @@ abstract contract Pool is Clone, Multicall, IPool {
                borrowerPledgedCollateral,
                lup
            ) >= Maths.WAD
-       ) revert LiquidateBorrowerOk();
+       ) revert KickBorrowerOk();
 
 
        (uint256 bondFactor, uint256 bondSize) = _calcBond(Maths.wad(loans.count - 1),
@@ -680,30 +680,22 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256, 
         uint256, 
         int256, 
+        PoolState memory,
         uint256, 
-        uint256,
         uint256
     ) { 
 
         PoolState memory poolState = _getPoolState();
         Liquidation memory liquidation = liquidations[borrower_];
 
-        (
-        uint256 borrowerAccruedDebt,
-        uint256 borrowerPledgedCollateral,
-        uint256 borrowerMompFactor,
-        uint256 borrowerInflatorSnapshot
-        ) = borrowers.getBorrower(borrower_);
-
-        (borrowerAccruedDebt, borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, uint256 borrowerMompFactor) = borrowers.getBorrowerInfoLiquidations(
             borrower_,
             poolState.inflator
         );
 
         // check liquidation process status
-        (,,bool auctionActive) = auctions.get(borrower_);
-        if (auctionActive != true) revert NoAuction();
-        if (liquidation.KickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
+        if (auctions.isActive(borrower_) != true) revert NoAuction();
+        if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
 
         if (
             PoolUtils.collateralization(
@@ -711,42 +703,23 @@ abstract contract Pool is Clone, Multicall, IPool {
                 borrowerPledgedCollateral,
                 _lup(borrowerDebt)
             ) >= Maths.WAD
-        ) revert LiquidateBorrowerOk();
+        ) revert TakeBorrowerOk();
 
         // calc amount
-        Liquidation memory liquidation = liquidations.getLiquidationInfo(borrower_);
         uint256 price = PoolUtils.auctionPrice(liquidation.referencePrice, uint256(liquidation.kickTime));
         uint256 amount = Maths.min(Maths.wmul(price, borrowerPledgedCollateral), maxCollateral_);
 
-        // Calculate BPF
-        // TODO: remove auction from queue if auctionDebt == 0;
-        int256 bpf = PoolUtils._bpf(
+        int256 rewardOrPenalty;
+        uint256 repayAmount;
+        (rewardOrPenalty, liquidation, repayAmount) = _bondAdjustment(
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
             borrowerMompFactor,
             poolState.inflator,
-            liquidation.bondFactor,
-            price);
-
-        // Calculate amounts
-        uint256 repayAmount = Maths.wmul(amount, uint256(1e18 - bpf));
-        int256 rewardOrPenalty;
-
-        if (repayAmount >= borrowerAccruedDebt) {
-            repayAmount = borrowerAccruedDebt;
-            amount = Maths.wdiv(borrowerAccruedDebt, uint256(1e18 - bpf));
-        }
-
-        if (bpf >= 0) {
-            // Take is below neutralPrice, Kicker is rewarded
-            rewardOrPenalty = int256(amount - repayAmount);
-            liquidation.bondSize += amount - repayAmount;
- 
-        } else {     
-            // Take is above neutralPrice, Kicker is penalized
-            rewardOrPenalty = PRBMathSD59x18.mul(int256(amount), bpf);
-            liquidation.bondSize -= uint256(-rewardOrPenalty);
-        }
+            liquidation,
+            amount,
+            price
+        );
 
         poolState.accruedDebt -= repayAmount;
         borrowerAccruedDebt   -= repayAmount;
@@ -757,11 +730,54 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrowerMompFactor,
             liquidation.bondSize,
             rewardOrPenalty,
-            poolState.inflator,
-            poolState.accruedDebt,
-            amount
+            poolState,
+            amount,
+            price
         );
 
+    }
+
+
+    function _bondAdjustment(
+        uint256 borrowerAccruedDebt_,
+        uint256 borrowerPledgedCollateral_,
+        uint256 borrowerMompFactor_,
+        uint256 poolStateInflator_,
+        Liquidation memory liquidation_,
+        uint256 amount_,
+        uint256 price_
+    ) internal returns (int256, Liquidation memory, uint256){
+        int256 rewardOrPenalty_;
+
+        // Calculate BPF
+        // TODO: remove auction from queue if auctionDebt == 0;
+        int256 bpf = PoolUtils._bpf(
+            borrowerAccruedDebt_,
+            borrowerPledgedCollateral_,
+            borrowerMompFactor_,
+            poolStateInflator_,
+            liquidation_.bondFactor,
+            price_);
+
+        // Calculate amounts
+        uint256 repayAmount_ = Maths.wmul(amount_, uint256(1e18 - bpf));
+        if (repayAmount_ >= borrowerAccruedDebt_) {
+            repayAmount_ = borrowerAccruedDebt_;
+            amount_ = Maths.wdiv(borrowerAccruedDebt_, uint256(1e18 - bpf));
+        }
+
+        if (bpf >= 0) {
+            // Take is below neutralPrice, Kicker is rewarded
+            rewardOrPenalty_ = int256(amount_ - repayAmount_);
+            liquidation_.bondSize += amount_ - repayAmount_;
+ 
+        } else {     
+            // Take is above neutralPrice, Kicker is penalized
+            rewardOrPenalty_ = PRBMathSD59x18.mul(int256(amount_), bpf);
+            liquidation_.bondSize -= uint256(-rewardOrPenalty_);
+        }
+
+        return (rewardOrPenalty_, liquidation_, repayAmount_);
     }
 
 

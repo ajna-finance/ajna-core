@@ -255,7 +255,7 @@ contract ERC721Pool is IERC721Pool, Pool {
                 borrowerPledgedCollateral,
                 _lup(borrowerDebt)
             ) >= Maths.WAD
-        ) revert LiquidateBorrowerOk();
+        ) revert TakeBorrowerOk();
 
         // Calculate BPF
         // TODO: remove auction from queue if auctionDebt == 0;

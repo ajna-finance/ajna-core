@@ -195,7 +195,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
 
     // TODO: Add reentrancy guard
-    function take(address borrower_, uint256 maxCollateral, bytes memory swapCalldata_) external override {
+    function take(address borrower_, uint256 maxCollateral_, bytes memory swapCalldata_) external override {
 
         (
             uint256 borrowerAccruedDebt,
@@ -203,78 +203,14 @@ contract ERC20Pool is IERC20Pool, Pool {
             uint256 borrowerMompFactor,
             uint256 liquidationBondSize,
             int256  rewardOrPenalty,
-            uint256 poolStateInflator,
-            uint256 poolStateAccruedDebt,
+            PoolState memory poolState,
             uint256 amount,
             uint256 price
         ) = _take(borrower_, maxCollateral_);
 
-        // PoolState memory poolState = _getPoolState();
-        // Liquidation memory liquidation = liquidations[borrower_];
-        
-        // // check liquidation process status
-        // (,,bool auctionActive) = auctions.get(borrower_);
-        // if (auctionActive != true) revert NoAuction();
-        // if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
-
-        // (
-        // uint256 borrowerAccruedDebt,
-        // uint256 borrowerPledgedCollateral,
-        // uint256 borrowerMompFactor,
-        // uint256 borrowerInflatorSnapshot
-        // ) = borrowers.getBorrower(borrower_);
-
-        // (borrowerAccruedDebt, borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
-        //     borrower_,
-        //     inflatorSnapshot
-        // );
-        // if (
-        //     PoolUtils.collateralization(
-        //         borrowerAccruedDebt,
-        //         borrowerPledgedCollateral,
-        //         _lup(borrowerDebt)
-        //     ) >= Maths.WAD
-        // ) revert LiquidateBorrowerOk();
-
-        // // Calculate BPF
-        // // TODO: remove auction from queue if auctionDebt == 0;
-        // uint256 price = PoolUtils.auctionPrice(liquidation.referencePrice, uint256(liquidation.kickTime));
-        // int256 bpf = PoolUtils._bpf(
-        //     borrowerAccruedDebt,
-        //     borrowerPledgedCollateral,
-        //     borrowerMompFactor,
-        //     borrowerInflatorSnapshot,
-        //     liquidation.bondFactor,
-        //     price);
-
-        // // Calculate amounts
-        // uint256 amount = Maths.min(Maths.wmul(price, borrowerPledgedCollateral), maxAmount_);
-        // uint256 repayAmount = Maths.wmul(amount, uint256(1e18 - bpf));
-        // int256 rewardOrPenalty;
-
-        // if (repayAmount >= borrowerAccruedDebt) {
-        //     repayAmount = borrowerAccruedDebt;
-        //     amount = Maths.wdiv(borrowerAccruedDebt, uint256(1e18 - bpf));
-        // }
-
-        // if (bpf >= 0) {
-        //     // Take is below neutralPrice, Kicker is rewarded
-        //     rewardOrPenalty = int256(amount - repayAmount);
-        //     liquidation.bondSize += amount - repayAmount;
- 
-        // } else {     
-        //     // Take is above neutralPrice, Kicker is penalized
-        //     rewardOrPenalty = PRBMathSD59x18.mul(int256(amount), bpf);
-        //     liquidation.bondSize -= uint256(-rewardOrPenalty);
-        // }
-
-
-        // poolState.accruedDebt -= repayAmount;
-        // borrowerAccruedDebt   -= repayAmount;
-
         // Reduce liquidation's remaining collateral
         // TODO: refactor collateral
-        pledgedCollateral         -= maxCollateral;
+        pledgedCollateral         -= maxCollateral_;
         borrowerPledgedCollateral -= Maths.wdiv(amount, price);
 
         uint256 newLup = _lup(pledgedCollateral);
@@ -299,14 +235,14 @@ contract ERC20Pool is IERC20Pool, Pool {
         }
 
         uint256 numLoans   = (loans.count - 1) * 1e18;
-        borrowerMompFactor = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrowerInflatorSnapshot): 0;
+        borrowerMompFactor = numLoans > 0 ? Maths.wdiv(_momp(numLoans), poolState.inflator): 0;
 
         borrowers.update(
             borrower_,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
             borrowerMompFactor,
-            poolStateInflator);
+            poolState.inflator);
         
         _updatePool(poolState, newLup);
         liquidations[borrower_].bondSize = liquidationBondSize;
