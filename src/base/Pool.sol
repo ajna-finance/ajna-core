@@ -671,10 +671,12 @@ abstract contract Pool is Clone, Multicall, IPool {
                 } else if (decreaseFactor > 10**18 - increaseFactor) {
                     newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
                 }
-                interestRate       = newInterestRate;
-                interestRateUpdate = block.timestamp;
+                if(poolState_.rate != newInterestRate) {
+                    interestRate       = newInterestRate;
+                    interestRateUpdate = block.timestamp;
 
-                emit UpdateInterestRate(poolState_.rate, newInterestRate);
+                    emit UpdateInterestRate(poolState_.rate, newInterestRate);
+                }
             }
         }
 

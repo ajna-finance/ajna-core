@@ -352,7 +352,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1.001370801704613834 * 1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   864000
+                interestRateUpdate:   0
             })
         );
         assertEq(_pool.debtEma(),   95.440014344854493304 * 1e18);
