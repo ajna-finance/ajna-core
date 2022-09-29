@@ -14,8 +14,6 @@ import { PoolInfoUtils } from '../../base/PoolInfoUtils.sol';
 import '../../libraries/Maths.sol';
 import '../../libraries/Actors.sol';
 
-import "@std/console.sol";
-
 abstract contract ERC20DSTestPlus is DSTestPlus {
 
     // ERC20 events

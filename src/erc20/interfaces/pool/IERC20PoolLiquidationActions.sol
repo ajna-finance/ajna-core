@@ -18,5 +18,4 @@ interface IERC20PoolLiquidationActions {
         uint256 amount,
         bytes memory swapCalldata
     ) external;
-
 }

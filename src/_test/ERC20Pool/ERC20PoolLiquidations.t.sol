@@ -10,7 +10,6 @@ import '../../libraries/Actors.sol';
 import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
 
-
 contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
     address internal _borrower;

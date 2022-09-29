@@ -33,6 +33,7 @@ interface IPoolState {
         );
 
     /**
+<<<<<<< HEAD
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @return kickTime    Amount of debt that the borrower has, in quote token.
@@ -51,6 +52,8 @@ interface IPoolState {
         );
 
     /**
+=======
+>>>>>>> develop
      *  @notice Mapping of buckets indexes to {Bucket} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  index               Bucket index.

@@ -213,7 +213,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, pool_utils, chain, test_u
                     # except VirtualMachineError as ex:
                     #     print(f" ERROR removing liquidity at {price / 10**18:.1f}, "
                     #           f"collateralized at {pool.poolCollateralization() / 10**18:.1%}: {ex}")
-                    #     print(test_utils.dump_book(pool1))
+                    #     print(test_utils.dump_book(pool1, pool_utils))
                     #     buckets_deposited[user_index].add(price)  # try again later when pool is better collateralized
                 else:
                     price = add_quote_token(lenders[user_index], user_index, pool, pool_utils)
@@ -224,7 +224,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, pool_utils, chain, test_u
                 test_utils.validate_pool(pool, pool_utils)
             except AssertionError as ex:
                 print("Pool state became invalid:")
-                print(TestUtils.dump_book(pool))
+                print(TestUtils.dump_book(pool, pool_utils))
                 raise ex
             chain.sleep(14)
 
@@ -342,7 +342,7 @@ def test_stable_volatile_one(pool1, pool_utils, lenders, borrowers, scaled_pool_
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
-    end_time = start_time + SECONDS_PER_DAY * 7
+    end_time = start_time + SECONDS_PER_DAY * 3
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeAllQuoteToken', 'repay']):
         while chain.time() < end_time:
@@ -353,7 +353,7 @@ def test_stable_volatile_one(pool1, pool_utils, lenders, borrowers, scaled_pool_
 
     # Validate test ended with the pool in a meaningful state
     test_utils.validate_pool(pool1, pool_utils)
-    print("After test:\n" + test_utils.dump_book(pool1))
+    print("After test:\n" + test_utils.dump_book(pool1, pool_utils))
     (_, _, poolActualUtilization, _) = pool_utils.poolUtilizationInfo(pool1.address)
     utilization = poolActualUtilization / 10**18
     print(f"elapsed time: {(chain.time()-start_time) / 3600 / 24} days   actual utilization: {utilization}")

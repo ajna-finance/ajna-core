@@ -769,9 +769,9 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             RemoveAllLiquiditySpecs({
                 from:     _lender,
                 index:    2873,
-                amount:   5_006.520576360073735059 * 1e18,
+                amount:   5_004.452220604052636859 * 1e18,
                 newLup:   601.252968524772188572 * 1e18,
-                lpRedeem: 5_002.403846153846155 * 1e27
+                lpRedeem: 5_000.337191152368689848178683092 * 1e27
             })
         );
         _removeAllLiquidity(
