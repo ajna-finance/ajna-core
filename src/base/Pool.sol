@@ -599,10 +599,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Pool Helper Functions ***/
     /*****************************/
 
+    // TODO: This is not a view; it mutates state.  Recommend renaming back to _accruePoolInterest.
     function _getPoolState() internal returns (PoolState memory poolState_) {
-        poolState_.accruedDebt  = borrowerDebt;
-        poolState_.collateral   = pledgedCollateral;
-        poolState_.inflator = inflatorSnapshot;
+        poolState_.accruedDebt = borrowerDebt;
+        poolState_.collateral  = pledgedCollateral;
+        poolState_.inflator    = inflatorSnapshot;
 
         if (poolState_.accruedDebt != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;

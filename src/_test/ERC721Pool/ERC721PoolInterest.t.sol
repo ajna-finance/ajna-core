@@ -191,13 +191,13 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         assertEq(_pool.borrowerDebt(), 13_263.563121817930264782 * 1e18);
         (uint256 debt, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
         assertEq(debt,        8_007.692307692307696000 * 1e18);
-        assertEq(pendingDebt, 8_007.692307692307696000 * 1e18);
+        assertEq(pendingDebt, 8_008.332217347647994785 * 1e18);
         (debt, pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
         assertEq(debt,        2_752.644230769230770500 * 1e18);
-        assertEq(pendingDebt, 2_752.644230769230770500 * 1e18);
+        assertEq(pendingDebt, 2_752.769925156330518889 * 1e18);
         (debt, pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), _borrower3);
         assertEq(debt,        2_502.403846153846155000 * 1e18);
-        assertEq(pendingDebt, 2_502.403846153846155000 * 1e18);
+        assertEq(pendingDebt, 2_502.460979313951752502 * 1e18);
     }
 }
 
