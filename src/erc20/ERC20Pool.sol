@@ -257,58 +257,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         emit Take(borrower_, amount, Maths.wdiv(amount, price), rewardOrPenalty);
         collateral().safeTransfer(msg.sender, Maths.wdiv(amount, price));
         quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
-    }
-
-    //function kick(address borrower_) external override {
-    //    PoolState memory poolState = _getPoolState();
-
-    //    (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
-    //        borrower_,
-    //        poolState.inflator
-    //    );
-    //    if (borrowerAccruedDebt == 0) revert KickNoDebt();
-
-    //    uint256 lup = _lup(poolState.accruedDebt);
-
-    //    if (
-    //        PoolUtils.collateralization(
-    //            borrowerAccruedDebt,
-    //            borrowerPledgedCollateral,
-    //            lup
-    //        ) >= Maths.WAD
-    //    ) revert LiquidateBorrowerOk();
-
-    //    uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
-    //    if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
-
-    //    borrowers.updateDebt(
-    //        borrower_,
-    //        borrowerAccruedDebt,
-    //        poolState.inflator
-    //    );
-
-    //    _updatePool(poolState, lup);
-
-    //    liquidations[borrower_] = Liquidation({
-    //        kickTime:            uint128(block.timestamp),
-    //        referencePrice:      uint128(_hpbIndex()),
-    //        remainingCollateral: borrowerPledgedCollateral,
-    //        remainingDebt:       borrowerAccruedDebt
-    //    });
-
-    //    // TODO: Uncomment when needed
-    //    // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
-
-    //    // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
-    //    // TODO: Account for repossessed collateral
-    //    liquidationBondEscrowed += Maths.wmul(borrowerAccruedDebt, 0.01 * 1e18);
-
-    //    // Post the liquidation bond
-    //    // Repossess the borrowers collateral, initialize the auction cooldown timer
-
-    //    emit Kick(borrower_, borrowerAccruedDebt, borrowerPledgedCollateral);
-    //}
-    
+    } 
 
     /************************/
     /*** Helper Functions ***/
