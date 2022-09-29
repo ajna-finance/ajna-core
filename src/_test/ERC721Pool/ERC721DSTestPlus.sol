@@ -62,9 +62,11 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     ERC20              internal _ajna;
     ERC721Pool         internal _pool;
     PoolInfoUtils      internal _poolUtils;
+    uint256            internal _startTime;
 
     // TODO: bool for pool type
     constructor() {
+        _startTime  = block.timestamp;
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
 
         _collateral = new NFTCollateralToken();

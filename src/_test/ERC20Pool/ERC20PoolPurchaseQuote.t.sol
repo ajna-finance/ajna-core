@@ -62,7 +62,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         bucketStates[0] = BucketState({index: testIndex, LPs: 22_043.56808879152623138 * 1e27, collateral: collateralToPurchaseWith});
         _assertBuckets(bucketStates);
         BucketLP[] memory lps = new BucketLP[](1);
-        lps[0] = BucketLP({index: testIndex, balance: 10_000 * 1e27, time: 0});
+        lps[0] = BucketLP({index: testIndex, balance: 10_000 * 1e27, time: _startTime});
         _assertLPs(
             LenderLPs({
                 lender:    _lender,
@@ -98,7 +98,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         bucketStates[0] = BucketState({index: testIndex, LPs: 12_043.56808879152623138 * 1e27, collateral: collateralToPurchaseWith});
         _assertBuckets(bucketStates);
         lps = new BucketLP[](1);
-        lps[0] = BucketLP({index: testIndex, balance: 10_000 * 1e27, time: 0});
+        lps[0] = BucketLP({index: testIndex, balance: 10_000 * 1e27, time: _startTime});
         _assertLPs(
             LenderLPs({
                 lender:    _lender,
@@ -131,7 +131,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         bucketStates[0] = BucketState({index: testIndex, LPs: 2_043.56808879152623138 * 1e27, collateral: 0.678725133191514712 * 1e18});
         _assertBuckets(bucketStates);
         lps = new BucketLP[](1);
-        lps[0] = BucketLP({index: testIndex, balance: 0, time: 0});
+        lps[0] = BucketLP({index: testIndex, balance: 0, time: _startTime});
         _assertLPs(
             LenderLPs({
                 lender:    _lender,
@@ -165,7 +165,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         bucketStates[0] = BucketState({index: testIndex, LPs: 0, collateral: 0});
         _assertBuckets(bucketStates);
         lps = new BucketLP[](1);
-        lps[0] = BucketLP({index: testIndex, balance: 0, time: 0});
+        lps[0] = BucketLP({index: testIndex, balance: 0, time: _startTime});
         _assertLPs(
             LenderLPs({
                 lender:    _lender,
@@ -265,6 +265,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
             })
         );
         BucketLP[] memory lps = new BucketLP[](1);
+
         lps[0] = BucketLP({index: 2550, balance: 0 * 1e27, time: 0});
         _assertLPs(
             LenderLPs({
@@ -285,7 +286,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 lpRedeem: 6_000 * 1e27
             })
         );
-        lps[0] = BucketLP({index: 2550, balance: 0 * 1e27, time: 0});
+        lps[0] = BucketLP({index: 2550, balance: 0 * 1e27, time: _startTime});
         _assertLPs(
             LenderLPs({
                 lender:    _lender,
@@ -305,7 +306,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 lpRedeem: 4_000 * 1e27
             })
         );
-        lps[0] = BucketLP({index: 2550, balance: 0 * 1e27, time: 0});
+        lps[0] = BucketLP({index: 2550, balance: 0 * 1e27, time: _startTime});
         _assertLPs(
             LenderLPs({
                 lender:    _lender1,

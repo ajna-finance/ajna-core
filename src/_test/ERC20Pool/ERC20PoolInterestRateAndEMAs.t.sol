@@ -42,7 +42,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             })
         );
 
-        skip(864000);
+        skip(10 days);
 
         _assertPool(
             PoolState({
@@ -60,7 +60,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -88,7 +88,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1.001507985182953253 * 1e18,
                 interestRate:         0.055 * 1e18,
-                interestRateUpdate:   864000
+                interestRateUpdate:   _startTime + 10 days
             })
         );
     }
@@ -132,7 +132,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1.000017123434275559 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -207,7 +207,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1.000005707778846384 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -230,7 +230,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1.000011415590271509 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
     }
@@ -264,7 +264,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_pool.debtEma(),   0);
@@ -298,7 +298,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_pool.debtEma(),   0);
@@ -331,7 +331,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1e18,
                 pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_pool.debtEma(),   0);
@@ -367,7 +367,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 inflatorSnapshot:     1.001370801704613834 * 1e18,
                 pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         assertEq(_pool.debtEma(),   95.440014344854493304 * 1e18);

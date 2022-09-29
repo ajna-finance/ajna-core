@@ -55,3 +55,4 @@ jobs:
       - name: Run coverage
         continue-on-error: true
         run: make coverage
+    timeout-minutes: 10
