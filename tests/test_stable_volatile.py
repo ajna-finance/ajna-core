@@ -189,10 +189,16 @@ def log_borrower_stats(borrowers, pool, pool_utils, chain, debug=False):
 
 
 def pledge_and_borrow(pool, pool_utils, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
+    # prevent invalid actions
     (_, pending_debt, collateral_deposited, _, _) = pool_utils.borrowerInfo(pool.address, borrower.address)
     if not ensure_pool_is_funded(pool, borrow_amount, "borrow"):
+        # ensure_pool_is_funded logs a message
         return
-    assert borrow_amount > 10**18
+    (_, _, _, min_debt) = pool_utils.poolUtilizationInfo(pool.address)
+    if borrow_amount < min_debt:
+        log(f" WARN: borrower {borrower_index} cannot draw {borrow_amount / 1e18:.1f}, "
+            f"which is below minimum debt of {min_debt/1e18:.1f}")
+        return
 
     # pledge collateral
     collateral_token = Contract(pool.collateral())
@@ -212,9 +218,9 @@ def pledge_and_borrow(pool, pool_utils, borrower, borrower_index, collateral_to_
     new_total_debt = pending_debt + borrow_amount + PoolUtils.get_origination_fee(pool, borrow_amount)
     threshold_price = new_total_debt * 10**18 / collateral_deposited
     log(f" borrower {borrower_index:>4} drawing {borrow_amount / 1e18:>8.1f} from bucket {pool_utils.lup(pool.address) / 1e18:>6.3f} "
-          f"with {collateral_deposited / 1e18:>6.1f} collateral deposited, "
-          f"with {new_total_debt/1e18:>9.1f} total debt "
-          f"at a TP of {threshold_price/1e18:8.1f}")
+        f"with {collateral_deposited / 1e18:>6.1f} collateral deposited, "
+        f"with {new_total_debt/1e18:>9.1f} total debt "
+        f"at a TP of {threshold_price/1e18:8.1f}")
     tx = pool.borrow(borrow_amount, MIN_BUCKET, {"from": borrower})
     return tx
 
