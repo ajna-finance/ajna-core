@@ -198,54 +198,11 @@ contract ERC20Pool is IERC20Pool, Pool {
     function take(address borrower_, uint256 maxCollateral_, bytes memory swapCalldata_) external override {
 
         (
-            uint256 borrowerAccruedDebt,
-            uint256 borrowerPledgedCollateral,
-            uint256 borrowerMompFactor,
-            uint256 liquidationBondSize,
             int256  rewardOrPenalty,
-            PoolState memory poolState,
-            uint256 amount,
+            uint256 collateralTaken,
+            uint256 amountQT,
             uint256 price
         ) = _take(borrower_, maxCollateral_);
-
-        // Reduce liquidation's remaining collateral
-        // TODO: refactor collateral
-        pledgedCollateral         -= maxCollateral_;
-        borrowerPledgedCollateral -= Maths.wdiv(amount, price);
-
-        uint256 newLup = _lup(pledgedCollateral);
-        // update loan queue
-        if (borrowerPledgedCollateral != 0 && PoolUtils.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, newLup) >= Maths.WAD) {
-            auctions.remove(borrower_);
-
-            if (borrowerAccruedDebt > 0) {
-                uint256 loansCount = loans.count - 1;
-                if (loansCount != 0
-                    &&
-                    (borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-                ) revert BorrowAmountLTMinDebt();
-
-                uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
-                    borrowerAccruedDebt,
-                    borrowerPledgedCollateral,
-                    poolState.inflator
-                );
-                loans.upsert(borrower_, thresholdPrice);
-            } 
-        }
-
-        uint256 numLoans   = (loans.count - 1) * 1e18;
-        borrowerMompFactor = numLoans > 0 ? Maths.wdiv(_momp(numLoans), poolState.inflator): 0;
-
-        borrowers.update(
-            borrower_,
-            borrowerAccruedDebt,
-            borrowerPledgedCollateral,
-            borrowerMompFactor,
-            poolState.inflator);
-        
-        _updatePool(poolState, newLup);
-        liquidations[borrower_].bondSize = liquidationBondSize;
 
         // TODO: implement flashloan functionality
         // Flash loan full amount to liquidate to borrower
@@ -254,9 +211,9 @@ contract ERC20Pool is IERC20Pool, Pool {
         // Get current swap price
         //uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralToPurchase);
 
-        emit Take(borrower_, amount, Maths.wdiv(amount, price), rewardOrPenalty);
-        collateral().safeTransfer(msg.sender, Maths.wdiv(amount, price));
-        quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
+        emit Take(borrower_, amountQT, collateralTaken, rewardOrPenalty);
+        collateral().safeTransfer(msg.sender, collateralTaken);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amountQT / quoteTokenScale);
     } 
 
     /************************/

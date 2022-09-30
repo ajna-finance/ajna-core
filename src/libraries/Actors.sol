@@ -103,13 +103,12 @@ library Actors {
         mapping(address => Borrower) storage self,
         address borrower_,
         uint256 poolInflator_
-    ) internal view returns (uint256 debt_, uint256 collateral_, uint256 mompFactor_) {
-        debt_       = self[borrower_].debt;
-        collateral_ = self[borrower_].collateral;
-        mompFactor_ = self[borrower_].mompFactor;
+    ) internal returns (Borrower memory) {
+        uint256 debt_ = self[borrower_].debt;
         if (debt_ != 0) {
-            debt_ = Maths.wmul(debt_, Maths.wdiv(poolInflator_, self[borrower_].inflatorSnapshot));
+            self[borrower_].debt = Maths.wmul(debt_, Maths.wdiv(poolInflator_, self[borrower_].inflatorSnapshot));
         }
+        return self[borrower_];
     }
 
     function update(
