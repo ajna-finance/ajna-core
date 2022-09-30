@@ -672,10 +672,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         address borrower_,
         uint256 maxCollateral_
     ) internal returns(
-        int256, 
-        uint256, 
-        uint256,
-        uint256
+        int256 rewardOrPenalty_,
+        uint256 collateralLiquidated_,
+        uint256 amountQT_,
+        uint256 price_
     ) { 
 
         // check liquidation process status
@@ -699,8 +699,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         ) revert TakeBorrowerOk();
 
         // calc amount
-        uint256 price = PoolUtils.auctionPrice(liquidation.referencePrice, uint256(liquidation.kickTime));
-        uint256 amountQT = Maths.min(Maths.wmul(price, borrower.collateral), maxCollateral_);
+        price_ = PoolUtils.auctionPrice(liquidation.referencePrice, uint256(liquidation.kickTime));
+        amountQT_ = Maths.min(Maths.wmul(price_, borrower.collateral), maxCollateral_);
 
         // (rewardOrPenalty, liquidation, repayAmount) = _bondAdjustment(
         //     borrower,
@@ -718,43 +718,37 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrower.mompFactor,
             poolState.inflator,
             liquidation.bondFactor,
-            price);
+            price_);
 
-        int256 rewardOrPenalty;
         // Calculate amounts
-        uint256 repayAmount = Maths.wmul(amountQT, uint256(1e18 - bpf));
+        uint256 repayAmount = Maths.wmul(amountQT_, uint256(1e18 - bpf));
         if (repayAmount >= borrower.debt) {
             repayAmount = borrower.debt;
-            amountQT = Maths.wdiv(borrower.debt, uint256(1e18 - bpf));
+            amountQT_ = Maths.wdiv(borrower.debt, uint256(1e18 - bpf));
         }
 
         if (bpf >= 0) {
             // Take is below neutralPrice, Kicker is rewarded
-            rewardOrPenalty = int256(amountQT - repayAmount);
-            liquidation.bondSize += amountQT - repayAmount;
+            rewardOrPenalty_ = int256(amountQT_ - repayAmount);
+            liquidation.bondSize += amountQT_ - repayAmount;
  
         } else {     
             // Take is above neutralPrice, Kicker is penalized
-            rewardOrPenalty = PRBMathSD59x18.mul(int256(amountQT), bpf);
-            liquidation.bondSize -= uint256(-rewardOrPenalty);
+            rewardOrPenalty_ = PRBMathSD59x18.mul(int256(amountQT_), bpf);
+            liquidation.bondSize -= uint256(-rewardOrPenalty_);
         }
 
         poolState.accruedDebt -= repayAmount;
         borrower.debt  -= repayAmount;
-        poolState.collateral  -= Maths.wmul(price, amountQT);
-        borrower.collateral   -= Maths.wmul(price, amountQT);
+
+        collateralLiquidated_ = Maths.wmul(price_, amountQT_);
+        poolState.collateral  -= collateralLiquidated_;
+        borrower.collateral   -= collateralLiquidated_;
 
         borrower = _updateLoanPosition(borrower_, borrower, poolState, poolState.accruedDebt, poolState.inflator);
 
         borrowers[borrower_] = borrower;
         liquidations[borrower_] = liquidation;
-
-        return (
-            rewardOrPenalty,
-            Maths.wmul(price, amountQT), 
-            amountQT,
-            price
-        );
 
     }
 
