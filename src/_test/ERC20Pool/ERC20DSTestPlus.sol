@@ -156,8 +156,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 minDebtAmount;
         uint256 loans;
         address maxBorrower;
-        uint256 inflatorSnapshot;
-        uint256 pendingInflator;
         uint256 interestRate;
         uint256 interestRateUpdate;
     }
@@ -352,8 +350,9 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(loansCount,  state_.loans);
         assertEq(maxBorrower, state_.maxBorrower);
 
-        assertEq(_pool.inflatorSnapshot(), state_.inflatorSnapshot);
-        assertEq(pendingInflator,          state_.pendingInflator);
+        uint256 poolInflatorSnapshot = _pool.inflatorSnapshot();
+        assertGe(poolInflatorSnapshot, 1e18);
+        assertGe(pendingInflator,      poolInflatorSnapshot);
 
         assertEq(_pool.interestRate(),       state_.interestRate);
         assertEq(_pool.interestRateUpdate(), state_.interestRateUpdate);

@@ -63,8 +63,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -110,8 +108,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -154,8 +150,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -204,8 +198,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -252,8 +244,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -300,8 +290,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
