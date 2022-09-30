@@ -79,7 +79,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         bucketLPs_ = buckets.quoteTokensToLPs(
             index_,
@@ -115,7 +115,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveQuoteToSamePrice();
 
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = lenders.getLenderInfo(
             fromIndex_,
@@ -169,7 +169,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     function removeAllQuoteToken(
         uint256 index_
     ) external returns (uint256 quoteTokenAmountRemoved_, uint256 redeemedLenderLPs_) {
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(
             index_,
@@ -198,7 +198,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
 
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         uint256 deposit = deposits.valueAt(index_);
         if (quoteTokenAmountToRemove_ > deposit) revert RemoveQuoteInsufficientQuoteAvailable();
@@ -270,7 +270,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 limitIndex_
     ) external override {
 
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
         if (lupId > limitIndex_) revert BorrowLimitIndexReached();
@@ -388,7 +388,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToPledge_
     ) internal {
 
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         // borrower accounting
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
@@ -423,7 +423,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToPull_
     ) internal {
 
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         // borrower accounting
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
@@ -467,7 +467,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 maxQuoteTokenAmountToRepay_
     ) internal {
 
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
             borrower_,
@@ -522,7 +522,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToAdd_,
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         (bucketLPs_, ) = buckets.collateralToLPs(
             index_,
@@ -541,7 +541,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
 
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         uint256 bucketCollateral;
         (bucketLPs_, bucketCollateral) = buckets.collateralToLPs(
@@ -599,10 +599,10 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Pool Helper Functions ***/
     /*****************************/
 
-    function _getPoolState() internal returns (PoolState memory poolState_) {
-        poolState_.accruedDebt  = borrowerDebt;
-        poolState_.collateral   = pledgedCollateral;
-        poolState_.inflator = inflatorSnapshot;
+    function _accruePoolInterest() internal returns (PoolState memory poolState_) {
+        poolState_.accruedDebt = borrowerDebt;
+        poolState_.collateral  = pledgedCollateral;
+        poolState_.inflator    = inflatorSnapshot;
 
         if (poolState_.accruedDebt != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;

@@ -133,7 +133,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     
     function _assertPool(PoolState memory state_) internal {
         ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
-        (uint256 poolSize, uint256 loansCount, address maxBorrower, ) = _poolUtils.poolLoansInfo(address(_pool));
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, , ) = _poolUtils.poolLoansInfo(address(_pool));
         (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
@@ -180,7 +180,7 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _poolSize() internal view returns (uint256 poolSize_) {
-        (poolSize_, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        (poolSize_, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _poolTargetUtilization() internal view returns (uint256 utilization_) {
@@ -196,10 +196,10 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _loansCount() internal view returns (uint256 loansCount_) {
-        ( , loansCount_, , ) = _poolUtils.poolLoansInfo(address(_pool));
+        ( , loansCount_, , , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _maxBorrower() internal view returns (address maxBorrower_) {
-        ( , , maxBorrower_, ) = _poolUtils.poolLoansInfo(address(_pool));
+        ( , , maxBorrower_, , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 }

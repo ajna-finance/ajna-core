@@ -222,7 +222,7 @@ contract ERC721Pool is IERC721Pool, Pool {
     }
 
     function kick(address borrower_) external override {
-        PoolState memory poolState = _getPoolState();
+        PoolState memory poolState = _accruePoolInterest();
 
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
             borrower_,

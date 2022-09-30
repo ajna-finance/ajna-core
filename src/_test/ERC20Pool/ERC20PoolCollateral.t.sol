@@ -63,8 +63,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -96,8 +94,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 minDebtAmount:        2_102.019230769230770200 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -139,8 +135,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 minDebtAmount:        2_104.900682313900291843 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1.001370801704613834 * 1e18,
-                pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.055 * 1e18,
                 interestRateUpdate:   _startTime + 10 days
             })
@@ -179,8 +173,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 minDebtAmount:        2_104.900682313900291843 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1.001370801704613834 * 1e18,
-                pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.055 * 1e18,
                 interestRateUpdate:   _startTime + 10 days
             })
@@ -566,8 +558,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -598,8 +588,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })

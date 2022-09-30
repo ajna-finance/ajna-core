@@ -57,8 +57,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -85,8 +83,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        4_604.423076923076925200 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1.001507985182953253 * 1e18,
                 interestRate:         0.055 * 1e18,
                 interestRateUpdate:   _startTime + 10 days
             })
@@ -129,8 +125,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        500.480769230769231 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1.000017123434275559 * 1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -157,8 +151,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        500.523620446054562664 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1.000085620103548021 * 1e18,
-                pendingInflator:      1.000085620103548021 * 1e18,
                 interestRate:         0.045 * 1e18,
                 interestRateUpdate:   54000
             })
@@ -204,8 +196,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        1_501.442307692307693000 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1.000005707778846384 * 1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -227,8 +217,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        1_501.442307692307693000 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1.000011415590271509 * 1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -261,8 +249,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -295,8 +281,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        50.048076923076923100 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -328,8 +312,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        50.048076923076923100 * 1e18,
                 loans:                2,
                 maxBorrower:          address(_borrower),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
@@ -364,8 +346,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        50.617163681466490465 * 1e18,
                 loans:                2,
                 maxBorrower:          address(_borrower),
-                inflatorSnapshot:     1.001370801704613834 * 1e18,
-                pendingInflator:      1.001370801704613834 * 1e18,
                 interestRate:         0.05 * 1e18,
                 interestRateUpdate:   _startTime
             })
