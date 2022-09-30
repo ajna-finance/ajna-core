@@ -343,7 +343,7 @@ class TestUtils:
         ptp_index = PoolUtils.price_to_index_safe(pool_utils, int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
 
         min_bucket_index = max(0, pool_utils.priceToIndex(pool_utils.hpb(pool.address)) - 3)  # HPB
-        max_bucket_index = min(7388, max(lup_index, htp_index, ptp_index) + 3)
+        max_bucket_index = min(7388, max(lup_index, htp_index) + 3) if htp_index < 7388 else min(7388, lup_index + 3)
         assert min_bucket_index < max_bucket_index
 
         lines = []
@@ -385,12 +385,11 @@ class TestUtils:
     @staticmethod
     def summarize_pool(pool, pool_utils):
         (_, poolCollateralization, poolActualUtilization, poolTargetUtilization) = pool_utils.poolUtilizationInfo(pool.address)
-        (_, _, _, pendingInflator) = pool_utils.poolLoansInfo(pool.address)
         print(f"actual utlzn:   {poolActualUtilization/1e18:>12.1%}  "
-              f"target utlzn: {poolTargetUtilization/1e18:>10.1%}   "
-              f"collateralization: {poolCollateralization/1e18:>7.1%}  "
-              f"borrowerDebt: {pool.borrowerDebt()/1e18:>12.1f}  "
-              f"pendingInf: {pendingInflator/1e18:>20.18f}")
+              f"target utlzn:   {poolTargetUtilization/1e18:>12.1%}  "
+              f"collateralization: {poolCollateralization/1e18:>9.1%}  "
+              f"borrowerDebt:   {pool.borrowerDebt()/1e18:>12.1f}  "
+              f"loan count:     {pool.noOfLoans():>8}")
 
         contract_quote_balance = Contract(pool.quoteToken()).balanceOf(pool)
         reserves = contract_quote_balance + pool.borrowerDebt() - pool.depositSize()
@@ -403,12 +402,17 @@ class TestUtils:
             ptp = 0
             ru = 0
         print(f"contract q bal: {contract_quote_balance/1e18:>12.1f}  "
-              f"reserves:   {reserves/1e18:>12.1f}   "
-              f"pledged collaterl: {pool.pledgedCollateral()/1e18:>7.1f}  "
-              f"ptp: {ptp/1e18:>10.3f}  "
-              f"ru: {ru/1e18:>12.1f}  "
-              f"sum: {pool.depositSize()/1e18:>12.1f}  "
-              f"rate:     {pool.interestRate()/1e18:>10.6f}")
+              f"deposit:        {pool.depositSize()/1e18:>12.1f}  "
+              f"reserves:       {reserves/1e18:>12.1f}  "
+              f"pledged:        {pool.pledgedCollateral()/1e18:>12.1f}  "
+              f"rate:           {pool.interestRate()/1e18:>8.4%}")
+
+        lup = pool_utils.lup(pool.address)
+        htp = pool_utils.htp(pool.address)
+        ptp = int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral())
+        print(f"lup:            {lup/1e18:>12.3f}  "
+              f"htp:            {htp/1e18:>12.3f}  "
+              f"ptp:            {ptp/1e18:>12.3f}")
 
 
 @pytest.fixture

@@ -149,6 +149,39 @@ def get_time_between_interactions(actor_index):
     return 333 * math.exp(actor_index/10) + 3600
 
 
+# for debugging discrepancy between pending borrower debt and pending pool debt
+def aggregate_borrower_debt(borrowers, pool, pool_utils):
+    total_debt = 0
+    total_pending_debt = 0
+    for i in range(0, len(borrowers) - 1):
+        borrower = borrowers[i]
+        (debt, pending_debt, _, _, inflatorSnap) = pool_utils.borrowerInfo(pool.address, borrower.address)
+        if debt > 0:
+            print(f"   borrower {i:>4}     debt: {debt/1e18:>15.6f}      "
+                  f"pending_debt: {pending_debt/1e18:>14.6f}  "
+                  f"inflatorSnap: {inflatorSnap/1e18:>15.12f}")
+        total_debt += debt
+        total_pending_debt += pending_debt
+    return total_debt, total_pending_debt
+
+
+# for debugging debt-with-no-loans issue
+def print_borrower_stats(borrowers, pool, pool_utils, chain):
+    borrower_debt = pool.borrowerDebt()
+    (_, _, _, inflator, interestFactor) = pool_utils.poolLoansInfo(pool.address)
+    assert 1e18 <= interestFactor < 2e18
+    pending_borrower_debt = borrower_debt * interestFactor / 10 ** 18
+
+    (agg_borrower_debt, agg_pending_borrower_debt) = aggregate_borrower_debt(borrowers, pool, pool_utils)
+    print(f"  time:       {chain.time()}"
+          f"  pool debt:  {pending_borrower_debt / 1e18:>12.6f}"
+          f"  borrower:   {agg_pending_borrower_debt / 1e18:>12.6f}"
+          f"  diff:       {(pending_borrower_debt - agg_pending_borrower_debt) / 1e18:>10.6f}"
+          f"  inflator:   {inflator/1e18:>15.12f}"
+          f"  loan count: {pool.noOfLoans():>3}\n")
+    chain.sleep(14)
+
+
 def pledge_and_borrow(pool, pool_utils, borrower, borrower_index, collateral_to_deposit, borrow_amount, test_utils, debug=False):
     (_, pending_debt, collateral_deposited, _, _) = pool_utils.borrowerInfo(pool.address, borrower.address)
     if not ensure_pool_is_funded(pool, borrow_amount, "borrow"):
@@ -331,6 +364,7 @@ def repay(borrower, borrower_index, pool, pool_utils, test_utils):
 def test_stable_volatile_one(pool1, pool_utils, lenders, borrowers, scaled_pool_utils, test_utils, chain):
     # Validate test set-up
     print("Before test:\n" + test_utils.dump_book(pool1, pool_utils))
+    test_utils.summarize_pool(pool1, pool_utils)
     assert pool1.collateral() == MKR_ADDRESS
     assert pool1.quoteToken() == DAI_ADDRESS
     assert len(lenders) == NUM_LENDERS
@@ -342,7 +376,7 @@ def test_stable_volatile_one(pool1, pool_utils, lenders, borrowers, scaled_pool_
 
     # Simulate pool activity over a configured time duration
     start_time = chain.time()
-    end_time = start_time + SECONDS_PER_DAY * 3
+    end_time = start_time + SECONDS_PER_DAY * 7
     actor_id = 0
     with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeAllQuoteToken', 'repay']):
         while chain.time() < end_time:
