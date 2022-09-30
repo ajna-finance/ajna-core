@@ -151,8 +151,6 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 minDebtAmount:        500.523620446054562664 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1.000085620103548021 * 1e18,
-                pendingInflator:      1.000085620103548021 * 1e18,
                 interestRate:         0.045 * 1e18,
                 interestRateUpdate:   54000
             })
