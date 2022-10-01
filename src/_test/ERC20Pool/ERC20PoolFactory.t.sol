@@ -50,7 +50,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
     function testDeployERC20Pool() external {
         skip(333);
 
-        address poolAddress = 0x8b233290C5458EdF1a03e2303Abc8aDCB52d5286;
+        address poolAddress = 0x801785AbA272f862a0A85C38d4747B54313eAB01;
         vm.expectEmit(true, true, false, true);
         emit PoolCreated(poolAddress);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.0543 * 10**18));

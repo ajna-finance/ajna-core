@@ -136,6 +136,11 @@ interface IPoolErrors {
     error TakeNotPastCooldown();
 
     /**
+     *  @notice Take was called on an auction with no collateral.
+     */
+    error TakeNoCollateral();
+
+    /**
      *  @notice When transferring LP tokens between indices, the new index must be a valid index.
      */
     error TransferLPInvalidIndex();

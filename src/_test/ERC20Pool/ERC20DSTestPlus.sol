@@ -334,7 +334,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
  
         (
             uint256 kickTime,
-            uint256 referencePrice,
+            uint256 kickPrice,
             uint256 bondFactor,
             uint256 bondSize,
             uint256 auctionPrice,
@@ -342,7 +342,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         ) = _poolUtils.auctionInfo(address(_pool), state_.borrower);
 
         assertEq(kickTime, state_.kickTime);
-        assertEq(referencePrice, state_.referencePrice);
+        assertEq(kickPrice, state_.kickPrice);
         assertEq(auctionPrice, state_.price);
         assertEq(bpf, state_.bpf);
         assertEq(bondFactor, state_.bondFactor);
@@ -374,7 +374,6 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(col,         state_.collateral);
         assertEq(mompFactor,  state_.mompFactor);
         assertEq(inflator,    state_.inflator);
-
         assertEq(
             PoolUtils.collateralization(
                 state_.debt,
@@ -384,6 +383,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
             state_.collateralization
         );
     }
+
 
     function _assertPoolPrices(PoolPricesInfo memory state_) internal {
         (uint256 hpb, , uint256 htp, , uint256 lup, uint256 lupIndex) = _poolUtils.poolPricesInfo(address(_pool));

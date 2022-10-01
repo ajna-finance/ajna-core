@@ -129,9 +129,9 @@ contract PoolInfoUtils {
     }
 
     /**
-     *  @notice Returns info related to Claimaible Reserve Auction.
+     *  @notice Returns info related to Auction.
      *  @return kickTime_               The amount of excess quote tokens.
-     *  @return referencePrice_         rves_ Denominated in quote token, or 0 if no reserves can be auctioned.
+     *  @return kickPrice_         rves_ Denominated in quote token, or 0 if no reserves can be auctioned.
      *  @return bondFactor_             rvesRemaining_ Amount of claimable reserves which has not yet been taken.
      *  @return bondSize_                Current price at which 1 quote token may be purchased, denominated in Ajna.
      *  @return auctionPrice_              Seconds remaining before takes are no longer allowed
@@ -142,7 +142,7 @@ contract PoolInfoUtils {
         view
         returns (
             uint256 kickTime_,
-            uint256 referencePrice_,
+            uint256 kickPrice_,
             uint256 bondFactor_,
             uint256 bondSize_,
             uint256 auctionPrice_,
@@ -152,18 +152,25 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
 
         // TODO: return reserves
+        uint256 kickPriceIndex;
         (uint256 debt, uint256 col, uint256 mompFactor, uint256 inflator) = pool.borrowers(borrower_);
-        (kickTime_, referencePrice_, bondFactor_, bondSize_) = pool.liquidations(borrower_);
-        auctionPrice_ = PoolUtils.auctionPrice(referencePrice_, kickTime_);
+        (kickTime_, kickPriceIndex, bondFactor_, bondSize_) = pool.liquidations(borrower_);
 
-        bpf_ = PoolUtils._bpf(
-                debt,
-                col,
-                mompFactor,
-                inflator,
-                bondFactor_,
-                auctionPrice_ 
-        );
+        if (kickPriceIndex != 0) {
+            // auction has been kicked
+            auctionPrice_ = PoolUtils.auctionPrice(kickPriceIndex, kickTime_);
+            kickPrice_ = PoolUtils.indexToPrice(kickPriceIndex);
+            if (col != 0) {
+                bpf_ = PoolUtils._bpf(
+                        debt,
+                        col,
+                        mompFactor,
+                        inflator,
+                        bondFactor_,
+                        auctionPrice_ 
+                );
+            }
+        }
     }
 
     /**

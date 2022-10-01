@@ -49,13 +49,13 @@ interface IPoolLiquidationActions {
     /**
      *  @notice Maintains the state of a liquidation.
      *  @param  kickTime            Time the liquidation was initiated.
-     *  @param  referencePrice      Highest Price Bucket at time of liquidation.
+     *  @param  kickPriceIndex      Highest Price Bucket at time of liquidation.
      *  @param  bondFactor Amount of collateral which has not yet been taken.
      *  @param  bondSize       Amount of debt which has not been covered by the liquidation.
      */
     struct Liquidation {
         uint128 kickTime;
-        uint128 referencePrice;
+        uint128 kickPriceIndex;
         uint256 bondFactor;
         uint256 bondSize;
     }

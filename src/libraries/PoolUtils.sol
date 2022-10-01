@@ -7,6 +7,7 @@ import '@prb-math/contracts/PRBMathUD60x18.sol';
 import './Maths.sol';
 import './BucketMath.sol';
 
+
 library PoolUtils {
     uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
     uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
@@ -15,14 +16,14 @@ library PoolUtils {
     uint256 public constant ONE_THIRD           = 0.333333333333333334 * 1e18;
 
     function auctionPrice(
-        uint256 referencePrice,
+        uint256 kickPriceIndex_,
         uint256 kickTime_
     ) internal view returns (uint256 price_) {
         uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
         elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
 
         int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
-        price_ = 10 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+        price_ = 10 * Maths.wmul(indexToPrice(kickPriceIndex_), uint256(PRBMathSD59x18.exp2(timeAdjustment)));
     }
 
     function claimableReserves(
@@ -178,9 +179,9 @@ library PoolUtils {
     }
 
     function _sign(int256 val_) private pure returns (int256) {
-        if ((val_) < 0 )     return -1;
-        else if ((val_) > 0) return 1;
-        else                 return 0;
+        if (val_ < 0 )     return -1;
+        else if (val_ > 0) return 1;
+        else               return 0;
     }
 
 

@@ -33,11 +33,10 @@ interface IPoolState {
         );
 
     /**
-<<<<<<< HEAD
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @return kickTime    Amount of debt that the borrower has, in quote token.
-     *  @return referencePrice Amount of collateral that the borrower has deposited, in collateral token.
+     *  @return kickPriceIndex Amount of collateral that the borrower has deposited, in collateral token.
      *  @return bondFactor Momp / borrowerInflatorSnapshot factor used.
      *  @return bondSize   Snapshot of inflator value used to track interest on loans.
      */
@@ -46,14 +45,12 @@ interface IPoolState {
         view
         returns (
             uint128 kickTime,
-            uint128 referencePrice,
+            uint128 kickPriceIndex,
             uint256 bondFactor,
             uint256 bondSize
         );
 
     /**
-=======
->>>>>>> develop
      *  @notice Mapping of buckets indexes to {Bucket} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  index               Bucket index.

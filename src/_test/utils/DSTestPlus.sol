@@ -120,9 +120,9 @@ abstract contract DSTestPlus is Test {
     struct AuctionState {
         address borrower;
         uint256 kickTime;
-        int256 bpf;
+        int256  bpf;
         uint256 price;
-        uint256 referencePrice;
+        uint256 kickPrice;
         uint256 bondFactor;
         uint256 bondSize;
         address next;
@@ -362,11 +362,11 @@ contract QueueInstance is DSTestPlus {
         return auctions.remove(borrower_);
     }
 
-    function getHead() external returns (address) {
+    function getHead() external view returns (address) {
         return auctions.getHead();
     }
 
-    function get(address _borrower) external returns (address, address, bool) {
+    function get(address _borrower) external view returns (address, address, bool) {
         return auctions.get(_borrower);
     }
 

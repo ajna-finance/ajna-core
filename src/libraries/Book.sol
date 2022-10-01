@@ -167,6 +167,8 @@ library Book {
         }
     }
 
+
+    //TODO: verify this
     function utilization(
         Deposits storage self,
         uint256 debt_,
@@ -174,10 +176,13 @@ library Book {
     ) internal view returns (uint256 utilization_) {
         if (collateral_ != 0) {
             uint256 ptp = Maths.wdiv(debt_, collateral_);
-            if (ptp != 0) utilization_ = Maths.wdiv(
-                debt_,
-                prefixSum(self, PoolUtils.priceToIndex(ptp))
-            );
+            if (ptp != 0) {
+                uint256 depositAbove = prefixSum(self, PoolUtils.priceToIndex(ptp));
+                if (depositAbove != 0) utilization_ = Maths.wdiv(
+                    debt_,
+                    depositAbove
+                );
+            }
         }
     }
 
