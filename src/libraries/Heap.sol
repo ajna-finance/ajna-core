@@ -25,6 +25,20 @@ library Heap {
         self_.nodes.push(Node(address(0),0));
     }
 
+    function dumpNodes(Data storage self_) internal view {
+        console.log("dumping heap with %s nodes, count is %s", self_.nodes.length, self_.count);
+        uint i = 0;
+        while (true) {
+            if (self_.nodes.length == i) { return; }
+            Node memory node = self_.nodes[i];
+            console.log(" id: %s, val: %s idx: %s", node.id, node.val, self_.indices[node.id]);
+            //console.log(" i is %s", i);
+            unchecked {
+                i++;
+            }
+        }
+    }
+
     /**
      *  @notice Performs an insert or an update dependent on borrowers existance.
      *  @param self_ Holds tree node data.
@@ -36,7 +50,8 @@ library Heap {
         uint256 i = self_.indices[id_];
 
         // Node exists, update in place.
-        if (i != 0) { 
+        if (i != 0) {
+            console.log("updating node %s", i);
             Node memory currentNode = self_.nodes[i];
             if (currentNode.val > val_) {
                 currentNode.val = val_;
@@ -50,6 +65,8 @@ library Heap {
         } else { 
             _bubbleUp(self_, Node(id_, val_), self_.nodes.length);
         }
+        console.log("count after upsert %s", self_.count);
+        dumpNodes(self_);
     }
 
     /**
@@ -100,6 +117,8 @@ library Heap {
             _bubbleUp(self_, tail, i_);
             _bubbleDown(self_, self_.nodes[i_], i_);
         }
+        console.log("count after removing %s: %s", id_, self_.count);
+        dumpNodes(self_);
     }
 
     /**
