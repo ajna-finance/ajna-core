@@ -8,6 +8,8 @@ import './interfaces/IPool.sol';
 
 import '../libraries/PoolUtils.sol';
 
+import "@std/console.sol";
+
 contract PoolInfoUtils {
 
     function borrowerInfo(address ajnaPool_, address borrower_)
@@ -158,16 +160,18 @@ contract PoolInfoUtils {
 
         if (kickPriceIndex != 0) {
             // auction has been kicked
+
             auctionPrice_ = PoolUtils.auctionPrice(kickPriceIndex, kickTime_);
             kickPrice_ = PoolUtils.indexToPrice(kickPriceIndex);
+
             if (col != 0) {
                 bpf_ = PoolUtils._bpf(
-                        debt,
-                        col,
-                        mompFactor,
-                        inflator,
-                        bondFactor_,
-                        auctionPrice_ 
+                    debt,
+                    col,
+                    mompFactor,
+                    inflator,
+                    bondFactor_,
+                    auctionPrice_ 
                 );
             }
         }

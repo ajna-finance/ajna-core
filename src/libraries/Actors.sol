@@ -99,7 +99,7 @@ library Actors {
         }
     }
 
-    function getBorrowerInfoLiquidations(
+    function getBorrowerInfoStruct(
         mapping(address => Borrower) storage self,
         address borrower_,
         uint256 poolInflator_

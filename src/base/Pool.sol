@@ -354,7 +354,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     function kick(address borrower_) external override {
         PoolState memory poolState = _getPoolState();
 
-        Actors.Borrower memory borrower = borrowers.getBorrowerInfoLiquidations(
+        Actors.Borrower memory borrower = borrowers.getBorrowerInfoStruct(
             borrower_,
             poolState.inflator
         );
@@ -536,46 +536,20 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         PoolState memory poolState = _getPoolState();
 
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+        Actors.Borrower memory borrower = borrowers.getBorrowerInfoStruct(
             borrower_,
             poolState.inflator
         );
-        if (borrowerAccruedDebt == 0) revert RepayNoDebt();
 
-        uint256 quoteTokenAmountToRepay = Maths.min(borrowerAccruedDebt, maxQuoteTokenAmountToRepay_);
-        borrowerAccruedDebt   -= quoteTokenAmountToRepay;
+
+        if (borrower.debt == 0) revert RepayNoDebt();
+        uint256 quoteTokenAmountToRepay = Maths.min(borrower.debt, maxQuoteTokenAmountToRepay_);
+
+        borrower.debt         -= quoteTokenAmountToRepay;
         poolState.accruedDebt -= quoteTokenAmountToRepay;
 
-        // update loan queue
-        if (borrowerAccruedDebt == 0) {
-            loans.remove(borrower_);
-        } else {
-            uint256 loansCount = loans.count - 1;
-            if (loansCount != 0
-                &&
-                (borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-            ) revert BorrowAmountLTMinDebt();
-
-            uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
-                borrowerAccruedDebt,
-                borrowerPledgedCollateral,
-                poolState.inflator
-            );
-            loans.upsert(borrower_, thresholdPrice);
-        }
-
-        uint256 numLoans = loans.count - 1;
-        uint256 mompFactor = numLoans > 0 ? Maths.wdiv(_momp(numLoans, poolState.accruedDebt), poolState.inflator): 0;
-        borrowers.update(
-            msg.sender,
-            borrowerAccruedDebt,
-            borrowerPledgedCollateral,
-            mompFactor,
-            poolState.inflator
-        );
-
         uint256 newLup = _lup(poolState.accruedDebt);
-        _updatePool(poolState, newLup);
+        _updateLoanPositionAndState(borrower_, borrower, poolState, newLup);
 
         // move amount to repay from sender to pool
         emit Repay(borrower_, newLup, quoteTokenAmountToRepay);
@@ -683,7 +657,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
 
         PoolState memory poolState = _getPoolState();
-        Actors.Borrower memory borrower = borrowers.getBorrowerInfoLiquidations(
+        Actors.Borrower memory borrower = borrowers.getBorrowerInfoStruct(
             borrower_,
             poolState.inflator
         );
@@ -697,11 +671,11 @@ abstract contract Pool is Clone, Multicall, IPool {
             ) >= Maths.WAD
         ) revert TakeBorrowerOk();
 
-        // calc amount
+        // Calculate amount
         uint256 price = PoolUtils.auctionPrice(liquidation.kickPriceIndex, liquidation.kickTime);
         amountQT_ = Maths.min(Maths.wmul(price, borrower.collateral), maxCollateral_);
 
-        // Calculate BPF
+        // Calculate Bond reward or penalty
         // TODO: remove auction from queue if auctionDebt == 0;
         int256 bpf = PoolUtils._bpf(
             borrower.debt,
@@ -711,7 +685,6 @@ abstract contract Pool is Clone, Multicall, IPool {
             liquidation.bondFactor,
             price);
 
-        // Calculate amounts
         uint256 repayAmount = Maths.wmul(amountQT_, uint256(1e18 - bpf));
         if (repayAmount >= borrower.debt) {
             repayAmount = borrower.debt;
@@ -732,11 +705,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         poolState.accruedDebt -= repayAmount;
         borrower.debt         -= repayAmount;
 
-        collateralTaken_ = Maths.wdiv(amountQT_, price);
+        collateralTaken_      =  Maths.wdiv(amountQT_, price);
         poolState.collateral  -= collateralTaken_;
         borrower.collateral   -= collateralTaken_;
-
-        _updateLoanPositionAndState(borrower_, borrower, poolState);
+        
+        uint256 newLup = _lup(poolState.accruedDebt);
+        _updateLoanPositionAndState(borrower_, borrower, poolState, newLup);
 
         liquidations[borrower_] = liquidation;
 
@@ -746,16 +720,18 @@ abstract contract Pool is Clone, Multicall, IPool {
     function _updateLoanPositionAndState(
         address borrower_,
         Actors.Borrower memory borrower,
-        PoolState memory poolState
+        PoolState memory poolState,
+        uint256 lup
         ) internal {
 
         uint256 loansCount = loans.count - 1;
-        uint256 lup = _lup(poolState.accruedDebt);
 
-        if (PoolUtils.collateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) {
-            auctions.remove(borrower_);
+        if (borrower.debt != 0) {
 
-            if (borrower.debt > 0) {
+            // If loan has debt or collateralized auction has debt
+            if (!auctions.isActive(borrower_) || PoolUtils.collateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) {
+
+                if (auctions.isActive(borrower_)) auctions.remove(borrower_);
                 if (loansCount != 0
                     &&
                     (borrower.debt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
@@ -766,11 +742,25 @@ abstract contract Pool is Clone, Multicall, IPool {
                     borrower.collateral,
                     poolState.inflator
                 );
+
                 loans.upsert(borrower_, thresholdPrice);
+
                 loansCount = loans.count - 1;
-                borrower.mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState.accruedDebt), poolState.inflator): 0;
-            } 
+                borrower.mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState.accruedDebt), poolState.inflator): 0; 
+            }
+
+        } else { // loan or auction has no debt
+
+            if (auctions.isActive(borrower_)) {
+                auctions.remove(borrower_);
+
+            } else {
+                loans.remove(borrower_);
+                loansCount = loans.count - 1;
+                borrower.mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState.accruedDebt), poolState.inflator): 0; 
+            }
         }
+
 
         borrower.inflatorSnapshot = poolState.inflator;
         borrowers[borrower_] = borrower;
