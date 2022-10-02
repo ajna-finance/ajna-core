@@ -18,30 +18,60 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
 
     function testDeployERC20PoolWithZeroAddress() external {
         // should revert if trying to deploy with zero address as collateral
-        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
-        _poolFactory.deployPool(address(0), address(_quote), 0.05 * 10**18);
+        _assertDeployWith0xAddressRevert(
+            {
+                poolFactory:  address(_poolFactory),
+                collateral:   address(0),
+                quote:        address(_quote),
+                interestRate: 0.05 * 10**18
+            }
+        );
 
         // should revert if trying to deploy with zero address as quote token
-        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
-        _poolFactory.deployPool(address(_collateral), address(0), 0.05 * 10**18);
+        _assertDeployWith0xAddressRevert(
+            {
+                poolFactory:  address(_poolFactory),
+                collateral:   address(_collateral),
+                quote:        address(0),
+                interestRate: 0.05 * 10**18
+            }
+        );
     }
 
     function testDeployERC20PoolWithInvalidRate() external {
         // should revert if trying to deploy with interest rate lower than accepted
-        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
-        _poolFactory.deployPool(address(_collateral), address(_quote), 10**18);
+        _assertDeployWithInvalidRateRevert(
+            {
+                poolFactory:  address(_poolFactory),
+                collateral:   address(_collateral),
+                quote:        address(_quote),
+                interestRate: 10**18
+            }
+        );
 
         // should revert if trying to deploy with interest rate higher than accepted
-        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
-        _poolFactory.deployPool(address(_collateral), address(_quote), 2 * 10**18);
+        _assertDeployWithInvalidRateRevert(
+            {
+                poolFactory:  address(_poolFactory),
+                collateral:   address(_collateral),
+                quote:        address(_quote),
+                interestRate: 2 * 10**18
+            }
+        );
     }
 
     function testDeployERC20PoolMultipleTimes() external {
         _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
 
         // should revert if trying to deploy same pool one more time
-        vm.expectRevert(PoolDeployer.PoolAlreadyExists.selector);
-        _poolFactory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        _assertDeployMultipleTimesRevert(
+            {
+                poolFactory:  address(_poolFactory),
+                collateral:   address(_collateral),
+                quote:        address(_quote),
+                interestRate: 0.05 * 10**18
+            }
+        );
 
         // should deploy different pool
         _poolFactory.deployPool(address(_collateral), address(_collateral), 0.05 * 10**18);

@@ -27,60 +27,85 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
         _mintQuoteAndApproveTokens(_lender, 21_000 * 1e18);
 
-        // Lender adds quote token in two price buckets
-        vm.startPrank(_lender);
-        _pool.addQuoteToken(10_000e18, HPB);
-        _pool.addQuoteToken(11_000e18, LEND_PRICE);
-        vm.stopPrank();
-
         _mintCollateralAndApproveTokens(_borrower,  1 * 1e18);
         _mintCollateralAndApproveTokens(_borrower2, 1 * 1e18);
 
+        // Lender adds quote token in two price buckets
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  HPB,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 11_000 * 1e18,
+                index:  LEND_PRICE,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+
         // Borrower adds collateral token and borrows at HPB
-        vm.startPrank(_borrower);
-        _collateral.approve(address(_pool), 10_000e18);
-        _pool.pledgeCollateral(_borrower, 1e18);
-        _pool.borrow(10_000e18, HPB);
-        vm.stopPrank();
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   1e18
+            }
+        );
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     10_000 * 1e18,
+                indexLimit: HPB,
+                newLup:     49_910.043670274810022205 * 1e18
+            }
+        );
 
         // Borrower adds collateral token and borrows at LEND_PRICE
-        vm.startPrank(_borrower2);
-        _collateral.approve(address(_pool), 10_000e18);
-        _pool.pledgeCollateral(_borrower2, 1e18);
-        _pool.borrow(10_000e18, LEND_PRICE);
-        vm.stopPrank();
+        _pledgeCollateral(
+            {
+                from:     _borrower2,
+                borrower: _borrower2,
+                amount:   1e18
+            }
+        );
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     10_000e18,
+                indexLimit: LEND_PRICE,
+                newLup:     10_016.501589292607751220 * 1e18
+            }
+        );
 
-        // Warp to make borrower undercollateralized
-        vm.warp(START + 15 days);
     }
 
     function test_liquidate() external {
+
+        // Warp to make borrower undercollateralized
+        vm.warp(START + 15 days);
         /**********************/
         /*** Pre-kick state ***/
         /**********************/
 
-        (
-            uint256 borrowerDebt,
-            uint256 borrowerPendingDebt,
-            uint256 collateralDeposited,
-            uint256 mompFactor,
-            uint256 borrowerInflator
-        ) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
-
-        assertEq(borrowerDebt,         10_009.615384615384620000 * 1e18);
-        assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);
-        assertEq(_encumberedCollateral(borrowerPendingDebt, _lup()), 1.001368006956135433 * 1e18);
-        assertEq(
-            PoolUtils.collateralization(
-                borrowerPendingDebt,
-                collateralDeposited,
-                _lup()
-            ),
-            0.998633861930247030 * 1e18
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              10_009.615384615384620000 * 1e18,
+                borrowerCollateral:        1 * 1e18,
+                borrowerMompFactor:        10_016.501589292607751220 * 1e18,
+                borrowerInflator:          1 * 1e18,
+                borrowerCollateralization: 1.000687958968713934 * 1e18,
+                borrowerPendingDebt:       10_030.204233142901661009 * 1e18
+            }
         );
-        assertEq(borrowerInflator,     1e18);
+        assertEq(PoolUtils.encumberance(10_030.204233142901661009 * 1e18, _lup()), 1.001368006956135433 * 1e18);
 
-        ( uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt ) = _pool.liquidations(_borrower2);
+        ( uint256 kickTime, uint256 referencePrice, uint256 remainingCollateral, uint256 remainingDebt ) = ERC20Pool(address(_pool)).liquidations(_borrower2);
 
         assertEq(kickTime,            0);
         assertEq(referencePrice,      0);
@@ -96,22 +121,20 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         /*** Post-kick state ***/
         /***********************/
 
-        (
-            borrowerDebt,
-            borrowerPendingDebt,
-            collateralDeposited,
-            mompFactor,
-            borrowerInflator
-        ) = _poolUtils.borrowerInfo(address(_pool), _borrower2);
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              10_030.204233142901661009 * 1e18, // Updated to reflect debt
+                borrowerCollateral:        1 * 1e18,                         // Unchanged
+                borrowerMompFactor:        10_016.501589292607751220 * 1e18,
+                borrowerInflator:          1.002056907057504104 * 1e18,      // Inflator is updated to reflect new deb
+                borrowerCollateralization: 0.998633861930247030 * 1e18,      // Unchanged because based off pending debt
+                borrowerPendingDebt:       10_030.204233142901661009 * 1e18  // Pending debt is unchanged
+            }
+        );
+        assertEq(PoolUtils.encumberance(10_030.204233142901661009 * 1e18, _lup()), 1.001368006956135433 * 1e18);  // Unencumbered collateral is unchanged because based off pending debt
 
-        assertEq(borrowerDebt,         10_030.204233142901661009 * 1e18);  // Updated to reflect debt
-        assertEq(borrowerPendingDebt,  10_030.204233142901661009 * 1e18);  // Pending debt is unchanged
-        assertEq(collateralDeposited,  1e18);                              // Unchanged
-        assertEq(_encumberedCollateral(borrowerDebt, _lup()), 1.001368006956135433 * 1e18);  // Unencumbered collateral is unchanged because based off pending debt
-        assertEq(PoolUtils.collateralization(borrowerDebt, collateralDeposited, _lup()), 0.998633861930247030 * 1e18);  // Unchanged because based off pending debt
-        assertEq(borrowerInflator,     1.002056907057504104 * 1e18);       // Inflator is updated to reflect new debt
-
-        ( kickTime, referencePrice, remainingCollateral, remainingDebt ) = _pool.liquidations(_borrower2);
+        ( kickTime, referencePrice, remainingCollateral, remainingDebt ) = ERC20Pool(address(_pool)).liquidations(_borrower2);
 
         assertEq(kickTime,            block.timestamp);
         assertEq(referencePrice,      HPB);
@@ -157,7 +180,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
         emit log_named_uint("collateralDeposited ", collateralDeposited);
         emit log_named_uint("mompFactor ",           mompFactor);
-        emit log_named_uint("collateralEncumbered", _encumberedCollateral(borrowerDebt, _lup()));
+        emit log_named_uint("collateralEncumbered", PoolUtils.encumberance(borrowerDebt, _lup()));
         emit log_named_uint("collateralization   ", PoolUtils.collateralization(borrowerDebt, collateralDeposited, _lup()));
         emit log_named_uint("borrowerInflator    ", borrowerInflator);
     }

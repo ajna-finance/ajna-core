@@ -22,8 +22,8 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
     }
 
-    function testMulticallDepostQuoteToken() external {
-        assertEq(_poolSize(), 0);
+    function testMulticallDepositQuoteToken() external {
+        assertEq(_pool.depositSize(), 0);
 
         bytes[] memory callsToExecute = new bytes[](3);
 
@@ -58,35 +58,80 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         emit AddQuoteToken(_lender, 2552, 10_000 * 1e18, BucketMath.MAX_PRICE);
         vm.expectEmit(true, true, false, true);
         emit Transfer(_lender, address(_pool), 10_000 * 1e18);                
-        _pool.multicall(callsToExecute);
+        ERC20Pool(address(_pool)).multicall(callsToExecute);
 
 
         _assertPoolPrices(
-            PoolPricesInfo({
-                htp: 0,
-                hpb: 3_010.892022197881557845 * 1e18,
-                lup: BucketMath.MAX_PRICE,
+            {
+                htp:      0,
+                htpIndex: 0,
+                hpb:      3_010.892022197881557845 * 1e18,
+                hpbIndex: 2550,
+                lup:      BucketMath.MAX_PRICE,
                 lupIndex: 0
-            })
+            }
         );
 
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 30_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        170_000 * 1e18);
-        assertEq(_poolSize(),                      30_000 * 1e18);
+
+        assertEq(_pool.depositSize(), 30_000 * 1e18);
 
         // check buckets
-        (uint256 lpBalance, ) = _pool.lenders(2550, _lender);
-        assertEq(lpBalance,           10_000 * 1e27);
-        assertEq(_exchangeRate(2550), 1 * 1e27);
+        _assertBucket(
+            {
+                index:        2550,
+                lpBalance:    10_000 * 1e27,
+                collateral:   0,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       2550,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
 
-        (lpBalance, ) = _pool.lenders(2551, _lender);
-        assertEq(lpBalance,           10_000 * 1e27);
-        assertEq(_exchangeRate(2551), 1 * 1e27);
+        _assertBucket(
+            {
+                index:        2551,
+                lpBalance:    10_000 * 1e27,
+                collateral:   0,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       2551,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
 
-        (lpBalance, ) = _pool.lenders(2552, _lender);
-        assertEq(lpBalance,           10_000 * 1e27);
-        assertEq(_exchangeRate(2552), 1 * 1e27);
+        _assertBucket(
+            {
+                index:        2552,
+                lpBalance:    10_000 * 1e27,
+                collateral:   0,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       2552,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
     }
 
     function testMulticallRevertString() public {
@@ -99,8 +144,8 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
         );
 
         changePrank(_lender);
-        vm.expectRevert(IPoolErrors.BorrowLimitIndexReached.selector);
-        _pool.multicall(callsToExecute);
+        vm.expectRevert(IPoolErrors.LimitIndexReached.selector);
+        ERC20Pool(address(_pool)).multicall(callsToExecute);
     }
 
 

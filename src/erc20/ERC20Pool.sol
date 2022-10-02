@@ -101,7 +101,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint256 fromIndex_,
         uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
-        if (fromIndex_ == toIndex_) revert MoveCollateralToSamePrice();
+        if (fromIndex_ == toIndex_) revert MoveToSamePrice();
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -111,13 +111,13 @@ contract ERC20Pool is IERC20Pool, Pool {
             deposits.valueAt(fromIndex_),
             collateralAmountToMove_
         );
-        if (fromBucketCollateral < collateralAmountToMove_) revert MoveCollateralInsufficientCollateral();
+        if (fromBucketCollateral < collateralAmountToMove_) revert InsufficientCollateral();
 
         (uint256 lpBalance, ) = lenders.getLenderInfo(
             fromIndex_,
             msg.sender
         );
-        if (fromBucketLPs_ > lpBalance) revert MoveCollateralInsufficientLP();
+        if (fromBucketLPs_ > lpBalance) revert InsufficientLPs();
 
         (toBucketLPs_, ) = buckets.collateralToLPs(
             toIndex_,
@@ -149,7 +149,7 @@ contract ERC20Pool is IERC20Pool, Pool {
             deposits.valueAt(index_),
             lenderLPsBalance
         );
-        if (collateralAmountRemoved_ == 0) revert RemoveCollateralNoClaim();
+        if (collateralAmountRemoved_ == 0) revert NoClaim();
 
         // update lender accounting
         lenders.removeLPs(index_, msg.sender, redeemedLenderLPs_);
@@ -201,7 +201,7 @@ contract ERC20Pool is IERC20Pool, Pool {
             borrower_,
             poolState.inflator
         );
-        if (borrowerAccruedDebt == 0) revert KickNoDebt();
+        if (borrowerAccruedDebt == 0) revert NoDebt();
 
         uint256 lup = _lup(poolState.accruedDebt);
 
@@ -214,7 +214,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         ) revert LiquidateBorrowerOk();
 
         uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
-        if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
+        if (lup > thresholdPrice) revert LUPGreaterThanTP();
 
         borrowers.updateDebt(
             borrower_,

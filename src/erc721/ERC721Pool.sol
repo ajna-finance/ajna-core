@@ -228,7 +228,7 @@ contract ERC721Pool is IERC721Pool, Pool {
             borrower_,
             poolState.inflator
         );
-        if (borrowerAccruedDebt == 0) revert KickNoDebt();
+        if (borrowerAccruedDebt == 0) revert NoDebt();
 
         uint256 lup = _lup(poolState.accruedDebt);
         if (

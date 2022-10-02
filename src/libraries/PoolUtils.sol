@@ -143,28 +143,23 @@ library PoolUtils {
         return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_100), 0.15 * 1e18);
     }
 
-    function indexToPrice(
-        uint256 index_
-    ) internal pure returns (uint256) {
-        return BucketMath.indexToPrice(indexToBucketIndex(index_));
-    }
-
-    function priceToIndex(
-        uint256 price_
-    ) internal pure returns (uint256) {
-        return uint256(7388 - (BucketMath.priceToIndex(price_) + 3232));
-    }
-
     /**
      *  @dev Fenwick index to bucket index conversion
      *          1.00      : bucket index 0,     fenwick index 4146: 7388-4156-3232=0
      *          MAX_PRICE : bucket index 4156,  fenwick index 0:    7388-0-3232=4156.
      *          MIN_PRICE : bucket index -3232, fenwick index 7388: 7388-7388-3232=-3232.
      */
-    function indexToBucketIndex(
+    function indexToPrice(
         uint256 index_
-    ) internal pure returns (int256 bucketIndex_) {
-        bucketIndex_ = (index_ != 8191) ? 4156 - int256(index_) : BucketMath.MIN_PRICE_INDEX;
+    ) internal pure returns (uint256) {
+        int256 bucketIndex = (index_ != 8191) ? 4156 - int256(index_) : BucketMath.MIN_PRICE_INDEX;
+        return BucketMath.indexToPrice(bucketIndex);
+    }
+
+    function priceToIndex(
+        uint256 price_
+    ) internal pure returns (uint256) {
+        return uint256(7388 - (BucketMath.priceToIndex(price_) + 3232));
     }
 
 }

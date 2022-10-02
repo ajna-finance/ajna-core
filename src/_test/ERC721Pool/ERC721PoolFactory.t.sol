@@ -21,7 +21,6 @@ contract ERC721PoolFactoryTest is DSTestPlus {
     Token              internal _quote;
     uint256[]          internal _tokenIdsSubsetOne;
     uint256[]          internal _tokenIdsSubsetTwo;
-    uint256            internal _startTime;
 
     function setUp() external {
         _startTime   = block.timestamp;
@@ -73,28 +72,58 @@ contract ERC721PoolFactoryTest is DSTestPlus {
 
     function testDeployERC721CollectionPoolWithZeroAddress() external {
         // should revert if trying to deploy with zero address as collateral
-        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
-        _factory.deployPool(address(0), address(_quote), 0.05 * 10**18);
+        _assertDeployWith0xAddressRevert(
+            {
+                poolFactory:  address(_factory),
+                collateral:   address(0),
+                quote:        address(_quote),
+                interestRate: 0.05 * 10**18
+            }
+        );
 
         // should revert if trying to deploy with zero address as quote token
-        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
-        _factory.deployPool(address(_collateral), address(0), 0.05 * 10**18);
+        _assertDeployWith0xAddressRevert(
+            {
+                poolFactory:  address(_factory),
+                collateral:   address(_collateral),
+                quote:        address(0),
+                interestRate: 0.05 * 10**18
+            }
+        );
     }
 
     function testDeployERC721CollectionPoolWithInvalidRate() external {
         // should revert if trying to deploy with interest rate lower than accepted
-        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
-        _factory.deployPool(address(_quote), address(_quote), 10**18);
+        _assertDeployWithInvalidRateRevert(
+            {
+                poolFactory:  address(_factory),
+                collateral:   address(_quote),
+                quote:        address(_quote),
+                interestRate: 10**18
+            }
+        );
 
         // should revert if trying to deploy with interest rate higher than accepted
-        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
-        _factory.deployPool(address(_quote), address(_quote), 2 * 10**18);
+        _assertDeployWithInvalidRateRevert(
+            {
+                poolFactory:  address(_factory),
+                collateral:   address(_quote),
+                quote:        address(_quote),
+                interestRate: 2 * 10**18
+            }
+        );
     }
 
     function testDeployERC721PoolMultipleTimes() external {
         // should revert if trying to deploy same pool one more time
-        vm.expectRevert(PoolDeployer.PoolAlreadyExists.selector);
-        _factory.deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        _assertDeployMultipleTimesRevert(
+            {
+                poolFactory:  address(_factory),
+                collateral:   address(_collateral),
+                quote:        address(_quote),
+                interestRate: 0.05 * 10**18
+            }
+        );
     }
 
     function testDeployERC721CollectionPool() external {
@@ -125,11 +154,11 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         tokenIdsTestSubset[2] = 3;
 
         // should revert if trying to deploy with zero address as collateral
-        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
+        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
         _factory.deploySubsetPool(address(0), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
 
         // should revert if trying to deploy with zero address as quote token
-        vm.expectRevert(PoolDeployer.DeployWithZeroAddress.selector);
+        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
         _factory.deploySubsetPool(address(_collateral), address(0), tokenIdsTestSubset, 0.05 * 10**18);
     }
 
@@ -139,10 +168,10 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         tokenIdsTestSubset[1] = 2;
         tokenIdsTestSubset[2] = 3;
 
-        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
+        vm.expectRevert(IPoolFactory.PoolInterestRateInvalid.selector);
         _factory.deploySubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.11 * 10**18);
 
-        vm.expectRevert(PoolDeployer.PoolInterestRateInvalid.selector);
+        vm.expectRevert(IPoolFactory.PoolInterestRateInvalid.selector);
         _factory.deploySubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.009 * 10**18);
     }
 
@@ -154,7 +183,7 @@ contract ERC721PoolFactoryTest is DSTestPlus {
 
         _factory.deploySubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
 
-        vm.expectRevert(PoolDeployer.PoolAlreadyExists.selector);
+        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
         _factory.deploySubsetPool(address(_collateral), address(_quote), tokenIdsTestSubset, 0.05 * 10**18);
     }
 
