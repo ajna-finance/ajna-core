@@ -121,23 +121,28 @@ contract ERC721Pool is IERC721Pool, Pool {
     function pullCollateral(
         uint256[] calldata tokenIdsToPull_
     ) external override {
-        _pullCollateralOnBehalfOf(msg.sender, tokenIdsToPull_);
+        _pullCollateral(msg.sender, Maths.wad(tokenIdsToPull_.length));
+        _checkAndTransferNFT(msg.sender, tokenIdsToPull_);
     }
 
-    function _pullCollateralOnBehalfOf(
+    /**
+     *  @notice Performs NFT transfering checks and transfers NFTs by token Id.
+     *  @param borrower_ Address of the borower whose NFTs are being transfered from.
+     *  @param tokenIds_ Array of token ids that the taker requests to purchase.
+     */
+    function _checkAndTransferNFT(
         address borrower_,
-        uint256[] memory tokenIdsToPull_
+        uint256[] memory tokenIds_
     ) internal {
-        _pullCollateral(borrower_, Maths.wad(tokenIdsToPull_.length));
-
         // move collateral from pool to sender
-        emit PullCollateralNFT(borrower_, tokenIdsToPull_);
-        for (uint256 i = 0; i < tokenIdsToPull_.length;) {
-            uint256 tokenId = tokenIdsToPull_[i];
+        emit PullCollateralNFT(borrower_, tokenIds_);
+
+        for (uint256 i = 0; i < tokenIds_.length;) {
+            uint256 tokenId = tokenIds_[i];
             //slither-disable-next-line calls-loop
             if (collateral().ownerOf(tokenId) != address(this)) revert TokenNotDeposited();
             if (!_poolCollateralTokenIds.get(tokenId))          revert RemoveTokenFailed(); // check if NFT token id in pool
-            if (!lockedNFTs[borrower_].get(tokenId))           revert RemoveTokenFailed(); // check if caller is the one that locked NFT token id
+            if (!lockedNFTs[borrower_].get(tokenId))            revert RemoveTokenFailed(); // check if caller is the one that locked NFT token id
 
             _poolCollateralTokenIds.unset(tokenId);
             lockedNFTs[borrower_].unset(tokenId);
@@ -227,105 +232,17 @@ contract ERC721Pool is IERC721Pool, Pool {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
-    // // TODO: Add reentrancy guard
+    /**
+     *  @notice Caller takes collateral from the auction in exchange for quote token.
+     *  @param borrower_     Address of the borower take is being called upon.
+     *  @param tokenIds_     Array of token ids that the taker requests to purchase.
+     *  @param swapCalldata_ Calldata which provides instructions to call a seperate contract for the purpose of an atomic swap.
+     */
     function take(address borrower_, uint256[] memory tokenIds_, bytes memory swapCalldata_) external override {
 
-        // PoolState memory poolState = _getPoolState();
-        // Liquidation memory liquidation = liquidations[borrower_];
-        
-        // // check liquidation process status
-        // (,,bool auctionActive) = auctions.get(borrower_);
-        // if (auctionActive != true) revert NoAuction();
-        // if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
+        if (borrowers[borrower_].collateral != Maths.wad(tokenIds_.length)) revert TakeNumTokenIdsDontMatch();
 
-        // (
-        // uint256 borrowerAccruedDebt,
-        // uint256 borrowerPledgedCollateral,
-        // uint256 borrowerMompFactor,
-        // uint256 borrowerInflatorSnapshot
-        // ) = borrowers.getBorrower(borrower_);
-
-        // (borrowerAccruedDebt, borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
-        //     borrower_,
-        //     inflatorSnapshot
-        // );
-        // if (
-        //     PoolUtils.collateralization(
-        //         borrowerAccruedDebt,
-        //         borrowerPledgedCollateral,
-        //         _lup(borrowerDebt)
-        //     ) >= Maths.WAD
-        // ) revert TakeBorrowerOk();
-
-        // // Calculate BPF
-        // // TODO: remove auction from queue if auctionDebt == 0;
-        // uint256 price = PoolUtils.auctionPrice(liquidation.referencePrice, uint256(liquidation.kickTime));
-        // int256 bpf = PoolUtils._bpf(
-        //     borrowerAccruedDebt,
-        //     borrowerPledgedCollateral,
-        //     borrowerMompFactor,
-        //     borrowerInflatorSnapshot,
-        //     liquidation.bondFactor,
-        //     price);
-
-        // // Calculate amounts
-        // uint256 amount = Maths.wmul(price, tokenIds_.length);
-        // uint256 repayAmount = Maths.wmul(amount, uint256(1e18 - bpf));
-        // int256 rewardOrPenalty;
-
-        // if (repayAmount >= borrowerAccruedDebt) {
-        //     repayAmount = borrowerAccruedDebt;
-        //     amount = Maths.wdiv(borrowerAccruedDebt, uint256(1e18 - bpf));
-        // }
-
-        // if (bpf >= 0) {
-        //     // Take is below neutralPrice, Kicker is rewarded
-        //     rewardOrPenalty = int256(amount - repayAmount);
-        //     liquidation.bondSize += amount - repayAmount;
- 
-        // } else {     
-        //     // Take is above neutralPrice, Kicker is penalized
-        //     rewardOrPenalty = PRBMathSD59x18.mul(int256(amount), bpf);
-        //     liquidation.bondSize -= uint256(-rewardOrPenalty);
-        // }
-
-
-        // poolState.accruedDebt -= repayAmount;
-        // borrowerAccruedDebt   -= repayAmount;
-
-        // // TODO: Reduce liquidation's remaining collateral HERE before collat check
-
-        // // If recollateralized remove loan from auction
-        // if (borrowerPledgedCollateral != 0 && PoolUtils.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, _lup(borrowerDebt)) >= Maths.WAD) {
-        //     auctions.remove(borrower_);
-
-        //     if (borrowerAccruedDebt > 0) {
-        //         uint256 loansCount = loans.count - 1;
-        //         if (loansCount != 0
-        //             &&
-        //             (borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-        //         ) revert BorrowAmountLTMinDebt();
-
-        //         uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
-        //             borrowerAccruedDebt,
-        //             borrowerPledgedCollateral,
-        //             poolState.inflator
-        //         );
-        //         loans.upsert(borrower_, thresholdPrice);
-        //     } 
-        // }
-
-        // uint256 numLoans   = (loans.count - 1) * 1e18;
-        // borrowerMompFactor = numLoans > 0 ? Maths.wdiv(_momp(numLoans), borrowerInflatorSnapshot): 0;
-
-        // borrowers.update(
-        //     borrower_,
-        //     borrowerAccruedDebt,
-        //     borrowerPledgedCollateral,
-        //     borrowerMompFactor,
-        //     borrowerInflatorSnapshot);
-
-        // liquidations[borrower_] = liquidation;
+        (int256 rewardOrPenalty, , uint256 amountQT) = _take(borrower_, Maths.wad(tokenIds_.length));
 
         // // TODO: implement flashloan functionality
         // // Flash loan full amount to liquidate to borrower
@@ -334,9 +251,9 @@ contract ERC721Pool is IERC721Pool, Pool {
         // // Get current swap price
         // //uint256 quoteTokenReturnAmount = _getQuoteTokenReturnAmount(uint256(liquidation.kickTime), uint256(liquidation.referencePrice), collateralToPurchase);
 
-        // emit Take(borrower_, amount, tokenIds_, rewardOrPenalty);
-        // _pullCollateralOnBehalfOf(borrower_, tokenIds_);
-        // quoteToken().safeTransferFrom(msg.sender, address(this), amount / quoteTokenScale);
+        _checkAndTransferNFT(borrower_, tokenIds_);
+        emit Take(borrower_, amountQT, tokenIds_, rewardOrPenalty);
+        quoteToken().safeTransferFrom(msg.sender, address(this), amountQT / quoteTokenScale);
     }
 
     /**********************/

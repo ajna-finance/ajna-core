@@ -106,9 +106,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 bpf:            0,
                 kickPrice:      0,
                 bondFactor:     0,
-                bondSize:       0,
-                next:           address(0),
-                active:         false
+                bondSize:       0
             })
         );
 
@@ -171,9 +169,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 bpf:            int256(-0.01 * 1e18),
                 kickPrice:      9.917184843435912074 * 1e18,
                 bondFactor:     0.01 * 1e18,
-                bondSize:       0.195342779771472726 * 1e18,
-                next:           address(0),
-                active:         true
+                bondSize:       0.195342779771472726 * 1e18
             })
         );
 
@@ -233,9 +229,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 bpf:            int256(-0.01 * 1e18),
                 kickPrice:      9.917184843435912074 * 1e18,
                 bondFactor:     0.01 * 1e18,
-                bondSize:       0.195342779771472726 * 1e18,
-                next:           address(0),
-                active:         true
+                bondSize:       0.195342779771472726 * 1e18
             })
         );
 
@@ -246,9 +240,9 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         vm.expectEmit(true, true, false, true);
         emit Take(_borrower, 
                 19.341067992886131878 * 1e18,
-                0.390051578108636266 * 1e18,
+                2 * 1e18,
                 -0.193410679928861319 * 1e18);
-        _pool.take(_borrower, 20e18, data);
+        _pool.take(_borrower, 2.0 * 1e18, data);
         vm.stopPrank();
 
 
@@ -257,7 +251,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 htp:                  8.097929340730578998 * 1e18,
                 lup:                  _p9_72,
                 poolSize:             73_094.573649505265010718 * 1e18,
-                pledgedCollateral:    1_001.609948421891363734 * 1e18,
+                pledgedCollateral:    1_000.0 * 1e18,
                 encumberedCollateral: 833.009246211652698536 * 1e18,
                 borrowerDebt:         8_097.929340730578997898 * 1e18,
                 actualUtilization:    0.110787011079110237 * 1e18,
@@ -279,7 +273,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                borrower:          _borrower,
                debt:              0,
                pendingDebt:       0,
-               collateral:        1.609948421891363734 * 1e18,
+               collateral:        0 * 1e18,
                collateralization: 1e18,
                mompFactor:        9.917184843435912074 * 1e18,
                inflator:          1.013803302006192493 * 1e18
@@ -288,15 +282,13 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
         _assertAuction(
             AuctionState({
-                borrower:       _borrower,
-                kickTime:       (block.timestamp - 2 hours),
-                price:          49.585924217179560370 * 1e18,
-                bpf:            int256(-0.01 * 1e18),
-                kickPrice: 9.917184843435912074 * 1e18,
-                bondFactor:     0.01 * 1e18,
-                bondSize:       0.001932099842611407 * 1e18,
-                next:           address(0),
-                active:         false
+                borrower:   _borrower,
+                kickTime:   (block.timestamp - 2 hours),
+                price:      49.585924217179560370 * 1e18,
+                bpf:        0 * 1e18,
+                kickPrice:  9.917184843435912074 * 1e18,
+                bondFactor: 0.01 * 1e18,
+                bondSize:   0.001932099842611407 * 1e18
             })
         );
         
@@ -363,9 +355,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 bpf:            int256(-0.01 * 1e18),
                 kickPrice:      9.917184843435912074 * 1e18,
                 bondFactor:     0.01 * 1e18,
-                bondSize:       98.533942419792216457 * 1e18,
-                next:           address(0),
-                active:         true
+                bondSize:       98.533942419792216457 * 1e18
             })
         );
 
@@ -382,12 +372,12 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 htp:                  9.767445610192598576 * 1e18,
                 lup:                  _p9_72,
                 poolSize:             73_119.091537808684512392 * 1e18,
-                pledgedCollateral:    998.773277849995859673 * 1e18,
-                encumberedCollateral: 1_013.593105224726321400 * 1e18,
-                borrowerDebt:         9_853.438462645853472494 * 1e18,
-                actualUtilization:    4.650318606623740397 * 1e18,
+                pledgedCollateral:    982.0 * 1e18,
+                encumberedCollateral: 1_003.005508276077856174 * 1e18,
+                borrowerDebt:         9_750.513300208334060504 * 1e18,
+                actualUtilization:    0 * 1e18,
                 targetUtilization:    1.013570846171602300 * 1e18,
-                minDebtAmount:        985.343846264585347249 * 1e18,
+                minDebtAmount:        975.051330020833406050 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
                 inflatorSnapshot:     1.013824712461823922 * 1e18,
@@ -401,10 +391,10 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         _assertBorrower(
             BorrowerState({
                borrower:          _borrower2,
-               debt:              9_833.903571425468275346 * 1e18,
-               pendingDebt:       9_833.903571425468275346 * 1e18,
-               collateral:        996.773277849995859673 * 1e18,
-               collateralization: 0.985359259825723463 * 1e18,
+               debt:              9_730.978408987948863356 * 1e18,
+               pendingDebt:       9_730.978408987948863356 * 1e18,
+               collateral:        980.0 * 1e18,
+               collateralization: 0.979024877799720373 * 1e18,
                mompFactor:        9.818751856078723036 * 1e18,
                inflator:          1.013824712461823922 * 1e18
             })
@@ -418,9 +408,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 bpf:            int256(0.01 * 1e18),
                 kickPrice:      9.917184843435912074 * 1e18,
                 bondFactor:     0.01 * 1e18,
-                bondSize:       98.733942419792216457 * 1e18,
-                next:           address(0),
-                active:         true
+                bondSize:       99.773590525221705467 * 1e18
             })
         );
 
@@ -428,11 +416,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         vm.startPrank(_lender);
         vm.expectEmit(true, true, false, true);
         emit Take(_borrower2, 
-                6_178.240527147445049999 * 1e18,
-                996.773277849995859673 * 1e18,
-                61.782405271474450500 * 1e18);
+                6_074.275716604496149000 * 1e18,
+                980.0 * 1e18,
+                60.742757166044961490 * 1e18);
 
-        _pool.take(_borrower2, 8_000 * 1e18, data);
+        _pool.take(_borrower2, 981.0 * 1e18, data);
         vm.stopPrank();
 
         _assertPool(
@@ -441,11 +429,11 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                lup:                  _p9_81,
                poolSize:             73_119.091537808684512392 * 1e18,
                pledgedCollateral:    2.0 * 1e18,
-               encumberedCollateral: 380.596270844378611524 * 1e18,
-               borrowerDebt:         3_736.980340769882872995 * 1e18,
+               encumberedCollateral: 380.596270844378611523 * 1e18,
+               borrowerDebt:         3_736.980340769882872994 * 1e18,
                actualUtilization:    0,
                targetUtilization:    1.013570846171602300 * 1e18,
-               minDebtAmount:        373.698034076988287300 * 1e18,
+               minDebtAmount:        373.698034076988287299 * 1e18,
                loans:                1,
                maxBorrower:          address(_borrower),
                inflatorSnapshot:     1.013824712461823922 * 1e18,
@@ -458,8 +446,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         _assertBorrower(
             BorrowerState({
                borrower:          _borrower2,
-               debt:              3_717.445449549497675847 * 1e18,
-               pendingDebt:       3_717.445449549497675847 * 1e18,
+               debt:              3_717.445449549497675846 * 1e18,
+               pendingDebt:       3_717.445449549497675846 * 1e18,
                collateral:        0,
                collateralization: 0,
                mompFactor:        9.818751856078723036 * 1e18,
@@ -475,9 +463,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 bpf:            0,
                 kickPrice:      9.917184843435912074 * 1e18,
                 bondFactor:     0.01 * 1e18,
-                bondSize:       160.516347691266666957 * 1e18,
-                next:           address(0),
-                active:         true
+                bondSize:       160.516347691266666957 * 1e18
             })
         );
         

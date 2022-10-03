@@ -346,8 +346,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(auctionPrice, state_.price);
         assertEq(bpf, state_.bpf);
         assertEq(bondFactor, state_.bondFactor);
-        assertEq(bondSize, state_.bondSize);
-        
+        assertEq(bondSize, state_.bondSize); 
     }
 
     function _assertLPs(LenderLPs memory specs_) internal {

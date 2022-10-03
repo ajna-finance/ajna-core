@@ -8,16 +8,17 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
  */
 interface IERC721PoolLiquidationActions {
 
+
     /**
-     *  @notice Called by actors to purchase collateral using quote token they provide themselves.
-     *  @param  borrower     Identifies the loan being liquidated.
-     *  @param  tokenIds     NFT token ids caller wishes to purchase from the liquidation.
-     *  @param  swapCalldata If provided, delegate call will be invoked after sending collateral to msg.sender,
+     *  @notice Caller takes collateral from the auction in exchange for quote token.
+     *  @param  borrower_     Address of the borower take is being called upon.
+     *  @param  tokenIds_     Array of token ids that the taker requests to purchase.
+     *  @param  swapCalldata_ If provided, delegate call will be invoked after sending collateral to msg.sender,
      *                        such that sender will have a sufficient quote token balance prior to payment.
      */
     function take(
-        address borrower,
-        uint256[] calldata tokenIds,
-        bytes memory swapCalldata
+        address borrower_,
+        uint256[] calldata tokenIds_,
+        bytes memory swapCalldata_
     ) external;
 }

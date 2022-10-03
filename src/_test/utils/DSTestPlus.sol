@@ -125,8 +125,6 @@ abstract contract DSTestPlus is Test {
         uint256 kickPrice;
         uint256 bondFactor;
         uint256 bondSize;
-        address next;
-        bool active;
     }
 
     struct BorrowerState {
@@ -164,7 +162,6 @@ abstract contract DSTestPlus is Test {
     function wadPercentDifference(uint256 lhs, uint256 rhs) internal pure returns (uint256 difference_) {
         difference_ = lhs < rhs ? Maths.WAD - Maths.wdiv(lhs, rhs) : Maths.WAD - Maths.wdiv(rhs, lhs);
     }
-
 
 }
 

@@ -351,6 +351,10 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation External Functions ***/
     /*********************************/
 
+    /**
+     *  @notice Caller posts a bond to starts an auction. Checks loan collateralization then calculates bondSize and bondFactor.
+     *  @param borrower_ Address of the borower take is being called upon.
+     */
     function kick(address borrower_) external override {
         PoolState memory poolState = _getPoolState();
 
@@ -641,6 +645,14 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Internal Functions ***/
     /*****************************/
 
+    /**
+     *  @notice Performs take checks, calculates amounts and bpf reward / penalty.
+     *  @dev Internal support method assisting in the ERC20 and ERC721 pool take calls.
+     *  @param borrower_         Address of the borower take is being called upon.
+     *  @param maxCollateral_    Max amount of collateral to take, submited by the taker.
+     *  @return rewardOrPenalty_ Reward (positive) or penalty (negative) in quote token that is applied to the bondSize.
+     *  @return collateralTaken_ Amount of collateral taken from the auction and sent to the taker.
+     */
     function _take(
         address borrower_,
         uint256 maxCollateral_
@@ -672,8 +684,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         ) revert TakeBorrowerOk();
 
         // Calculate amount
-        uint256 price = PoolUtils.auctionPrice(liquidation.kickPriceIndex, liquidation.kickTime);
-        amountQT_ = Maths.min(Maths.wmul(price, borrower.collateral), maxCollateral_);
+        uint256 price    = PoolUtils.auctionPrice(liquidation.kickPriceIndex, liquidation.kickTime);
+        amountQT_        = Maths.wmul(price, Maths.min(borrower.collateral, maxCollateral_));
+        collateralTaken_ = Maths.wdiv(amountQT_, price);
 
         // Calculate Bond reward or penalty
         // TODO: remove auction from queue if auctionDebt == 0;
@@ -705,7 +718,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         poolState.accruedDebt -= repayAmount;
         borrower.debt         -= repayAmount;
 
-        collateralTaken_      =  Maths.wdiv(amountQT_, price);
         poolState.collateral  -= collateralTaken_;
         borrower.collateral   -= collateralTaken_;
         
@@ -717,36 +729,44 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
 
+    /**
+     *  @notice Performs loan and auction update checks, calculates TP and loan and auction position.
+     *  @dev Internal support method assisting in the ERC20 and ERC721 pool take calls, called by _take.
+     *  @param borrower_       Address of the borower take is being called upon.
+     *  @param borrowerStruct_ Borrower struct containing relevant Borrower info.
+     *  @param poolState_      PoolState struct containing relevant PoolState info.
+     *  @param lup_            Lowest utilized price, used to track shared liquidation price.
+     */
     function _updateLoanPositionAndState(
         address borrower_,
-        Actors.Borrower memory borrower,
-        PoolState memory poolState,
-        uint256 lup
+        Actors.Borrower memory borrowerStruct_,
+        PoolState memory poolState_,
+        uint256 lup_
         ) internal {
 
         uint256 loansCount = loans.count - 1;
 
-        if (borrower.debt != 0) {
+        if (borrowerStruct_.debt != 0) {
 
             // If loan has debt or collateralized auction has debt
-            if (!auctions.isActive(borrower_) || PoolUtils.collateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) {
+            if (!auctions.isActive(borrower_) || PoolUtils.collateralization(borrowerStruct_.debt, borrowerStruct_.collateral, lup_) >= Maths.WAD) {
 
                 if (auctions.isActive(borrower_)) auctions.remove(borrower_);
                 if (loansCount != 0
                     &&
-                    (borrower.debt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
+                    (borrowerStruct_.debt < PoolUtils.minDebtAmount(poolState_.accruedDebt, loansCount))
                 ) revert BorrowAmountLTMinDebt();
 
                 uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
-                    borrower.debt,
-                    borrower.collateral,
-                    poolState.inflator
+                    borrowerStruct_.debt,
+                    borrowerStruct_.collateral,
+                    poolState_.inflator
                 );
 
                 loans.upsert(borrower_, thresholdPrice);
 
                 loansCount = loans.count - 1;
-                borrower.mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState.accruedDebt), poolState.inflator): 0; 
+                borrowerStruct_.mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState_.accruedDebt), poolState_.inflator): 0; 
             }
 
         } else { // loan or auction has no debt
@@ -757,14 +777,15 @@ abstract contract Pool is Clone, Multicall, IPool {
             } else {
                 loans.remove(borrower_);
                 loansCount = loans.count - 1;
-                borrower.mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState.accruedDebt), poolState.inflator): 0; 
+                borrowerStruct_.mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState_.accruedDebt), poolState_.inflator): 0; 
             }
         }
 
 
-        borrower.inflatorSnapshot = poolState.inflator;
-        borrowers[borrower_] = borrower;
-        _updatePool(poolState, lup);
+        borrowerStruct_.inflatorSnapshot = poolState_.inflator;
+
+        borrowers[borrower_] = borrowerStruct_;
+        _updatePool(poolState_, lup_);
     }
 
     /*****************************/
@@ -859,24 +880,45 @@ abstract contract Pool is Clone, Multicall, IPool {
         }
     }
 
-
-    function _momp(uint256 numLoans, uint256 poolStateAccruedDebt) internal view returns (uint256) {
+    /**
+     *  @notice Calculates the MOMP, most optomistic matching price.
+     *  @dev The MOMP is stamped on each loan when touched and used in the kick as well as take.
+     *  @param numLoans_             Number of loans in the pool.
+     *  @param poolStateAccruedDebt_ Total debt of the pool.
+     *  @return momp_                The amount of deposit above this price is equal to the average loan's debt.
+     */
+    function _momp(uint256 numLoans_, uint256 poolStateAccruedDebt_) internal view returns (uint256) {
         return PoolUtils.indexToPrice(
                 deposits.findIndexOfSum(
-                    Maths.wdiv(poolStateAccruedDebt, numLoans * Maths.WAD)
+                    Maths.wdiv(poolStateAccruedDebt_, numLoans_ * Maths.WAD)
                 )
             );
     }
-
     
-    function _calcBond(uint256 numLoans, uint256 poolStateAccruedDebt, uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, uint256 lup) internal view returns (uint256 bondFactor, uint256 bondSize) {
-       uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
-       if (lup > thresholdPrice) revert KickLUPGreaterThanTP();
-       uint256 momp = _momp(numLoans, poolStateAccruedDebt);
+    /**
+     *  @notice Calculates the bondFactor and bondSize, to be used in determining the bond when an auction is kicked. 
+     *  @param numLoans_                  Number of loans in the pool.
+     *  @param poolStateAccruedDebt_      Total debt of the pool.
+     *  @param borrowerAccruedDebt_       Total borrower.
+     *  @param borrowerPledgedCollateral_ Total borrower pledged collateral.
+     *  @return bondFactor_               Factor used in calculating the BPF, bond penalty factor on every take.
+     *  @return bondSize_                 Size of the bond required to kick the loan into auction.
+     */
+    function _calcBond(
+        uint256 numLoans_,
+        uint256 poolStateAccruedDebt_,
+        uint256 borrowerAccruedDebt_,
+        uint256 borrowerPledgedCollateral_,
+        uint256 lup_
+    ) internal view returns (uint256 bondFactor_, uint256 bondSize_) {
+
+       uint256 thresholdPrice = borrowerAccruedDebt_ * Maths.WAD / borrowerPledgedCollateral_;
+       if (lup_ > thresholdPrice) revert KickLUPGreaterThanTP();
+       uint256 momp = _momp(numLoans_, poolStateAccruedDebt_);
 
        // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
-       bondFactor = thresholdPrice >= momp ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, momp)));
-       bondSize = Maths.wmul(bondFactor, borrowerAccruedDebt);
+       bondFactor_ = thresholdPrice >= momp ? 0.01 * 1e18 : Maths.min(0.3 * 1e18, Maths.max(0.01 * 1e18, 1e18 - Maths.wdiv(thresholdPrice, momp)));
+       bondSize_ = Maths.wmul(bondFactor_, borrowerAccruedDebt_);
     }
 
     function _hpbIndex() internal view returns (uint256) {
@@ -947,6 +989,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposit_
         );
     }
+
 
     function collateralAddress() external pure override returns (address) {
         return _getArgAddress(0);

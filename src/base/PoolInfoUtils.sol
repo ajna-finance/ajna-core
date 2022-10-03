@@ -8,8 +8,6 @@ import './interfaces/IPool.sol';
 
 import '../libraries/PoolUtils.sol';
 
-import "@std/console.sol";
-
 contract PoolInfoUtils {
 
     function borrowerInfo(address ajnaPool_, address borrower_)

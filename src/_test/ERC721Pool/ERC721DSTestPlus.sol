@@ -139,40 +139,40 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     }
 
     function _assertAuction(AuctionState memory state_) internal {
+ 
+        (
+            uint256 kickTime,
+            uint256 kickPrice,
+            uint256 bondFactor,
+            uint256 bondSize,
+            uint256 auctionPrice,
+            int256 bpf
+        ) = _poolUtils.auctionInfo(address(_pool), state_.borrower);
 
-     //   (uint256 debt, , uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
-     //   (uint128 kickTime, uint256 referencePrice, uint256 bondFactor, uint256 bondSize) = _pool.liquidations(state_.borrower);
-     //   (address next, , bool active) = _pool.getAuction(state_.borrower);
-     //   int256 bpf = _pool.bpf(
-     //           debt,
-     //           col,
-     //           mompFactor,
-     //           inflator,
-     //           bondFactor,
-     //           _pool.auctionPrice(referencePrice, kickTime)
-     //   );
-     //   
-     //   assertEq(kickTime, state_.kickTime);
-     //   assertEq(referencePrice, state_.referencePrice);
-     //   assertEq(_pool.auctionPrice(referencePrice, kickTime), state_.price);
-     //   assertEq(bpf, state_.bpf);
-     //   assertEq(bondFactor, state_.bondFactor);
-     //   assertEq(bondSize, state_.bondSize);
-     //   assertEq(next, state_.next);
-     //   assertEq(active, state_.active);
-        
+        assertEq(kickTime, state_.kickTime);
+        assertEq(kickPrice, state_.kickPrice);
+        assertEq(auctionPrice, state_.price);
+        assertEq(bpf, state_.bpf);
+        assertEq(bondFactor, state_.bondFactor);
+        assertEq(bondSize, state_.bondSize); 
     }
 
     function _assertBorrower(BorrowerState memory state_) internal {
-       // (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _pool.borrowerInfo(state_.borrower);
-       // (, , uint256 lup, ) = _pool.poolPricesInfo();
-       // assertEq(debt,        state_.debt);
-       // assertEq(pendingDebt, state_.pendingDebt);
-       // assertEq(col,         state_.collateral);
-       // assertEq(mompFactor,  state_.mompFactor);
-       // assertEq(inflator,    state_.inflator);
-
-       // assertEq(_pool.borrowerCollateralization(state_.debt, state_.collateral, lup), state_.collateralization);
+        (uint256 debt, uint256 pendingDebt, uint256 col, uint256 mompFactor, uint256 inflator) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
+        ( , , , , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
+        assertEq(debt,        state_.debt);
+        assertEq(pendingDebt, state_.pendingDebt);
+        assertEq(col,         state_.collateral);
+        assertEq(mompFactor,  state_.mompFactor);
+        assertEq(inflator,    state_.inflator);
+        assertEq(
+            PoolUtils.collateralization(
+                state_.debt,
+                state_.collateral,
+                lup
+            ),
+            state_.collateralization
+        );
     }
 
     function _assertReserveAuction(ReserveAuctionState memory state_) internal {
