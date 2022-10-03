@@ -280,7 +280,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
         if (lupId > limitIndex_) revert BorrowLimitIndexReached();
 
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.accrueBorrowerInterest(
             msg.sender,
             poolState.inflator
         );
@@ -354,7 +354,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     function kick(address borrower_) external override {
         PoolState memory poolState = _accruePoolInterest();
 
-        Actors.Borrower memory borrower = borrowers.getBorrowerInfoStruct(
+        Actors.Borrower memory borrower = borrowers.getBorrowerInfo(
             borrower_,
             poolState.inflator
         );
@@ -453,7 +453,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         // borrower accounting
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.accrueBorrowerInterest(
             borrower_,
             poolState.inflator
         );
@@ -491,7 +491,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         // borrower accounting
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.accrueBorrowerInterest(
             borrower_,
             poolState.inflator
         );
@@ -536,7 +536,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        Actors.Borrower memory borrower = borrowers.getBorrowerInfoStruct(
+        Actors.Borrower memory borrower = borrowers.getBorrowerInfo(
             borrower_,
             poolState.inflator
         );
@@ -665,7 +665,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
 
         PoolState memory poolState = _accruePoolInterest();
-        Actors.Borrower memory borrower = borrowers.getBorrowerInfoStruct(
+        Actors.Borrower memory borrower = borrowers.getBorrowerInfo(
             borrower_,
             poolState.inflator
         );

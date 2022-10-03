@@ -87,7 +87,7 @@ library Actors {
         uint256 inflatorSnapshot; // [WAD]
     }
 
-    function getBorrowerInfo(
+    function accrueBorrowerInterest(
         mapping(address => Borrower) storage self,
         address borrower_,
         uint256 poolInflator_
@@ -99,7 +99,7 @@ library Actors {
         }
     }
 
-    function getBorrowerInfoStruct(
+    function getBorrowerInfo(
         mapping(address => Borrower) storage self,
         address borrower_,
         uint256 poolInflator_
