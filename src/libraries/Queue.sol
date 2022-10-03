@@ -29,7 +29,7 @@ library Queue {
     function add(Data storage self_, address borrower_) internal {
 
         Node memory node = self_.nodes[borrower_];
-        require(node.active == false, "Q:RH:AUCT_ALRDY_EXISTS");
+        require(node.active == false, "Q:A:AUCT_ALRDY_EXISTS");
 
         if (self_.head != address(0)) {
             // other auctions in queue, node doesn't exist or overwriting.
@@ -62,7 +62,7 @@ library Queue {
         Node storage nextNode = self_.nodes[node.next];
         Node storage prevNode = self_.nodes[node.prev];
 
-        require(node.active == true, "Q:RH:AUCT_NOT_DEACT");
+        require(node.active == true, "Q:R:AUCT_NOT_DEACT");
 
         if (self_.head == borrower_ && self_.tail == borrower_) {
             // node is the head and tail

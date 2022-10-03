@@ -12,7 +12,7 @@ interface IPoolLiquidationActions {
      *  @param borrower_ Address of the borower kick is being called upon.
      */
     function kick(
-        address borrower
+        address borrower_
     ) external;
 
     /**
