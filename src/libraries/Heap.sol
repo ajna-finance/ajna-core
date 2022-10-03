@@ -50,7 +50,6 @@ library Heap {
 
         // New node, insert it
         } else { 
-            //Node n_ = Node(id_, val_);
             _bubbleUp(self_, Node(id_, val_), self_.count);
             ++self_.count;
         }
@@ -81,7 +80,7 @@ library Heap {
      *  @param self_ Holds tree node data.
      *  @return Node Max Node in the Heap.
      */
-    function getMax(Data storage self_) internal view returns(Node memory){
+    function getMax(Data storage self_) internal view returns(Node memory) {
         return getByIndex(self_, ROOT_INDEX);
     }
 
@@ -95,16 +94,14 @@ library Heap {
         uint256 i_ = self_.indices[id_];
         require(i_ != 0, "H:R:NO_ID");
 
-        delete self_.nodes[i_];
-        delete self_.indices[id_];
         --self_.count;
-
-        Node memory tail = self_.nodes[self_.count];
-
-        // If extracted node is not tail.
-        if (i_ < self_.count){ 
-            _bubbleUp(self_, tail, i_);
-            _bubbleDown(self_, self_.nodes[i_], i_);
+        delete self_.indices[id_];
+        uint256 tailIndex = self_.nodes.length - 1;
+        if (i_ == tailIndex) self_.nodes.pop(); // we're removing the tail, pop without sorting
+        else {
+            Node memory tail = self_.nodes[tailIndex];
+            self_.nodes.pop();            // remove tail node
+            _bubbleDown(self_, tail, i_); // bubble down only as this is the tail node
         }
     }
 
