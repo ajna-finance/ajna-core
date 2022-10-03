@@ -4,17 +4,11 @@ pragma solidity 0.8.14;
 
 interface IQueue {
 
-    /***************/
-    /*** Structs ***/
-    /***************/
-
-
     /**************************/
     /*** External Functions ***/
     /**************************/
 
     function head() external view returns (address head_);
-
 
     /**
      *  @notice Looks up the threshold price and next pointer for a borrower.

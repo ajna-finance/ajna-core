@@ -7,6 +7,10 @@ pragma solidity 0.8.14;
  */
 interface IPoolLiquidationActions {
 
+    /**
+     *  @notice Removes loan from pool and kicks off auction, requires bond from kicker.
+     *  @param borrower_ Address of the borower kick is being called upon.
+     */
     function kick(
         address borrower
     ) external;
@@ -48,10 +52,10 @@ interface IPoolLiquidationActions {
 
     /**
      *  @notice Maintains the state of a liquidation.
-     *  @param  kickTime            Time the liquidation was initiated.
-     *  @param  kickPriceIndex      Highest Price Bucket at time of liquidation.
-     *  @param  bondFactor Amount of collateral which has not yet been taken.
-     *  @param  bondSize       Amount of debt which has not been covered by the liquidation.
+     *  @param  kickTime        Time the auction was initiated.
+     *  @param  kickPriceIndex  Highest Price Bucket at time of kick.
+     *  @param  bondFactor      Factor used in calcualting BPF.
+     *  @param  bondSize        Amount in quote token that kicker receives when auciton ends.
      */
     struct Liquidation {
         uint128 kickTime;

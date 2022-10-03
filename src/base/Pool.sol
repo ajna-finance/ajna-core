@@ -351,10 +351,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation External Functions ***/
     /**************************************/
 
-    /**
-     *  @notice Caller posts a bond to starts an auction. Checks loan collateralization then calculates bondSize and bondFactor.
-     *  @param borrower_ Address of the borower take is being called upon.
-     */
     function kick(address borrower_) external override {
         PoolState memory poolState = _accruePoolInterest();
 

@@ -34,11 +34,10 @@ interface IPoolState {
 
     /**
      *  @notice Mapping of borrower addresses to {Borrower} structs.
-     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
-     *  @return kickTime    Amount of debt that the borrower has, in quote token.
-     *  @return kickPriceIndex Amount of collateral that the borrower has deposited, in collateral token.
-     *  @return bondFactor Momp / borrowerInflatorSnapshot factor used.
-     *  @return bondSize   Snapshot of inflator value used to track interest on loans.
+     *  @param  kickTime        Time the auction was initiated.
+     *  @param  kickPriceIndex  Highest Price Bucket at time of kick.
+     *  @param  bondFactor      Factor used in calcualting BPF.
+     *  @param  bondSize        Amount in quote token that kicker receives when auciton ends.
      */
     function liquidations(address borrower)
         external
