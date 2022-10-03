@@ -279,7 +279,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             msg.sender,
             poolState.inflator
         );
-        uint256 loansCount = loans.count - 1;
+        uint256 loansCount = loans.nodes.length - 1;
         if (
             loansCount != 0
             &&
@@ -321,7 +321,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             msg.sender,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.count - 1),
+            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.nodes.length - 1),
             poolState.inflator
         );
 
@@ -411,7 +411,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrower_,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.count - 1),
+            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.nodes.length - 1),
             poolState.inflator
         );
 
@@ -453,7 +453,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             msg.sender,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.count - 1),
+            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.nodes.length - 1),
             poolState.inflator
         );
 
@@ -483,7 +483,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (borrowerAccruedDebt == 0) {
             loans.remove(borrower_);
         } else {
-            uint256 loansCount = loans.count - 1;
+            uint256 loansCount = loans.nodes.length - 1;
             if (loansCount != 0
                 &&
                 (borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
@@ -501,7 +501,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             msg.sender,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
-            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.count - 1),
+            deposits.mompFactor(poolState.inflator, poolState.accruedDebt, loans.nodes.length - 1),
             poolState.inflator
         );
 
@@ -734,7 +734,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function noOfLoans() external view override returns (uint256) {
-        return loans.count - 1;
+        return loans.nodes.length - 1;
     }
 
     function maxBorrower() external view override returns (address) {

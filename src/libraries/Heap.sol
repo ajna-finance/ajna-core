@@ -6,7 +6,6 @@ library Heap {
     uint256 constant ROOT_INDEX = 1;
 
     struct Data {
-        uint256 count;
         Node[] nodes;
         mapping (address => uint) indices; // unique id => node index
     }
@@ -22,9 +21,8 @@ library Heap {
      *  @param self_ Holds tree node data.
      */
     function init(Data storage self_) internal {
-        require(self_.count == 0, "H:ALREADY_INIT");
+        require(self_.nodes.length == 0, "H:ALREADY_INIT");
         self_.nodes.push(Node(address(0),0));
-        ++self_.count;
     }
 
     /**
@@ -50,8 +48,7 @@ library Heap {
 
         // New node, insert it
         } else { 
-            _bubbleUp(self_, Node(id_, val_), self_.count);
-            ++self_.count;
+            _bubbleUp(self_, Node(id_, val_), self_.nodes.length);
         }
     }
 
@@ -72,7 +69,7 @@ library Heap {
      *  @return Node Node revreived by index.
      */
     function getByIndex(Data storage self_, uint256 i_) internal view returns(Node memory) {
-        return self_.count > i_ ? self_.nodes[i_] : Node(address(0),0);
+        return self_.nodes.length > i_ ? self_.nodes[i_] : Node(address(0),0);
     }
 
     /**
@@ -94,7 +91,6 @@ library Heap {
         uint256 i_ = self_.indices[id_];
         require(i_ != 0, "H:R:NO_ID");
 
-        --self_.count;
         delete self_.indices[id_];
         uint256 tailIndex = self_.nodes.length - 1;
         if (i_ == tailIndex) self_.nodes.pop(); // we're removing the tail, pop without sorting
@@ -112,10 +108,11 @@ library Heap {
      *  @param i_    index for Node to be moved to.
      */
     function _bubbleUp(Data storage self_, Node memory n_, uint i_) private {
+        uint256 count = self_.nodes.length;
         if (i_ == ROOT_INDEX || n_.val <= self_.nodes[i_ / 2].val){
-          _insert(self_, n_, i_);
+          _insert(self_, n_, i_, count);
         } else {
-          _insert(self_, self_.nodes[i_ / 2], i_);
+          _insert(self_, self_.nodes[i_ / 2], i_, count);
           _bubbleUp(self_, n_, i_ / 2);
         }
     }
@@ -131,19 +128,20 @@ library Heap {
         // Left child index.
         uint cIndex = i_ * 2; 
 
-        if (self_.count <= cIndex) {
-            _insert(self_, n_, i_);
+        uint256 count = self_.nodes.length;
+        if (count <= cIndex) {
+            _insert(self_, n_, i_, count);
         } else {
             Node memory largestChild = self_.nodes[cIndex];
 
-            if (self_.count > cIndex + 1 && self_.nodes[cIndex + 1].val > largestChild.val) {
+            if (count > cIndex + 1 && self_.nodes[cIndex + 1].val > largestChild.val) {
                 largestChild = self_.nodes[++cIndex];
             }
 
             if (largestChild.val <= n_.val) {
-              _insert(self_, n_, i_);
+              _insert(self_, n_, i_, count);
             } else {
-              _insert(self_, largestChild, i_);
+              _insert(self_, largestChild, i_, count);
               _bubbleDown(self_, n_, cIndex);
             }
         }
@@ -155,8 +153,8 @@ library Heap {
      *  @param n_    Node to be inserted.
      *  @param i_    index for Node to be inserted at.
      */
-    function _insert(Data storage self_, Node memory n_, uint i_) private {
-        if (i_ == self_.count) self_.nodes.push(n_);
+    function _insert(Data storage self_, Node memory n_, uint i_, uint256 count_) private {
+        if (i_ == count_) self_.nodes.push(n_);
         else self_.nodes[i_] = n_;
 
         self_.indices[n_.id] = i_;

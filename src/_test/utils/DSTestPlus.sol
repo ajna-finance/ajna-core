@@ -126,7 +126,7 @@ contract HeapInstance is DSTestPlus {
     }
 
     function getCount() public view returns (uint256) {
-        return _heap.count;
+        return _heap.nodes.length;
     }
 
     function numInserts() public view returns (uint256) {
@@ -158,7 +158,7 @@ contract HeapInstance is DSTestPlus {
     }
 
     function getTotalTps() external view returns (uint256) {
-        return _heap.count;
+        return _heap.nodes.length;
     }
 
 
@@ -188,13 +188,13 @@ contract HeapInstance is DSTestPlus {
             insertsDec  -=  1;
 
             // Verify amount of Heap TPs
-            assertEq(_heap.count - 1, totalInserts - insertsDec);
+            assertEq(_heap.nodes.length - 1, totalInserts - insertsDec);
             assertEq(getTp(borrower), tp);
 
             if (trackInserts_)  inserts.push(borrower);
         }
 
-        assertEq(_heap.count - 1, totalInserts);
+        assertEq(_heap.nodes.length - 1, totalInserts);
     }
 }
 
