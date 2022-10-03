@@ -97,7 +97,8 @@ library Heap {
         else {
             Node memory tail = self_.nodes[tailIndex];
             self_.nodes.pop();            // remove tail node
-            _bubbleDown(self_, tail, i_); // bubble down only as this is the tail node
+            _bubbleUp(self_, tail, i_);
+            _bubbleDown(self_, self_.nodes[i_], i_);
         }
     }
 
