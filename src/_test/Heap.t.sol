@@ -299,6 +299,37 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getTotalTps(),    2);
     }
 
+    function testHeapRemoveMiddleAndHead() public {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+        address b4 = makeAddr("b4");
+        address b5 = makeAddr("b5");
+        address b6 = makeAddr("b6");
+        address b7 = makeAddr("b7");
+
+        _loans.upsertTp(b7, 7);
+        _loans.upsertTp(b5, 5);
+        _loans.upsertTp(b3, 3);
+        _loans.upsertTp(b2, 2);
+        _loans.upsertTp(b4, 4);
+        _loans.upsertTp(b1, 1);
+        _loans.upsertTp(b6, 6);
+        assertEq(_loans.getMaxBorrower(), b7);
+        assertEq(_loans.getMaxTp(),       7);
+        assertEq(_loans.getTotalTps(),    8);
+
+        _loans.removeTp(b2);
+        assertEq(_loans.getMaxBorrower(), b7);
+        assertEq(_loans.getMaxTp(),       7);
+        assertEq(_loans.getTotalTps(),    7);
+
+        _loans.removeTp(b7);
+        assertEq(_loans.getMaxBorrower(), b6);
+        assertEq(_loans.getMaxTp(),       6);
+        assertEq(_loans.getTotalTps(),    6);
+    }
+
 }
 
 contract HeapGasLoadTest is DSTestPlus {
