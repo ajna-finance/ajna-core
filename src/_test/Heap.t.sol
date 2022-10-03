@@ -328,6 +328,11 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getMaxBorrower(), b6);
         assertEq(_loans.getMaxTp(),       6);
         assertEq(_loans.getTotalTps(),    6);
+
+        _loans.removeTp(b6);
+        assertEq(_loans.getMaxBorrower(), b5);
+        assertEq(_loans.getMaxTp(),       5);
+        assertEq(_loans.getTotalTps(),    5);
     }
 
 }
