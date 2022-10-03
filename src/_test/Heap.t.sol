@@ -309,12 +309,12 @@ contract HeapTest is DSTestPlus {
         address b7 = makeAddr("b7");
 
         _loans.upsertTp(b7, 7);
-        _loans.upsertTp(b5, 5);
-        _loans.upsertTp(b3, 3);
-        _loans.upsertTp(b2, 2);
         _loans.upsertTp(b4, 4);
-        _loans.upsertTp(b1, 1);
         _loans.upsertTp(b6, 6);
+        _loans.upsertTp(b2, 2);
+        _loans.upsertTp(b3, 3);
+        _loans.upsertTp(b1, 1);
+        _loans.upsertTp(b5, 5);
         assertEq(_loans.getMaxBorrower(), b7);
         assertEq(_loans.getMaxTp(),       7);
         assertEq(_loans.getTotalTps(),    8);
