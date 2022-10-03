@@ -87,6 +87,8 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
        ///**********************/
        ///*** Pre-kick state ***/
        ///**********************/
+    
+       assertEq(_quote.balanceOf(_lender), 47_000.0 * 1e18);
 
        _assertPool(
            PoolState({
@@ -122,13 +124,13 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
 
         _assertAuction(
            AuctionState({
-               borrower:       _borrower,
-               kickTime:       0,
-               price:          0,
-               bpf:            0,
-               kickPrice: 0,
-               bondFactor:     0,
-               bondSize:       0
+               borrower:   _borrower,
+               kickTime:   0,
+               price:      0,
+               bpf:        0,
+               kickPrice:  0,
+               bondFactor: 0,
+               bondSize:   0
            })
        );
 
@@ -146,6 +148,8 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
         vm.startPrank(_lender);
         _pool.kick(_borrower);
         vm.stopPrank();
+
+        assertEq(_quote.balanceOf(_lender), 46_999.799075997949342339 * 1e18);
 
         /**********************/
         /*** Post-kick state ***/
@@ -173,12 +177,12 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
         _assertBorrower(
             BorrowerState({
                borrower:          _borrower,
-               debt:              19.819038461538461548 * 1e18,
-               pendingDebt:       19.819038461538461548 * 1e18,
+               debt:              20.092400205065766075 * 1e18,
+               pendingDebt:       20.092400205065766075 * 1e18,
                collateral:        2e18,
-               collateralization: 1.000773560501591181 * 1e18,
+               collateralization: 0.987157805162128596 * 1e18,
                mompFactor:        9.917184843435912074 * 1e18,
-               inflator:          1e18
+               inflator:          1.013792886272348689 * 1e18
             })
         );
 
@@ -197,16 +201,14 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
 
     function testSubsetTakeGTNeutral() external {
 
-        //TODO: assert lender state
         // Skip to make borrower undercollateralized
         skip(100 days);
-
 
         vm.startPrank(_lender);
         _pool.kick(_borrower);
         vm.stopPrank();
 
-        //TODO: assert lender state
+        assertEq(_quote.balanceOf(_lender), 46_999.799075997949342339 * 1e18);
 
         _assertPool(
             PoolState({
@@ -254,6 +256,8 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
 
         skip(2 hours);
  
+        assertEq(_quote.balanceOf(_lender), 46_999.799075997949342339 * 1e18);
+
         bytes memory data = new bytes(0);
         uint256[] memory tokenIdsToTake = new uint256[](2);
         tokenIdsToTake[0] = 1;
@@ -261,6 +265,8 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
         vm.startPrank(_lender);
         _pool.take(_borrower, tokenIdsToTake, data);
         vm.stopPrank();
+
+        assertEq(_quote.balanceOf(_lender), 46_979.905406062409320979 * 1e18);
 
 
         _assertPool(
@@ -282,8 +288,6 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
                interestRateUpdate:   block.timestamp - 2 hours
            })
         );
-
-        //TODO: assert lender state
 
         _assertBorrower(
            BorrowerState({
@@ -315,13 +319,11 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
         // Skip to make borrower undercollateralized
         skip(100 days);
 
-        //TODO: assert lender state
-
         vm.startPrank(_lender);
         _pool.kick(_borrower);
         vm.stopPrank();
 
-        //TODO: assert lender state
+        assertEq(_quote.balanceOf(_lender), 46_999.799075997949342339 * 1e18);
 
         _assertPool(
             PoolState({
@@ -369,6 +371,8 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
 
         skip(5 hours); 
 
+        assertEq(_quote.balanceOf(_lender), 46_999.799075997949342339 * 1e18);
+
         vm.startPrank(_lender);
         bytes memory data = new bytes(0);
         uint256[] memory tokenIdsToTake = new uint256[](2);
@@ -383,7 +387,8 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
         _pool.take(_borrower, tokenIdsToTake, data);
         vm.stopPrank();
 
-        //TODO: assert lender state
+        assertEq(_quote.balanceOf(_lender), 46_987.402594943654452239 * 1e18);
+
         _assertPool(
             PoolState({
                 htp:                  5.073968758489023769 * 1e18,

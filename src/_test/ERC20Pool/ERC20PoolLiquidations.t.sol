@@ -54,6 +54,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         /*** Pre-kick state ***/
         /**********************/
 
+        assertEq(_quote.balanceOf(_lender), 47_000.0 * 1e18);
+
         _assertPool(
             PoolState({
                 htp:                  9.634254807692307697 * 1e18,
@@ -126,6 +128,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         _pool.kick(_borrower);
         vm.stopPrank();
 
+        assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
+
         /**********************/
         /*** Post-kick state ***/
         /**********************/        
@@ -178,16 +182,14 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
     function testTakeGTNeutral() external {
 
-        //TODO: assert lender state
         // Skip to make borrower undercollateralized
         skip(100 days);
-
 
         vm.startPrank(_lender);
         _pool.kick(_borrower);
         vm.stopPrank();
 
-        //TODO: assert lender state
+        assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
 
         _assertPool(
             PoolState({
@@ -233,6 +235,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             })
         );
 
+        assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
+
         skip(2 hours);
  
         bytes memory data = new bytes(0);
@@ -244,6 +248,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 -0.193410679928861319 * 1e18);
         _pool.take(_borrower, 2.0 * 1e18, data);
         vm.stopPrank();
+
+        assertEq(_quote.balanceOf(_lender), 46_980.463589227342395396 * 1e18);
 
 
         _assertPool(
@@ -266,7 +272,6 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             })
         );
 
-        //TODO: assert lender state
 
         _assertBorrower(
             BorrowerState({
@@ -290,8 +295,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 bondFactor: 0.01 * 1e18,
                 bondSize:   0.001932099842611407 * 1e18
             })
-        );
-        
+        ); 
     }
 
     function testTakeLTNeutral() external {
@@ -304,16 +308,16 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         // Skip to make borrower undercollateralized
         skip(100 days);
 
-        //TODO: assert lender state
+        assertEq(_quote.balanceOf(_lender), 47_000.0 * 1e18);
 
         vm.startPrank(_lender);
         _pool.kick(_borrower2);
         vm.stopPrank();
 
+        assertEq(_quote.balanceOf(_lender), 46_901.466057580207783543 * 1e18);
+
         //skip ahead so take can be called on the loan
         skip(1.5 hours);
-
-        //TODO: assert lender state
 
         _assertPool(
             PoolState({
@@ -361,12 +365,15 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
         skip(3.5 hours);
 
+        assertEq(_quote.balanceOf(_lender), 46_901.466057580207783543 * 1e18);
+
         vm.startPrank(_lender);
         bytes memory data = new bytes(0); 
         _pool.take(_borrower2, 20 * 1e18, data);
         vm.stopPrank();
 
-        //TODO: assert lender state
+        assertEq(_quote.balanceOf(_lender), 46_777.501247037258882543 * 1e18);
+
         _assertPool(
             PoolState({
                 htp:                  9.767445610192598576 * 1e18,
@@ -412,6 +419,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             })
         );
 
+        assertEq(_quote.balanceOf(_lender), 46_777.501247037258882543 * 1e18);
+
         // perform take, _borrower2 has no debt but the auction remains active.
         vm.startPrank(_lender);
         vm.expectEmit(true, true, false, true);
@@ -422,6 +431,8 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
 
         _pool.take(_borrower2, 981.0 * 1e18, data);
         vm.stopPrank();
+
+        assertEq(_quote.balanceOf(_lender), 40_703.225530432762733543 * 1e18);
 
         _assertPool(
            PoolState({
@@ -467,11 +478,6 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             })
         );
         
-    }
-
-    function testTakeInterestIncreaseBig() external {
-        //TODO: This is breaking something
-        //skip(200 days);
     }
 
     function testBondFactorFormula() external {
