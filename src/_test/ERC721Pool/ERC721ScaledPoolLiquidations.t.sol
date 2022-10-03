@@ -103,8 +103,6 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
                minDebtAmount:        1.741673076923076924 * 1e18,
                loans:                2,
                maxBorrower:          address(_borrower),
-               inflatorSnapshot:     1e18,
-               pendingInflator:      1e18,
                interestRate:         0.05 * 1e18,
                interestRateUpdate:   0
            })
@@ -167,8 +165,6 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
                 minDebtAmount:        3.531391551193377068 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
-                inflatorSnapshot:     1.013792886272348689 * 1e18,
-                pendingInflator:      1.013792886272348689 * 1e18,
                 interestRate:         0.045 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
@@ -223,8 +219,6 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
                 minDebtAmount:        3.531391551193377068 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
-                inflatorSnapshot:     1.013792886272348689 * 1e18,
-                pendingInflator:      1.013792886272348689 * 1e18,
                 interestRate:         0.045 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
@@ -282,8 +276,6 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
                minDebtAmount:        1.522167169310259210 * 1e18,
                loans:                1,
                maxBorrower:          address(_borrower2),
-               inflatorSnapshot:     1.013803302006192493 * 1e18,
-               pendingInflator:      1.013803302006192493 * 1e18,
                interestRate:         0.045 * 1e18,
                interestRateUpdate:   block.timestamp - 2 hours
            })
@@ -338,8 +330,6 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
                 minDebtAmount:        3.531391551193377068 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
-                inflatorSnapshot:     1.013792886272348689 * 1e18,
-                pendingInflator:      1.013792886272348689 * 1e18,
                 interestRate:         0.045 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
@@ -402,8 +392,6 @@ contract ERC721PoolKickSuccessTest is ERC721HelperContract {
                 minDebtAmount:        2.304230631533166423 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
-                inflatorSnapshot:     1.013824712461823922 * 1e18,
-                pendingInflator:      1.013824712461823922 * 1e18,
                 interestRate:         0.055 * 1e18,
                 interestRateUpdate:   block.timestamp - 5 hours
             })

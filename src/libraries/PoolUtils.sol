@@ -144,6 +144,17 @@ library PoolUtils {
         return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_100), 0.15 * 1e18);
     }
 
+    /**
+     *  @notice Calculates bond penalty factor.
+     *  @dev Called in kick and take.
+     *  @param debt_             Borrower debt.
+     *  @param collateral_       Borrower collateral.
+     *  @param mompFactor_       Factor stamped on borrower, used to calculate the MOMP retroactivley.
+     *  @param inflatorSnapshot_ Borrower inflator snapshot.
+     *  @param bondFactor_       Factor used to determine bondSize.
+     *  @param price_            Auction price at the time of call.
+     *  @return bpf_             Factor used in determining bond Reward (positive) or penalty (negative).
+     */
     function _bpf(
         uint256 debt_,
         uint256 collateral_,
@@ -177,6 +188,12 @@ library PoolUtils {
         return PRBMathSD59x18.mul(int256(bondFactor_), _sign(neutralPrice - int256(price_)));
     }
 
+    /**
+     *  @notice utility function for calculating sign of a value.
+     *  @dev Called in _bpf.
+     *  @param val_   Value to calculate sign on.
+     *  @return sign_ Sign of value.
+     */
     function _sign(int256 val_) private pure returns (int256) {
         if (val_ < 0 )     return -1;
         else if (val_ > 0) return 1;

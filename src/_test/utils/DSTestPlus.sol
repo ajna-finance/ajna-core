@@ -111,8 +111,6 @@ abstract contract DSTestPlus is Test {
         uint256 minDebtAmount;
         uint256 loans;
         address maxBorrower;
-        uint256 inflatorSnapshot;
-        uint256 pendingInflator;
         uint256 interestRate;
         uint256 interestRateUpdate;
     }

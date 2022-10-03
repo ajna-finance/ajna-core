@@ -21,8 +21,10 @@ contract ERC721PoolFactoryTest is DSTestPlus {
     Token              internal _quote;
     uint256[]          internal _tokenIdsSubsetOne;
     uint256[]          internal _tokenIdsSubsetTwo;
+    uint256            internal _startTime;
 
     function setUp() external {
+        _startTime   = block.timestamp;
         _collateral  = new NFTCollateralToken();
         _quote       = new Token("Quote", "Q");
 
@@ -105,9 +107,9 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         assertEq(address(_NFTCollectionPool.quoteToken()),        address(_quote));
         assertEq(_NFTCollectionPool.quoteTokenScale(),            1);
         assertEq(_NFTCollectionPool.inflatorSnapshot(),           10**18);
-        assertEq(_NFTCollectionPool.lastInflatorSnapshotUpdate(), 0);
+        assertEq(_NFTCollectionPool.lastInflatorSnapshotUpdate(), _startTime);
         assertEq(_NFTCollectionPool.interestRate(),               0.05 * 10**18);
-        assertEq(_NFTCollectionPool.interestRateUpdate(),         0);
+        assertEq(_NFTCollectionPool.interestRateUpdate(),         _startTime);
         assertEq(_NFTCollectionPool.minFee(),                     0.0005 * 10**18);
         assertEq(_NFTCollectionPool.isSubset(),                   false);
     }
@@ -169,9 +171,9 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         assertEq(address(_NFTSubsetOnePool.quoteToken()),        address(_quote));
         assertEq(_NFTSubsetOnePool.quoteTokenScale(),            1);
         assertEq(_NFTSubsetOnePool.inflatorSnapshot(),           10**18);
-        assertEq(_NFTSubsetOnePool.lastInflatorSnapshotUpdate(), 0);
+        assertEq(_NFTSubsetOnePool.lastInflatorSnapshotUpdate(), _startTime);
         assertEq(_NFTSubsetOnePool.interestRate(),               0.05 * 10**18);
-        assertEq(_NFTSubsetOnePool.interestRateUpdate(),         0);
+        assertEq(_NFTSubsetOnePool.interestRateUpdate(),         _startTime);
         assertEq(_NFTSubsetOnePool.minFee(),                     0.0005 * 10**18);
         assertEq(_NFTSubsetOnePool.isSubset(),                   true);
 

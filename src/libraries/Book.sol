@@ -167,8 +167,6 @@ library Book {
         }
     }
 
-
-    //TODO: verify this
     function utilization(
         Deposits storage self,
         uint256 debt_,

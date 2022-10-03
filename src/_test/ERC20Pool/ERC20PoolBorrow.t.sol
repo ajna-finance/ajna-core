@@ -66,10 +66,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -101,10 +99,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        2_102.0192307692307702 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -113,11 +109,11 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
 
         BucketLP[] memory lps = new BucketLP[](5);
-        lps[0] = BucketLP({index: highest, balance: 10_000 * 1e27, time: 0});
-        lps[1] = BucketLP({index: high,    balance: 10_000 * 1e27, time: 0});
-        lps[2] = BucketLP({index: med,     balance: 10_000 * 1e27, time: 0});
-        lps[3] = BucketLP({index: low,     balance: 10_000 * 1e27, time: 0});
-        lps[4] = BucketLP({index: lowest,  balance: 10_000 * 1e27, time: 0});
+        lps[0] = BucketLP({index: highest, balance: 10_000 * 1e27, time: _startTime});
+        lps[1] = BucketLP({index: high,    balance: 10_000 * 1e27, time: _startTime});
+        lps[2] = BucketLP({index: med,     balance: 10_000 * 1e27, time: _startTime});
+        lps[3] = BucketLP({index: low,     balance: 10_000 * 1e27, time: _startTime});
+        lps[4] = BucketLP({index: lowest,  balance: 10_000 * 1e27, time: _startTime});
 
         _assertLPs(
             LenderLPs({
@@ -161,10 +157,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        4_003.846153846153848 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         // check balances
@@ -194,10 +188,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        3_003.846153846153848000 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -229,10 +221,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -275,14 +265,12 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
-        skip(864000);
+        skip(10 days);
         _borrow(
             BorrowSpecs({
                 from:         _borrower,
@@ -307,10 +295,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        2_102.019230769230770200 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1.001507985182953253 * 1e18,
                 interestRate:         0.055 * 1e18,
-                interestRateUpdate:   864000
+                interestRateUpdate:   _startTime + 10 days
             })
         );
         _assertBorrower(
@@ -325,7 +311,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        skip(864000);
+        skip(10 days);
         _pledgeCollateral(
             PledgeSpecs({
                 from:     _borrower,
@@ -347,10 +333,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        2_108.363638510121338731 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1.003018244385218513 * 1e18,
-                pendingInflator:      1.003018244385218513 * 1e18,
                 interestRate:         0.0605 * 1e18,
-                interestRateUpdate:   1728000
+                interestRateUpdate:   _startTime + 20 days
             })
         );
         _assertBorrower(
@@ -365,7 +349,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        skip(864000);
+        skip(10 days);
         _pullCollateral(
             PullSpecs({
                 from:    _borrower,
@@ -386,10 +370,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        2_111.861221326057567518 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1.004682160092905114 * 1e18,
-                pendingInflator:      1.004682160092905114 * 1e18,
                 interestRate:         0.06655 * 1e18,
-                interestRateUpdate:   2592000
+                interestRateUpdate:   _startTime + 30 days
             })
         );
         _assertBorrower(
@@ -404,7 +386,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        skip(864000);
+        skip(10 days);
         _borrow(
             BorrowSpecs({
                 from:         _borrower,
@@ -429,10 +411,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        2_115.715264301085329867 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1.006515655675920014 * 1e18,
-                pendingInflator:      1.006515655675920014 * 1e18,
                 interestRate:         0.073205 * 1e18,
-                interestRateUpdate:   3456000
+                interestRateUpdate:   _startTime + 40 days
             })
         );
         _assertBorrower(
@@ -447,7 +427,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        skip(864000);
+        skip(10 days);
         _repay(
             RepaySpecs({
                 from:        _borrower,
@@ -469,10 +449,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        2_119.962835689728444617 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1.008536365727696620 * 1e18,
-                pendingInflator:      1.008536365727696620 * 1e18,
                 interestRate:         0.0805255 * 1e18,
-                interestRateUpdate:   4320000
+                interestRateUpdate:   _startTime + 50 days
             })
         );
         _assertBorrower(
@@ -487,7 +465,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        skip(864000);
+        skip(10 days);
         _assertPool(
             PoolState({
                 htp:                  423.992567137945688924 * 1e18,
@@ -501,10 +479,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        2_119.962835689728444617 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1.008536365727696620 * 1e18,
-                pendingInflator:      1.010763832743848754 * 1e18,
                 interestRate:         0.0805255 * 1e18,
-                interestRateUpdate:   4320000
+                interestRateUpdate:   _startTime + 50 days
             })
         );
         _assertBorrower(
@@ -646,10 +622,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        100.096153846153846200 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -678,10 +652,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        300.288461538461538600 * 1e18,
                 loans:                2,
                 maxBorrower:          _borrower2,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -713,10 +685,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        300.288456538461538600 * 1e18,
                 loans:                2,
                 maxBorrower:          _borrower2,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
     }
@@ -757,10 +727,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        100.096153846153846200 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -787,10 +755,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        100.096143846153846200 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
     }
@@ -843,10 +809,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        50.048076923076923100 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
     }
@@ -894,10 +858,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        50.048076923076923100 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
 
@@ -930,10 +892,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 minDebtAmount:        0,
                 loans:                0,
                 maxBorrower:          address(0),
-                inflatorSnapshot:     1e18,
-                pendingInflator:      1e18,
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
     }

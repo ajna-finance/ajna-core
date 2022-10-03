@@ -1,0 +1,63 @@
+name: Size Check
+on: [push]
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Cache compiler installations
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.solcx
+            ~/.vvm
+          key: ${{ runner.os }}-compiler-cache
+
+      - name: Setup node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: "12.x"
+
+      - name: Install ganache
+        run: npm install -g ganache-cli@6.12.1
+
+      - name: Set up python 3.8
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Set pip cache directory path
+        id: pip-cache-dir-path
+        run: |
+            echo "::set-output name=dir::$(pip cache dir)"
+      - name: Restore pip cache
+        uses: actions/cache@v2
+        id: pip-cache
+        with:
+            path: |
+                ${{ steps.pip-cache-dir-path.outputs.dir }}
+            key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
+            restore-keys: |
+                ${{ runner.os }}-pip-${{ hashFiles('**/requirements-dev.txt') }}
+                ${{ runner.os }}-pip-
+      - name: Install python dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Run check-size script
+        run: |
+          mkdir -p size-reports-${{ github.run_id }}
+          ./check-size.sh | tee size-reports-${{github.run_id}}/size-report
+          echo "##[set-output name=size-report;]$(echo $(cat size-reports-${{github.run_id}}/size-report|tail -1))"
+        id: check-size
+
+      - name: Send size report to Discord
+        uses: appleboy/discord-action@master
+        with:
+          webhook_id: ${{ secrets.DISCORD_ID }}
+          webhook_token: ${{ secrets.DISCORD_TOKEN }}
+          username: "Contract Size Reporter"
+          message: Largest contract size for `${{ github.ref }}`  ```${{ steps.check-size.outputs.size-report }}```
+    timeout-minutes: 2

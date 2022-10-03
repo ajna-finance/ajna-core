@@ -379,7 +379,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(indexes[0], tokenId2), 0);
         assertEq(_positionManager.getLPTokens(indexes[3], tokenId2), 0);
 
-        (uint256 poolSize, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        (uint256 poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
 
         // construct memorialize lender 1 params struct
@@ -429,7 +429,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[1]), 3_000 * 1e27);
         assertEq(_positionManager.getLPTokens(tokenId1, indexes[2]), 3_000 * 1e27);
 
-        (poolSize, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        (poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
 
         // allow position manager to take ownership of lender 2's position
@@ -476,7 +476,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertEq(_positionManager.getLPTokens(tokenId2, indexes[0]), 3_000 * 1e27);
         assertEq(_positionManager.getLPTokens(tokenId2, indexes[3]), 3_000 * 1e27);
 
-        (poolSize, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        (poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(poolSize, 15_000 * 1e18);
     }
 
@@ -645,25 +645,28 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertTrue(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
 
         // approve and transfer NFT by permit to different address
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(
-            minterPrivateKey,
-            keccak256(
-                abi.encodePacked(
-                    "\x19\x01",
-                    _positionManager.DOMAIN_SEPARATOR(),
-                    keccak256(
-                        abi.encode(
-                            _positionManager.PERMIT_TYPEHASH(),
-                            testReceiver,
-                            tokenId,
-                            0,
-                            1 days
+        {
+            uint256 deadline = block.timestamp + 1 days;
+            (uint8 v, bytes32 r, bytes32 s) = vm.sign(
+                minterPrivateKey,
+                keccak256(
+                    abi.encodePacked(
+                        "\x19\x01",
+                        _positionManager.DOMAIN_SEPARATOR(),
+                        keccak256(
+                            abi.encode(
+                                _positionManager.PERMIT_TYPEHASH(),
+                                testReceiver,
+                                tokenId,
+                                0,
+                                deadline
+                            )
                         )
                     )
                 )
-            )
-        );
-        _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, 1 days, v, r, s );
+            );
+            _positionManager.safeTransferFromWithPermit(testMinter, testReceiver, testReceiver, tokenId, deadline, v, r, s );
+        }
 
         // check owner
         assertEq(_positionManager.ownerOf(tokenId), testReceiver);

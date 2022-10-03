@@ -61,8 +61,6 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
                 targetUtilization:    1 * 1e18,
                 loans:                1,
                 maxBorrower:          _borrower,
-                inflatorSnapshot:      0.875841346153846154 * 1e18,
-                pendingInflator:      0.875841346153846154 * 1e18,
                 interestRate:         0.875841346153846154 * 1e18,
                 interestRateUpdate:   0.875841346153846154 * 1e18,
                 minDebtAmount:        17_516.826923076923085000 * 1e18

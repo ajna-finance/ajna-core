@@ -23,13 +23,13 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        uint256 inflatorSnapshot           = pool.inflatorSnapshot();
+        uint256 poolInflatorSnapshot       = pool.inflatorSnapshot();
         uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
         uint256 interestRate               = pool.interestRate();
 
+        uint256 pendingInflator = PoolUtils.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         (debt_, collateral_, mompFactor_, inflatorSnapshot_) = pool.borrowers(borrower_);
-        uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        pendingDebt_ = Maths.wmul(debt_, Maths.wdiv(pendingInflator, inflatorSnapshot));
+        pendingDebt_ = (debt_ != 0) ? Maths.wmul(debt_, Maths.wdiv(pendingInflator, inflatorSnapshot_)) : 0;
     }
 
     /**
@@ -71,10 +71,11 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Returns info related to pool loans.
-     *  @return poolSize_        The total amount of quote tokens in pool (WAD).
-     *  @return loansCount_      The number of loans in pool.
-     *  @return maxBorrower_     The address with the highest TP in pool.
-     *  @return pendingInflator_ Pending inflator in pool
+     *  @return poolSize_              The total amount of quote tokens in pool (WAD).
+     *  @return loansCount_            The number of loans in pool.
+     *  @return maxBorrower_           The address with the highest TP in pool.
+     *  @return pendingInflator_       Pending inflator in pool.
+     *  @return pendingInterestFactor_ Factor used to scale the inflator.
      */
     function poolLoansInfo(address ajnaPool_)
         external
@@ -83,7 +84,8 @@ contract PoolInfoUtils {
             uint256 poolSize_,
             uint256 loansCount_,
             address maxBorrower_,
-            uint256 pendingInflator_
+            uint256 pendingInflator_,
+            uint256 pendingInterestFactor_
         )
     {
         IPool pool = IPool(ajnaPool_);
@@ -95,7 +97,8 @@ contract PoolInfoUtils {
         uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
         uint256 interestRate               = pool.interestRate();
 
-        pendingInflator_ = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        pendingInflator_       = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        pendingInterestFactor_ = PoolUtils.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
     }
 
     /**

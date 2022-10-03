@@ -157,12 +157,14 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     Token         internal _quote;
     ERC20Pool     internal _pool;
     PoolInfoUtils internal _poolUtils;
+    uint256       internal _startTime;
 
     constructor() {
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolUtils  = new PoolInfoUtils();
+        _startTime  = block.timestamp;
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
@@ -307,7 +309,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     function _assertPool(PoolState memory state_) internal {
         ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
-        (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator) = _poolUtils.poolLoansInfo(address(_pool));
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator, uint256 pendingInterestFactor) = _poolUtils.poolLoansInfo(address(_pool));
         (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
@@ -323,8 +325,9 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(loansCount,  state_.loans);
         assertEq(maxBorrower, state_.maxBorrower);
 
-        assertEq(_pool.inflatorSnapshot(), state_.inflatorSnapshot);
-        assertEq(pendingInflator,          state_.pendingInflator);
+        uint256 poolInflatorSnapshot = _pool.inflatorSnapshot();
+        assertGe(poolInflatorSnapshot, 1e18);
+        assertGe(pendingInflator,      poolInflatorSnapshot);
 
         assertEq(_pool.interestRate(),       state_.interestRate);
         assertEq(_pool.interestRateUpdate(), state_.interestRateUpdate);
@@ -393,11 +396,11 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     }
 
     function _loansCount() internal view returns (uint256 loansCount_) {
-        ( , loansCount_, , ) = _poolUtils.poolLoansInfo(address(_pool));
+        ( , loansCount_, , , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _poolSize() internal view returns (uint256 poolSize_) {
-        (poolSize_, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        (poolSize_, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
     }
 
     function _exchangeRate(uint256 index_) internal view returns (uint256 exchangeRate_) {
