@@ -401,6 +401,20 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         assertEq(lupIndex, state_.lupIndex);
     }
 
+    function _assertTpHeapValid() internal {
+        ( , , uint256 htp, , , ) = _poolUtils.poolPricesInfo(address(_pool));
+        (, uint256 loansCount, address maxBorrower, , ) = _poolUtils.poolLoansInfo(address(_pool));
+        if (_pool.borrowerDebt() == 0) {
+            assertEq(htp, 0);
+            assertEq(loansCount, 0);
+            assertEq(maxBorrower, address(0));
+        } else {
+            assertGt(htp, 0);
+            assertGt(loansCount, 0);
+            assertTrue(maxBorrower != address(0));
+        }
+    }
+
     function _loansCount() internal view returns (uint256 loansCount_) {
         ( , loansCount_, , , ) = _poolUtils.poolLoansInfo(address(_pool));
     }

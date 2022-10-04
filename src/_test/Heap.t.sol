@@ -335,6 +335,37 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getTotalTps(),    5);
     }
 
+    function testHeapSize() public {
+        address b1 = makeAddr("b1");
+        address b2 = makeAddr("b2");
+        address b3 = makeAddr("b3");
+        address b4 = makeAddr("b4");
+
+        _loans.upsertTp(b1, 200 * 1e18);
+        _loans.upsertTp(b2, 200 * 1e18);
+        _loans.upsertTp(b3, 200 * 1e18);
+        _loans.upsertTp(b4, 200 * 1e18);
+        assertEq(_loans.getTotalTps(), 5);
+
+        _loans.upsertTp(b1, 190 * 1e18);
+        assertEq(_loans.getTotalTps(), 5);
+        _loans.upsertTp(b2, 210 * 1e18);
+        assertEq(_loans.getTotalTps(), 5);
+
+        _loans.removeTp(b1);
+        assertEq(_loans.getTotalTps(), 4);
+        _loans.upsertTp(b2, 110 * 1e18);
+        assertEq(_loans.getTotalTps(), 4);
+        _loans.removeTp(b2);
+        assertEq(_loans.getTotalTps(), 3);
+
+        _loans.upsertTp(b3, 100 * 1e18);
+        assertEq(_loans.getTotalTps(), 3);
+        _loans.upsertTp(b4, 300 * 1e18);
+        assertEq(_loans.getTotalTps(), 3);
+        _loans.upsertTp(b1, 190 * 1e18);
+        assertEq(_loans.getTotalTps(), 4);
+    }
 }
 
 contract HeapGasLoadTest is DSTestPlus {
