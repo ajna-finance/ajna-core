@@ -19,7 +19,7 @@ GOAL_UTILIZATION = 0.6      # borrowers should collateralize such that target ut
 MIN_PARTICIPATION = 10000   # in quote token, the minimum amount to lend
 NUM_LENDERS = 50
 NUM_BORROWERS = 50
-LOG_LENDER_ACTIONS = False
+LOG_LENDER_ACTIONS = True
 LOG_BORROWER_ACTIONS = True
 
 
@@ -88,7 +88,8 @@ def add_initial_liquidity(lenders, pool, pool_utils, scaled_pool_utils):
     # Lenders 0-9 will be "new to the pool" upon actual testing
     # TODO: determine this non-arbitrarily
     deposit_amount = 1_000 * 10 ** 18
-    for i in range(10, len(lenders) - 1):
+    first_lender = 0 if len(lenders) <= 10 else 10
+    for i in range(first_lender, len(lenders) - 1):
         # determine how many buckets to deposit into
         for b in range(1, (i % 4) + 1):
             price_count = MIN_BUCKET - MAX_BUCKET
