@@ -330,14 +330,12 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // borrow 8_000 DAI
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 0,
-                borrowAmount: 8_000 * 1e18,
-                indexLimit:   3_500,
-                price:        3_010.892022197881557845 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     8_000 * 1e18,
+                indexLimit: 3_500,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
         );
 
         _assertPool(
