@@ -177,7 +177,6 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
     Token              internal _quote;
     ERC20              internal _ajna;
 
-    // TODO: bool for pool type
     constructor() {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
 
@@ -225,9 +224,4 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         vm.prank(operator_);
         _ajna.approve(address(_pool), type(uint256).max);
     }
-
-    // TODO: implement this
-    function _assertBalances() internal {}
-
-    // TODO: implement _pullCollateral()
 }

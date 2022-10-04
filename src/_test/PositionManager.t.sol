@@ -50,7 +50,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
      */
     function testMint() external {
         uint256 mintAmount  = 50 * 1e18;
-        uint256 mintPrice   = _p1004;
+        uint256 mintPrice   = 1_004.989662429170775094 * 1e18;
         address testAddress = makeAddr("testAddress");
 
         _mintQuoteAndApproveManagerTokens(testAddress, mintAmount);

@@ -247,7 +247,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
 
 }
 
-// TODO: merge this contract with parent ERC20DSTestPlus
 abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;

@@ -23,15 +23,19 @@ interface IPoolFactory {
     error PoolAlreadyExists();
 
     /**
+     *  @notice Pool starting interest rate is invalid.
+     */
+    error PoolInterestRateInvalid();
+
+    /**************/
+    /*** Events ***/
+    /**************/
+
+    /**
      *  @notice Emitted when a new pool is created.
      *  @param  pool_ The address of the new pool.
      */
     event PoolCreated(address pool_);
-
-    /**
-     *  @notice Pool starting interest rate is invalid.
-     */
-    error PoolInterestRateInvalid();
 
     /**************************/
     /*** External Functions ***/

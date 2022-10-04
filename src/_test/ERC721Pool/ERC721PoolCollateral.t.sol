@@ -15,7 +15,6 @@ import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
 
-// TODO: pass different pool type to enable collection + subset test simplification
 contract ERC721PoolCollateralTest is ERC721HelperContract {
 
     address internal _borrower;
