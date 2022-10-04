@@ -245,7 +245,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool, pool_utils, chain, test_u
                     draw_debt(borrowers[user_index], user_index, pool, pool_utils, test_utils, collateralization=target_collateralization)
                 elif utilization > MIN_UTILIZATION:  # start repaying debt if interest grows too high
                     repay(borrowers[user_index], user_index, pool, pool_utils, test_utils)
-                log_borrower_stats(borrowers, pool, pool_utils, chain, debug=True)
+                # log_borrower_stats(borrowers, pool, pool_utils, chain, debug=True)
                 chain.sleep(14)
 
             # Add or remove liquidity
