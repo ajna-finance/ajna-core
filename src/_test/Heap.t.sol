@@ -334,7 +334,6 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getMaxTp(),       5);
         assertEq(_loans.getTotalTps(),    5);
     }
-
 }
 
 contract HeapGasLoadTest is DSTestPlus {

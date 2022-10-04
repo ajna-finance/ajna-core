@@ -334,7 +334,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     function _assertPool(PoolState memory state_) internal {
         ( , , uint256 htp, , uint256 lup, ) = _poolUtils.poolPricesInfo(address(_pool));
-        (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator, uint256 pendingInterestFactor) = _poolUtils.poolLoansInfo(address(_pool));
+        (uint256 poolSize, uint256 loansCount, address maxBorrower, uint256 pendingInflator, ) = _poolUtils.poolLoansInfo(address(_pool));
         (uint256 poolMinDebtAmount, , uint256 poolActualUtilization, uint256 poolTargetUtilization) = _poolUtils.poolUtilizationInfo(address(_pool));
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
