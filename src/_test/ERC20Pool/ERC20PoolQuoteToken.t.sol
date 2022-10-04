@@ -84,21 +84,9 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 depositTime: 0
             }
         );
-
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 10_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        190_000 * 1e18);
-
-        // check bucket balance
-        _assertBucket(
-            {
-                index:        2550,
-                lpBalance:    10_000 * 1e27,
-                collateral:   0,
-                deposit:      10_000 * 1e18,
-                exchangeRate: 1 * 1e27
-            }
-        );
 
         // test 20_000 deposit at price of 2_995.912459898389633881
        _addLiquidity(
