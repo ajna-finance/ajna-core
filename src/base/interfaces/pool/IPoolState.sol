@@ -39,7 +39,6 @@ interface IPoolState {
      *  @return debt       Amount of debt that the borrower has, in quote token.
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
      *  @return mompFactor Momp / borrowerInflatorSnapshot factor used.
-     *  @return inflator   Snapshot of inflator value used to track interest on loans.
      */
     function borrowers(address borrower)
         external
@@ -47,8 +46,7 @@ interface IPoolState {
         returns (
             uint256 debt,
             uint256 collateral,
-            uint256 mompFactor,
-            uint256 inflator
+            uint256 mompFactor
         );
 
     /**

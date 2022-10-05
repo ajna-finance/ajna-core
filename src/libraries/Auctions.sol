@@ -187,22 +187,23 @@ library Auctions {
         );
 
         // calculate amount
-        quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
-        collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+        quoteTokenAmount_    = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
+        collateralTaken_     = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_) - repayAmount_;
 
         int256 bpf = PoolUtils.bpf(
-            borrower_.debt,
+            borrowerDebt,
             borrower_.collateral,
             borrower_.mompFactor,
-            borrower_.inflatorSnapshot,
+            poolInflator_,
             liquidation.bondFactor,
             auctionPrice
         );
 
         repayAmount_ = Maths.wmul(quoteTokenAmount_, uint256(1e18 - bpf));
-        if (repayAmount_ >= borrower_.debt) {
-            repayAmount_      = borrower_.debt;
-            quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - bpf));
+        if (repayAmount_ >= borrowerDebt) {
+            repayAmount_      = borrowerDebt;
+            quoteTokenAmount_ = Maths.wdiv(borrowerDebt, uint256(1e18 - bpf));
         }
 
         isRewarded_ = (bpf >= 0);

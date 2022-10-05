@@ -14,11 +14,9 @@ contract PoolInfoUtils {
         external
         view
         returns (
-            uint256 debt_,             // accrued debt (WAD)
-            uint256 pendingDebt_,      // accrued debt (WAD)
-            uint256 collateral_,       // deposited collateral including encumbered (WAD)
-            uint256 mompFactor_,       // MOMP / inflator, used in neutralPrice calc (WAD)
-            uint256 inflatorSnapshot_  // used to calculate pending interest (WAD)
+            uint256 debt_,             // current debt owed by borrower              (WAD)
+            uint256 collateral_,       // deposited collateral including encumbered  (WAD)
+            uint256 mompFactor_        // MOMP / inflator, used in neutralPrice calc (WAD)
         )
     {
         IPool pool = IPool(ajnaPool_);
@@ -28,8 +26,7 @@ contract PoolInfoUtils {
         uint256 interestRate               = pool.interestRate();
 
         uint256 pendingInflator = PoolUtils.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        (debt_, collateral_, mompFactor_, inflatorSnapshot_) = pool.borrowers(borrower_);
-        pendingDebt_ = (debt_ != 0) ? Maths.wmul(debt_, Maths.wdiv(pendingInflator, inflatorSnapshot_)) : 0;
+        (debt_, collateral_, mompFactor_)  = pool.borrowers(borrower_);
     }
 
     /**
