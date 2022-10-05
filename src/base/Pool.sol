@@ -10,19 +10,22 @@ import '@openzeppelin/contracts/utils/Multicall.sol';
 
 import './interfaces/IPool.sol';
 
-import '../libraries/Maths.sol';
-import '../libraries/Heap.sol';
-import '../libraries/Book.sol';
 import '../libraries/Actors.sol';
+import '../libraries/Auctions.sol';
+import '../libraries/Book.sol';
+import '../libraries/Heap.sol';
+import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 
 abstract contract Pool is Clone, Multicall, IPool {
     using SafeERC20 for ERC20;
-    using Book      for mapping(uint256 => Book.Bucket);
-    using Book      for Book.Deposits;
-    using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
-    using Actors    for mapping(address => Actors.Borrower);
-    using Heap      for Heap.Data;
+
+    using Actors        for mapping(uint256 => mapping(address => Actors.Lender));
+    using Actors        for mapping(address => Actors.Borrower);
+    using AuctionsQueue for AuctionsQueue.Data;
+    using Book          for mapping(uint256 => Book.Bucket);
+    using Book          for Book.Deposits;
+    using Heap          for Heap.Data;
 
     uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
     uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
@@ -57,11 +60,11 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
-    address       internal ajnaTokenAddress; //  Address of the Ajna token, needed for Claimable Reserve Auctions.
-    Book.Deposits internal deposits;
-    Heap.Data     internal loans;
-
-    uint256 internal poolInitializations;
+    address            internal ajnaTokenAddress; //  Address of the Ajna token, needed for Claimable Reserve Auctions.
+    AuctionsQueue.Data internal auctions;
+    Book.Deposits      internal deposits;
+    Heap.Data          internal loans;
+    uint256            internal poolInitializations;
 
     struct PoolState {
         uint256 accruedDebt;
@@ -340,9 +343,59 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
 
-    /*************************/
-    /*** Buyback Functions ***/
-    /*************************/
+    /*****************************/
+    /*** Liquidation Functions ***/
+    /*****************************/
+
+    function kick(address borrower_) external override {
+        if (auctions.isActive(borrower_)) revert AuctionActive();
+
+        PoolState memory poolState = _accruePoolInterest();
+
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
+            borrower_,
+            poolState.inflator
+        );
+
+        if (borrowerAccruedDebt == 0) revert NoDebt();
+        uint256 lup = _lup(poolState.accruedDebt);
+
+       if (
+           PoolUtils.collateralization(
+               borrowerAccruedDebt,
+               borrowerPledgedCollateral,
+               lup
+           ) >= Maths.WAD
+       ) revert BorrowerOk();
+
+        uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
+        if (lup > thresholdPrice) revert LUPGreaterThanTP();
+
+        uint256 bondSize = auctions.kick(
+            borrower_,
+            borrowerAccruedDebt,
+            thresholdPrice,
+            deposits.momp(poolState.accruedDebt, loans.nodes.length - 1),
+            _hpbIndex()
+        );
+        loans.remove(borrower_);
+
+        borrowers.updateDebt(
+            borrower_,
+            borrowerAccruedDebt,
+            poolState.inflator
+        );
+
+        _updatePool(poolState, lup);
+
+        emit Kick(borrower_, borrowerAccruedDebt, borrowerPledgedCollateral);
+        quoteToken().safeTransferFrom(msg.sender, address(this), bondSize / quoteTokenScale);
+    }
+
+
+    /*********************************/
+    /*** Reserve Auction Functions ***/
+    /*********************************/
 
     function startClaimableReserveAuction() external override {
         uint256 curUnclaimedAuctionReserve = reserveAuctionUnclaimed;
@@ -709,6 +762,25 @@ abstract contract Pool is Clone, Multicall, IPool {
     /**************************/
     /*** External Functions ***/
     /**************************/
+
+    function auctionInfo(
+        address borrower_
+    )
+        external
+        view
+        override
+        returns (
+            address,
+            uint256,
+            uint256,
+            uint128,
+            uint128,
+            address,
+            address
+        )
+    {
+        return auctions.get(borrower_);
+    }
 
     function depositSize() external view override returns (uint256) {
         return deposits.treeSum();

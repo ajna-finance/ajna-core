@@ -9,20 +9,6 @@ import { EnumerableSet } from "@openzeppelin/contracts/utils/structs/EnumerableS
 interface IERC721PoolLiquidationActions {
 
     /**
-     *  @notice Maintains the state of a liquidation.
-     *  @param  kickTime            Time the liquidation was initiated.
-     *  @param  referencePrice      Highest Price Bucket at time of liquidation.
-     *  @param  remainingTokenIds   Liquidated NFTs which not yet been taken.
-     *  @param  remainingDebt       Amount of debt which has not been covered by the liquidation.
-     */
-    struct NFTLiquidationInfo {
-        uint128               kickTime;
-        uint128               referencePrice;
-        EnumerableSet.UintSet remainingTokenIds;
-        uint256               remainingDebt;
-    }
-
-    /**
      *  @notice Called by actors to purchase collateral using quote token they provide themselves.
      *  @param  borrower     Identifies the loan being liquidated.
      *  @param  tokenIds     NFT token ids caller wishes to purchase from the liquidation.

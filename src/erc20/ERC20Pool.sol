@@ -16,17 +16,15 @@ import '../libraries/Actors.sol';
 
 contract ERC20Pool is IERC20Pool, Pool {
     using SafeERC20 for ERC20;
-    using Book      for mapping(uint256 => Book.Bucket);
-    using Book      for Book.Deposits;
     using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
     using Actors    for mapping(address => Actors.Borrower);
+    using Book      for mapping(uint256 => Book.Bucket);
+    using Book      for Book.Deposits;
     using Heap      for Heap.Data;
 
     /***********************/
     /*** State Variables ***/
     /***********************/
-
-    mapping(address => LiquidationInfo) public override liquidations;
 
     uint256 public override collateralScale;
 
@@ -194,95 +192,8 @@ contract ERC20Pool is IERC20Pool, Pool {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
-    function kick(address borrower_) external override {
-        PoolState memory poolState = _accruePoolInterest();
-
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
-            borrower_,
-            poolState.inflator
-        );
-        if (borrowerAccruedDebt == 0) revert NoDebt();
-
-        uint256 lup = _lup(poolState.accruedDebt);
-
-        if (
-            PoolUtils.collateralization(
-                borrowerAccruedDebt,
-                borrowerPledgedCollateral,
-                lup
-            ) >= Maths.WAD
-        ) revert LiquidateBorrowerOk();
-
-        uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
-        if (lup > thresholdPrice) revert LUPGreaterThanTP();
-
-        borrowers.updateDebt(
-            borrower_,
-            borrowerAccruedDebt,
-            poolState.inflator
-        );
-
-        _updatePool(poolState, lup);
-
-        liquidations[borrower_] = LiquidationInfo({
-            kickTime:            uint128(block.timestamp),
-            referencePrice:      uint128(_hpbIndex()),
-            remainingCollateral: borrowerPledgedCollateral,
-            remainingDebt:       borrowerAccruedDebt
-        });
-
-        // TODO: Uncomment when needed
-        // uint256 poolPrice      = borrowerDebt * Maths.WAD / pledgedCollateral;  // PTP
-
-        // TODO: Post liquidation bond (use max bond factor of 1% but leave todo to revisit)
-        // TODO: Account for repossessed collateral
-        liquidationBondEscrowed += Maths.wmul(borrowerAccruedDebt, 0.01 * 1e18);
-
-        // Post the liquidation bond
-        // Repossess the borrowers collateral, initialize the auction cooldown timer
-
-        emit Kick(borrower_, borrowerAccruedDebt, borrowerPledgedCollateral);
-    }
-
     // TODO: Add reentrancy guard
     function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external override {
-        LiquidationInfo memory liquidation = liquidations[borrower_];
-        // check liquidation process status
-        if (liquidation.kickTime == 0 || block.timestamp - uint256(liquidation.kickTime) <= 1 hours) revert TakeNotPastCooldown();
-
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
-            borrower_,
-            inflatorSnapshot
-        );
-        if (
-            PoolUtils.collateralization(
-                borrowerAccruedDebt,
-                borrowerPledgedCollateral,
-                _lup(borrowerDebt)
-            ) >= Maths.WAD
-        ) revert LiquidateBorrowerOk();
-
-        // TODO: calculate using price decrease function and amount_
-        uint256 liquidationPrice = Maths.WAD;
-        uint256 collateralToPurchase = Maths.wdiv(amount_, liquidationPrice);
-
-        // Reduce liquidation's remaining collateral
-        liquidations[borrower_].remainingCollateral -= collateralToPurchase;
-
-        // Flash loan full amount to liquidate to borrower
-        collateral().safeTransfer(msg.sender, collateralToPurchase);
-
-        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-        msg.sender.call(swapCalldata_);
-
-        // Get current swap price
-        uint256 hoursSinceKick = (block.timestamp - uint256(liquidation.kickTime)) / 1 hours;
-        uint256 currentPrice   = 10 * uint256(liquidation.referencePrice) * 2 ** (hoursSinceKick - 1 hours);
-        uint256 quoteTokenReturnAmount = collateralToPurchase * currentPrice * quoteTokenScale / collateralScale;
-
-        _repayDebt(borrower_, quoteTokenReturnAmount);
-
-        emit Take(borrower_, amount_, collateralToPurchase, 0);
     }
 
     /************************/

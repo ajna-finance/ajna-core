@@ -177,6 +177,29 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         }
     }
 
+    function testLoadERC20PoolGasKickAllLoansFromLowestTP() public {
+        address kicker = makeAddr("kicker");
+        _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
+
+        vm.warp(8640000000);
+        vm.startPrank(kicker);
+        for (uint256 i; i < LOANS_COUNT; i ++) {
+            _pool.kick(_borrowers[i]);
+        }
+        vm.stopPrank();
+    }
+
+    function testLoadERC20PoolGasKickAllLoansFromHighestTP() public {
+        address kicker = makeAddr("kicker");
+        _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
+
+        vm.warp(8640000000);
+        vm.startPrank(kicker);
+        for (uint256 i; i < LOANS_COUNT; i ++) {
+            _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
+        }
+        vm.stopPrank();
+    }
 
     /*************************/
     /*** Utility Functions ***/
