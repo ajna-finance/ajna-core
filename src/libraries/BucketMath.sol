@@ -2,6 +2,9 @@
 pragma solidity 0.8.14;
 
 import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
+import { PRBMathUD60x18 } from "@prb-math/contracts/PRBMathUD60x18.sol";
+
+import './Maths.sol';
 
 /**
     @dev https://stackoverflow.com/questions/42738640/division-in-ethereum-solidity
@@ -18,8 +21,6 @@ import { PRBMathSD59x18 } from "@prb-math/contracts/PRBMathSD59x18.sol";
  */
 library BucketMath {
 
-    using PRBMathSD59x18 for int256;
-
     /**
         @dev constant price indices defining the min and max of the potential price range
      */
@@ -28,6 +29,9 @@ library BucketMath {
 
     uint256 public constant MIN_PRICE = 99_836_282_890;
     uint256 public constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
+
+    uint256 public constant CUBIC_ROOT_100      = 4.641588833612778892 * 1e18;
+    uint256 public constant ONE_THIRD           = 0.333333333333333334 * 1e18;
 
     /**
         @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
@@ -106,6 +110,44 @@ library BucketMath {
     function getClosestBucket(uint256 price_) external pure returns (int256 index_, uint256 bucketPrice_) {
         index_ = priceToIndex(price_);
         bucketPrice_ = indexToPrice(index_);
+    }
+
+    function auctionPrice(
+        uint256 referencePrice,
+        uint256 kickTime_
+    ) public view returns (uint256 price_) {
+        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
+        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
+
+        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
+        price_ = 10 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+    }
+
+    function pendingInterestFactor(
+        uint256 interestRate_,
+        uint256 elapsed_
+    ) public pure returns (uint256) {
+        return PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
+    }
+
+    function pendingInflator(
+        uint256 inflatorSnapshot_,
+        uint256 lastInflatorSnapshotUpdate_,
+        uint256 interestRate_
+    ) public view returns (uint256) {
+        return Maths.wmul(
+            inflatorSnapshot_,
+            PRBMathUD60x18.exp((interestRate_ * (block.timestamp - lastInflatorSnapshotUpdate_)) / 365 days)
+        );
+    }
+
+    function lenderInterestMargin(
+        uint256 mau_
+    ) public pure returns (uint256) {
+        // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
+        // cubic root of the percentage of meaningful unutilized deposit
+        uint256 crpud = PRBMathUD60x18.pow(100 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 100 * 1e18), ONE_THIRD);
+        return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_100), 0.15 * 1e18);
     }
 
 }
