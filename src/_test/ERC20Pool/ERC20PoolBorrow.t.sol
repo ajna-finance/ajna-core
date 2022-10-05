@@ -100,22 +100,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     /**
-     *  @dev Convenience method to seed a pool with initial liquidity
-     **/
-    function _addLiquidityToTwoBuckets(uint256 depositPerBucket) internal {
-        // add initial quote to the pool
-        Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: depositPerBucket, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: depositPerBucket, index: 2551, newLup: BucketMath.MAX_PRICE});
-        _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
-        );
-    }
-
-    /**
      *  @dev Creates debt for an anonymous non-player borrower not otherwise involved in the test.
      **/
     function _anonBorrowerDrawsDebt(uint256 loanAmount) internal {
@@ -123,13 +107,18 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
         vm.stopPrank();
         _mintCollateralAndApproveTokens(borrower,  100 * 1e18);
+        _pledgeCollateral(
+            {
+                from:     borrower,
+                borrower: borrower,
+                amount:   100 * 1e18
+            }
+        );
         changePrank(borrower);
-        _pool.pledgeCollateral(borrower, 100 * 1e18);
         _pool.borrow(loanAmount, 7_777);
     }
 
     function testPoolBorrowAndRepay() external {
-
         // check balances before borrow
         assertEq(_quote.balanceOf(address(_pool)), 50_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
@@ -388,7 +377,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     function testPoolBorrowerInterestAccumulation() external {
-
         skip(10 days);
         _pledgeCollateral(
             {
@@ -701,9 +689,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     function testMinBorrowAmountCheck() external {
-        // add initial quote to the pool
-        _addLiquidityToTwoBuckets(10_000 * 1e18);
-
         // 10 borrowers draw debt
         for (uint i=0; i<10; ++i) {
             _anonBorrowerDrawsDebt(1_200 * 1e18);
@@ -711,8 +696,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(loansCount, 10);
 
-        changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 100 * 1e18);
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   100 * 1e18
+            }
+        );
 
         // should revert if borrower attempts to borrow more than minimum amount
         _assertBorrowMinDebtRevert(
@@ -844,19 +834,21 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     function testMinRepayAmountCheck() external {
-        // add initial quote to the pool
-        _addLiquidityToTwoBuckets(20_000 * 1e18);
-
         // borrower 1 borrows 1000 quote from the pool
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 1_000 * 1e18,
-                indexLimit:   3_000,
-                price:        3_010.892022197881557845 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     1_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
         );
 
         // 9 other borrowers draw debt
@@ -874,11 +866,9 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 amount:   950 * 1e18
             }
         );
-
     }
 
     function testRepayLoanFromDifferentActor() external {
-
         // borrower 1 borrows 1000 quote from the pool
         _pledgeCollateral(
             {
@@ -950,7 +940,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *              Attempts to borrow with a TP of 0.
      */
     function testZeroThresholdPriceLoan() external {
-
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
         _pledgeCollateral(
             {

@@ -202,11 +202,6 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
         return ERC721Pool(new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
-    // TODO: finish implementing
-    function _approveQuoteMultipleUserMultiplePool() internal {
-
-    }
-
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {
         deal(address(_quote), operator_, mintAmount_);
         vm.prank(operator_);

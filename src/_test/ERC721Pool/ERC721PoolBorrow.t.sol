@@ -664,14 +664,19 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         changePrank(borrower);
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = _collateral.totalSupply();
-        _pool.pledgeCollateral(borrower, tokenIdsToAdd);
+        _pledgeCollateral(
+            {
+                from:     borrower,
+                borrower: borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
         _pool.borrow(loanAmount, 7_777);
     }
 
     function testMinRepayAmountCheck() external {
         // add initial quote to the pool
         changePrank(_lender);
-        assertEq(_indexToPrice(2550), 3_010.892022197881557845 * 1e18);
         _pool.addQuoteToken(20_000 * 1e18, 2550);
 
         // 9 other borrowers draw debt
@@ -685,9 +690,16 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
         tokenIdsToAdd[2] = 5;
-        _pool.pledgeCollateral(_borrower, tokenIdsToAdd);
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
         _pool.borrow(1_000 * 1e18, 3000);
-        assertEq(_loansCount(), 10);
+        (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(loansCount, 10);
 
         // should revert if amount left after repay is less than the average debt
         _assertRepayMinDebtRevert(
