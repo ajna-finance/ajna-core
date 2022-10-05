@@ -18,6 +18,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
     address internal _lender1;
+    uint _anonBorrowerCount = 0;
 
     uint256 highest = 2550;
     uint256 high    = 2551;
@@ -96,6 +97,16 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
+    }
+
+    function _anonBorrowerDrawsDebt(uint256 loanAmount) internal {
+        _anonBorrowerCount += 1;
+        address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
+        vm.stopPrank();
+        _mintCollateralAndApproveTokens(borrower,  100 * 1e18);
+        changePrank(borrower);
+        _pool.pledgeCollateral(borrower, 100 * 1e18);
+        _pool.borrow(loanAmount, 7_777);
     }
 
     function testPoolBorrowAndRepay() external {
@@ -650,14 +661,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             }
         );
 
-        // should revert if borrower attempts to borrow more than minimum amount
-        _assertBorrowMinDebtRevert(
-            {
-                from:       _borrower,
-                amount:     10 * 1e18,
-                indexLimit: 3000
-            }
-        );
         // should revert if borrower undercollateralized
         _assertBorrowBorrowerUnderCollateralizedRevert(
             {
@@ -674,6 +677,37 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 amount:     10 * 1e18,
                 indexLimit: 3_000,
                 newLup:     2_995.912459898389633881 * 1e18
+            }
+        );
+    }
+
+    function testMinBorrowAmountCheck() external {
+        // add initial quote to the pool
+        Liquidity[] memory amounts = new Liquidity[](1);
+        amounts[0] = Liquidity({amount: 20_000 * 1e18, index: 2727, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
+
+        // 10 borrowers draw debt
+        for (uint i=0; i<10; ++i) {
+            _anonBorrowerDrawsDebt(1_200 * 1e18);
+        }
+        (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(loansCount, 10);
+
+        changePrank(_borrower);
+        _pool.pledgeCollateral(_borrower, 100 * 1e18);
+
+        // should revert if borrower attempts to borrow more than minimum amount
+        _assertBorrowMinDebtRevert(
+            {
+                from:       _borrower,
+                amount:     10 * 1e18,
+                indexLimit: 7_777
             }
         );
     }
