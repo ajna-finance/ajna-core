@@ -38,17 +38,27 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         indexes[2] = 2552;
 
         // should fail if allowed owner is not set
-        changePrank(_lender);
-        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _assertTransferNoAllowanceRevert(
+            {
+                operator: _lender,
+                from:     _lender1,
+                to:       _lender2,
+                indexes:  indexes
+            }
+        );
 
         // should fail if allowed owner is set to 0x
         changePrank(_lender1);
         _pool.approveLpOwnership(address(0), indexes[0], 1_000 * 1e18);
 
-        changePrank(_lender);
-        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _assertTransferNoAllowanceRevert(
+            {
+                operator: _lender,
+                from:     _lender1,
+                to:       _lender2,
+                indexes:  indexes
+            }
+        );
     }
 
     function testTransferLPTokensToUnallowedAddress() external {
@@ -63,9 +73,14 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e27);
         _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
 
-        changePrank(_lender);
-        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender, indexes);
+        _assertTransferNoAllowanceRevert(
+            {
+                operator: _lender,
+                from:     _lender1,
+                to:       _lender2,
+                indexes:  indexes
+            }
+        );
     }
 
     function testTransferLPTokensToInvalidIndex() external {
@@ -80,9 +95,14 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[1], 1_000 * 1e27);
         _pool.approveLpOwnership(_lender2, indexes[2], 1_000 * 1e27);
 
-        changePrank(_lender);
-        vm.expectRevert(IPoolErrors.TransferLPInvalidIndex.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _assertTransferInvalidIndexRevert(
+            {
+                operator: _lender,
+                from:     _lender1,
+                to:       _lender2,
+                indexes:  indexes
+            }
+        );
     }
 
     function testTransferLPTokensGreaterThanBalance() external {
@@ -90,16 +110,35 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         indexes[0] = 2550;
         indexes[1] = 2551;
 
-        changePrank(_lender1);
-        _pool.addQuoteToken(10_000 * 1e18, indexes[0]);
-        _pool.addQuoteToken(20_000 * 1e18, indexes[1]);
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 10_000 * 1e18,
+                index:  indexes[0],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 20_000 * 1e18,
+                index:  indexes[1],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+
         // set allowed owner to lender2 address
         _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e27);
         _pool.approveLpOwnership(_lender2, indexes[1], 30_000 * 1e27);
 
-        changePrank(_lender2);
-        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _assertTransferNoAllowanceRevert(
+            {
+                operator: _lender2,
+                from:     _lender1,
+                to:       _lender2,
+                indexes:  indexes
+            }
+        );
     }
 
     function testTransferLPTokensForAllIndexes() external {
@@ -109,26 +148,81 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         indexes[2] = 2552;
 
         skip(1 hours);
-        changePrank(_lender1);
-        _pool.addQuoteToken(10_000 * 1e18, indexes[0]);
-        _pool.addQuoteToken(20_000 * 1e18, indexes[1]);
-        _pool.addQuoteToken(30_000 * 1e18, indexes[2]);
+
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 10_000 * 1e18,
+                index:  indexes[0],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 20_000 * 1e18,
+                index:  indexes[1],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 30_000 * 1e18,
+                index:  indexes[2],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
 
         // check lenders lp balance
-        (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.lenders(indexes[0], _lender1);
-        assertEq(lpBalance, 10_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 1 hours);
-        (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
-        assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
-        assertEq(lpBalance, 30_000 * 1e27);
-
-        (lpBalance, ) = _pool.lenders(indexes[0], _lender2);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
-        assertEq(lpBalance, 0);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[0],
+                lpBalance:   10_000 * 1e27,
+                depositTime: 3600
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[0],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[1],
+                lpBalance:   20_000 * 1e27,
+                depositTime: 3600
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[1],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[2],
+                lpBalance:   30_000 * 1e27,
+                depositTime: 3600
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[2],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
 
         // set allowed owner to lender2 address
         _pool.approveLpOwnership(_lender2, indexes[0], 10_000 * 1e27);
@@ -136,30 +230,75 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e27);
 
         // transfer LP tokens for all indexes
-        changePrank(_lender);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(_lender1, _lender2, indexes, 60_000 * 1e27);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _transferLpTokens(
+            {
+                operator:  _lender,
+                from:      _lender1,
+                to:        _lender2,
+                indexes:   indexes,
+                lpBalance: 60_000 * 1e27
+            }
+        );
 
         // check that old token ownership was removed - a new transfer should fail
-        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _assertTransferNoAllowanceRevert(
+            {
+                operator: _lender,
+                from:     _lender1,
+                to:       _lender2,
+                indexes:  indexes
+            }
+        );
 
         // check lenders lp balance
-        (lpBalance, ) = _pool.lenders(indexes[0], _lender1);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
-        assertEq(lpBalance, 0);
-
-        (lpBalance, lastQuoteDeposit) = _pool.lenders(indexes[0], _lender2);
-        assertEq(lpBalance, 10_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 1 hours);
-        (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
-        assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
-        assertEq(lpBalance, 30_000 * 1e27);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[0],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[0],
+                lpBalance:   10_000 * 1e27,
+                depositTime: 3600
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[1],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[1],
+                lpBalance:   20_000 * 1e27,
+                depositTime: 3600
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[2],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[2],
+                lpBalance:   30_000 * 1e27,
+                depositTime: 3600
+            }
+        );
     }
 
     function testTransferLPTokensForTwoIndexes() external {
@@ -172,54 +311,155 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         transferIndexes[0] = 2550;
         transferIndexes[1] = 2552;
 
-        changePrank(_lender1);
-        _pool.addQuoteToken(10_000 * 1e18, depositIndexes[0]);
-        _pool.addQuoteToken(20_000 * 1e18, depositIndexes[1]);
-        _pool.addQuoteToken(30_000 * 1e18, depositIndexes[2]);
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 10_000 * 1e18,
+                index:  depositIndexes[0],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 20_000 * 1e18,
+                index:  depositIndexes[1],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 30_000 * 1e18,
+                index:  depositIndexes[2],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
 
         // check lenders lp balance
-        (uint256 lpBalance, ) = _pool.lenders(depositIndexes[0], _lender1);
-        assertEq(lpBalance, 10_000 * 1e27);
-        (lpBalance, ) = _pool.lenders(depositIndexes[1], _lender1);
-        assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.lenders(depositIndexes[2], _lender1);
-        assertEq(lpBalance, 30_000 * 1e27);
-
-        (lpBalance, ) = _pool.lenders(depositIndexes[0], _lender2);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(depositIndexes[1], _lender2);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(depositIndexes[2], _lender2);
-        assertEq(lpBalance, 0);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       depositIndexes[0],
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       depositIndexes[0],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       depositIndexes[1],
+                lpBalance:   20_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       depositIndexes[1],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       depositIndexes[2],
+                lpBalance:   30_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       depositIndexes[2],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
 
         // set allowed owner to lender2 address
         _pool.approveLpOwnership(_lender2, transferIndexes[0], 10_000 * 1e27);
         _pool.approveLpOwnership(_lender2, transferIndexes[1], 30_000 * 1e27);
 
         // transfer LP tokens for 2 indexes
-        changePrank(_lender);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(_lender1, _lender2, transferIndexes, 40_000 * 1e27);
-        _pool.transferLPTokens(_lender1, _lender2, transferIndexes);
+        _transferLpTokens(
+            {
+                operator:  _lender,
+                from:      _lender1,
+                to:        _lender2,
+                indexes:   transferIndexes,
+                lpBalance: 40_000 * 1e27
+            }
+        );
 
         // check that old token ownership was removed - transfer with same indexes should fail
-        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, transferIndexes);
+        _assertTransferNoAllowanceRevert(
+            {
+                operator: _lender,
+                from:     _lender1,
+                to:       _lender2,
+                indexes:  transferIndexes
+            }
+        );
 
         // check lenders lp balance
-        (lpBalance, ) = _pool.lenders(depositIndexes[0], _lender1);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(depositIndexes[1], _lender1);
-        assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.lenders(depositIndexes[2], _lender1);
-        assertEq(lpBalance, 0);
-
-        (lpBalance, ) = _pool.lenders(depositIndexes[0], _lender2);
-        assertEq(lpBalance, 10_000 * 1e27);
-        (lpBalance, ) = _pool.lenders(depositIndexes[1], _lender2);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(depositIndexes[2], _lender2);
-        assertEq(lpBalance, 30_000 * 1e27);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       depositIndexes[0],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       depositIndexes[0],
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       depositIndexes[1],
+                lpBalance:   20_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       depositIndexes[1],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       depositIndexes[2],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       depositIndexes[2],
+                lpBalance:   30_000 * 1e27,
+                depositTime: 0
+            }
+        );
     }
 
     function testTransferLPTokensToLenderWithLPTokens() external {
@@ -229,33 +469,108 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         indexes[2] = 2552;
 
         skip(1 hours);
-        changePrank(_lender1);
-        _pool.addQuoteToken(10_000 * 1e18, indexes[0]);
-        _pool.addQuoteToken(20_000 * 1e18, indexes[1]);
-        _pool.addQuoteToken(30_000 * 1e18, indexes[2]);
+
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 10_000 * 1e18,
+                index:  indexes[0],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 20_000 * 1e18,
+                index:  indexes[1],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 30_000 * 1e18,
+                index:  indexes[2],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
 
         skip(1 hours);
-        changePrank(_lender2);
-        _pool.addQuoteToken(5_000 * 1e18, indexes[0]);
-        _pool.addQuoteToken(10_000 * 1e18, indexes[1]);
-        _pool.addQuoteToken(15_000 * 1e18, indexes[2]);
+
+        _addLiquidity(
+            {
+                from:   _lender2,
+                amount: 5_000 * 1e18,
+                index:  indexes[0],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender2,
+                amount: 10_000 * 1e18,
+                index:  indexes[1],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender2,
+                amount: 15_000 * 1e18,
+                index:  indexes[2],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
 
         // check lenders lp balance
-        (uint256 lpBalance, uint256 lastQuoteDeposit) = _pool.lenders(indexes[0], _lender1);
-        assertEq(lpBalance, 10_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 1 hours);
-        (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
-        assertEq(lpBalance, 20_000 * 1e27);
-        (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
-        assertEq(lpBalance, 30_000 * 1e27);
-
-        (lpBalance, lastQuoteDeposit) = _pool.lenders(indexes[0], _lender2);
-        assertEq(lpBalance, 5_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 2 hours);
-        (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
-        assertEq(lpBalance, 10_000 * 1e27);
-        (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
-        assertEq(lpBalance, 15_000 * 1e27);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[0],
+                lpBalance:   10_000 * 1e27,
+                depositTime: 3600
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[0],
+                lpBalance:   5_000 * 1e27,
+                depositTime: 7200
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[1],
+                lpBalance:   20_000 * 1e27,
+                depositTime: 3600
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[1],
+                lpBalance:   10_000 * 1e27,
+                depositTime: 7200
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[2],
+                lpBalance:   30_000 * 1e27,
+                depositTime: 3600
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[2],
+                lpBalance:   15_000 * 1e27,
+                depositTime: 7200
+            }
+        );
 
         // set allowed owner to lender2 address
         changePrank(_lender1);
@@ -264,29 +579,74 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         _pool.approveLpOwnership(_lender2, indexes[2], 30_000 * 1e27);
 
         // transfer LP tokens for all indexes
-        changePrank(_lender);
-        vm.expectEmit(true, true, true, true);
-        emit TransferLPTokens(_lender1, _lender2, indexes, 60_000 * 1e27);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _transferLpTokens(
+            {
+                operator:  _lender,
+                from:      _lender1,
+                to:        _lender2,
+                indexes:   indexes,
+                lpBalance: 60_000 * 1e27
+            }
+        );
 
         // check that old token ownership was removed - transfer with same indexes should fail
-        vm.expectRevert(IPoolErrors.TransferLPNoAllowance.selector);
-        _pool.transferLPTokens(_lender1, _lender2, indexes);
+        _assertTransferNoAllowanceRevert(
+            {
+                operator: _lender,
+                from:     _lender1,
+                to:       _lender2,
+                indexes:  indexes
+            }
+        );
 
         // check lenders lp balance
-        (lpBalance, ) = _pool.lenders(indexes[0], _lender1);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(indexes[1], _lender1);
-        assertEq(lpBalance, 0);
-        (lpBalance, ) = _pool.lenders(indexes[2], _lender1);
-        assertEq(lpBalance, 0);
-
-        (lpBalance, lastQuoteDeposit) = _pool.lenders(indexes[0], _lender2);
-        assertEq(lpBalance, 15_000 * 1e27);
-        assertEq(lastQuoteDeposit, _startTime + 2 hours);
-        (lpBalance, ) = _pool.lenders(indexes[1], _lender2);
-        assertEq(lpBalance, 30_000 * 1e27);
-        (lpBalance, ) = _pool.lenders(indexes[2], _lender2);
-        assertEq(lpBalance, 45_000 * 1e27);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[0],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[0],
+                lpBalance:   15_000 * 1e27,
+                depositTime: 7200
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[1],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[1],
+                lpBalance:   30_000 * 1e27,
+                depositTime: 7200
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       indexes[2],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender2,
+                index:       indexes[2],
+                lpBalance:   45_000 * 1e27,
+                depositTime: 7200
+            }
+        );
     }
 }

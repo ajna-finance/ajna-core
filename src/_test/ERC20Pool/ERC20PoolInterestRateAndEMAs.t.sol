@@ -28,18 +28,46 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
     }
 
-    function testPoolInterestRateIncrease() external {
-        Liquidity[] memory amounts = new Liquidity[](5);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 20_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
-        amounts[2] = Liquidity({amount: 20_000 * 1e18, index: 2552, newLup: BucketMath.MAX_PRICE});
-        amounts[3] = Liquidity({amount: 50_000 * 1e18, index: 3900, newLup: BucketMath.MAX_PRICE});
-        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: 4200, newLup: BucketMath.MAX_PRICE});
+    function testPoolInterestRateIncreaseDecrease() external {
         _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  2550,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 20_000 * 1e18,
+                index:  2551,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 20_000 * 1e18,
+                index:  2552,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 50_000 * 1e18,
+                index:  3900,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  4200,
+                newLup: BucketMath.MAX_PRICE
+            }
         );
 
         skip(10 days);
@@ -61,14 +89,24 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-
-        // enforce EMA and target utilization update, increasing interest rate from 0.05 to 0.055
-        changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 100 * 1e18);
-
+        // enforce EMA and target utilization update
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   100 * 1e18
+            }
+        );
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.055 * 1e18);
-        _pool.borrow(46_000 * 1e18, 4_300);
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     46_000 * 1e18,
+                indexLimit: 4_300,
+                newLup:     2_981.007422784467321543 * 1e18
+            }
+        );
 
         _assertPool(
             PoolState({
@@ -87,31 +125,49 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime + 10 days
             })
         );
+
+        // repay entire loan
+        deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 200 * 1e18);
+        _repay(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   46_113.664786991249514684 * 1e18,
+                repaid:   46_113.664786991249514684 * 1e18,
+                newLup:   BucketMath.MAX_PRICE
+            }
+        );
     }
 
     function testPoolInterestRateDecrease() external {
         // lender makes an initial deposit
         skip(1 hours);
-        Liquidity[] memory amounts = new Liquidity[](1);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2873, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  2873,
+                newLup: BucketMath.MAX_PRICE
+            }
         );
         // borrower draws debt
         skip(2 hours);
-        _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 10 * 1e18,
-                borrowAmount: 5_000 * 1e18,
-                indexLimit:   3000,
-                price:        601.252968524772188572 * 1e18
-            })
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   10 * 1e18
+            }
         );
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     5_000 * 1e18,
+                indexLimit: 3000,
+                newLup:     601.252968524772188572 * 1e18
+            }
+        );
+
         _assertPool(
             PoolState({
                 htp:                  500.480769230769231000 * 1e18,
@@ -133,10 +189,16 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         // another lender provides liquidity, decresing interest rate from 0.05 to 0.045
         skip(12 hours);
 
-        changePrank(_lender1);
         vm.expectEmit(true, true, false, true);
         emit UpdateInterestRate(0.05 * 1e18, 0.045 * 1e18);
-        _pool.addQuoteToken(1_000 * 1e18, 2873);
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 1_000 * 1e18,
+                index:  2873,
+                newLup: 601.252968524772188572 * 1e18
+            }
+        );
 
         _assertPool(
             PoolState({
@@ -159,30 +221,50 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
     function testPendingInflator() external {
         // add liquidity
-        Liquidity[] memory amounts = new Liquidity[](3);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2552, newLup: BucketMath.MAX_PRICE});
-        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: 4200, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  2550,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  2552,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  4200,
+                newLup: BucketMath.MAX_PRICE
+            }
         );
 
         skip(3600);
 
         // draw debt
-        _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 15_000 * 1e18,
-                indexLimit:   4300,
-                price:        2_981.007422784467321543 * 1e18
-            })
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
         );
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     15_000 * 1e18,
+                indexLimit: 4_300,
+                newLup:     2_981.007422784467321543 * 1e18
+            }
+        );
+
         _assertPool(
             PoolState({
                 htp:                  300.288461538461538600 * 1e18,
@@ -226,14 +308,21 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     function testPoolEMAAndTargetUtilizationUpdate() external {
 
         // add initial quote to the pool
-        Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 3_010, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2_995, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  3_010,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  2_995,
+                newLup: BucketMath.MAX_PRICE
+            }
         );
 
         _assertPool(
@@ -257,15 +346,20 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         assertEq(_pool.lupColEma(), 0);
 
         // borrower 1 borrows 500 quote from the pool
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 500 * 1e18,
-                indexLimit:   3_010,
-                price:        327.188250324085203338 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     500 * 1e18,
+                indexLimit: 3_010,
+                newLup:     327.188250324085203338 * 1e18
+            }
         );
 
         _assertPool(
@@ -288,16 +382,21 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         assertEq(_pool.debtEma(),   0);
         assertEq(_pool.lupColEma(), 0);
 
+        _pledgeCollateral(
+            {
+                from:     _borrower2,
+                borrower: _borrower2,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower2,
-                borrower:     _borrower2,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 500 * 1e18,
-                indexLimit:   3_010,
-                price:        327.188250324085203338 * 1e18
-            })
-        ); 
+            {
+                from:       _borrower2,
+                amount:     500 * 1e18,
+                indexLimit: 3_010,
+                newLup:     327.188250324085203338 * 1e18
+            }
+        );
 
         _assertPool(
             PoolState({
@@ -323,14 +422,12 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         // borrower 1 borrows 500 quote from the pool
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 0,
-                borrowAmount: 10 * 1e18,
-                indexLimit:   3_010,
-                price:        327.188250324085203338 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     10 * 1e18,
+                indexLimit: 3_010,
+                newLup:     327.188250324085203338 * 1e18
+            }
         );
 
         _assertPool(

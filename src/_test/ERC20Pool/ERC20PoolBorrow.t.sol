@@ -19,6 +19,12 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     address internal _lender;
     address internal _lender1;
 
+    uint256 highest = 2550;
+    uint256 high    = 2551;
+    uint256 med     = 2552;
+    uint256 low     = 2553;
+    uint256 lowest  = 2554;
+
     function setUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
@@ -30,27 +36,47 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         _mintQuoteAndApproveTokens(_lender,   200_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
-    }
-
-    function testPoolBorrowAndRepay() external {
-        uint256 highest = 2550;
-        uint256 high    = 2551;
-        uint256 med     = 2552;
-        uint256 low     = 2553;
-        uint256 lowest  = 2554;
 
         // lender deposits 10000 DAI in 5 buckets each
-        Liquidity[] memory amounts = new Liquidity[](5);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high,    newLup: BucketMath.MAX_PRICE});
-        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med,     newLup: BucketMath.MAX_PRICE});
-        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low,     newLup: BucketMath.MAX_PRICE});
-        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest,  newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  highest,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  high,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  med,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  low,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  lowest,
+                newLup: BucketMath.MAX_PRICE
+            }
         );
 
         _assertPool(
@@ -70,20 +96,28 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
+    }
+
+    function testPoolBorrowAndRepay() external {
 
         // check balances before borrow
         assertEq(_quote.balanceOf(address(_pool)), 50_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
 
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   100 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 100 * 1e18,
-                borrowAmount: 21_000 * 1e18,
-                indexLimit:   3_000,
-                price:        2_981.007422784467321543 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     21_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     2_981.007422784467321543 * 1e18
+            }
         );
 
         _assertPool(
@@ -108,40 +142,102 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(address(_pool)), 29_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
 
-        BucketLP[] memory lps = new BucketLP[](5);
-        lps[0] = BucketLP({index: highest, balance: 10_000 * 1e27, time: _startTime});
-        lps[1] = BucketLP({index: high,    balance: 10_000 * 1e27, time: _startTime});
-        lps[2] = BucketLP({index: med,     balance: 10_000 * 1e27, time: _startTime});
-        lps[3] = BucketLP({index: low,     balance: 10_000 * 1e27, time: _startTime});
-        lps[4] = BucketLP({index: lowest,  balance: 10_000 * 1e27, time: _startTime});
-
-        _assertLPs(
-            LenderLPs({
-                lender:    _lender,
-                bucketLPs: lps
-            })
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       highest,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       high,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       med,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       low,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       lowest,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
         );
 
         // check buckets
-        BucketState[] memory bucketStates = new BucketState[](5);
-        bucketStates[0] = BucketState({index: highest, LPs: 10_000 * 1e27, collateral: 0});
-        bucketStates[1] = BucketState({index: high,    LPs: 10_000 * 1e27, collateral: 0});
-        bucketStates[2] = BucketState({index: med,     LPs: 10_000 * 1e27, collateral: 0});
-        bucketStates[3] = BucketState({index: low,     LPs: 10_000 * 1e27, collateral: 0});
-        bucketStates[4] = BucketState({index: lowest,  LPs: 10_000 * 1e27, collateral: 0});
-
-        _assertBuckets(bucketStates);
+        _assertBucket(
+            {
+                index:        highest,
+                lpBalance:    10_000 * 1e27,
+                collateral:   0,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        high,
+                lpBalance:    10_000 * 1e27,
+                collateral:   0,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        med,
+                lpBalance:    10_000 * 1e27,
+                collateral:   0,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        low,
+                lpBalance:    10_000 * 1e27,
+                collateral:   0,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        lowest,
+                lpBalance:    10_000 * 1e27,
+                collateral:   0,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
 
         // borrow 19_000 DAI
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 0,
-                borrowAmount: 19_000 * 1e18,
-                indexLimit:   3_500,
-                price:        2_951.419442869698640451 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     19_000 * 1e18,
+                indexLimit: 3_500,
+                newLup:     2_951.419442869698640451 * 1e18
+            }
         );
 
         _assertPool(
@@ -167,12 +263,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // repay partial
         _repay(
-            RepaySpecs({
-                from:        _borrower,
-                borrower:    _borrower,
-                repayAmount: 10_000 * 1e18,
-                price:       2_966.176540084047110076 * 1e18
-            })
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   10_000 * 1e18,
+                repaid:   10_000 * 1e18,
+                newLup:   2_966.176540084047110076 * 1e18
+            }
         );
 
         _assertPool(
@@ -200,12 +297,13 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // repay entire loan
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 40 * 1e18);
         _repay(
-            RepaySpecs({
-                from:        _borrower,
-                borrower:    _borrower,
-                repayAmount: 30_038.461538461538480000 * 1e18,
-                price:       BucketMath.MAX_PRICE
-            })
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   30_038.461538461538480000 * 1e18,
+                repaid:   30_038.461538461538480000 * 1e18,
+                newLup:   BucketMath.MAX_PRICE
+            }
         );
 
         _assertPool(
@@ -232,14 +330,12 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // borrow 8_000 DAI
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 0,
-                borrowAmount: 8_000 * 1e18,
-                indexLimit:   3_500,
-                price:        3_010.892022197881557845 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     8_000 * 1e18,
+                indexLimit: 3_500,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
         );
 
         _assertPool(
@@ -262,54 +358,22 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     function testPoolBorrowerInterestAccumulation() external {
-        uint256 highest = 2550;
-        uint256 high    = 2551;
-        uint256 med     = 2552;
-        uint256 low     = 2553;
-        uint256 lowest  = 2554;
-
-        // lender deposits 10000 DAI in 5 buckets each
-        Liquidity[] memory amounts = new Liquidity[](5);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: highest, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: high,    newLup: BucketMath.MAX_PRICE});
-        amounts[2] = Liquidity({amount: 10_000 * 1e18, index: med,     newLup: BucketMath.MAX_PRICE});
-        amounts[3] = Liquidity({amount: 10_000 * 1e18, index: low,     newLup: BucketMath.MAX_PRICE});
-        amounts[4] = Liquidity({amount: 10_000 * 1e18, index: lowest,  newLup: BucketMath.MAX_PRICE});
-        _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
-        );
-
-        _assertPool(
-            PoolState({
-                htp:                  0,
-                lup:                  BucketMath.MAX_PRICE,
-                poolSize:             50_000 * 1e18,
-                pledgedCollateral:    0,
-                encumberedCollateral: 0,
-                borrowerDebt:         0,
-                actualUtilization:    0,
-                targetUtilization:    1e18,
-                minDebtAmount:        0,
-                loans:                0,
-                maxBorrower:          address(0),
-                interestRate:         0.05 * 1e18,
-                interestRateUpdate:   _startTime
-            })
-        );
 
         skip(10 days);
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 21_000 * 1e18,
-                indexLimit:   3_000,
-                price:        2_981.007422784467321543 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     21_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     2_981.007422784467321543 * 1e18
+            }
         );
 
         _assertPool(
@@ -330,24 +394,24 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
         _assertBorrower(
-            BorrowerState({
-                borrower:          _borrower,
-                debt:              21_020.192307692307702000 * 1e18,
-                pendingDebt:       21_051.890446235135648008 * 1e18,
-                collateral:        50 * 1e18,
-                collateralization: 7.090818626082626625 * 1e18,
-                mompFactor:        2_981.007422784467321543 * 1e18,
-                inflator:          1 * 1e18
-            })
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              21_020.192307692307702000 * 1e18,
+                borrowerCollateral:        50 * 1e18,
+                borrowerMompFactor:        2_981.007422784467321543 * 1e18,
+                borrowerInflator:          1 * 1e18,
+                borrowerCollateralization: 7.090818626082626625 * 1e18,
+                borrowerPendingDebt:       21_051.890446235135648008  * 1e18
+            }
         );
 
         skip(10 days);
         _pledgeCollateral(
-            PledgeSpecs({
+            {
                 from:     _borrower,
                 borrower: _borrower,
                 amount:   10 * 1e18
-            })
+            }
         );
 
         _assertPool(
@@ -368,23 +432,23 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
         _assertBorrower(
-            BorrowerState({
-                borrower:          _borrower,
-                debt:              21_083.636385101213387311 * 1e18,
-                pendingDebt:       21_083.636385101213387311 * 1e18,
-                collateral:        60 * 1e18,
-                collateralization: 8.483377444958217435 * 1e18,
-                mompFactor:        2_972.037088529352426932 * 1e18,
-                inflator:          1.003018244385218513 * 1e18
-            })
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              21_083.636385101213387311 * 1e18,
+                borrowerCollateral:        60 * 1e18,
+                borrowerMompFactor:        2_972.037088529352426932 * 1e18,
+                borrowerInflator:          1.003018244385218513 * 1e18,
+                borrowerCollateralization: 8.483377444958217435 * 1e18,
+                borrowerPendingDebt:       21_083.636385101213387311 * 1e18
+            }
         );
 
         skip(10 days);
         _pullCollateral(
-            PullSpecs({
+            {
                 from:    _borrower,
                 amount:  10 * 1e18
-            })
+            }
         );
 
         _assertPool(
@@ -405,27 +469,25 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
         _assertBorrower(
-            BorrowerState({
-                borrower:          _borrower,
-                debt:              21_118.612213260575675180 * 1e18,
-                pendingDebt:       21_118.612213260575675180 * 1e18,
-                collateral:        50 * 1e18,
-                collateralization: 7.057773002983275249 * 1e18,
-                mompFactor:        2_967.114915734949620331 * 1e18,
-                inflator:          1.004682160092905114 * 1e18
-            })
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              21_118.612213260575675180 * 1e18,
+                borrowerCollateral:        50 * 1e18,
+                borrowerMompFactor:        2_967.114915734949620331 * 1e18,
+                borrowerInflator:          1.004682160092905114 * 1e18,
+                borrowerCollateralization: 7.057773002983275249 * 1e18,
+                borrowerPendingDebt:       21_118.612213260575675180 * 1e18
+            }
         );
 
         skip(10 days);
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 0,
-                borrowAmount: 0,
-                indexLimit:   3_000,
-                price:        2_981.007422784467321543 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     0,
+                indexLimit: 3_000,
+                newLup:     2_981.007422784467321543 * 1e18
+            }
         );
 
         _assertPool(
@@ -446,25 +508,26 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
         _assertBorrower(
-            BorrowerState({
-                borrower:          _borrower,
-                debt:              21_157.152643010853298669 * 1e18,
-                pendingDebt:       21_157.152643010853298669 * 1e18,
-                collateral:        50 * 1e18,
-                collateralization: 7.044916376706357985 * 1e18,
-                mompFactor:        2_961.709940599570999250 * 1e18,
-                inflator:          1.006515655675920014 * 1e18
-            })
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              21_157.152643010853298669 * 1e18,
+                borrowerCollateral:        50 * 1e18,
+                borrowerMompFactor:        2_961.709940599570999250 * 1e18,
+                borrowerInflator:          1.006515655675920014 * 1e18,
+                borrowerCollateralization: 7.044916376706357985 * 1e18,
+                borrowerPendingDebt:       21_157.152643010853298669  * 1e18
+            }
         );
 
         skip(10 days);
         _repay(
-            RepaySpecs({
-                from:        _borrower,
-                borrower:    _borrower,
-                repayAmount: 0,
-                price:       2_981.007422784467321543 * 1e18
-            })
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   0,
+                repaid:   0,
+                newLup:   2_981.007422784467321543 * 1e18
+            }
         );
         _assertPool(
             PoolState({
@@ -484,15 +547,15 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
         _assertBorrower(
-            BorrowerState({
-                borrower:          _borrower,
-                debt:              21_199.628356897284446170 * 1e18,
-                pendingDebt:       21_199.628356897284446170 * 1e18,
-                collateral:        50 * 1e18,
-                collateralization: 7.030801136225104189 * 1e18,
-                mompFactor:        2_955.775839211865438160 * 1e18,
-                inflator:          1.008536365727696620 * 1e18
-            })
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              21_199.628356897284446170 * 1e18,
+                borrowerCollateral:        50 * 1e18,
+                borrowerMompFactor:        2_955.775839211865438160 * 1e18,
+                borrowerInflator:          1.008536365727696620 * 1e18,
+                borrowerCollateralization: 7.030801136225104189 * 1e18,
+                borrowerPendingDebt:       21_199.628356897284446170  * 1e18
+            }
         );
 
         skip(10 days);
@@ -514,15 +577,15 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
         _assertBorrower(
-            BorrowerState({
-                borrower:          _borrower,
-                debt:              21_199.628356897284446170 * 1e18,
-                pendingDebt:       21_246.450141935843879765 * 1e18,
-                collateral:        50 * 1e18,
-                collateralization: 7.030801136225104189 * 1e18,
-                mompFactor:        2_955.775839211865438160 * 1e18,
-                inflator:          1.008536365727696620 * 1e18
-            })
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              21_199.628356897284446170 * 1e18,
+                borrowerCollateral:        50 * 1e18,
+                borrowerMompFactor:        2_955.775839211865438160 * 1e18,
+                borrowerInflator:          1.008536365727696620 * 1e18,
+                borrowerCollateralization: 7.030801136225104189 * 1e18,
+                borrowerPendingDebt:       21_246.450141935843879765 * 1e18
+            }
         );
     }
 
@@ -536,69 +599,82 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      */
     function testPoolBorrowRequireChecks() external {
         // should revert if borrower attempts to borrow with an out of bounds limitIndex
-        changePrank(_borrower);
-        vm.expectRevert(IPoolErrors.BorrowLimitIndexReached.selector);
-        _pool.borrow(1_000 * 1e18, 5000);
-
-        // add initial quote to the pool
-        Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
-        _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
+        _assertBorrowLimitIndexRevert(
+            {
+                from:       _borrower,
+                amount:     1_000 * 1e18,
+                indexLimit: 1000
+            }
         );
 
-        changePrank(_borrower);
         // should revert if borrower didn't pledged any collateral
-        vm.expectRevert(IPoolErrors.BorrowBorrowerUnderCollateralized.selector);
-        _pool.borrow(500 * 1e18, 3000);
+        _assertBorrowBorrowerUnderCollateralizedRevert(
+            {
+                from:       _borrower,
+                amount:     500 * 1e18,
+                indexLimit: 3000
+            }
+        );
 
         // borrower 1 borrows 500 quote from the pool after adding sufficient collateral
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 500 * 1e18,
-                indexLimit:   3_000,
-                price:        3_010.892022197881557845 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     500 * 1e18,
+                indexLimit: 3_000,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
         );
 
         // borrower 2 borrows 15k quote from the pool with borrower2 becoming new queue HEAD
+        _pledgeCollateral(
+            {
+                from:     _borrower2,
+                borrower: _borrower2,
+                amount:   6 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower2,
-                borrower:     _borrower2,
-                pledgeAmount: 6 * 1e18,
-                borrowAmount: 15_000 * 1e18,
-                indexLimit:   3_000,
-                price:        2_995.912459898389633881 * 1e18
-            })
+            {
+                from:       _borrower2,
+                amount:     15_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     2_995.912459898389633881 * 1e18
+            }
         );
 
-        changePrank(_borrower);
         // should revert if borrower attempts to borrow more than minimum amount
-        vm.expectRevert(IPoolErrors.BorrowAmountLTMinDebt.selector);
-        _pool.borrow(10 * 1e18, 3000);
-
-        changePrank(_borrower2);
-        vm.expectRevert(IPoolErrors.BorrowBorrowerUnderCollateralized.selector);
-        _pool.borrow(2_976 * 1e18, 3000);
+        _assertBorrowMinDebtRevert(
+            {
+                from:       _borrower,
+                amount:     10 * 1e18,
+                indexLimit: 3000
+            }
+        );
+        // should revert if borrower undercollateralized
+        _assertBorrowBorrowerUnderCollateralizedRevert(
+            {
+                from:       _borrower2,
+                amount:     2_976 * 1e18,
+                indexLimit: 3000
+            }
+        );
 
         // should be able to borrow if properly specified
         _borrow(
-            BorrowSpecs({
-                from:         _borrower2,
-                borrower:     _borrower2,
-                pledgeAmount: 0,
-                borrowAmount: 10 * 1e18,
-                indexLimit:   3_000,
-                price:        2_995.912459898389633881 * 1e18
-            })
+            {
+                from:       _borrower2,
+                amount:     10 * 1e18,
+                indexLimit: 3_000,
+                newLup:     2_995.912459898389633881 * 1e18
+            }
         );
     }
 
@@ -610,44 +686,43 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *              Attempts to repay when bucket would be left with amount less than averge debt.
      */
     function testPoolRepayRequireChecks() external {
-        // add initial quote to the pool
-        Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
-        _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
+        deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
+
+        // should revert if borrower has no debt
+        _assertRepayNoDebtRevert(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   10_000 * 1e18
+            }
         );
 
-        changePrank(_borrower);
-        // should revert if borrower has no debt
-        deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
-        vm.expectRevert(IPoolErrors.RepayNoDebt.selector);
-        _pool.repay(_borrower, 10_000 * 1e18);
-
         // borrower 1 borrows 1000 quote from the pool
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 1_000 * 1e18,
-                indexLimit:   3_000,
-                price:        3_010.892022197881557845 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     1_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
         );
 
         _assertPool(
             PoolState({
                 htp:                  20.019230769230769240 * 1e18,
                 lup:                  3_010.892022197881557845 * 1e18,
-                poolSize:             20_000 * 1e18,
+                poolSize:             50_000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 0.332446840033426268 * 1e18,
                 borrowerDebt:         1_000.961538461538462000 * 1e18,
-                actualUtilization:    0.050048076923076923 * 1e18,
+                actualUtilization:    0.020019230769230769 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        100.096153846153846200 * 1e18,
                 loans:                1,
@@ -658,26 +733,31 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
 
         // borrower 2 borrows 5k quote from the pool and becomes new queue HEAD
+        _pledgeCollateral(
+            {
+                from:     _borrower2,
+                borrower: _borrower2,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower2,
-                borrower:     _borrower2,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 5_000 * 1e18,
-                indexLimit:   3_000,
-                price:        3_010.892022197881557845 * 1e18
-            })
+            {
+                from:       _borrower2,
+                amount:     5_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
         );
 
         _assertPool(
             PoolState({
                 htp:                  100.096153846153846200 * 1e18,
                 lup:                  3_010.892022197881557845 * 1e18,
-                poolSize:             20_000 * 1e18,
+                poolSize:             50_000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 1.994681040200557607 * 1e18,
                 borrowerDebt:         6_005.769230769230772000 * 1e18,
-                actualUtilization:    0.300288461538461539 * 1e18,
+                actualUtilization:    0.120115384615384615 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        300.288461538461538600 * 1e18,
                 loans:                2,
@@ -688,29 +768,34 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
 
         // should revert if amount left after repay is less than the average debt
-        changePrank(_borrower);
-        vm.expectRevert(IPoolErrors.BorrowAmountLTMinDebt.selector);
-        _pool.repay(_borrower, 750 * 1e18);
+        _assertRepayMinDebtRevert(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   750 * 1e18
+            }
+        );
 
         // should be able to repay loan if properly specified
         _repay(
-            RepaySpecs({
-                from:        _borrower,
-                borrower:    _borrower,
-                repayAmount: 0.0001 * 1e18,
-                price:       3_010.892022197881557845 * 1e18
-            })
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   0.0001 * 1e18,
+                repaid:   0.0001 * 1e18,
+                newLup:   3_010.892022197881557845 * 1e18
+            }
         );
 
         _assertPool(
             PoolState({
                 htp:                  100.096153846153846200 * 1e18,
                 lup:                  3_010.892022197881557845 * 1e18,
-                poolSize:             20_000 * 1e18,
+                poolSize:             50_000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 1.994681006987808939 * 1e18,
                 borrowerDebt:         6_005.769130769230772000 * 1e18,
-                actualUtilization:    0.300288456538461539 * 1e18,
+                actualUtilization:    0.120115382615384615 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        300.288456538461538600 * 1e18,
                 loans:                2,
@@ -722,37 +807,33 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     function testRepayLoanFromDifferentActor() external {
-        Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
-        _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
-        );
 
         // borrower 1 borrows 1000 quote from the pool
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 1_000 * 1e18,
-                indexLimit:   3_000,
-                price:        3_010.892022197881557845 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     1_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
         );
 
         _assertPool(
             PoolState({
                 htp:                  20.019230769230769240 * 1e18,
                 lup:                  3_010.892022197881557845 * 1e18,
-                poolSize:             20_000 * 1e18,
+                poolSize:             50_000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 0.332446840033426268 * 1e18,
                 borrowerDebt:         1_000.961538461538462000 * 1e18,
-                actualUtilization:    0.050048076923076923 * 1e18,
+                actualUtilization:    0.020019230769230769 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        100.096153846153846200 * 1e18,
                 loans:                1,
@@ -764,23 +845,24 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // should be able to repay loan on behalf of borrower
         _repay(
-            RepaySpecs({
-                from:        _lender,
-                borrower:    _borrower,
-                repayAmount: 0.0001 * 1e18,
-                price:       3_010.892022197881557845 * 1e18
-            })
+            {
+                from:     _lender,
+                borrower: _borrower,
+                amount:   0.0001 * 1e18,
+                repaid:   0.0001 * 1e18,
+                newLup:   3_010.892022197881557845 * 1e18
+            }
         );
 
         _assertPool(
             PoolState({
                 htp:                  20.019228769230769240 * 1e18,
                 lup:                  3_010.892022197881557845 * 1e18,
-                poolSize:             20_000 * 1e18,
+                poolSize:             50_000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 0.332446806820677600 * 1e18,
                 borrowerDebt:         1_000.961438461538462000 * 1e18,
-                actualUtilization:    0.050048071923076923 * 1e18,
+                actualUtilization:    0.020019228769230769 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        100.096143846153846200 * 1e18,
                 loans:                1,
@@ -797,44 +879,44 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *              Attempts to borrow with a TP of 0.
      */
     function testZeroThresholdPriceLoan() external {
-        // add initial quote to the pool
-        Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
-        _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
-        );
 
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
-        changePrank(_borrower);
-        _pool.pledgeCollateral(_borrower, 50 * 1e18);
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
         vm.expectRevert("H:I:VAL_EQ_0");
         _pool.borrow(0.00000000000000001 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 500 * 1e18,
-                indexLimit:   3_000,
-                price:        3_010.892022197881557845 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     500 * 1e18,
+                indexLimit: 3_000,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
         );
 
         _assertPool(
             PoolState({
                 htp:                  5.004807692307692310 * 1e18,
                 lup:                  3_010.892022197881557845 * 1e18,
-                poolSize:             20_000 * 1e18,
+                poolSize:             50_000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 0.166223420016713134 * 1e18,
                 borrowerDebt:         500.48076923076923100 * 1e18,
-                actualUtilization:    0.025024038461538462 * 1e18,
+                actualUtilization:    0.010009615384615385 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        50.048076923076923100 * 1e18,
                 loans:                1,
@@ -852,38 +934,32 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      */
     function testZeroThresholdPriceLoanAfterRepay() external {
 
-        // add initial quote to the pool
-        Liquidity[] memory amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
-        _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
-        );
-
         // borrower 1 borrows 500 quote from the pool
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 50 * 1e18,
-                borrowAmount: 500 * 1e18,
-                indexLimit:   2_551,
-                price:        3_010.892022197881557845 * 1e18
-            })
+            {
+                from:       _borrower,
+                amount:     500 * 1e18,
+                indexLimit: 2_551,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
         );
 
         _assertPool(
             PoolState({
                 htp:                  10.009615384615384620 * 1e18,
                 lup:                  3_010.892022197881557845 * 1e18,
-                poolSize:             20_000 * 1e18,
+                poolSize:             50_000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 0.166223420016713134 * 1e18,
                 borrowerDebt:         500.480769230769231000 * 1e18,
-                actualUtilization:    0.025024038461538462 * 1e18,
+                actualUtilization:    0.010009615384615385 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        50.048076923076923100 * 1e18,
                 loans:                1,
@@ -893,27 +969,38 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        (, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), _borrower);
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              500.480769230769231 * 1e18,
+                borrowerCollateral:        50 * 1e18,
+                borrowerMompFactor:        3_010.892022197881557845 * 1e18,
+                borrowerInflator:          1 * 1e18,
+                borrowerCollateralization: 300.799971477982403259 * 1e18,
+                borrowerPendingDebt:       500.480769230769231000 * 1e18
+            }
+        );
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
         vm.expectRevert("H:I:VAL_EQ_0");
-        _pool.repay(_borrower, pendingDebt - 1);
+        _pool.repay(_borrower, 500.480769230769231000 * 1e18 - 1);
 
         // should be able to pay back all pendingDebt
         _repay(
-            RepaySpecs({
-                from:        _borrower,
-                borrower:    _borrower,
-                repayAmount: pendingDebt,
-                price:       BucketMath.MAX_PRICE
-            })
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   500.480769230769231000 * 1e18,
+                repaid:   500.480769230769231000 * 1e18,
+                newLup:   BucketMath.MAX_PRICE
+            }
         );
 
         _assertPool(
             PoolState({
                 htp:                  0,
                 lup:                  BucketMath.MAX_PRICE,
-                poolSize:             20_000 * 1e18,
+                poolSize:             50_000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 0,
                 borrowerDebt:         0,

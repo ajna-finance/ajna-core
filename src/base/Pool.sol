@@ -113,7 +113,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 fromIndex_,
         uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
-        if (fromIndex_ == toIndex_) revert MoveQuoteToSamePrice();
+        if (fromIndex_ == toIndex_) revert MoveToSamePrice();
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -152,7 +152,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         deposits.add(toIndex_, quoteTokenAmountToMove);
 
         uint256 newLup = _lup(poolState.accruedDebt); // move lup if necessary and check loan book's htp against new lup
-        if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert MoveQuoteLUPBelowHTP();
+        if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
         // update lender accounting
         lenders.removeLPs(fromIndex_, msg.sender, fromBucketLPs_);
@@ -175,7 +175,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             index_,
             msg.sender
         );
-        if (lenderLPsBalance == 0) revert RemoveQuoteNoClaim();
+        if (lenderLPsBalance == 0) revert NoClaim();
 
         uint256 deposit = deposits.valueAt(index_);
         (quoteTokenAmountRemoved_, , redeemedLenderLPs_) = buckets.lpsToQuoteToken(
@@ -201,7 +201,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 deposit = deposits.valueAt(index_);
-        if (quoteTokenAmountToRemove_ > deposit) revert RemoveQuoteInsufficientQuoteAvailable();
+        if (quoteTokenAmountToRemove_ > deposit) revert InsufficientLiquidity();
 
         bucketLPs_ = buckets.quoteTokensToLPs(
             index_,
@@ -210,7 +210,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
 
         (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
-        if (lenderLPsBalance == 0 || bucketLPs_ > lenderLPsBalance) revert RemoveQuoteInsufficientLPB();
+        if (lenderLPsBalance == 0 || bucketLPs_ > lenderLPsBalance) revert InsufficientLPs();
 
         _redeemLPForQuoteToken(
             index_,
@@ -229,16 +229,16 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 indexesLength = indexes_.length;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            if (!Book.isDepositIndex(indexes_[i])) revert TransferLPInvalidIndex();
+            if (!Book.isDepositIndex(indexes_[i])) revert InvalidIndex();
 
             uint256 transferAmount = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
-            if (transferAmount == 0) revert TransferLPNoAllowance();
+            if (transferAmount == 0) revert NoAllowance();
 
             (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = lenders.getLenderInfo(
                 indexes_[i],
                 owner_
             );
-            if (transferAmount != lenderLpBalance) revert TransferLPNoAllowance();
+            if (transferAmount != lenderLpBalance) revert NoAllowance();
 
             delete _lpTokenAllowances[owner_][newOwner_][indexes_[i]]; // delete allowance
 
@@ -273,7 +273,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
-        if (lupId > limitIndex_) revert BorrowLimitIndexReached();
+        if (lupId > limitIndex_) revert LimitIndexReached();
 
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
             msg.sender,
@@ -284,7 +284,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             loansCount != 0
             &&
             (borrowerAccruedDebt + amountToBorrow_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-        )  revert BorrowAmountLTMinDebt();
+        )  revert AmountLTMinDebt();
 
         uint256 debt  = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
         borrowerAccruedDebt += debt;
@@ -298,7 +298,7 @@ abstract contract Pool is Clone, Multicall, IPool {
                 borrowerPledgedCollateral,
                 newLup
             ) < Maths.WAD || borrowerPledgedCollateral == 0
-        ) revert BorrowBorrowerUnderCollateralized();
+        ) revert BorrowerUnderCollateralized();
 
         poolState.accruedDebt += debt;
         if (
@@ -307,7 +307,7 @@ abstract contract Pool is Clone, Multicall, IPool {
                 poolState.collateral,
                 newLup
             ) < Maths.WAD
-        ) revert BorrowPoolUnderCollateralized();
+        ) revert PoolUnderCollateralized();
 
         // update loan queue
         uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
@@ -355,7 +355,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
         curUnclaimedAuctionReserve += claimable - kickerAward;
-        if (curUnclaimedAuctionReserve == 0) revert KickNoReserves();
+        if (curUnclaimedAuctionReserve == 0) revert NoReserves();
 
         reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
         reserveAuctionKicked    = block.timestamp;
@@ -436,7 +436,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrowerPledgedCollateral - PoolUtils.encumberance(borrowerAccruedDebt, curLup)
             <
             collateralAmountToPull_
-        ) revert PullCollateralInsufficientCollateral();
+        ) revert InsufficientCollateral();
         borrowerPledgedCollateral -= collateralAmountToPull_;
 
         // update loan queue
@@ -473,7 +473,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrower_,
             poolState.inflator
         );
-        if (borrowerAccruedDebt == 0) revert RepayNoDebt();
+        if (borrowerAccruedDebt == 0) revert NoDebt();
 
         uint256 quoteTokenAmountToRepay = Maths.min(borrowerAccruedDebt, maxQuoteTokenAmountToRepay_);
         borrowerAccruedDebt   -= quoteTokenAmountToRepay;
@@ -487,7 +487,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             if (loansCount != 0
                 &&
                 (borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-            ) revert BorrowAmountLTMinDebt();
+            ) revert AmountLTMinDebt();
 
             uint256 thresholdPrice = PoolUtils.t0ThresholdPrice(
                 borrowerAccruedDebt,
@@ -549,10 +549,10 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposits.valueAt(index_),
             collateralAmountToRemove_
         );
-        if (collateralAmountToRemove_ > bucketCollateral) revert PullCollateralInsufficientCollateral();
+        if (collateralAmountToRemove_ > bucketCollateral) revert InsufficientCollateral();
 
         (uint256 lenderLpBalance, ) = lenders.getLenderInfo(index_, msg.sender);
-        if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert RemoveCollateralInsufficientLP(); // ensure user can actually remove that much
+        if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert InsufficientLPs(); // ensure user can actually remove that much
 
         lenders.removeLPs(index_, msg.sender, bucketLPs_);
         buckets.removeCollateral(index_, bucketLPs_, collateralAmountToRemove_);
@@ -569,7 +569,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         deposits.remove(index_, amount);  // update FenwickTree
 
         uint256 newLup = _lup(poolState_.accruedDebt);
-        if (_htp(poolState_.inflator) > newLup) revert RemoveQuoteLUPBelowHTP();
+        if (_htp(poolState_.inflator) > newLup) revert LUPBelowHTP();
 
         // persist bucket changes
         buckets.removeLPs(index_, lpAmount_);

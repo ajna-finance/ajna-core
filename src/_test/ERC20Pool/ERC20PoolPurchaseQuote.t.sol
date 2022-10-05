@@ -38,146 +38,176 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         uint256 testIndex = 2550;
 
         // lender adds initial quote to pool
-        Liquidity[] memory amounts = new Liquidity[](1);
-        amounts[0] = Liquidity({amount: 10_000 * 1e18, index: testIndex, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  testIndex,
+                newLup: BucketMath.MAX_PRICE
+            }
         );
 
         // bidder deposits collateral into a bucket
         uint256 collateralToPurchaseWith = 4 * 1e18;
         _addCollateral(
-            AddCollateralSpecs({
+            {
                 from:   _bidder,
                 amount: collateralToPurchaseWith,
                 index:  testIndex
-            })
+            }
         );
 
         // check bucket state and LPs
-        BucketState[] memory bucketStates = new BucketState[](1);
-        bucketStates[0] = BucketState({index: testIndex, LPs: 22_043.56808879152623138 * 1e27, collateral: collateralToPurchaseWith});
-        _assertBuckets(bucketStates);
-        BucketLP[] memory lps = new BucketLP[](1);
-        lps[0] = BucketLP({index: testIndex, balance: 10_000 * 1e27, time: _startTime});
-        _assertLPs(
-            LenderLPs({
-                lender:    _lender,
-                bucketLPs: lps
-            })
+        _assertBucket(
+            {
+                index:        testIndex,
+                lpBalance:    22_043.56808879152623138 * 1e27,
+                collateral:   collateralToPurchaseWith,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
         );
-        lps[0] = BucketLP({index: testIndex, balance: 12_043.56808879152623138 * 1e27, time: 0});
-        _assertLPs(
-            LenderLPs({
-                lender:    _bidder,
-                bucketLPs: lps
-            })
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       testIndex,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _bidder,
+                index:       testIndex,
+                lpBalance:   12_043.56808879152623138 * 1e27,
+                depositTime: 0
+            }
         );
 
-        (, uint256 availableCollateral) = _pool.buckets(testIndex);
-        assertEq(availableCollateral, collateralToPurchaseWith);
+        uint256 availableCollateral = collateralToPurchaseWith;
 
         // bidder uses their LP to purchase all quote token in the bucket
         _removeLiquidity(
-            RemoveLiquiditySpecs({
+            {
                 from:     _bidder,
-                index:    testIndex,
                 amount:   10_000 * 1e18,
+                index:    testIndex,
                 penalty:  0,
                 newLup:   _lup(),
                 lpRedeem: 10_000 * 1e27
-            })
+            }
         );
         assertEq(_quote.balanceOf(_bidder), 10_000 * 1e18);
 
         // check bucket state
-        bucketStates = new BucketState[](1);
-        bucketStates[0] = BucketState({index: testIndex, LPs: 12_043.56808879152623138 * 1e27, collateral: collateralToPurchaseWith});
-        _assertBuckets(bucketStates);
-        lps = new BucketLP[](1);
-        lps[0] = BucketLP({index: testIndex, balance: 10_000 * 1e27, time: _startTime});
-        _assertLPs(
-            LenderLPs({
-                lender:    _lender,
-                bucketLPs: lps
-            })
+        _assertBucket(
+            {
+                index:        testIndex,
+                lpBalance:    12_043.56808879152623138 * 1e27,
+                collateral:   collateralToPurchaseWith,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
         );
-        lps[0] = BucketLP({index: testIndex, balance: 2_043.56808879152623138 * 1e27, time: 0});
-        _assertLPs(
-            LenderLPs({
-                lender:    _bidder,
-                bucketLPs: lps
-            })
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       testIndex,
+                lpBalance:   10_000 * 1e27,
+                depositTime: 0
+            }
         );
+        _assertLenderLpBalance(
+            {
+                lender:      _bidder,
+                index:       testIndex,
+                lpBalance:   2_043.56808879152623138 * 1e27,
+                depositTime: 0
+            }
+        );
+
         // check pool state and balances
-        assertEq(_collateral.balanceOf(_lender), 0);
-        assertEq(_collateral.balanceOf(address(_pool)),   collateralToPurchaseWith);
+        assertEq(_collateral.balanceOf(_lender),        0);
+        assertEq(_collateral.balanceOf(address(_pool)), collateralToPurchaseWith);
         assertGe(_collateral.balanceOf(address(_pool)), availableCollateral);
-        assertEq(_quote.balanceOf(address(_pool)),        0);
+        assertEq(_quote.balanceOf(address(_pool)),      0);
 
         // lender exchanges their LP for collateral
         _removeAllCollateral(
-            RemoveCollateralSpecs({
+            {
                 from: _lender,
                 amount: 3.321274866808485288 * 1e18,
                 index: testIndex,
                 lpRedeem: 10_000 * 1e27
-            })
+            }
         );
-        bucketStates = new BucketState[](1);
-        bucketStates[0] = BucketState({index: testIndex, LPs: 2_043.56808879152623138 * 1e27, collateral: 0.678725133191514712 * 1e18});
-        _assertBuckets(bucketStates);
-        lps = new BucketLP[](1);
-        lps[0] = BucketLP({index: testIndex, balance: 0, time: _startTime});
-        _assertLPs(
-            LenderLPs({
-                lender:    _lender,
-                bucketLPs: lps
-            })
+
+        _assertBucket(
+            {
+                index:        testIndex,
+                lpBalance:    2_043.56808879152623138 * 1e27,
+                collateral:   0.678725133191514712 * 1e18,
+                deposit:      0,
+                exchangeRate: 0.999999999999999999892795209 * 1e27
+            }
         );
-        lps[0] = BucketLP({index: testIndex, balance: 2_043.56808879152623138 * 1e27, time: 0});
-        _assertLPs(
-            LenderLPs({
-                lender:    _bidder,
-                bucketLPs: lps
-            })
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       testIndex,
+                lpBalance:   0,
+                depositTime: 0
+            }
         );
+        _assertLenderLpBalance(
+            {
+                lender:      _bidder,
+                index:       testIndex,
+                lpBalance:   2_043.56808879152623138 * 1e27,
+                depositTime: 0
+            }
+        );
+
         assertEq(_collateral.balanceOf(_lender), 3.321274866808485288 * 1e18);
 
         // bidder removes their _collateral
         _removeAllCollateral(
-            RemoveCollateralSpecs({
+            {
                 from: _bidder,
                 amount: 0.678725133191514712 * 1e18,
                 index: testIndex,
                 lpRedeem: 2_043.56808879152623138 * 1e27
-            })
+            }
         );
         // check pool balances
         assertEq(_collateral.balanceOf(address(_pool)), 0);
         assertEq(_quote.balanceOf(address(_pool)),      0);
 
         // check bucket state
-        bucketStates = new BucketState[](1);
-        bucketStates[0] = BucketState({index: testIndex, LPs: 0, collateral: 0});
-        _assertBuckets(bucketStates);
-        lps = new BucketLP[](1);
-        lps[0] = BucketLP({index: testIndex, balance: 0, time: _startTime});
-        _assertLPs(
-            LenderLPs({
-                lender:    _lender,
-                bucketLPs: lps
-            })
+        _assertBucket(
+            {
+                index:        testIndex,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
         );
-        lps[0] = BucketLP({index: testIndex, balance: 0, time: 0});
-        _assertLPs(
-            LenderLPs({
-                lender:    _bidder,
-                bucketLPs: lps
-            })
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       testIndex,
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _bidder,
+                index:       testIndex,
+                lpBalance:   0,
+                depositTime: 0
+            }
         );
     }
 
@@ -188,37 +218,67 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         uint256 p2550 = 3_010.892022197881557845 * 1e18;
 
         // lenders add liquidity
-        Liquidity[] memory amounts = new Liquidity[](3);
-        amounts[0] = Liquidity({amount:  6_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 10_000 * 1e18, index: 2551, newLup: BucketMath.MAX_PRICE});
-        amounts[2] = Liquidity({amount:  5_000 * 1e18, index: 2552, newLup: BucketMath.MAX_PRICE});
+        // lender 1
         _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
+            {
+                from:   _lender,
+                amount: 6_000 * 1e18,
+                index:  2550,
+                newLup: BucketMath.MAX_PRICE
+            }
         );
-        amounts = new Liquidity[](2);
-        amounts[0] = Liquidity({amount: 4_000 * 1e18, index: 2550, newLup: BucketMath.MAX_PRICE});
-        amounts[1] = Liquidity({amount: 5_000 * 1e18, index: 2552, newLup: BucketMath.MAX_PRICE});
         _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender1,
-                amounts: amounts
-            })
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  2551,
+                newLup: BucketMath.MAX_PRICE
+            }
         );
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 5_000 * 1e18,
+                index:  2552,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+
+        // lender 2
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 4_000 * 1e18,
+                index:  2550,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 5_000 * 1e18,
+                index:  2552,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+
         skip(3600);
 
         // borrower draws debt
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   100 * 1e18
+            }
+        );
         _borrow(
-            BorrowSpecs({
-                from:         _borrower,
-                borrower:     _borrower,
-                pledgeAmount: 100 * 1e18,
-                borrowAmount: 15_000 * 1e18,
-                indexLimit:   3000,
-                price:        _indexToPrice(2551)
-            })
+            {
+                from:       _borrower,
+                amount:     15_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     PoolUtils.indexToPrice(2551)
+            }
         );
 
         skip(86400);
@@ -237,41 +297,40 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
 
         // bidder purchases all quote from the highest bucket
         _addCollateral(
-            AddCollateralSpecs({
+            {
                 from:   _bidder,
                 amount: collateralToPurchaseWith,
                 index:  2550
-            })
+            }
         );
 
         _removeAllLiquidity(
-            RemoveAllLiquiditySpecs({
+            {
                 from:     _bidder,
-                index:    2550,
                 amount:   amountWithInterest,
-                newLup:   _indexToPrice(2552),
+                index:    2550,
+                newLup:   PoolUtils.indexToPrice(2552),
                 lpRedeem: 10_000 * 1e27
-            })
+            }
         );
 
         // bidder withdraws unused collateral
         uint256 expectedCollateral = 0.066548648694011883 * 1e18;
         _removeAllCollateral(
-            RemoveCollateralSpecs({
+            {
                 from:     _bidder,
                 amount:   expectedCollateral,
                 index:    2550,
                 lpRedeem: 200.358188812263475078370320348 * 1e27
-            })
+            }
         );
-        BucketLP[] memory lps = new BucketLP[](1);
-
-        lps[0] = BucketLP({index: 2550, balance: 0 * 1e27, time: 0});
-        _assertLPs(
-            LenderLPs({
-                lender:    _bidder,
-                bucketLPs: lps
-            })
+        _assertLenderLpBalance(
+            {
+                lender:      _bidder,
+                index:       2550,
+                lpBalance:   0,
+                depositTime: 0
+            }
         );
 
         skip(7200);
@@ -279,19 +338,21 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         // lender exchanges their LP for collateral
         expectedCollateral = 1.992890305762394375 * 1e18;
         _removeAllCollateral(
-            RemoveCollateralSpecs({
+            {
                 from:     _lender,
                 amount:   expectedCollateral,
                 index:    2550,
                 lpRedeem: 6_000 * 1e27
-            })
+            }
         );
-        lps[0] = BucketLP({index: 2550, balance: 0 * 1e27, time: _startTime});
-        _assertLPs(
-            LenderLPs({
-                lender:    _lender,
-                bucketLPs: lps
-            })
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       2550,
+                lpBalance:   0,
+                depositTime: 0
+            }
         );
 
         skip(3600);
@@ -299,27 +360,35 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         // lender1 exchanges their LP for collateral
         expectedCollateral = 1.328593537174929584 * 1e18;
         _removeAllCollateral(
-            RemoveCollateralSpecs({
+            {
                 from:     _lender1,
                 amount:   expectedCollateral,
                 index:    2550,
                 lpRedeem: 4_000 * 1e27
-            })
+            }
         );
-        lps[0] = BucketLP({index: 2550, balance: 0 * 1e27, time: _startTime});
-        _assertLPs(
-            LenderLPs({
-                lender:    _lender1,
-                bucketLPs: lps
-            })
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       2550,
+                lpBalance:   0,
+                depositTime: 0
+            }
         );
 
         // check pool balances
         assertEq(_collateral.balanceOf(address(_pool)), 100 * 1e18);
 
         // check bucket state
-        BucketState[] memory bucketStates = new BucketState[](1);
-        bucketStates[0] = BucketState({index: 2550, LPs: 0, collateral: 0});
-        _assertBuckets(bucketStates);
+        _assertBucket(
+            {
+                index:        2550,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
     }
 }
