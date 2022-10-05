@@ -99,6 +99,25 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
+    /**
+     *  @dev Convenience method to seed a pool with initial liquidity
+     **/
+    function _addLiquidityToTwoBuckets(uint256 depositPerBucket) internal {
+        // add initial quote to the pool
+        Liquidity[] memory amounts = new Liquidity[](2);
+        amounts[0] = Liquidity({amount: depositPerBucket, index: 2550, newLup: BucketMath.MAX_PRICE});
+        amounts[1] = Liquidity({amount: depositPerBucket, index: 2551, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity(
+            AddLiquiditySpecs({
+                from:    _lender,
+                amounts: amounts
+            })
+        );
+    }
+
+    /**
+     *  @dev Creates debt for an anonymous non-player borrower not otherwise involved in the test.
+     **/
     function _anonBorrowerDrawsDebt(uint256 loanAmount) internal {
         _anonBorrowerCount += 1;
         address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
@@ -683,14 +702,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
     function testMinBorrowAmountCheck() external {
         // add initial quote to the pool
-        Liquidity[] memory amounts = new Liquidity[](1);
-        amounts[0] = Liquidity({amount: 20_000 * 1e18, index: 2727, newLup: BucketMath.MAX_PRICE});
-        _addLiquidity(
-            AddLiquiditySpecs({
-                from:    _lender,
-                amounts: amounts
-            })
-        );
+        _addLiquidityToTwoBuckets(10_000 * 1e18);
 
         // 10 borrowers draw debt
         for (uint i=0; i<10; ++i) {
@@ -801,15 +813,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        // should revert if amount left after repay is less than the average debt
-        _assertRepayMinDebtRevert(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   750 * 1e18
-            }
-        );
-
         // should be able to repay loan if properly specified
         _repay(
             {
@@ -838,6 +841,40 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
+    }
+
+    function testMinRepayAmountCheck() external {
+        // add initial quote to the pool
+        _addLiquidityToTwoBuckets(20_000 * 1e18);
+
+        // borrower 1 borrows 1000 quote from the pool
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 50 * 1e18,
+                borrowAmount: 1_000 * 1e18,
+                indexLimit:   3_000,
+                price:        3_010.892022197881557845 * 1e18
+            })
+        );
+
+        // 9 other borrowers draw debt
+        for (uint i=0; i<9; ++i) {
+            _anonBorrowerDrawsDebt(1_000 * 1e18);
+        }
+        (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(loansCount, 10);
+
+        // should revert if amount left after repay is less than the average debt
+        _assertRepayMinDebtRevert(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   950 * 1e18
+            }
+        );
+
     }
 
     function testRepayLoanFromDifferentActor() external {
