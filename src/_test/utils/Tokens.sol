@@ -26,6 +26,10 @@ contract NFTCollateralToken is ERC721 {
             _safeMint(to_, _nextId++);
         }
     }
+
+    function totalSupply() public view returns (uint256) {
+        return _nextId - 1;
+    }
 }
 
 contract TokenWithNDecimals is ERC20 {

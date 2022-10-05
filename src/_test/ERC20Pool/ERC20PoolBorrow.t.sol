@@ -18,7 +18,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
     address internal _lender1;
-    uint _anonBorrowerCount = 0;
+    uint internal _anonBorrowerCount = 0;
 
     uint256 highest = 2550;
     uint256 high    = 2551;
