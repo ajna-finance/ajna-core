@@ -229,6 +229,36 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         // check balances
         assertEq(_quote.balanceOf(address(_pool)), 50_038.461538461538480000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
+
+        // borrow 8_000 DAI
+        _borrow(
+            BorrowSpecs({
+                from:         _borrower,
+                borrower:     _borrower,
+                pledgeAmount: 0,
+                borrowAmount: 8_000 * 1e18,
+                indexLimit:   3_500,
+                price:        3_010.892022197881557845 * 1e18
+            })
+        );
+
+        _assertPool(
+            PoolState({
+                htp:                  80.076923076923076960 * 1e18,
+                lup:                  3_010.892022197881557845 * 1e18,
+                poolSize:             50_000 * 1e18,
+                pledgedCollateral:    100 * 1e18,
+                encumberedCollateral: 2.659574720267410143 * 1e18,
+                borrowerDebt:         8_007.692307692307696000 * 1e18,
+                actualUtilization:    0.160153846153846154 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        800.769230769230769600 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
     }
 
     function testPoolBorrowerInterestAccumulation() external {

@@ -284,7 +284,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             msg.sender,
             poolState.inflator
         );
-        uint256 loansCount = loans.count - 1;
+        uint256 loansCount = loans.nodes.length - 1;
         if (
             loansCount != 0
             &&
@@ -322,8 +322,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         loans.upsert(msg.sender, thresholdPrice);
 
-        uint256 numLoans = loans.count - 1;
-        uint256 mompFactor = numLoans > 0 ? Maths.wdiv(_momp(numLoans, poolState.accruedDebt), poolState.inflator): 0;
+        loansCount = loans.nodes.length - 1;
+        uint256 mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState.accruedDebt), poolState.inflator): 0;
 
         borrowers.update(
             msg.sender,
@@ -373,7 +373,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
 
        (uint256 bondFactor, uint256 bondSize) = _calcBond(
-                                                    loans.count - 1,
+                                                    loans.nodes.length - 1,
                                                     poolState.accruedDebt,
                                                     borrower.debt,
                                                     borrower.collateral,
@@ -469,8 +469,8 @@ abstract contract Pool is Clone, Multicall, IPool {
             loans.upsert(borrower_, thresholdPrice);
         }
 
-        uint256 numLoans = loans.count - 1;
-        uint256 mompFactor = numLoans > 0 ? Maths.wdiv(_momp(numLoans, poolState.accruedDebt), poolState.inflator): 0;
+        uint256 loansCount = loans.nodes.length - 1;
+        uint256 mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState.accruedDebt), poolState.inflator): 0;
         borrowers.update(
             borrower_,
             borrowerAccruedDebt,
@@ -514,8 +514,8 @@ abstract contract Pool is Clone, Multicall, IPool {
             loans.upsert(borrower_, thresholdPrice);
         }
 
-        uint256 numLoans = loans.count - 1;
-        uint256 mompFactor = numLoans > 0 ? Maths.wdiv(_momp(numLoans, poolState.accruedDebt), poolState.inflator): 0;
+        uint256 loansCount = loans.nodes.length - 1;
+        uint256 mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState.accruedDebt), poolState.inflator): 0;
         borrowers.update(
             borrower_,
             borrowerAccruedDebt,
@@ -740,7 +740,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 lup_
         ) internal {
 
-        uint256 loansCount = loans.count - 1;
+        uint256 loansCount = loans.nodes.length - 1;
 
         if (borrowerStruct_.debt != 0) {
 
@@ -761,8 +761,9 @@ abstract contract Pool is Clone, Multicall, IPool {
 
                 loans.upsert(borrower_, thresholdPrice);
 
-                loansCount = loans.count - 1;
+                loansCount = loans.nodes.length - 1;
                 borrowerStruct_.mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState_.accruedDebt), poolState_.inflator): 0; 
+
             }
 
         } else { // loan or auction has no debt
@@ -772,7 +773,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
             } else {
                 loans.remove(borrower_);
-                loansCount = loans.count - 1;
+                loansCount = loans.nodes.length - 1;
                 borrowerStruct_.mompFactor = loansCount > 0 ? Maths.wdiv(_momp(loansCount, poolState_.accruedDebt), poolState_.inflator): 0; 
             }
         }
@@ -965,7 +966,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function noOfLoans() external view override returns (uint256) {
-        return loans.count - 1;
+        return loans.nodes.length - 1;
     }
 
     function maxBorrower() external view override returns (address) {
