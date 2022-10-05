@@ -133,12 +133,14 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Returns info related to Auction.
-     *  @return kickTime_               The amount of excess quote tokens.
-     *  @return kickPrice_         rves_ Denominated in quote token, or 0 if no reserves can be auctioned.
-     *  @return bondFactor_             rvesRemaining_ Amount of claimable reserves which has not yet been taken.
-     *  @return bondSize_                Current price at which 1 quote token may be purchased, denominated in Ajna.
-     *  @return auctionPrice_              Seconds remaining before takes are no longer allowed
-     *  @return bpf_              Seconds remaining before takes are no longer allowed
+     *  @param  ajnaPool_      Address of the ajna pool to retreive info on.
+     *  @param  borrower_      Address of the borrower to retreive info on.
+     *  @return kickTime_      Time the auction was initiated.
+     *  @return kickPrice_     Price when the auction was kicked.
+     *  @return bondFactor_    Factor used in calcualting BPF.
+     *  @return bondSize_      Amount in quote token that kicker receives when auciton ends.
+     *  @return auctionPrice_  Current price of the collateral during the dutch auction.
+     *  @return bpf_           Bond penalty factor, used to caclulate bond reward or penalty.
      */
     function auctionInfo(address ajnaPool_, address borrower_)
         external
@@ -180,11 +182,12 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Returns info related to Claimaible Reserve Auction.
-     *  @return reserves_                   The amount of excess quote tokens.
-     *  @return claimableReserves_          Denominated in quote token, or 0 if no reserves can be auctioned.
-     *  @return claimableReservesRemaining_ Amount of claimable reserves which has not yet been taken.
-     *  @return auctionPrice_               Current price at which 1 quote token may be purchased, denominated in Ajna.
-     *  @return timeRemaining_              Seconds remaining before takes are no longer allowed.
+     *  @param  ajnaPool_                    Address of the ajna pool to retreive info on.
+     *  @return reserves_                    The amount of excess quote tokens.
+     *  @return claimableReserves_           Denominated in quote token, or 0 if no reserves can be auctioned.
+     *  @return claimableReservesRemaining_  Amount of claimable reserves which has not yet been taken.
+     *  @return auctionPrice_                Current price at which 1 quote token may be purchased, denominated in Ajna.
+     *  @return timeRemaining_               Seconds remaining before takes are no longer allowed.
      */
     function poolReservesInfo(address ajnaPool_)
         external
@@ -223,10 +226,11 @@ contract PoolInfoUtils {
 
     /**
      *  @notice Returns info related to Claimaible Reserve Auction.
-     *  @return poolMinDebtAmount_     Minimum debt amount.
-     *  @return poolCollateralization_ Current pool collateralization ratio.
-     *  @return poolActualUtilization_ The current pool actual utilization, in WAD units.
-     *  @return poolTargetUtilization_ The current pool Target utilization, in WAD units.
+     *  @param  ajnaPool_               Address of the ajna pool to retreive info on.
+     *  @return poolMinDebtAmount_      Minimum debt amount.
+     *  @return poolCollateralization_  Current pool collateralization ratio.
+     *  @return poolActualUtilization_  The current pool actual utilization, in WAD units.
+     *  @return poolTargetUtilization_  The current pool Target utilization, in WAD units.
      */
     function poolUtilizationInfo(address ajnaPool_)
         external

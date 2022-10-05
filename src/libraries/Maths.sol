@@ -162,4 +162,19 @@ library Maths {
     function minInt(int256 x, int256 y) internal pure returns (int256) {
         return x <= y ? x : y;
     }
+
+    /**********************/
+    /*** Misc Functions ***/
+    /**********************/
+
+    /**
+     *  @notice Calculates sign of a value.
+     *  @param val_    Value to calculate sign on.
+     *  @return sign_  Sign of value.
+     */
+    function sign(int256 val_) internal pure returns (int256) {
+        if (val_ < 0 )     return -1;
+        else if (val_ > 0) return 1;
+        else               return 0;
+    }
 }

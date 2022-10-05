@@ -138,6 +138,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
 
         assertEq(_loansCount(), LOANS_COUNT);
     }
+    
     function testLoadERC20PoolGasFuzzyAddRemoveQuoteToken(uint256 index_) public {
         vm.assume(index_ > 1 && index_ < 7388);
 

@@ -879,7 +879,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     /**
-     *  @notice Calculates the MOMP, most optomistic matching price.
+     *  @notice Calculates the MOMP, most optimistic matching price.
      *  @dev The MOMP is stamped on each loan when touched and used in the kick as well as take.
      *  @param numLoans_             Number of loans in the pool.
      *  @param poolStateAccruedDebt_ Total debt of the pool.
@@ -895,12 +895,13 @@ abstract contract Pool is Clone, Multicall, IPool {
     
     /**
      *  @notice Calculates the bondFactor and bondSize, to be used in determining the bond when an auction is kicked. 
-     *  @param numLoans_                  Number of loans in the pool.
-     *  @param poolStateAccruedDebt_      Total debt of the pool.
-     *  @param borrowerAccruedDebt_       Total borrower.
-     *  @param borrowerPledgedCollateral_ Total borrower pledged collateral.
-     *  @return bondFactor_               Factor used in calculating the BPF, bond penalty factor on every take.
-     *  @return bondSize_                 Size of the bond required to kick the loan into auction.
+     *  @param numLoans_                   Number of loans in the pool.
+     *  @param poolStateAccruedDebt_       Total debt of the pool.
+     *  @param borrowerAccruedDebt_        Total borrower.
+     *  @param borrowerPledgedCollateral_  Total borrower pledged collateral.
+     *  @param lup_                        Lowest Utilized Price bucket.
+     *  @return bondFactor_                Factor used in calculating the BPF, bond penalty factor on every take.
+     *  @return bondSize_                  Size of the bond required to kick the loan into auction.
      */
     function _calcBond(
         uint256 numLoans_,

@@ -309,7 +309,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender), 46_901.466057580207783543 * 1e18);
 
         //skip ahead so take can be called on the loan
-        skip(1.5 hours);
+        skip(5 hours);
 
         _assertPool(
             PoolState({
@@ -325,7 +325,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
                 loans:                1,
                 maxBorrower:          address(_borrower),
                 interestRate:         0.055 * 1e18,
-                interestRateUpdate:   block.timestamp - 1.5 hours
+                interestRateUpdate:   block.timestamp - 5 hours
             })
         );
 
@@ -333,7 +333,7 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
             BorrowerState({
                borrower:          _borrower2,
                debt:              9_853.394241979221645666 * 1e18,
-               pendingDebt:       9_853.487039793475871463 * 1e18,
+               pendingDebt:       9_853.703571425468275346 * 1e18,
                collateral:        1000.0 * 1e18,
                collateralization: 0.986593617011217057 * 1e18,
                mompFactor:        9.818751856078723036 * 1e18,
@@ -344,21 +344,23 @@ contract ERC20PoolKickSuccessTest is ERC20HelperContract {
         _assertAuction(
             AuctionState({
                 borrower:       _borrower2,
-                kickTime:       block.timestamp - 1.5 hours,
-                price:          70.125086530739830440 * 1e18,
-                bpf:            int256(-0.01 * 1e18),
+                kickTime:       block.timestamp - 5 hours,
+                price:          6.198240527147445050 * 1e18,
+                bpf:            int256(0.01 * 1e18),
                 kickPrice:      9.917184843435912074 * 1e18,
                 bondFactor:     0.01 * 1e18,
                 bondSize:       98.533942419792216457 * 1e18
             })
         );
 
-        skip(3.5 hours);
-
         assertEq(_quote.balanceOf(_lender), 46_901.466057580207783543 * 1e18);
 
         vm.startPrank(_lender);
         bytes memory data = new bytes(0); 
+        // emit Take(_borrower2, 
+        //         6_074.275716604496149000 * 1e18,
+        //         980.0 * 1e18,
+        //         60.742757166044961490 * 1e18);
         _pool.take(_borrower2, 20 * 1e18, data);
         vm.stopPrank();
 

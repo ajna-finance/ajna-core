@@ -166,7 +166,7 @@ library PoolUtils {
         int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
         int256 neutralPrice = int256(Maths.wmul(mompFactor_, inflatorSnapshot_));
  
-        if (thresholdPrice <= neutralPrice) {
+        if (thresholdPrice < neutralPrice) {
 
             // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
             return PRBMathSD59x18.mul(
@@ -185,21 +185,8 @@ library PoolUtils {
         }
      
         // BPF = BondFactor * sign(neutralPrice - price)
-        return PRBMathSD59x18.mul(int256(bondFactor_), _sign(neutralPrice - int256(price_)));
+        return PRBMathSD59x18.mul(int256(bondFactor_), Maths.sign(neutralPrice - int256(price_)));
     }
-
-    /**
-     *  @notice utility function for calculating sign of a value.
-     *  @dev Called in _bpf.
-     *  @param val_   Value to calculate sign on.
-     *  @return sign_ Sign of value.
-     */
-    function _sign(int256 val_) private pure returns (int256) {
-        if (val_ < 0 )     return -1;
-        else if (val_ > 0) return 1;
-        else               return 0;
-    }
-
 
     function indexToPrice(
         uint256 index_
