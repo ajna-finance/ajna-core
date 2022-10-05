@@ -674,6 +674,39 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         _pool.borrow(loanAmount, 7_777);
     }
 
+    function testMinBorrowAmountCheck() external {
+        // add initial quote to the pool
+        changePrank(_lender);
+        _pool.addQuoteToken(20_000 * 1e18, 2550);
+
+        // 10 borrowers draw debt
+        for (uint i=0; i<10; ++i) {
+            _anonBorrowerDrawsDebt(1_200 * 1e18);
+        }
+        (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(loansCount, 10);
+
+        changePrank(_borrower);
+        uint256[] memory tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 5;
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
+
+        // should revert if borrower attempts to borrow more than minimum amount
+        _assertBorrowMinDebtRevert(
+            {
+                from:       _borrower,
+                amount:     100 * 1e18,
+                indexLimit: 7_777
+            }
+        );
+    }
+
     function testMinRepayAmountCheck() external {
         // add initial quote to the pool
         changePrank(_lender);
