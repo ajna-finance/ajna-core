@@ -13,13 +13,13 @@ library AuctionsQueue {
     }
 
     struct Liquidation {
-        address kicker;     // address that initiated liquidation
-        uint256 bondSize;   // bond size posted by kicker to start liquidation
-        uint256 bondFactor; // bond factor used to start liquidation
-        uint128 time;       // timestamp when liquidation was started
-        uint128 hpbIndex;   // HPB index at liquidation start
-        address prev;       // previous liquidated borrower in auctions queue
-        address next;       // next liquidated borrower in auctions queue
+        address kicker;         // address that initiated liquidation
+        uint256 bondSize;       // bond size posted by kicker to start liquidation
+        uint256 bondFactor;     // bond factor used to start liquidation
+        uint128 kickTime;       // timestamp when liquidation was started
+        uint128 kickPriceIndex; // HPB index at liquidation start
+        address prev;           // previous liquidated borrower in auctions queue
+        address next;           // next liquidated borrower in auctions queue
     }
 
 
@@ -46,9 +46,9 @@ library AuctionsQueue {
     ) internal returns (uint256 bondSize_) {
 
         Liquidation storage liquidation = self_.liquidations[borrower_];
-        liquidation.kicker   = msg.sender;
-        liquidation.time     = uint128(block.timestamp);
-        liquidation.hpbIndex = uint128(hpbIndex_);
+        liquidation.kicker         = msg.sender;
+        liquidation.kickTime       = uint128(block.timestamp);
+        liquidation.kickPriceIndex = uint128(hpbIndex_);
 
         uint256 bondFactor;
         // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
@@ -150,8 +150,8 @@ library AuctionsQueue {
             liquidation.kicker,
             liquidation.bondSize,
             liquidation.bondFactor,
-            liquidation.time,
-            liquidation.hpbIndex,
+            liquidation.kickTime,
+            liquidation.kickPriceIndex,
             liquidation.prev,
             liquidation.next
         );
