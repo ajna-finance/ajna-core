@@ -114,7 +114,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 amount:   100 * 1e18
             }
         );
-        changePrank(borrower);
         _pool.borrow(loanAmount, 7_777);
     }
 

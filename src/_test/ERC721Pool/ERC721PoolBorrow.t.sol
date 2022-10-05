@@ -661,7 +661,6 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
         vm.stopPrank();
         _mintAndApproveCollateralTokens(borrower, 1);
-        changePrank(borrower);
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = _collateral.totalSupply();
         _pledgeCollateral(
@@ -686,7 +685,6 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(loansCount, 10);
 
-        changePrank(_borrower);
         uint256[] memory tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 5;
         _pledgeCollateral(
@@ -718,7 +716,6 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         }
 
         // borrower 1 borrows 1000 quote from the pool
-        changePrank(_borrower);
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
