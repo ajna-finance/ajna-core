@@ -312,16 +312,12 @@ abstract contract DSTestPlus is Test {
         uint256 borrowerDebt,
         uint256 borrowerCollateral,
         uint256 borrowerMompFactor,
-        uint256 borrowerInflator,
-        uint256 borrowerPendingDebt,
         uint256 borrowerCollateralization
     ) internal {
         (
             uint256 debt,
-            uint256 pendingDebt,
             uint256 col,
-            uint256 mompFactor,
-            uint256 inflator
+            uint256 mompFactor
         ) = _poolUtils.borrowerInfo(address(_pool), borrower);
 
         uint256 lup = _poolUtils.lup(address(_pool));
@@ -329,7 +325,6 @@ abstract contract DSTestPlus is Test {
         assertEq(debt,        borrowerDebt);
         assertEq(col,         borrowerCollateral);
         assertEq(mompFactor,  borrowerMompFactor);
-        assertEq(inflator,    borrowerInflator);
         assertEq(
             PoolUtils.collateralization(
                 borrowerDebt,
@@ -338,7 +333,6 @@ abstract contract DSTestPlus is Test {
             ),
             borrowerCollateralization
         );
-        assertEq(pendingDebt, borrowerPendingDebt);
     }
 
     function _assertKicker(

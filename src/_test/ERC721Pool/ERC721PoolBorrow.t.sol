@@ -297,9 +297,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 borrowerDebt:              3_002.884615384615386000 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_010.892022197881557845 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 3.007999714779824033 * 1e18,
-                borrowerPendingDebt:       3_002.884615384615386000 * 1e18
+                borrowerCollateralization: 3.007999714779824033 * 1e18
             }
         );
 
@@ -361,9 +359,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 borrowerDebt:              1_507.000974734143274062 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_006.770336295505368176 * 1e18,
-                borrowerInflator:          1.001370801704613834 * 1e18,
-                borrowerCollateralization: 5.993809040625961846 * 1e18,
-                borrowerPendingDebt:       1_507.000974734143274062 * 1e18
+                borrowerCollateralization: 5.993809040625961846 * 1e18
             }
         );
 
@@ -374,12 +370,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1_507.000974734143274062 * 1e18,
+                borrowerDebt:              1_508.860066921599064643 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_006.770336295505368176 * 1e18,
-                borrowerInflator:          1.001370801704613834 * 1e18,
-                borrowerCollateralization: 5.993809040625961846 * 1e18,
-                borrowerPendingDebt:       1_508.860066921599064643 * 1e18
+                borrowerCollateralization: 5.993809040625961846 * 1e18
             }
         );
 
@@ -454,9 +448,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 borrowerDebt:              0,
                 borrowerCollateral:        0,
                 borrowerMompFactor:        0,
-                borrowerInflator:          1.002606129793584586 * 1e18,
-                borrowerCollateralization: 1 * 1e18,
-                borrowerPendingDebt:       0
+                borrowerCollateralization: 1 * 1e18
             }
         );
 

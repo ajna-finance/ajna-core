@@ -39,9 +39,9 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         vm.assume(borrowerId_ <= LOANS_COUNT);
         skip(15 hours);
         address borrower = _borrowers[borrowerId_];
-        (, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
         vm.prank(borrower);
-        _pool.repay(borrower, pendingDebt);
+        _pool.repay(borrower, debt);
 
         assertEq(_pool.noOfLoans(), LOANS_COUNT - 1);
     }
@@ -109,9 +109,9 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
             assertEq(_pool.noOfLoans(), LOANS_COUNT);
 
             address borrower = _borrowers[i];
-            (, uint256 pendingDebt, , , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+            (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
             vm.prank(borrower);
-            _pool.repay(borrower, pendingDebt);
+            _pool.repay(borrower, debt);
 
             assertEq(_pool.noOfLoans(), LOANS_COUNT - 1);
             vm.revertTo(snapshot);

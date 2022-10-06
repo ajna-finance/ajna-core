@@ -145,7 +145,6 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              7_987.673076923076926760 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerInflator:          1 * 1e18,
                 borrowerCollateralization: 1.217037273735858713 * 1e18,
                 borrowerPendingDebt:       7_987.673076923076926760 * 1e18
             }
@@ -227,7 +226,6 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              7_987.673076923076926760 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerInflator:          1 * 1e18,
                 borrowerCollateralization: 1.217037273735858713 * 1e18,
                 borrowerPendingDebt:       8_097.846143253778448241 * 1e18
             }
@@ -552,7 +550,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
     }
 
     function testTakeLTNeutral() external {
-         
+
         // Borrower2 borrows
         _borrow(
             {
@@ -710,7 +708,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 maxCollateral: 10 * 1e18
             }
         );
-        
+
     }
 
     function testTakeReverts() external {
@@ -785,19 +783,14 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
     function _logBorrowerInfo(address borrower_) internal {
         (
             uint256 borrowerDebt,
-            uint256 borrowerPendingDebt,
             uint256 collateralDeposited,
-            uint256 mompFactor,
-            uint256 borrowerInflator
-
+            uint256 mompFactor
         ) = _poolUtils.borrowerInfo(address(_pool), borrower_);
 
         emit log_named_uint("borrowerDebt        ", borrowerDebt);
-        emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
         emit log_named_uint("collateralDeposited ", collateralDeposited);
         emit log_named_uint("mompFactor ",           mompFactor);
         emit log_named_uint("collateralEncumbered", PoolUtils.encumberance(borrowerDebt, _lup()));
         emit log_named_uint("collateralization   ", PoolUtils.collateralization(borrowerDebt, collateralDeposited, _lup()));
-        emit log_named_uint("borrowerInflator    ", borrowerInflator);
     }
 }
