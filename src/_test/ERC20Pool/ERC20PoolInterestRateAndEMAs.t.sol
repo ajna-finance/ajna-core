@@ -80,11 +80,9 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _assertBorrower({
             borrower:                  _borrower,
             borrowerDebt:              19.268509615384615394 * 1e18,
-            borrowerPendingDebt:       19.268509615384615394 * 1e18,
             borrowerCollateral:        2e18,
             borrowerCollateralization: 1.029367090801636643 * 1e18,
-            borrowerMompFactor:        9.917184843435912074 * 1e18,
-            borrowerInflator:          1e18
+            borrowerMompFactor:        9.917184843435912074 * 1e18
         });
 
         skip(100 days);
@@ -110,12 +108,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower,
+    // borrowerPendingDebt was 19.534277977147272573 * 1e18
             borrowerDebt:              19.268509615384615394 * 1e18,
-            borrowerPendingDebt:       19.534277977147272573 * 1e18,
             borrowerCollateral:        2e18,
             borrowerCollateralization: 1.029367090801636643 * 1e18,
-            borrowerMompFactor:        9.917184843435912074 * 1e18,
-            borrowerInflator:          1 * 1e18
+            borrowerMompFactor:        9.917184843435912074 * 1e18
         });
 
         // Borrower2 borrows to accumulate interest / debt
@@ -143,17 +140,13 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower,
+        // FIXME: per Akash, value should resemble 18.51 (I get 18.282114846254861728)
             borrowerDebt:              18.534277977147272573 * 1e18,
-            borrowerPendingDebt:       18.534277977147272573 * 1e18,
             borrowerCollateral:        2e18,
             borrowerCollateralization: 1.070145257955425188 * 1e18,
-            borrowerMompFactor:        9.782259254058058749 * 1e18,
-            borrowerInflator:          1.013792886272348689 * 1e18
+            borrowerMompFactor:        9.782259254058058749 * 1e18
         });
     }
-
-
-
 
     function testPoolInterestRateIncreaseDecrease() external {
         _addLiquidity(
