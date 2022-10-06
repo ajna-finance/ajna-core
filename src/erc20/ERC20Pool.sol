@@ -192,8 +192,19 @@ contract ERC20Pool is IERC20Pool, Pool {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
-    // TODO: Add reentrancy guard
-    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external override {
+    function take(
+        address borrower_,
+        uint256 maxCollateral_,
+        bytes memory swapCalldata_
+    ) external override {
+        uint256 collateralTaken = _take(borrower_, maxCollateral_);
+
+        // TODO: implement flashloan functionality
+        // Flash loan full amount to liquidate to borrower
+        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
+        //msg.sender.call(swapCalldata_);
+
+        collateral().safeTransfer(msg.sender, collateralTaken);
     }
 
     /************************/

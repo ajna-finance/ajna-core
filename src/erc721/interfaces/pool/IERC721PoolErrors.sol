@@ -21,4 +21,9 @@ interface IERC721PoolErrors {
      *  @notice User attempted to interact with a tokenId that hasn't been deposited into the pool or bucket.
      */
     error TokenNotDeposited();
+
+    /**
+     *  @notice User attempted to take only some auctioned NFTs collateral.
+     */
+    error PartialTakeNotAllowed();
 }

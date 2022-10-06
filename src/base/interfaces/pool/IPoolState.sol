@@ -22,8 +22,8 @@ interface IPoolState {
         address kicker,
         uint256 bondSize,
         uint256 bondFactor,
-        uint128 kickTime,
-        uint128 kickPriceIndex,
+        uint256 kickTime,
+        uint256 kickPriceIndex,
         address prev,
         address next
     );

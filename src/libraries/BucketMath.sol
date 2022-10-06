@@ -150,4 +150,41 @@ library BucketMath {
         return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_100), 0.15 * 1e18);
     }
 
+    function bpf(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 mompFactor_,
+        uint256 inflatorSnapshot_,
+        uint256 bondFactor_,
+        uint256 price_
+    ) public pure returns (int256) {
+        int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
+        int256 neutralPrice = int256(Maths.wmul(mompFactor_, inflatorSnapshot_));
+ 
+        if (thresholdPrice <= neutralPrice) {
+
+            // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
+            return PRBMathSD59x18.mul(
+                int256(bondFactor_),
+                Maths.minInt(
+                    1e18,
+                    Maths.maxInt(
+                        -1 * 1e18,
+                        PRBMathSD59x18.div(
+                            neutralPrice - int256(price_),
+                            neutralPrice - thresholdPrice
+                        )
+                    )
+                )
+            );
+        }
+
+        // BPF = BondFactor * sign(neutralPrice - price)
+        int256 sign;
+        int256 val = neutralPrice - int256(price_);
+        if (val < 0 )      sign = -1;
+        else if (val != 0) sign = 1;
+        return PRBMathSD59x18.mul(int256(bondFactor_), sign); // TODO: is this right or should be sign * val?
+    }
+
 }

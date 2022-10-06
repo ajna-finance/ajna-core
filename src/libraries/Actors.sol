@@ -99,6 +99,24 @@ library Actors {
         }
     }
 
+    function getAuctionedBorrowerInfo(
+        mapping(address => Borrower) storage self,
+        address borrower_,
+        uint256 poolInflator_,
+        uint256 bondFactor_,
+        uint256 price_
+    ) internal view returns (uint256 debt_, uint256 collateral_, int256 bpf_) {
+        (debt_, collateral_) = getBorrowerInfo(self, borrower_, poolInflator_);
+        bpf_ = PoolUtils.bpf(
+            debt_,
+            collateral_,
+            self[borrower_].mompFactor,
+            poolInflator_,
+            bondFactor_,
+            price_
+        );
+    }
+
     function update(
         mapping(address => Borrower) storage self,
         address borrower_,

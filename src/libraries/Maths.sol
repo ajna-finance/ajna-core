@@ -146,4 +146,16 @@ library Maths {
         return wdiv(a, 10 ** 18) / 10 ** 18;
     }
 
+    /*************************/
+    /*** Integer Functions ***/
+    /*************************/
+
+    function maxInt(int256 x, int256 y) internal pure returns (int256) {
+        return x >= y ? x : y;
+    }
+
+    function minInt(int256 x, int256 y) internal pure returns (int256) {
+        return x <= y ? x : y;
+    }
+
 }

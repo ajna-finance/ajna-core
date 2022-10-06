@@ -206,15 +206,15 @@ abstract contract DSTestPlus is Test {
         address kicker,
         uint256 bondSize,
         uint256 bondFactor,
-        uint128 kickTime,
-        uint128 kickPriceIndex
+        uint256 kickTime,
+        uint256 kickPriceIndex
     ) internal {
         (
             address auctionKicker,
             uint256 auctionBondSize,
             uint256 auctionBondFactor,
-            uint128 auctionKickTime,
-            uint128 auctionKickPriceIndex,
+            uint256 auctionKickTime,
+            uint256 auctionKickPriceIndex,
             ,
         ) = _pool.auctionInfo(borrower);
 

@@ -116,6 +116,13 @@ library AuctionsQueue {
         delete self_.liquidations[borrower_];
     }
 
+    function update(
+        Data storage self_,
+        address borrower_,
+        uint256 bondSize_
+    ) internal {
+        self_.liquidations[borrower_].bondSize = bondSize_;
+    }
 
     /**************************/
     /*** View Functions ***/
@@ -129,6 +136,13 @@ library AuctionsQueue {
         return self_.liquidations[borrower_].kicker != address(0);
     }
 
+    function getLiquidation(
+        Data storage self_,
+        address borrower_
+    ) internal view returns (AuctionsQueue.Liquidation memory) {
+        return self_.liquidations[borrower_];
+    }
+
     function get(
         Data storage self_,
         address borrower_
@@ -139,8 +153,8 @@ library AuctionsQueue {
             address,
             uint256,
             uint256,
-            uint128,
-            uint128,
+            uint256,
+            uint256,
             address,
             address
         )
@@ -150,8 +164,8 @@ library AuctionsQueue {
             liquidation.kicker,
             liquidation.bondSize,
             liquidation.bondFactor,
-            liquidation.kickTime,
-            liquidation.kickPriceIndex,
+            uint256(liquidation.kickTime),
+            uint256(liquidation.kickPriceIndex),
             liquidation.prev,
             liquidation.next
         );

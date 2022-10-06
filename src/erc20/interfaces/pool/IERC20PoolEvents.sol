@@ -79,19 +79,4 @@ interface IERC20PoolEvents {
         uint256 indexed price,
         uint256 amount
     );
-
-    /**
-     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
-     *  @param  borrower   Identifies the loan being liquidated.
-     *  @param  amount     Amount of quote token used to purchase collateral.
-     *  @param  collateral Amount of collateral purchased with quote token.
-     *  @param  bondChange Impact of this take to the liquidation bond.
-     *  @dev    amount / collateral implies the auction price.
-     */
-    event Take(
-        address indexed borrower,
-        uint256 amount,
-        uint256 collateral,
-        int256 bondChange
-    );
 }
