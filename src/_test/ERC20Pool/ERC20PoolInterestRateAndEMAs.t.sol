@@ -28,6 +28,133 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
     }
 
+
+    function testPoolInterestRateIncrease() external {
+        _addLiquidity({from: _lender, amount: 2_000 * 1e18, index: _i9_91, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity({from: _lender, amount: 5_000 * 1e18, index: _i9_81, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity({from: _lender, amount: 11_000 * 1e18, index: _i9_72, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity({from: _lender, amount: 25_000 * 1e18, index: _i9_62, newLup: BucketMath.MAX_PRICE});
+        _addLiquidity({from: _lender, amount: 30_000 * 1e18, index: _i9_52, newLup: BucketMath.MAX_PRICE});
+        vm.stopPrank();
+
+        // Borrower adds collateral token and borrows
+        vm.startPrank(_borrower);
+        _collateral.approve(address(_pool), 20 * 1e18);
+        _pledgeCollateral({
+                        from: _borrower,
+                        borrower: _borrower,
+                        amount: 2 * 1e18
+                    });
+        _pool.borrow(19.25 * 1e18, _i9_91);
+        vm.stopPrank();
+
+        // Borrower2 adds collateral token and borrows
+        vm.startPrank(_borrower2);
+        _collateral.approve(address(_pool), 50 * 1e18);
+        _pledgeCollateral({from:      _borrower2,
+                          borrower:  _borrower2,
+                          amount:    20 * 1e18
+                          });
+
+        _pool.borrow(50 * 1e18, _i9_72);
+        vm.stopPrank();
+
+        _assertPool(
+            PoolState({
+                htp:                  9.634254807692307697 * 1e18,
+                lup:                  _p9_91,
+                poolSize:             73_000 * 1e18,
+                pledgedCollateral:    22.0 * 1e18,
+                encumberedCollateral: 6.989542660822895832 * 1e18,
+                borrowerDebt:         69.316586538461538494 * 1e18,
+                actualUtilization:    0.000949542281348788 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        3.465829326923076925* 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              19.268509615384615394 * 1e18,
+            borrowerPendingDebt:       19.268509615384615394 * 1e18,
+            borrowerCollateral:        2e18,
+            borrowerCollateralization: 1.029367090801636643 * 1e18,
+            borrowerMompFactor:        9.917184843435912074 * 1e18,
+            borrowerInflator:          1e18
+        });
+
+        skip(100 days);
+
+        // Pool wasn't touched, nothing changes.
+        _assertPool(
+            PoolState({
+                htp:                  9.634254807692307697 * 1e18,
+                lup:                  _p9_91,
+                poolSize:             73_000 * 1e18,
+                pledgedCollateral:    22.0 * 1e18,
+                encumberedCollateral: 6.989542660822895832 * 1e18,
+                borrowerDebt:         69.316586538461538494 * 1e18,
+                actualUtilization:    0.000949542281348788 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        3.465829326923076925 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   0
+            })
+        );
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              19.268509615384615394 * 1e18,
+            borrowerPendingDebt:       19.534277977147272573 * 1e18,
+            borrowerCollateral:        2e18,
+            borrowerCollateralization: 1.029367090801636643 * 1e18,
+            borrowerMompFactor:        9.917184843435912074 * 1e18,
+            borrowerInflator:          1 * 1e18
+        });
+
+        // Borrower2 borrows to accumulate interest / debt
+        vm.startPrank(_borrower);
+        _pool.repay(_borrower, 1 * 1e18);
+        vm.stopPrank();
+
+        _assertPool(
+            PoolState({
+                htp:                  9.267138988573636287 * 1e18,
+                lup:                  _p9_91,
+                poolSize:             73_000.812709831769829000 * 1e18,
+                pledgedCollateral:    22.0 * 1e18,
+                encumberedCollateral: 6.985113560651726096 * 1e18,
+                borrowerDebt:         69.272662333373954580 * 1e18,
+                actualUtilization:    0.000948930015460558 * 1e18,
+                targetUtilization:    0.317505161847805732 * 1e18,
+                minDebtAmount:        3.463633116668697729 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower), // TODO: this is incorrect
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );
+
+        _assertBorrower({
+            borrower:                  _borrower,
+            borrowerDebt:              18.534277977147272573 * 1e18,
+            borrowerPendingDebt:       18.534277977147272573 * 1e18,
+            borrowerCollateral:        2e18,
+            borrowerCollateralization: 1.070145257955425188 * 1e18,
+            borrowerMompFactor:        9.782259254058058749 * 1e18,
+            borrowerInflator:          1.013792886272348689 * 1e18
+        });
+    }
+
+
+
+
     function testPoolInterestRateIncreaseDecrease() external {
         _addLiquidity(
             {
