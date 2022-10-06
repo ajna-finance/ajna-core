@@ -7,11 +7,15 @@ pragma solidity 0.8.14;
  */
 interface IPoolState {
 
+    function activeBonds(
+        address borrower,
+        address kicker
+    ) external view returns (uint256 lpBalance);
+
     /**
      *  @notice Returns details of an auction for a given borrower address.
      *  @param  borrower       Address of the borrower that is liquidated.
      *  @return kicker         Address that initiated the auction (kicker).
-     *  @return bondSize       The bond size posted by kicker to initiate the auction.
      *  @return bondFactor     The factor used for calculating bond size.
      *  @return kickTime       Time the liquidation was initiated.
      *  @return kickPriceIndex Highest Price Bucket index at time of liquidation.
@@ -20,7 +24,6 @@ interface IPoolState {
      */
     function auctionInfo(address borrower) external view returns (
         address kicker,
-        uint256 bondSize,
         uint256 bondFactor,
         uint256 kickTime,
         uint256 kickPriceIndex,

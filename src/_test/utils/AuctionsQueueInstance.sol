@@ -43,7 +43,6 @@ contract AuctionsQueueInstance is DSTestPlus {
             uint256,
             uint256,
             uint256,
-            uint256,
             address,
             address
         )

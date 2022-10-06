@@ -54,9 +54,10 @@ abstract contract Pool is Clone, Multicall, IPool {
     uint256 public override reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 public override reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
 
-    mapping(uint256 => Book.Bucket)                       public override buckets;   // deposit index -> bucket
-    mapping(uint256 => mapping(address => Actors.Lender)) public override lenders;   // deposit index -> lender address -> lender lp [RAY] and deposit timestamp
-    mapping(address => Actors.Borrower)                   public override borrowers; // borrowers book: borrower address -> Borrower struct
+    mapping(uint256 => Book.Bucket)                       public override buckets;     // deposit index -> bucket
+    mapping(uint256 => mapping(address => Actors.Lender)) public override lenders;     // deposit index -> lender address -> lender lp [RAY] and deposit timestamp
+    mapping(address => Actors.Borrower)                   public override borrowers;   // borrowers book: borrower address -> Borrower struct
+    mapping(address => mapping(address => uint256))       public override activeBonds; // bonds book: kicker address -> borrower -> bond size
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
@@ -273,6 +274,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 limitIndex_
     ) external override {
 
+        // if borrower auctioned then it cannot draw more debt
+        if (auctions.isActive(msg.sender)) revert AuctionActive();
+
         PoolState memory poolState = _accruePoolInterest();
 
         uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
@@ -380,6 +384,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         loans.remove(borrower_);
 
+        activeBonds[msg.sender][borrower_] = bondSize;
         borrowers.updateDebt(
             borrower_,
             borrowerAccruedDebt,
@@ -460,6 +465,15 @@ abstract contract Pool is Clone, Multicall, IPool {
             loans.upsert(borrower_, thresholdPrice);
         }
 
+        uint256 newLup = _lup(poolState.accruedDebt);
+        // remove auction if loan in liquidation AND borrower becomes collateralized after repay (this includes full repayment too)
+        if (auctions.isActive(borrower_)
+            &&
+            PoolUtils.collateralization(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                newLup) >= Maths.WAD
+        ) auctions.remove(borrower_);
         borrowers.update(
             borrower_,
             borrowerAccruedDebt,
@@ -469,7 +483,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
 
         poolState.collateral += collateralAmountToPledge_;
-        _updatePool(poolState, _lup(poolState.accruedDebt));
+        _updatePool(poolState, newLup);
     }
 
     function _pullCollateral(
@@ -532,9 +546,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         borrowerAccruedDebt   -= quoteTokenAmountToRepay;
         poolState.accruedDebt -= quoteTokenAmountToRepay;
 
-        if (borrowerAccruedDebt == 0) {
-            loans.remove(borrower_); // entire debt reconciliated, remove from loans
-        } else {
+        if (borrowerAccruedDebt == 0) loans.remove(borrower_);
+        else {
             uint256 loansCount = loans.nodes.length - 1;
             if (loansCount >= 10
                 &&
@@ -552,10 +565,13 @@ abstract contract Pool is Clone, Multicall, IPool {
         }
 
         uint256 newLup = _lup(poolState.accruedDebt);
-        // remove liquidation if loan in liquidation AND borrower collateralized after repay (this includes full repayment too)
+        // remove auction if loan in liquidation AND borrower becomes collateralized after repay (this includes full repayment too)
         if (auctions.isActive(borrower_) 
             &&
-            PoolUtils.collateralization(borrowerAccruedDebt, borrowerPledgedCollateral, newLup) >= Maths.WAD
+            PoolUtils.collateralization(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                newLup) >= Maths.WAD
         ) auctions.remove(borrower_);
 
         borrowers.update(
@@ -672,7 +688,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         // check liquidation process status
         AuctionsQueue.Liquidation memory liquidation = auctions.getLiquidation(borrower_);
 
-        if (liquidation.kicker == address(0))                  revert NoAuction();
+        if (liquidation.kickTime == 0)                         revert NoAuction();
         if (block.timestamp - liquidation.kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         uint256 auctionPrice = PoolUtils.auctionPrice(
@@ -695,11 +711,11 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // calculate amount
         uint256 quoteTokenAmount = Maths.wmul(auctionPrice, Maths.min(borrowerPledgedCollateral, collateral_));
-        collateralTaken_        = Maths.wdiv(quoteTokenAmount, auctionPrice);
+        collateralTaken_         = Maths.wdiv(quoteTokenAmount, auctionPrice);
 
         uint256 repayAmount = Maths.wmul(quoteTokenAmount, uint256(1e18 - bpf));
         if (repayAmount >= borrowerAccruedDebt) {
-            repayAmount        = borrowerAccruedDebt;
+            repayAmount      = borrowerAccruedDebt;
             quoteTokenAmount = Maths.wdiv(borrowerAccruedDebt, uint256(1e18 - bpf));
         }
 
@@ -708,24 +724,20 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
             bondChange = quoteTokenAmount - repayAmount;
-            liquidation.bondSize += bondChange;
+            activeBonds[liquidation.kicker][borrower_] += bondChange;
         } else {
             // take is above neutralPrice, Kicker is penalized
             bondChange = Maths.wmul(quoteTokenAmount, uint256(-bpf));
-            liquidation.bondSize -= bondChange;
+            activeBonds[liquidation.kicker][borrower_] -= bondChange;
         }
 
-        poolState.accruedDebt -= repayAmount;
-        borrowerAccruedDebt   -= repayAmount;
-
-        poolState.collateral      -= collateralTaken_;
+        borrowerAccruedDebt       -= repayAmount;
         borrowerPledgedCollateral -= collateralTaken_;
+        poolState.accruedDebt     -= repayAmount;
+        poolState.collateral      -= collateralTaken_;
 
-        uint256 newLup = _lup(poolState.accruedDebt);
-
-        if (borrowerAccruedDebt == 0) {
-            loans.remove(borrower_); // entire borrower debt was recovered, remove from loans
-        } else {
+        if (borrowerAccruedDebt == 0) loans.remove(borrower_);
+        else {
             // check that take doesn't leave borrower debt under min debt amount
             if (
                 borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loans.nodes.length - 1)
@@ -742,6 +754,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             );
         }
 
+        uint256 newLup = _lup(poolState.accruedDebt);
         // remove auction from queue if borrower is collateralized after take (this includes full repayment too)
         if (
             PoolUtils.collateralization(
@@ -750,9 +763,6 @@ abstract contract Pool is Clone, Multicall, IPool {
                 newLup
         ) >= Maths.WAD) auctions.remove(borrower_);
 
-        // TODO: create kicker's book and keep bond sizes there.
-        // Otherwise bond balances will be lost when removing auction from queue
-        // auctions.update(borrower_, liquidation.bondSize); 
         borrowers.update(
             borrower_,
             borrowerAccruedDebt,
@@ -890,7 +900,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         override
         returns (
             address,
-            uint256,
             uint256,
             uint256,
             uint256,

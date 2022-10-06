@@ -39,7 +39,6 @@ contract AuctionsQueueTest is DSTestPlus {
             ,
             ,
             ,
-            ,
             address prev,
             address next
         ) = auctions.get(auctions.getHead());
@@ -58,7 +57,6 @@ contract AuctionsQueueTest is DSTestPlus {
             ,
             ,
             ,
-            ,
             prev,
             next
         ) = auctions.get(_borrower);
@@ -66,7 +64,6 @@ contract AuctionsQueueTest is DSTestPlus {
         assertEq(address(0), prev);
 
         (
-            ,
             ,
             ,
             ,
@@ -87,7 +84,6 @@ contract AuctionsQueueTest is DSTestPlus {
             ,
             ,
             ,
-            ,
             prev,
             next
         ) = auctions.get(auctions.getHead());
@@ -99,7 +95,6 @@ contract AuctionsQueueTest is DSTestPlus {
             ,
             ,
             ,
-            ,
             prev,
             next
         ) = auctions.get(_borrower2);
@@ -107,7 +102,6 @@ contract AuctionsQueueTest is DSTestPlus {
         assertEq(_borrower, prev);
 
         (
-            ,
             ,
             ,
             ,
@@ -135,7 +129,6 @@ contract AuctionsQueueTest is DSTestPlus {
         // assert new head
         assertEq(auctions.getHead(), _borrower2);
         (
-            ,
             ,
             ,
             ,
@@ -172,7 +165,6 @@ contract AuctionsQueueTest is DSTestPlus {
             ,
             ,
             ,
-            ,
             address prev,
             address next
         ) = auctions.get(_borrower);
@@ -182,7 +174,6 @@ contract AuctionsQueueTest is DSTestPlus {
         assertEq(auctions.getHead(), _borrower);
 
         (
-            ,
             ,
             ,
             ,
@@ -201,7 +192,6 @@ contract AuctionsQueueTest is DSTestPlus {
         auctions.kick(_borrower2);
 
         (
-            ,
             ,
             ,
             ,

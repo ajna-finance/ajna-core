@@ -211,16 +211,16 @@ abstract contract DSTestPlus is Test {
     ) internal {
         (
             address auctionKicker,
-            uint256 auctionBondSize,
             uint256 auctionBondFactor,
             uint256 auctionKickTime,
             uint256 auctionKickPriceIndex,
             ,
         ) = _pool.auctionInfo(borrower);
+        uint256 kickerBondSize = _pool.activeBonds(kicker, borrower);
 
-        assertEq(auctionKicker != address(0), active);
+        assertEq(auctionKickTime != 0,  active);
         assertEq(auctionKicker,         kicker);
-        assertEq(auctionBondSize,       bondSize);
+        assertEq(kickerBondSize,        bondSize);
         assertEq(auctionBondFactor,     bondFactor);
         assertEq(auctionKickTime,       kickTime);
         assertEq(auctionKickPriceIndex, kickPriceIndex);

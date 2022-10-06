@@ -14,7 +14,6 @@ library AuctionsQueue {
 
     struct Liquidation {
         address kicker;         // address that initiated liquidation
-        uint256 bondSize;       // bond size posted by kicker to start liquidation
         uint256 bondFactor;     // bond factor used to start liquidation
         uint128 kickTime;       // timestamp when liquidation was started
         uint128 kickPriceIndex; // HPB index at liquidation start
@@ -65,7 +64,6 @@ library AuctionsQueue {
         }
         bondSize_ = Maths.wmul(bondFactor, borrowerDebt_);
 
-        liquidation.bondSize   = bondSize_;
         liquidation.bondFactor = bondFactor;
 
         liquidation.next = address(0);
@@ -116,14 +114,6 @@ library AuctionsQueue {
         delete self_.liquidations[borrower_];
     }
 
-    function update(
-        Data storage self_,
-        address borrower_,
-        uint256 bondSize_
-    ) internal {
-        self_.liquidations[borrower_].bondSize = bondSize_;
-    }
-
     /**************************/
     /*** View Functions ***/
     /**************************/
@@ -133,7 +123,7 @@ library AuctionsQueue {
     }
 
     function isActive(Data storage self_, address borrower_) internal view returns (bool) {
-        return self_.liquidations[borrower_].kicker != address(0);
+        return self_.liquidations[borrower_].kickTime != 0;
     }
 
     function getLiquidation(
@@ -154,7 +144,6 @@ library AuctionsQueue {
             uint256,
             uint256,
             uint256,
-            uint256,
             address,
             address
         )
@@ -162,7 +151,6 @@ library AuctionsQueue {
         AuctionsQueue.Liquidation memory liquidation = self_.liquidations[borrower_];
         return (
             liquidation.kicker,
-            liquidation.bondSize,
             liquidation.bondFactor,
             uint256(liquidation.kickTime),
             uint256(liquidation.kickPriceIndex),
