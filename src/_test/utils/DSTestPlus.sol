@@ -12,8 +12,6 @@ import '../../base/interfaces/IPoolFactory.sol';
 import '../../base/PoolInfoUtils.sol';
 
 import '../../libraries/Maths.sol';
-import '../../libraries/Heap.sol';
-import '../../libraries/Book.sol';
 
 abstract contract DSTestPlus is Test {
 
@@ -27,7 +25,7 @@ abstract contract DSTestPlus is Test {
     // Pool events
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
-    event Liquidate(address indexed borrower_, uint256 debt_, uint256 collateral_);
+    event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
@@ -84,6 +82,20 @@ abstract contract DSTestPlus is Test {
         emit Borrow(from, newLup, amount);
         _assertTokenTransferEvent(address(_pool), from, amount);
         _pool.borrow(amount, indexLimit);
+    }
+
+    function _kick(
+        address from,
+        address borrower,
+        uint256 debt,
+        uint256 collateral,
+        uint256 bond
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Kick(borrower, debt, collateral);
+        _assertTokenTransferEvent(from, address(_pool), bond);
+        _pool.kick(borrower);
     }
 
     function _moveLiquidity(
@@ -187,6 +199,32 @@ abstract contract DSTestPlus is Test {
     /*********************/
     /*** State asserts ***/
     /*********************/
+
+    function _assertAuction(
+        address borrower,
+        bool    active,
+        address kicker,
+        uint256 bondSize,
+        uint256 bondFactor,
+        uint128 kickTime,
+        uint128 kickPriceIndex
+    ) internal {
+        (
+            address auctionKicker,
+            uint256 auctionBondSize,
+            uint256 auctionBondFactor,
+            uint128 auctionKickTime,
+            uint128 auctionKickPriceIndex,
+            ,
+        ) = _pool.auctionInfo(borrower);
+
+        assertEq(auctionKicker != address(0), active);
+        assertEq(auctionKicker,         kicker);
+        assertEq(auctionBondSize,       bondSize);
+        assertEq(auctionBondFactor,     bondFactor);
+        assertEq(auctionKickTime,       kickTime);
+        assertEq(auctionKickPriceIndex, kickPriceIndex);
+    }
 
     function _assertPool(PoolState memory state_) internal {
         ( 
@@ -396,6 +434,24 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
         _pool.borrow(amount, indexLimit);
+    }
+
+    function _assertKickActiveAuctionRevert(
+        address from,
+        address borrower
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        _pool.kick(borrower);
+    }
+
+    function _assertKickCollateralizedBorrowerRevert(
+        address from,
+        address borrower
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.BorrowerOk.selector);
+        _pool.kick(borrower);
     }
 
     function _assertRepayNoDebtRevert(

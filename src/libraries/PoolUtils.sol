@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
-import '@prb-math/contracts/PRBMathSD59x18.sol';
-import '@prb-math/contracts/PRBMathUD60x18.sol';
-
 import './Maths.sol';
 import './BucketMath.sol';
 
@@ -11,18 +8,11 @@ library PoolUtils {
     uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
     uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
 
-    uint256 public constant CUBIC_ROOT_100      = 4.641588833612778892 * 1e18;
-    uint256 public constant ONE_THIRD           = 0.333333333333333334 * 1e18;
-
     function auctionPrice(
         uint256 referencePrice,
         uint256 kickTime_
-    ) internal view returns (uint256 price_) {
-        uint256 elapsedHours = Maths.wdiv((block.timestamp - kickTime_) * 1e18, 1 hours * 1e18);
-        elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
-
-        int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
-        price_ = 10 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+    ) internal view returns (uint256) {
+        return BucketMath.auctionPrice(referencePrice, kickTime_);
     }
 
     function claimableReserves(
@@ -71,7 +61,7 @@ library PoolUtils {
         uint256 interestRate_,
         uint256 elapsed_
     ) internal pure returns (uint256) {
-        return PRBMathUD60x18.exp((interestRate_ * elapsed_) / 365 days);
+        return BucketMath.pendingInterestFactor(interestRate_, elapsed_);
     }
 
     function pendingInflator(
@@ -79,10 +69,7 @@ library PoolUtils {
         uint256 lastInflatorSnapshotUpdate_,
         uint256 interestRate_
     ) internal view returns (uint256) {
-        return Maths.wmul(
-            inflatorSnapshot_,
-            PRBMathUD60x18.exp((interestRate_ * (block.timestamp - lastInflatorSnapshotUpdate_)) / 365 days)
-        );
+        return BucketMath.pendingInflator(inflatorSnapshot_, lastInflatorSnapshotUpdate_, interestRate_);
     }
 
     function minDebtAmount(
@@ -137,10 +124,7 @@ library PoolUtils {
     function lenderInterestMargin(
         uint256 mau_
     ) internal pure returns (uint256) {
-        // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
-        // cubic root of the percentage of meaningful unutilized deposit
-        uint256 crpud = PRBMathUD60x18.pow(100 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 100 * 1e18), ONE_THIRD);
-        return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_100), 0.15 * 1e18);
+        return BucketMath.lenderInterestMargin(mau_);
     }
 
     /**

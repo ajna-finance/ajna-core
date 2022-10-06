@@ -181,16 +181,22 @@ library Book {
         }
     }
 
+    function momp(
+        Deposits storage self,
+        uint256 curDebt_,
+        uint256 numLoans_
+    ) internal view returns (uint256 momp_) {
+        if (numLoans_ != 0) momp_ = PoolUtils.indexToPrice(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18)));
+    }
+
     function mompFactor(
         Deposits storage self,
         uint256 inflator_,
         uint256 curDebt_,
         uint256 numLoans_
     ) internal view returns (uint256 factor_) {
-        if (numLoans_ != 0) factor_ = Maths.wdiv(
-            PoolUtils.indexToPrice(findIndexOfSum(self, Maths.wdiv(curDebt_, numLoans_ * 1e18))),
-            inflator_
-        ); 
+        uint256 curMomp = momp(self, curDebt_, numLoans_);
+        if (curMomp != 0) factor_ = Maths.wdiv(curMomp, inflator_);
     }
 
     /**

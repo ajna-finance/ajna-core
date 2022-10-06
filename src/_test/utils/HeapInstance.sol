@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 
 import './DSTestPlus.sol';
 
+import '../../libraries/Heap.sol';
+
 contract HeapInstance is DSTestPlus {
     using Heap for Heap.Data;
 

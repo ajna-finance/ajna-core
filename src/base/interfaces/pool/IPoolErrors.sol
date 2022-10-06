@@ -21,6 +21,16 @@ interface IPoolErrors {
     error AmountLTMinDebt();
 
     /**
+     *  @notice Kicker is attempting to kick or clear an active auction.
+     */
+    error AuctionActive();
+
+    /**
+     *  @notice Borrower has a healthy over-collateralized position.
+     */
+    error BorrowerOk();
+
+    /**
      *  @notice Borrower is attempting to borrow more quote token than they have collateral for.
      */
     error BorrowerUnderCollateralized();
