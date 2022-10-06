@@ -18,6 +18,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
     address internal _lender1;
+    uint internal _anonBorrowerCount = 0;
 
     uint256 highest = 2550;
     uint256 high    = 2551;
@@ -98,8 +99,25 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
-    function testPoolBorrowAndRepay() external {
+    /**
+     *  @dev Creates debt for an anonymous non-player borrower not otherwise involved in the test.
+     **/
+    function _anonBorrowerDrawsDebt(uint256 loanAmount) internal {
+        _anonBorrowerCount += 1;
+        address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
+        vm.stopPrank();
+        _mintCollateralAndApproveTokens(borrower,  100 * 1e18);
+        _pledgeCollateral(
+            {
+                from:     borrower,
+                borrower: borrower,
+                amount:   100 * 1e18
+            }
+        );
+        _pool.borrow(loanAmount, 7_777);
+    }
 
+    function testPoolBorrowAndRepay() external {
         // check balances before borrow
         assertEq(_quote.balanceOf(address(_pool)), 50_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
@@ -358,7 +376,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     function testPoolBorrowerInterestAccumulation() external {
-
         skip(10 days);
         _pledgeCollateral(
             {
@@ -650,14 +667,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             }
         );
 
-        // should revert if borrower attempts to borrow more than minimum amount
-        _assertBorrowMinDebtRevert(
-            {
-                from:       _borrower,
-                amount:     10 * 1e18,
-                indexLimit: 3000
-            }
-        );
         // should revert if borrower undercollateralized
         _assertBorrowBorrowerUnderCollateralizedRevert(
             {
@@ -674,6 +683,32 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 amount:     10 * 1e18,
                 indexLimit: 3_000,
                 newLup:     2_995.912459898389633881 * 1e18
+            }
+        );
+    }
+
+    function testMinBorrowAmountCheck() external {
+        // 10 borrowers draw debt
+        for (uint i=0; i<10; ++i) {
+            _anonBorrowerDrawsDebt(1_200 * 1e18);
+        }
+        (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(loansCount, 10);
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   100 * 1e18
+            }
+        );
+
+        // should revert if borrower attempts to borrow more than minimum amount
+        _assertBorrowMinDebtRevert(
+            {
+                from:       _borrower,
+                amount:     10 * 1e18,
+                indexLimit: 7_777
             }
         );
     }
@@ -767,15 +802,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
             })
         );
 
-        // should revert if amount left after repay is less than the average debt
-        _assertRepayMinDebtRevert(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   750 * 1e18
-            }
-        );
-
         // should be able to repay loan if properly specified
         _repay(
             {
@@ -806,8 +832,42 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
-    function testRepayLoanFromDifferentActor() external {
+    function testMinRepayAmountCheck() external {
+        // borrower 1 borrows 1000 quote from the pool
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   50 * 1e18
+            }
+        );
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     1_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
+        );
 
+        // 9 other borrowers draw debt
+        for (uint i=0; i<9; ++i) {
+            _anonBorrowerDrawsDebt(1_000 * 1e18);
+        }
+        (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(loansCount, 10);
+
+        // should revert if amount left after repay is less than the average debt
+        _assertRepayMinDebtRevert(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   950 * 1e18
+            }
+        );
+    }
+
+    function testRepayLoanFromDifferentActor() external {
         // borrower 1 borrows 1000 quote from the pool
         _pledgeCollateral(
             {
@@ -879,7 +939,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *              Attempts to borrow with a TP of 0.
      */
     function testZeroThresholdPriceLoan() external {
-
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
         _pledgeCollateral(
             {

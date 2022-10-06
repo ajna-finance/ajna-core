@@ -281,7 +281,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         uint256 loansCount = loans.nodes.length - 1;
         if (
-            loansCount != 0
+            loansCount >= 10
             &&
             (borrowerAccruedDebt + amountToBorrow_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
         )  revert AmountLTMinDebt();
@@ -484,7 +484,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             loans.remove(borrower_);
         } else {
             uint256 loansCount = loans.nodes.length - 1;
-            if (loansCount != 0
+            if (loansCount >= 10
                 &&
                 (borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
             ) revert AmountLTMinDebt();

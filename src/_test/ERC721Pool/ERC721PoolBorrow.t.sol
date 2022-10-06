@@ -13,13 +13,15 @@ import '../../erc721/ERC721PoolFactory.sol';
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
 
-contract ERC721PoolBorrowTest is ERC721HelperContract {
-
+abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _borrower3;
     address internal _lender;
     address internal _lender2;
+
+    // Called by setUp method to set the _pool which tests will use
+    function createPool() external virtual returns (ERC721Pool);
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
@@ -29,8 +31,20 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         _lender2   = makeAddr("lender2");
 
         // deploy collection pool
-        ERC721Pool collectionPool = _deployCollectionPool();
+        _pool = this.createPool();
 
+        _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
+        _mintAndApproveCollateralTokens(_borrower, 52);
+        _mintAndApproveCollateralTokens(_borrower2, 10);
+        _mintAndApproveCollateralTokens(_borrower3, 13);
+
+        vm.prank(_borrower);
+        _quote.approve(address(_pool), 200_000 * 1e18);
+    }
+}
+
+contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
+    function createPool() external override returns (ERC721Pool) {
         // deploy subset pool
         uint256[] memory subsetTokenIds = new uint256[](6);
         subsetTokenIds[0] = 1;
@@ -39,20 +53,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         subsetTokenIds[3] = 51;
         subsetTokenIds[4] = 53;
         subsetTokenIds[5] = 73;
-        _pool = _deploySubsetPool(subsetTokenIds);
-
-        _mintAndApproveQuoteTokens(_lender, 200_000 * 1e18);
-
-        _mintAndApproveCollateralTokens(_borrower, 52);
-        _mintAndApproveCollateralTokens(_borrower2, 10);
-        _mintAndApproveCollateralTokens(_borrower3, 13);
-
-        // TODO: figure out how to generally approve quote tokens for the borrowers to handle repays
-        // TODO: potentially use _approveQuoteMultipleUserMultiplePool()
-        vm.prank(_borrower);
-        _quote.approve(address(collectionPool), 200_000 * 1e18);
-        vm.prank(_borrower);
-        _quote.approve(address(_pool), 200_000 * 1e18);
+        return _deploySubsetPool(subsetTokenIds);
     }
 
     /***************************/
@@ -548,15 +549,6 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
             }
         );
 
-        // should revert if amount left after repay is less than the average debt
-        _assertRepayMinDebtRevert(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   900 * 1e18
-            }
-        );
-
         // should be able to repay loan if properly specified
         _repay(
             {
@@ -568,6 +560,7 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
             }
         );
     }
+
 
     function testRepayLoanFromDifferentActor() external {
         _addLiquidity(
@@ -650,5 +643,101 @@ contract ERC721PoolBorrowTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(address(_pool)), 28_500 * 1e18);
         assertEq(_quote.balanceOf(_lender),        168_500 * 1e18);
         assertEq(_quote.balanceOf(_borrower),      3_000 * 1e18);
+    }
+}
+
+contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
+    uint internal _anonBorrowerCount = 0;
+
+    function createPool() external override returns (ERC721Pool) {
+        return _deployCollectionPool();
+    }
+
+    /**
+     *  @dev Creates debt for an anonymous non-player borrower not otherwise involved in the test.
+     **/
+    function _anonBorrowerDrawsDebt(uint256 loanAmount) internal {
+        _anonBorrowerCount += 1;
+        address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
+        vm.stopPrank();
+        _mintAndApproveCollateralTokens(borrower, 1);
+        uint256[] memory tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = _collateral.totalSupply();
+        _pledgeCollateral(
+            {
+                from:     borrower,
+                borrower: borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
+        _pool.borrow(loanAmount, 7_777);
+    }
+
+    function testMinBorrowAmountCheck() external {
+        // add initial quote to the pool
+        changePrank(_lender);
+        _pool.addQuoteToken(20_000 * 1e18, 2550);
+
+        // 10 borrowers draw debt
+        for (uint i=0; i<10; ++i) {
+            _anonBorrowerDrawsDebt(1_200 * 1e18);
+        }
+        (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(loansCount, 10);
+
+        uint256[] memory tokenIdsToAdd = new uint256[](1);
+        tokenIdsToAdd[0] = 5;
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
+
+        // should revert if borrower attempts to borrow more than minimum amount
+        _assertBorrowMinDebtRevert(
+            {
+                from:       _borrower,
+                amount:     100 * 1e18,
+                indexLimit: 7_777
+            }
+        );
+    }
+
+    function testMinRepayAmountCheck() external {
+        // add initial quote to the pool
+        changePrank(_lender);
+        _pool.addQuoteToken(20_000 * 1e18, 2550);
+
+        // 9 other borrowers draw debt
+        for (uint i=0; i<9; ++i) {
+            _anonBorrowerDrawsDebt(1_200 * 1e18);
+        }
+
+        // borrower 1 borrows 1000 quote from the pool
+        uint256[] memory tokenIdsToAdd = new uint256[](3);
+        tokenIdsToAdd[0] = 1;
+        tokenIdsToAdd[1] = 3;
+        tokenIdsToAdd[2] = 5;
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                tokenIds: tokenIdsToAdd
+            }
+        );
+        _pool.borrow(1_000 * 1e18, 3000);
+        (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(loansCount, 10);
+
+        // should revert if amount left after repay is less than the average debt
+        _assertRepayMinDebtRevert(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   900 * 1e18
+            }
+        );
     }
 }
