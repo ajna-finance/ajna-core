@@ -39,6 +39,22 @@ abstract contract DSTestPlus is Test {
     PoolInfoUtils internal _poolUtils;
     uint256       internal _startTime;
 
+
+    uint256 internal _p9_91     = 9.917184843435912074 * 1e18;
+    uint256 internal _p9_81     = 9.818751856078723036 * 1e18;
+    uint256 internal _p9_72     = 9.721295865031779605 * 1e18;
+    uint256 internal _p9_62     = 9.624807173121239337 * 1e18;
+    uint256 internal _p9_52     = 9.529276179422528643 * 1e18;
+
+    uint256 internal _i49910    = 1987;
+    uint256 internal _i10016    = 2309;
+    uint256 internal _i100      = 3232;
+    uint256 internal _i9_91     = 3696;
+    uint256 internal _i9_81     = 3698;
+    uint256 internal _i9_72     = 3700;
+    uint256 internal _i9_62     = 3702;
+    uint256 internal _i9_52     = 3704;
+
     struct PoolState {
         uint256 htp;
         uint256 lup;
