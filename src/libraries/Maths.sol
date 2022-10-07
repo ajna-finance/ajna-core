@@ -7,6 +7,13 @@ library Maths {
     uint256 internal constant RAY = 10**27;
     uint256 internal constant RAD = 10**45;
 
+    function uadd(uint256 x, int256 y) internal pure returns (uint256) {
+        require(x < uint256(type(int256).max) && int256(x) + y >= 0, "MATH-UADD-OVERFLOW");   // TODO: make custom error
+        // TODO: do this in assembly
+        int256 signedResult = int256(x) + y;
+        return uint256(signedResult);
+    }
+
     function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
         return (x * y + 10**18 / 2) / 10**18;
     }

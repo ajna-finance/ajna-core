@@ -81,6 +81,23 @@ contract MathTest is DSTestPlus {
     function testPow() external {
         assertEq(Maths.wpow(3 * 1e18, 3), 27 * 1e18);
         assertEq(Maths.rpow(0.5 * 1e27, 60), 0.000000000000000000867361738 * 1e27);
-        assertEq(Maths.rpow(0.5 * 1e27, 80), 0.000000000000000000000000827 * 1e27);  // FIXME: not much precision
+        assertEq(Maths.rpow(0.5 * 1e27, 80), 0.000000000000000000000000827 * 1e27);
+    }
+
+    function testUAdd() external {
+        uint256 val = 3 * 1e18;
+
+        val = Maths.uadd(val, 6 * 1e18);
+        assertEq(val, 9 * 1e18);
+        val = Maths.uadd(val, -5 * 1e18);
+        assertEq(val, 4 * 1e18);
+
+        vm.expectRevert("MATH-UADD-OVERFLOW");
+        val = Maths.uadd(val, -12 * 1e18);
+        vm.expectRevert("MATH-UADD-OVERFLOW");
+        val = Maths.uadd(val, type(int256).max);
+
+        val = Maths.uadd(val, -3 * 1e18);
+        assertEq(val, 0);
     }
 }
