@@ -29,8 +29,8 @@ contract AuctionsQueueInstance is DSTestPlus {
         return auctions.getHead();
     }
 
-    function isActive(address borrower_) external view returns (bool) {
-        return auctions.isActive(borrower_);
+    function isActive(address borrower_) external view returns (bool kicked_) {
+        (kicked_, ) = auctions.getStatus(borrower_);
     }
 
     function get(

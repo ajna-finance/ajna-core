@@ -122,8 +122,13 @@ library AuctionsQueue {
         return self_.head;
     }
 
-    function isActive(Data storage self_, address borrower_) internal view returns (bool) {
-        return self_.liquidations[borrower_].kickTime != 0;
+    function getStatus(
+        Data storage self_,
+        address borrower_
+    ) internal view returns (bool kicked_, bool started_) {
+        uint256 kickTime = self_.liquidations[borrower_].kickTime;
+        kicked_  = kickTime != 0;
+        started_ = kicked_ && (block.timestamp - kickTime > 1 hours);
     }
 
     function getLiquidation(
