@@ -17,7 +17,7 @@ contract ERC721Pool is IERC721Pool, Pool {
     using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
     using BitMaps   for BitMaps.BitMap;
     using Book      for mapping(uint256 => Book.Bucket);
-    using LoansHeap for LoansHeap.Data;
+    using Loans     for Loans.Data;
 
     /***********************/
     /*** State Variables ***/
@@ -201,7 +201,7 @@ contract ERC721Pool is IERC721Pool, Pool {
     ) external override {
 
         uint256 numberOfNFTsWad = Maths.wad(tokenIds_.length);
-        if (borrowers[borrower_].collateral != numberOfNFTsWad) revert PartialTakeNotAllowed();
+        if (loans.borrowers[borrower_].collateral != numberOfNFTsWad) revert PartialTakeNotAllowed();
 
         _take(borrower_, numberOfNFTsWad);
 

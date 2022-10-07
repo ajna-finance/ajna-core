@@ -14,7 +14,7 @@ contract ERC20Pool is IERC20Pool, Pool {
     using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
     using Book      for mapping(uint256 => Book.Bucket);
     using Book      for Book.Deposits;
-    using LoansHeap for LoansHeap.Data;
+    using Loans     for Loans.Data;
 
     /***********************/
     /*** State Variables ***/

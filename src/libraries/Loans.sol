@@ -1,18 +1,38 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
-library LoansHeap {
+import './Book.sol';
+import './PoolUtils.sol';
+import './Maths.sol';
+
+library Loans {
 
     uint256 constant ROOT_INDEX = 1;
 
     struct Data {
         Loan[] loans;
-        mapping (address => uint) indices; // unique id => loan index
+        mapping (address => uint)     indices;   // borrower address => loan index
+        mapping (address => Borrower) borrowers; // borrower address => Borrower struct
     }
 
     struct Loan {
         address borrower;
         uint256 thresholdPrice;
+    }
+
+    /**
+     *  @notice Struct holding borrower related info.
+     *  @param  debt             Borrower debt, WAD units.
+     *  @param  collateral       Collateral deposited by borrower, WAD units.
+     *  @return mompFactor       Most Optimistic Matching Price (MOMP) / inflator, used in neutralPrice calc, WAD units.
+     *  @param  inflatorSnapshot Current borrower inflator snapshot, WAD units.
+     */
+    struct Borrower {
+        uint256 debt;             // [WAD]
+        uint256 collateral;       // [WAD]
+        uint256 mompFactor;       // [WAD]
+        uint256 inflatorSnapshot; // [WAD]
     }
 
     /**
@@ -31,13 +51,49 @@ library LoansHeap {
 
    function update(
         Data storage self_,
+        Book.Deposits storage deposits_,
         address borrower_,
-        uint256 thresholdPrice_
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 poolDebt_,
+        uint256 inflator_
     ) internal {
-        if (thresholdPrice_ != 0) upsert(self_, borrower_, thresholdPrice_);
-        else if (self_.indices[borrower_] != 0) {
+
+        // update loan heap
+        if (debt_ != 0) {
+            uint256 t0ThresholdPrice;
+            if (collateral_ != 0) t0ThresholdPrice = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
+            upsert(self_, borrower_, t0ThresholdPrice);
+        } else if (self_.indices[borrower_] != 0) {
             remove(self_, borrower_);
         }
+
+        // update borrower balance
+        uint256 borrowerMompFactor;
+        if (debt_ != 0) borrowerMompFactor = Book.mompFactor(
+            deposits_,
+            inflator_,
+            poolDebt_,
+            self_.loans.length - 1
+        );
+
+        Borrower storage borrower = self_.borrowers[borrower_];
+        borrower.debt             = debt_;
+        borrower.collateral       = collateral_;
+        borrower.mompFactor       = borrowerMompFactor;
+        borrower.inflatorSnapshot = inflator_;
+    }
+
+    function take(
+        Data storage self,
+        address borrower_,
+        uint256 debt_,
+        uint256 inflator_
+    ) internal {
+        remove(self, borrower_);
+        Borrower storage borrower = self.borrowers[borrower_];
+        borrower.debt             = debt_;
+        borrower.inflatorSnapshot = inflator_;
     }
 
     /**
@@ -66,7 +122,7 @@ library LoansHeap {
             }
 
         // New loan, insert it
-        } else { 
+        } else {
             _bubbleUp(self_, Loan(borrower_, thresholdPrice_), self_.loans.length);
         }
     }
@@ -144,7 +200,7 @@ library LoansHeap {
      */
     function _bubbleDown(Data storage self_, Loan memory loan_, uint i_) private {
         // Left child index.
-        uint cIndex = i_ * 2; 
+        uint cIndex = i_ * 2;
 
         uint256 count = self_.loans.length;
         if (count <= cIndex) {
@@ -176,5 +232,66 @@ library LoansHeap {
         else self_.loans[i_] = loan_;
 
         self_.indices[loan_.borrower] = i_;
+    }
+
+
+    /*****************/
+    /*** Borrowers ***/
+    /*****************/
+
+    function getBorrowerInfo(
+        Data storage self,
+        address borrower_,
+        uint256 poolInflator_
+    ) internal view returns (uint256 debt_, uint256 collateral_) {
+        debt_       = self.borrowers[borrower_].debt;
+        collateral_ = self.borrowers[borrower_].collateral;
+        if (debt_ != 0) {
+            debt_ = Maths.wmul(debt_, Maths.wdiv(poolInflator_, self.borrowers[borrower_].inflatorSnapshot));
+        }
+    }
+
+    function getAuctionedBorrowerInfo(
+        Data storage self,
+        address borrower_,
+        uint256 poolInflator_,
+        uint256 bondFactor_,
+        uint256 price_
+    ) internal view returns (uint256 debt_, uint256 collateral_, int256 bpf_) {
+        (debt_, collateral_) = getBorrowerInfo(self, borrower_, poolInflator_);
+        bpf_ = PoolUtils.bpf(
+            debt_,
+            collateral_,
+            self.borrowers[borrower_].mompFactor,
+            poolInflator_,
+            bondFactor_,
+            price_
+        );
+    }
+
+    function updateDebt(
+        Data storage self,
+        address borrower_,
+        uint256 debt_,
+        uint256 inflator_
+    ) internal {
+        Borrower storage borrower = self.borrowers[borrower_];
+        borrower.debt             = debt_;
+        borrower.inflatorSnapshot = inflator_;
+    }
+
+    function updateBorrower(
+        Data storage self,
+        address borrower_,
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 mompFactor_,
+        uint256 inflator_
+    ) internal {
+        Borrower storage borrower = self.borrowers[borrower_];
+        borrower.debt             = debt_;
+        borrower.collateral       = collateral_;
+        borrower.mompFactor       = mompFactor_;
+        borrower.inflatorSnapshot = inflator_;
     }
 }

@@ -92,14 +92,6 @@ library PoolUtils {
         }
     }
 
-    function t0ThresholdPrice(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 inflator_
-    ) internal pure returns (uint256 tp_) {
-        if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
-    }
-
     function applyEarlyWithdrawalPenalty(
         uint256 interestRate_,
         uint256 minFee_,
