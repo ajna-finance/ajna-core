@@ -4,12 +4,12 @@ pragma solidity 0.8.14;
 
 import './DSTestPlus.sol';
 
-import '../../libraries/Heap.sol';
+import '../../libraries/Loans.sol';
 
-contract HeapInstance is DSTestPlus {
-    using Heap for Heap.Data;
+contract LoansHeapInstance is DSTestPlus {
+    using LoansHeap for LoansHeap.Data;
 
-    Heap.Data private _heap;
+    LoansHeap.Data private _heap;
 
     /**
      *  @notice used to track fuzzing test insertions.
@@ -21,7 +21,7 @@ contract HeapInstance is DSTestPlus {
     }
 
     function getCount() public view returns (uint256) {
-        return _heap.nodes.length;
+        return _heap.loans.length;
     }
 
     function numInserts() public view returns (uint256) {
@@ -41,19 +41,19 @@ contract HeapInstance is DSTestPlus {
     }
 
     function getTp(address borrower_) public view returns (uint256) {
-        return _heap.getById(borrower_).val;
+        return _heap.getById(borrower_).thresholdPrice;
     }
 
     function getMaxTp() external view returns (uint256) {
-        return _heap.getMax().val;
+        return _heap.getMax().thresholdPrice;
     }
 
     function getMaxBorrower() external view returns (address) {
-        return _heap.getMax().id;
+        return _heap.getMax().borrower;
     }
 
     function getTotalTps() external view returns (uint256) {
-        return _heap.nodes.length;
+        return _heap.loans.length;
     }
 
 
@@ -83,13 +83,13 @@ contract HeapInstance is DSTestPlus {
             insertsDec  -=  1;
 
             // Verify amount of Heap TPs
-            assertEq(_heap.nodes.length - 1, totalInserts - insertsDec);
+            assertEq(_heap.loans.length - 1, totalInserts - insertsDec);
             assertEq(getTp(borrower), tp);
 
             if (trackInserts_)  inserts.push(borrower);
         }
 
-        assertEq(_heap.nodes.length - 1, totalInserts);
+        assertEq(_heap.loans.length - 1, totalInserts);
     }
 }
 

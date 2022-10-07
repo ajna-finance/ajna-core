@@ -3,13 +3,13 @@
 pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
-import './utils/HeapInstance.sol';
+import './utils/LoansHeapInstance.sol';
 
 contract HeapTest is DSTestPlus {
-    HeapInstance private _loans;
+    LoansHeapInstance private _loans;
 
     function setUp() public {
-       _loans = new HeapInstance();
+       _loans = new LoansHeapInstance();
     }
 
     function testHeapInsertAndRandomlyRemoveTps() public {
@@ -277,7 +277,7 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getMaxBorrower(), b6);
         assertEq(_loans.getTotalTps(),    7);
 
-        vm.expectRevert("H:R:NO_ID");
+        vm.expectRevert("H:R:NO_BORROWER");
         _loans.removeTp(address(100));
     }
 
@@ -338,12 +338,12 @@ contract HeapTest is DSTestPlus {
 }
 
 contract HeapGasLoadTest is DSTestPlus {
-    HeapInstance private _loans;
+    LoansHeapInstance private _loans;
     address[] private _borrowers;
     uint256 private constant NODES_COUNT = 10_000;
 
     function setUp() public {
-        _loans = new HeapInstance();
+        _loans = new LoansHeapInstance();
         for (uint256 i; i < NODES_COUNT; i++) {
                 address borrower = makeAddr(vm.toString(i));
             _loans.upsertTp(borrower, 1 * 1e18 + i * 1e18);

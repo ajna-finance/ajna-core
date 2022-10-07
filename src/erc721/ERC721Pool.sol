@@ -12,18 +12,12 @@ import './interfaces/IERC721Pool.sol';
 
 import '../base/Pool.sol';
 
-import '../libraries/Heap.sol';
-import '../libraries/Maths.sol';
-import '../libraries/Book.sol';
-import '../libraries/Actors.sol';
-
 contract ERC721Pool is IERC721Pool, Pool {
     using SafeERC20 for ERC20;
     using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
-    using Actors    for mapping(address => Actors.Borrower);
     using BitMaps   for BitMaps.BitMap;
     using Book      for mapping(uint256 => Book.Bucket);
-    using Heap      for Heap.Data;
+    using LoansHeap for LoansHeap.Data;
 
     /***********************/
     /*** State Variables ***/

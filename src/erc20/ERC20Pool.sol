@@ -9,18 +9,12 @@ import './interfaces/IERC20Pool.sol';
 
 import '../base/Pool.sol';
 
-import '../libraries/Heap.sol';
-import '../libraries/Maths.sol';
-import '../libraries/Book.sol';
-import '../libraries/Actors.sol';
-
 contract ERC20Pool is IERC20Pool, Pool {
     using SafeERC20 for ERC20;
     using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
-    using Actors    for mapping(address => Actors.Borrower);
     using Book      for mapping(uint256 => Book.Bucket);
     using Book      for Book.Deposits;
-    using Heap      for Heap.Data;
+    using LoansHeap for LoansHeap.Data;
 
     /***********************/
     /*** State Variables ***/
