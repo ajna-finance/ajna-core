@@ -100,13 +100,11 @@ library Actors {
     function update(
         mapping(address => Borrower) storage self,
         address borrower_,
-        uint256 debt_,
         uint256 collateral_,
         uint256 mompFactor_,
         uint256 inflator_
     ) internal {
         Borrower storage borrower = self[borrower_];
-        borrower.t0debt           = Maths.wdiv(debt_, inflator_);
         borrower.collateral       = collateral_;
         borrower.mompFactor       = mompFactor_;
     }

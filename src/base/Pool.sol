@@ -273,6 +273,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             (borrowerDebt + amountToBorrow_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
         )  revert AmountLTMinDebt();
 
+        // increase debt by the origination fee
         uint256 debt  = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
         borrowerDebt += debt;
 

@@ -108,7 +108,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertBorrower({
             borrower:                  _borrower,
-    // borrowerPendingDebt was 19.534277977147272573 * 1e18
+    // FIXME: borrowerPendingDebt was 19.534277977147272573 * 1e18
             borrowerDebt:              19.268509615384615394 * 1e18,
             borrowerCollateral:        2e18,
             borrowerCollateralization: 1.029367090801636643 * 1e18,

@@ -587,7 +587,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-            // borrowerPendingDebt was 21_246.450141935843879765 * 1e18
+            // FIXME: borrowerPendingDebt was 21_246.450141935843879765 * 1e18
                 borrowerDebt:              21_199.628356897284446170 * 1e18,
                 borrowerCollateral:        50 * 1e18,
                 borrowerMompFactor:        2_955.775839211865438160 * 1e18,
