@@ -2,7 +2,7 @@
 
 pragma solidity 0.8.14;
 
-import './Book.sol';
+import './Deposits.sol';
 import './PoolUtils.sol';
 import './Maths.sol';
 
@@ -51,7 +51,7 @@ library Loans {
 
    function update(
         Data storage self_,
-        Book.Deposits storage deposits_,
+        Deposits.Data storage deposits_,
         address borrower_,
         uint256 debt_,
         uint256 collateral_,
@@ -70,7 +70,7 @@ library Loans {
 
         // update borrower balance
         uint256 borrowerMompFactor;
-        if (debt_ != 0) borrowerMompFactor = Book.mompFactor(
+        if (debt_ != 0) borrowerMompFactor = Deposits.mompFactor(
             deposits_,
             inflator_,
             poolDebt_,

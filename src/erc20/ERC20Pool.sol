@@ -11,9 +11,8 @@ import '../base/Pool.sol';
 
 contract ERC20Pool is IERC20Pool, Pool {
     using SafeERC20 for ERC20;
-    using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
-    using Book      for mapping(uint256 => Book.Bucket);
-    using Book      for Book.Deposits;
+    using Buckets   for mapping(uint256 => Buckets.Bucket);
+    using Deposits  for Deposits.Data;
     using Loans     for Loans.Data;
 
     /***********************/
@@ -105,7 +104,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         );
         if (fromBucketCollateral < collateralAmountToMove_) revert InsufficientCollateral();
 
-        (uint256 lpBalance, ) = lenders.getLenderInfo(
+        (uint256 lpBalance, ) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
         );
@@ -117,12 +116,8 @@ contract ERC20Pool is IERC20Pool, Pool {
             collateralAmountToMove_
         );
 
-        // update lender accounting
-        lenders.removeLPs(fromIndex_, msg.sender, fromBucketLPs_);
-        lenders.addLPs(toIndex_, msg.sender, toBucketLPs_);
-        // update buckets
-        buckets.removeCollateral(fromIndex_, fromBucketLPs_, collateralAmountToMove_);
-        buckets.addCollateral(toIndex_, toBucketLPs_, collateralAmountToMove_);
+        buckets.removeCollateral(collateralAmountToMove_, fromBucketLPs_, fromIndex_);
+        buckets.addCollateral(collateralAmountToMove_, toBucketLPs_, toIndex_);
 
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
@@ -135,7 +130,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
+        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(index_, msg.sender);
         (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
             index_,
             deposits.valueAt(index_),
@@ -143,11 +138,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         );
         if (collateralAmountRemoved_ == 0) revert NoClaim();
 
-        // update lender accounting
-        lenders.removeLPs(index_, msg.sender, redeemedLenderLPs_);
-        // update bucket accounting
-        buckets.removeCollateral(index_, redeemedLenderLPs_, collateralAmountRemoved_);
-
+        buckets.removeCollateral(collateralAmountRemoved_, redeemedLenderLPs_, index_);
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
         // move collateral from pool to lender

@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 
 import './Maths.sol';
 
-library AuctionsQueue {
+library Auctions {
 
     struct Data {
         address head;
@@ -134,7 +134,7 @@ library AuctionsQueue {
     function getLiquidation(
         Data storage self_,
         address borrower_
-    ) internal view returns (AuctionsQueue.Liquidation memory) {
+    ) internal view returns (Auctions.Liquidation memory) {
         return self_.liquidations[borrower_];
     }
 
@@ -153,7 +153,7 @@ library AuctionsQueue {
             address
         )
     {
-        AuctionsQueue.Liquidation memory liquidation = self_.liquidations[borrower_];
+        Auctions.Liquidation memory liquidation = self_.liquidations[borrower_];
         return (
             liquidation.kicker,
             liquidation.bondFactor,

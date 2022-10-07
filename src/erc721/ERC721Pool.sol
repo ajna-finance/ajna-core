@@ -14,9 +14,8 @@ import '../base/Pool.sol';
 
 contract ERC721Pool is IERC721Pool, Pool {
     using SafeERC20 for ERC20;
-    using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
     using BitMaps   for BitMaps.BitMap;
-    using Book      for mapping(uint256 => Book.Bucket);
+    using Buckets   for mapping(uint256 => Buckets.Bucket);
     using Loans     for Loans.Data;
 
     /***********************/

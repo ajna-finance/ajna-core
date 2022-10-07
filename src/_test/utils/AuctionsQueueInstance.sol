@@ -7,9 +7,9 @@ import './DSTestPlus.sol';
 import '../../libraries/Auctions.sol';
 
 contract AuctionsQueueInstance is DSTestPlus {
-    using AuctionsQueue for AuctionsQueue.Data;
+    using Auctions for Auctions.Data;
 
-    AuctionsQueue.Data private auctions;
+    Auctions.Data private auctions;
 
     function kick(address borrower_) external returns (uint256) {
         return auctions.kick(

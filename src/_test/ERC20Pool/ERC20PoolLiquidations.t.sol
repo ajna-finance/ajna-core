@@ -6,7 +6,6 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import '../../erc20/ERC20Pool.sol';
 import '../../erc20/ERC20PoolFactory.sol';
 
-import '../../libraries/Actors.sol';
 import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
 

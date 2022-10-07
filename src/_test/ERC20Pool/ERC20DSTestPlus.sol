@@ -13,7 +13,6 @@ import '../../base/interfaces/IPool.sol';
 import '../../base/PoolInfoUtils.sol';
 
 import '../../libraries/Maths.sol';
-import '../../libraries/Actors.sol';
 
 abstract contract ERC20DSTestPlus is DSTestPlus {
 

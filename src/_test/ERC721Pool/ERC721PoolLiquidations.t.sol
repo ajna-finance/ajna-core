@@ -7,7 +7,6 @@ import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
 import '../../erc721/ERC721Pool.sol';
 import '../../erc721/ERC721PoolFactory.sol';
 
-import '../../libraries/Actors.sol';
 import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
 
