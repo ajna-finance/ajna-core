@@ -206,12 +206,12 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         assertEq(_NFTSubsetOnePool.minFee(),                     0.0005 * 10**18);
         assertEq(_NFTSubsetOnePool.isSubset(),                   true);
 
-        assertTrue(_NFTSubsetOnePool.isTokenIdAllowed(1));
-        assertTrue(_NFTSubsetOnePool.isTokenIdAllowed(5));
-        assertTrue(_NFTSubsetOnePool.isTokenIdAllowed(50));
-        assertTrue(_NFTSubsetOnePool.isTokenIdAllowed(61));
+        assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(1));
+        assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(5));
+        assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(50));
+        assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(61));
 
-        assertFalse(_NFTSubsetOnePool.isTokenIdAllowed(10));
+        assertFalse(_NFTSubsetOnePool.tokenIdsAllowed(10));
     }
 
 }

@@ -340,6 +340,17 @@ abstract contract DSTestPlus is Test {
         assertEq(pendingDebt, borrowerPendingDebt);
     }
 
+    function _assertKicker(
+        address kicker,
+        uint256 claimable,
+        uint256 locked
+    ) internal {
+        (uint256 curClaimable, uint256 curLocked) = _pool.kickers(kicker);
+
+        assertEq(curClaimable, claimable);
+        assertEq(curLocked,    locked);
+    }
+
     function _assertLoans(
         uint256 noOfLoans,
         address maxBorrower,
@@ -406,6 +417,16 @@ abstract contract DSTestPlus is Test {
     /*** Revert asserts ***/
     /**********************/
 
+    function _assertBorrowAuctionActiveRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        _pool.borrow(amount, indexLimit);
+    }
+
     function _assertBorrowLimitIndexRevert(
         address from,
         uint256 amount,
@@ -436,7 +457,7 @@ abstract contract DSTestPlus is Test {
         _pool.borrow(amount, indexLimit);
     }
 
-    function _assertKickActiveAuctionRevert(
+    function _assertKickAuctionActiveRevert(
         address from,
         address borrower
     ) internal {
@@ -452,6 +473,16 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerOk.selector);
         _pool.kick(borrower);
+    }
+
+    function _assertRepayAuctionActiveRevert(
+        address from,
+        address borrower,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        _pool.repay(borrower, amount);
     }
 
     function _assertRepayNoDebtRevert(

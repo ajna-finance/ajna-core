@@ -263,8 +263,8 @@ abstract contract Pool is Clone, Multicall, IPool {
     ) external override {
 
         // if borrower auctioned then it cannot draw more debt
-        (, bool auctionStarted) = auctions.getStatus(msg.sender);
-        if (auctionStarted) revert AuctionActive();
+        (bool auctionKicked, ) = auctions.getStatus(msg.sender);
+        if (auctionKicked) revert AuctionActive();
 
         PoolState memory poolState = _accruePoolInterest();
 

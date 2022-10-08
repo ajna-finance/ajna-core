@@ -256,9 +256,16 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 kickPriceIndex: 3696
             }
         );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.200924002050657661 * 1e18
+            }
+        );
 
         // kick should fail if borrower in liquidation
-        _assertKickActiveAuctionRevert(
+        _assertKickAuctionActiveRevert(
             {
                 from:       _lender,
                 borrower:   _borrower

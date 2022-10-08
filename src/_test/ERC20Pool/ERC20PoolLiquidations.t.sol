@@ -28,7 +28,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
         _mintQuoteAndApproveTokens(_lender, 120_000 * 1e18);
 
-        _mintCollateralAndApproveTokens(_borrower,  2 * 1e18);
+        _mintCollateralAndApproveTokens(_borrower,  4 * 1e18);
         _mintCollateralAndApproveTokens(_borrower2, 1_000 * 1e18);
 
         // Lender adds Quote token accross 5 prices
@@ -236,12 +236,11 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 kickPriceIndex: 3696
             }
         );
-
-        // kick should fail if borrower in liquidation
-        _assertKickActiveAuctionRevert(
+        _assertKicker(
             {
-                from:       _lender,
-                borrower:   _borrower
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.195342779771472726 * 1e18
             }
         );
 
@@ -250,6 +249,226 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower2
+            }
+        );
+    }
+
+    function testKickAndSaveByRepay() external {
+
+        _assertAuction(
+            {
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
+            }
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.534277977147272573 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.195342779771472726 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:       _borrower,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       0.195342779771472726 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       uint128(block.timestamp),
+                kickPriceIndex: 3696
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.195342779771472726 * 1e18
+            }
+        );
+
+        _repay(
+            {
+                from: _borrower,
+                borrower: _borrower,
+                amount: 15 * 1e18,
+                repaid: 15 * 1e18,
+                newLup: 9.721295865031779605 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0.195342779771472726 * 1e18,
+                locked:    0
+            }
+        );
+    }
+
+    function testKickAndSaveByPledgeCollateral() external {
+
+        _assertAuction(
+            {
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
+            }
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.534277977147272573 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.195342779771472726 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:       _borrower,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       0.195342779771472726 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       uint128(block.timestamp),
+                kickPriceIndex: 3696
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.195342779771472726 * 1e18
+            }
+        );
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   2 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0.195342779771472726 * 1e18,
+                locked:    0
+            }
+        );
+    }
+
+    function testKickActiveAuctionReverts() external {
+
+        _assertAuction(
+            {
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
+            }
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.534277977147272573 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.195342779771472726 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:       _borrower,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       0.195342779771472726 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       uint128(block.timestamp),
+                kickPriceIndex: 3696
+            }
+        );
+
+        // kick should fail if borrower in liquidation
+        _assertKickAuctionActiveRevert(
+            {
+                from:       _lender,
+                borrower:   _borrower
+            }
+        );
+
+        // should not allow borrower to draw more debt if auction kicked
+        _assertBorrowAuctionActiveRevert(
+            {
+                from:       _borrower,
+                amount:     1 * 1e18,
+                indexLimit: 7000
+            }
+        );
+
+        skip(61 minutes);
+        // should revert if trying to repay debt after grace period of 1h expired
+        _assertRepayAuctionActiveRevert(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   15 * 1e18
+            }
+        );
+        // should revert if trying to pledge collateral after grace period of 1h expired
+        _assertPledgeAuctionActiveRevert(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   2 * 1e18
             }
         );
     }
