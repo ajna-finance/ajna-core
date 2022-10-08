@@ -114,8 +114,4 @@ interface IPoolErrors {
      */
     error PoolUnderCollateralized();
 
-    /**
-     *  @notice Take was called before 1 hour had passed from kick time.
-     */
-    error TakeNotPastCooldown();
 }

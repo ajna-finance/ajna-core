@@ -7,11 +7,6 @@ pragma solidity 0.8.14;
  */
 interface IPoolState {
 
-    function activeBonds(
-        address borrower,
-        address kicker
-    ) external view returns (uint256 lpBalance);
-
     /**
      *  @notice Returns details of an auction for a given borrower address.
      *  @param  borrower       Address of the borrower that is liquidated.
@@ -94,6 +89,14 @@ interface IPoolState {
      *  @return The timestamp of the last rate update.
      */
     function interestRateUpdate() external view returns (uint256);
+
+    function kickers(address kicker)
+        external
+        view
+        returns (
+            uint256 claimable,
+            uint256 locked
+        );
 
     /**
      *  @notice Returns the `lastInflatorSnapshotUpdate` state variable.

@@ -76,7 +76,6 @@ library Loans {
             poolDebt_,
             self_.loans.length - 1
         );
-
         Borrower storage borrower = self_.borrowers[borrower_];
         borrower.debt             = debt_;
         borrower.collateral       = collateral_;
@@ -84,7 +83,7 @@ library Loans {
         borrower.inflatorSnapshot = inflator_;
     }
 
-    function take(
+    function kick(
         Data storage self,
         address borrower_,
         uint256 debt_,
@@ -243,30 +242,13 @@ library Loans {
         Data storage self,
         address borrower_,
         uint256 poolInflator_
-    ) internal view returns (uint256 debt_, uint256 collateral_) {
+    ) internal view returns (uint256 debt_, uint256 collateral_, uint256 mompFactor_) {
         debt_       = self.borrowers[borrower_].debt;
         collateral_ = self.borrowers[borrower_].collateral;
+        mompFactor_ = self.borrowers[borrower_].mompFactor;
         if (debt_ != 0) {
             debt_ = Maths.wmul(debt_, Maths.wdiv(poolInflator_, self.borrowers[borrower_].inflatorSnapshot));
         }
-    }
-
-    function getAuctionedBorrowerInfo(
-        Data storage self,
-        address borrower_,
-        uint256 poolInflator_,
-        uint256 bondFactor_,
-        uint256 price_
-    ) internal view returns (uint256 debt_, uint256 collateral_, int256 bpf_) {
-        (debt_, collateral_) = getBorrowerInfo(self, borrower_, poolInflator_);
-        bpf_ = PoolUtils.bpf(
-            debt_,
-            collateral_,
-            self.borrowers[borrower_].mompFactor,
-            poolInflator_,
-            bondFactor_,
-            price_
-        );
     }
 
     function updateDebt(
