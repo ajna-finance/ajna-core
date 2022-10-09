@@ -33,11 +33,11 @@ contract LoansHeapInstance is DSTestPlus {
     }
 
     function upsertTp(address borrower_, uint256 tp_) public {
-        _heap.upsert(borrower_, tp_);
+        _heap._upsert(borrower_, tp_);
     }
 
     function removeTp(address borrower_) external {
-        _heap.remove(borrower_);
+        _heap._remove(borrower_);
     }
 
     function getTp(address borrower_) public view returns (uint256) {

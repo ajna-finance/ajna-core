@@ -22,11 +22,16 @@ contract AuctionsQueueInstance is DSTestPlus {
     }
 
     function remove(address borrower_) external {
-        auctions.remove(borrower_);
+        auctions.checkAndRemove(
+            borrower_,
+            1e18,
+            1e18,
+            1e18
+        );
     }
 
     function getHead() external view returns (address) {
-        return auctions.getHead();
+        return auctions.head;
     }
 
     function isActive(address borrower_) external view returns (bool kicked_) {
@@ -47,7 +52,7 @@ contract AuctionsQueueInstance is DSTestPlus {
             address
         )
     {
-        return auctions.get(borrower_);
+        return auctions.getAuctionInfo(borrower_);
     }
 }
 

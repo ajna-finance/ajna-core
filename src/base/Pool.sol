@@ -25,11 +25,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
 
-    uint256 public constant INCREASE_COEFFICIENT = 1.1 * 10**18;
-    uint256 public constant DECREASE_COEFFICIENT = 0.9 * 10**18;
+    uint256 internal constant INCREASE_COEFFICIENT = 1.1 * 10**18;
+    uint256 internal constant DECREASE_COEFFICIENT = 0.9 * 10**18;
 
-    uint256 public constant LAMBDA_EMA_7D        = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
-    uint256 public constant EMA_7D_RATE_FACTOR   = 1e18 - LAMBDA_EMA_7D;
+    uint256 internal constant LAMBDA_EMA_7D      = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
+    uint256 internal constant EMA_7D_RATE_FACTOR = 1e18 - LAMBDA_EMA_7D;
 
     /***********************/
     /*** State Variables ***/
@@ -53,15 +53,13 @@ abstract contract Pool is Clone, Multicall, IPool {
     uint256 public override reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
 
     mapping(uint256 => Buckets.Bucket)              public override buckets;     // deposit index -> bucket
-    // mapping(address => mapping(address => uint256)) public override activeBonds; // bonds book: kicker address -> borrower -> bond size
-
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
-    Auctions.Data  internal auctions;
-    Deposits.Data  internal deposits;
-    Loans.Data     internal loans;
-    address        internal ajnaTokenAddress;    //  Address of the Ajna token, needed for Claimable Reserve Auctions.
-    uint256        internal poolInitializations;
+    Auctions.Data internal auctions;
+    Deposits.Data internal deposits;
+    Loans.Data    internal loans;
+    address       internal ajnaTokenAddress;    //  Address of the Ajna token, needed for Claimable Reserve Auctions.
+    uint256       internal poolInitializations;
 
     struct PoolState {
         uint256 accruedDebt;
@@ -82,13 +80,13 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         bucketLPs_ = buckets.quoteTokensToLPs(
-            index_,
             deposits.valueAt(index_),
-            quoteTokenAmountToAdd_
+            quoteTokenAmountToAdd_,
+            index_
         );
 
         deposits.add(index_, quoteTokenAmountToAdd_);
-        buckets.add(bucketLPs_, index_);
+        buckets.addLPs(bucketLPs_, index_);
 
         uint256 newLup = _lup(poolState.accruedDebt);
         _updatePool(poolState, newLup);
@@ -121,10 +119,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         uint256 quoteTokenAmountToMove;
         (quoteTokenAmountToMove, fromBucketLPs_, ) = buckets.lpsToQuoteToken(
-            fromIndex_,
             deposits.valueAt(fromIndex_),
             lenderLpBalance,
-            maxQuoteTokenAmountToMove_
+            maxQuoteTokenAmountToMove_,
+            fromIndex_
         );
 
         deposits.remove(fromIndex_, quoteTokenAmountToMove);
@@ -142,9 +140,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
 
         toBucketLPs_ = buckets.quoteTokensToLPs(
-            toIndex_,
             deposits.valueAt(toIndex_),
-            quoteTokenAmountToMove
+            quoteTokenAmountToMove,
+            toIndex_
         );
 
         deposits.add(toIndex_, quoteTokenAmountToMove);
@@ -171,10 +169,10 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 deposit = deposits.valueAt(index_);
         (quoteTokenAmountRemoved_, , redeemedLenderLPs_) = buckets.lpsToQuoteToken(
-            index_,
             deposit,
             lenderLPsBalance,
-            deposit
+            deposit,
+            index_
         );
 
         _redeemLPForQuoteToken(
@@ -196,9 +194,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (quoteTokenAmountToRemove_ > deposit) revert InsufficientLiquidity();
 
         bucketLPs_ = buckets.quoteTokensToLPs(
-            index_,
             deposit,
-            quoteTokenAmountToRemove_
+            quoteTokenAmountToRemove_,
+            index_
         );
 
         (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(index_, msg.sender);
@@ -271,7 +269,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
         if (lupId > limitIndex_) revert LimitIndexReached();
 
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.getBorrowerInfo(
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.accrueBorrowerInterest(
             msg.sender,
             poolState.inflator
         );
@@ -331,7 +329,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.getBorrowerInfo(
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.accrueBorrowerInterest(
             borrower_,
             poolState.inflator
         );
@@ -352,7 +350,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 newLup = _lup(poolState.accruedDebt);
 
         if (auctionKicked) {
-            auctions.update(
+            auctions.checkAndRemove(
                 borrower_,
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
@@ -386,7 +384,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.getBorrowerInfo(
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.accrueBorrowerInterest(
             borrower_,
             poolState.inflator
         );
@@ -482,7 +480,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         // borrower accounting
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.getBorrowerInfo(
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.accrueBorrowerInterest(
             borrower_,
             poolState.inflator
         );
@@ -493,7 +491,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 newLup = _lup(poolState.accruedDebt);
 
         if (auctionKicked) {
-            auctions.update(
+            auctions.checkAndRemove(
                 borrower_,
                 borrowerAccruedDebt,
                 borrowerPledgedCollateral,
@@ -518,7 +516,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         // borrower accounting
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.getBorrowerInfo(
+        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.accrueBorrowerInterest(
             msg.sender,
             poolState.inflator
         );
@@ -556,9 +554,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
 
         (bucketLPs_, ) = buckets.collateralToLPs(
-            index_,
             deposits.valueAt(index_),
-            collateralAmountToAdd_
+            collateralAmountToAdd_,
+            index_
         );
 
         buckets.addCollateral(collateralAmountToAdd_, bucketLPs_, index_);
@@ -575,9 +573,9 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 bucketCollateral;
         (bucketLPs_, bucketCollateral) = buckets.collateralToLPs(
-            index_,
             deposits.valueAt(index_),
-            collateralAmountToRemove_
+            collateralAmountToRemove_,
+            index_
         );
         if (collateralAmountToRemove_ > bucketCollateral) revert InsufficientCollateral();
 
@@ -643,7 +641,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             uint256 borrowerAccruedDebt,
             uint256 borrowerPledgedCollateral,
             uint256 borrowerMompFactor
-        ) = loans.getBorrowerInfo(
+        ) = loans.accrueBorrowerInterest(
             borrower_,
             poolState.inflator
         );
@@ -678,7 +676,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 newLup = _lup(poolState.accruedDebt);
 
-        auctions.update(
+        auctions.checkAndRemove(
             borrower_,
             borrowerAccruedDebt,
             borrowerPledgedCollateral,
@@ -830,7 +828,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             address
         )
     {
-        return auctions.get(borrower_);
+        return auctions.getAuctionInfo(borrower_);
     }
 
     function depositSize() external view override returns (uint256) {
@@ -874,10 +872,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 index_
     ) external view override returns (uint256 quoteTokenAmount_) {
         (quoteTokenAmount_, , ) = buckets.lpsToQuoteToken(
-            index_,
             deposit_,
             lpTokens_,
-            deposit_
+            deposit_,
+            index_
         );
     }
 
@@ -890,13 +888,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function borrowers(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
-        Loans.Borrower memory borrower = loans.borrowers[borrower_];
-        return (borrower.debt, borrower.collateral, borrower.mompFactor, borrower.inflatorSnapshot);
+        return loans.getBorrowerInfo(borrower_);
     }
 
     function lenders(uint256 index_, address lender_) external view override returns (uint256, uint256) {
-        Buckets.Lender memory lender = buckets[index_].lenders[lender_];
-        return (lender.lps, lender.ts);
+        return buckets.getLenderInfo(index_, lender_);
     }
 
     function kickers(address kicker_) external view override returns (uint256, uint256) {

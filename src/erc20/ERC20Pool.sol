@@ -98,9 +98,9 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         uint256 fromBucketCollateral;
         (fromBucketLPs_, fromBucketCollateral) = buckets.collateralToLPs(
-            fromIndex_,
             deposits.valueAt(fromIndex_),
-            collateralAmountToMove_
+            collateralAmountToMove_,
+            fromIndex_
         );
         if (fromBucketCollateral < collateralAmountToMove_) revert InsufficientCollateral();
 
@@ -111,9 +111,9 @@ contract ERC20Pool is IERC20Pool, Pool {
         if (fromBucketLPs_ > lpBalance) revert InsufficientLPs();
 
         (toBucketLPs_, ) = buckets.collateralToLPs(
-            toIndex_,
             deposits.valueAt(toIndex_),
-            collateralAmountToMove_
+            collateralAmountToMove_,
+            toIndex_
         );
 
         buckets.removeCollateral(collateralAmountToMove_, fromBucketLPs_, fromIndex_);
@@ -132,9 +132,9 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(index_, msg.sender);
         (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
-            index_,
             deposits.valueAt(index_),
-            lenderLPsBalance
+            lenderLPsBalance,
+            index_
         );
         if (collateralAmountRemoved_ == 0) revert NoClaim();
 

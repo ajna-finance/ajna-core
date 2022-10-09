@@ -6,22 +6,22 @@ import './PoolUtils.sol';
 
 library Buckets {
 
-    /***************/
-    /*** Buckets ***/
-    /***************/
-
-    /**
-     *  @notice struct holding bucket info
-     *  @param lps        Bucket LP accumulator, RAY
-     *  @param collateral Available collateral tokens deposited in the bucket, WAD
-     */
-    struct Bucket {
-        uint256 lps;
-        uint256 collateral;
-        mapping(address => Lender) lenders;
+    struct Lender {
+        uint256 lps; // [RAY] Lender LP accumulator
+        uint256 ts;  // timestamp of last deposit
     }
 
-    function add(
+    struct Bucket {
+        uint256 lps;                        // [RAY] Bucket LP accumulator
+        uint256 collateral;                 // [WAD] Available collateral tokens deposited in the bucket
+        mapping(address => Lender) lenders; // lender address to Lender struct mapping
+    }
+
+    /***********************************/
+    /*** Bucket Management Functions ***/
+    /***********************************/
+
+    function addLPs(
         mapping(uint256 => Bucket) storage self,
         uint256 amount_,
         uint256 index_
@@ -32,6 +32,19 @@ library Buckets {
         Lender storage lender = bucket.lenders[msg.sender];
         lender.lps += amount_;
         lender.ts  = block.timestamp;
+    }
+
+    function addCollateral(
+        mapping(uint256 => Bucket) storage self,
+        uint256 collateral_,
+        uint256 lps_,
+        uint256 index_
+    ) internal {
+        Bucket storage bucket = self[index_];
+        bucket.lps += lps_;
+        bucket.collateral += collateral_;
+
+        bucket.lenders[msg.sender].lps += lps_;
     }
 
     function moveLPs(
@@ -48,6 +61,19 @@ library Buckets {
 
         fromBucket.lenders[msg.sender].lps -= fromAmount_;
         toBucket.lenders[msg.sender].lps   += toAmount_;
+    }
+
+    function removeCollateral(
+        mapping(uint256 => Bucket) storage self,
+        uint256 collateral_,
+        uint256 lps_,
+        uint256 index_
+    ) internal {
+        Bucket storage bucket = self[index_];
+        bucket.lps        -= Maths.min(bucket.lps, lps_);
+        bucket.collateral -= Maths.min(bucket.collateral, collateral_);
+
+        bucket.lenders[msg.sender].lps -= lps_;
     }
 
     function removeLPs(
@@ -77,36 +103,26 @@ library Buckets {
         delete self[index_].lenders[owner_];
     }
 
-    function addCollateral(
+
+    /**********************/
+    /*** View Functions ***/
+    /**********************/
+
+    function collateralToLPs(
         mapping(uint256 => Bucket) storage self,
+        uint256 deposit_,
         uint256 collateral_,
-        uint256 lps_,
         uint256 index_
-    ) internal {
-        Bucket storage bucket = self[index_];
-        bucket.lps += lps_;
-        bucket.collateral += collateral_;
-
-        bucket.lenders[msg.sender].lps += lps_;
-    }
-
-    function removeCollateral(
-        mapping(uint256 => Bucket) storage self,
-        uint256 collateral_,
-        uint256 lps_,
-        uint256 index_
-    ) internal {
-        Bucket storage bucket = self[index_];
-        bucket.lps        -= Maths.min(bucket.lps, lps_);
-        bucket.collateral -= Maths.min(bucket.collateral, collateral_);
-
-        bucket.lenders[msg.sender].lps -= lps_;
+    ) internal view returns (uint256, uint256) {
+        (uint256 rate, uint256 bucketCollateral)  = getExchangeRate(self, deposit_, index_);
+        uint256 lps = (collateral_ * PoolUtils.indexToPrice(index_) * 1e18 + rate / 2) / rate;
+        return (lps, bucketCollateral);
     }
 
     function getExchangeRate(
         mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 quoteToken_
+        uint256 quoteToken_,
+        uint256 index_
     ) internal view returns (uint256, uint256) {
         uint256 bucketCollateral = self[index_].collateral;
         uint256 bucketLPs        = self[index_].lps;
@@ -117,36 +133,41 @@ library Buckets {
         return (bucketSize * 10**18 / bucketLPs, bucketCollateral); // 10^27
     }
 
-    function collateralToLPs(
+    function getLenderInfo(
         mapping(uint256 => Bucket) storage self,
         uint256 index_,
-        uint256 deposit_,
-        uint256 collateral_
+        address lender_
     ) internal view returns (uint256, uint256) {
-        (uint256 rate, uint256 bucketCollateral)  = getExchangeRate(self, index_, deposit_);
-        uint256 lps = (collateral_ * PoolUtils.indexToPrice(index_) * 1e18 + rate / 2) / rate;
-        return (lps, bucketCollateral);
+        return (self[index_].lenders[lender_].lps, self[index_].lenders[lender_].ts);
     }
 
-    function quoteTokensToLPs(
+    function lpsToCollateral(
         mapping(uint256 => Bucket) storage self,
-        uint256 index_,
         uint256 deposit_,
-        uint256 quoteTokens_
-    ) internal view returns (uint256) {
-        (uint256 rate, )  = getExchangeRate(self, index_, deposit_);
-        return Maths.rdiv(Maths.wadToRay(quoteTokens_), rate);
+        uint256 lenderLPsBalance_,
+        uint256 index_
+    ) internal view returns (uint256 collateralAmount_, uint256 lenderLPs_) {
+        // max collateral to lps
+        lenderLPs_        = lenderLPsBalance_;
+        uint256 price      = PoolUtils.indexToPrice(index_);
+        (uint256 rate, uint256 bucketCollateral) = getExchangeRate(self, deposit_, index_);
+        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), price);
+        if (collateralAmount_ > bucketCollateral) {
+            // user is owed more collateral than is available in the bucket
+            collateralAmount_ = bucketCollateral;
+            lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, price), rate);
+        }
     }
 
     function lpsToQuoteToken(
         mapping(uint256 => Bucket) storage self,
-        uint256 index_,
         uint256 deposit_,
         uint256 lenderLPsBalance_,
-        uint256 maxQuoteToken_
+        uint256 maxQuoteToken_,
+        uint256 index_
     ) internal view returns (uint256 quoteTokenAmount_, uint256 bucketLPs_, uint256 lenderLPs_) {
         lenderLPs_ = lenderLPsBalance_;
-        (uint256 rate, )  = getExchangeRate(self, index_, deposit_);
+        (uint256 rate, )  = getExchangeRate(self, deposit_, index_);
         quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
         if (quoteTokenAmount_ > deposit_) {
             quoteTokenAmount_ = deposit_;
@@ -156,38 +177,13 @@ library Buckets {
         bucketLPs_ = Maths.wrdivr(quoteTokenAmount_, rate);
     }
 
-    function lpsToCollateral(
+    function quoteTokensToLPs(
         mapping(uint256 => Bucket) storage self,
-        uint256 index_,
         uint256 deposit_,
-        uint256 lenderLPsBalance_
-    ) internal view returns (uint256 collateralAmount_, uint256 lenderLPs_) {
-        // max collateral to lps
-        lenderLPs_        = lenderLPsBalance_;
-        uint256 price      = PoolUtils.indexToPrice(index_);
-        (uint256 rate, uint256 bucketCollateral) = getExchangeRate(self, index_, deposit_);
-        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), price);
-        if (collateralAmount_ > bucketCollateral) {
-            // user is owed more collateral than is available in the bucket
-            collateralAmount_ = bucketCollateral;
-            lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, price), rate);
-        }
-    }
-
-    /***************/
-    /*** Lenders ***/
-    /***************/
-
-    struct Lender {
-        uint256 lps; // [RAY]
-        uint256 ts;  // timestamp
-    }
-
-    function getLenderInfo(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        address lender_
-    ) internal view returns (uint256, uint256) {
-        return (self[index_].lenders[lender_].lps, self[index_].lenders[lender_].ts);
+        uint256 quoteTokens_,
+        uint256 index_
+    ) internal view returns (uint256) {
+        (uint256 rate, )  = getExchangeRate(self, deposit_, index_);
+        return Maths.rdiv(Maths.wadToRay(quoteTokens_), rate);
     }
 }

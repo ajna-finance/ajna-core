@@ -5,8 +5,8 @@ import './Maths.sol';
 import './BucketMath.sol';
 
 library PoolUtils {
-    uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
-    uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
+    uint256 private constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
+    uint256 private constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
 
     function auctionPrice(
         uint256 referencePrice,

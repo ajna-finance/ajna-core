@@ -947,8 +947,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 amount:   50 * 1e18
             }
         );
-        // vm.expectRevert("H:R:NO_BORROWER");
-        // _pool.borrow(0.00000000000000001 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
         _pledgeCollateral(

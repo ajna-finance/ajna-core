@@ -32,10 +32,55 @@ library Auctions {
     error NoAuction();
     error TakeNotPastCooldown();
 
+    /*********************************/
+    /***  Auctions Queue Functions ***/
+    /*********************************/
 
-    /*********************************/
-    /***  Auctions Queue functions ***/
-    /*********************************/
+    /**
+     *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
+     *  @param  borrower_   Borrower whose loan is being placed in queue.
+     *  @param  debt_       Borrower's accrued debt.
+     *  @param  collateral_ Borrower's pledged collateral.
+     *  @param  lup_        Pool's LUP.
+     */
+    function checkAndRemove(
+        Data storage self_,
+        address borrower_,
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 lup_
+    ) internal {
+        if (PoolUtils.collateralization(debt_, collateral_, lup_) >= Maths.WAD) {
+            Liquidation memory liquidation = self_.liquidations[borrower_];
+
+            Kicker storage kicker = self_.kickers[liquidation.kicker];
+            kicker.locked    -= liquidation.bondSize;
+            kicker.claimable += liquidation.bondSize;
+
+            if (self_.head == borrower_ && self_.tail == borrower_) {
+                // liquidation is the head and tail
+                self_.head = address(0);
+                self_.tail = address(0);
+
+            } else if(self_.head == borrower_) {
+                // liquidation is the head
+                self_.liquidations[liquidation.next].prev = address(0);
+                self_.head = liquidation.next;
+
+            } else if(self_.tail == borrower_) {
+                // liquidation is the tail
+                self_.liquidations[liquidation.prev].next = address(0);
+                self_.tail = liquidation.prev;
+
+            } else {
+                // liquidation is in the middle
+                self_.liquidations[liquidation.prev].next = liquidation.next;
+                self_.liquidations[liquidation.next].prev = liquidation.prev;
+            }
+
+            delete self_.liquidations[borrower_];
+        }
+    }
 
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue
@@ -162,83 +207,11 @@ library Auctions {
         }
     }
 
-    function update(
-        Data storage self_,
-        address borrower_,
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 lup_
-    ) internal {
-        if (
-            PoolUtils.collateralization(
-                debt_,
-                collateral_,
-                lup_
-        ) >= Maths.WAD) remove(self_, borrower_);
-    }
-
-    /**
-     *  @notice Removes a borrower from the auctions queue and repairs the queue order.
-     *  @dev    Called by _updateLoanQueue if borrower.debt == 0.
-     *  @param  borrower_ Borrower whose loan is being placed in queue.
-     */
-    function remove(Data storage self_, address borrower_) internal {
-
-        Liquidation memory liquidation = self_.liquidations[borrower_];
-
-        Kicker storage kicker = self_.kickers[liquidation.kicker];
-        kicker.locked    -= liquidation.bondSize;
-        kicker.claimable += liquidation.bondSize;
-
-        if (self_.head == borrower_ && self_.tail == borrower_) {
-            // liquidation is the head and tail
-            self_.head = address(0);
-            self_.tail = address(0);
-
-        } else if(self_.head == borrower_) {
-            // liquidation is the head
-            self_.liquidations[liquidation.next].prev = address(0);
-            self_.head = liquidation.next;
-
-        } else if(self_.tail == borrower_) {
-            // liquidation is the tail
-            self_.liquidations[liquidation.prev].next = address(0);
-            self_.tail = liquidation.prev;
-
-        } else {
-            // liquidation is in the middle
-            self_.liquidations[liquidation.prev].next = liquidation.next;
-            self_.liquidations[liquidation.next].prev = liquidation.prev;
-        }
-
-        delete self_.liquidations[borrower_];
-    }
-
-    /**************************/
+    /**********************/
     /*** View Functions ***/
-    /**************************/
+    /**********************/
 
-    function getHead(Data storage self_) internal view returns (address) {
-        return self_.head;
-    }
-
-    function getStatus(
-        Data storage self_,
-        address borrower_
-    ) internal view returns (bool kicked_, bool started_) {
-        uint256 kickTime = self_.liquidations[borrower_].kickTime;
-        kicked_  = kickTime != 0;
-        started_ = kicked_ && (block.timestamp - kickTime > 1 hours);
-    }
-
-    function getLiquidation(
-        Data storage self_,
-        address borrower_
-    ) internal view returns (Auctions.Liquidation memory) {
-        return self_.liquidations[borrower_];
-    }
-
-    function get(
+    function getAuctionInfo(
         Data storage self_,
         address borrower_
     )
@@ -269,6 +242,15 @@ library Auctions {
         address kicker_
     ) internal view returns (uint256, uint256) {
         return (self.kickers[kicker_].claimable, self.kickers[kicker_].locked);
+    }
+
+    function getStatus(
+        Data storage self_,
+        address borrower_
+    ) internal view returns (bool kicked_, bool started_) {
+        uint256 kickTime = self_.liquidations[borrower_].kickTime;
+        kicked_  = kickTime != 0;
+        started_ = kicked_ && (block.timestamp - kickTime > 1 hours);
     }
 
 }
