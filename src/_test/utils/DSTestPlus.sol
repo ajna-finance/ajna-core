@@ -476,16 +476,6 @@ abstract contract DSTestPlus is Test {
         _pool.kick(borrower);
     }
 
-    function _assertRepayAuctionActiveRevert(
-        address from,
-        address borrower,
-        uint256 amount
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.AuctionActive.selector);
-        _pool.repay(borrower, amount);
-    }
-
     function _assertRepayNoDebtRevert(
         address from,
         address borrower,

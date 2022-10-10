@@ -453,24 +453,6 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 indexLimit: 7000
             }
         );
-
-        skip(61 minutes);
-        // should revert if trying to repay debt after grace period of 1h expired
-        _assertRepayAuctionActiveRevert(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   15 * 1e18
-            }
-        );
-        // should revert if trying to pledge collateral after grace period of 1h expired
-        _assertPledgeAuctionActiveRevert(
-            {
-                from:     _borrower,
-                borrower: _borrower,
-                amount:   2 * 1e18
-            }
-        );
     }
 
     function testTakeGTNeutral() external {

@@ -50,7 +50,13 @@ library Auctions {
         uint256 collateral_,
         uint256 lup_
     ) internal {
-        if (PoolUtils.collateralization(debt_, collateral_, lup_) >= Maths.WAD) {
+
+        if (
+            self_.liquidations[borrower_].kickTime != 0
+            &&
+            PoolUtils.collateralization(debt_, collateral_, lup_) >= Maths.WAD
+        ) {
+
             Liquidation memory liquidation = self_.liquidations[borrower_];
 
             Kicker storage kicker = self_.kickers[liquidation.kicker];

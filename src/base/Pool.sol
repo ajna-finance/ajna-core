@@ -321,10 +321,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 maxQuoteTokenAmountToRepay_
     ) external override {
 
-        // if borrower auctioned then it cannot repay
-        (bool auctionKicked, bool auctionStarted) = auctions.getStatus(msg.sender);
-        if (auctionStarted) revert AuctionActive();
-
         PoolState memory poolState = _accruePoolInterest();
 
         (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral, ) = loans.accrueBorrowerInterest(
@@ -347,14 +343,12 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 newLup = _lup(poolState.accruedDebt);
 
-        if (auctionKicked) {
-            auctions.checkAndRemove(
-                borrower_,
-                borrowerAccruedDebt,
-                borrowerPledgedCollateral,
-                newLup
-            );
-        }
+        auctions.checkAndRemove(
+            borrower_,
+            borrowerAccruedDebt,
+            borrowerPledgedCollateral,
+            newLup
+        );
         loans.update(
             deposits,
             borrower_,
@@ -467,10 +461,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToPledge_
     ) internal {
 
-        // if borrower auctioned then it cannot pledge more collateral
-        (bool auctionKicked, bool auctionStarted) = auctions.getStatus(msg.sender);
-        if (auctionStarted) revert AuctionActive();
-
         PoolState memory poolState = _accruePoolInterest();
 
         // borrower accounting
@@ -484,14 +474,12 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 newLup = _lup(poolState.accruedDebt);
 
-        if (auctionKicked) {
-            auctions.checkAndRemove(
-                borrower_,
-                borrowerAccruedDebt,
-                borrowerPledgedCollateral,
-                newLup
-            );
-        }
+        auctions.checkAndRemove(
+            borrower_,
+            borrowerAccruedDebt,
+            borrowerPledgedCollateral,
+            newLup
+        );
         loans.update(
             deposits,
             borrower_,
