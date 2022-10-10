@@ -399,9 +399,6 @@ abstract contract Pool is Clone, Multicall, IPool {
             ) >= Maths.WAD
         ) revert BorrowerOk();
 
-        uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
-        if (lup > thresholdPrice) revert LUPGreaterThanTP();
-
         loans.kick(
             borrower_,
             borrowerAccruedDebt,
@@ -411,7 +408,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 kickAuctionAmount = auctions.kick(
             borrower_,
             borrowerAccruedDebt,
-            thresholdPrice,
+            borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral,
             deposits.momp(poolState.accruedDebt, loans.noOfLoans()),
             PoolUtils.indexToPrice(_hpbIndex())
         );
