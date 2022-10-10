@@ -388,17 +388,16 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrower_,
             poolState.inflator
         );
-
         if (borrowerAccruedDebt == 0) revert NoDebt();
-        uint256 lup = _lup(poolState.accruedDebt);
 
-       if (
-           PoolUtils.collateralization(
-               borrowerAccruedDebt,
-               borrowerPledgedCollateral,
-               lup
-           ) >= Maths.WAD
-       ) revert BorrowerOk();
+        uint256 lup = _lup(poolState.accruedDebt);
+        if (
+            PoolUtils.collateralization(
+                borrowerAccruedDebt,
+                borrowerPledgedCollateral,
+                lup
+            ) >= Maths.WAD
+        ) revert BorrowerOk();
 
         uint256 thresholdPrice = borrowerAccruedDebt * Maths.WAD / borrowerPledgedCollateral;
         if (lup > thresholdPrice) revert LUPGreaterThanTP();
