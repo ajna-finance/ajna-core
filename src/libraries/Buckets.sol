@@ -21,30 +21,44 @@ library Buckets {
     /*** Bucket Management Functions ***/
     /***********************************/
 
-    function addLPs(
+    function addQuoteToken(
         mapping(uint256 => Bucket) storage self,
-        uint256 amount_,
+        uint256 deposit_,
+        uint256 quoteTokenAmountToAdd_,
         uint256 index_
-    ) internal {
+    ) internal returns (uint256 bucketLPs_) {
+        bucketLPs_ = quoteTokensToLPs(
+            self,
+            deposit_,
+            quoteTokenAmountToAdd_,
+            index_
+        );
+
         Bucket storage bucket = self[index_];
-        bucket.lps += amount_;
+        bucket.lps += bucketLPs_;
 
         Lender storage lender = bucket.lenders[msg.sender];
-        lender.lps += amount_;
+        lender.lps += bucketLPs_;
         lender.ts  = block.timestamp;
     }
 
     function addCollateral(
         mapping(uint256 => Bucket) storage self,
+        uint256 deposit_,
         uint256 collateral_,
-        uint256 lps_,
         uint256 index_
-    ) internal {
+    ) internal returns (uint256 bucketLPs_) {
+        (bucketLPs_, ) = collateralToLPs(
+            self,
+            deposit_,
+            collateral_,
+            index_
+        );
         Bucket storage bucket = self[index_];
-        bucket.lps += lps_;
+        bucket.lps += bucketLPs_;
         bucket.collateral += collateral_;
 
-        bucket.lenders[msg.sender].lps += lps_;
+        bucket.lenders[msg.sender].lps += bucketLPs_;
     }
 
     function moveLPs(

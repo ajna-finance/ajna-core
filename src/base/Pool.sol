@@ -79,14 +79,12 @@ abstract contract Pool is Clone, Multicall, IPool {
     ) external override returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
 
-        bucketLPs_ = buckets.quoteTokensToLPs(
+        bucketLPs_ = buckets.addQuoteToken(
             deposits.valueAt(index_),
             quoteTokenAmountToAdd_,
             index_
         );
-
         deposits.add(index_, quoteTokenAmountToAdd_);
-        buckets.addLPs(bucketLPs_, index_);
 
         uint256 newLup = _lup(poolState.accruedDebt);
         _updatePool(poolState, newLup);
@@ -548,15 +546,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
-
-        (bucketLPs_, ) = buckets.collateralToLPs(
-            deposits.valueAt(index_),
-            collateralAmountToAdd_,
-            index_
-        );
-
-        buckets.addCollateral(collateralAmountToAdd_, bucketLPs_, index_);
-
+        bucketLPs_ = buckets.addCollateral(deposits.valueAt(index_), collateralAmountToAdd_, index_);
         _updatePool(poolState, _lup(poolState.accruedDebt));
     }
 

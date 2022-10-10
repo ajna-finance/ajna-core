@@ -110,14 +110,8 @@ contract ERC20Pool is IERC20Pool, Pool {
         );
         if (fromBucketLPs_ > lpBalance) revert InsufficientLPs();
 
-        (toBucketLPs_, ) = buckets.collateralToLPs(
-            deposits.valueAt(toIndex_),
-            collateralAmountToMove_,
-            toIndex_
-        );
-
         buckets.removeCollateral(collateralAmountToMove_, fromBucketLPs_, fromIndex_);
-        buckets.addCollateral(collateralAmountToMove_, toBucketLPs_, toIndex_);
+        toBucketLPs_ = buckets.addCollateral(deposits.valueAt(toIndex_), collateralAmountToMove_, toIndex_);
 
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
