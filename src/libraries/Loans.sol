@@ -73,10 +73,8 @@ library Loans {
     ) internal {
 
         // update loan heap
-        if (debt_ != 0) {
-            uint256 t0ThresholdPrice;
-            if (collateral_ != 0) t0ThresholdPrice = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
-            _upsert(self_, borrower_, t0ThresholdPrice);
+        if (debt_ != 0 && collateral_ != 0) {
+            _upsert(self_, borrower_,  Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_));
         } else if (self_.indices[borrower_] != 0) {
             _remove(self_, borrower_);
         }

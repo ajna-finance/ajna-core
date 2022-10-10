@@ -177,7 +177,7 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         }
     }
 
-    function testLoadERC20PoolGasKickAllLoansFromLowestTP() public {
+    function testLoadERC20PoolGasKickAndTakeAllLoansFromLowestTP() public {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
@@ -186,10 +186,14 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[i]);
         }
+        skip(2 hours);
+        for (uint256 i; i < LOANS_COUNT - 1; i ++) {
+            ERC20Pool(address(_pool)).take(_borrowers[i], 100 * 1e18, new bytes(0));
+        }
         vm.stopPrank();
     }
 
-    function testLoadERC20PoolGasKickAllLoansFromHighestTP() public {
+    function testLoadERC20PoolGasKickAndTakeAllLoansFromHighestTP() public {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
@@ -197,6 +201,10 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         vm.startPrank(kicker);
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
+        }
+        skip(2 hours);
+        for (uint256 i; i < LOANS_COUNT - 1; i ++) {
+            ERC20Pool(address(_pool)).take(_borrowers[LOANS_COUNT - 1 - i], 100 * 1e18, new bytes(0));
         }
         vm.stopPrank();
     }

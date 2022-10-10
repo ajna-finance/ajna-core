@@ -29,6 +29,7 @@ abstract contract DSTestPlus is Test {
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
+    event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
     event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
     event ReserveAuction(uint256 claimableReservesRemaining_, uint256 auctionPrice_);
@@ -207,23 +208,23 @@ abstract contract DSTestPlus is Test {
         uint256 bondSize,
         uint256 bondFactor,
         uint256 kickTime,
-        uint256 kickPriceIndex
+        uint256 kickPrice
     ) internal {
         (
             address auctionKicker,
             uint256 auctionBondFactor,
             uint256 auctionKickTime,
-            uint256 auctionKickPriceIndex,
+            uint256 auctionKickPrice,
             ,
         ) = _pool.auctionInfo(borrower);
         (, uint256 lockedBonds) = _pool.kickers(kicker);
 
-        assertEq(auctionKickTime != 0,  active);
-        assertEq(auctionKicker,         kicker);
-        assertEq(lockedBonds,           bondSize);
-        assertEq(auctionBondFactor,     bondFactor);
-        assertEq(auctionKickTime,       kickTime);
-        assertEq(auctionKickPriceIndex, kickPriceIndex);
+        assertEq(auctionKickTime != 0, active);
+        assertEq(auctionKicker,        kicker);
+        assertEq(lockedBonds,          bondSize);
+        assertEq(auctionBondFactor,    bondFactor);
+        assertEq(auctionKickTime,      kickTime);
+        assertEq(auctionKickPrice,     kickPrice);
     }
 
     function _assertPool(PoolState memory state_) internal {
@@ -569,7 +570,7 @@ abstract contract DSTestPlus is Test {
     function _assertTakeReservesNoAuctionRevert(
         uint256 amount
     ) internal {
-        vm.expectRevert(IPoolErrors.NoAuction.selector);
+        vm.expectRevert(IPoolErrors.NoReservesAuction.selector);
         _pool.takeReserves(amount);
     }
 

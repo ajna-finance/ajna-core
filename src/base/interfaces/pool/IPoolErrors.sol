@@ -89,9 +89,9 @@ interface IPoolErrors {
     error NoAllowance();
 
     /**
-     *  @notice Actor is attempting to take or clear an inactive auction.
+     *  @notice Actor is attempting to take or clear an inactive reserves auction.
      */
-    error NoAuction();
+    error NoReservesAuction();
 
     /**
      *  @notice Lender must have non-zero LPB when attemptign to remove quote token from the pool.

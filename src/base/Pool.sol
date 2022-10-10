@@ -17,6 +17,8 @@ import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 
+import "@std/console.sol";
+
 abstract contract Pool is Clone, Multicall, IPool {
     using SafeERC20 for ERC20;
 
@@ -414,7 +416,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrowerAccruedDebt,
             thresholdPrice,
             deposits.momp(poolState.accruedDebt, loans.noOfLoans()),
-            _hpbIndex()
+            PoolUtils.indexToPrice(_hpbIndex())
         );
 
         // update pool state
@@ -450,7 +452,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
         uint256 kicked = reserveAuctionKicked;
-        if (kicked == 0 || block.timestamp - kicked > 72 hours) revert NoAuction();
+        if (kicked == 0 || block.timestamp - kicked > 72 hours) revert NoReservesAuction();
 
         amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
         uint256 price = PoolUtils.reserveAuctionPrice(kicked);
@@ -667,12 +669,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         poolState.accruedDebt     -= repayAmount;
         poolState.collateral      -= collateralTaken;
 
-        if (borrowerAccruedDebt != 0) {
-            // check that take doesn't leave borrower debt under min debt amount
-            if (
-                borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loans.noOfLoans())
-            ) revert AmountLTMinDebt();
-        }
+        // check that take doesn't leave borrower debt under min debt amount
+        if (
+            borrowerAccruedDebt != 0
+            &&
+            borrowerAccruedDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loans.noOfLoans())
+        ) revert AmountLTMinDebt();
 
         uint256 newLup = _lup(poolState.accruedDebt);
 
