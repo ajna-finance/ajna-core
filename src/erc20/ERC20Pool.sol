@@ -114,7 +114,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         buckets.removeCollateral(collateralAmountToMove_, fromBucketLPs_, fromIndex_);
         toBucketLPs_ = buckets.addCollateral(deposits.valueAt(toIndex_), collateralAmountToMove_, toIndex_);
 
-        _updatePool(poolState, _lup(poolState.accruedDebt));
+        _updatePool(poolState, 0, _lup(poolState.accruedDebt));
 
         emit MoveCollateral(msg.sender, fromIndex_, toIndex_, collateralAmountToMove_);
     }

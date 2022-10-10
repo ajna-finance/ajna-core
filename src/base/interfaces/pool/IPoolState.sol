@@ -27,7 +27,7 @@ interface IPoolState {
     );
 
     /**
-     *  @notice Returns the `borrowerDebt` state variable.
+     *  @notice Calculates pool debt with interest.
      *  @return borrowerDebt_ Total amount of borrower debt in pool.
      */
     function borrowerDebt() external view returns (uint256 borrowerDebt_);
@@ -36,7 +36,7 @@ interface IPoolState {
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  borrower   Address of the borrower.
-     *  @return debt       Amount of debt that the borrower has, in quote token.
+     *  @return t0debt     Amount of debt that the borrower has, as if it occurred at the first borrow in the pool
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
      *  @return mompFactor Momp / borrowerInflatorSnapshot factor used.
      */
@@ -44,7 +44,7 @@ interface IPoolState {
         external
         view
         returns (
-            uint256 debt,
+            uint256 t0debt,
             uint256 collateral,
             uint256 mompFactor
         );
@@ -78,7 +78,7 @@ interface IPoolState {
 
     /**
      *  @notice Returns the `interestRate` state variable.
-     *  @return interestRate TODO
+     *  @return Current annual percentage rate of the pool
      */
     function interestRate() external view returns (uint256);
 

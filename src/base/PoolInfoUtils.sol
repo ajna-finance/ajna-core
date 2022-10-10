@@ -26,7 +26,9 @@ contract PoolInfoUtils {
         uint256 interestRate               = pool.interestRate();
 
         uint256 pendingInflator = PoolUtils.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        (debt_, collateral_, mompFactor_)  = pool.borrowers(borrower_);
+        uint256 t0debt;
+        (t0debt, collateral_, mompFactor_)  = pool.borrowers(borrower_);
+        debt_ = Maths.wmul(t0debt, pendingInflator);
     }
 
     /**

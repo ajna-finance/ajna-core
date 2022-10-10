@@ -95,14 +95,15 @@ library Actors {
         if (debt_ != 0) {
             debt_ = Maths.wmul(debt_, poolInflator_);
         }
+        console.log(" borrower t0debt=%s, debt=%s for inflator %s", self[borrower_].t0debt, debt_, poolInflator_);
     }
 
     function update(
         mapping(address => Borrower) storage self,
         address borrower_,
         uint256 collateral_,
-        uint256 mompFactor_,
-        uint256 inflator_
+        int256  t0debtChange_,
+        uint256 mompFactor_
     ) internal {
         Borrower storage borrower = self[borrower_];
         borrower.collateral       = collateral_;
