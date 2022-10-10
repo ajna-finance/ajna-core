@@ -51,14 +51,15 @@ library Loans {
         Data storage self,
         address borrower_,
         uint256 debt_,
-        uint256 inflator_
+        uint256 inflator_,
+        uint256 rate_
     ) internal {
         // update loan heap
         _remove(self, borrower_);
 
         // update borrower balance
         Borrower storage borrower = self.borrowers[borrower_];
-        borrower.debt             = debt_;
+        borrower.debt             = debt_ + Maths.wmul(Maths.wdiv(rate_, 4 * 1e18), debt_); // the moment a loan is kicked, its debt is increased by three months of interest
         borrower.inflatorSnapshot = inflator_;
     }
 

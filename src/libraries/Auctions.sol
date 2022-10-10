@@ -208,8 +208,11 @@ library Auctions {
         } else {
             // take is above neutralPrice, Kicker is penalized
             bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(-bpf));
-            liquidation.bondSize -= bondChange_;
-            self_.kickers[liquidation.kicker].locked -= bondChange_;
+            liquidation.bondSize -= Maths.min(liquidation.bondSize, bondChange_);
+            if (bondChange_ >= self_.kickers[liquidation.kicker].locked) {
+                self_.kickers[liquidation.kicker].locked = 0;
+            }
+            else self_.kickers[liquidation.kicker].locked -= bondChange_;
         }
     }
 

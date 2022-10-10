@@ -394,7 +394,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         loans.kick(
             borrower_,
             borrowerAccruedDebt,
-            poolState.inflator
+            poolState.inflator,
+            poolState.rate
         );
         // kick auction
         uint256 kickAuctionAmount = auctions.kick(
