@@ -689,7 +689,60 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerPendingDebt:       3_656.702692383452714356 * 1e18
             }
         );
+
+        // should revert if there's no more collateral to be auctioned
+        _assertTakeInsufficentCollateralRevert(
+            {
+                from:          _lender,
+                borrower:      _borrower2,
+                maxCollateral: 10 * 1e18
+            }
+        );
         
+    }
+
+    function testTakeReverts() external {
+        // should revert if there's no auction started
+        _assertTakeNoAuctionRevert(
+            {
+                from:          _lender,
+                borrower:      _borrower,
+                maxCollateral: 10 * 1e18
+            }
+        );
+
+        skip(100 days);
+
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.534277977147272573 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.195342779771472726 * 1e18
+            }
+        );
+
+        // should revert if auction in grace period
+        _assertTakeAuctionInCooldownRevert(
+            {
+                from:          _lender,
+                borrower:      _borrower,
+                maxCollateral: 10 * 1e18
+            }
+        );
+
+        skip(2 hours);
+
+        // should revert if auction leaves borrower with debt under minimum pool debt
+        _assertTakeDebtUnderMinPoolDebtRevert(
+            {
+                from:          _lender,
+                borrower:      _borrower,
+                maxCollateral: 0.1 * 1e18
+            }
+        );
+
     }
 
     function testAuctionPrice() external {
