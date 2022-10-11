@@ -182,9 +182,9 @@ library BucketMath {
         // BPF = BondFactor * sign(neutralPrice - price)
         int256 sign;
         int256 val = neutralPrice - int256(price_);
-        if (val < 0 )      sign = -1;
-        else if (val != 0) sign = 1;
-        return PRBMathSD59x18.mul(int256(bondFactor_), sign); // TODO: is this right or should be sign * val?
+        if (val < 0 )      sign = -1e18;
+        else if (val != 0) sign = 1e18;
+        return PRBMathSD59x18.mul(int256(bondFactor_), sign);
     }
 
 }

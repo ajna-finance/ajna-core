@@ -594,7 +594,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 from:            _lender,
                 borrower:        _borrower2,
                 maxCollateral:   20 * 1e18,
-                bondChange:      0,
+                bondChange:      1.239648105429489010 * 1e18,
                 givenAmount:     123.964810542948901000 * 1e18,
                 collateralTaken: 20 * 1e18,
                 isReward:        true
@@ -605,7 +605,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrower:   _borrower2,
                 active:     true,
                 kicker:     _lender,
-                bondSize:   98.533942419792216457 * 1e18,
+                bondSize:   99.773590525221705467 * 1e18,
                 bondFactor: 0.01 * 1e18,
                 kickTime:   block.timestamp - 5 hours,
                 kickPrice:  PoolUtils.indexToPrice(3696)
@@ -615,18 +615,18 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 kicker:    _lender,
                 claimable: 0,
-                locked:    98.533942419792216457 * 1e18 // still locked, auction is not yet finished, now at initial bond + reward
+                locked:    99.773590525221705467 * 1e18 // locked bond + reward, auction is not yet finished
             }
         );
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              9_852.910055525337727788 * 1e18,
+                borrowerDebt:              9_854.149703630767216798 * 1e18,
                 borrowerCollateral:        980 * 1e18,
                 borrowerMompFactor:        9.684861431554868575 * 1e18,
                 borrowerInflator:          1.013824712461823922 * 1e18,
-                borrowerCollateralization: 0.966909257675466530 * 1e18,
-                borrowerPendingDebt:       9_852.910055525337727788 * 1e18
+                borrowerCollateralization: 0.966787620876204389 * 1e18,
+                borrowerPendingDebt:       9_854.149703630767216798 * 1e18
             }
         );
 
@@ -636,7 +636,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 from:            _lender,
                 borrower:        _borrower2,
                 maxCollateral:   981 * 1e18,
-                bondChange:      0,
+                bondChange:      60.742757166044961490 * 1e18,
                 givenAmount:     6_074.275716604496149000 * 1e18,
                 collateralTaken: 980 * 1e18,
                 isReward:        true
@@ -647,7 +647,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrower:   _borrower2,
                 active:     true,
                 kicker:     _lender,
-                bondSize:   98.533942419792216457 * 1e18,
+                bondSize:   160.516347691266666957 * 1e18,
                 bondFactor: 0.01 * 1e18,
                 kickTime:   block.timestamp - 5 hours,
                 kickPrice:  PoolUtils.indexToPrice(3696)
@@ -657,18 +657,18 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 kicker:    _lender,
                 claimable: 0,
-                locked:    98.533942419792216457 * 1e18 // still locked, auction is not yet finalized
+                locked:    160.516347691266666957 * 1e18 // locked bond + reward, auction is not yet finalized
             }
         );
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              3_778.634338920841578788 * 1e18,
+                borrowerDebt:              3_840.616744192316029288 * 1e18,
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.684861431554868575 * 1e18,
                 borrowerInflator:          1.013824712461823922 * 1e18,
                 borrowerCollateralization: 0,
-                borrowerPendingDebt:       3_778.634338920841578788 * 1e18
+                borrowerPendingDebt:       3_840.616744192316029288 * 1e18
             }
         );
 
