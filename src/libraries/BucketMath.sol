@@ -179,7 +179,7 @@ library BucketMath {
             if (val < 0 )      sign = -1e18;
             else if (val != 0) sign = 1e18;
         }
- 
+
         return PRBMathSD59x18.mul(int256(bondFactor_), sign);
     }
 

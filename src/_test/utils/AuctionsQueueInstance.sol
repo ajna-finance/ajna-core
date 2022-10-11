@@ -52,7 +52,15 @@ contract AuctionsQueueInstance is DSTestPlus {
             address
         )
     {
-        return auctions.getAuctionInfo(borrower_);
+        Auctions.Liquidation memory liquidation = auctions.liquidations[borrower_];
+        return (
+            liquidation.kicker,
+            liquidation.bondFactor,
+            liquidation.kickTime,
+            liquidation.kickPrice,
+            liquidation.prev,
+            liquidation.next
+        );
     }
 }
 

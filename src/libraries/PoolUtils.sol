@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import '../base/Pool.sol';
 import './Maths.sol';
 import './BucketMath.sol';
 
@@ -93,22 +94,20 @@ library PoolUtils {
     }
 
     function applyEarlyWithdrawalPenalty(
-        uint256 interestRate_,
+        Pool.PoolState memory poolState_,
         uint256 minFee_,
         uint256 depositTime_,
-        uint256 curDebt_,
-        uint256 col_,
         uint256 fromIndex_,
         uint256 toIndex_,
         uint256 amount_
     ) internal view returns (uint256 amountWithPenalty_){
         amountWithPenalty_ = amount_;
-        if (col_ != 0 && depositTime_ != 0 && block.timestamp - depositTime_ < 1 days) {
-            uint256 ptp = Maths.wdiv(curDebt_, col_);
+        if (poolState_.collateral != 0 && depositTime_ != 0 && block.timestamp - depositTime_ < 1 days) {
+            uint256 ptp = Maths.wdiv(poolState_.accruedDebt, poolState_.collateral);
             bool applyPenalty = indexToPrice(fromIndex_) > ptp;
             if (toIndex_ != 0) applyPenalty = applyPenalty && indexToPrice(toIndex_) < ptp;
             if (applyPenalty) {
-                amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate(interestRate_, minFee_));
+                amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate(poolState_.rate, minFee_));
             }
         }
     }

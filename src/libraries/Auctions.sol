@@ -156,12 +156,9 @@ library Auctions {
 
     function take(
         Data storage self_,
-        address borrower_,
-        uint256 borrowerDebt_,
-        uint256 borrowerCollateral_,
-        uint256 borrowerMompFactor_,
-        uint256 maxCollateral_,
-        uint256 poolInflator_
+        address borrowerAddress_,
+        Loans.Borrower memory borrower_,
+        uint256 maxCollateral_
     )
         internal
         returns (
@@ -172,7 +169,7 @@ library Auctions {
             bool isRewarded_
         )
     {
-        Liquidation storage liquidation = self_.liquidations[borrower_];
+        Liquidation storage liquidation = self_.liquidations[borrowerAddress_];
         if (liquidation.kickTime == 0) revert NoAuction();
         if (block.timestamp - liquidation.kickTime <= 1 hours) revert TakeNotPastCooldown();
 
@@ -181,22 +178,22 @@ library Auctions {
             liquidation.kickTime
         );
         // calculate amount
-        quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrowerCollateral_, maxCollateral_));
+        quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
         collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
 
         int256 bpf = PoolUtils.bpf(
-            borrowerDebt_,
-            borrowerCollateral_,
-            borrowerMompFactor_,
-            poolInflator_,
+            borrower_.debt,
+            borrower_.collateral,
+            borrower_.mompFactor,
+            borrower_.inflatorSnapshot,
             liquidation.bondFactor,
             auctionPrice
         );
 
         repayAmount_ = Maths.wmul(quoteTokenAmount_, uint256(1e18 - bpf));
-        if (repayAmount_ >= borrowerDebt_) {
-            repayAmount_      = borrowerDebt_;
-            quoteTokenAmount_ = Maths.wdiv(borrowerDebt_, uint256(1e18 - bpf));
+        if (repayAmount_ >= borrower_.debt) {
+            repayAmount_      = borrower_.debt;
+            quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - bpf));
         }
 
         isRewarded_ = (bpf >= 0);
@@ -219,39 +216,6 @@ library Auctions {
     /**********************/
     /*** View Functions ***/
     /**********************/
-
-    function getAuctionInfo(
-        Data storage self_,
-        address borrower_
-    )
-        internal
-        view
-        returns (
-            address,
-            uint256,
-            uint256,
-            uint256,
-            address,
-            address
-        )
-    {
-        Auctions.Liquidation memory liquidation = self_.liquidations[borrower_];
-        return (
-            liquidation.kicker,
-            liquidation.bondFactor,
-            liquidation.kickTime,
-            liquidation.kickPrice,
-            liquidation.prev,
-            liquidation.next
-        );
-    }
-
-    function getKickerInfo(
-        Data storage self,
-        address kicker_
-    ) internal view returns (uint256, uint256) {
-        return (self.kickers[kicker_].claimable, self.kickers[kicker_].locked);
-    }
 
     function getStatus(
         Data storage self_,

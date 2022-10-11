@@ -66,33 +66,31 @@ library Loans {
     function update(
         Data storage self_,
         Deposits.Data storage deposits_,
-        address borrower_,
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 poolDebt_,
-        uint256 inflator_
+        address borrowerAddress_,
+        Borrower memory borrower_,
+        uint256 poolDebt_
     ) internal {
 
         // update loan heap
-        if (debt_ != 0 && collateral_ != 0) {
-            _upsert(self_, borrower_,  Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_));
-        } else if (self_.indices[borrower_] != 0) {
-            _remove(self_, borrower_);
+        if (borrower_.debt != 0 && borrower_.collateral != 0) {
+            _upsert(
+                self_,
+                borrowerAddress_,
+                Maths.wdiv(Maths.wdiv(borrower_.debt, borrower_.inflatorSnapshot), borrower_.collateral)
+            );
+        } else if (self_.indices[borrowerAddress_] != 0) {
+            _remove(self_, borrowerAddress_);
         }
 
         // update borrower balance
-        uint256 borrowerMompFactor;
-        if (debt_ != 0) borrowerMompFactor = Deposits.mompFactor(
+        if (borrower_.debt != 0) borrower_.mompFactor = Deposits.mompFactor(
             deposits_,
-            inflator_,
+            borrower_.inflatorSnapshot,
             poolDebt_,
             self_.loans.length - 1
         );
-        Borrower storage borrower = self_.borrowers[borrower_];
-        borrower.debt             = debt_;
-        borrower.collateral       = collateral_;
-        borrower.mompFactor       = borrowerMompFactor;
-        borrower.inflatorSnapshot = inflator_;
+        else borrower_.mompFactor = 0;
+        self_.borrowers[borrowerAddress_] = borrower_;
     }
 
     /**************************************/
@@ -217,13 +215,13 @@ library Loans {
         Data storage self,
         address borrower_,
         uint256 poolInflator_
-    ) internal view returns (uint256 debt_, uint256 collateral_, uint256 mompFactor_) {
-        debt_       = self.borrowers[borrower_].debt;
-        collateral_ = self.borrowers[borrower_].collateral;
-        mompFactor_ = self.borrowers[borrower_].mompFactor;
-        if (debt_ != 0) {
-            debt_ = Maths.wmul(debt_, Maths.wdiv(poolInflator_, self.borrowers[borrower_].inflatorSnapshot));
+    ) internal view returns (Borrower memory) {
+        Borrower memory borrower = self.borrowers[borrower_];
+        if (borrower.debt != 0) {
+            borrower.debt = Maths.wmul(borrower.debt, Maths.wdiv(poolInflator_, borrower.inflatorSnapshot));
         }
+        borrower.inflatorSnapshot = poolInflator_;
+        return borrower;
     }
 
     /**
@@ -253,18 +251,6 @@ library Loans {
      */
     function getMax(Data storage self_) internal view returns(Loan memory) {
         return getByIndex(self_, ROOT_INDEX);
-    }
-
-    function getBorrowerInfo(
-        Data storage self,
-        address borrower_
-    ) internal view returns (uint256, uint256, uint256, uint256) {
-        return(
-            self.borrowers[borrower_].debt,
-            self.borrowers[borrower_].collateral,
-            self.borrowers[borrower_].mompFactor,
-            self.borrowers[borrower_].inflatorSnapshot
-        );
     }
 
     function noOfLoans(Data storage self_) internal view returns (uint256) {
