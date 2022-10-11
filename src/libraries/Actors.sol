@@ -95,7 +95,6 @@ library Actors {
         if (debt_ != 0) {
             debt_ = Maths.wmul(debt_, poolInflator_);
         }
-        console.log(" borrower t0debt=%s, debt=%s for inflator %s", self[borrower_].t0debt, debt_, poolInflator_);
     }
 
     function update(
@@ -108,5 +107,7 @@ library Actors {
         Borrower storage borrower = self[borrower_];
         borrower.collateral       = collateral_;
         borrower.mompFactor       = mompFactor_;
+        // TODO: inefficient; would like to mutate this with a += in borrow, -= in repay
+        borrower.t0debt = Maths.uadd(borrower.t0debt, t0debtChange_);
     }
 }

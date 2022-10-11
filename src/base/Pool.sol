@@ -17,8 +17,6 @@ import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 
-import "forge-std/console.sol";
-
 abstract contract Pool is Clone, Multicall, IPool {
     using SafeERC20 for ERC20;
 
@@ -281,7 +279,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 debt = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
         require(debt < uint256(type(int256).max), "BORROWER-DEBT-OVERFLOW");   // TODO: make custom error
         int256 t0debt = int256(Maths.wdiv(debt, poolState.inflator));
-        console.log("borrow increasing borrower debt %s by %s", borrowerDebt, debt);
         borrowerDebt += debt;
 
         // FIXME: newLup should be calculated on debt including origination fee
