@@ -15,13 +15,13 @@ library Auctions {
     }
 
     struct Liquidation {
-        address kicker;     // address that initiated liquidation
-        uint256 bondSize;   // liquidation bond size
-        uint256 bondFactor; // bond factor used to start liquidation
-        uint256 kickTime;   // timestamp when liquidation was started
-        uint256 kickPrice;  // HPB index at liquidation start
-        address prev;       // previous liquidated borrower in auctions queue
-        address next;       // next liquidated borrower in auctions queue
+        address kicker;          // address that initiated liquidation
+        uint256 bondSize;        // liquidation bond size
+        uint256 bondFactor;      // bond factor used to start liquidation
+        uint128 kickTime;        // timestamp when liquidation was started
+        uint128 kickPriceIndex;  // HPB price index at liquidation kick time
+        address prev;            // previous liquidated borrower in auctions queue
+        address next;            // next liquidated borrower in auctions queue
     }
 
     struct Kicker {
@@ -100,7 +100,7 @@ library Auctions {
      *  @param  borrowerDebt_      Borrower debt to be recovered.
      *  @param  thresholdPrice_    Current threshold price (used to calculate bond factor).
      *  @param  momp_              Current MOMP (used to calculate bond factor).
-     *  @param  hpb_               Current HPB.
+     *  @param  hpbIndex_          Current HPB index.
      *  @return kickAuctionAmount_ The amount that kicker should send to pool in order to kick auction.
      */
     function kick(
@@ -109,7 +109,7 @@ library Auctions {
         uint256 borrowerDebt_,
         uint256 thresholdPrice_,
         uint256 momp_,
-        uint256 hpb_
+        uint256 hpbIndex_
     ) internal returns (uint256 kickAuctionAmount_) {
 
         uint256 bondFactor;
@@ -139,11 +139,11 @@ library Auctions {
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
-        liquidation.kicker     = msg.sender;
-        liquidation.kickTime   = block.timestamp;
-        liquidation.kickPrice  = hpb_;
-        liquidation.bondSize   = bondSize;
-        liquidation.bondFactor = bondFactor;
+        liquidation.kicker         = msg.sender;
+        liquidation.kickTime       = uint128(block.timestamp);
+        liquidation.kickPriceIndex = uint128(hpbIndex_);
+        liquidation.bondSize       = bondSize;
+        liquidation.bondFactor     = bondFactor;
 
         liquidation.next = address(0);
         if (self.head != address(0)) {
@@ -191,7 +191,7 @@ library Auctions {
         if (block.timestamp - liquidation.kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         uint256 auctionPrice = PoolUtils.auctionPrice(
-            liquidation.kickPrice,
+            PoolUtils.indexToPrice(liquidation.kickPriceIndex),
             liquidation.kickTime
         );
         // calculate amount

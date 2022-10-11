@@ -57,7 +57,7 @@ contract AuctionsQueueInstance is DSTestPlus {
             liquidation.kicker,
             liquidation.bondFactor,
             liquidation.kickTime,
-            liquidation.kickPrice,
+            liquidation.kickPriceIndex,
             liquidation.prev,
             liquidation.next
         );

@@ -396,7 +396,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrower.debt,
             borrower.debt * Maths.WAD / borrower.collateral,
             deposits.momp(poolState.accruedDebt, loans.noOfLoans()),
-            PoolUtils.indexToPrice(_hpbIndex())
+            _hpbIndex()
         );
 
         // update pool state
@@ -778,7 +778,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             auctions.liquidations[borrower_].kicker,
             auctions.liquidations[borrower_].bondFactor,
             auctions.liquidations[borrower_].kickTime,
-            auctions.liquidations[borrower_].kickPrice,
+            auctions.liquidations[borrower_].kickPriceIndex,
             auctions.liquidations[borrower_].prev,
             auctions.liquidations[borrower_].next
         );

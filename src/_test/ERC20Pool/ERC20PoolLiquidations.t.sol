@@ -158,13 +158,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     false,
-                kicker:     address(0),
-                bondSize:   0,
-                bondFactor: 0,
-                kickTime:   0,
-                kickPrice:  0
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
             }
         );
 
@@ -227,13 +227,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     true,
-                kicker:     _lender,
-                bondSize:   0.195342779771472726 * 1e18,
-                bondFactor: 0.01 * 1e18,
-                kickTime:   block.timestamp,
-                kickPrice:  PoolUtils.indexToPrice(3696)
+                borrower:       _borrower,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       0.195342779771472726 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       block.timestamp,
+                kickPriceIndex: 3696
             }
         );
         _assertKicker(
@@ -257,13 +257,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     false,
-                kicker:     address(0),
-                bondSize:   0,
-                bondFactor: 0,
-                kickTime:   0,
-                kickPrice:  0
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
             }
         );
 
@@ -281,13 +281,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     true,
-                kicker:     _lender,
-                bondSize:   0.195342779771472726 * 1e18,
-                bondFactor: 0.01 * 1e18,
-                kickTime:   block.timestamp,
-                kickPrice:  PoolUtils.indexToPrice(3696)
+                borrower:       _borrower,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       0.195342779771472726 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       block.timestamp,
+                kickPriceIndex: 3696
             }
         );
         _assertKicker(
@@ -309,13 +309,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     false,
-                kicker:     address(0),
-                bondSize:   0,
-                bondFactor: 0,
-                kickTime:   0,
-                kickPrice:  0
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
             }
         );
         _assertKicker(
@@ -331,13 +331,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     false,
-                kicker:     address(0),
-                bondSize:   0,
-                bondFactor: 0,
-                kickTime:   0,
-                kickPrice:  0
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
             }
         );
 
@@ -355,13 +355,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     true,
-                kicker:     _lender,
-                bondSize:   0.195342779771472726 * 1e18,
-                bondFactor: 0.01 * 1e18,
-                kickTime:   block.timestamp,
-                kickPrice:  PoolUtils.indexToPrice(3696)
+                borrower:       _borrower,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       0.195342779771472726 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       block.timestamp,
+                kickPriceIndex: 3696
             }
         );
         _assertKicker(
@@ -381,13 +381,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     false,
-                kicker:     address(0),
-                bondSize:   0,
-                bondFactor: 0,
-                kickTime:   0,
-                kickPrice:  0
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
             }
         );
         _assertKicker(
@@ -403,13 +403,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     false,
-                kicker:     address(0),
-                bondSize:   0,
-                bondFactor: 0,
-                kickTime:   0,
-                kickPrice:  0
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
             }
         );
 
@@ -427,13 +427,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     true,
-                kicker:     _lender,
-                bondSize:   0.195342779771472726 * 1e18,
-                bondFactor: 0.01 * 1e18,
-                kickTime:   block.timestamp,
-                kickPrice:  PoolUtils.indexToPrice(3696)
+                borrower:       _borrower,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       0.195342779771472726 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       block.timestamp,
+                kickPriceIndex: 3696
             }
         );
 
@@ -471,13 +471,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     true,
-                kicker:     _lender,
-                bondSize:   0.195342779771472726 * 1e18,
-                bondFactor: 0.01 * 1e18,
-                kickTime:   block.timestamp,
-                kickPrice:  PoolUtils.indexToPrice(3696)
+                borrower:       _borrower,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       0.195342779771472726 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       block.timestamp,
+                kickPriceIndex: 3696
             }
         );
         _assertKicker(
@@ -503,13 +503,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     false,
-                kicker:     address(0),
-                bondSize:   0,
-                bondFactor: 0,
-                kickTime:   0,
-                kickPrice:  0
+                borrower:       _borrower,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
             }
         );
         _assertKicker(
@@ -557,13 +557,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower2,
-                active:     true,
-                kicker:     _lender,
-                bondSize:   98.533942419792216457 * 1e18,
-                bondFactor: 0.01 * 1e18,
-                kickTime:   block.timestamp,
-                kickPrice:  PoolUtils.indexToPrice(3696)
+                borrower:       _borrower2,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       98.533942419792216457 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       block.timestamp,
+                kickPriceIndex: 3696
             }
         );
         _assertKicker(
@@ -602,13 +602,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower2,
-                active:     true,
-                kicker:     _lender,
-                bondSize:   99.773590525221705467 * 1e18,
-                bondFactor: 0.01 * 1e18,
-                kickTime:   block.timestamp - 5 hours,
-                kickPrice:  PoolUtils.indexToPrice(3696)
+                borrower:       _borrower2,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       99.773590525221705467 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       block.timestamp - 5 hours,
+                kickPriceIndex: 3696
             }
         );
         _assertKicker(
@@ -644,13 +644,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertAuction(
             {
-                borrower:   _borrower2,
-                active:     true,
-                kicker:     _lender,
-                bondSize:   160.516347691266666957 * 1e18,
-                bondFactor: 0.01 * 1e18,
-                kickTime:   block.timestamp - 5 hours,
-                kickPrice:  PoolUtils.indexToPrice(3696)
+                borrower:       _borrower2,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       160.516347691266666957 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       block.timestamp - 5 hours,
+                kickPriceIndex: 3696
             }
         );
         _assertKicker(
