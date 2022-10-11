@@ -160,13 +160,11 @@ library BucketMath {
     ) public pure returns (int256) {
         int256 thresholdPrice = int256(Maths.wdiv(debt_, collateral_));
         int256 neutralPrice = int256(Maths.wmul(mompFactor_, inflatorSnapshot_));
- 
-        if (thresholdPrice <= neutralPrice) {
 
+        int256 sign;
+        if (thresholdPrice <= neutralPrice) {
             // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
-            return PRBMathSD59x18.mul(
-                int256(bondFactor_),
-                Maths.minInt(
+            sign = Maths.minInt(
                     1e18,
                     Maths.maxInt(
                         -1 * 1e18,
@@ -175,15 +173,13 @@ library BucketMath {
                             neutralPrice - thresholdPrice
                         )
                     )
-                )
             );
+        } else {
+            int256 val = neutralPrice - int256(price_);
+            if (val < 0 )      sign = -1e18;
+            else if (val != 0) sign = 1e18;
         }
-
-        // BPF = BondFactor * sign(neutralPrice - price)
-        int256 sign;
-        int256 val = neutralPrice - int256(price_);
-        if (val < 0 )      sign = -1e18;
-        else if (val != 0) sign = 1e18;
+ 
         return PRBMathSD59x18.mul(int256(bondFactor_), sign);
     }
 
