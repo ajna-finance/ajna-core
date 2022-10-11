@@ -108,11 +108,11 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
                 lup:                  _p9_91,
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    22.0 * 1e18,
-                encumberedCollateral: 6.989542660822895832 * 1e18,
-                poolDebt:             69.316586538461538494 * 1e18, // TODO: return debt calculated with pending inflator
-                actualUtilization:    0.000949542281348788 * 1e18,
+                encumberedCollateral: 7.085948627839355481 * 1e18,
+                poolDebt:             70.272662333373954580 * 1e18,
+                actualUtilization:    0.000962639210046219 * 1e18,
                 targetUtilization:    1e18,
-                minDebtAmount:        3.465829326923076925 * 1e18,
+                minDebtAmount:        3.513633116668697729 * 1e18,
                 loans:                2,
                 maxBorrower:          address(_borrower),
                 interestRate:         _initialRate,
@@ -122,11 +122,9 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
 
         _assertBorrower({
             borrower:                  _borrower,
-    // FIXME: borrowerDebt was 19.268509615384615394, borrowerPendingDebt was 19.534277977147272573 * 1e18;
-    // per Akash, value should resemble 19.51
-            borrowerDebt:              19.51 * 1e18,
+            borrowerDebt:              19.534277977147272573 * 1e18,
             borrowerCollateral:        2e18,
-            borrowerCollateralization: 1.029367090801636643 * 1e18,
+            borrowerCollateralization: 1.015362313881046556 * 1e18,
             borrowerMompFactor:        9.917184843435912074 * 1e18
         });
         return;
@@ -156,7 +154,6 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
 
         _assertBorrower({
             borrower:                  _borrower,
-        // FIXME: per Akash, value should resemble 18.51 (I get 18.282114846254861728)
             borrowerDebt:              18.534277977147272573 * 1e18,
             borrowerCollateral:        2e18,
             borrowerCollateralization: 1.070145257955425188 * 1e18,

@@ -722,6 +722,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             }
         }
 
+        // TODO: inefficient; would like to mutate this with a += in borrow, -= in repay
         t0poolDebt        = Maths.uadd(t0poolDebt, t0debtChange_);
         pledgedCollateral = poolState_.collateral;
 
