@@ -803,6 +803,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         return _getArgAddress(0);
     }
 
+    function debt() external view override returns (uint256 borrowerDebt_) {
+        uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
+        return Maths.wmul(t0poolDebt, pendingInflator);
+    }
+
     function depositIndex(uint256 debt_) external view override returns (uint256) {
         return deposits.findIndexOfSum(debt_);
     }

@@ -32,11 +32,13 @@ abstract contract ERC20PoolInterestTest is ERC20HelperContract {
 }
 
 contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
+    uint256 _initialRate = 0.05 * 10**18;
+
     // create a pool with the correct interest rate (5.5%)
     constructor() {
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
-        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), _initialRate));
         _poolUtils  = new PoolInfoUtils();
         _startTime  = block.timestamp;
     }
@@ -78,13 +80,13 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    22.0 * 1e18,
                 encumberedCollateral: 6.989542660822895832 * 1e18,
-                borrowerDebt:         69.316586538461538494 * 1e18,
+                poolDebt:             69.316586538461538494 * 1e18,
                 actualUtilization:    0.000949542281348788 * 1e18,
                 targetUtilization:    1e18,
                 minDebtAmount:        3.465829326923076925* 1e18,
                 loans:                2,
                 maxBorrower:          address(_borrower),
-                interestRate:         0.055 * 1e18,
+                interestRate:         _initialRate,
                 interestRateUpdate:   0
             })
         );
@@ -107,13 +109,13 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    22.0 * 1e18,
                 encumberedCollateral: 6.989542660822895832 * 1e18,
-                borrowerDebt:         69.316586538461538494 * 1e18, // TODO: return debt calculated with pending inflator
+                poolDebt:             69.316586538461538494 * 1e18, // TODO: return debt calculated with pending inflator
                 actualUtilization:    0.000949542281348788 * 1e18,
                 targetUtilization:    1e18,
                 minDebtAmount:        3.465829326923076925 * 1e18,
                 loans:                2,
                 maxBorrower:          address(_borrower),
-                interestRate:         0.055 * 1e18,
+                interestRate:         _initialRate,
                 interestRateUpdate:   0
             })
         );
@@ -141,13 +143,13 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
                 poolSize:             73_000.812709831769829000 * 1e18,
                 pledgedCollateral:    22.0 * 1e18,
                 encumberedCollateral: 6.985113560651726096 * 1e18,
-                borrowerDebt:         69.272662333373954580 * 1e18,
+                poolDebt:             69.272662333373954580 * 1e18,
                 actualUtilization:    0.000948930015460558 * 1e18,
                 targetUtilization:    0.317505161847805732 * 1e18,
                 minDebtAmount:        3.463633116668697729 * 1e18,
                 loans:                2,
                 maxBorrower:          address(_borrower),
-                interestRate:         0.05 * 1e18,
+                interestRate:         _initialRate - 0.005 * 1e18,
                 interestRateUpdate:   block.timestamp
             })
         );
@@ -216,7 +218,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             110_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
-                borrowerDebt:         0,
+                poolDebt:             0,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
@@ -252,7 +254,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             110_000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 15.445862501819022598 * 1e18,
-                borrowerDebt:         46_044.23076923076925200 * 1e18,
+                poolDebt:             46_044.23076923076925200 * 1e18,
                 actualUtilization:    0.920884615384615385 * 1e18,
                 targetUtilization:    0.000000505854275034 * 1e18,
                 minDebtAmount:        4_604.423076923076925200 * 1e18,
@@ -312,7 +314,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             10_000 * 1e18,
                 pledgedCollateral:    10 * 1e18,
                 encumberedCollateral: 8.323963380317995918 * 1e18,
-                borrowerDebt:         5_004.80769230769231 * 1e18,
+                poolDebt:             5_004.80769230769231 * 1e18,
                 actualUtilization:    0.500480769230769231 * 1e18,
                 targetUtilization:    1e18,
                 minDebtAmount:        500.480769230769231 * 1e18,
@@ -344,7 +346,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             11_000.377511961388180000 * 1e18,
                 pledgedCollateral:    10 * 1e18,
                 encumberedCollateral: 8.324676078924548679 * 1e18,
-                borrowerDebt:         5_005.23620446054562664 * 1e18,
+                poolDebt:             5_005.23620446054562664 * 1e18,
                 actualUtilization:    0.455005857664252335 * 1e18,
                 targetUtilization:    0.832467607892454868 * 1e18,
                 minDebtAmount:        500.523620446054562664 * 1e18,
@@ -409,7 +411,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 5.036694294071420412 * 1e18,
-                borrowerDebt:         15_014.423076923076930000 * 1e18,
+                poolDebt:             15_014.423076923076930000 * 1e18,
                 actualUtilization:    0.750721153846153847 * 1e18,
                 targetUtilization:    1e18,
                 minDebtAmount:        1_501.442307692307693000 * 1e18,
@@ -430,7 +432,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 5.036694294071420412 * 1e18,
-                borrowerDebt:         15_014.423076923076930000 * 1e18,
+                poolDebt:             15_014.423076923076930000 * 1e18,
                 actualUtilization:    0.750721153846153847 * 1e18,
                 targetUtilization:    1e18,
                 minDebtAmount:        1_501.442307692307693000 * 1e18,
@@ -469,7 +471,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             20_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
-                borrowerDebt:         0,
+                poolDebt:             0,
                 actualUtilization:    0,
                 targetUtilization:    1e18,
                 minDebtAmount:        0,
@@ -506,7 +508,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             20_000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
                 encumberedCollateral: 1.529641632103338099 * 1e18,
-                borrowerDebt:         500.480769230769231000 * 1e18,
+                poolDebt:             500.480769230769231000 * 1e18,
                 actualUtilization:    0.025024038461538462 * 1e18,
                 targetUtilization:    1e18,
                 minDebtAmount:        50.048076923076923100 * 1e18,
@@ -542,7 +544,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             20_000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 3.059283264206676197 * 1e18,
-                borrowerDebt:         1000.961538461538462000 * 1e18,
+                poolDebt:             1000.961538461538462000 * 1e18,
                 actualUtilization:    0.050048076923076923 * 1e18,
                 targetUtilization:    1e18,
                 minDebtAmount:        50.048076923076923100 * 1e18,
@@ -574,7 +576,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
                 poolSize:             20_001.169794343035540000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
                 encumberedCollateral: 3.094069767562214045 * 1e18,
-                borrowerDebt:         1012.343273629329809307 * 1e18,
+                poolDebt:             1012.343273629329809307 * 1e18,
                 actualUtilization:    0.050614203271033305 * 1e18,
                 targetUtilization:    0.030940697675622140 * 1e18,
                 minDebtAmount:        50.617163681466490465 * 1e18,

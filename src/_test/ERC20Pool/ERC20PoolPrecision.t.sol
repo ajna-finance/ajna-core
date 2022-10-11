@@ -337,7 +337,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
         assertEq(_pool.depositSize(),       150_000 * _quotePoolPrecision);
-        assertEq(_pool.borrowerDebt(),      debt);
+        assertEq(_pool.debt(),              debt);
         assertEq(_pool.pledgedCollateral(), col);
 
         _assertBucket(
@@ -405,7 +405,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
         assertEq(_pool.depositSize(),       150_000 * _quotePoolPrecision);
-        assertEq(_pool.borrowerDebt(),      debt);
+        assertEq(_pool.debt(),              debt);
         assertEq(_pool.pledgedCollateral(), col);
 
         _assertBucket(
@@ -472,7 +472,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
         assertEq(_pool.depositSize(),       150_000 * _quotePoolPrecision);
-        assertEq(_pool.borrowerDebt(),      debt);
+        assertEq(_pool.debt(),              debt);
         assertEq(_pool.pledgedCollateral(), col);
     }
 

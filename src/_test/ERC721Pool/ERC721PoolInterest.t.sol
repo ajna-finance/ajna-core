@@ -122,7 +122,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        assertEq(_pool.borrowerDebt(), 5_004.807692307692310000 * 1e18);
+        assertEq(_pool.debt(), 5_004.807692307692310000 * 1e18);
 
         _assertBorrower(
             {
@@ -146,7 +146,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        assertEq(_pool.borrowerDebt(), 5_019.913425024098425550 * 1e18);
+        assertEq(_pool.debt(), 5_019.913425024098425550 * 1e18);
 
         _assertBorrower(
             {
@@ -169,7 +169,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        assertEq(_pool.borrowerDebt(), 5_028.241003157279922662 * 1e18);
+        assertEq(_pool.debt(), 5_028.241003157279922662 * 1e18);
 
         _assertBorrower(
             {
@@ -193,7 +193,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        assertEq(_pool.borrowerDebt(), 6_038.697103647272763112 * 1e18);
+        assertEq(_pool.debt(), 6_038.697103647272763112 * 1e18);
 
         _assertBorrower(
             {
@@ -221,7 +221,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        assertEq(_pool.borrowerDebt(), 0);
+        assertEq(_pool.debt(), 0);
 
         _assertBorrower(
             {
@@ -345,7 +345,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         );
 
         // check pool and borrower debt to confirm interest has accumulated
-        assertEq(_pool.borrowerDebt(), 13_263.563121817930264782 * 1e18);
+        assertEq(_pool.debt(), 13_263.563121817930264782 * 1e18);
 
         _assertBorrower(
             {

@@ -126,7 +126,7 @@ contract PoolInfoUtils {
         hpb_      = PoolUtils.indexToPrice(hpbIndex_);
         htp_      = Maths.wmul(pool.maxThresholdPrice(), pool.inflatorSnapshot());
         if (htp_ != 0) htpIndex_ = PoolUtils.priceToIndex(htp_);
-        lupIndex_ = pool.depositIndex(pool.borrowerDebt());
+        lupIndex_ = pool.depositIndex(pool.debt());
         lup_      = PoolUtils.indexToPrice(lupIndex_);
     }
 
@@ -150,7 +150,7 @@ contract PoolInfoUtils {
         )
     {
         IPool pool = IPool(ajnaPool_);
-        uint256 poolDebt = pool.borrowerDebt();
+        uint256 poolDebt = pool.debt();
         uint256 poolSize = pool.depositSize();
 
         uint256 quoteTokenBalance = ERC20(pool.quoteTokenAddress()).balanceOf(ajnaPool_);
@@ -192,7 +192,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        uint256 poolDebt       = pool.borrowerDebt();
+        uint256 poolDebt       = pool.debt();
         uint256 poolCollateral = pool.pledgedCollateral();
 
         if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, pool.noOfLoans());
@@ -214,7 +214,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        uint256 poolDebt       = pool.borrowerDebt();
+        uint256 poolDebt       = pool.debt();
         uint256 poolCollateral = pool.pledgedCollateral();
         uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
 
@@ -240,7 +240,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        uint256 currentLupIndex = pool.depositIndex(pool.borrowerDebt());
+        uint256 currentLupIndex = pool.depositIndex(pool.debt());
         return PoolUtils.indexToPrice(currentLupIndex);
     }
 
@@ -249,7 +249,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        return pool.depositIndex(pool.borrowerDebt());
+        return pool.depositIndex(pool.debt());
     }
 
     function hpb(

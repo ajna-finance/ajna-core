@@ -61,7 +61,7 @@ abstract contract DSTestPlus is Test {
         uint256 poolSize;
         uint256 pledgedCollateral;
         uint256 encumberedCollateral;
-        uint256 borrowerDebt;
+        uint256 poolDebt;
         uint256 actualUtilization;
         uint256 targetUtilization;
         uint256 minDebtAmount;
@@ -271,11 +271,11 @@ abstract contract DSTestPlus is Test {
         assertEq(_pool.pledgedCollateral(),  state_.pledgedCollateral);
         assertEq(
             PoolUtils.encumberance(
-                state_.borrowerDebt,
+                state_.poolDebt,
                 state_.lup
             ),                               state_.encumberedCollateral
         );
-        assertEq(_pool.borrowerDebt(),       state_.borrowerDebt);
+        assertEq(_pool.debt(),               state_.poolDebt);
         assertEq(poolActualUtilization,      state_.actualUtilization);
         assertEq(poolTargetUtilization,      state_.targetUtilization);
         assertEq(poolMinDebtAmount,          state_.minDebtAmount);

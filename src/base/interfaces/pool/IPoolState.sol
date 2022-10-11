@@ -28,9 +28,9 @@ interface IPoolState {
 
     /**
      *  @notice Calculates pool debt with interest.
-     *  @return borrowerDebt_ Total amount of borrower debt in pool.
+     *  @return debt_ Total amount of borrower debt in pool.
      */
-    function borrowerDebt() external view returns (uint256 borrowerDebt_);
+    function debt() external view returns (uint256 debt_);
 
     /**
      *  @notice Mapping of borrower addresses to {Borrower} structs.

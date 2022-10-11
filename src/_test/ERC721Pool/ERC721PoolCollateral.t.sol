@@ -331,7 +331,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
-                borrowerDebt:         0,
+                poolDebt:             0,
                 actualUtilization:    0,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        0,
@@ -379,7 +379,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    Maths.wad(3),
                 encumberedCollateral: 0.997340520100278804 * 1e18,
-                borrowerDebt:         3_002.884615384615386 * 1e18,
+                poolDebt:             3_002.884615384615386 * 1e18,
                 actualUtilization:    0.100096153846153846 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        300.288461538461538600 * 1e18,
@@ -418,7 +418,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    Maths.wad(1),
                 encumberedCollateral: 0.997340520100278804 * 1e18,
-                borrowerDebt:         3_002.884615384615386 * 1e18,
+                poolDebt:             3_002.884615384615386 * 1e18,
                 actualUtilization:    0.300288461538461539 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        300.288461538461538600 * 1e18,
@@ -474,7 +474,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // check collateralization after pledge
-        assertEq(PoolUtils.encumberance(_pool.borrowerDebt(), _lup()), 0);
+        assertEq(PoolUtils.encumberance(_pool.debt(), _lup()), 0);
 
         // borrower borrows some quote
         _borrow(
@@ -487,7 +487,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // check collateralization after borrow
-        assertEq(PoolUtils.encumberance(_pool.borrowerDebt(), _lup()), 2.992021560300836411 * 1e18);
+        assertEq(PoolUtils.encumberance(_pool.debt(), _lup()), 2.992021560300836411 * 1e18);
 
         // should revert if borrower attempts to pull more collateral than is unencumbered
         uint256[] memory tokenIdsToRemove = new uint256[](2);
