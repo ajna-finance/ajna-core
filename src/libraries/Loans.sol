@@ -36,17 +36,25 @@ library Loans {
     /**
      *  @notice Initializes Loans Max Heap.
      *  @dev    Organizes loans so Highest Threshold Price can be retreived easily.
-     *  @param self_ Holds tree loan data.
+     *  @param self Holds tree loan data.
      */
-    function init(Data storage self_) internal {
-        require(self_.loans.length == 0, "H:ALREADY_INIT");
-        self_.loans.push(Loan(address(0), 0));
+    function init(Data storage self) internal {
+        require(self.loans.length == 0, "H:ALREADY_INIT");
+        self.loans.push(Loan(address(0), 0));
     }
 
     /***********************************/
     /***  Loans Management Functions ***/
     /***********************************/
 
+    /**
+     *  @notice Kicks a loan by removing it from loan heap and updating borrower info (adding kick penalty to debt).
+     *  @param self Holds tree loan data.
+     *  @param borrower_ Address of borrower to be kicked.
+     *  @param debt_     Accrued debt of borrower to be kicked.
+     *  @param inflator_ Pool current inflator.
+     *  @param rate_     Pool interest rate.
+     */
     function kick(
         Data storage self,
         address borrower_,
@@ -63,8 +71,16 @@ library Loans {
         borrower.inflatorSnapshot = inflator_;
     }
 
+    /**
+     *  @notice Updates a loan: updates heap (upsert if TP not 0, remove otherwise) and borrower balance.
+     *  @param self Holds tree loan data.
+     *  @param deposits_        Pool deposits, used to calculate borrower MOMP factor.
+     *  @param borrowerAddress_ Borrower's address to update.
+     *  @param borrower_        Borrower struct with borrower details.
+     *  @param poolDebt_        Pool debt.
+     */
     function update(
-        Data storage self_,
+        Data storage self,
         Deposits.Data storage deposits_,
         address borrowerAddress_,
         Borrower memory borrower_,
@@ -74,12 +90,12 @@ library Loans {
         // update loan heap
         if (borrower_.debt != 0 && borrower_.collateral != 0) {
             _upsert(
-                self_,
+                self,
                 borrowerAddress_,
                 Maths.wdiv(Maths.wdiv(borrower_.debt, borrower_.inflatorSnapshot), borrower_.collateral)
             );
-        } else if (self_.indices[borrowerAddress_] != 0) {
-            _remove(self_, borrowerAddress_);
+        } else if (self.indices[borrowerAddress_] != 0) {
+            _remove(self, borrowerAddress_);
         }
 
         // update borrower balance
@@ -87,10 +103,10 @@ library Loans {
             deposits_,
             borrower_.inflatorSnapshot,
             poolDebt_,
-            self_.loans.length - 1
+            self.loans.length - 1
         );
         else borrower_.mompFactor = 0;
-        self_.borrowers[borrowerAddress_] = borrower_;
+        self.borrowers[borrowerAddress_] = borrower_;
     }
 
     /**************************************/
@@ -99,110 +115,110 @@ library Loans {
 
     /**
      *  @notice Moves a Loan up the tree.
-     *  @param self_ Holds tree loan data.
+     *  @param self Holds tree loan data.
      *  @param loan_ Loan to be moved.
      *  @param i_    Index for Loan to be moved to.
      */
-    function _bubbleUp(Data storage self_, Loan memory loan_, uint i_) private {
-        uint256 count = self_.loans.length;
-        if (i_ == ROOT_INDEX || loan_.thresholdPrice <= self_.loans[i_ / 2].thresholdPrice){
-          _insert(self_, loan_, i_, count);
+    function _bubbleUp(Data storage self, Loan memory loan_, uint i_) private {
+        uint256 count = self.loans.length;
+        if (i_ == ROOT_INDEX || loan_.thresholdPrice <= self.loans[i_ / 2].thresholdPrice){
+          _insert(self, loan_, i_, count);
         } else {
-          _insert(self_, self_.loans[i_ / 2], i_, count);
-          _bubbleUp(self_, loan_, i_ / 2);
+          _insert(self, self.loans[i_ / 2], i_, count);
+          _bubbleUp(self, loan_, i_ / 2);
         }
     }
 
     /**
      *  @notice Moves a Loan down the tree.
-     *  @param self_ Holds tree loan data.
+     *  @param self Holds tree loan data.
      *  @param loan_ Loan to be moved.
      *  @param i_    Index for Loan to be moved to.
      */
-    function _bubbleDown(Data storage self_, Loan memory loan_, uint i_) private {
+    function _bubbleDown(Data storage self, Loan memory loan_, uint i_) private {
         // Left child index.
         uint cIndex = i_ * 2;
 
-        uint256 count = self_.loans.length;
+        uint256 count = self.loans.length;
         if (count <= cIndex) {
-            _insert(self_, loan_, i_, count);
+            _insert(self, loan_, i_, count);
         } else {
-            Loan memory largestChild = self_.loans[cIndex];
+            Loan memory largestChild = self.loans[cIndex];
 
-            if (count > cIndex + 1 && self_.loans[cIndex + 1].thresholdPrice > largestChild.thresholdPrice) {
-                largestChild = self_.loans[++cIndex];
+            if (count > cIndex + 1 && self.loans[cIndex + 1].thresholdPrice > largestChild.thresholdPrice) {
+                largestChild = self.loans[++cIndex];
             }
 
             if (largestChild.thresholdPrice <= loan_.thresholdPrice) {
-              _insert(self_, loan_, i_, count);
+              _insert(self, loan_, i_, count);
             } else {
-              _insert(self_, largestChild, i_, count);
-              _bubbleDown(self_, loan_, cIndex);
+              _insert(self, largestChild, i_, count);
+              _bubbleDown(self, loan_, cIndex);
             }
         }
     }
 
     /**
      *  @notice Inserts a Loan in the tree.
-     *  @param self_ Holds tree loan data.
+     *  @param self Holds tree loan data.
      *  @param loan_ Loan to be inserted.
      *  @param i_    index for Loan to be inserted at.
      */
-    function _insert(Data storage self_, Loan memory loan_, uint i_, uint256 count_) private {
-        if (i_ == count_) self_.loans.push(loan_);
-        else self_.loans[i_] = loan_;
+    function _insert(Data storage self, Loan memory loan_, uint i_, uint256 count_) private {
+        if (i_ == count_) self.loans.push(loan_);
+        else self.loans[i_] = loan_;
 
-        self_.indices[loan_.borrower] = i_;
+        self.indices[loan_.borrower] = i_;
     }
 
     /**
      *  @notice Removes loan for given borrower address.
-     *  @param self_     Holds tree loan data.
+     *  @param self     Holds tree loan data.
      *  @param borrower_ Borrower address whose loan is being updated or inserted.
      */
-    function _remove(Data storage self_, address borrower_) internal {
-        uint256 i_ = self_.indices[borrower_];
+    function _remove(Data storage self, address borrower_) internal {
+        uint256 i_ = self.indices[borrower_];
         require(i_ != 0, "H:R:NO_BORROWER");
 
-        delete self_.indices[borrower_];
-        uint256 tailIndex = self_.loans.length - 1;
-        if (i_ == tailIndex) self_.loans.pop(); // we're removing the tail, pop without sorting
+        delete self.indices[borrower_];
+        uint256 tailIndex = self.loans.length - 1;
+        if (i_ == tailIndex) self.loans.pop(); // we're removing the tail, pop without sorting
         else {
-            Loan memory tail = self_.loans[tailIndex];
-            self_.loans.pop();            // remove tail loan
-            _bubbleUp(self_, tail, i_);
-            _bubbleDown(self_, self_.loans[i_], i_);
+            Loan memory tail = self.loans[tailIndex];
+            self.loans.pop();            // remove tail loan
+            _bubbleUp(self, tail, i_);
+            _bubbleDown(self, self.loans[i_], i_);
         }
     }
 
     /**
      *  @notice Performs an insert or an update dependent on borrowers existance.
-     *  @param self_ Holds tree loan data.
+     *  @param self Holds tree loan data.
      *  @param borrower_       Borrower address that is being updated or inserted.
      *  @param thresholdPrice_ Threshold Price that is updated or inserted.
      */
     function _upsert(
-        Data storage self_,
+        Data storage self,
         address borrower_,
         uint256 thresholdPrice_
     ) internal {
         require(thresholdPrice_ != 0, "H:I:VAL_EQ_0");
-        uint256 i = self_.indices[borrower_];
+        uint256 i = self.indices[borrower_];
 
         // Loan exists, update in place.
         if (i != 0) {
-            Loan memory currentLoan = self_.loans[i];
+            Loan memory currentLoan = self.loans[i];
             if (currentLoan.thresholdPrice > thresholdPrice_) {
                 currentLoan.thresholdPrice = thresholdPrice_;
-                _bubbleDown(self_, currentLoan, i);
+                _bubbleDown(self, currentLoan, i);
             } else {
                 currentLoan.thresholdPrice = thresholdPrice_;
-                _bubbleUp(self_, currentLoan, i);
+                _bubbleUp(self, currentLoan, i);
             }
 
         // New loan, insert it
         } else {
-            _bubbleUp(self_, Loan(borrower_, thresholdPrice_), self_.loans.length);
+            _bubbleUp(self, Loan(borrower_, thresholdPrice_), self.loans.length);
         }
     }
 
@@ -211,12 +227,19 @@ library Loans {
     /*** View Functions ***/
     /**********************/
 
+    /**
+     *  @notice Accrues borrower interest and returns updated borrower struct.
+     *  @param self Holds tree loan data.
+     *  @param borrowerAddress_ Borrower's address to accrue interest.
+     *  @param poolInflator_    Current pool inflator.
+     *  @return Borrower struct containing borrower updated info.
+     */
     function accrueBorrowerInterest(
         Data storage self,
-        address borrower_,
+        address borrowerAddress_,
         uint256 poolInflator_
     ) internal view returns (Borrower memory) {
-        Borrower memory borrower = self.borrowers[borrower_];
+        Borrower memory borrower = self.borrowers[borrowerAddress_];
         if (borrower.debt != 0) {
             borrower.debt = Maths.wmul(borrower.debt, Maths.wdiv(poolInflator_, borrower.inflatorSnapshot));
         }
@@ -226,34 +249,39 @@ library Loans {
 
     /**
      *  @notice Retreives Loan by borrower address.
-     *  @param self_     Holds tree loans data.
+     *  @param self     Holds tree loans data.
      *  @param borrower_ Borrower address that is being updated or inserted.
-     *  @return Loan     Id's freshly updated or inserted Loan.
+     *  @return Loan     Loan struct containing loans info.
      */
-    function getById(Data storage self_, address borrower_) internal view returns(Loan memory) {
-        return getByIndex(self_, self_.indices[borrower_]);
+    function getById(Data storage self, address borrower_) internal view returns(Loan memory) {
+        return getByIndex(self, self.indices[borrower_]);
     }
 
     /**
      *  @notice Retreives Loan by index, i_.
-     *  @param self_ Holds tree loan data.
+     *  @param self Holds tree loan data.
      *  @param i_    Index to retreive Loan.
      *  @return Loan Loan retrieved by index.
      */
-    function getByIndex(Data storage self_, uint256 i_) internal view returns(Loan memory) {
-        return self_.loans.length > i_ ? self_.loans[i_] : Loan(address(0), 0);
+    function getByIndex(Data storage self, uint256 i_) internal view returns(Loan memory) {
+        return self.loans.length > i_ ? self.loans[i_] : Loan(address(0), 0);
     }
 
     /**
      *  @notice Retreives Loan with the highest threshold price value.
-     *  @param self_ Holds tree loan data.
+     *  @param self Holds tree loan data.
      *  @return Loan Max Loan in the Heap.
      */
-    function getMax(Data storage self_) internal view returns(Loan memory) {
-        return getByIndex(self_, ROOT_INDEX);
+    function getMax(Data storage self) internal view returns(Loan memory) {
+        return getByIndex(self, ROOT_INDEX);
     }
 
-    function noOfLoans(Data storage self_) internal view returns (uint256) {
-        return self_.loans.length - 1;
+    /**
+     *  @notice Returns number of loans in pool.
+     *  @param self Holds tree loan data.
+     *  @return number of loans in pool.
+     */
+    function noOfLoans(Data storage self) internal view returns (uint256) {
+        return self.loans.length - 1;
     }
 }
