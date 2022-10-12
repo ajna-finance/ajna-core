@@ -299,7 +299,7 @@ class TestUtils:
             )
 
     @staticmethod
-    def validate_pool(pool, pool_utils):
+    def validate_pool(pool, pool_utils, borrowers):
         # if pool is collateralized...
         if pool_utils.lupIndex(pool.address) > PoolUtils.price_to_index_safe(pool_utils, pool_utils.htp(pool.address)):
             # ...ensure debt is less than the size of the pool
@@ -310,8 +310,16 @@ class TestUtils:
             assert pool.borrowerDebt() == 0
 
         # loan count should be decremented as borrowers repay debt
-        if pool.noOfLoans() > 0:
+        loan_count = pool.noOfLoans()
+        if loan_count > 0:
             assert pool.borrowerDebt() > 0
+
+        borrowers_with_debt = 0
+        for borrower in borrowers:
+            (debt, pending_debt, _, _, _) = pool_utils.borrowerInfo(pool.address, borrower.address)
+            if debt > 0:
+                borrowers_with_debt += 1
+        assert borrowers_with_debt == loan_count
 
     @staticmethod
     def dump_book(pool, pool_utils, with_headers=True, csv=False) -> str:

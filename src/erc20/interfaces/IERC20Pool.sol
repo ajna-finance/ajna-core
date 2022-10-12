@@ -9,7 +9,6 @@ import './pool/IERC20PoolLenderActions.sol';
 import './pool/IERC20PoolLiquidationActions.sol';
 import './pool/IERC20PoolState.sol';
 import './pool/IERC20PoolEvents.sol';
-import './pool/IERC20PoolErrors.sol';
 
 /**
  * @title ERC20 Pool
@@ -20,8 +19,7 @@ interface IERC20Pool is
     IERC20PoolBorrowerActions,
     IERC20PoolLiquidationActions,
     IERC20PoolState,
-    IERC20PoolEvents,
-    IERC20PoolErrors
+    IERC20PoolEvents
 {
 
 }

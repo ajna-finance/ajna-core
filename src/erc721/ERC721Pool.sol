@@ -19,10 +19,10 @@ import '../libraries/Actors.sol';
 
 contract ERC721Pool is IERC721Pool, Pool {
     using SafeERC20 for ERC20;
-    using BitMaps   for BitMaps.BitMap;
-    using Book      for mapping(uint256 => Book.Bucket);
     using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
     using Actors    for mapping(address => Actors.Borrower);
+    using BitMaps   for BitMaps.BitMap;
+    using Book      for mapping(uint256 => Book.Bucket);
     using Heap      for Heap.Data;
 
     /***********************/
@@ -41,8 +41,6 @@ contract ERC721Pool is IERC721Pool, Pool {
 
     /// @dev pledged collateral: borrower address -> Set of NFT Token Ids pledged by the borrower
     mapping(address => BitMaps.BitMap) private lockedNFTs;
-
-    mapping(address => NFTLiquidationInfo) private liquidations;
 
     bool public isSubset;
 
@@ -219,30 +217,6 @@ contract ERC721Pool is IERC721Pool, Pool {
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit DepositTake(borrower_, index_, amount_, 0, 0);
-    }
-
-    function kick(address borrower_) external override {
-        PoolState memory poolState = _accruePoolInterest();
-
-        (uint256 borrowerAccruedDebt, uint256 borrowerPledgedCollateral) = borrowers.getBorrowerInfo(
-            borrower_,
-            poolState.inflator
-        );
-        if (borrowerAccruedDebt == 0) revert KickNoDebt();
-
-        uint256 lup = _lup(poolState.accruedDebt);
-        if (
-            PoolUtils.collateralization(
-                borrowerAccruedDebt,
-                borrowerPledgedCollateral,
-                lup
-            ) >= Maths.WAD
-        ) revert LiquidateBorrowerOk();
-
-        _updatePool(poolState, lup);
-
-        // TODO: Implement similar to ERC20Pool, but this will have a different LiquidationInfo struct
-        //  which includes an array of the borrower's tokenIds being auctioned off.
     }
 
     function take(address borrower_, uint256[] calldata tokenIds_, bytes memory swapCalldata_) external override {

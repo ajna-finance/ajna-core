@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
+import './utils/HeapInstance.sol';
 
 contract HeapTest is DSTestPlus {
     HeapInstance private _loans;
@@ -334,7 +335,6 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getMaxTp(),       5);
         assertEq(_loans.getTotalTps(),    5);
     }
-
 }
 
 contract HeapGasLoadTest is DSTestPlus {

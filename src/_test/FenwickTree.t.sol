@@ -2,6 +2,7 @@
 pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
+import './utils/FenwickTreeInstance.sol';
 
 import '../libraries/Maths.sol';
 

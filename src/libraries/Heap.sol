@@ -36,7 +36,7 @@ library Heap {
         uint256 i = self_.indices[id_];
 
         // Node exists, update in place.
-        if (i != 0) { 
+        if (i != 0) {
             Node memory currentNode = self_.nodes[i];
             if (currentNode.val > val_) {
                 currentNode.val = val_;
@@ -87,7 +87,6 @@ library Heap {
      *  @param id_   Id's address whose Node is being updated or inserted.
      */
     function remove(Data storage self_, address id_) internal {
-
         uint256 i_ = self_.indices[id_];
         require(i_ != 0, "H:R:NO_ID");
 
@@ -125,7 +124,6 @@ library Heap {
      *  @param i_    index for Node to be moved to.
      */
     function _bubbleDown(Data storage self_, Node memory n_, uint i_) private {
-
         // Left child index.
         uint cIndex = i_ * 2; 
 
