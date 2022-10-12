@@ -20,18 +20,16 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** State Variables ***/
     /***********************/
 
-    /// @dev Set of tokenIds that are currently being used as collateral in the pool
-    mapping(uint256 => bool) private _poolCollateralTokenIds;
+    /// @dev bucket collateral: : NFT Token id => owner address
+    mapping(uint256 => bool) private _bucketLockedNFTs;
 
-    /// @dev Set of NFT Token Ids that have been deposited into any bucket
-    mapping(uint256 => bool) private _bucketCollateralTokenIds;
+    /// @dev pledged collateral: NFT Token id => borrower address
+    mapping(uint256 => address) private _borrowerLockedNFTs;
 
     /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
     /// @dev Defaults to length 0 if the whole collection is to be used
     mapping(uint256 => bool) public tokenIdsAllowed;
 
-    /// @dev pledged collateral: borrower address -> Set of NFT Token Ids pledged by the borrower
-    mapping(address => mapping(uint256 => bool)) private _lockedNFTs;
 
     bool public isSubset;
 
@@ -65,7 +63,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256 rate_,
         address ajnaTokenAddress_
     ) external override {
-        this.initialize(rate_, ajnaTokenAddress_);
         isSubset = true;
 
         // add subset of tokenIds allowed in the pool
@@ -75,6 +72,8 @@ contract ERC721Pool is IERC721Pool, Pool {
                 ++id;
             }
         }
+
+        this.initialize(rate_, ajnaTokenAddress_);
     }
 
     /***********************************/
@@ -94,11 +93,9 @@ contract ERC721Pool is IERC721Pool, Pool {
             uint256 tokenId = tokenIdsToPledge_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
 
-            _poolCollateralTokenIds[tokenId] = true;
-            _lockedNFTs[borrower_][tokenId] = true;
+            _borrowerLockedNFTs[tokenId] = borrower_;
 
-            //slither-disable-next-line calls-loop
-            collateral().safeTransferFrom(msg.sender, address(this), tokenId); // move collateral from sender to pool
+            _transferNFT(msg.sender, address(this), tokenId);
 
             unchecked {
                 ++i;
@@ -112,7 +109,10 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256[] calldata tokenIdsToPull_
     ) external override {
         _pullCollateral(Maths.wad(tokenIdsToPull_.length));
-        _transferNFTs(msg.sender, tokenIdsToPull_);
+
+        // move collateral from pool to claimer
+        emit PullCollateralNFT(msg.sender, tokenIdsToPull_);
+        _pullNFTs(msg.sender, tokenIdsToPull_);
     }
 
     /*********************************/
@@ -133,10 +133,9 @@ contract ERC721Pool is IERC721Pool, Pool {
             uint256 tokenId = tokenIdsToAdd_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
 
-            _bucketCollateralTokenIds[tokenId] = true;
+            _bucketLockedNFTs[tokenId] = true;
 
-            //slither-disable-next-line calls-loop
-            collateral().safeTransferFrom(msg.sender, address(this), tokenId); // move collateral from sender to pool
+            _transferNFT(msg.sender, address(this), tokenId);
 
             unchecked {
                 ++i;
@@ -156,12 +155,11 @@ contract ERC721Pool is IERC721Pool, Pool {
         // move collateral from pool to lender
         for (uint256 i = 0; i < tokenIdsToRemove_.length;) {
             uint256 tokenId = tokenIdsToRemove_[i];
-            if (!_bucketCollateralTokenIds[tokenId]) revert TokenNotDeposited(); // check if NFT token deposited in buckets
+            if (!_bucketLockedNFTs[tokenId]) revert TokenNotDeposited(); // check if NFT token deposited in buckets by caller
 
-            delete _bucketCollateralTokenIds[tokenId];
+            _bucketLockedNFTs[tokenId] = false;
 
-            //slither-disable-next-line calls-loop
-            collateral().safeTransferFrom(address(this), msg.sender, tokenId);
+            _transferNFT(address(this), msg.sender, tokenId);
 
             unchecked {
                 ++i;
@@ -207,7 +205,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
         //msg.sender.call(swapCalldata_);
 
-        _transferNFTs(borrower_, tokenIds_);
+        _pullNFTs(msg.sender, tokenIds_);
     }
 
 
@@ -220,29 +218,27 @@ contract ERC721Pool is IERC721Pool, Pool {
      *  @param borrower_ Address of the borower whose NFTs are being transfered from.
      *  @param tokenIds_ Array of token ids to be pulled.
      */
-    function _transferNFTs(
+    function _pullNFTs(
         address borrower_,
         uint256[] memory tokenIds_
     ) internal {
-        // move collateral from pool to claimer
-        emit PullCollateralNFT(borrower_, tokenIds_);
-
         for (uint256 i = 0; i < tokenIds_.length;) {
             uint256 tokenId = tokenIds_[i];
-            //slither-disable-next-line calls-loop
-            if (collateral().ownerOf(tokenId) != address(this)) revert TokenNotDeposited();
-            if (!_poolCollateralTokenIds[tokenId] || !_lockedNFTs[borrower_][tokenId]) revert RemoveTokenFailed();
+            if (_borrowerLockedNFTs[tokenId] != borrower_) revert TokenNotDeposited();
 
-            delete _poolCollateralTokenIds[tokenId];
-            delete _lockedNFTs[borrower_][tokenId];
+            delete _borrowerLockedNFTs[tokenId];
 
-            //slither-disable-next-line calls-loop
-            collateral().safeTransferFrom(address(this), msg.sender, tokenId); // move collateral from pool to sender
+            _transferNFT(address(this), borrower_, tokenId);
 
             unchecked {
                 ++i;
             }
         }
+    }
+
+    function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
+        //slither-disable-next-line calls-loop
+        collateral().safeTransferFrom(from_, to_, tokenId_);
     }
 
     /************************/
