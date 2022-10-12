@@ -758,7 +758,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
 
-        // lender makes a partial withdrawal, paying an early withdrawal penalty
+        // lender makes a partial withdrawal, paying an early withdrawal penalty - current annualized interest rate divided by 52 (one week of interest)
         uint256 penalty = Maths.WAD - Maths.wdiv(_pool.interestRate(), 52 * 10**18);
         assertLt(penalty, Maths.WAD);
         uint256 expectedWithdrawal1 = Maths.wmul(1_700 * 1e18, penalty);
