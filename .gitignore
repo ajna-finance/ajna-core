@@ -9,3 +9,4 @@ node_modules
 __pycache__/
 reports/
 .gas-snapshot
+.DS_store
