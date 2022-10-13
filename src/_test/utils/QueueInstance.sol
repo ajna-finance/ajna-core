@@ -6,7 +6,7 @@ import './DSTestPlus.sol';
 
 import '../../libraries/Auctions.sol';
 
-contract AuctionsQueueInstance is DSTestPlus {
+contract QueueInstance is DSTestPlus {
     using Auctions for Auctions.Data;
 
     Auctions.Data private auctions;

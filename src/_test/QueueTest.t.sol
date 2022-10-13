@@ -3,9 +3,9 @@ pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
 
-import './utils/AuctionsQueueInstance.sol';
+import './utils/QueueInstance.sol';
 
-contract AuctionsQueueTest is DSTestPlus {
+contract QueueTest is DSTestPlus {
 
     address internal _borrower;
     address internal _borrower2;
@@ -15,14 +15,14 @@ contract AuctionsQueueTest is DSTestPlus {
     address internal _borrower6;
     address internal _lender;
 
-    AuctionsQueueInstance private auctions;
+    QueueInstance private auctions;
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _borrower3 = makeAddr("borrower3");
 
-        auctions = new AuctionsQueueInstance();
+        auctions = new QueueInstance();
     }
     /**
      *  @notice With 1 lender and 1 borrower test adding collateral and borrowing.
