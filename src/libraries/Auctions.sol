@@ -44,24 +44,16 @@ library Auctions {
 
     /**
      *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
-     *  @param  borrower_   Borrower whose loan is being placed in queue.
-     *  @param  debt_       Borrower's accrued debt.
-     *  @param  collateral_ Borrower's pledged collateral.
-     *  @param  lup_        Pool's LUP.
+     *  @param  borrower_          Borrower whose loan is being placed in queue.
+     *  @param  collateralization_ Borrower's collateralization.
      */
     function checkAndRemove(
         Data storage self,
         address borrower_,
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 lup_
+        uint256 collateralization_
     ) internal {
 
-        if (
-            self.liquidations[borrower_].kickTime != 0
-            &&
-            PoolUtils.collateralization(debt_, collateral_, lup_) >= Maths.WAD
-        ) {
+        if (collateralization_ >= Maths.WAD && self.liquidations[borrower_].kickTime != 0) {
 
             Liquidation memory liquidation = self.liquidations[borrower_];
 

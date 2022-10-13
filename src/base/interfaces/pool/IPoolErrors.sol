@@ -114,4 +114,9 @@ interface IPoolErrors {
      */
     error PoolUnderCollateralized();
 
+    /**
+     *  @notice Pool cannot be initialized with 0x address for Ajna token.
+     */
+    error Token0xAddress();
+
 }

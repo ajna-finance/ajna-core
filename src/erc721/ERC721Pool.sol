@@ -20,7 +20,7 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** State Variables ***/
     /***********************/
 
-    /// @dev bucket collateral: : NFT Token id => owner address
+    /// @dev bucket collateral: : NFT Token id => boolean (true if locked)
     mapping(uint256 => bool) private _bucketLockedNFTs;
 
     /// @dev pledged collateral: NFT Token id => borrower address
@@ -41,7 +41,8 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256 rate_,
         address ajnaTokenAddress_
     ) external override {
-        if (poolInitializations != 0) revert AlreadyInitialized();
+        if (poolInitializations != 0)         revert AlreadyInitialized();
+        if (ajnaTokenAddress_ == address(0))  revert Token0xAddress();
 
         quoteTokenScale = 10**(18 - quoteToken().decimals());
 
@@ -212,6 +213,23 @@ contract ERC721Pool is IERC721Pool, Pool {
     /**************************/
     /*** Internal Functions ***/
     /**************************/
+
+    /**
+     *  @notice Overrides default implementation and use floor(amount of collateral) to calculate collateralization.
+     *  @param debt_       Debt to calculate collateralization for.
+     *  @param collateral_ Collateral to calculate collateralization for.
+     *  @param price_      Price to calculate collateralization for.
+     *  @return Collateralization value.
+     */
+    function _collateralization(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) internal override returns (uint256) {
+        uint256 encumbered = price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        collateral_ = Maths.wadToIntRoundingDown(collateral_) * Maths.WAD;
+        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+    }
 
     /**
      *  @notice Performs NFT transfering checks and transfers NFTs (by token Id) from pool to claimer.

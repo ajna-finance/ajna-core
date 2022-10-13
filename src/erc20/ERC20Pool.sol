@@ -29,7 +29,8 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint256 rate_,
         address ajnaTokenAddress_
     ) external override {
-        if (poolInitializations != 0) revert AlreadyInitialized();
+        if (poolInitializations != 0)         revert AlreadyInitialized();
+        if (ajnaTokenAddress_ == address(0))  revert Token0xAddress();
 
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());

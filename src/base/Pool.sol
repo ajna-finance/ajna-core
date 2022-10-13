@@ -281,23 +281,16 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 newLup = PoolUtils.indexToPrice(lupId);
 
-        // check borrow won't push borrower or pool into a state of under-collateralization
+        // check borrow won't push borrower into a state of under-collateralization
         if (
-            PoolUtils.collateralization(
-                borrower.debt,
-                borrower.collateral,
-                newLup
-            ) < Maths.WAD || borrower.collateral == 0
+            _collateralization(borrower.debt, borrower.collateral, newLup) < Maths.WAD
+            ||
+            borrower.collateral == 0
         ) revert BorrowerUnderCollateralized();
 
+        // check borrow won't push pool into a state of under-collateralization
         poolState.accruedDebt += debt;
-        if (
-            PoolUtils.collateralization(
-                poolState.accruedDebt,
-                poolState.collateral,
-                newLup
-            ) < Maths.WAD
-        ) revert PoolUnderCollateralized();
+        if (_collateralization(poolState.accruedDebt, poolState.collateral, newLup) < Maths.WAD) revert PoolUnderCollateralized();
 
         loans.update(
             deposits,
@@ -341,9 +334,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         auctions.checkAndRemove(
             borrowerAddress_,
-            borrower.debt,
-            borrower.collateral,
-            newLup
+            _collateralization(borrower.debt, borrower.collateral, newLup)
         );
         loans.update(
             deposits,
@@ -376,13 +367,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (borrower.debt == 0) revert NoDebt();
 
         uint256 lup = _lup(poolState.accruedDebt);
-        if (
-            PoolUtils.collateralization(
-                borrower.debt,
-                borrower.collateral,
-                lup
-            ) >= Maths.WAD
-        ) revert BorrowerOk();
+        if (_collateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert BorrowerOk();
 
         loans.kick(
             borrowerAddress_,
@@ -468,9 +453,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         auctions.checkAndRemove(
             borrowerAddress_,
-            borrower.debt,
-            borrower.collateral,
-            newLup
+            _collateralization(borrower.debt, borrower.collateral, newLup)
         );
         loans.update(
             deposits,
@@ -492,11 +475,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
 
         uint256 curLup = _lup(poolState.accruedDebt);
-        if (
-            borrower.collateral - PoolUtils.encumberance(borrower.debt, curLup)
-            <
-            collateralAmountToPull_
-        ) revert InsufficientCollateral();
+        uint256 encumberedCollateral = borrower.debt != 0 ? Maths.wdiv(borrower.debt, curLup) : 0;
+        if (borrower.collateral - encumberedCollateral < collateralAmountToPull_) revert InsufficientCollateral();
 
         borrower.collateral  -= collateralAmountToPull_;
         poolState.collateral -= collateralAmountToPull_;
@@ -626,9 +606,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         auctions.checkAndRemove(
             borrowerAddress_,
-            borrower.debt,
-            borrower.collateral,
-            newLup
+            _collateralization(borrower.debt, borrower.collateral, newLup)
         );
         loans.update(
             deposits,
@@ -678,6 +656,22 @@ abstract contract Pool is Clone, Multicall, IPool {
         }
     }
 
+    /**
+     *  @notice Default collateralization calculation (to be overridden in other pool implementations like NFT's).
+     *  @param debt_       Debt to calculate collateralization for.
+     *  @param collateral_ Collateral to calculate collateralization for.
+     *  @param price_      Price to calculate collateralization for.
+     *  @return Collateralization value.
+     */
+    function _collateralization(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 price_
+    ) internal virtual returns (uint256) {
+        uint256 encumbered = price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+    }
+
     function _updatePool(PoolState memory poolState_, uint256 lup_) internal {
         if (block.timestamp - interestRateUpdate > 12 hours) {
             // Update EMAs for target utilization
@@ -694,12 +688,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
-            if (
-                PoolUtils.collateralization(
-                    poolState_.accruedDebt,
-                    poolState_.collateral,
-                    lup_
-                ) != Maths.WAD) {
+            if (_collateralization(poolState_.accruedDebt, poolState_.collateral, lup_) != Maths.WAD) {
 
                     int256 actualUtilization = int256(
                         deposits.utilization(
@@ -709,6 +698,8 @@ abstract contract Pool is Clone, Multicall, IPool {
                     );
                     int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
 
+                    // raise rates if 4*(targetUtilization-actualUtilization) < (targetUtilization+actualUtilization-1)^2-1
+                    // decrease rates if 4*(targetUtilization-mau) > -(targetUtilization+mau-1)^2+1
                     int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
                     int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
 
@@ -720,7 +711,7 @@ abstract contract Pool is Clone, Multicall, IPool {
                     } else if (decreaseFactor > 10**18 - increaseFactor) {
                         newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
                     }
-                    if(poolState_.rate != newInterestRate) {
+                    if (poolState_.rate != newInterestRate) {
                         interestRate       = newInterestRate;
                         interestRateUpdate = block.timestamp;
 
