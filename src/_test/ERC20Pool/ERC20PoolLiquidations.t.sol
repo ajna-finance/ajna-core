@@ -150,12 +150,20 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerPendingDebt:       7_987.673076923076926760 * 1e18
             }
         );
+        _assertReserveAuction(
+            {
+                reserves:                   7.691586538461542154 * 1e18,
+                claimableReserves :         0,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              3 days
+            }
+        );
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
     }
 
     function testKick() external {
-
         _assertAuction(
             {
                 borrower:       _borrower,
@@ -241,6 +249,15 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 kicker:    _lender,
                 claimable: 0,
                 locked:    0.195342779771472726 * 1e18
+            }
+        );
+        _assertReserveAuction(
+            {
+                reserves:                   23.628141539209698814 * 1e18,
+                claimableReserves :         0,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
             }
         );
 

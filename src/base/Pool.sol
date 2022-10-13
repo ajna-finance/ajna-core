@@ -40,11 +40,10 @@ abstract contract Pool is Clone, Multicall, IPool {
     uint256 public override minFee;                     // [WAD]
     uint256 public override interestRate;               // [WAD]
     uint256 public override interestRateUpdate;         // [SEC]
-
     uint256 public override borrowerDebt;               // [WAD]
-    uint256 public override liquidationBondEscrowed;    // [WAD]
+
     uint256 public override quoteTokenScale;
-    uint256 public override pledgedCollateral;
+    uint256 public override pledgedCollateral; // [WAD]
 
     uint256 public override debtEma;      // [WAD]
     uint256 public override lupColEma;    // [WAD]
@@ -401,7 +400,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 claimable = PoolUtils.claimableReserves(
             borrowerDebt,
             deposits.treeSum(),
-            liquidationBondEscrowed,
+            auctions.liquidationBondEscrowed,
             curUnclaimedAuctionReserve,
             quoteToken().balanceOf(address(this))
         );
@@ -775,19 +774,13 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function depositSize() external view override returns (uint256) {
-        return deposits.treeSum();
-    }
-
-    function depositIndex(uint256 debt_) external view override returns (uint256) {
-        return deposits.findIndexOfSum(debt_);
-    }
-
-    function depositUtilization(
-        uint256 debt_,
-        uint256 collateral_
-    ) external view override returns (uint256) {
-        return deposits.utilization(debt_, collateral_);
+    function borrowers(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
+        return (
+            loans.borrowers[borrower_].debt,
+            loans.borrowers[borrower_].collateral,
+            loans.borrowers[borrower_].mompFactor,
+            loans.borrowers[borrower_].inflatorSnapshot
+        );
     }
 
     function bucketDeposit(uint256 index_) external view override returns (uint256) {
@@ -798,16 +791,38 @@ abstract contract Pool is Clone, Multicall, IPool {
         return deposits.scale(index_);
     }
 
-    function noOfLoans() external view override returns (uint256) {
-        return loans.noOfLoans();
+    function collateralAddress() external pure override returns (address) {
+        return _getArgAddress(0);
     }
 
-    function maxBorrower() external view override returns (address) {
-        return loans.getMax().borrower;
+    function depositIndex(uint256 debt_) external view override returns (uint256) {
+        return deposits.findIndexOfSum(debt_);
     }
 
-    function maxThresholdPrice() external view override returns (uint256) {
-        return loans.getMax().thresholdPrice;
+    function depositSize() external view override returns (uint256) {
+        return deposits.treeSum();
+    }
+
+    function depositUtilization(
+        uint256 debt_,
+        uint256 collateral_
+    ) external view override returns (uint256) {
+        return deposits.utilization(debt_, collateral_);
+    }
+
+    function kickers(address kicker_) external view override returns (uint256, uint256) {
+        return(
+            auctions.kickers[kicker_].claimable,
+            auctions.kickers[kicker_].locked
+        );
+    }
+
+    function lenders(uint256 index_, address lender_) external view override returns (uint256, uint256) {
+        return buckets.getLenderInfo(index_, lender_);
+    }
+
+    function liquidationBondEscrowed() external view override returns (uint256) {
+        return auctions.liquidationBondEscrowed;
     }
 
     function lpsToQuoteTokens(
@@ -823,32 +838,20 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function collateralAddress() external pure override returns (address) {
-        return _getArgAddress(0);
+    function maxBorrower() external view override returns (address) {
+        return loans.getMax().borrower;
+    }
+
+    function maxThresholdPrice() external view override returns (uint256) {
+        return loans.getMax().thresholdPrice;
+    }
+
+    function noOfLoans() external view override returns (uint256) {
+        return loans.noOfLoans();
     }
 
     function quoteTokenAddress() external pure override returns (address) {
         return _getArgAddress(0x14);
-    }
-
-    function borrowers(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
-        return (
-            loans.borrowers[borrower_].debt,
-            loans.borrowers[borrower_].collateral,
-            loans.borrowers[borrower_].mompFactor,
-            loans.borrowers[borrower_].inflatorSnapshot
-        );
-    }
-
-    function lenders(uint256 index_, address lender_) external view override returns (uint256, uint256) {
-        return buckets.getLenderInfo(index_, lender_);
-    }
-
-    function kickers(address kicker_) external view override returns (uint256, uint256) {
-        return(
-            auctions.kickers[kicker_].claimable,
-            auctions.kickers[kicker_].locked
-        );
     }
 
     /************************/

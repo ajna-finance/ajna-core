@@ -10,6 +10,7 @@ library Auctions {
     struct Data {
         address head;
         address tail;
+        uint256 liquidationBondEscrowed; // [WAD]
         mapping(address => Liquidation) liquidations;
         mapping(address => Kicker)      kickers;
     }
@@ -44,6 +45,7 @@ library Auctions {
 
     /**
      *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
+     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
      *  @param  borrower_          Borrower whose loan is being placed in queue.
      *  @param  collateralization_ Borrower's collateralization.
      */
@@ -56,7 +58,7 @@ library Auctions {
         if (collateralization_ >= Maths.WAD && self.liquidations[borrower_].kickTime != 0) {
 
             Liquidation memory liquidation = self.liquidations[borrower_];
-
+            // update kicker balances
             Kicker storage kicker = self.kickers[liquidation.kicker];
             kicker.locked    -= liquidation.bondSize;
             kicker.claimable += liquidation.bondSize;
@@ -81,7 +83,7 @@ library Auctions {
                 self.liquidations[liquidation.prev].next = liquidation.next;
                 self.liquidations[liquidation.next].prev = liquidation.prev;
             }
-
+            // delete liquidation
             delete self.liquidations[borrower_];
         }
     }
@@ -128,6 +130,8 @@ library Auctions {
             kickAuctionAmount_ = bondSize - kicker.claimable;
             kicker.claimable = 0;
         }
+        // update liquidationBondEscrowed accumulator
+        self.liquidationBondEscrowed += bondSize;
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
