@@ -65,19 +65,4 @@ interface IERC721PoolEvents {
         uint256 indexed price,
         uint256[] tokenIds
     );
-
-    /**
-     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
-     *  @param  borrower   Identifies the loan being liquidated.
-     *  @param  amount     Amount of quote token used to purchase collateral.
-     *  @param  tokenIds   Tokens purchased with quote token.
-     *  @param  bondChange Impact of this take to the liquidation bond.
-     *  @dev    amount / len(tokenIds) implies the auction price.
-     */
-    event Take(
-        address indexed borrower,
-        uint256 amount,
-        uint256[] tokenIds,
-        int256 bondChange
-    );
 }

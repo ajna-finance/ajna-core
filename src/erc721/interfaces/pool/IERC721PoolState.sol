@@ -11,7 +11,7 @@ interface IERC721PoolState {
      *  @param  tokenId The token id to check.
      *  @return allowed True if token id is allowed in pool
      */
-    function isTokenIdAllowed(
+    function tokenIdsAllowed(
         uint256 tokenId
     ) external view returns (bool allowed);
 }

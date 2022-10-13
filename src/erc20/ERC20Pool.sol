@@ -9,18 +9,11 @@ import './interfaces/IERC20Pool.sol';
 
 import '../base/Pool.sol';
 
-import '../libraries/Heap.sol';
-import '../libraries/Maths.sol';
-import '../libraries/Book.sol';
-import '../libraries/Actors.sol';
-
 contract ERC20Pool is IERC20Pool, Pool {
     using SafeERC20 for ERC20;
-    using Actors    for mapping(uint256 => mapping(address => Actors.Lender));
-    using Actors    for mapping(address => Actors.Borrower);
-    using Book      for mapping(uint256 => Book.Bucket);
-    using Book      for Book.Deposits;
-    using Heap      for Heap.Data;
+    using Buckets   for mapping(uint256 => Buckets.Bucket);
+    using Deposits  for Deposits.Data;
+    using Loans     for Loans.Data;
 
     /***********************/
     /*** State Variables ***/
@@ -36,7 +29,8 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint256 rate_,
         address ajnaTokenAddress_
     ) external override {
-        if (poolInitializations != 0) revert AlreadyInitialized();
+        if (poolInitializations != 0)         revert AlreadyInitialized();
+        if (ajnaTokenAddress_ == address(0))  revert Token0xAddress();
 
         collateralScale = 10**(18 - collateral().decimals());
         quoteTokenScale = 10**(18 - quoteToken().decimals());
@@ -105,30 +99,20 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         uint256 fromBucketCollateral;
         (fromBucketLPs_, fromBucketCollateral) = buckets.collateralToLPs(
-            fromIndex_,
             deposits.valueAt(fromIndex_),
-            collateralAmountToMove_
+            collateralAmountToMove_,
+            fromIndex_
         );
         if (fromBucketCollateral < collateralAmountToMove_) revert InsufficientCollateral();
 
-        (uint256 lpBalance, ) = lenders.getLenderInfo(
+        (uint256 lpBalance, ) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
         );
         if (fromBucketLPs_ > lpBalance) revert InsufficientLPs();
 
-        (toBucketLPs_, ) = buckets.collateralToLPs(
-            toIndex_,
-            deposits.valueAt(toIndex_),
-            collateralAmountToMove_
-        );
-
-        // update lender accounting
-        lenders.removeLPs(fromIndex_, msg.sender, fromBucketLPs_);
-        lenders.addLPs(toIndex_, msg.sender, toBucketLPs_);
-        // update buckets
-        buckets.removeCollateral(fromIndex_, fromBucketLPs_, collateralAmountToMove_);
-        buckets.addCollateral(toIndex_, toBucketLPs_, collateralAmountToMove_);
+        buckets.removeCollateral(collateralAmountToMove_, fromBucketLPs_, fromIndex_);
+        toBucketLPs_ = buckets.addCollateral(deposits.valueAt(toIndex_), collateralAmountToMove_, toIndex_);
 
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
@@ -141,19 +125,15 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        (uint256 lenderLPsBalance, ) = lenders.getLenderInfo(index_, msg.sender);
+        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(index_, msg.sender);
         (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
-            index_,
             deposits.valueAt(index_),
-            lenderLPsBalance
+            lenderLPsBalance,
+            index_
         );
         if (collateralAmountRemoved_ == 0) revert NoClaim();
 
-        // update lender accounting
-        lenders.removeLPs(index_, msg.sender, redeemedLenderLPs_);
-        // update bucket accounting
-        buckets.removeCollateral(index_, redeemedLenderLPs_, collateralAmountRemoved_);
-
+        buckets.removeCollateral(collateralAmountRemoved_, redeemedLenderLPs_, index_);
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
         // move collateral from pool to lender
@@ -192,8 +172,19 @@ contract ERC20Pool is IERC20Pool, Pool {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
-    // TODO: Add reentrancy guard
-    function take(address borrower_, uint256 amount_, bytes memory swapCalldata_) external override {
+    function take(
+        address borrower_,
+        uint256 maxCollateral_,
+        bytes memory swapCalldata_
+    ) external override {
+        uint256 collateralTaken = _take(borrower_, maxCollateral_);
+
+        // TODO: implement flashloan functionality
+        // Flash loan full amount to liquidate to borrower
+        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
+        //msg.sender.call(swapCalldata_);
+
+        collateral().safeTransfer(msg.sender, collateralTaken);
     }
 
     /************************/

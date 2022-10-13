@@ -29,6 +29,7 @@ abstract contract DSTestPlus is Test {
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
+    event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
     event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
     event UpdateInterestRate(uint256 oldRate_, uint256 newRate_);
     event ReserveAuction(uint256 claimableReservesRemaining_, uint256 auctionPrice_);
@@ -206,21 +207,21 @@ abstract contract DSTestPlus is Test {
         address kicker,
         uint256 bondSize,
         uint256 bondFactor,
-        uint128 kickTime,
-        uint128 kickPriceIndex
+        uint256 kickTime,
+        uint256 kickPriceIndex
     ) internal {
         (
             address auctionKicker,
-            uint256 auctionBondSize,
             uint256 auctionBondFactor,
-            uint128 auctionKickTime,
-            uint128 auctionKickPriceIndex,
+            uint256 auctionKickTime,
+            uint256 auctionKickPriceIndex,
             ,
         ) = _pool.auctionInfo(borrower);
+        (, uint256 lockedBonds) = _pool.kickers(kicker);
 
-        assertEq(auctionKicker != address(0), active);
+        assertEq(auctionKickTime != 0,  active);
         assertEq(auctionKicker,         kicker);
-        assertEq(auctionBondSize,       bondSize);
+        assertEq(lockedBonds,           bondSize);
         assertEq(auctionBondFactor,     bondFactor);
         assertEq(auctionKickTime,       kickTime);
         assertEq(auctionKickPriceIndex, kickPriceIndex);
@@ -340,6 +341,17 @@ abstract contract DSTestPlus is Test {
         assertEq(pendingDebt, borrowerPendingDebt);
     }
 
+    function _assertKicker(
+        address kicker,
+        uint256 claimable,
+        uint256 locked
+    ) internal {
+        (uint256 curClaimable, uint256 curLocked) = _pool.kickers(kicker);
+
+        assertEq(curClaimable, claimable);
+        assertEq(curLocked,    locked);
+    }
+
     function _assertLoans(
         uint256 noOfLoans,
         address maxBorrower,
@@ -406,6 +418,16 @@ abstract contract DSTestPlus is Test {
     /*** Revert asserts ***/
     /**********************/
 
+    function _assertBorrowAuctionActiveRevert(
+        address from,
+        uint256 amount,
+        uint256 indexLimit
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        _pool.borrow(amount, indexLimit);
+    }
+
     function _assertBorrowLimitIndexRevert(
         address from,
         uint256 amount,
@@ -436,7 +458,7 @@ abstract contract DSTestPlus is Test {
         _pool.borrow(amount, indexLimit);
     }
 
-    function _assertKickActiveAuctionRevert(
+    function _assertKickAuctionActiveRevert(
         address from,
         address borrower
     ) internal {
@@ -538,7 +560,7 @@ abstract contract DSTestPlus is Test {
     function _assertTakeReservesNoAuctionRevert(
         uint256 amount
     ) internal {
-        vm.expectRevert(IPoolErrors.NoAuction.selector);
+        vm.expectRevert(IPoolErrors.NoReservesAuction.selector);
         _pool.takeReserves(amount);
     }
 

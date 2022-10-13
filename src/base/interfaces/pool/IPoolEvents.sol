@@ -131,6 +131,23 @@ interface IPoolEvents {
     );
 
     /**
+     *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
+     *  @param  borrower   Identifies the loan being liquidated.
+     *  @param  amount     Amount of quote token used to purchase collateral.
+     *  @param  collateral Amount of collateral purchased with quote token (ERC20 pool) or number of NFTs purchased (ERC721 pool).
+     *  @param  bondChange Impact of this take to the liquidation bond.
+     *  @param  isReward   True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
+     *  @dev    amount / collateral implies the auction price.
+     */
+    event Take(
+        address indexed borrower,
+        uint256 amount,
+        uint256 collateral,
+        uint256 bondChange,
+        bool    isReward
+    );
+
+    /**
      *  @notice Emitted when a lender transfers their LP tokens to a different address.
      *  @dev    Used by PositionManager.memorializePositions().
      *  @param  owner    The original owner address of the position.

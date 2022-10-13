@@ -89,9 +89,9 @@ interface IPoolErrors {
     error NoAllowance();
 
     /**
-     *  @notice Actor is attempting to take or clear an inactive auction.
+     *  @notice Actor is attempting to take or clear an inactive reserves auction.
      */
-    error NoAuction();
+    error NoReservesAuction();
 
     /**
      *  @notice Lender must have non-zero LPB when attemptign to remove quote token from the pool.
@@ -115,7 +115,8 @@ interface IPoolErrors {
     error PoolUnderCollateralized();
 
     /**
-     *  @notice Take was called before 1 hour had passed from kick time.
+     *  @notice Pool cannot be initialized with 0x address for Ajna token.
      */
-    error TakeNotPastCooldown();
+    error Token0xAddress();
+
 }

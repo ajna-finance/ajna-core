@@ -128,12 +128,12 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         ERC721Pool(address(_pool)).pullCollateral(tokenIds);
     }
 
-    function _assertPullTokenRevert(
+    function _assertPullTokenNotDepositedRevert(
         address from,
         uint256[] memory tokenIds
     ) internal {
         changePrank(from);
-        vm.expectRevert(IERC721PoolErrors.RemoveTokenFailed.selector);
+        vm.expectRevert(IERC721PoolErrors.TokenNotDeposited.selector);
         ERC721Pool(address(_pool)).pullCollateral(tokenIds);
     }
 

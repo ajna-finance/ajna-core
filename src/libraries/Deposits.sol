@@ -4,140 +4,14 @@ pragma solidity 0.8.14;
 import './Maths.sol';
 import './PoolUtils.sol';
 
-library Book {
-
-    /***************/
-    /*** Buckets ***/
-    /***************/
-
-    /**
-     *  @notice struct holding bucket info
-     *  @param lps        Bucket LP accumulator, RAY
-     *  @param collateral Available collateral tokens deposited in the bucket, WAD
-     */
-    struct Bucket {
-        uint256 lps;
-        uint256 collateral;
-    }
-
-    function addLPs(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 amount_
-    ) internal {
-        self[index_].lps += amount_;
-    }
-
-    function removeLPs(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 amount_
-    ) internal {
-        self[index_].lps -= amount_;
-    }
-
-    function addCollateral(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 lps_,
-        uint256 collateral_
-    ) internal {
-        self[index_].lps += lps_;
-        self[index_].collateral += collateral_;
-    }
-
-    function removeCollateral(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 lps_,
-        uint256 collateral_
-    ) internal {
-        Bucket storage bucket = self[index_];
-        bucket.lps        -= Maths.min(bucket.lps, lps_);
-        bucket.collateral -= Maths.min(bucket.collateral, collateral_);
-    }
-
-    function getExchangeRate(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 quoteToken_
-    ) internal view returns (uint256, uint256) {
-        uint256 bucketCollateral = self[index_].collateral;
-        uint256 bucketLPs        = self[index_].lps;
-        if (bucketLPs == 0) {
-            return  (Maths.RAY, bucketCollateral);
-        }
-        uint256 bucketSize = quoteToken_ * 10**18 + PoolUtils.indexToPrice(index_) * bucketCollateral;  // 10^36 + // 10^36
-        return (bucketSize * 10**18 / bucketLPs, bucketCollateral); // 10^27
-    }
-
-    function collateralToLPs(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 deposit_,
-        uint256 collateral_
-    ) internal view returns (uint256, uint256) {
-        (uint256 rate, uint256 bucketCollateral)  = getExchangeRate(self, index_, deposit_);
-        uint256 lps = (collateral_ * PoolUtils.indexToPrice(index_) * 1e18 + rate / 2) / rate;
-        return (lps, bucketCollateral);
-    }
-
-    function quoteTokensToLPs(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 deposit_,
-        uint256 quoteTokens_
-    ) internal view returns (uint256) {
-        (uint256 rate, )  = getExchangeRate(self, index_, deposit_);
-        return Maths.rdiv(Maths.wadToRay(quoteTokens_), rate);
-    }
-
-    function lpsToQuoteToken(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 deposit_,
-        uint256 lenderLPsBalance_,
-        uint256 maxQuoteToken_
-    ) internal view returns (uint256 quoteTokenAmount_, uint256 bucketLPs_, uint256 lenderLPs_) {
-        lenderLPs_ = lenderLPsBalance_;
-        (uint256 rate, )  = getExchangeRate(self, index_, deposit_);
-        quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
-        if (quoteTokenAmount_ > deposit_) {
-            quoteTokenAmount_ = deposit_;
-            lenderLPs_        = Maths.wrdivr(quoteTokenAmount_, rate);
-        }
-        if (maxQuoteToken_ != quoteTokenAmount_) quoteTokenAmount_ = Maths.min(maxQuoteToken_,quoteTokenAmount_);
-        bucketLPs_ = Maths.wrdivr(quoteTokenAmount_, rate);
-    }
-
-    function lpsToCollateral(
-        mapping(uint256 => Bucket) storage self,
-        uint256 index_,
-        uint256 deposit_,
-        uint256 lenderLPsBalance_
-    ) internal view returns (uint256 collateralAmount_, uint256 lenderLPs_) {
-        // max collateral to lps
-        lenderLPs_        = lenderLPsBalance_;
-        uint256 price      = PoolUtils.indexToPrice(index_);
-        (uint256 rate, uint256 bucketCollateral) = getExchangeRate(self, index_, deposit_);
-        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), price);
-        if (collateralAmount_ > bucketCollateral) {
-            // user is owed more collateral than is available in the bucket
-            collateralAmount_ = bucketCollateral;
-            lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, price), rate);
-        }
-    }
-
-    /****************/
-    /*** Deposits ***/
-    /****************/
+library Deposits {
 
     uint256 internal constant SIZE = 8192;
 
     error InvalidIndex();
     error InvalidScalingFactor();
 
-    struct Deposits {
+    struct Data {
         uint256[8193] values;  // Array of values in the FenwickTree.
         uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
     }
@@ -149,7 +23,7 @@ library Book {
     }
 
     function accrueInterest(
-        Deposits storage self,
+        Data storage self,
         uint256 debt_,
         uint256 collateral_,
         uint256 htp_,
@@ -168,7 +42,7 @@ library Book {
     }
 
     function utilization(
-        Deposits storage self,
+        Data storage self,
         uint256 debt_,
         uint256 collateral_
     ) internal view returns (uint256 utilization_) {
@@ -182,7 +56,7 @@ library Book {
     }
 
     function momp(
-        Deposits storage self,
+        Data storage self,
         uint256 curDebt_,
         uint256 numLoans_
     ) internal view returns (uint256 momp_) {
@@ -190,7 +64,7 @@ library Book {
     }
 
     function mompFactor(
-        Deposits storage self,
+        Data storage self,
         uint256 inflator_,
         uint256 curDebt_,
         uint256 numLoans_
@@ -206,7 +80,7 @@ library Book {
      *  @param  x_  amount to increase the value by.
     */    
     function add(
-        Deposits storage self,
+        Data storage self,
         uint256 i_,
         uint256 x_
     ) internal {
@@ -246,7 +120,7 @@ library Book {
      *  @return  m_  returns smallest index where prefixsum > x_
     */    
     function findIndexOfSum(
-        Deposits storage self,
+        Data storage self,
         uint256 x_
     ) internal view returns (uint256 m_) {
         uint256 i     = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
@@ -295,7 +169,7 @@ library Book {
     */    
     // TODO: add check to ensure scaling factor is at least a WAD? 
     function mult(
-        Deposits storage self,
+        Data storage self,
         uint256 i_,
         uint256 f_
     ) internal {
@@ -345,7 +219,7 @@ library Book {
      *  @param  i_  The index to receive the prefix sum
     */    
     function prefixSum(
-        Deposits storage self,
+        Data storage self,
         uint256 i_
     ) internal view returns (uint256 s_) {
 
@@ -386,7 +260,7 @@ library Book {
      *  @param  x_  Amount to decrease the value by.
     */    
     function remove(
-        Deposits storage self,
+        Data storage self,
         uint256 i_,
         uint256 x_
     ) internal {
@@ -419,7 +293,7 @@ library Book {
     }
 
     function scale(
-        Deposits storage self,
+        Data storage self,
         uint256 i_
     ) internal view returns (uint256 a_) {
         if (i_ >= SIZE) revert InvalidIndex();
@@ -434,13 +308,13 @@ library Book {
     }
 
     function treeSum(
-        Deposits storage self
+        Data storage self
     ) internal view returns (uint256) {
         return self.values[SIZE];
     }
 
     function valueAt(
-        Deposits storage self,
+        Data storage self,
         uint256 i_
     ) internal view returns (uint256 s_) {
         if (i_ >= SIZE) revert InvalidIndex();

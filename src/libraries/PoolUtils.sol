@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.14;
 
+import '../base/Pool.sol';
 import './Maths.sol';
 import './BucketMath.sol';
 
 library PoolUtils {
-    uint256 public constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
-    uint256 public constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
+    uint256 private constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
+    uint256 private constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
 
     function auctionPrice(
         uint256 referencePrice,
@@ -92,31 +93,21 @@ library PoolUtils {
         }
     }
 
-    function t0ThresholdPrice(
-        uint256 debt_,
-        uint256 collateral_,
-        uint256 inflator_
-    ) internal pure returns (uint256 tp_) {
-        if (collateral_ != 0) tp_ = Maths.wdiv(Maths.wdiv(debt_, inflator_), collateral_);
-    }
-
     function applyEarlyWithdrawalPenalty(
-        uint256 interestRate_,
+        Pool.PoolState memory poolState_,
         uint256 minFee_,
         uint256 depositTime_,
-        uint256 curDebt_,
-        uint256 col_,
         uint256 fromIndex_,
         uint256 toIndex_,
         uint256 amount_
     ) internal view returns (uint256 amountWithPenalty_){
         amountWithPenalty_ = amount_;
-        if (col_ != 0 && depositTime_ != 0 && block.timestamp - depositTime_ < 1 days) {
-            uint256 ptp = Maths.wdiv(curDebt_, col_);
+        if (poolState_.collateral != 0 && depositTime_ != 0 && block.timestamp - depositTime_ < 1 days) {
+            uint256 ptp = Maths.wdiv(poolState_.accruedDebt, poolState_.collateral);
             bool applyPenalty = indexToPrice(fromIndex_) > ptp;
             if (toIndex_ != 0) applyPenalty = applyPenalty && indexToPrice(toIndex_) < ptp;
             if (applyPenalty) {
-                amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate(interestRate_, minFee_));
+                amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate(poolState_.rate, minFee_));
             }
         }
     }
@@ -144,6 +135,35 @@ library PoolUtils {
         uint256 price_
     ) internal pure returns (uint256) {
         return uint256(7388 - (BucketMath.priceToIndex(price_) + 3232));
+    }
+
+    /**
+     *  @notice Calculates bond penalty factor.
+     *  @dev Called in kick and take.
+     *  @param debt_             Borrower debt.
+     *  @param collateral_       Borrower collateral.
+     *  @param mompFactor_       Factor stamped on borrower, used to calculate the MOMP retroactivley.
+     *  @param inflatorSnapshot_ Borrower inflator snapshot.
+     *  @param bondFactor_       Factor used to determine bondSize.
+     *  @param price_            Auction price at the time of call.
+     *  @return bpf_             Factor used in determining bond Reward (positive) or penalty (negative).
+     */
+    function bpf(
+        uint256 debt_,
+        uint256 collateral_,
+        uint256 mompFactor_,
+        uint256 inflatorSnapshot_,
+        uint256 bondFactor_,
+        uint256 price_
+    ) internal pure returns (int256) {
+        return BucketMath.bpf(
+            debt_,
+            collateral_,
+            mompFactor_,
+            inflatorSnapshot_,
+            bondFactor_,
+            price_
+        );
     }
 
 }

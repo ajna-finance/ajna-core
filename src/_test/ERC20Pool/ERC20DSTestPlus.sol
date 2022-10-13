@@ -13,7 +13,6 @@ import '../../base/interfaces/IPool.sol';
 import '../../base/PoolInfoUtils.sol';
 
 import '../../libraries/Maths.sol';
-import '../../libraries/Actors.sol';
 
 abstract contract ERC20DSTestPlus is DSTestPlus {
 
@@ -125,6 +124,22 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         assertEq(lpRedeem, lpRedeemed_);
     }
 
+    function _take(
+        address from,
+        address borrower,
+        uint256 maxCollateral,
+        uint256 bondChange,
+        uint256 givenAmount,
+        uint256 collateralTaken,
+        bool isReward
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
+        _assertTokenTransferEvent(from, address(_pool), givenAmount);
+        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
+    }
+
     function _transferLpTokens(
         address operator,
         address from,
@@ -232,6 +247,46 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         changePrank(operator);
         vm.expectRevert(IPoolErrors.InvalidIndex.selector);
         _pool.transferLPTokens(from, to, indexes);
+    }
+
+    function _assertTakeAuctionInCooldownRevert(
+        address from,
+        address borrower,
+        uint256 maxCollateral
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('TakeNotPastCooldown()'));
+        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
+    }
+
+    function _assertTakeDebtUnderMinPoolDebtRevert(
+        address from,
+        address borrower,
+        uint256 maxCollateral
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
+        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
+    }
+
+    function _assertTakeInsufficentCollateralRevert(
+        address from,
+        address borrower,
+        uint256 maxCollateral
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
+        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
+    }
+
+    function _assertTakeNoAuctionRevert(
+        address from,
+        address borrower,
+        uint256 maxCollateral
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
+        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
     }
 
     function _assertTransferNoAllowanceRevert(

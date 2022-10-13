@@ -7,7 +7,6 @@ import { ERC721HelperContract } from "./ERC721DSTestPlus.sol";
 import '../../erc721/ERC721Pool.sol';
 import '../../erc721/ERC721PoolFactory.sol';
 
-import '../../libraries/Actors.sol';
 import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
 
@@ -226,12 +225,12 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              20.092400205065766075 * 1e18,
+                borrowerDebt:              20.343555207629088151 * 1e18,
                 borrowerCollateral:        2 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
                 borrowerInflator:          1.013792886272348689 * 1e18,
-                borrowerCollateralization: 0.987157805162128596 * 1e18,
-                borrowerPendingDebt:       20.092400205065766075 * 1e18
+                borrowerCollateralization: 0.974970671765065280 * 1e18,
+                borrowerPendingDebt:       20.343555207629088151 * 1e18
             }
         );
         _assertBorrower(
@@ -253,13 +252,20 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 kicker:         _lender,
                 bondSize:       0.200924002050657661 * 1e18,
                 bondFactor:     0.01 * 1e18,
-                kickTime:       uint128(block.timestamp),
+                kickTime:       block.timestamp,
                 kickPriceIndex: 3696
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.200924002050657661 * 1e18
             }
         );
 
         // kick should fail if borrower in liquidation
-        _assertKickActiveAuctionRevert(
+        _assertKickAuctionActiveRevert(
             {
                 from:       _lender,
                 borrower:   _borrower

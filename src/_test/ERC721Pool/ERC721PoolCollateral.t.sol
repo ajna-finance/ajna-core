@@ -225,7 +225,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 4);
 
         // should fail if trying to pull collateral by an address that pledged different collateral
-        _assertPullTokenRevert(
+        _assertPullTokenNotDepositedRevert(
             {
                 from:     _borrower2,
                 tokenIds: tokenIdsToRemove

@@ -277,7 +277,7 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getMaxBorrower(), b6);
         assertEq(_loans.getTotalTps(),    7);
 
-        vm.expectRevert("H:R:NO_ID");
+        vm.expectRevert("H:R:NO_BORROWER");
         _loans.removeTp(address(100));
     }
 

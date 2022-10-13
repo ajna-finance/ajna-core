@@ -3,9 +3,9 @@ pragma solidity 0.8.14;
 
 library Maths {
 
-    uint256 public constant WAD = 10**18;
-    uint256 public constant RAY = 10**27;
-    uint256 public constant RAD = 10**45;
+    uint256 internal constant WAD = 10**18;
+    uint256 internal constant RAY = 10**27;
+    uint256 internal constant RAD = 10**45;
 
     function wmul(uint256 x, uint256 y) internal pure returns (uint256) {
         return (x * y + 10**18 / 2) / 10**18;
@@ -144,6 +144,18 @@ library Maths {
      */
     function wadToIntRoundingDown(uint256 a) internal pure returns (uint256) {
         return wdiv(a, 10 ** 18) / 10 ** 18;
+    }
+
+    /*************************/
+    /*** Integer Functions ***/
+    /*************************/
+
+    function maxInt(int256 x, int256 y) internal pure returns (int256) {
+        return x >= y ? x : y;
+    }
+
+    function minInt(int256 x, int256 y) internal pure returns (int256) {
+        return x <= y ? x : y;
     }
 
 }

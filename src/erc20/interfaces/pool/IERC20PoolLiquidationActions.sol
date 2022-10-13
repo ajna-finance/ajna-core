@@ -7,15 +7,15 @@ pragma solidity 0.8.14;
 interface IERC20PoolLiquidationActions {
 
     /**
-     *  @notice Called by actors to purchase collateral using quote token they provide themselves.
-     *  @param  borrower     Identifies the loan under liquidation.
-     *  @param  amount       Amount of quote token which will be used to purchase collateral at the auction price.
+     *  @notice Called by actors to purchase collateral from the auction in exchange for quote token.
+     *  @param  borrower     Address of the borower take is being called upon.
+     *  @param  maxAmount    Max amount of collateral that will be taken from the auction.
      *  @param  swapCalldata If provided, delegate call will be invoked after sending collateral to msg.sender,
-     *                        such that sender will have a sufficient quote token balance prior to payment.
+     *                       such that sender will have a sufficient quote token balance prior to payment.
      */
     function take(
         address borrower,
-        uint256 amount,
+        uint256 maxAmount,
         bytes memory swapCalldata
     ) external;
 }

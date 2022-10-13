@@ -4,12 +4,12 @@ pragma solidity 0.8.14;
 
 import './DSTestPlus.sol';
 
-import '../../libraries/Book.sol';
+import '../../libraries/Deposits.sol';
 
 contract FenwickTreeInstance is DSTestPlus {
-    using Book for Book.Deposits;
+    using Deposits for Deposits.Data;
 
-    Book.Deposits private deposits;
+    Deposits.Data private deposits;
 
     /**
      *  @notice used to track fuzzing test insertions.
