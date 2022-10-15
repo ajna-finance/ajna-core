@@ -57,13 +57,15 @@ interface IPoolState {
      *  @param  index               Bucket index.
      *  @return lpAccumulator       Amount of LPs accumulated in current bucket.
      *  @return availableCollateral Amount of collateral available in current bucket.
+     *  @return locked              True if bucket locked for LPs withdrawalss.
      */
     function buckets(uint256 index)
         external
         view
         returns (
             uint256 lpAccumulator,
-            uint256 availableCollateral
+            uint256 availableCollateral,
+            bool    locked
         );
 
     /**

@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import './Buckets.sol';
 import './Loans.sol';
 import './Maths.sol';
 
@@ -43,6 +44,83 @@ library Auctions {
     /***  Auctions Queue Functions ***/
     /*********************************/
 
+    function clear(
+        Data storage self,
+        Loans.Data storage loans_,
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        address borrower_,
+        uint256 reserves_,
+        uint256 bucketDepth_
+    ) internal returns (
+        uint256 clearedDebt_,
+        uint256 remainingDebt_,
+        uint256 remainingCol_,
+        uint256 remainingReserves_,
+        uint256 totalForgived_,
+        uint256 hpbIndex_
+    )
+    {
+
+        if (self.liquidations[borrower_].kickTime > 72 hours) {
+
+            remainingDebt_     = loans_.borrowers[borrower_].debt;
+            remainingCol_      = loans_.borrowers[borrower_].collateral;
+            remainingReserves_ = reserves_;
+
+            while (bucketDepth_ > 0) {
+                // auction has debt to cover with remaining collateral
+                if (remainingDebt_ != 0 && remainingCol_ != 0) {
+                    hpbIndex_             = Deposits.findIndexOfSum(deposits_, 1);
+                    uint256 clearableDebt = Maths.min(remainingDebt_, Deposits.valueAt(deposits_, hpbIndex_));
+                    uint256 clearableCol  = Maths.wdiv(clearableDebt, PoolUtils.indexToPrice(hpbIndex_));
+
+                    remainingDebt_ -= clearableDebt;
+                    remainingCol_  -= clearableCol;
+
+                    Deposits.remove(deposits_, hpbIndex_, clearableDebt);
+                    buckets_[hpbIndex_].collateral -= clearableCol;
+                }
+
+                // there's still debt to cover but no collateral left to auction, use reserve or forgive amount form next HPB
+                if (remainingDebt_ != 0 && remainingCol_ == 0) {
+                    if (remainingReserves_ != 0) {
+                        uint256 fromReserve =  Maths.min(remainingDebt_, remainingReserves_);
+                        remainingReserves_ -= fromReserve;
+                        remainingDebt_     -= fromReserve;
+                    } else {
+                        hpbIndex_          = Deposits.findIndexOfSum(deposits_, 1);
+                        uint256 forgiveAmt = Maths.min(remainingDebt_, Deposits.valueAt(deposits_, hpbIndex_));
+
+                        totalForgived_ += forgiveAmt;
+                        remainingDebt_ -= forgiveAmt;
+
+                        Deposits.remove(deposits_, hpbIndex_, forgiveAmt);
+
+                        if (buckets_[hpbIndex_].collateral == 0 && Deposits.valueAt(deposits_, hpbIndex_) == 0) {
+                            // existing LPB and LP tokens for the bucket shall become unclaimable.
+                            buckets_[hpbIndex_].locked = true;
+                        }
+                    }
+                }
+
+                // no more debt to cover, remove auction from queue
+                if (remainingDebt_ == 0) {
+                    _removeAuction(self, borrower_);
+                    break;
+                }
+
+                --bucketDepth_;
+            }
+
+            clearedDebt_ = loans_.borrowers[borrower_].debt - remainingDebt_;
+
+            // save remaining debt and collateral after auction clear action
+            loans_.borrowers[borrower_].debt       = remainingDebt_;
+            loans_.borrowers[borrower_].collateral = remainingCol_;
+        }
+    }
+
     /**
      *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
@@ -56,37 +134,45 @@ library Auctions {
     ) internal {
 
         if (collateralization_ >= Maths.WAD && self.liquidations[borrower_].kickTime != 0) {
-
-            Liquidation memory liquidation = self.liquidations[borrower_];
-            // update kicker balances
-            Kicker storage kicker = self.kickers[liquidation.kicker];
-            kicker.locked    -= liquidation.bondSize;
-            kicker.claimable += liquidation.bondSize;
-
-            if (self.head == borrower_ && self.tail == borrower_) {
-                // liquidation is the head and tail
-                self.head = address(0);
-                self.tail = address(0);
-
-            } else if(self.head == borrower_) {
-                // liquidation is the head
-                self.liquidations[liquidation.next].prev = address(0);
-                self.head = liquidation.next;
-
-            } else if(self.tail == borrower_) {
-                // liquidation is the tail
-                self.liquidations[liquidation.prev].next = address(0);
-                self.tail = liquidation.prev;
-
-            } else {
-                // liquidation is in the middle
-                self.liquidations[liquidation.prev].next = liquidation.next;
-                self.liquidations[liquidation.next].prev = liquidation.prev;
-            }
-            // delete liquidation
-            delete self.liquidations[borrower_];
+            _removeAuction(self, borrower_);
         }
     }
+
+    function _removeAuction(
+        Data storage self,
+        address borrower_
+    ) internal {
+
+        Liquidation memory liquidation = self.liquidations[borrower_];
+        // update kicker balances
+        Kicker storage kicker = self.kickers[liquidation.kicker];
+        kicker.locked    -= liquidation.bondSize;
+        kicker.claimable += liquidation.bondSize;
+
+        if (self.head == borrower_ && self.tail == borrower_) {
+            // liquidation is the head and tail
+            self.head = address(0);
+            self.tail = address(0);
+
+        } else if(self.head == borrower_) {
+            // liquidation is the head
+            self.liquidations[liquidation.next].prev = address(0);
+            self.head = liquidation.next;
+
+        } else if(self.tail == borrower_) {
+            // liquidation is the tail
+            self.liquidations[liquidation.prev].next = address(0);
+            self.tail = liquidation.prev;
+
+        } else {
+            // liquidation is in the middle
+            self.liquidations[liquidation.prev].next = liquidation.next;
+            self.liquidations[liquidation.next].prev = liquidation.prev;
+        }
+        // delete liquidation
+         delete self.liquidations[borrower_];
+    }
+
 
     /**
      *  @notice Called to start borrower liquidation and to update the auctions queue.

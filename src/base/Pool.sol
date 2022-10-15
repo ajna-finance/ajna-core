@@ -353,6 +353,25 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
+    function clear(
+        address borrower_,
+        uint256 maxDepth_
+    ) external override {
+        (
+            uint256 clearedDebt,
+            uint256 remainingDebt,
+            uint256 remainingCol,
+            uint256 remainingReserves,
+            uint256 totalForgived,
+            uint256 hpbIndex
+
+        ) = auctions.clear(loans, buckets, deposits, borrower_, 0, maxDepth_);
+        if (clearedDebt != 0) {
+            borrowerDebt -= totalForgived;
+            emit Clear(borrower_, hpbIndex, clearedDebt, remainingCol, remainingDebt);
+        }
+    }
+
     function kick(address borrowerAddress_) external override {
 
         (bool auctionKicked, ) = auctions.getStatus(borrowerAddress_);

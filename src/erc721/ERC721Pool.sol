@@ -177,14 +177,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         emit ArbTake(borrower_, index_, amount_, 0, 0);
     }
 
-    function clear(address borrower_, uint256 maxDepth_) external override {
-        // TODO: implement
-        uint256[] memory tokenIdsReturned = new uint256[](1);
-        tokenIdsReturned[0] = 0;
-        uint256 debtCleared = maxDepth_ * 10_000;
-        emit ClearNFT(borrower_, _hpbIndex(), debtCleared, tokenIdsReturned, 0);
-    }
-
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit DepositTake(borrower_, index_, amount_, 0, 0);

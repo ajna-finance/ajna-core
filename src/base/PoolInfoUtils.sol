@@ -60,7 +60,7 @@ contract PoolInfoUtils {
         quoteTokens_                  = pool.bucketDeposit(index_); // quote token in bucket, deposit + interest (WAD)
         scale_                        = pool.bucketScale(index_);     // lender interest multiplier (WAD)
 
-        (bucketLPs_, collateral_) = pool.buckets(index_);
+        (bucketLPs_, collateral_, ) = pool.buckets(index_);
         if (bucketLPs_ == 0) {
             exchangeRate_ = Maths.RAY;
         } else {

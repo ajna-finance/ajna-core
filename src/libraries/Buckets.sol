@@ -14,6 +14,7 @@ library Buckets {
     struct Bucket {
         uint256 lps;                        // [RAY] Bucket LP accumulator
         uint256 collateral;                 // [WAD] Available collateral tokens deposited in the bucket
+        bool    locked;                     // True if bucket locked for LPs withdrawals
         mapping(address => Lender) lenders; // lender address to Lender struct mapping
     }
 
