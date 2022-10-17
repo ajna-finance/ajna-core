@@ -14,9 +14,11 @@ library Buckets {
     struct Bucket {
         uint256 lps;                        // [RAY] Bucket LP accumulator
         uint256 collateral;                 // [WAD] Available collateral tokens deposited in the bucket
-        bool    locked;                     // True if bucket locked for LPs withdrawals
+        uint256 bankruptcyTs;               // Timestamp when bucket become insolvent, 0 if healthy
         mapping(address => Lender) lenders; // lender address to Lender struct mapping
     }
+
+    error BucketInsolventBlock();
 
     /***********************************/
     /*** Bucket Management Functions ***/
@@ -35,6 +37,11 @@ library Buckets {
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
     ) internal returns (uint256 addedLPs_) {
+
+        // cannot deposit in the same block when bucket becomes insolvent
+        uint256 bankruptcyTs = self[index_].bankruptcyTs;
+        if (bankruptcyTs != 0 && bankruptcyTs == block.timestamp) revert BucketInsolventBlock();
+
         // calculate amount of LPs to be added for the amount of quote tokens added to bucket
         addedLPs_ = quoteTokensToLPs(
             self,
@@ -48,7 +55,8 @@ library Buckets {
         bucket.lps += addedLPs_;
         // update lender LPs balance and deposit timestamp
         Lender storage lender = bucket.lenders[msg.sender];
-        lender.lps += addedLPs_;
+        if (bankruptcyTs >= lender.ts) lender.lps = addedLPs_;
+        else lender.lps += addedLPs_;
         lender.ts  = block.timestamp;
     }
 
@@ -134,10 +142,11 @@ library Buckets {
         uint256 lpsAmountToRemove_,
         uint256 index_
     ) internal {
+        Bucket storage bucket = self[index_];
         // update bucket LPs balance
-        self[index_].lps -= lpsAmountToRemove_;
+        bucket.lps -= lpsAmountToRemove_;
         // update lender LPs balance
-        self[index_].lenders[msg.sender].lps -= lpsAmountToRemove_;
+        bucket.lenders[msg.sender].lps -= lpsAmountToRemove_;
     }
 
     /**
@@ -219,7 +228,10 @@ library Buckets {
         uint256 index_,
         address lender_
     ) internal view returns (uint256, uint256) {
-        return (self[index_].lenders[lender_].lps, self[index_].lenders[lender_].ts);
+        uint256 lpBalance   = self[index_].lenders[lender_].lps;
+        uint256 depositTime = self[index_].lenders[lender_].ts;
+        if (self[index_].bankruptcyTs != 0 && self[index_].bankruptcyTs >= depositTime) lpBalance = 0;
+        return (lpBalance, depositTime);
     }
 
     /**
