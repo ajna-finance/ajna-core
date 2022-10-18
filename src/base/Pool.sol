@@ -367,7 +367,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         ) = auctions.clear(loans, buckets, deposits, borrower_, 0, maxDepth_);
         if (clearedDebt != 0) {
-            borrowerDebt -= totalForgived;
+            borrowerDebt -= Maths.min(borrowerDebt, totalForgived);
             emit Clear(borrower_, hpbIndex, clearedDebt, remainingCol, remainingDebt);
         }
     }

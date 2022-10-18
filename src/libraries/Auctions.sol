@@ -63,8 +63,9 @@ library Auctions {
     {
 
         if (self.liquidations[borrower_].kickTime > 72 hours) {
+            uint256 debtToClear = loans_.borrowers[borrower_].debt;
 
-            remainingDebt_     = loans_.borrowers[borrower_].debt;
+            remainingDebt_     = debtToClear;
             remainingCol_      = loans_.borrowers[borrower_].collateral;
             remainingReserves_ = reserves_;
 
@@ -89,8 +90,9 @@ library Auctions {
                         remainingReserves_ -= fromReserve;
                         remainingDebt_     -= fromReserve;
                     } else {
-                        hpbIndex_          = Deposits.findIndexOfSum(deposits_, 1);
-                        uint256 forgiveAmt = Maths.min(remainingDebt_, Deposits.valueAt(deposits_, hpbIndex_));
+                        hpbIndex_         = Deposits.findIndexOfSum(deposits_, 1);
+                        uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex_);
+                        uint256 forgiveAmt = Maths.min(remainingDebt_, hpbDeposit);
 
                         totalForgived_ += forgiveAmt;
                         remainingDebt_ -= forgiveAmt;
@@ -114,7 +116,7 @@ library Auctions {
                 --bucketDepth_;
             }
 
-            clearedDebt_ = loans_.borrowers[borrower_].debt - remainingDebt_;
+            clearedDebt_ = debtToClear - remainingDebt_;
 
             // save remaining debt and collateral after auction clear action
             loans_.borrowers[borrower_].debt       = remainingDebt_;

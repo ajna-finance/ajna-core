@@ -697,6 +697,193 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 maxCollateral: 10 * 1e18
             }
         );
+
+        // full clear / debt heal
+        uint256 snapshot = vm.snapshot();
+        _assertBucket(
+            {
+                index:        3696,
+                lpBalance:    2_000 * 1e27,
+                collateral:   0,
+                deposit:      2_118.873844172952622392 * 1e18,
+                exchangeRate: 1.059436922086476311196000000 * 1e27
+            }
+        );
+        _clear(
+            {
+                from:                _lender,
+                borrower:            _borrower2,
+                maxDepth:            10,
+                hpbIndex:            3698,
+                clearedDebt:         3_840.616744192316029288 * 1e18,
+                remainingCollateral: 0,
+                remainingDebt:       0
+            }
+        );
+        _assertAuction(
+            {
+                borrower:       _borrower2,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 160.516347691266666957 * 1e18,
+                locked:    0
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              0,
+                borrowerCollateral:        0,
+                borrowerMompFactor:        9.684861431554868575 * 1e18,
+                borrowerInflator:          1.013824712461823922 * 1e18,
+                borrowerCollateralization: 1 * 1e18,
+                borrowerPendingDebt:       0
+            }
+        );
+        // bucket is bankrupt
+        _assertBucket(
+            {
+                index:        3696,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        // TODO: shouldn't part of forgive amt be accounted from bucket _i9_81 too?
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_81,
+                lpBalance:   5_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_72,
+                lpBalance:   11_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_62,
+                lpBalance:   25_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_52,
+                lpBalance:   30_000 * 1e27,
+                depositTime: 0
+            }
+        );
+        vm.revertTo(snapshot);
+
+        // partial clears / debt heal - max buckets to use is 1
+        _clear(
+            {
+                from:                _lender,
+                borrower:            _borrower2,
+                maxDepth:            1,
+                hpbIndex:            3696,
+                clearedDebt:         2_118.873844172952622392 * 1e18,
+                remainingCollateral: 0,
+                remainingDebt:       1_721.742900019363406896 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:       _borrower2,
+                active:         true,
+                kicker:         _lender,
+                bondSize:       160.516347691266666957 * 1e18,
+                bondFactor:     0.01 * 1e18,
+                kickTime:       block.timestamp - 5 hours,
+                kickPriceIndex: 3696
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    160.516347691266666957 * 1e18 // locked bond + reward, auction is not yet finalized
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              1_721.742900019363406896 * 1e18,
+                borrowerCollateral:        0,
+                borrowerMompFactor:        9.684861431554868575 * 1e18,
+                borrowerInflator:          1.013824712461823922 * 1e18,
+                borrowerCollateralization: 0,
+                borrowerPendingDebt:       1_721.742900019363406896 * 1e18
+            }
+        );
+        // clear remaining debt
+        _clear(
+            {
+                from:                _lender,
+                borrower:            _borrower2,
+                maxDepth:            1,
+                hpbIndex:            3698,
+                clearedDebt:         1_721.742900019363406896 * 1e18,
+                remainingCollateral: 0,
+                remainingDebt:       0
+            }
+        );
+        _assertAuction(
+            {
+                borrower:       _borrower2,
+                active:         false,
+                kicker:         address(0),
+                bondSize:       0,
+                bondFactor:     0,
+                kickTime:       0,
+                kickPriceIndex: 0
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 160.516347691266666957 * 1e18,
+                locked:    0
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              0,
+                borrowerCollateral:        0,
+                borrowerMompFactor:        9.684861431554868575 * 1e18,
+                borrowerInflator:          1.013824712461823922 * 1e18,
+                borrowerCollateralization: 1 * 1e18,
+                borrowerPendingDebt:       0
+            }
+        );
         
     }
 
