@@ -57,7 +57,7 @@ interface IPoolState {
      *  @param  index               Bucket index.
      *  @return lpAccumulator       Amount of LPs accumulated in current bucket.
      *  @return availableCollateral Amount of collateral available in current bucket.
-     *  @return bankruptcyTs        Timestamp when bucket become insolvent, 0 if healthy
+     *  @return bankruptcyTime      Timestamp when bucket become insolvent, 0 if healthy
      */
     function buckets(uint256 index)
         external
@@ -65,7 +65,7 @@ interface IPoolState {
         returns (
             uint256 lpAccumulator,
             uint256 availableCollateral,
-            uint256 bankruptcyTs
+            uint256 bankruptcyTime
         );
 
     /**

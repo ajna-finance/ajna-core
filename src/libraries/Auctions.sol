@@ -100,7 +100,7 @@ library Auctions {
                         if (buckets_[hpbIndex_].collateral == 0 && Deposits.valueAt(deposits_, hpbIndex_) == 0) {
                             // existing LPB and LP tokens for the bucket shall become unclaimable.
                             buckets_[hpbIndex_].lps = 0;
-                            buckets_[hpbIndex_].bankruptcyTs = block.timestamp;
+                            buckets_[hpbIndex_].bankruptcyTime = block.timestamp;
                         }
                     }
                 }
