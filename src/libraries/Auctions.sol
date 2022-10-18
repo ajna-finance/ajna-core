@@ -44,6 +44,16 @@ library Auctions {
     /***  Auctions Queue Functions ***/
     /*********************************/
 
+    /**
+     *  @notice Heals the debt of the given loan / borrower.
+     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
+     *  @param  borrower_      Borrower whose debt is healed.
+     *  @param  reserves_      Pool reserves.
+     *  @param  bucketDepth_   Max number of buckets heal action should iterate through.
+     *  @return clearedDebt_   The amount of debt that was healed.
+     *  @return totalForgived_ The amount of total forgived debt in the pool.
+     *  @return reward_        The amount of collateral rewarded to the actor that healed debt.
+     */
     function clear(
         Data storage self,
         Loans.Data storage loans_,
@@ -54,73 +64,74 @@ library Auctions {
         uint256 bucketDepth_
     ) internal returns (
         uint256 clearedDebt_,
-        uint256 remainingDebt_,
-        uint256 remainingCol_,
-        uint256 remainingReserves_,
         uint256 totalForgived_,
-        uint256 hpbIndex_
+        uint256 reward_
     )
     {
 
         if (self.liquidations[borrower_].kickTime > 72 hours) {
             uint256 debtToClear = loans_.borrowers[borrower_].debt;
 
-            remainingDebt_     = debtToClear;
-            remainingCol_      = loans_.borrowers[borrower_].collateral;
-            remainingReserves_ = reserves_;
+            uint256 remainingDebt = debtToClear;
+            uint256 remainingCol  = loans_.borrowers[borrower_].collateral;
 
             while (bucketDepth_ > 0) {
                 // auction has debt to cover with remaining collateral
-                if (remainingDebt_ != 0 && remainingCol_ != 0) {
-                    hpbIndex_             = Deposits.findIndexOfSum(deposits_, 1);
-                    uint256 clearableDebt = Maths.min(remainingDebt_, Deposits.valueAt(deposits_, hpbIndex_));
-                    uint256 clearableCol  = Maths.wdiv(clearableDebt, PoolUtils.indexToPrice(hpbIndex_));
+                uint256 hpbIndex;
+                if (remainingDebt != 0 && remainingCol != 0) {
+                    hpbIndex              = Deposits.findIndexOfSum(deposits_, 1);
+                    uint256 hpbPrice      = PoolUtils.indexToPrice(hpbIndex);
+                    uint256 clearableDebt = Maths.min(remainingDebt, Deposits.valueAt(deposits_, hpbIndex));
+                    clearableDebt         = Maths.min(clearableDebt, Maths.wmul(remainingCol, hpbPrice));
+                    uint256 clearableCol  = Maths.wdiv(clearableDebt, hpbPrice);
 
-                    remainingDebt_ -= clearableDebt;
-                    remainingCol_  -= clearableCol;
+                    remainingDebt -= clearableDebt;
+                    remainingCol  -= clearableCol;
 
-                    Deposits.remove(deposits_, hpbIndex_, clearableDebt);
-                    buckets_[hpbIndex_].collateral -= clearableCol;
+                    Deposits.remove(deposits_, hpbIndex, clearableDebt);
+                    buckets_[hpbIndex].collateral -= clearableCol;
                 }
 
                 // there's still debt to cover but no collateral left to auction, use reserve or forgive amount form next HPB
-                if (remainingDebt_ != 0 && remainingCol_ == 0) {
-                    if (remainingReserves_ != 0) {
-                        uint256 fromReserve =  Maths.min(remainingDebt_, remainingReserves_);
-                        remainingReserves_ -= fromReserve;
-                        remainingDebt_     -= fromReserve;
+                if (remainingDebt != 0 && remainingCol == 0) {
+                    if (reserves_ != 0) {
+                        uint256 fromReserve =  Maths.min(remainingDebt, reserves_);
+                        reserves_      -= fromReserve;
+                        remainingDebt  -= fromReserve;
+                        totalForgived_ += fromReserve;
                     } else {
-                        hpbIndex_         = Deposits.findIndexOfSum(deposits_, 1);
-                        uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex_);
-                        uint256 forgiveAmt = Maths.min(remainingDebt_, hpbDeposit);
+                        hpbIndex           = Deposits.findIndexOfSum(deposits_, 1);
+                        uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
+                        uint256 forgiveAmt = Maths.min(remainingDebt, hpbDeposit);
 
                         totalForgived_ += forgiveAmt;
-                        remainingDebt_ -= forgiveAmt;
+                        remainingDebt -= forgiveAmt;
 
-                        Deposits.remove(deposits_, hpbIndex_, forgiveAmt);
+                        Deposits.remove(deposits_, hpbIndex, forgiveAmt);
 
-                        if (buckets_[hpbIndex_].collateral == 0 && Deposits.valueAt(deposits_, hpbIndex_) == 0) {
+                        if (buckets_[hpbIndex].collateral == 0 && forgiveAmt >= hpbDeposit) {
                             // existing LPB and LP tokens for the bucket shall become unclaimable.
-                            buckets_[hpbIndex_].lps = 0;
-                            buckets_[hpbIndex_].bankruptcyTime = block.timestamp;
+                            buckets_[hpbIndex].lps = 0;
+                            buckets_[hpbIndex].bankruptcyTime = block.timestamp;
                         }
                     }
                 }
 
                 // no more debt to cover, remove auction from queue
-                if (remainingDebt_ == 0) {
+                if (remainingDebt == 0) {
                     _removeAuction(self, borrower_);
+                    reward_ = remainingCol; // collateral to be rewarded to actor calling clear
                     break;
                 }
 
                 --bucketDepth_;
             }
 
-            clearedDebt_ = debtToClear - remainingDebt_;
+            clearedDebt_ = debtToClear - remainingDebt;
 
             // save remaining debt and collateral after auction clear action
-            loans_.borrowers[borrower_].debt       = remainingDebt_;
-            loans_.borrowers[borrower_].collateral = remainingCol_;
+            loans_.borrowers[borrower_].debt       = remainingDebt;
+            loans_.borrowers[borrower_].collateral = remainingCol;
         }
     }
 
@@ -332,6 +343,10 @@ library Auctions {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
         kicked_  = kickTime != 0;
         started_ = kicked_ && (block.timestamp - kickTime > 1 hours);
+    }
+
+    function isHeadClearable(Data storage self) internal view returns (bool) {
+        return (self.liquidations[self.head].kickTime > 72 hours);
     }
 
 }

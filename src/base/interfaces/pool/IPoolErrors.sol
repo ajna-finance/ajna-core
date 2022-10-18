@@ -26,6 +26,11 @@ interface IPoolErrors {
     error AuctionActive();
 
     /**
+     *  @notice Head auction should be cleared prior of taking auctions.
+     */
+    error AuctionNotCleared();
+
+    /**
      *  @notice Borrower has a healthy over-collateralized position.
      */
     error BorrowerOk();

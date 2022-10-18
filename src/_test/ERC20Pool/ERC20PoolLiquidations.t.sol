@@ -714,10 +714,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 from:                _lender,
                 borrower:            _borrower2,
                 maxDepth:            10,
-                hpbIndex:            3698,
-                clearedDebt:         3_840.616744192316029288 * 1e18,
-                remainingCollateral: 0,
-                remainingDebt:       0
+                clearedDebt:         3_840.616744192316029288 * 1e18
             }
         );
         _assertAuction(
@@ -808,10 +805,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 from:                _lender,
                 borrower:            _borrower2,
                 maxDepth:            1,
-                hpbIndex:            3696,
-                clearedDebt:         2_118.873844172952622392 * 1e18,
-                remainingCollateral: 0,
-                remainingDebt:       1_721.742900019363406896 * 1e18
+                clearedDebt:         86.879330108643410602 * 1e18
             }
         );
         _assertAuction(
@@ -835,12 +829,12 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              1_721.742900019363406896 * 1e18,
+                borrowerDebt:              3_753.737414083672618686 * 1e18,
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.684861431554868575 * 1e18,
                 borrowerInflator:          1.013824712461823922 * 1e18,
                 borrowerCollateralization: 0,
-                borrowerPendingDebt:       1_721.742900019363406896 * 1e18
+                borrowerPendingDebt:       3_753.737414083672618686 * 1e18
             }
         );
         // clear remaining debt
@@ -848,11 +842,8 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:                _lender,
                 borrower:            _borrower2,
-                maxDepth:            1,
-                hpbIndex:            3698,
-                clearedDebt:         1_721.742900019363406896 * 1e18,
-                remainingCollateral: 0,
-                remainingDebt:       0
+                maxDepth:            2,
+                clearedDebt:         3_753.737414083672618686 * 1e18
             }
         );
         _assertAuction(

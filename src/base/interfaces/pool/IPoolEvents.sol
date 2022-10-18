@@ -52,18 +52,13 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when an actor settles debt in a completed liquidation
      *  @param  borrower           Identifies the loan under liquidation.
-     *  @param  hpbIndex           The index of the Highest Price Bucket where debt was cleared.
-     *  @param  amount             Amount of debt cleared from the HPB in this transaction.
-     *  @param  collateralReturned Amount of collateral returned to the borrower in this transaction.
-     *  @param  amountRemaining    Amount of debt which still needs to be cleared.
+     *  @param  clearedDebt        Amount of debt cleared from the HPB in this transaction.
      *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
      */
     event Clear(
         address indexed borrower,
-        uint256 hpbIndex,
-        uint256 amount,
-        uint256 collateralReturned,
-        uint256 amountRemaining);
+        uint256 clearedDebt
+    );
 
     /**
      *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.

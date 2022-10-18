@@ -154,6 +154,8 @@ abstract contract Pool is Clone, Multicall, IPool {
     function removeAllQuoteToken(
         uint256 index_
     ) external returns (uint256 quoteTokenAmountRemoved_, uint256 redeemedLenderLPs_) {
+        if (auctions.isHeadClearable()) revert AuctionNotCleared();
+
         PoolState memory poolState = _accruePoolInterest();
 
         (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(
@@ -182,6 +184,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 quoteTokenAmountToRemove_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
+
+        if (auctions.isHeadClearable()) revert AuctionNotCleared();
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -357,18 +361,18 @@ abstract contract Pool is Clone, Multicall, IPool {
         address borrower_,
         uint256 maxDepth_
     ) external override {
+        uint256 poolDebt = borrowerDebt;
+        uint256 quoteTokenBalance = ERC20(_getArgAddress(0x14)).balanceOf(address(this));
+        uint256 reserves = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.liquidationBondEscrowed - reserveAuctionUnclaimed;
         (
             uint256 clearedDebt,
-            uint256 remainingDebt,
-            uint256 remainingCol,
-            uint256 remainingReserves,
             uint256 totalForgived,
-            uint256 hpbIndex
+            uint256 rewardedCollateral
 
-        ) = auctions.clear(loans, buckets, deposits, borrower_, 0, maxDepth_);
+        ) = auctions.clear(loans, buckets, deposits, borrower_, reserves, maxDepth_);
         if (clearedDebt != 0) {
-            borrowerDebt -= Maths.min(borrowerDebt, totalForgived);
-            emit Clear(borrower_, hpbIndex, clearedDebt, remainingCol, remainingDebt);
+            borrowerDebt -= Maths.min(poolDebt, totalForgived);
+            emit Clear(borrower_, clearedDebt);
         }
     }
 
@@ -526,6 +530,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToRemove_,
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
+
+        if (auctions.isHeadClearable()) revert AuctionNotCleared();
 
         PoolState memory poolState = _accruePoolInterest();
 
