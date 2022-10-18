@@ -208,13 +208,13 @@ abstract contract DSTestPlus is Test {
         uint256 bondSize,
         uint256 bondFactor,
         uint256 kickTime,
-        uint256 kickPriceIndex
+        uint256 kickMomp
     ) internal {
         (
             address auctionKicker,
             uint256 auctionBondFactor,
             uint256 auctionKickTime,
-            uint256 auctionKickPriceIndex,
+            uint256 auctionKickMomp,
             ,
         ) = _pool.auctionInfo(borrower);
         (, uint256 lockedBonds) = _pool.kickers(kicker);
@@ -224,7 +224,7 @@ abstract contract DSTestPlus is Test {
         assertEq(lockedBonds,           bondSize);
         assertEq(auctionBondFactor,     bondFactor);
         assertEq(auctionKickTime,       kickTime);
-        assertEq(auctionKickPriceIndex, kickPriceIndex);
+        assertEq(auctionKickMomp, kickMomp);
     }
 
     function _assertPool(PoolState memory state_) internal {

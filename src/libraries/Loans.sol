@@ -6,6 +6,9 @@ import './Deposits.sol';
 import './PoolUtils.sol';
 import './Maths.sol';
 
+
+import '@std/console.sol';
+
 library Loans {
 
     uint256 constant ROOT_INDEX = 1;
@@ -61,14 +64,17 @@ library Loans {
         uint256 debt_,
         uint256 inflator_,
         uint256 rate_
-    ) internal {
+    ) internal returns (uint256, uint256){
         // update loan heap
         _remove(self, borrower_);
 
         // update borrower balance
         Borrower storage borrower = self.borrowers[borrower_];
-        borrower.debt             = debt_ + Maths.wmul(Maths.wdiv(rate_, 4 * 1e18), debt_); // the moment a loan is kicked, its debt is increased by three months of interest
+        uint256 kickPenalty      = Maths.wmul(Maths.wdiv(rate_, 4 * 1e18), debt_); // when loan is kicked, penalty of three months of interest is added
+        borrower.debt             = debt_ + kickPenalty; 
         borrower.inflatorSnapshot = inflator_;
+
+        return (kickPenalty, borrower.debt);
     }
 
     /**

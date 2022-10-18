@@ -5,6 +5,8 @@ pragma solidity 0.8.14;
 import './Loans.sol';
 import './Maths.sol';
 
+import '@std/console.sol';
+
 library Auctions {
 
     struct Data {
@@ -20,7 +22,7 @@ library Auctions {
         uint256 bondSize;        // liquidation bond size
         uint256 bondFactor;      // bond factor used to start liquidation
         uint128 kickTime;        // timestamp when liquidation was started
-        uint128 kickPriceIndex;  // HPB price index at liquidation kick time
+        uint256 kickMomp;        // Momp when liquidation was started
         address prev;            // previous liquidated borrower in auctions queue
         address next;            // next liquidated borrower in auctions queue
     }
@@ -94,7 +96,6 @@ library Auctions {
      *  @param  borrowerDebt_      Borrower debt to be recovered.
      *  @param  thresholdPrice_    Current threshold price (used to calculate bond factor).
      *  @param  momp_              Current MOMP (used to calculate bond factor).
-     *  @param  hpbIndex_          Current HPB index.
      *  @return kickAuctionAmount_ The amount that kicker should send to pool in order to kick auction.
      */
     function kick(
@@ -102,8 +103,7 @@ library Auctions {
         address borrower_,
         uint256 borrowerDebt_,
         uint256 thresholdPrice_,
-        uint256 momp_,
-        uint256 hpbIndex_
+        uint256 momp_
     ) internal returns (uint256 kickAuctionAmount_) {
 
         uint256 bondFactor;
@@ -121,6 +121,8 @@ library Auctions {
         }
         uint256 bondSize = Maths.wmul(bondFactor, borrowerDebt_);
 
+        console.log("bondSize", bondSize);
+
         // update kicker balances
         Kicker storage kicker = self.kickers[msg.sender];
         kicker.locked += bondSize;
@@ -137,7 +139,7 @@ library Auctions {
         Liquidation storage liquidation = self.liquidations[borrower_];
         liquidation.kicker         = msg.sender;
         liquidation.kickTime       = uint128(block.timestamp);
-        liquidation.kickPriceIndex = uint128(hpbIndex_);
+        liquidation.kickMomp       = momp_;
         liquidation.bondSize       = bondSize;
         liquidation.bondFactor     = bondFactor;
 
@@ -187,12 +189,20 @@ library Auctions {
         if (block.timestamp - liquidation.kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         uint256 auctionPrice = PoolUtils.auctionPrice(
-            PoolUtils.indexToPrice(liquidation.kickPriceIndex),
+            liquidation.kickMomp,
             liquidation.kickTime
         );
+
         // calculate amount
         quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
         collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+
+        int256 neutralPrice = int256(Maths.wmul(borrower_.mompFactor, borrower_.inflatorSnapshot));
+        int256 thresholdPrice = int256(Maths.wdiv(borrower_.debt, borrower_.collateral));
+
+        console.log("neutral & thresh");
+        console.logInt(neutralPrice);
+        console.logInt(thresholdPrice);
 
         int256 bpf = PoolUtils.bpf(
             borrower_.debt,
@@ -205,6 +215,7 @@ library Auctions {
 
         repayAmount_ = Maths.wmul(quoteTokenAmount_, uint256(1e18 - bpf));
         if (repayAmount_ >= borrower_.debt) {
+            console.log("in reset var");
             repayAmount_      = borrower_.debt;
             quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - bpf));
         }
@@ -218,12 +229,14 @@ library Auctions {
         } else {
             // take is above neutralPrice, Kicker is penalized
             bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(-bpf));
+            console.log("bondChange", bondChange_);
+            console.log("bondSize", liquidation.bondSize);
             liquidation.bondSize -= Maths.min(liquidation.bondSize, bondChange_);
             if (bondChange_ >= self.kickers[liquidation.kicker].locked) {
                 self.kickers[liquidation.kicker].locked = 0;
             }
             else self.kickers[liquidation.kicker].locked -= bondChange_;
-        }
+        } 
     }
 
     /**********************/
