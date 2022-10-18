@@ -126,7 +126,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 lender:      _bidder,
                 index:       testIndex,
                 lpBalance:   lpBalanceChange,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -164,7 +164,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 lender:      _bidder,
                 index:       testIndex,
                 lpBalance:   0,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -308,7 +308,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         tokenIdsToAdd[3] = 74;
         uint256 amountToPurchase = 10_100 * 1e18;
         assertGt(_quote.balanceOf(address(_pool)), amountToPurchase);
-        uint256 amountWithInterest = 24_001.477919844844176000 * 1e18;
+        uint256 amountWithInterest = 24_002.808232738534440000 * 1e18;
 
         _addCollateral(
             {
@@ -317,13 +317,14 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 index:    2350
             }
         );
+        skip(25 hours); // remove liquidity after one day to avoid early withdraw penalty
         _removeAllLiquidity(
             {
                 from:     _bidder,
                 amount:   amountWithInterest,
                 index:    2350,
                 newLup:   PoolUtils.indexToPrice(2352),
-                lpRedeem: 24_000.000000000000000000000023999 * 1e27
+                lpRedeem: 24_000.766698354457765204510601361 * 1e27
             }
         );
 
@@ -333,10 +334,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        2350,
-                lpBalance:    32_654.330240478871500328243823671 * 1e27,
+                lpBalance:    32_653.563542124413735123733246309 * 1e27,
                 collateral:   Maths.wad(4),
                 deposit:      0,
-                exchangeRate: 1.000061579993535174 * 1e27
+                exchangeRate: 1.000085061215324285728665849 * 1e27
             }
         );
 
@@ -348,7 +349,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:     _bidder,
                 tokenIds: tokenIdsToRemove,
                 index:    2350,
-                lpRedeem: 8_163.582560119717875082060961917 * 1e27
+                lpRedeem: 8_163.390885531103433780933317567 * 1e27
             }
         );
 
@@ -356,8 +357,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             {
                 lender:      _bidder,
                 index:       2350,
-                lpBalance:   490.747680359153625246182861754 * 1e27,
-                depositTime: 0
+                lpBalance:   490.172656593310301342799928742 * 1e27,
+                depositTime: _startTime + 25 hours
             }
         );
 
@@ -398,7 +399,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:     _lender,
                 tokenIds: tokenIdsToRemove,
                 index:    2350,
-                lpRedeem: 8_163.582560119717875082060961917 * 1e27
+                lpRedeem: 8_163.390885531103433780933317567 * 1e27
             }
         );
 
@@ -406,8 +407,8 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
             {
                 lender:      _bidder,
                 index:       2350,
-                lpBalance:   490.747680359153625246182861754 * 1e27,
-                depositTime: 0
+                lpBalance:   490.172656593310301342799928742 * 1e27,
+                depositTime: _startTime + 25 hours
             }
         );
 
@@ -417,10 +418,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         _assertBucket(
             {
                 index:        2350,
-                lpBalance:    16_327.165120239435750164121899837 * 1e27,
+                lpBalance:    16_326.781771062206867561866611175 * 1e27,
                 collateral:   Maths.wad(2),
                 deposit:      0,
-                exchangeRate: 1.000061579993535174000000001 * 1e27
+                exchangeRate: 1.000085061215324285728665850 * 1e27
             }
         );
 

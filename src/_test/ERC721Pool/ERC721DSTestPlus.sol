@@ -93,7 +93,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             emit Transfer(address(_pool), from, i);
         }
         lpRedeemed_ = ERC721Pool(address(_pool)).removeCollateral(tokenIds, index);
-        assertEq(lpRedeem, lpRedeemed_);
+        assertEq(lpRedeemed_, lpRedeem);
     }
 
 

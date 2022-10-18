@@ -43,7 +43,8 @@ library Buckets {
 
         // cannot deposit in the same block when bucket becomes insolvent
         uint256 bankruptcyTime = self[index_].bankruptcyTime;
-        if (bankruptcyTime != 0 && bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
+        bool isBucketBankrupt  = bankruptcyTime != 0;
+        if (isBucketBankrupt && bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
         // calculate amount of LPs to be added for the amount of quote tokens added to bucket
         addedLPs_ = quoteTokensToLPs(
@@ -58,7 +59,7 @@ library Buckets {
         bucket.lps += addedLPs_;
         // update lender LPs balance and deposit timestamp
         Lender storage lender = bucket.lenders[msg.sender];
-        if (bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
+        if (isBucketBankrupt && bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
         else lender.lps += addedLPs_;
         lender.depositTime = block.timestamp;
     }
@@ -76,6 +77,12 @@ library Buckets {
         uint256 collateralAmountToAdd_,
         uint256 index_
     ) internal returns (uint256 addedLPs_) {
+
+        // cannot deposit in the same block when bucket becomes insolvent
+        uint256 bankruptcyTime = self[index_].bankruptcyTime;
+        bool isBucketBankrupt  = bankruptcyTime != 0;
+        if (isBucketBankrupt && bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
+
         // calculate amount of LPs to be added for the amount of collateral added to bucket
         (addedLPs_, ) = collateralToLPs(
             self,
@@ -88,7 +95,10 @@ library Buckets {
         bucket.lps += addedLPs_;
         bucket.collateral += collateralAmountToAdd_;
         // update lender LPs balance
-        bucket.lenders[msg.sender].lps += addedLPs_;
+        Lender storage lender = bucket.lenders[msg.sender];
+        if (isBucketBankrupt && bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
+        else lender.lps += addedLPs_;
+        lender.depositTime = block.timestamp;
     }
 
     /**

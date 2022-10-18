@@ -563,7 +563,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       3333,
                 lpBalance:   1_212.5476695591403933 * 1e27,
-                depositTime: 0
+                depositTime: 2 hours
             }
         );
         _assertBucket(
@@ -682,7 +682,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       toBucket,
                 lpBalance:   1_970_734.1978643312064901215 * 1e27,
-                depositTime: 0
+                depositTime: 2 hours
             }
         );
 
@@ -730,7 +730,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       toBucket,
                 lpBalance:   3_941_468.395728662412980243 * 1e27,
-                depositTime: 0
+                depositTime: 2 hours
             }
         );
     }
