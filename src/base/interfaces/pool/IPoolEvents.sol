@@ -50,17 +50,6 @@ interface IPoolEvents {
     );
 
     /**
-     *  @notice Emitted when an actor settles debt in a completed liquidation
-     *  @param  borrower           Identifies the loan under liquidation.
-     *  @param  clearedDebt        Amount of debt cleared from the HPB in this transaction.
-     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
-     */
-    event Clear(
-        address indexed borrower,
-        uint256 clearedDebt
-    );
-
-    /**
      *  @notice Emitted when an actor uses quote token outside of the book to purchase collateral under liquidation.
      *  @param  borrower   Identifies the loan being liquidated.
      *  @param  index      Index of the price bucket from which quote token was exchanged for collateral.
@@ -75,6 +64,17 @@ interface IPoolEvents {
         uint256 amount,
         uint256 collateral,
         int256 bondChange
+    );
+
+    /**
+     *  @notice Emitted when an actor settles debt in a completed liquidation
+     *  @param  borrower   Identifies the loan under liquidation.
+     *  @param  healedDebt Amount of pool debt healed in this transaction.
+     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
+     */
+    event Heal(
+        address indexed borrower,
+        uint256 healedDebt
     );
 
     /**

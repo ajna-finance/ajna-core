@@ -709,12 +709,12 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 exchangeRate: 1.059436922086476311196000000 * 1e27
             }
         );
-        _clear(
+        _heal(
             {
-                from:                _lender,
-                borrower:            _borrower2,
-                maxDepth:            10,
-                clearedDebt:         3_840.616744192316029288 * 1e18
+                from:       _lender,
+                borrower:   _borrower2,
+                maxDepth:   10,
+                healedDebt: 3_840.616744192316029288 * 1e18
             }
         );
         _assertAuction(
@@ -800,12 +800,12 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         vm.revertTo(snapshot);
 
         // partial clears / debt heal - max buckets to use is 1
-        _clear(
+        _heal(
             {
-                from:                _lender,
-                borrower:            _borrower2,
-                maxDepth:            1,
-                clearedDebt:         86.879330108643410602 * 1e18
+                from:       _lender,
+                borrower:   _borrower2,
+                maxDepth:   1,
+                healedDebt: 86.879330108643410602 * 1e18
             }
         );
         _assertAuction(
@@ -838,12 +838,12 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             }
         );
         // clear remaining debt
-        _clear(
+        _heal(
             {
-                from:                _lender,
-                borrower:            _borrower2,
-                maxDepth:            2,
-                clearedDebt:         3_753.737414083672618686 * 1e18
+                from:       _lender,
+                borrower:   _borrower2,
+                maxDepth:   2,
+                healedDebt: 3_753.737414083672618686 * 1e18
             }
         );
         _assertAuction(

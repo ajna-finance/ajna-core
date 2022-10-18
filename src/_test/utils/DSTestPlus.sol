@@ -25,7 +25,7 @@ abstract contract DSTestPlus is Test {
     // Pool events
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
-    event Clear(address indexed borrower, uint256 clearedDebt);
+    event Heal(address indexed borrower, uint256 clearedDebt);
     event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
@@ -86,16 +86,16 @@ abstract contract DSTestPlus is Test {
         _pool.borrow(amount, indexLimit);
     }
 
-    function _clear(
+    function _heal(
         address from,
         address borrower,
         uint256 maxDepth,
-        uint256 clearedDebt
+        uint256 healedDebt
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit Clear(borrower, clearedDebt);
-        _pool.clear(borrower, maxDepth);
+        emit Heal(borrower, healedDebt);
+        _pool.heal(borrower, maxDepth);
     }
 
     function _kick(

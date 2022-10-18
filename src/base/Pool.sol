@@ -51,7 +51,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     uint256 public override reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 public override reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
 
-    mapping(uint256 => Buckets.Bucket)              public override buckets;     // deposit index -> bucket
+    mapping(uint256 => Buckets.Bucket)                                  public override buckets;     // deposit index -> bucket
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
     Auctions.Data internal auctions;
@@ -357,7 +357,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
-    function clear(
+    function heal(
         address borrower_,
         uint256 maxDepth_
     ) external override {
@@ -365,14 +365,14 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 quoteTokenBalance = ERC20(_getArgAddress(0x14)).balanceOf(address(this));
         uint256 reserves = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.liquidationBondEscrowed - reserveAuctionUnclaimed;
         (
-            uint256 clearedDebt,
+            uint256 healedDebt,
             uint256 totalForgived,
             uint256 rewardedCollateral
 
-        ) = auctions.clear(loans, buckets, deposits, borrower_, reserves, maxDepth_);
-        if (clearedDebt != 0) {
+        ) = auctions.heal(loans, buckets, deposits, borrower_, reserves, maxDepth_);
+        if (healedDebt != 0) {
             borrowerDebt -= Maths.min(poolDebt, totalForgived);
-            emit Clear(borrower_, clearedDebt);
+            emit Heal(borrower_, healedDebt);
         }
     }
 

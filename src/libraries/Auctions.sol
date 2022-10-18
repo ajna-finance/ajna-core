@@ -50,11 +50,11 @@ library Auctions {
      *  @param  borrower_      Borrower whose debt is healed.
      *  @param  reserves_      Pool reserves.
      *  @param  bucketDepth_   Max number of buckets heal action should iterate through.
-     *  @return clearedDebt_   The amount of debt that was healed.
+     *  @return healedDebt_    The amount of debt that was healed.
      *  @return totalForgived_ The amount of total forgived debt in the pool.
      *  @return reward_        The amount of collateral rewarded to the actor that healed debt.
      */
-    function clear(
+    function heal(
         Data storage self,
         Loans.Data storage loans_,
         mapping(uint256 => Buckets.Bucket) storage buckets_,
@@ -63,16 +63,16 @@ library Auctions {
         uint256 reserves_,
         uint256 bucketDepth_
     ) internal returns (
-        uint256 clearedDebt_,
+        uint256 healedDebt_,
         uint256 totalForgived_,
         uint256 reward_
     )
     {
 
         if (self.liquidations[borrower_].kickTime > 72 hours) {
-            uint256 debtToClear = loans_.borrowers[borrower_].debt;
+            uint256 debtToHeal = loans_.borrowers[borrower_].debt;
 
-            uint256 remainingDebt = debtToClear;
+            uint256 remainingDebt = debtToHeal;
             uint256 remainingCol  = loans_.borrowers[borrower_].collateral;
 
             while (bucketDepth_ > 0) {
@@ -127,7 +127,7 @@ library Auctions {
                 --bucketDepth_;
             }
 
-            clearedDebt_ = debtToClear - remainingDebt;
+            healedDebt_ = debtToHeal - remainingDebt;
 
             // save remaining debt and collateral after auction clear action
             loans_.borrowers[borrower_].debt       = remainingDebt;
