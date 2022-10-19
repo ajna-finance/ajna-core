@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
-import { Clone } from '@clones/Clone.sol';
-
 import './interfaces/IERC721Pool.sol';
-
 import '../base/Pool.sol';
 
 contract ERC721Pool is IERC721Pool, Pool {

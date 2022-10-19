@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import './interfaces/IERC20Pool.sol';
-
 import '../base/Pool.sol';
 
 contract ERC20Pool is IERC20Pool, Pool {

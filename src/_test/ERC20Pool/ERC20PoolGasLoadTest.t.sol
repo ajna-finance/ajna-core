@@ -1,22 +1,36 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
+import { ERC20DSTestPlus } from './ERC20DSTestPlus.sol';
 
 import '../utils/Tokens.sol';
 
 import '../../erc20/ERC20Pool.sol';
 import '../../erc20/ERC20PoolFactory.sol';
 
+import '../../base/PoolInfoUtils.sol';
+
 import '../../libraries/BucketMath.sol';
 
-contract ERC20PoolGasLoadTest is ERC20HelperContract {
+contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
+
+    Token internal _collateral;
+    Token internal _quote;
+
     address[] private _lenders;
     address[] private _borrowers;
     uint16 private constant LENDERS     = 2_000;
     uint16 private constant LOANS_COUNT = 8_000;
 
     function setUp() public {
+
+        _collateral = new Token("Collateral", "C");
+        _quote      = new Token("Quote", "Q");
+        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _poolUtils  = new PoolInfoUtils();
+
+        skip(1 hours); // avoid deposit time to be the same as bucket bankruptcy time
+
         _setupLendersAndDeposits(LENDERS);
         _setupBorrowersAndLoans(LOANS_COUNT);
     }
@@ -244,7 +258,26 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         }
     }
 
-    function _noOfLoans() internal returns (uint256 loans_) {
+    function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_quote), operator_, mintAmount_);
+
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+        vm.prank(operator_);
+        _collateral.approve(address(_pool), type(uint256).max);
+    }
+
+    function _mintCollateralAndApproveTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_collateral), operator_, mintAmount_);
+
+        vm.prank(operator_);
+        _collateral.approve(address(_pool), type(uint256).max);
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+
+    }
+
+    function _noOfLoans() internal view returns (uint256 loans_) {
         (, , loans_) = _pool.loansInfo();
     }
 }

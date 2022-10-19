@@ -272,7 +272,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _bidder,
                 index:       2550,
                 lpBalance:   12_043.56808879152623138 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         // check balances
@@ -304,7 +304,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _bidder,
                 index:       2550,
                 lpBalance:   7_436.90329482876744787715 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         // check balances
@@ -336,7 +336,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _bidder,
                 index:       2550,
                 lpBalance:   0,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         // check balances
@@ -381,7 +381,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _bidder,
                 index:       1530,
                 lpBalance:   243_808.1263305875209909205 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         // check balances
@@ -413,7 +413,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _bidder,
                 index:       1530,
                 lpBalance:   0,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         // check balances
@@ -563,7 +563,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       3333,
                 lpBalance:   1_212.5476695591403933 * 1e27,
-                depositTime: 2 hours
+                depositTime: _startTime + 2 hours
             }
         );
         _assertBucket(
@@ -580,7 +580,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       3334,
                 lpBalance:   0,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
     }
@@ -616,7 +616,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       fromBucket,
                 lpBalance:   1_088_464.114498091939987319 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertBucket(
@@ -664,7 +664,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       fromBucket,
                 lpBalance:   544_232.0572490459699936595 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -682,7 +682,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       toBucket,
                 lpBalance:   1_970_734.1978643312064901215 * 1e27,
-                depositTime: 2 hours
+                depositTime: _startTime + 2 hours
             }
         );
 
@@ -713,7 +713,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       fromBucket,
                 lpBalance:   0,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertBucket(
@@ -730,7 +730,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       toBucket,
                 lpBalance:   3_941_468.395728662412980243 * 1e27,
-                depositTime: 2 hours
+                depositTime: _startTime + 2 hours
             }
         );
     }

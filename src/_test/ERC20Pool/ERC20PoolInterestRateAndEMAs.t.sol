@@ -214,7 +214,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 loans:                1,
                 maxBorrower:          _borrower,
                 interestRate:         0.045 * 1e18,
-                interestRateUpdate:   54000
+                interestRateUpdate:   _startTime + 15 hours
             })
         );
     }

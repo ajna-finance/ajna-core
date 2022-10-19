@@ -125,7 +125,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 loans:                2,
                 maxBorrower:          address(_borrower),
                 interestRate:         0.05 * 1e18,
-                interestRateUpdate:   0
+                interestRateUpdate:   _startTime
             })
         );
         _assertBorrower(
@@ -156,7 +156,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 claimableReserves :         0,
                 claimableReservesRemaining: 0,
                 auctionPrice:               0,
-                timeRemaining:              3 days
+                timeRemaining:              0
             }
         );
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
@@ -679,7 +679,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 kicker:     _lender,
                 bondSize:   104.609752335437078857 * 1e18,
                 bondFactor: 0.01 * 1e18,
-                kickTime:   8640000,
+                kickTime:   _startTime + 100 days,
                 kickMomp:   9.721295865031779605 * 1e18
             }
         );
@@ -773,7 +773,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       _i9_91,
                 lpBalance:   0, // bucket is bankrupt
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertBucket(
@@ -790,7 +790,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       _i9_81,
                 lpBalance:   0, // bucket is bankrupt
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertBucket(
@@ -807,7 +807,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       _i9_72,
                 lpBalance:   11_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertBucket(
@@ -824,7 +824,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       _i9_62,
                 lpBalance:   25_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertBucket(
@@ -841,7 +841,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       _i9_52,
                 lpBalance:   30_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         vm.revertTo(snapshot);
@@ -862,7 +862,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 kicker:     _lender,
                 bondSize:   104.609752335437078857 * 1e18,
                 bondFactor: 0.01 * 1e18,
-                kickTime:   100 days,
+                kickTime:   _startTime + 100 days,
                 kickMomp:   9.721295865031779605 * 1e18
             }
         );
@@ -922,7 +922,6 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerPendingDebt:       0
             }
         );
-        
     }
 
     function testTakeReverts() external {

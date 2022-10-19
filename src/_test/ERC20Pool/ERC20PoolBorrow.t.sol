@@ -165,7 +165,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       highest,
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -173,7 +173,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       high,
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -181,7 +181,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       med,
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -189,7 +189,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       low,
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -197,7 +197,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       lowest,
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
