@@ -5,8 +5,6 @@ pragma solidity 0.8.14;
 import './Loans.sol';
 import './Maths.sol';
 
-import '@std/console.sol';
-
 library Auctions {
 
     struct Data {
