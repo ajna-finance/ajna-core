@@ -6,9 +6,6 @@ import './Deposits.sol';
 import './PoolUtils.sol';
 import './Maths.sol';
 
-
-import '@std/console.sol';
-
 library Loans {
 
     uint256 constant ROOT_INDEX = 1;

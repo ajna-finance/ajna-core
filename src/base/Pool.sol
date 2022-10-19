@@ -17,8 +17,6 @@ import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 
-import '@std/console.sol';
-
 abstract contract Pool is Clone, Multicall, IPool {
     using SafeERC20 for ERC20;
 
