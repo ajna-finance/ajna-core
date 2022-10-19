@@ -369,7 +369,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 lup = _lup(poolState.accruedDebt);
         if (_collateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert BorrowerOk();
 
-        poolState.accuredDebt += loans.kick(
+        poolState.accruedDebt += loans.kick(
                 borrowerAddress_,
                 borrower.debt,
                 borrower.inflatorSnapshot,
@@ -615,7 +615,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             poolState.accruedDebt
         );
         _updatePool(poolState, newLup);
-         
+
         emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
         quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenAmount / quoteTokenScale);
         return collateralTaken;
