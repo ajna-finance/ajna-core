@@ -49,11 +49,12 @@ library Loans {
 
     /**
      *  @notice Kicks a loan by removing it from loan heap and updating borrower info (adding kick penalty to debt).
-     *  @param self Holds tree loan data.
-     *  @param borrower_ Address of borrower to be kicked.
-     *  @param debt_     Accrued debt of borrower to be kicked.
-     *  @param inflator_ Pool current inflator.
-     *  @param rate_     Pool interest rate.
+     *  @param  self Holds tree loan data.
+     *  @param  borrower_     Address of borrower to be kicked.
+     *  @param  debt_         Accrued debt of borrower to be kicked.
+     *  @param  inflator_     Pool current inflator.
+     *  @param  rate_         Pool interest rate.
+     *  @return kickPenalty_  Liquidation penalty added to the debt of the borrower and poolstate debt. 
      */
     function kick(
         Data storage self,
@@ -61,7 +62,7 @@ library Loans {
         uint256 debt_,
         uint256 inflator_,
         uint256 rate_
-    ) internal returns (uint256 kickPenalty_){
+    ) internal returns (uint256 kickPenalty_) {
         // update loan heap
         _remove(self, borrower_);
 

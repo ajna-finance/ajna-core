@@ -16,11 +16,11 @@ library Auctions {
     }
 
     struct Liquidation {
-        address kicker;          // address that initiated liquidation
-        uint256 bondSize;        // liquidation bond size
-        uint256 bondFactor;      // bond factor used to start liquidation
-        uint128 kickTime;        // timestamp when liquidation was started
-        uint256 kickMomp;        // Momp when liquidation was started
+        address kicker;      // address that initiated liquidation
+        uint256 bondSize;    // liquidation bond size
+        uint256 bondFactor;  // bond factor used to start liquidation
+        uint128 kickTime;    // timestamp when liquidation was started
+        uint256 kickMomp;    // Momp when liquidation was started
         address prev;            // previous liquidated borrower in auctions queue
         address next;            // next liquidated borrower in auctions queue
     }
@@ -133,9 +133,9 @@ library Auctions {
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
-        liquidation.kicker         = msg.sender;
-        liquidation.kickTime       = uint128(block.timestamp);
-        liquidation.kickMomp       = momp_;
+        liquidation.kicker   = msg.sender;
+        liquidation.kickTime = uint128(block.timestamp);
+        liquidation.kickMomp = momp_;
         liquidation.bondSize       = bondSize;
         liquidation.bondFactor     = bondFactor;
 
@@ -170,16 +170,13 @@ library Auctions {
         address borrowerAddress_,
         Loans.Borrower memory borrower_,
         uint256 maxCollateral_
-    )
-        internal
-        returns (
-            uint256 quoteTokenAmount_,
-            uint256 repayAmount_,
-            uint256 collateralTaken_,
-            uint256 bondChange_,
-            bool isRewarded_
-        )
-    {
+    ) internal returns (
+        uint256 quoteTokenAmount_,
+        uint256 repayAmount_,
+        uint256 collateralTaken_,
+        uint256 bondChange_,
+        bool isRewarded_
+    ) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         if (liquidation.kickTime == 0) revert NoAuction();
         if (block.timestamp - liquidation.kickTime <= 1 hours) revert TakeNotPastCooldown();
@@ -222,7 +219,7 @@ library Auctions {
                 self.kickers[liquidation.kicker].locked = 0;
             }
             else self.kickers[liquidation.kicker].locked -= bondChange_;
-        } 
+        }
     }
 
     /**********************/
