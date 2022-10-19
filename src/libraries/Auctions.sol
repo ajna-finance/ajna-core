@@ -21,8 +21,8 @@ library Auctions {
         uint256 bondFactor;  // bond factor used to start liquidation
         uint128 kickTime;    // timestamp when liquidation was started
         uint256 kickMomp;    // Momp when liquidation was started
-        address prev;            // previous liquidated borrower in auctions queue
-        address next;            // next liquidated borrower in auctions queue
+        address prev;        // previous liquidated borrower in auctions queue
+        address next;        // next liquidated borrower in auctions queue
     }
 
     struct Kicker {

@@ -545,7 +545,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         _assertKicker(
             {
                 kicker:    _lender,
-                claimable: 0.0 * 1e18, // the entire bond was penalized
+                claimable: 0, // the entire bond was penalized
                 locked:    0
             }
         );
@@ -600,7 +600,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 kicker:    _lender,
                 claimable: 0,
-                locked:   98.533942419792216457 * 1e18
+                locked:    98.533942419792216457 * 1e18
             }
         );
         _assertBorrower(
@@ -615,10 +615,10 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             }
         );
 
-        //skip ahead so take can be called on the loan
+        // skip ahead so take can be called on the loan
         skip(10 hours);
 
-        //perform partial take for 20 collateral
+        // perform partial take for 20 collateral
         _take(
             {
                 from:            _lender,
@@ -626,7 +626,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 maxCollateral:   20 * 1e18,
                 bondChange:      0.121516198312897248 * 1e18,
                 givenAmount:     12.151619831289724800 * 1e18,
-                collateralTaken: 20.0 * 1e18,
+                collateralTaken: 20 * 1e18,
                 isReward:        true
             }
         );
