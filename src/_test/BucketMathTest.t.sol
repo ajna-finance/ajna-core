@@ -171,4 +171,92 @@ contract BucketMathTest is DSTestPlus {
         assertEq(BucketMath.priceToIndex(price), index);
     }
 
+    /**
+     *  @notice Tests pending inflator calculation for varying parameters
+     */
+    function testPendingInflator() external {
+        uint256 inflatorSnapshot = 0.01 * 1e18; 
+        skip(730 days);
+        uint256 lastInflatorSnapshotUpdate = block.timestamp - 365 days; 
+        uint256 interestRate = 0.1 * 1e18;
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate), Maths.wmul(inflatorSnapshot,PRBMathUD60x18.exp(interestRate)));
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 1 hours , interestRate), 10000114155902715);
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 10 hours , interestRate),   10001141617671002 );
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 1 days , interestRate), 10002740101366609 );
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 5 hours , 0.042 * 1e18 ),    10000239728900849);
+    }
+
+    /**
+     *  @notice Tests pending interest factor calculation for varying parameters
+     */
+    function testPendingInterestFactor() external {
+        uint256 interestRate = 0.1 * 1e18;
+        uint256 elapsed = 1 days;
+        assertEq(BucketMath.pendingInterestFactor(interestRate, elapsed), 1000274010136660929);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 1 hours),  1000011415590271509);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 10 hours),   1000114161767100174);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 1 minutes), 1000000190258770001);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 30 days),  1008253048257773742);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 365 days), 1105170918075647624);
+    }
+
+    /**
+     *  @notice Tests lender interest margin for varying meaningful actual utilization values
+     */
+    function testLenderInterestMargin() external {
+        assertEq(BucketMath.lenderInterestMargin(0.1 * 1e18),  855176592309155536  );
+        assertEq(BucketMath.lenderInterestMargin(0.5 * 1e18),   880944921102385039 );
+        assertEq(BucketMath.lenderInterestMargin(1 * 1e18), 1 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.75 * 1e18),  905505921257884513 );
+        assertEq(BucketMath.lenderInterestMargin(0.25 * 1e18), 863715955537589525  );
+        assertEq(BucketMath.lenderInterestMargin(0.2  * 1e18), 860752334991616633  );
+        assertEq(BucketMath.lenderInterestMargin(0  * 1e18), 0.85 * 1e18);
+    }
+
+    /**
+     *  @notice Tests bond penalty/reward factor calculation for varying parameters
+     */
+    function testBpf() external {
+        uint256 debt  = 11_000 * 1e18;
+        uint256 price = 10 * 1e18;
+        uint256 collateral = 1000 * 1e18;
+        uint256 mompFactor = 5 * 1e18;
+        uint256 inflatorSnapshot = 2 * 1e18;
+        uint256 bondFactor = 0.1 *  1e18;
+
+        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, price),  0);
+        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, price),  0);
+        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, 9.5 * 1e18),  0.1 * 1e18);
+        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, 9.5 * 1e18),  0.05 * 1e18);
+        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, 10.5 * 1e18),  -0.05 * 1e18);
+        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, 10.5 * 1e18),  -0.1 * 1e18);
+    }
+
+    /**
+     *  @notice Tests auction price multiplier for reverse dutch auction at different times
+     */
+    function testAuctionPrice() external {
+        skip(6238);
+        uint256 referencePrice = 8_678.5 * 1e18;
+        uint256 kickTime = block.timestamp;
+        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
+        skip(1444); // price should not change in the first hour
+        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 86_785.0 * 1e18);
+
+        skip(5756);     // 2 hours
+        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 43_392.5 * 1e18);
+        skip(2394);     // 2 hours, 39 minutes, 54 seconds
+        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 27_367.159606354998613290 * 1e18);
+        skip(2586);     // 3 hours, 23 minutes
+        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 16_633.737549018910661740 * 1e18);
+        skip(3);        // 3 seconds later
+        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 16_624.132299820494703920 * 1e18);
+        skip(20153);    // 8 hours, 35 minutes, 53 seconds
+        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 343.207165783609045700 * 1e18);
+        skip(97264);    // 36 hours
+        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 0.00000252577588655 * 1e18);
+        skip(129600);   // 72 hours
+        assertEq(BucketMath.auctionPrice(referencePrice, kickTime), 0);
+    }
+
 }
