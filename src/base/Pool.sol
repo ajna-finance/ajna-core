@@ -30,8 +30,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** State Variables ***/
     /***********************/
 
-    uint256 public override inflatorSnapshot;           // [WAD]
-    uint256 public override lastInflatorSnapshotUpdate; // [SEC]
     uint256 public override minFee;                     // [WAD]
     uint256 public override interestRate;               // [WAD]
     uint256 public override interestRateUpdate;         // [SEC]
@@ -42,6 +40,9 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     uint256 public override debtEma;      // [WAD]
     uint256 public override lupColEma;    // [WAD]
+
+    uint256 internal inflatorSnapshot;           // [WAD]
+    uint256 internal lastInflatorSnapshotUpdate; // [SEC]
 
     uint256 internal reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 internal reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
@@ -873,6 +874,21 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateral_
     ) external view override returns (uint256) {
         return deposits.utilization(debt_, collateral_);
+    }
+
+    function inflatorInfo()
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256
+        )
+    {
+        return (
+            inflatorSnapshot,
+            lastInflatorSnapshotUpdate
+        );
     }
 
     function kickerInfo(

@@ -280,7 +280,7 @@ abstract contract DSTestPlus is Test {
         assertEq(loansCount,  state_.loans);
         assertEq(maxBorrower, state_.maxBorrower);
 
-        uint256 poolInflatorSnapshot = _pool.inflatorSnapshot();
+        (uint256 poolInflatorSnapshot, ) = _pool.inflatorInfo();
         assertGe(poolInflatorSnapshot, 1e18);
         assertGe(pendingInflator,      poolInflatorSnapshot);
 

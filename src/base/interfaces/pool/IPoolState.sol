@@ -79,10 +79,17 @@ interface IPoolState {
     function debtEma() external view returns (uint256);
 
     /**
-     *  @notice Returns the `inflatorSnapshot` state variable.
-     *  @return A snapshot of the last inflator value, in RAY units.
+     *  @notice Returns information about pool inflator.
+     *  @return inflatorSnapshot A snapshot of the last inflator value.
+     *  @return lastUpdate       The timestamp of the last `inflatorSnapshot` update.
      */
-    function inflatorSnapshot() external view returns (uint256);
+    function inflatorInfo()
+        external
+        view
+        returns (
+            uint256 inflatorSnapshot,
+            uint256 lastUpdate
+    );
 
     /**
      *  @notice Returns the `interestRate` state variable.
@@ -96,6 +103,12 @@ interface IPoolState {
      */
     function interestRateUpdate() external view returns (uint256);
 
+    /**
+     *  @notice Returns details about kicker balances.
+     *  @param  kicker    The address of the kicker to retrieved info for.
+     *  @return claimable Amount of quote token kicker can claim / withdraw from pool at any time.
+     *  @return locked    Amount of quote token kicker locked in auctions (as bonds).
+     */
     function kickerInfo(address kicker)
         external
         view
@@ -103,12 +116,6 @@ interface IPoolState {
             uint256 claimable,
             uint256 locked
         );
-
-    /**
-     *  @notice Returns the `lastInflatorSnapshotUpdate` state variable.
-     *  @return The timestamp of the last `inflatorSnapshot` update.
-     */
-    function lastInflatorSnapshotUpdate() external view returns (uint256);
 
     /**
      *  @notice Mapping of buckets indexes and owner addresses to {Lender} structs.

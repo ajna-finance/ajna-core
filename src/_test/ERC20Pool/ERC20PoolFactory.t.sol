@@ -85,16 +85,18 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         emit PoolCreated(poolAddress);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(address(_collateral), address(_quote), 0.0543 * 10**18));
 
-        assertEq(address(pool),                     poolAddress);
-        assertEq(pool.collateralAddress(),          address(_collateral));
-        assertEq(pool.collateralScale(),            1);
-        assertEq(pool.quoteTokenAddress(),          address(_quote));
-        assertEq(pool.quoteTokenScale(),            1);
-        assertEq(pool.inflatorSnapshot(),           10**18);
-        assertEq(pool.lastInflatorSnapshotUpdate(), _startTime + 333);
-        assertEq(pool.interestRate(),               0.0543 * 10**18);
-        assertEq(pool.interestRateUpdate(),         _startTime + 333);
-        assertEq(pool.minFee(),                     0.0005 * 10**18);
+        assertEq(address(pool),             poolAddress);
+        assertEq(pool.collateralAddress(),  address(_collateral));
+        assertEq(pool.collateralScale(),    1);
+        assertEq(pool.quoteTokenAddress(),  address(_quote));
+        assertEq(pool.quoteTokenScale(),    1);
+        assertEq(pool.interestRate(),       0.0543 * 10**18);
+        assertEq(pool.interestRateUpdate(), _startTime + 333);
+        assertEq(pool.minFee(),             0.0005 * 10**18);
+
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflatorSnapshot, 10**18);
+        assertEq(lastInflatorUpdate,   _startTime + 333);
     }
 
 }

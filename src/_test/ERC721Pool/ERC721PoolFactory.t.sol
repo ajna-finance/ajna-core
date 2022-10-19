@@ -132,15 +132,17 @@ contract ERC721PoolFactoryTest is DSTestPlus {
 
         assert(_NFTCollectionPoolAddress != _NFTSubsetOnePoolAddress);
 
-        assertEq(_NFTCollectionPool.collateralAddress(),          address(_collateral));
-        assertEq(_NFTCollectionPool.quoteTokenAddress(),          address(_quote));
-        assertEq(_NFTCollectionPool.quoteTokenScale(),            1);
-        assertEq(_NFTCollectionPool.inflatorSnapshot(),           10**18);
-        assertEq(_NFTCollectionPool.lastInflatorSnapshotUpdate(), _startTime);
-        assertEq(_NFTCollectionPool.interestRate(),               0.05 * 10**18);
-        assertEq(_NFTCollectionPool.interestRateUpdate(),         _startTime);
-        assertEq(_NFTCollectionPool.minFee(),                     0.0005 * 10**18);
-        assertEq(_NFTCollectionPool.isSubset(),                   false);
+        assertEq(_NFTCollectionPool.collateralAddress(),  address(_collateral));
+        assertEq(_NFTCollectionPool.quoteTokenAddress(),  address(_quote));
+        assertEq(_NFTCollectionPool.quoteTokenScale(),    1);
+        assertEq(_NFTCollectionPool.interestRate(),       0.05 * 10**18);
+        assertEq(_NFTCollectionPool.interestRateUpdate(), _startTime);
+        assertEq(_NFTCollectionPool.minFee(),             0.0005 * 10**18);
+        assertEq(_NFTCollectionPool.isSubset(),           false);
+
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = _NFTCollectionPool.inflatorInfo();
+        assertEq(poolInflatorSnapshot, 10**18);
+        assertEq(lastInflatorUpdate,   _startTime);
     }
 
     /**************************************/
@@ -196,15 +198,17 @@ contract ERC721PoolFactoryTest is DSTestPlus {
 
         assertTrue(_NFTSubsetOnePoolAddress != _NFTSubsetTwoPoolAddress);
 
-        assertEq(_NFTSubsetOnePool.collateralAddress(),          address(_collateral));
-        assertEq(_NFTSubsetOnePool.quoteTokenAddress(),          address(_quote));
-        assertEq(_NFTSubsetOnePool.quoteTokenScale(),            1);
-        assertEq(_NFTSubsetOnePool.inflatorSnapshot(),           10**18);
-        assertEq(_NFTSubsetOnePool.lastInflatorSnapshotUpdate(), _startTime);
-        assertEq(_NFTSubsetOnePool.interestRate(),               0.05 * 10**18);
-        assertEq(_NFTSubsetOnePool.interestRateUpdate(),         _startTime);
-        assertEq(_NFTSubsetOnePool.minFee(),                     0.0005 * 10**18);
-        assertEq(_NFTSubsetOnePool.isSubset(),                   true);
+        assertEq(_NFTSubsetOnePool.collateralAddress(),  address(_collateral));
+        assertEq(_NFTSubsetOnePool.quoteTokenAddress(),  address(_quote));
+        assertEq(_NFTSubsetOnePool.quoteTokenScale(),    1);
+        assertEq(_NFTSubsetOnePool.interestRate(),       0.05 * 10**18);
+        assertEq(_NFTSubsetOnePool.interestRateUpdate(), _startTime);
+        assertEq(_NFTSubsetOnePool.minFee(),             0.0005 * 10**18);
+        assertEq(_NFTSubsetOnePool.isSubset(),           true);
+
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = _NFTSubsetOnePool.inflatorInfo();
+        assertEq(poolInflatorSnapshot, 10**18);
+        assertEq(lastInflatorUpdate,   _startTime);
 
         assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(1));
         assertTrue(_NFTSubsetOnePool.tokenIdsAllowed(5));
