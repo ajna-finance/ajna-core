@@ -15,12 +15,6 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
 
-    uint256 internal _i9_91 = 3696;
-    uint256 internal _i9_81 = 3698;
-    uint256 internal _i9_72 = 3700;
-    uint256 internal _i9_62 = 3702;
-    uint256 internal _i9_52 = 3704;
-
     function setUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
@@ -118,7 +112,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 823.649613971736296163 * 1e18,
-                borrowerDebt:         8_006.941586538461542154 * 1e18,
+                poolDebt:             8_006.941586538461542154 * 1e18,
                 actualUtilization:    0.109684131322444679 * 1e18,
                 targetUtilization:    1e18,
                 minDebtAmount:        400.347079326923077108 * 1e18,
@@ -134,9 +128,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              19.268509615384615394 * 1e18,
                 borrowerCollateral:        2 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 1.009034539679184679 * 1e18,
-                borrowerPendingDebt:       19.268509615384615394 * 1e18
+                borrowerCollateralization: 1.009034539679184679 * 1e18
             }
         );
         _assertBorrower(
@@ -145,8 +137,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              7_987.673076923076926760 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerCollateralization: 1.217037273735858713 * 1e18,
-                borrowerPendingDebt:       7_987.673076923076926760 * 1e18
+                borrowerCollateralization: 1.217037273735858713 * 1e18
             }
         );
         _assertReserveAuction(
@@ -198,11 +189,11 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             73_094.502279691716022000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
-                encumberedCollateral: 835.035237319063220561 * 1e18,
-                borrowerDebt:         8_117.624599705640061721 * 1e18,
-                actualUtilization:    0.111056568504208946 * 1e18,
-                targetUtilization:    0.833368500318426368 * 1e18,
-                minDebtAmount:        811.762459970564006172* 1e18,
+                encumberedCollateral: 835.010119425512354679 * 1e18,
+                poolDebt:             8_117.380421230925720814 * 1e18,
+                actualUtilization:    0.111053227918158028 * 1e18,
+                targetUtilization:    0.833343432560391572 * 1e18,
+                minDebtAmount:        811.738042123092572081 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
                 interestRate:         0.045 * 1e18,
@@ -215,19 +206,16 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              19.778456451861613480 * 1e18,
                 borrowerCollateral:        2 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
-                borrowerInflator:          1.013792886272348689 * 1e18,
-                borrowerCollateralization: 0.983018658578564579 * 1e18,
-                borrowerPendingDebt:       19.778456451861613480 * 1e18
+                borrowerCollateralization: 0.983018658578564579 * 1e18
             }
         );
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              7_987.673076923076926760 * 1e18,
+                borrowerDebt:              8_097.846143253778448241 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerCollateralization: 1.217037273735858713 * 1e18,
-                borrowerPendingDebt:       8_097.846143253778448241 * 1e18
+                borrowerCollateralization: 1.217037273735858713 * 1e18
             }
         );
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
@@ -566,12 +554,10 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              9_719.336538461538466020 * 1e18,
+                borrowerDebt:              9_853.394241979221645666 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 1.000201590567677913 * 1e18,
-                borrowerPendingDebt:       9_853.394241979221645666 * 1e18
+                borrowerCollateralization: 1.000201590567677913 * 1e18
             }
         );
         _kick(
@@ -607,9 +593,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              9_976.561670003961916237 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerInflator:          1.013792886272348689 * 1e18,
-                borrowerCollateralization: 0.974413448899967463 * 1e18,
-                borrowerPendingDebt:       9_976.561670003961916237 * 1e18
+                borrowerCollateralization: 0.974413448899967463 * 1e18
             }
         );
 
@@ -651,10 +635,8 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              9_965.044074140935163953 * 1e18,
                 borrowerCollateral:        980 * 1e18,
-                borrowerMompFactor:        9.684667957374334904 * 1e18,
-                borrowerInflator:          1.013844966011693846 * 1e18,
-                borrowerCollateralization: 0.956028882245805301 * 1e18,
-                borrowerPendingDebt:       9_965.044074140935163953 * 1e18
+                borrowerMompFactor:        9.684861431554868575 * 1e18,
+                borrowerCollateralization: 0.966787620876204389 * 1e18
             }
         );
 
@@ -693,10 +675,8 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              9_375.568996125070613905 * 1e18,
                 borrowerCollateral:        0,
-                borrowerMompFactor:        9.588542815647469183 * 1e18,
-                borrowerInflator:          1.013844966011693846 * 1e18,
-                borrowerCollateralization: 0,
-                borrowerPendingDebt:       9_375.568996125070613905 * 1e18
+                borrowerMompFactor:        9.684861431554868575 * 1e18,
+                borrowerCollateralization: 0
             }
         );
 

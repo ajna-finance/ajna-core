@@ -41,7 +41,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     uint256 public override interestRate;               // [WAD]
     uint256 public override interestRateUpdate;         // [SEC]
 
-    uint256 public override liquidationBondEscrowed;    // [WAD]
     uint256 public override quoteTokenScale;
     uint256 public override pledgedCollateral; // [WAD]
 
@@ -775,15 +774,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function borrowerDebt() external view override returns (uint256 borrowerDebt_) {
-        PoolState memory poolState = _accruePoolInterest();
-        return Maths.wmul(t0poolDebt, poolState.inflator);
-    }
-
     function borrowers(address borrower_) external view override returns (uint256, uint256, uint256) {
-        PoolState memory poolState = _accruePoolInterest();
+        uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         return (
-            Maths.wmul(loans.borrowers[borrower_].t0debt, poolState.inflator),
+            Maths.wmul(loans.borrowers[borrower_].t0debt, pendingInflator),
             loans.borrowers[borrower_].collateral,
             loans.borrowers[borrower_].mompFactor
         );

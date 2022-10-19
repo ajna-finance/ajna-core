@@ -134,7 +134,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         if (collateralAmountRemoved_ == 0) revert NoClaim();
 
         buckets.removeCollateral(collateralAmountRemoved_, redeemedLenderLPs_, index_);
-        _updatePool(poolState, _lup(poolState.accruedDebt));
+        _updatePool(poolState, 0, _lup(poolState.accruedDebt));
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
