@@ -60,7 +60,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move collateral from sender to pool
         emit PledgeCollateral(borrower_, collateralAmountToPledge_);
-        collateral().safeTransferFrom(msg.sender, address(this), collateralAmountToPledge_ / collateralScale);
+        _transferCollateralFrom(msg.sender, collateralAmountToPledge_);
     }
 
     function pullCollateral(
@@ -70,7 +70,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move collateral from pool to sender
         emit PullCollateral(msg.sender, collateralAmountToPull_);
-        collateral().safeTransfer(msg.sender, collateralAmountToPull_ / collateralScale);
+        _transferCollateral(msg.sender, collateralAmountToPull_);
     }
 
     /*********************************/
@@ -85,7 +85,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move required collateral from sender to pool
         emit AddCollateral(msg.sender, index_, collateralAmountToAdd_);
-        collateral().safeTransferFrom(msg.sender, address(this), collateralAmountToAdd_ / collateralScale);
+        _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
     function moveCollateral(
@@ -138,7 +138,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
-        collateral().safeTransfer(msg.sender, collateralAmountRemoved_ / collateralScale);
+        _transferCollateral(msg.sender, collateralAmountRemoved_);
     }
 
     function removeCollateral(
@@ -149,7 +149,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountToRemove_);
-        collateral().safeTransfer(msg.sender, collateralAmountToRemove_ / collateralScale);
+        _transferCollateral(msg.sender, collateralAmountToRemove_);
     }
 
     /*******************************/
@@ -178,12 +178,20 @@ contract ERC20Pool is IERC20Pool, Pool {
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
         //msg.sender.call(swapCalldata_);
 
-        collateral().safeTransfer(msg.sender, collateralTaken);
+        _transferCollateral(msg.sender, collateralTaken);
     }
 
     /************************/
     /*** Helper Functions ***/
     /************************/
+
+    function _transferCollateralFrom(address from_, uint256 amount_) internal {
+        collateral().safeTransferFrom(from_, address(this), amount_ / collateralScale);
+    }
+
+    function _transferCollateral(address to_, uint256 amount_) internal {
+        collateral().safeTransfer(to_, amount_ / collateralScale);
+    }
 
     /**
      *  @dev Pure function used to facilitate accessing token via clone state.

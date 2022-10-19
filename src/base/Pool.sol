@@ -90,7 +90,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // move quote token amount from lender to pool
         emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, newLup);
-        quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenAmountToAdd_ / quoteTokenScale);
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
 
     function approveLpOwnership(
@@ -286,14 +286,23 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // check borrow won't push borrower into a state of under-collateralization
         if (
-            _collateralization(borrower.debt, borrower.collateral, newLup) < Maths.WAD
+            _collateralization(
+                borrower.debt,
+                borrower.collateral,
+                newLup
+            ) < Maths.WAD
             ||
             borrower.collateral == 0
         ) revert BorrowerUnderCollateralized();
 
         // check borrow won't push pool into a state of under-collateralization
         poolState.accruedDebt += debt;
-        if (_collateralization(poolState.accruedDebt, poolState.collateral, newLup) < Maths.WAD) revert PoolUnderCollateralized();
+        if (
+            _collateralization(
+                poolState.accruedDebt,
+                poolState.collateral,
+                newLup
+            ) < Maths.WAD) revert PoolUnderCollateralized();
 
         loans.update(
             deposits,
@@ -305,7 +314,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // move borrowed amount from pool to sender
         emit Borrow(msg.sender, newLup, amountToBorrow_);
-        quoteToken().safeTransfer(msg.sender, amountToBorrow_ / quoteTokenScale);
+        _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
     function repay(
@@ -334,22 +343,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         }
 
         uint256 newLup = _lup(poolState.accruedDebt);
-
-        auctions.checkAndRemove(
-            borrowerAddress_,
-            _collateralization(borrower.debt, borrower.collateral, newLup)
-        );
-        loans.update(
-            deposits,
-            borrowerAddress_,
-            borrower,
-            poolState.accruedDebt
-        );
+        _updateBorrower(borrower, borrowerAddress_, newLup, poolState.accruedDebt);
         _updatePool(poolState, newLup);
 
         // move amount to repay from sender to pool
         emit Repay(borrowerAddress_, newLup, quoteTokenAmountToRepay);
-        quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenAmountToRepay / quoteTokenScale);
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToRepay);
     }
 
 
@@ -389,7 +388,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (borrower.debt == 0) revert NoDebt();
 
         uint256 lup = _lup(poolState.accruedDebt);
-        if (_collateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert BorrowerOk();
+        if (
+            _collateralization(
+                borrower.debt,
+                borrower.collateral,
+                lup
+            ) >= Maths.WAD) revert BorrowerOk();
 
         loans.kick(
             borrowerAddress_,
@@ -410,7 +414,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         _updatePool(poolState, lup);
 
         emit Kick(borrowerAddress_, borrower.debt, borrower.collateral);
-        quoteToken().safeTransferFrom(msg.sender, address(this), kickAuctionAmount / quoteTokenScale);
+        _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
 
@@ -434,7 +438,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
         reserveAuctionKicked    = block.timestamp;
         emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
-        quoteToken().safeTransfer(msg.sender, kickerAward / quoteTokenScale);
+        _transferQuoteToken(msg.sender, kickerAward);
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
@@ -449,7 +453,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         emit ReserveAuction(reserveAuctionUnclaimed, price);
         ERC20(ajnaTokenAddress).safeTransferFrom(msg.sender, address(this), ajnaRequired);
         ERC20Burnable(ajnaTokenAddress).burn(ajnaRequired);
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
+        _transferQuoteToken(msg.sender, amount_);
     }
 
 
@@ -472,17 +476,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         poolState.collateral += collateralAmountToPledge_;
 
         uint256 newLup = _lup(poolState.accruedDebt);
-
-        auctions.checkAndRemove(
-            borrowerAddress_,
-            _collateralization(borrower.debt, borrower.collateral, newLup)
-        );
-        loans.update(
-            deposits,
-            borrowerAddress_,
-            borrower,
-            poolState.accruedDebt
-        );
+        _updateBorrower(borrower, borrowerAddress_, newLup, poolState.accruedDebt);
         _updatePool(poolState, newLup);
     }
 
@@ -579,7 +573,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // move quote token amount from pool to lender
         emit RemoveQuoteToken(msg.sender, index_, amount, newLup);
-        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
+        _transferQuoteToken(msg.sender, amount);
     }
 
 
@@ -627,21 +621,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         ) revert AmountLTMinDebt();
 
         uint256 newLup = _lup(poolState.accruedDebt);
-
-        auctions.checkAndRemove(
-            borrowerAddress_,
-            _collateralization(borrower.debt, borrower.collateral, newLup)
-        );
-        loans.update(
-            deposits,
-            borrowerAddress_,
-            borrower,
-            poolState.accruedDebt
-        );
+        _updateBorrower(borrower, borrowerAddress_, newLup, poolState.accruedDebt);
         _updatePool(poolState, newLup);
 
         emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
-        quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenAmount / quoteTokenScale);
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
         return collateralTaken;
     }
 
@@ -696,6 +680,28 @@ abstract contract Pool is Clone, Multicall, IPool {
         return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
     }
 
+    function _updateBorrower(
+        Loans.Borrower memory borrowerState_,
+        address borrowerAddress_,
+        uint256 lup_,
+        uint256 poolDebt_
+    ) internal {
+        auctions.checkAndRemove(
+            borrowerAddress_,
+            _collateralization(
+                borrowerState_.debt,
+                borrowerState_.collateral,
+                lup_
+            )
+        );
+        loans.update(
+            deposits,
+            borrowerAddress_,
+            borrowerState_,
+            poolDebt_
+        );
+    }
+
     function _updatePool(PoolState memory poolState_, uint256 lup_) internal {
         if (block.timestamp - interestRateUpdate > 12 hours) {
             // Update EMAs for target utilization
@@ -712,7 +718,12 @@ abstract contract Pool is Clone, Multicall, IPool {
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
-            if (_collateralization(poolState_.accruedDebt, poolState_.collateral, lup_) != Maths.WAD) {
+            if (
+                _collateralization(
+                    poolState_.accruedDebt,
+                    poolState_.collateral,
+                    lup_
+                ) != Maths.WAD) {
 
                     int256 actualUtilization = int256(
                         deposits.utilization(
@@ -751,6 +762,14 @@ abstract contract Pool is Clone, Multicall, IPool {
             inflatorSnapshot           = poolState_.inflator;
             lastInflatorSnapshotUpdate = block.timestamp;
         }
+    }
+
+    function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
+        quoteToken().safeTransferFrom(from_, address(this), amount_ / quoteTokenScale);
+    }
+
+    function _transferQuoteToken(address to_, uint256 amount_) internal {
+        quoteToken().safeTransfer(to_, amount_ / quoteTokenScale);
     }
 
     function _hpbIndex() internal view returns (uint256) {

@@ -3,8 +3,6 @@ pragma solidity 0.8.14;
 
 import { Clone } from '@clones/Clone.sol';
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
 
 import './interfaces/IERC721Pool.sol';
@@ -12,9 +10,8 @@ import './interfaces/IERC721Pool.sol';
 import '../base/Pool.sol';
 
 contract ERC721Pool is IERC721Pool, Pool {
-    using SafeERC20 for ERC20;
-    using Buckets   for mapping(uint256 => Buckets.Bucket);
-    using Loans     for Loans.Data;
+    using Buckets for mapping(uint256 => Buckets.Bucket);
+    using Loans   for Loans.Data;
 
     /***********************/
     /*** State Variables ***/
