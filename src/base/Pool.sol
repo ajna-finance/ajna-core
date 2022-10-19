@@ -372,16 +372,15 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (_collateralization(borrower.debt, borrower.collateral, lup) >= Maths.WAD) revert BorrowerOk();
 
         uint256 kickPenalty;
-        (kickPenalty, borrower.debt) = loans.kick(
+        kickPenalty = loans.kick(
                 borrowerAddress_,
                 borrower.debt,
                 borrower.inflatorSnapshot,
                 poolState.rate
             );
         
-        //console.log("b debt minus", borrowerDebt - borrower.debt);
-
         poolState.accruedDebt += kickPenalty;
+
         // kick auction
         uint256 kickAuctionAmount = auctions.kick(
             borrowerAddress_,
@@ -392,9 +391,6 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // update pool state
         _updatePool(poolState, lup);
-
-        // console.log("BD", borrower.debt);
-        // console.log("BC", borrower.collateral);
 
         emit Kick(borrowerAddress_, borrower.debt, borrower.collateral);
         quoteToken().safeTransferFrom(msg.sender, address(this), kickAuctionAmount / quoteTokenScale);
@@ -625,12 +621,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         _updatePool(poolState, newLup);
         
-        // console.log("BA", borrowerAddress_);
-        // console.log("GA", quoteTokenAmount);
-        // console.log("CT", collateralTaken);
-        // console.log("BC", bondChange);
-        // console.log("IR", isRewarded);
-
         emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
         quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenAmount / quoteTokenScale);
         return collateralTaken;

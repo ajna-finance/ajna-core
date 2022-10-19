@@ -121,8 +121,6 @@ library Auctions {
         }
         uint256 bondSize = Maths.wmul(bondFactor, borrowerDebt_);
 
-        console.log("bondSize", bondSize);
-
         // update kicker balances
         Kicker storage kicker = self.kickers[msg.sender];
         kicker.locked += bondSize;
@@ -197,13 +195,6 @@ library Auctions {
         quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
         collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
 
-        int256 neutralPrice = int256(Maths.wmul(borrower_.mompFactor, borrower_.inflatorSnapshot));
-        int256 thresholdPrice = int256(Maths.wdiv(borrower_.debt, borrower_.collateral));
-
-        console.log("neutral & thresh");
-        console.logInt(neutralPrice);
-        console.logInt(thresholdPrice);
-
         int256 bpf = PoolUtils.bpf(
             borrower_.debt,
             borrower_.collateral,
@@ -215,7 +206,6 @@ library Auctions {
 
         repayAmount_ = Maths.wmul(quoteTokenAmount_, uint256(1e18 - bpf));
         if (repayAmount_ >= borrower_.debt) {
-            console.log("in reset var");
             repayAmount_      = borrower_.debt;
             quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - bpf));
         }
@@ -229,8 +219,6 @@ library Auctions {
         } else {
             // take is above neutralPrice, Kicker is penalized
             bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(-bpf));
-            console.log("bondChange", bondChange_);
-            console.log("bondSize", liquidation.bondSize);
             liquidation.bondSize -= Maths.min(liquidation.bondSize, bondChange_);
             if (bondChange_ >= self.kickers[liquidation.kicker].locked) {
                 self.kickers[liquidation.kicker].locked = 0;

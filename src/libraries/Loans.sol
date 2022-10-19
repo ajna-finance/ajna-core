@@ -64,17 +64,15 @@ library Loans {
         uint256 debt_,
         uint256 inflator_,
         uint256 rate_
-    ) internal returns (uint256, uint256){
+    ) internal returns (uint256 kickPenalty_){
         // update loan heap
         _remove(self, borrower_);
 
         // update borrower balance
         Borrower storage borrower = self.borrowers[borrower_];
-        uint256 kickPenalty      = Maths.wmul(Maths.wdiv(rate_, 4 * 1e18), debt_); // when loan is kicked, penalty of three months of interest is added
-        borrower.debt             = debt_ + kickPenalty; 
+        kickPenalty_              = Maths.wmul(Maths.wdiv(rate_, 4 * 1e18), debt_); // when loan is kicked, penalty of three months of interest is added
+        borrower.debt             = debt_ + kickPenalty_; 
         borrower.inflatorSnapshot = inflator_;
-
-        return (kickPenalty, borrower.debt);
     }
 
     /**
