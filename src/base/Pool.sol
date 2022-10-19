@@ -43,17 +43,18 @@ abstract contract Pool is Clone, Multicall, IPool {
     uint256 public override debtEma;      // [WAD]
     uint256 public override lupColEma;    // [WAD]
 
-    uint256 public override reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
-    uint256 public override reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+    uint256 internal reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
+    uint256 internal reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
 
-    mapping(uint256 => Buckets.Bucket)                                  public override buckets;     // deposit index -> bucket
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
-    Auctions.Data internal auctions;
-    Deposits.Data internal deposits;
-    Loans.Data    internal loans;
-    address       internal ajnaTokenAddress;    //  Address of the Ajna token, needed for Claimable Reserve Auctions.
-    uint256       internal poolInitializations;
+    Auctions.Data                      internal auctions;
+    mapping(uint256 => Buckets.Bucket) internal buckets; // deposit index -> bucket
+    Deposits.Data                      internal deposits;
+    Loans.Data                         internal loans;
+
+    address internal ajnaTokenAddress;    //  Address of the Ajna token, needed for Claimable Reserve Auctions.
+    uint256 internal poolInitializations;
 
     struct PoolState {
         uint256 accruedDebt;
@@ -815,7 +816,19 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function borrowers(address borrower_) external view override returns (uint256, uint256, uint256, uint256) {
+    function borrowerInfo(
+        address borrower_
+    )
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
         return (
             loans.borrowers[borrower_].debt,
             loans.borrowers[borrower_].collateral,
@@ -824,16 +837,27 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function bucketDeposit(uint256 index_) external view override returns (uint256) {
-        return deposits.valueAt(index_);
-    }
-
-    function bucketScale(uint256 index_) external view override returns (uint256) {
-        return deposits.scale(index_);
-    }
-
-    function collateralAddress() external pure override returns (address) {
-        return _getArgAddress(0);
+    function bucketInfo(
+        uint256 index_
+    )
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            buckets[index_].lps,
+            buckets[index_].collateral,
+            buckets[index_].bankruptcyTime,
+            deposits.valueAt(index_),
+            deposits.scale(index_)
+        );
     }
 
     function depositIndex(uint256 debt_) external view override returns (uint256) {
@@ -851,19 +875,36 @@ abstract contract Pool is Clone, Multicall, IPool {
         return deposits.utilization(debt_, collateral_);
     }
 
-    function kickers(address kicker_) external view override returns (uint256, uint256) {
+    function kickerInfo(
+        address kicker_
+    )
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256
+    )
+    {
         return(
             auctions.kickers[kicker_].claimable,
             auctions.kickers[kicker_].locked
         );
     }
 
-    function lenders(uint256 index_, address lender_) external view override returns (uint256, uint256) {
+    function lenderInfo(
+        uint256 index_,
+        address lender_
+    )
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256
+        )
+    {
         return buckets.getLenderInfo(index_, lender_);
-    }
-
-    function liquidationBondEscrowed() external view override returns (uint256) {
-        return auctions.liquidationBondEscrowed;
     }
 
     function lpsToQuoteTokens(
@@ -879,16 +920,42 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function maxBorrower() external view override returns (address) {
-        return loans.getMax().borrower;
+    function loansInfo()
+        external
+        view
+        override
+        returns (
+            address,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            loans.getMax().borrower,
+            loans.getMax().thresholdPrice,
+            loans.noOfLoans()
+        );
     }
 
-    function maxThresholdPrice() external view override returns (uint256) {
-        return loans.getMax().thresholdPrice;
+    function reservesInfo()
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            auctions.liquidationBondEscrowed,
+            reserveAuctionUnclaimed,
+            reserveAuctionKicked
+        );
     }
 
-    function noOfLoans() external view override returns (uint256) {
-        return loans.noOfLoans();
+    function collateralAddress() external pure override returns (address) {
+        return _getArgAddress(0);
     }
 
     function quoteTokenAddress() external pure override returns (address) {

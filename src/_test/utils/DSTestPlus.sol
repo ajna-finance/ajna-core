@@ -230,7 +230,7 @@ abstract contract DSTestPlus is Test {
             uint256 auctionKickPriceIndex,
             ,
         ) = _pool.auctionInfo(borrower);
-        (, uint256 lockedBonds) = _pool.kickers(kicker);
+        (, uint256 lockedBonds) = _pool.kickerInfo(kicker);
 
         assertEq(auctionKickTime != 0,  active);
         assertEq(auctionKicker,         kicker);
@@ -294,7 +294,7 @@ abstract contract DSTestPlus is Test {
         uint256 lpBalance,
         uint256 depositTime
     ) internal {
-        (uint256 curLpBalance, uint256 time) = _pool.lenders(index, lender);
+        (uint256 curLpBalance, uint256 time) = _pool.lenderInfo(index, lender);
         assertEq(curLpBalance, lpBalance);
         assertEq(time,       depositTime);
     }
@@ -359,7 +359,7 @@ abstract contract DSTestPlus is Test {
         uint256 claimable,
         uint256 locked
     ) internal {
-        (uint256 curClaimable, uint256 curLocked) = _pool.kickers(kicker);
+        (uint256 curClaimable, uint256 curLocked) = _pool.kickerInfo(kicker);
 
         assertEq(curClaimable, claimable);
         assertEq(curLocked,    locked);
@@ -370,9 +370,10 @@ abstract contract DSTestPlus is Test {
         address maxBorrower,
         uint256 maxThresholdPrice
     ) internal {
-        assertEq(_pool.noOfLoans(),         noOfLoans);
-        assertEq(_pool.maxBorrower(),       maxBorrower);
-        assertEq(_pool.maxThresholdPrice(), maxThresholdPrice);
+        (address curMaxBorrower, uint256 curTpPrice, uint256 curNoOfLoans) = _pool.loansInfo();
+        assertEq(curNoOfLoans,   noOfLoans);
+        assertEq(curMaxBorrower, maxBorrower);
+        assertEq(curTpPrice,     maxThresholdPrice);
     }
 
     function _assertPoolPrices(
