@@ -120,7 +120,7 @@ library BucketMath {
         elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
 
         int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
-        price_ = 10 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
     }
 
     function pendingInterestFactor(
