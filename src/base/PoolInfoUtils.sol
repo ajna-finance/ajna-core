@@ -200,7 +200,8 @@ contract PoolInfoUtils {
         uint256 currentLup      = PoolUtils.indexToPrice(pool.depositIndex(poolDebt));
         poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, currentLup);
         poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
-        poolTargetUtilization_ = PoolUtils.poolTargetUtilization(pool.debtEma(), pool.lupColEma());
+        (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
+        poolTargetUtilization_ = PoolUtils.poolTargetUtilization(debtEma, lupColEma);
     }
 
     /**

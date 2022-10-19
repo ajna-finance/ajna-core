@@ -25,7 +25,6 @@ contract ERC721Pool is IERC721Pool, Pool {
     /// @dev Defaults to length 0 if the whole collection is to be used
     mapping(uint256 => bool) public tokenIdsAllowed;
 
-
     bool public isSubset;
 
     /****************************/

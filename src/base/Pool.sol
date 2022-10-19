@@ -38,8 +38,8 @@ abstract contract Pool is Clone, Multicall, IPool {
     uint256 public override quoteTokenScale;
     uint256 public override pledgedCollateral; // [WAD]
 
-    uint256 public override debtEma;      // [WAD]
-    uint256 public override lupColEma;    // [WAD]
+    uint256 internal debtEma;      // [WAD]
+    uint256 internal lupColEma;    // [WAD]
 
     uint256 internal inflatorSnapshot;           // [WAD]
     uint256 internal lastInflatorSnapshotUpdate; // [SEC]
@@ -874,6 +874,21 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateral_
     ) external view override returns (uint256) {
         return deposits.utilization(debt_, collateral_);
+    }
+
+    function emasInfo()
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256
+        )
+    {
+        return (
+            debtEma,
+            lupColEma
+        );
     }
 
     function inflatorInfo()

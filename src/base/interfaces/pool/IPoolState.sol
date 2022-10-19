@@ -73,10 +73,17 @@ interface IPoolState {
         );
 
     /**
-     *  @notice Returns the `debtEma` state variable.
-     *  @return Exponential debt moving average.
+     *  @notice Returns information about the pool EMA (Exponential Moving Average) variables.
+     *  @return debtEma   Exponential debt moving average.
+     *  @return lupColEma Exponential LUP * pledged collateral moving average.
      */
-    function debtEma() external view returns (uint256);
+    function emasInfo()
+        external
+        view
+        returns (
+            uint256 debtEma,
+            uint256 lupColEma
+    );
 
     /**
      *  @notice Returns information about pool inflator.
@@ -134,12 +141,6 @@ interface IPoolState {
             uint256 lpBalance,
             uint256 lastQuoteDeposit
     );
-
-    /**
-     *  @notice Returns the `lupColEma` state variable.
-     *  @return Exponential LUP * pledged collateral moving average.
-     */
-    function lupColEma() external view returns (uint256);
 
     /**
      *  @notice Returns information about pool loans.
