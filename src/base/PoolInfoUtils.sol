@@ -2,8 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-
 import './interfaces/IPool.sol';
 
 import '../libraries/PoolUtils.sol';
@@ -154,7 +152,7 @@ contract PoolInfoUtils {
         uint256 poolDebt = pool.borrowerDebt();
         uint256 poolSize = pool.depositSize();
 
-        uint256 quoteTokenBalance = ERC20(pool.quoteTokenAddress()).balanceOf(ajnaPool_);
+        uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_);
 
         uint256 bondEscrowed     = pool.liquidationBondEscrowed();
         uint256 unclaimedReserve = pool.reserveAuctionUnclaimed();

@@ -3,8 +3,6 @@
 pragma solidity 0.8.14;
 
 import '@clones/Clone.sol';
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
 import './interfaces/IPool.sol';
@@ -358,7 +356,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 maxDepth_
     ) external override {
         uint256 poolDebt = borrowerDebt;
-        uint256 quoteTokenBalance = ERC20(_getArgAddress(0x14)).balanceOf(address(this));
+        uint256 quoteTokenBalance = IERC20Token(_getArgAddress(0x14)).balanceOf(address(this));
         uint256 reserves = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.liquidationBondEscrowed - reserveAuctionUnclaimed;
         (
             uint256 healedDebt,
@@ -426,7 +424,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposits.treeSum(),
             auctions.liquidationBondEscrowed,
             curUnclaimedAuctionReserve,
-            quoteToken().balanceOf(address(this))
+            IERC20Token(_getArgAddress(0x14)).balanceOf(address(this))
         );
         uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
         curUnclaimedAuctionReserve += claimable - kickerAward;
@@ -448,8 +446,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         reserveAuctionUnclaimed -= amount_;
 
         emit ReserveAuction(reserveAuctionUnclaimed, price);
-        ERC20(ajnaTokenAddress).transferFrom(msg.sender, address(this), ajnaRequired);
-        ERC20Burnable(ajnaTokenAddress).burn(ajnaRequired);
+
+        IERC20Token ajnaToken = IERC20Token(ajnaTokenAddress);
+        ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired);
+        ajnaToken.burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
     }
 
@@ -762,11 +762,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        quoteToken().transferFrom(from_, address(this), amount_ / quoteTokenScale);
+        IERC20Token(_getArgAddress(0x14)).transferFrom(from_, address(this), amount_ / quoteTokenScale);
     }
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
-        quoteToken().transfer(to_, amount_ / quoteTokenScale);
+        IERC20Token(_getArgAddress(0x14)).transfer(to_, amount_ / quoteTokenScale);
     }
 
     function _hpbIndex() internal view returns (uint256) {
@@ -893,17 +893,6 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function quoteTokenAddress() external pure override returns (address) {
         return _getArgAddress(0x14);
-    }
-
-    /************************/
-    /*** Helper Functions ***/
-    /************************/
-
-    /**
-     *  @dev Pure function used to facilitate accessing token via clone state.
-     */
-    function quoteToken() public pure returns (ERC20) {
-        return ERC20(_getArgAddress(0x14));
     }
 
 }

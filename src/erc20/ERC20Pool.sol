@@ -2,8 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-
 import './interfaces/IERC20Pool.sol';
 
 import '../base/Pool.sol';
@@ -30,8 +28,8 @@ contract ERC20Pool is IERC20Pool, Pool {
         if (poolInitializations != 0)         revert AlreadyInitialized();
         if (ajnaTokenAddress_ == address(0))  revert Token0xAddress();
 
-        collateralScale = 10**(18 - collateral().decimals());
-        quoteTokenScale = 10**(18 - quoteToken().decimals());
+        collateralScale = 10**(18 - IERC20Token(_getArgAddress(0)).decimals());
+        quoteTokenScale = 10**(18 - IERC20Token(_getArgAddress(0x14)).decimals());
 
         ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
@@ -184,17 +182,10 @@ contract ERC20Pool is IERC20Pool, Pool {
     /************************/
 
     function _transferCollateralFrom(address from_, uint256 amount_) internal {
-        collateral().transferFrom(from_, address(this), amount_ / collateralScale);
+        IERC20Token(_getArgAddress(0)).transferFrom(from_, address(this), amount_ / collateralScale);
     }
 
     function _transferCollateral(address to_, uint256 amount_) internal {
-        collateral().transfer(to_, amount_ / collateralScale);
-    }
-
-    /**
-     *  @dev Pure function used to facilitate accessing token via clone state.
-     */
-    function collateral() public pure returns (ERC20) {
-        return ERC20(_getArgAddress(0));
+        IERC20Token(_getArgAddress(0)).transfer(to_, amount_ / collateralScale);
     }
 }

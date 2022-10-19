@@ -3,8 +3,6 @@ pragma solidity 0.8.14;
 
 import { Clone } from '@clones/Clone.sol';
 
-import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-
 import './interfaces/IERC721Pool.sol';
 
 import '../base/Pool.sol';
@@ -41,7 +39,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         if (poolInitializations != 0)         revert AlreadyInitialized();
         if (ajnaTokenAddress_ == address(0))  revert Token0xAddress();
 
-        quoteTokenScale = 10**(18 - quoteToken().decimals());
+        quoteTokenScale = 10**(18 - IERC20Token(_getArgAddress(0x14)).decimals());
 
         ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
@@ -245,19 +243,12 @@ contract ERC721Pool is IERC721Pool, Pool {
 
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
         //slither-disable-next-line calls-loop
-        collateral().safeTransferFrom(from_, to_, tokenId_);
+        IERC721Token(_getArgAddress(0)).safeTransferFrom(from_, to_, tokenId_);
     }
 
     /************************/
     /*** Helper Functions ***/
     /************************/
-
-    /** @dev Collateral tokens are always non-fungible
-     *  @dev Pure function used to facilitate accessing token via clone state
-     */
-    function collateral() public pure returns (ERC721) {
-        return ERC721(_getArgAddress(0));
-    }
 
     /** @notice Implementing this method allows contracts to receive ERC721 tokens
      *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828

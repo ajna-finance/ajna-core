@@ -127,13 +127,13 @@ contract ERC721PoolFactoryTest is DSTestPlus {
     }
 
     function testDeployERC721CollectionPool() external {
-        assertEq(address(_collateral), address(_NFTCollectionPool.collateral()));
-        assertEq(address(_quote),      address(_NFTCollectionPool.quoteToken()));
+        assertEq(address(_collateral), _NFTCollectionPool.collateralAddress());
+        assertEq(address(_quote),      _NFTCollectionPool.quoteTokenAddress());
 
         assert(_NFTCollectionPoolAddress != _NFTSubsetOnePoolAddress);
 
-        assertEq(address(_NFTCollectionPool.collateral()),        address(_collateral));
-        assertEq(address(_NFTCollectionPool.quoteToken()),        address(_quote));
+        assertEq(_NFTCollectionPool.collateralAddress(),          address(_collateral));
+        assertEq(_NFTCollectionPool.quoteTokenAddress(),          address(_quote));
         assertEq(_NFTCollectionPool.quoteTokenScale(),            1);
         assertEq(_NFTCollectionPool.inflatorSnapshot(),           10**18);
         assertEq(_NFTCollectionPool.lastInflatorSnapshotUpdate(), _startTime);
@@ -188,16 +188,16 @@ contract ERC721PoolFactoryTest is DSTestPlus {
     }
 
     function testDeployERC721SubsetPool() external {
-        assertEq(address(_collateral), address(_NFTSubsetOnePool.collateral()));
-        assertEq(address(_quote),      address(_NFTSubsetOnePool.quoteToken()));
+        assertEq(address(_collateral), _NFTCollectionPool.collateralAddress());
+        assertEq(address(_quote),      _NFTCollectionPool.quoteTokenAddress());
 
-        assertEq(address(_NFTSubsetOnePool.collateral()), address(_NFTSubsetTwoPool.collateral()));
-        assertEq(address(_NFTSubsetOnePool.quoteToken()), address(_NFTSubsetTwoPool.quoteToken()));
+        assertEq(_NFTSubsetOnePool.collateralAddress(), _NFTSubsetTwoPool.collateralAddress());
+        assertEq(_NFTSubsetOnePool.quoteTokenAddress(), _NFTSubsetTwoPool.quoteTokenAddress());
 
         assertTrue(_NFTSubsetOnePoolAddress != _NFTSubsetTwoPoolAddress);
 
-        assertEq(address(_NFTSubsetOnePool.collateral()),        address(_collateral));
-        assertEq(address(_NFTSubsetOnePool.quoteToken()),        address(_quote));
+        assertEq(_NFTSubsetOnePool.collateralAddress(),          address(_collateral));
+        assertEq(_NFTSubsetOnePool.quoteTokenAddress(),          address(_quote));
         assertEq(_NFTSubsetOnePool.quoteTokenScale(),            1);
         assertEq(_NFTSubsetOnePool.inflatorSnapshot(),           10**18);
         assertEq(_NFTSubsetOnePool.lastInflatorSnapshotUpdate(), _startTime);
