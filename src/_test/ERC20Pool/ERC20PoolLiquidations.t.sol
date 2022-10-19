@@ -702,7 +702,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             }
         );
 
-        // // // should revert if there's no more collateral to be auctioned
+        // should revert if there's no more collateral to be auctioned
         _assertTakeInsufficentCollateralRevert(
             {
                 from:          _lender,
