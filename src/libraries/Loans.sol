@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import "forge-std/console.sol";
 import './Deposits.sol';
 import './PoolUtils.sol';
 import './Maths.sol';
@@ -85,22 +86,27 @@ library Loans {
         Deposits.Data storage deposits_,
         address borrowerAddress_,
         Borrower memory borrower_,
+        int256 t0debtChange_,
         uint256 poolDebt_,
         uint256 poolInflator_
     ) internal {
+        // TODO: inefficient; would like to mutate this with a += in borrow, -= in repay
+        borrower_.t0debt = Maths.uadd(borrower_.t0debt, t0debtChange_);
+        // TODO: inefficient; caller likely knows the current borrower debt
+        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_);
 
         // update loan heap
         if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
             _upsert(
                 self,
                 borrowerAddress_,
-                Maths.wdiv(borrower_.t0debt, borrower_.collateral)
+                Maths.wdiv(borrowerDebt, borrower_.collateral)
             );
         } else if (self.indices[borrowerAddress_] != 0) {
             _remove(self, borrowerAddress_);
         }
 
-        // update borrower balance
+        // update borrower
         if (borrower_.t0debt != 0) borrower_.mompFactor = Deposits.mompFactor(
             deposits_,
             poolInflator_,

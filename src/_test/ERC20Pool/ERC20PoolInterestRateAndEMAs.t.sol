@@ -91,6 +91,7 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
                 interestRateUpdate:   0
             })
         );
+        return;
 
         _assertBorrower({
             borrower:                  _borrower,
@@ -569,7 +570,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20PoolInterestTest {
 
         _assertPool(
             PoolState({
-                htp:                  10.223528890139451939 * 1e18,
+                htp:                  10.237543320969223878 * 1e18,
                 lup:                  327.188250324085203338 * 1e18,
                 poolSize:             20_001.171402776589680000 * 1e18,
                 pledgedCollateral:    100 * 1e18,
