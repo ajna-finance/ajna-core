@@ -5,7 +5,6 @@ pragma solidity 0.8.14;
 import '@clones/Clone.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
 import './interfaces/IPool.sol';
@@ -18,8 +17,6 @@ import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 
 abstract contract Pool is Clone, Multicall, IPool {
-    using SafeERC20 for ERC20;
-
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
@@ -451,7 +448,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         reserveAuctionUnclaimed -= amount_;
 
         emit ReserveAuction(reserveAuctionUnclaimed, price);
-        ERC20(ajnaTokenAddress).safeTransferFrom(msg.sender, address(this), ajnaRequired);
+        ERC20(ajnaTokenAddress).transferFrom(msg.sender, address(this), ajnaRequired);
         ERC20Burnable(ajnaTokenAddress).burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
     }
@@ -765,11 +762,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        quoteToken().safeTransferFrom(from_, address(this), amount_ / quoteTokenScale);
+        quoteToken().transferFrom(from_, address(this), amount_ / quoteTokenScale);
     }
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
-        quoteToken().safeTransfer(to_, amount_ / quoteTokenScale);
+        quoteToken().transfer(to_, amount_ / quoteTokenScale);
     }
 
     function _hpbIndex() internal view returns (uint256) {

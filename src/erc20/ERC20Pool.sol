@@ -3,17 +3,15 @@
 pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 import './interfaces/IERC20Pool.sol';
 
 import '../base/Pool.sol';
 
 contract ERC20Pool is IERC20Pool, Pool {
-    using SafeERC20 for ERC20;
-    using Buckets   for mapping(uint256 => Buckets.Bucket);
-    using Deposits  for Deposits.Data;
-    using Loans     for Loans.Data;
+    using Buckets  for mapping(uint256 => Buckets.Bucket);
+    using Deposits for Deposits.Data;
+    using Loans    for Loans.Data;
 
     /***********************/
     /*** State Variables ***/
@@ -186,11 +184,11 @@ contract ERC20Pool is IERC20Pool, Pool {
     /************************/
 
     function _transferCollateralFrom(address from_, uint256 amount_) internal {
-        collateral().safeTransferFrom(from_, address(this), amount_ / collateralScale);
+        collateral().transferFrom(from_, address(this), amount_ / collateralScale);
     }
 
     function _transferCollateral(address to_, uint256 amount_) internal {
-        collateral().safeTransfer(to_, amount_ / collateralScale);
+        collateral().transfer(to_, amount_ / collateralScale);
     }
 
     /**
