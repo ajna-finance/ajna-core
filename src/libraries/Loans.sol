@@ -28,6 +28,8 @@ library Loans {
         uint256 inflatorSnapshot; // [WAD] Current borrower inflator snapshot.
     }
 
+    error NoLoan();
+    error ZeroThresholdPrice();
 
     /***********************/
     /***  Initialization ***/
@@ -39,7 +41,6 @@ library Loans {
      *  @param self Holds tree loan data.
      */
     function init(Data storage self) internal {
-        require(self.loans.length == 0, "H:ALREADY_INIT");
         self.loans.push(Loan(address(0), 0));
     }
 
@@ -178,7 +179,7 @@ library Loans {
      */
     function _remove(Data storage self, address borrower_) internal {
         uint256 i_ = self.indices[borrower_];
-        require(i_ != 0, "H:R:NO_BORROWER");
+        if (i_ == 0) revert NoLoan();
 
         delete self.indices[borrower_];
         uint256 tailIndex = self.loans.length - 1;
@@ -202,7 +203,7 @@ library Loans {
         address borrower_,
         uint256 thresholdPrice_
     ) internal {
-        require(thresholdPrice_ != 0, "H:I:VAL_EQ_0");
+        if (thresholdPrice_ == 0) revert ZeroThresholdPrice();
         uint256 i = self.indices[borrower_];
 
         // Loan exists, update in place.

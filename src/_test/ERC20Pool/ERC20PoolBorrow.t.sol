@@ -947,7 +947,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 amount:   50 * 1e18
             }
         );
-        vm.expectRevert("H:I:VAL_EQ_0");
+        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
         _pool.borrow(0.00000000000000001 * 1e18, 3000);
 
         // borrower 1 borrows 500 quote from the pool after using a non 0 TP
@@ -1041,7 +1041,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
         // should revert if borrower repays most, but not all of their debt resulting in a 0 tp loan remaining on the book
-        vm.expectRevert("H:I:VAL_EQ_0");
+        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
         _pool.repay(_borrower, 500.480769230769231000 * 1e18 - 1);
 
         // should be able to pay back all pendingDebt

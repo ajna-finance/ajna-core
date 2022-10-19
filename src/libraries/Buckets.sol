@@ -221,9 +221,8 @@ library Buckets {
     ) internal view returns (uint256, uint256) {
         uint256 bucketCollateral = self[index_].collateral;
         uint256 bucketLPs        = self[index_].lps;
-        if (bucketLPs == 0) {
-            return  (Maths.RAY, bucketCollateral);
-        }
+        if (bucketLPs == 0) return (Maths.RAY, bucketCollateral);
+
         uint256 bucketSize = quoteToken_ * 10**18 + PoolUtils.indexToPrice(index_) * bucketCollateral;  // 10^36 + // 10^36
         return (bucketSize * 10**18 / bucketLPs, bucketCollateral); // 10^27
     }
