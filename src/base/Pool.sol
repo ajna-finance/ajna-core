@@ -7,7 +7,6 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
-import "forge-std/console.sol";
 
 import './interfaces/IPool.sol';
 
@@ -279,9 +278,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 debt = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
         require(debt < uint256(type(int256).max), "BORROWER-DEBT-OVERFLOW");   // TODO: make custom error
         int256 t0debt = int256(Maths.wdiv(debt, poolState.inflator));
-//        console.log("borrow change in t0debt is: "); console.logInt(t0debt);
         borrowerDebt += debt;
-        console.log("borrow borrowerDebt is %s", borrowerDebt);
 
         // FIXME: newLup should be calculated on debt including origination fee
         uint256 newLup = PoolUtils.indexToPrice(lupId);
