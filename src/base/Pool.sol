@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import '@clones/Clone.sol';
+import "forge-std/console.sol";
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
@@ -630,9 +631,9 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
         poolState_.collateral  = pledgedCollateral;
-        // TODO: pulling t0poolDebt twice from storage, and doing extra multiplication
-        poolState_.accruedDebt        = Maths.wmul(t0poolDebt, poolState_.inflator);
         poolState_.inflator    = inflatorSnapshot;
+        // TODO: when new interest has accrued, this gets overwriten, wasting a storage read and multiplication
+        poolState_.accruedDebt = Maths.wmul(t0poolDebt, poolState_.inflator);
 
         if (t0poolDebt != 0) {
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
