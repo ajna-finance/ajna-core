@@ -68,7 +68,6 @@ library Auctions {
         uint256 reward_
     )
     {
-
         if (self.liquidations[borrower_].kickTime > 72 hours) {
             uint256 debtToHeal = loans_.borrowers[borrower_].debt;
 

@@ -442,6 +442,16 @@ abstract contract DSTestPlus is Test {
     /*** Revert asserts ***/
     /**********************/
 
+    function _assertAddLiquidityBankruptcyBlockRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
+        _pool.addQuoteToken(amount, index);
+    }
+
     function _assertBorrowAuctionActiveRevert(
         address from,
         uint256 amount,
@@ -520,6 +530,16 @@ abstract contract DSTestPlus is Test {
         _pool.repay(borrower, amount);
     }
 
+    function _assertRemoveLiquidityAuctionNotClearedRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        _pool.removeQuoteToken(amount, index);
+    }
+
     function _assertRemoveLiquidityInsufficientLPsRevert(
         address from,
         uint256 amount,
@@ -550,6 +570,15 @@ abstract contract DSTestPlus is Test {
         _pool.removeQuoteToken(amount, index);
     }
 
+    function _assertRemoveAllLiquidityAuctionNotClearedRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        _pool.removeAllQuoteToken(index);
+    }
+
     function _assertRemoveAllLiquidityLupBelowHtpRevert(
         address from,
         uint256 index
@@ -557,6 +586,17 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
         _pool.removeAllQuoteToken(index);
+    }
+
+    function _assertMoveLiquidityBankruptcyBlockRevert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex,
+        uint256 toIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
+        _pool.moveQuoteToken(amount, fromIndex, toIndex);
     }
 
     function _assertMoveLiquidityLupBelowHtpRevert(

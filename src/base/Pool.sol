@@ -30,16 +30,16 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** State Variables ***/
     /***********************/
 
-    uint256 public override minFee;                     // [WAD]
-    uint256 public override interestRate;               // [WAD]
-    uint256 public override interestRateUpdate;         // [SEC]
-    uint256 public override borrowerDebt;               // [WAD]
+    uint256 public override interestRate;       // [WAD]
+    uint256 public override interestRateUpdate; // [SEC]
 
-    uint256 public override quoteTokenScale;
+    uint256 public override borrowerDebt;      // [WAD]
+    uint256 public override minFee;            // [WAD]
     uint256 public override pledgedCollateral; // [WAD]
+    uint256 public override quoteTokenScale;
 
-    uint256 internal debtEma;      // [WAD]
-    uint256 internal lupColEma;    // [WAD]
+    uint256 internal debtEma;   // [WAD]
+    uint256 internal lupColEma; // [WAD]
 
     uint256 internal inflatorSnapshot;           // [WAD]
     uint256 internal lastInflatorSnapshotUpdate; // [SEC]

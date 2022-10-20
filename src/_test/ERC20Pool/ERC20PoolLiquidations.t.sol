@@ -14,6 +14,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
     address internal _borrower;
     address internal _borrower2;
     address internal _lender;
+    address internal _lender1;
 
     uint256 internal _i9_91 = 3696;
     uint256 internal _i9_81 = 3698;
@@ -25,11 +26,14 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
+        _lender1   = makeAddr("lender1");
 
-        _mintQuoteAndApproveTokens(_lender, 120_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender,  120_000 * 1e18);
+        _mintQuoteAndApproveTokens(_lender1, 120_000 * 1e18);
 
         _mintCollateralAndApproveTokens(_borrower,  4 * 1e18);
         _mintCollateralAndApproveTokens(_borrower2, 1_000 * 1e18);
+        _mintCollateralAndApproveTokens(_lender1,   4 * 1e18);
 
         // Lender adds Quote token accross 5 prices
         _addLiquidity(
@@ -552,7 +556,6 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
     }
 
     function testTakeLTNeutral() external {
-         
         // Borrower2 borrows
         _borrow(
             {
@@ -965,7 +968,180 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 maxCollateral: 0.1 * 1e18
             }
         );
+    }
 
+    function testHealAuctionReverts() external {
+        // Borrower2 borrows
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_730 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     9.721295865031779605 * 1e18
+            }
+        );
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower2,
+                debt:       9_853.394241979221645666 * 1e18,
+                collateral: 1_000 * 1e18,
+                bond:       98.533942419792216457 * 1e18
+            }
+        );
+        // skip ahead so take can be called on the loan
+        skip(10 hours);
+        // take entire collateral
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   1_000 * 1e18,
+                bondChange:      6.075809915644862400 * 1e18,
+                givenAmount:     607.580991564486240000 * 1e18,
+                collateralTaken: 1_000 * 1e18,
+                isReward:        true
+            }
+        );
+
+        // remove quote tokens should fail since auction head is clearable
+        _assertRemoveLiquidityAuctionNotClearedRevert(
+            {
+                from:   _lender,
+                amount: 1_000 * 1e18,
+                index:  _i9_52
+            }
+        );
+        _assertRemoveAllLiquidityAuctionNotClearedRevert(
+            {
+                from:   _lender,
+                index:  _i9_52
+            }
+        );
+        // remove collateral should fail since auction head is clearable
+        _assertRemoveCollateralAuctionNotClearedRevert(
+            {
+                from:   _lender,
+                amount: 10 * 1e18,
+                index:  _i9_52
+            }
+        );
+
+        // add liquidity in same block should be possible as debt was not yet healed / bucket is not yet insolvent
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 100 * 1e18,
+                index:  _i9_91,
+                newLup: 9.721295865031779605 * 1e18
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       _i9_91,
+                lpBalance:   94.388085261495553091346700232 * 1e27,
+                depositTime: _startTime + 100 days + 10 hours
+            }
+        );
+        // adding to a different bucket for testing move in same block with bucket bankruptcy
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 100 * 1e18,
+                index:  _i9_52,
+                newLup: 9.721295865031779605 * 1e18
+            }
+        );
+
+        // heal to make buckets insolvent
+        _heal(
+            {
+                from:       _lender,
+                borrower:   _borrower2,
+                maxDepth:   10,
+                healedDebt: 9_375.568996125070613905 * 1e18
+            }
+        );
+
+        // bucket is insolvent, balances are resetted
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    0, // bucket is bankrupt
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        // after bucket bankruptcy lenders balance is zero
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   0,
+                depositTime: _startTime
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       _i9_91,
+                lpBalance:   0,
+                depositTime: _startTime + 100 days + 10 hours
+            }
+        );
+        // cannot add liquidity in same block when bucket marked insolvent
+        _assertAddLiquidityBankruptcyBlockRevert(
+            {
+                from:   _lender1,
+                amount: 1_000 * 1e18,
+                index:  _i9_91
+            }
+        );
+        // cannot add collateral in same block when bucket marked insolvent
+        _assertAddCollateralBankruptcyBlockRevert(
+            {
+                from:   _lender1,
+                amount: 10 * 1e18,
+                index:  _i9_91
+            }
+        );
+        // cannot move LPs in same block when bucket marked insolvent
+        _assertMoveLiquidityBankruptcyBlockRevert(
+            {
+                from:      _lender1,
+                amount:    10 * 1e18,
+                fromIndex: _i9_52,
+                toIndex:   _i9_91
+            }
+        );
+
+        // all operations should work if not in same block
+        skip(1 hours);
+        _pool.addQuoteToken(100 * 1e18, _i9_91);
+        _pool.moveQuoteToken(10 * 1e18, _i9_52, _i9_91);
+        ERC20Pool(address(_pool)).addCollateral(4 * 1e18, _i9_91);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender1,
+                index:       _i9_91,
+                lpBalance:   149.668739373743648321147432044 * 1e27,
+                depositTime: _startTime + 100 days + 10 hours + 1 hours
+            }
+        );
+        // bucket is healthy again
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    149.668739373743648321147432044 * 1e27,
+                collateral:   4 * 1e18,
+                deposit:      109.999999999999999948 * 1e18,
+                exchangeRate: 0.999999999999999999484545454 * 1e27
+            }
+        );
     }
 
     function testAuctionPrice() external {

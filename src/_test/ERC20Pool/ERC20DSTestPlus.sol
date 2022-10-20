@@ -158,6 +158,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     /*** Revert asserts ***/
     /**********************/
 
+    function _assertAddCollateralBankruptcyBlockRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
+        ERC20Pool(address(_pool)).addCollateral(amount, index);
+    }
+
     function _assertMoveCollateralInsufficientLPsRevert(
         address from,
         uint256 amount,
@@ -216,6 +226,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoClaim.selector);
         ERC20Pool(address(_pool)).removeAllQuoteToken(index);
+    }
+
+    function _assertRemoveCollateralAuctionNotClearedRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        ERC20Pool(address(_pool)).removeCollateral(amount, index);
     }
 
     function _assertRemoveCollateralInsufficientLPsRevert(
