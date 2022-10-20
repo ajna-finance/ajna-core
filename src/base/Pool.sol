@@ -381,7 +381,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         Loans.Borrower memory borrower  = loans.accrueBorrowerInterest(
             borrowerAddress_,
             poolState.inflator
-       );
+        );
+
         if (borrower.debt == 0) revert NoDebt();
 
         uint256 lup = _lup(poolState.accruedDebt);
@@ -392,19 +393,19 @@ abstract contract Pool is Clone, Multicall, IPool {
                 lup
             ) >= Maths.WAD) revert BorrowerOk();
 
-        loans.kick(
-            borrowerAddress_,
-            borrower.debt,
-            borrower.inflatorSnapshot,
-            poolState.rate
-        );
+        poolState.accruedDebt += loans.kick(
+                borrowerAddress_,
+                borrower.debt,
+                borrower.inflatorSnapshot,
+                poolState.rate
+            );
+        
         // kick auction
         uint256 kickAuctionAmount = auctions.kick(
             borrowerAddress_,
             borrower.debt,
             borrower.debt * Maths.WAD / borrower.collateral,
-            deposits.momp(poolState.accruedDebt, loans.noOfLoans()),
-            _hpbIndex()
+            deposits.momp(poolState.accruedDebt, loans.noOfLoans())
         );
 
         // update pool state
@@ -724,33 +725,33 @@ abstract contract Pool is Clone, Multicall, IPool {
                     lup_
                 ) != Maths.WAD) {
 
-                    int256 actualUtilization = int256(
-                        deposits.utilization(
-                            poolState_.accruedDebt,
-                            poolState_.collateral
-                        )
-                    );
-                    int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
+                int256 actualUtilization = int256(
+                    deposits.utilization(
+                        poolState_.accruedDebt,
+                        poolState_.collateral
+                    )
+                );
+                int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
 
-                    // raise rates if 4*(targetUtilization-actualUtilization) < (targetUtilization+actualUtilization-1)^2-1
-                    // decrease rates if 4*(targetUtilization-mau) > -(targetUtilization+mau-1)^2+1
-                    int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
-                    int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+                // raise rates if 4*(targetUtilization-actualUtilization) < (targetUtilization+actualUtilization-1)^2-1
+                // decrease rates if 4*(targetUtilization-mau) > -(targetUtilization+mau-1)^2+1
+                int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
+                int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
 
-                    if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate;
+                if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate;
 
-                    uint256 newInterestRate = poolState_.rate;
-                    if (decreaseFactor < increaseFactor - 10**18) {
-                        newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-                    } else if (decreaseFactor > 10**18 - increaseFactor) {
-                        newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
-                    }
-                    if (poolState_.rate != newInterestRate) {
-                        interestRate       = newInterestRate;
-                        interestRateUpdate = block.timestamp;
+                uint256 newInterestRate = poolState_.rate;
+                if (decreaseFactor < increaseFactor - 10**18) {
+                    newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
+                } else if (decreaseFactor > 10**18 - increaseFactor) {
+                    newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
+                }
+                if (poolState_.rate != newInterestRate) {
+                    interestRate       = newInterestRate;
+                    interestRateUpdate = block.timestamp;
 
-                        emit UpdateInterestRate(poolState_.rate, newInterestRate);
-                    }
+                    emit UpdateInterestRate(poolState_.rate, newInterestRate);
+                }
             }
         }
 
@@ -811,7 +812,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             auctions.liquidations[borrower_].kicker,
             auctions.liquidations[borrower_].bondFactor,
             auctions.liquidations[borrower_].kickTime,
-            auctions.liquidations[borrower_].kickPriceIndex,
+            auctions.liquidations[borrower_].kickMomp,
             auctions.liquidations[borrower_].prev,
             auctions.liquidations[borrower_].next
         );
