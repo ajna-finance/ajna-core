@@ -91,7 +91,6 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
                 interestRateUpdate:   0
             })
         );
-        return;
 
         _assertBorrower({
             borrower:                  _borrower,
@@ -124,12 +123,11 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              19.534277977147272573 * 1e18,
+            borrowerDebt:              19.803712051698510506 * 1e18,
             borrowerCollateral:        2e18,
-            borrowerCollateralization: 1.015362313881046556 * 1e18,
+            borrowerCollateralization: 1.001548075183747393 * 1e18,
             borrowerMompFactor:        9.917184843435912074 * 1e18
         });
-        return;
 
         // Borrower2 borrows.
         vm.startPrank(_borrower);
@@ -138,13 +136,13 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
 
         _assertPool(
             PoolState({
-                htp:                  9.267138988573636287 * 1e18,
+                htp:                  9.394959582713080909 * 1e18,
                 lup:                  _p9_91,
-                poolSize:             73_000.812709831769829000 * 1e18,
+                poolSize:             73_000.823920081175051000 * 1e18,
                 pledgedCollateral:    22.0 * 1e18,
                 encumberedCollateral: 6.985113560651726096 * 1e18,
                 poolDebt:             69.272662333373954580 * 1e18,
-                actualUtilization:    0.000948930015460558 * 1e18,
+                actualUtilization:    0.000948929869739708 * 1e18,
                 targetUtilization:    0.317505161847805732 * 1e18,
                 minDebtAmount:        3.463633116668697729 * 1e18,
                 loans:                2,
@@ -156,9 +154,9 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              18.534277977147272573 * 1e18,
+            borrowerDebt:              18.789919165426161817 * 1e18,
             borrowerCollateral:        2e18,
-            borrowerCollateralization: 1.070145257955425188 * 1e18,
+            borrowerCollateralization: 1.055585684656242311 * 1e18,
             borrowerMompFactor:        9.782259254058058749 * 1e18
         });
     }
