@@ -394,11 +394,11 @@ abstract contract Pool is Clone, Multicall, IPool {
             ) >= Maths.WAD) revert BorrowerOk();
 
         poolState.accruedDebt += loans.kick(
-                borrowerAddress_,
-                borrower.debt,
-                borrower.inflatorSnapshot,
-                poolState.rate
-            );
+            borrowerAddress_,
+            borrower.debt,
+            borrower.inflatorSnapshot,
+            poolState.rate
+        );
         
         // kick auction
         uint256 kickAuctionAmount = auctions.kick(

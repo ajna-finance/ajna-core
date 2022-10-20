@@ -20,7 +20,7 @@ library Auctions {
         address kicker;      // address that initiated liquidation
         uint256 bondSize;    // liquidation bond size
         uint256 bondFactor;  // bond factor used to start liquidation
-        uint128 kickTime;    // timestamp when liquidation was started
+        uint256 kickTime;    // timestamp when liquidation was started
         uint256 kickMomp;    // Momp when liquidation was started
         address prev;        // previous liquidated borrower in auctions queue
         address next;        // next liquidated borrower in auctions queue
@@ -233,11 +233,11 @@ library Auctions {
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
-        liquidation.kicker   = msg.sender;
-        liquidation.kickTime = uint128(block.timestamp);
-        liquidation.kickMomp = momp_;
-        liquidation.bondSize       = bondSize;
-        liquidation.bondFactor     = bondFactor;
+        liquidation.kicker     = msg.sender;
+        liquidation.kickTime   = block.timestamp;
+        liquidation.kickMomp   = momp_;
+        liquidation.bondSize   = bondSize;
+        liquidation.bondFactor = bondFactor;
 
         liquidation.next = address(0);
         if (self.head != address(0)) {
