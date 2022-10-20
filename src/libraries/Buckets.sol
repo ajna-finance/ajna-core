@@ -41,10 +41,6 @@ library Buckets {
         uint256 index_
     ) internal returns (uint256 addedLPs_) {
 
-        // cannot deposit in the same block when bucket becomes insolvent
-        uint256 bankruptcyTime = self[index_].bankruptcyTime;
-        if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
-
         // calculate amount of LPs to be added for the amount of quote tokens added to bucket
         addedLPs_ = quoteTokensToLPs(
             self,
@@ -55,10 +51,13 @@ library Buckets {
 
         // update bucket LPs balance
         Bucket storage bucket = self[index_];
+        // cannot deposit in the same block when bucket becomes insolvent
+        if (bucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
         bucket.lps += addedLPs_;
+
         // update lender LPs balance and deposit timestamp
         Lender storage lender = bucket.lenders[msg.sender];
-        if (bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
+        if (bucket.bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
         else lender.lps += addedLPs_;
         lender.depositTime = block.timestamp;
     }
@@ -77,10 +76,6 @@ library Buckets {
         uint256 index_
     ) internal returns (uint256 addedLPs_) {
 
-        // cannot deposit in the same block when bucket becomes insolvent
-        uint256 bankruptcyTime = self[index_].bankruptcyTime;
-        if (bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
-
         // calculate amount of LPs to be added for the amount of collateral added to bucket
         (addedLPs_, ) = collateralToLPs(
             self,
@@ -90,11 +85,14 @@ library Buckets {
         );
         // update bucket LPs balance and collateral
         Bucket storage bucket = self[index_];
+        // cannot deposit in the same block when bucket becomes insolvent
+        if (bucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
         bucket.lps += addedLPs_;
         bucket.collateral += collateralAmountToAdd_;
+
         // update lender LPs balance
         Lender storage lender = bucket.lenders[msg.sender];
-        if (bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
+        if (bucket.bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
         else lender.lps += addedLPs_;
         lender.depositTime = block.timestamp;
     }
@@ -113,16 +111,23 @@ library Buckets {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal {
+
+        Bucket storage toBucket = self[toIndex_];
+        // cannot move in the same block when target bucket becomes insolvent
+        if (toBucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
+
         // update buckets LPs balance
         Bucket storage fromBucket = self[fromIndex_];
-        Bucket storage toBucket   = self[toIndex_];
         fromBucket.lps -= fromLPsAmount_;
         toBucket.lps   += toLPsAmount_;
         // update lender LPs balance
         fromBucket.lenders[msg.sender].lps -= fromLPsAmount_;
 
-        toBucket.lenders[msg.sender].lps         += toLPsAmount_;
-        toBucket.lenders[msg.sender].depositTime = block.timestamp;
+        // update lender LPs balance
+        Lender storage lender = toBucket.lenders[msg.sender];
+        if (toBucket.bankruptcyTime >= lender.depositTime) lender.lps = toLPsAmount_;
+        else lender.lps += toLPsAmount_;
+        lender.depositTime = block.timestamp;
     }
 
     /**
