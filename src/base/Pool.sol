@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import '@clones/Clone.sol';
+import "forge-std/console.sol";
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
@@ -642,8 +643,6 @@ abstract contract Pool is Clone, Multicall, IPool {
                 uint256 factor = PoolUtils.pendingInterestFactor(poolState_.rate, elapsed);
                 // Scale the borrower inflator to update amount of interest owed by borrowers
                 poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
-                // Calculate pool debt using the new inflator
-                poolState_.accruedDebt = Maths.wmul(t0poolDebt, poolState_.inflator);
 
                 // Scale the fenwick tree to update amount of debt owed to lenders
                 uint256 newHtp = _htp(poolState_.inflator);
@@ -655,6 +654,9 @@ abstract contract Pool is Clone, Multicall, IPool {
                         factor
                     );
                 }
+
+                // Calculate pool debt using the new inflator
+                poolState_.accruedDebt = Maths.wmul(t0poolDebt, poolState_.inflator);
             }
         }
     }
