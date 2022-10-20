@@ -129,7 +129,7 @@ class PoolHelper:
         return htp
 
     def indexToPrice(self, price_index: int):
-        return self.bucket_math.indexToPrice(price_index)
+        return self.pool_info_utils.indexToPrice(price_index)
 
     def lenderInfo(self, index, lender_address):
         # returns (lpBalance, lastQuoteDeposit)
@@ -149,7 +149,7 @@ class PoolHelper:
         return lupIndex
 
     def priceToIndex(self, price):
-        return self.bucket_math.priceToIndex(price)
+        return self.pool_info_utils.priceToIndex(price)
 
     def quoteToken(self):
         return Contract(self.pool.quoteTokenAddress())
@@ -165,11 +165,11 @@ class PoolHelper:
 
     def price_to_index_safe(self, price):
         if price < MIN_PRICE:
-            return self.bucket_math.priceToIndex(MIN_PRICE)
+            return self.pool_info_utils.priceToIndex(MIN_PRICE)
         elif price > MAX_PRICE:
-            return self.bucket_math.priceToIndex(MAX_PRICE)
+            return self.pool_info_utils.priceToIndex(MAX_PRICE)
         else:
-            return self.bucket_math.priceToIndex(price)
+            return self.pool_info_utils.priceToIndex(price)
 
 
 class LoansHeapUtils:
