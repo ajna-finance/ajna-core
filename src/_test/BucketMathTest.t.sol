@@ -179,11 +179,11 @@ contract BucketMathTest is DSTestPlus {
         skip(730 days);
         uint256 lastInflatorSnapshotUpdate = block.timestamp - 365 days; 
         uint256 interestRate = 0.1 * 1e18;
-        assertEq(BucketMath.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate), Maths.wmul(inflatorSnapshot,PRBMathUD60x18.exp(interestRate)));
-        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 1 hours , interestRate), 10000114155902715);
-        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 10 hours , interestRate),   10001141617671002 );
-        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 1 days , interestRate), 10002740101366609 );
-        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 5 hours , 0.042 * 1e18 ),    10000239728900849);
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate),   Maths.wmul(inflatorSnapshot,PRBMathUD60x18.exp(interestRate)));
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 1 hours, interestRate),    0.010000114155902715 * 1e18);
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 10 hours, interestRate),   0.010001141617671002 * 1e18);
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 1 days, interestRate),     0.010002740101366609 * 1e18);
+        assertEq(BucketMath.pendingInflator(inflatorSnapshot, block.timestamp - 5 hours, 0.042 * 1e18 ),   0.010000239728900849 * 1e18);
     }
 
     /**
@@ -192,25 +192,25 @@ contract BucketMathTest is DSTestPlus {
     function testPendingInterestFactor() external {
         uint256 interestRate = 0.1 * 1e18;
         uint256 elapsed = 1 days;
-        assertEq(BucketMath.pendingInterestFactor(interestRate, elapsed), 1000274010136660929);
-        assertEq(BucketMath.pendingInterestFactor(interestRate, 1 hours),  1000011415590271509);
-        assertEq(BucketMath.pendingInterestFactor(interestRate, 10 hours),   1000114161767100174);
-        assertEq(BucketMath.pendingInterestFactor(interestRate, 1 minutes), 1000000190258770001);
-        assertEq(BucketMath.pendingInterestFactor(interestRate, 30 days),  1008253048257773742);
-        assertEq(BucketMath.pendingInterestFactor(interestRate, 365 days), 1105170918075647624);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, elapsed),    1.000274010136660929 * 1e18);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 1 hours),    1.000011415590271509 * 1e18);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 10 hours),   1.000114161767100174 * 1e18);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 1 minutes),  1.000000190258770001 * 1e18);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 30 days),    1.008253048257773742 * 1e18);
+        assertEq(BucketMath.pendingInterestFactor(interestRate, 365 days),   1.105170918075647624 * 1e18);
     }
 
     /**
      *  @notice Tests lender interest margin for varying meaningful actual utilization values
      */
     function testLenderInterestMargin() external {
-        assertEq(BucketMath.lenderInterestMargin(0.1 * 1e18),  855176592309155536  );
-        assertEq(BucketMath.lenderInterestMargin(0.5 * 1e18),   880944921102385039 );
-        assertEq(BucketMath.lenderInterestMargin(1 * 1e18), 1 * 1e18 );
-        assertEq(BucketMath.lenderInterestMargin(0.75 * 1e18),  905505921257884513 );
-        assertEq(BucketMath.lenderInterestMargin(0.25 * 1e18), 863715955537589525  );
-        assertEq(BucketMath.lenderInterestMargin(0.2  * 1e18), 860752334991616633  );
-        assertEq(BucketMath.lenderInterestMargin(0  * 1e18), 0.85 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(0.1 * 1e18),   0.855176592309155536 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.5 * 1e18),   0.880944921102385039 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(1 * 1e18),     1 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.75 * 1e18),  0.905505921257884513 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.25 * 1e18),  0.863715955537589525 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.2 * 1e18),   0.860752334991616633 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0 * 1e18),     0.85 * 1e18 );
     }
 
     /**
@@ -224,12 +224,12 @@ contract BucketMathTest is DSTestPlus {
         uint256 inflatorSnapshot = 2 * 1e18;
         uint256 bondFactor = 0.1 *  1e18;
 
-        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, price),  0);
-        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, price),  0);
-        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, 9.5 * 1e18),  0.1 * 1e18);
-        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, 9.5 * 1e18),  0.05 * 1e18);
+        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, price),               0);
+        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, price),        0);
+        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, 9.5 * 1e18),          0.1 * 1e18);
+        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, 9.5 * 1e18),   0.05 * 1e18);
         assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, 10.5 * 1e18),  -0.05 * 1e18);
-        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, 10.5 * 1e18),  -0.1 * 1e18);
+        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, 10.5 * 1e18),         -0.1 * 1e18);
     }
 
     /**
