@@ -104,7 +104,7 @@ library Auctions {
                     remainingCol  -= clearableCol;
 
                     Deposits.remove(deposits_, hpbIndex, clearableDebt);
-                    buckets_[hpbIndex].collateral -= clearableCol;
+                    buckets_[hpbIndex].collateral += clearableCol;
                 }
 
                 // there's still debt to cover but no collateral left to auction, use reserve or forgive amount form next HPB
