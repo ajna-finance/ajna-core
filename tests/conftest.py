@@ -61,9 +61,6 @@ def scaled_pool(deployer):
         scaled_factory.deployedPools("2263c4378b4920f0bef611a3ff22c506afa4745b3319c50b6d704a874990b8b2", MKR_ADDRESS, DAI_ADDRESS)
         )
 
-@pytest.fixture
-def pool_utils(deployer):
-    return PoolInfoUtils.deploy({"from": deployer})
 
 @pytest.fixture
 def lenders(ajna_protocol, scaled_pool):
@@ -101,30 +98,78 @@ def borrowers(ajna_protocol, scaled_pool):
     return borrowers
 
 
-class PoolUtils:
-    def __init__(self, ajna_protocol: AjnaProtocol):
+# Layer of abstraction between pool contracts and brownie tests
+class PoolHelper:
+    def __init__(self, ajna_protocol: AjnaProtocol, pool):
         self.bucket_math = ajna_protocol.bucket_math
+        self.loans = ajna_protocol.loans
+        self.pool = pool
+        self.pool_info_utils = ajna_protocol.pool_info_utils
+        self.pool_utils = ajna_protocol.pool_utils
 
-    @staticmethod
-    def get_origination_fee(pool: ERC20Pool, amount):
-        fee_rate = max(pool.interestRate() / 52, 0.0005 * 10**18)
+    # TODO: Move this functionality into SDK to insulate consumer from implementation logic.
+
+    def borrowerInfo(self, borrower_address):
+        # returns (debt, pendingDebt, collateral, mompFactor, inflatorSnapshot)
+        return self.pool_info_utils.borrowerInfo(self.pool.address, borrower_address)
+
+    def bucketInfo(self, index):
+        # returns (index, price, quoteTokens, collateral, bucketLPs, scale, exchangeRate)
+        return self.pool_info_utils.bucketInfo(self.pool.address, index)
+
+    def collateralToken(self):
+        return Contract(self.pool.collateralAddress())
+
+    def hpb(self):
+        (hpb, hpbIndex, htp, htpIndex, lup, lupIndex) = self.pool_info_utils.poolPricesInfo(self.pool.address)
+        return hpb
+
+    def htp(self):
+        (hpb, hpbIndex, htp, htpIndex, lup, lupIndex) = self.pool_info_utils.poolPricesInfo(self.pool.address)
+        return htp
+
+    def indexToPrice(self, price_index: int):
+        return self.pool_info_utils.indexToPrice(price_index)
+
+    def lenderInfo(self, index, lender_address):
+        # returns (lpBalance, lastQuoteDeposit)
+        return self.pool.lenderInfo(index, lender_address)
+
+    def loansInfo(self):
+        # returns (poolSize, loansCount, maxBorrower, pendingInflator, pendingInterestFactor)
+        # Not to be confused with pool.loansInfo which returns (maxBorrower, maxThresholdPrice, noOfLoans)
+        return self.pool_info_utils.poolLoansInfo(self.pool.address)
+
+    def lup(self):
+        (hpb, hpbIndex, htp, htpIndex, lup, lupIndex) = self.pool_info_utils.poolPricesInfo(self.pool.address)
+        return lup
+
+    def lupIndex(self):
+        (hpb, hpbIndex, htp, htpIndex, lup, lupIndex) = self.pool_info_utils.poolPricesInfo(self.pool.address)
+        return lupIndex
+
+    def priceToIndex(self, price):
+        return self.pool_info_utils.priceToIndex(price)
+
+    def quoteToken(self):
+        return Contract(self.pool.quoteTokenAddress())
+
+    def utilizationInfo(self):
+        return self.pool_info_utils.poolUtilizationInfo(self.pool.address)
+
+    def get_origination_fee(self, amount):
+        fee_rate = max(self.pool.interestRate() / 52, 0.0005 * 10**18)
         assert fee_rate >= (0.0005 * 10**18)
         assert fee_rate < (100 * 10**18)
         return fee_rate * amount / 10**18
 
-    @staticmethod
-    def price_to_index_safe(pool_utils, price):
+    def price_to_index_safe(self, price):
         if price < MIN_PRICE:
-            return pool_utils.priceToIndex(MIN_PRICE)
+            return self.pool_info_utils.priceToIndex(MIN_PRICE)
         elif price > MAX_PRICE:
-            return pool_utils.priceToIndex(MAX_PRICE)
+            return self.pool_info_utils.priceToIndex(MAX_PRICE)
         else:
-            return pool_utils.priceToIndex(price)
-
-
-@pytest.fixture
-def scaled_pool_utils(ajna_protocol):
-    return PoolUtils(ajna_protocol)
+            return self.pool_info_utils.priceToIndex(price)
 
 
 class LoansHeapUtils:
@@ -299,39 +344,41 @@ class TestUtils:
             )
 
     @staticmethod
-    def validate_pool(pool, pool_utils, borrowers):
+    def validate_pool(pool_helper, borrowers):
+        pool = pool_helper.pool
+
         # if pool is collateralized...
-        if pool_utils.lupIndex(pool.address) > PoolUtils.price_to_index_safe(pool_utils, pool_utils.htp(pool.address)):
+        if pool_helper.lupIndex() > pool_helper.price_to_index_safe(pool_helper.htp()):
             # ...ensure debt is less than the size of the pool
             assert pool.borrowerDebt() <= pool.depositSize()
 
         # if there are no borrowers in the pool, ensure there is no debt
-        if pool.noOfLoans() == 0:
+        (_, loansCount, _, inflator, interestFactor) = pool_helper.loansInfo()
+        if loansCount == 0:
             assert pool.borrowerDebt() == 0
 
         # loan count should be decremented as borrowers repay debt
-        loan_count = pool.noOfLoans()
-        if loan_count > 0:
+        if loansCount > 0:
             assert pool.borrowerDebt() > 0
 
         borrowers_with_debt = 0
         for borrower in borrowers:
-            (debt, pending_debt, _, _, _) = pool_utils.borrowerInfo(pool.address, borrower.address)
+            (debt, pending_debt, _, _, _) = pool_helper.borrowerInfo(borrower.address)
             if debt > 0:
                 borrowers_with_debt += 1
-        assert borrowers_with_debt == loan_count
+        assert borrowers_with_debt == loansCount
 
     @staticmethod
-    def dump_book(pool, pool_utils, with_headers=True, csv=False) -> str:
+    def dump_book(pool_helper, with_headers=True, csv=False) -> str:
         """
-        :param pool:             pool contract for which report shall be generated
-        :param pool_utils:       pool utils contract
+        :param pool_helper:      simplifies interaction with pool contracts
         :param min_bucket_index: highest-priced bucket from which to iterate downward in price
         :param max_bucket_index: lowest-priced bucket
         :param with_headers:     print column headings
         :param csv:              export as CSV for importing into a spreadsheet
         :return:                 multi-line string
         """
+        pool = pool_helper.pool
 
         # formatting shortcuts
         w = 15
@@ -346,11 +393,11 @@ class TestUtils:
         def fy(ray):
             return f"{ny(ray):>{w}.3f}"
 
-        lup_index = pool_utils.lupIndex(pool.address)
-        htp_index = PoolUtils.price_to_index_safe(pool_utils, pool_utils.htp(pool.address))
-        ptp_index = PoolUtils.price_to_index_safe(pool_utils, int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
+        lup_index = pool_helper.lupIndex()
+        htp_index = pool_helper.price_to_index_safe(pool_helper.htp())
+        ptp_index = pool_helper.price_to_index_safe(int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
 
-        min_bucket_index = max(0, pool_utils.priceToIndex(pool_utils.hpb(pool.address)) - 3)  # HPB
+        min_bucket_index = max(0, pool_helper.priceToIndex(pool_helper.hpb()) - 3)  # HPB
         max_bucket_index = min(7388, max(lup_index, htp_index) + 3) if htp_index < 7388 else min(7388, lup_index + 3)
         assert min_bucket_index < max_bucket_index
 
@@ -362,7 +409,7 @@ class TestUtils:
                 lines.append(j('Index') + j('Price') + j('Pointer') + j('Quote') + j('Collateral')
                              + j('LP Outstanding') + j('Scale'))
         for i in range(min_bucket_index, max_bucket_index):
-            price = pool_utils.indexToPrice(i)
+            price = pool_helper.indexToPrice(i)
             pointer = ""
             if i == lup_index:
                 pointer += "LUP"
@@ -378,7 +425,7 @@ class TestUtils:
                     bucket_lpAccumulator,
                     bucket_scale,
                     _
-                ) = pool_utils.bucketInfo(pool.address, i)
+                ) = pool_helper.bucketInfo(i)
             except VirtualMachineError as ex:
                 lines.append(f"ERROR retrieving bucket {i} at price {price} ({price / 1e18})")
                 continue
@@ -391,32 +438,32 @@ class TestUtils:
         return '\n'.join(lines)
 
     @staticmethod
-    def summarize_pool(pool, pool_utils):
-        (_, poolCollateralization, poolActualUtilization, poolTargetUtilization) = pool_utils.poolUtilizationInfo(pool.address)
+    def summarize_pool(pool_helper):
+        pool = pool_helper.pool
+        (_, poolCollateralization, poolActualUtilization, poolTargetUtilization) = pool_helper.utilizationInfo()
+        (_, loansCount, _, _, _) = pool_helper.loansInfo()
         print(f"actual utlzn:   {poolActualUtilization/1e18:>12.1%}  "
               f"target utlzn:   {poolTargetUtilization/1e18:>12.1%}  "
               f"collateralization: {poolCollateralization/1e18:>9.1%}  "
               f"borrowerDebt:   {pool.borrowerDebt()/1e18:>12.1f}  "
-              f"loan count:     {pool.noOfLoans():>8}")
+              f"loan count:     {loansCount:>8}")
 
-        contract_quote_balance = Contract(pool.quoteToken()).balanceOf(pool)
+        contract_quote_balance = pool_helper.quoteToken().balanceOf(pool)
         reserves = contract_quote_balance + pool.borrowerDebt() - pool.depositSize()
         pledged_collateral = pool.pledgedCollateral()
         if pledged_collateral > 0:
             ptp = pool.borrowerDebt() * 10 ** 18 / pledged_collateral
-            ptp_index = pool_utils.priceToIndex(ptp)
-            ru = pool.bucketDeposit(ptp_index)  # FIXME: saw this revert with under/overflow once
+            ptp_index = pool_helper.priceToIndex(ptp)
         else:
             ptp = 0
-            ru = 0
         print(f"contract q bal: {contract_quote_balance/1e18:>12.1f}  "
               f"deposit:        {pool.depositSize()/1e18:>12.1f}  "
               f"reserves:       {reserves/1e18:>12.1f}  "
               f"pledged:        {pool.pledgedCollateral()/1e18:>12.1f}  "
               f"rate:           {pool.interestRate()/1e18:>8.4%}")
 
-        lup = pool_utils.lup(pool.address)
-        htp = pool_utils.htp(pool.address)
+        lup = pool_helper.lup()
+        htp = pool_helper.htp()
         ptp = int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral())
         print(f"lup:            {lup/1e18:>12.3f}  "
               f"htp:            {htp/1e18:>12.3f}  "
