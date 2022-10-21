@@ -355,10 +355,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1_509.066774239163547045 * 1e18,
+                borrowerDebt:              1_507.000974734143274062 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_006.770336295505368176 * 1e18,
-                borrowerCollateralization: 5.985603964508270588 * 1e18
+                borrowerCollateralization: 5.993809040625961846 * 1e18
             }
         );
 
@@ -369,10 +369,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1_512.792352096353476721 * 1e18,
+                borrowerDebt:              1_508.860066921599065131 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_006.770336295505368176 * 1e18,
-                borrowerCollateralization: 5.970863122144030550 * 1e18
+                borrowerCollateralization: 5.986423966420065589 * 1e18
             }
         );
 
