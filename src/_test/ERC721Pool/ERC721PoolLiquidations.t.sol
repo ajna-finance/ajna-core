@@ -218,7 +218,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 borrowerDebt:              20.624151550983163085 * 1e18,
                 borrowerCollateral:        2 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
-                borrowerCollateralization: 0.974970671765065280 * 1e18
+                borrowerCollateralization: 0.961705970683982408 * 1e18
             }
         );
         _assertBorrower(
@@ -227,7 +227,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 borrowerDebt:              15.431463936388449745 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
-                borrowerCollateralization: 1.981531649793150539 * 1e18
+                borrowerCollateralization: 1.927980044728713733 * 1e18
             }
         );
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);

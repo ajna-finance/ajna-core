@@ -31,7 +31,7 @@ abstract contract ERC20PoolInterestTest is ERC20HelperContract {
     }
 }
 
-contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
+contract ERC20PoolInterestCalculationTest is ERC20PoolInterestTest {
     //TODO: introduced because Akash was using 5.5% APR in an example; could revert
     uint256 _initialRate = 0.05 * 10**18;
 
@@ -44,7 +44,7 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
         _startTime  = block.timestamp;
     }
 
-    function testInterestAccumulation() external {
+    function testInterestCalculation() external {
         _addLiquidity({from: _lender, amount: 2_000 * 1e18, index: _i9_91, newLup: BucketMath.MAX_PRICE});
         _addLiquidity({from: _lender, amount: 5_000 * 1e18, index: _i9_81, newLup: BucketMath.MAX_PRICE});
         _addLiquidity({from: _lender, amount: 11_000 * 1e18, index: _i9_72, newLup: BucketMath.MAX_PRICE});
@@ -123,9 +123,9 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              19.803712051698510506 * 1e18,
+            borrowerDebt:              19.534277977147272573 * 1e18,
             borrowerCollateral:        2e18,
-            borrowerCollateralization: 1.001548075183747393 * 1e18,
+            borrowerCollateralization: 1.015362313881046556 * 1e18,
             borrowerMompFactor:        9.917184843435912074 * 1e18
         });
 
@@ -154,9 +154,9 @@ contract ERC20PoolInterestAccumulationTest is ERC20PoolInterestTest {
 
         _assertBorrower({
             borrower:                  _borrower,
-            borrowerDebt:              18.789919165426161817 * 1e18,
+            borrowerDebt:              18.534277977147272573 * 1e18,
             borrowerCollateral:        2e18,
-            borrowerCollateralization: 1.055585684656242311 * 1e18,
+            borrowerCollateralization: 1.070145257955425188 * 1e18,
             borrowerMompFactor:        9.782259254058058749 * 1e18
         });
     }

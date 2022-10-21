@@ -3,6 +3,7 @@
 pragma solidity 0.8.14;
 
 import '@clones/Clone.sol';
+import "forge-std/console.sol";
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
@@ -781,9 +782,8 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function borrowers(address borrower_) external view override returns (uint256, uint256, uint256) {
-        uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         return (
-            Maths.wmul(loans.borrowers[borrower_].t0debt, pendingInflator),
+            loans.borrowers[borrower_].t0debt,
             loans.borrowers[borrower_].collateral,
             loans.borrowers[borrower_].mompFactor
         );
@@ -801,6 +801,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         return _getArgAddress(0);
     }
 
+    // TODO: only PoolInfoUtils should access this
     function accruedDebt() external view override returns (uint256 accruedDebt_)
     {
         return Maths.wmul(t0poolDebt, inflatorSnapshot);

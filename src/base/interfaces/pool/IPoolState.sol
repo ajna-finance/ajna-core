@@ -42,7 +42,7 @@ interface IPoolState {
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  borrower   Address of the borrower.
-     *  @return t0debt     Amount of debt that the borrower has, as if it occurred at the first borrow in the pool
+     *  @return t0debt     Amount of debt borrower would have had if their loan was the first debt drawn from the pool
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
      *  @return mompFactor Momp / borrowerInflatorSnapshot factor used.
      */
