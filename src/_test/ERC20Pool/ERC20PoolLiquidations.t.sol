@@ -970,6 +970,230 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
     }
 
+    function testHealOnAuctionKicked72HoursAgoAndPartiallyTaken() external {
+        // Borrower2 borrows
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_730 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     9.721295865031779605 * 1e18
+            }
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower2,
+                debt:       9_853.394241979221645666 * 1e18,
+                collateral: 1_000 * 1e18,
+                bond:       98.533942419792216457 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:   _borrower2,
+                active:     true,
+                kicker:     _lender,
+                bondSize:   98.533942419792216457 * 1e18,
+                bondFactor: 0.01 * 1e18,
+                kickTime:   _startTime + 100 days,
+                kickMomp:   9.721295865031779605 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_976.561670003961916237 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerInflator:          1.013792886272348689 * 1e18,
+                borrowerCollateralization: 0.974413448899967463 * 1e18,
+                borrowerPendingDebt:       9_976.561670003961916237 * 1e18
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000 * 1e27,
+                collateral:   0,
+                deposit:      2_118.781595119199960000 * 1e18,
+                exchangeRate: 1.05939079755959998 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_81,
+                lpBalance:    5_000 * 1e27,
+                collateral:   0,
+                deposit:      5_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_72,
+                lpBalance:    11_000 * 1e27,
+                collateral:   0,
+                deposit:      11_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_62,
+                lpBalance:    25_000 * 1e27,
+                collateral:   0,
+                deposit:      25_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        // skip ahead so take can be called on the loan
+        skip(10 hours);
+        // take partial 800 collateral
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   800 * 1e18,
+                bondChange:      4.860647932515889920 * 1e18,
+                givenAmount:     486.064793251588992000 * 1e18,
+                collateralTaken: 800 * 1e18,
+                isReward:        true
+            }
+        );
+        _assertAuction(
+            {
+                borrower:   _borrower2,
+                active:     true,
+                kicker:     _lender,
+                bondSize:   103.394590352308106377 * 1e18,
+                bondFactor: 0.01 * 1e18,
+                kickTime:   _startTime + 100 days,
+                kickMomp:   9.721295865031779605 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_495.870032454838889425 * 1e18,
+                borrowerCollateral:        200 * 1e18,
+                borrowerMompFactor:        9.684667957374334904 * 1e18,
+                borrowerInflator:          1.013844966011693846 * 1e18,
+                borrowerCollateralization: 0.204747871059870949 * 1e18,
+                borrowerPendingDebt:       9_495.870032454838889425 * 1e18
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000 * 1e27,
+                collateral:   0,
+                deposit:      2_118.911507166546111004 * 1e18,
+                exchangeRate: 1.059455753583273055502 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_81,
+                lpBalance:    5_000 * 1e27,
+                collateral:   0,
+                deposit:      5_000.306572531226000000 * 1e18,
+                exchangeRate: 1.0000613145062452 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_72,
+                lpBalance:    11_000 * 1e27,
+                collateral:   0,
+                deposit:      11_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_62,
+                lpBalance:    25_000 * 1e27,
+                collateral:   0,
+                deposit:      25_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        // heal should affect first 3 buckets, reducing deposit and incrementing collateral
+        skip(73 hours);
+        _heal(
+            {
+                from:       _lender,
+                borrower:   _borrower2,
+                maxDepth:   10,
+                healedDebt: 9_495.870032454838889425 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:   _borrower2,
+                active:     false,
+                kicker:     address(0),
+                bondSize:   0,
+                bondFactor: 0,
+                kickTime:   0,
+                kickMomp:   0
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              0,
+                borrowerCollateral:        0,
+                borrowerMompFactor:        9.684667957374334904 * 1e18,
+                borrowerInflator:          1.013844966011693846 * 1e18,
+                borrowerCollateralization: 1 * 1e18,
+                borrowerPendingDebt:       0
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000 * 1e27,
+                collateral:   200 * 1e18,
+                deposit:      0,
+                exchangeRate: 0.9917184843435912074 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_81,
+                lpBalance:    0,
+                collateral:   0,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_72,
+                lpBalance:    11_000 * 1e27,
+                collateral:   0,
+                deposit:      8_776.350074727694604454 * 1e18,
+                exchangeRate: 0.797850006793426782223090909 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_62,
+                lpBalance:    25_000 * 1e27,
+                collateral:   0,
+                deposit:      25_000 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+    }
+
     function testHealOnAuctionKicked72HoursAgo() external {
         // Borrower2 borrows
         _borrow(
