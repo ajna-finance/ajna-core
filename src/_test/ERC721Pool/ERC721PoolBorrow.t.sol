@@ -325,7 +325,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check pool state after partial repay
         _assertPool(
             PoolState({
-                htp:                  502.333658244714424687 * 1e18,
+                htp:                  503.022258079721182348 * 1e18,
                 lup:                  PoolUtils.indexToPrice(2550),
                 poolSize:             30_003.520235392247040000 * 1e18,
                 pledgedCollateral:    Maths.wad(3),
@@ -340,7 +340,6 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 interestRateUpdate:   _startTime + 10 days
             })
         );
-
         // check bucket state after partial repay
         _assertBucket(
             {
@@ -356,10 +355,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1_507.000974734143274062 * 1e18,
+                borrowerDebt:              1_509.066774239163547045 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_006.770336295505368176 * 1e18,
-                borrowerCollateralization: 5.993809040625961846 * 1e18
+                borrowerCollateralization: 5.985603964508270588 * 1e18
             }
         );
 
@@ -370,10 +369,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1_508.860066921599064643 * 1e18,
+                borrowerDebt:              1_512.792352096353476721 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_006.770336295505368176 * 1e18,
-                borrowerCollateralization: 5.993809040625961846 * 1e18
+                borrowerCollateralization: 5.970863122144030550 * 1e18
             }
         );
 
@@ -385,8 +384,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             {
                 from:     _borrower,
                 borrower: _borrower,
-                amount:   1_508.860066921599064643 * 1e18,
-                repaid:   1_508.860066921599064643 * 1e18,
+                amount:   1_508.860066921599065131 * 1e18,
+                repaid:   1_508.860066921599065131 * 1e18,
                 newLup:   BucketMath.MAX_PRICE
             }
         );
@@ -397,8 +396,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         assertEq(_collateral.balanceOf(_borrower),      49);
         assertEq(_collateral.balanceOf(address(_pool)), 3);
 
-        assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599064643 * 1e18);
-        assertEq(_quote.balanceOf(_borrower),      991.139933078400935357 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599065131 * 1e18);
+        assertEq(_quote.balanceOf(_borrower),      991.139933078400934869 * 1e18);
 
         // borrower pulls collateral
         uint256[] memory tokenIdsToRemove = tokenIdsToAdd;

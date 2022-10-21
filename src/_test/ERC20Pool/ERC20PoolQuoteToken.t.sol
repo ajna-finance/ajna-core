@@ -1116,7 +1116,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
 
         uint256 ptp = Maths.wdiv(_pool.debt(), 10 * 1e18);
-        assertEq(ptp, 500.480769230769231 * 1e18);
+        assertEq(ptp, 500.489339180327335288 * 1e18);
 
         // lender moves some liquidity below the pool threshold price; penalty should be assessed
         skip(16 hours);

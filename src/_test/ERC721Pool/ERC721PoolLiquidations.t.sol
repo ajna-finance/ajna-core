@@ -215,7 +215,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              23.012828827714740289 * 1e18,
+                borrowerDebt:              20.624151550983163085 * 1e18,
                 borrowerCollateral:        2 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
                 borrowerCollateralization: 0.974970671765065280 * 1e18
@@ -224,7 +224,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              15.014423076923076930 * 1e18,
+                borrowerDebt:              15.431463936388449745 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
                 borrowerCollateralization: 1.981531649793150539 * 1e18

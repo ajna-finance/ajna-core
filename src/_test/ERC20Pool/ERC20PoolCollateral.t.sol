@@ -141,7 +141,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
 
         _assertPool(
             PoolState({
-                htp:                  420.980136462780058369 * 1e18,
+                htp:                  421.557216751451801727 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_025.923273028334880000 * 1e18,
                 pledgedCollateral:    50 * 1e18,
@@ -159,25 +159,26 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              21_049.006823139002918431 * 1e18,
+                borrowerDebt:              21_077.860837572590086315 * 1e18,
                 borrowerCollateral:        50 * 1e18,
                 borrowerMompFactor:        2_976.926646662711731597 * 1e18,
-                borrowerCollateralization: 7.081111825921092812 * 1e18
+                borrowerCollateralization: 7.071418313642713897 * 1e18
             }
         );
         assertEq(_collateral.balanceOf(_borrower), 100 * 1e18);
 
         // remove all of the remaining unencumbered collateral
+        // FIXME: determine correct amount to pull to achieve 100% CR on line 202
         _pullCollateral(
             {
                 from:   _borrower,
-                amount: 50 * 1e18 - PoolUtils.encumberance(21_049.006823139002918431 * 1e18, _lup())
+                amount: 50 * 1e18 - PoolUtils.encumberance(21_077.860837572590086315 * 1e18, _lup())
             }
         );
 
         _assertPool(
             PoolState({
-                htp:                  2_981.007422784467321393 * 1e18,
+                htp:                  2_985.093792841086761332 * 1e18,
                 lup:                  2_981.007422784467321543 * 1e18,
                 poolSize:             30_025.923273028334880000 * 1e18,
                 pledgedCollateral:    7.061038044473493202 * 1e18,
@@ -195,7 +196,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              21_049.006823139002918431 * 1e18,
+                borrowerDebt:              21_077.860837572590086315 * 1e18,
                 borrowerCollateral:        7.061038044473493202 * 1e18,
                 borrowerMompFactor:        2_976.926646662711731597 * 1e18,
                 borrowerCollateralization: 1 * 1e18
