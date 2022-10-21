@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import '@clones/Clone.sol';
-import "forge-std/console.sol";
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
@@ -800,6 +799,11 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function collateralAddress() external pure override returns (address) {
         return _getArgAddress(0);
+    }
+
+    function accruedDebt() external view override returns (uint256 accruedDebt_)
+    {
+        return Maths.wmul(t0poolDebt, inflatorSnapshot);
     }
 
     function debt() external view override returns (uint256 borrowerDebt_) {
