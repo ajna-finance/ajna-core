@@ -151,7 +151,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     function removeAllQuoteToken(
         uint256 index_
     ) external returns (uint256 quoteTokenAmountRemoved_, uint256 redeemedLenderLPs_) {
-        if (auctions.isHeadClearable()) revert AuctionNotCleared();
+        auctions.revertIfHeadClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -181,8 +181,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 quoteTokenAmountToRemove_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-
-        if (auctions.isHeadClearable()) revert AuctionNotCleared();
+        auctions.revertIfHeadClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -255,10 +254,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 amountToBorrow_,
         uint256 limitIndex_
     ) external override {
-
         // if borrower auctioned then it cannot draw more debt
-        (bool auctionKicked, ) = auctions.getStatus(msg.sender);
-        if (auctionKicked) revert AuctionActive();
+        auctions.revertIfActive(msg.sender);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -362,8 +359,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 reserves = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.liquidationBondEscrowed - reserveAuctionUnclaimed;
         (
             uint256 healedDebt,
-            uint256 totalForgived,
-            uint256 rewardedCollateral
+            uint256 totalForgived
 
         ) = auctions.heal(loans, buckets, deposits, borrower_, reserves, maxDepth_);
         if (healedDebt != 0) {
@@ -373,9 +369,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function kick(address borrowerAddress_) external override {
-
-        (bool auctionKicked, ) = auctions.getStatus(borrowerAddress_);
-        if (auctionKicked) revert AuctionActive();
+        auctions.revertIfActive(borrowerAddress_);
 
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.accrueBorrowerInterest(
@@ -524,8 +518,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToRemove_,
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
-
-        if (auctions.isHeadClearable()) revert AuctionNotCleared();
+        auctions.revertIfHeadClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
 

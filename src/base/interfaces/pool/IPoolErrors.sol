@@ -21,16 +21,6 @@ interface IPoolErrors {
     error AmountLTMinDebt();
 
     /**
-     *  @notice Kicker is attempting to kick or clear an active auction.
-     */
-    error AuctionActive();
-
-    /**
-     *  @notice Head auction should be cleared prior of taking auctions.
-     */
-    error AuctionNotCleared();
-
-    /**
      *  @notice Borrower has a healthy over-collateralized position.
      */
     error BorrowerOk();

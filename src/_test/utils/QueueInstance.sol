@@ -32,7 +32,7 @@ contract QueueInstance is DSTestPlus {
     }
 
     function isActive(address borrower_) external view returns (bool kicked_) {
-        (kicked_, ) = auctions.getStatus(borrower_);
+        kicked_ = auctions.liquidations[borrower_].kickTime != 0;
     }
 
     function get(

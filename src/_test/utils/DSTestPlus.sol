@@ -458,7 +458,7 @@ abstract contract DSTestPlus is Test {
         uint256 indexLimit
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
         _pool.borrow(amount, indexLimit);
     }
 
@@ -492,12 +492,30 @@ abstract contract DSTestPlus is Test {
         _pool.borrow(amount, indexLimit);
     }
 
+    function _assertHealOnNotClearableAuctionRevert(
+        address from,
+        address borrower
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotClearable()'));
+        _pool.heal(borrower, 1);
+    }
+
+    function _assertHealOnNotKickedAuctionRevert(
+        address from,
+        address borrower
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
+        _pool.heal(borrower, 1);
+    }
+
     function _assertKickAuctionActiveRevert(
         address from,
         address borrower
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
         _pool.kick(borrower);
     }
 
@@ -536,7 +554,7 @@ abstract contract DSTestPlus is Test {
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        vm.expectRevert(abi.encodeWithSignature('HeadNotCleared()'));
         _pool.removeQuoteToken(amount, index);
     }
 
@@ -575,7 +593,7 @@ abstract contract DSTestPlus is Test {
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        vm.expectRevert(abi.encodeWithSignature('HeadNotCleared()'));
         _pool.removeAllQuoteToken(index);
     }
 

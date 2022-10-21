@@ -980,8 +980,18 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 newLup:     9.721295865031779605 * 1e18
             }
         );
+
         // Skip to make borrower undercollateralized
         skip(100 days);
+        // heal should revert on a borrower that is not auctioned
+        _assertHealOnNotKickedAuctionRevert(
+            {
+                from:     _lender,
+                borrower: _borrower2
+            }
+        );
+
+        uint256 kickTime = _startTime + 100 days;
         _kick(
             {
                 from:       _lender,
@@ -989,6 +999,36 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 debt:       9_853.394241979221645666 * 1e18,
                 collateral: 1_000 * 1e18,
                 bond:       98.533942419792216457 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:   _borrower2,
+                active:     true,
+                kicker:     _lender,
+                bondSize:   98.533942419792216457 * 1e18,
+                bondFactor: 0.01 * 1e18,
+                kickTime:   kickTime,
+                kickMomp:   9.721295865031779605 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_976.561670003961916237 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerInflator:          1.013792886272348689 * 1e18,
+                borrowerCollateralization: 0.974413448899967463 * 1e18,
+                borrowerPendingDebt:       9_976.561670003961916237 * 1e18
+            }
+        );
+
+        // heal should revert on an kicked auction but 72 hours not passed (there's still debt to heal and collateral to be auctioned)
+        _assertHealOnNotClearableAuctionRevert(
+            {
+                from:     _lender,
+                borrower: _borrower2
             }
         );
         // skip ahead so take can be called on the loan
@@ -1057,6 +1097,19 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
 
         // heal to make buckets insolvent
+        // heal should work because there is still debt to heal but no collateral left to auction (even if 72 hours didn't pass from kick)
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_375.568996125070613905 * 1e18,
+                borrowerCollateral:        0,
+                borrowerMompFactor:        9.588542815647469183 * 1e18,
+                borrowerInflator:          1.013844966011693846 * 1e18,
+                borrowerCollateralization: 0,
+                borrowerPendingDebt:       9_375.568996125070613905 * 1e18
+            }
+        );
+        assertTrue(block.timestamp - kickTime < 72 hours); // assert auction was kicked less than 72 hours ago
         _heal(
             {
                 from:       _lender,

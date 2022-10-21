@@ -234,7 +234,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.AuctionNotCleared.selector);
+        vm.expectRevert(abi.encodeWithSignature('HeadNotCleared()'));
         ERC20Pool(address(_pool)).removeCollateral(amount, index);
     }
 
