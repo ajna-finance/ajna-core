@@ -271,7 +271,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             loansCount >= 10
             &&
             (borrower.debt + amountToBorrow_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-        )  revert AmountLTMinDebt();
+        ) revert AmountLTMinDebt();
 
         uint256 debt  = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
         borrower.debt += debt;
@@ -296,7 +296,8 @@ abstract contract Pool is Clone, Multicall, IPool {
                 poolState.accruedDebt,
                 poolState.collateral,
                 newLup
-            ) < Maths.WAD) revert PoolUnderCollateralized();
+            ) < Maths.WAD
+        ) revert PoolUnderCollateralized();
 
         loans.update(
             deposits,
@@ -330,7 +331,8 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         if (borrower.debt != 0) {
             uint256 loansCount = loans.noOfLoans();
-            if (loansCount >= 10
+            if (
+                loansCount >= 10
                 &&
                 (borrower.debt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
             ) revert AmountLTMinDebt();
@@ -385,7 +387,8 @@ abstract contract Pool is Clone, Multicall, IPool {
                 borrower.debt,
                 borrower.collateral,
                 lup
-            ) >= Maths.WAD) revert BorrowerOk();
+            ) >= Maths.WAD
+        ) revert BorrowerOk();
 
         poolState.accruedDebt += loans.kick(
             borrowerAddress_,
@@ -716,7 +719,8 @@ abstract contract Pool is Clone, Multicall, IPool {
                     poolState_.accruedDebt,
                     poolState_.collateral,
                     lup_
-                ) != Maths.WAD) {
+                ) != Maths.WAD
+            ) {
 
                 int256 actualUtilization = int256(
                     deposits.utilization(

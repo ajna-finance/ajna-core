@@ -87,8 +87,7 @@ library Auctions {
             (block.timestamp - kickTime > 72 hours)
             ||
             (debtToHeal > 0 && remainingCol == 0)
-            )
-        {
+        ) {
             uint256 remainingDebt = debtToHeal;
 
             while (bucketDepth_ > 0) {
