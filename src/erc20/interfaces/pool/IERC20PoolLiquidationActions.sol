@@ -18,4 +18,15 @@ interface IERC20PoolLiquidationActions {
         uint256 maxAmount,
         bytes memory swapCalldata
     ) external;
+
+    /**
+     *  @notice Called by actors to settle an amount of debt in a completed liquidation.
+     *  @param  borrower Identifies the loan under liquidation.
+     *  @param  maxDepth Measured from HPB, maximum number of buckets deep to settle debt.
+     *  @dev maxDepth is used to prevent unbounded iteration clearing large liquidations.
+     */
+    function heal(
+        address borrower,
+        uint256 maxDepth
+    ) external;
 }

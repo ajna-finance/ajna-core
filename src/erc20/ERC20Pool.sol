@@ -176,6 +176,14 @@ contract ERC20Pool is IERC20Pool, Pool {
         _transferCollateral(msg.sender, collateralTaken);
     }
 
+    function heal(
+        address borrower_,
+        uint256 maxDepth_
+    ) external override {
+        _heal(borrower_, maxDepth_);
+    }
+
+
     /************************/
     /*** Helper Functions ***/
     /************************/

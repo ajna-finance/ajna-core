@@ -20,4 +20,17 @@ interface IERC721PoolLiquidationActions {
         uint256[] calldata tokenIds,
         bytes memory swapCalldata
     ) external;
+
+
+    /**
+     *  @notice Called by actors to settle an amount of debt in a completed liquidation.
+     *  @param  borrower Identifies the loan under liquidation.
+     *  @param  tokenIds Measured from HPB, maximum number of buckets deep to settle debt.
+     *  @param  maxDepth Measured from HPB, maximum number of buckets deep to settle debt.
+     */
+    function heal(
+        address borrower,
+        uint256[] calldata tokenIds,
+        uint256 maxDepth
+    ) external;
 }

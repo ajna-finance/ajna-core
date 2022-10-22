@@ -21,4 +21,6 @@ interface IERC721PoolErrors {
      *  @notice User attempted to take only some auctioned NFTs collateral.
      */
     error PartialTakeNotAllowed();
+
+    error IncorrectNumTokenIds();
 }

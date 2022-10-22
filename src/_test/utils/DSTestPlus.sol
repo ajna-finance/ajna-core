@@ -86,18 +86,6 @@ abstract contract DSTestPlus is Test {
         _pool.borrow(amount, indexLimit);
     }
 
-    function _heal(
-        address from,
-        address borrower,
-        uint256 maxDepth,
-        uint256 healedDebt
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Heal(borrower, healedDebt);
-        _pool.heal(borrower, maxDepth);
-    }
-
     function _kick(
         address from,
         address borrower,
@@ -490,24 +478,6 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
         _pool.borrow(amount, indexLimit);
-    }
-
-    function _assertHealOnNotClearableAuctionRevert(
-        address from,
-        address borrower
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('AuctionNotClearable()'));
-        _pool.heal(borrower, 1);
-    }
-
-    function _assertHealOnNotKickedAuctionRevert(
-        address from,
-        address borrower
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
-        _pool.heal(borrower, 1);
     }
 
     function _assertKickAuctionActiveRevert(

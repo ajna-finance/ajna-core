@@ -140,6 +140,36 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
     }
 
+    function _heal(
+        address from,
+        address borrower,
+        uint256 maxDepth,
+        uint256 healedDebt
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Heal(borrower, healedDebt);
+        ERC20Pool(address(_pool)).heal(borrower, maxDepth);
+    }
+
+    function _assertHealOnNotClearableAuctionRevert(
+        address from,
+        address borrower
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotClearable()'));
+        ERC20Pool(address(_pool)).heal(borrower, 1);
+    }
+
+    function _assertHealOnNotKickedAuctionRevert(
+        address from,
+        address borrower
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
+        ERC20Pool(address(_pool)).heal(borrower, 1);
+    }
+
     function _transferLpTokens(
         address operator,
         address from,

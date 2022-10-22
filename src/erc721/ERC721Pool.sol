@@ -166,11 +166,25 @@ contract ERC721Pool is IERC721Pool, Pool {
 
     function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
+        // allow arbTake to take tokenIds arg
+
+        // Partial collateral: Perform check for partial collateral (not integral amount) first. If borrower.coll is checked and has 
+        // decimal amt move remainder into bucket, tokenID has already been moved.
+        // If borrower.coll is checked and it is integral and we move a partial amount of NFT into a bucket, ALSO move the ID.
+        // in Heal, if it sees a partial amount remains will assume the tokenId for that collateral remainder has already been moved.
+
         emit ArbTake(borrower_, index_, amount_, 0, 0);
     }
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
+        // allow depositTake to take tokenIds arg
+
+        // Partial collateral: Perform check for partial collateral (not integral amount) first. If borrower.coll is checked and has 
+        // decimal amt move remainder into bucket, tokenID has already been moved.
+        // If borrower.coll is checked and it is integral and we move a partial amount of NFT into a bucket, ALSO move the ID.
+        // in Heal, if it sees a partial amount remains will assume the tokenId for that collateral remainder has already been moved.
+
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
@@ -191,6 +205,49 @@ contract ERC721Pool is IERC721Pool, Pool {
         //msg.sender.call(swapCalldata_);
 
         _pullNFTs(msg.sender, tokenIds_);
+    }
+
+    function heal(
+        address borrower_,
+        uint256[] calldata tokenIds_,
+        uint256 maxDepth_
+    ) external override {
+        (uint256 healedCollateral, uint256 remainingDebt, uint256 remainingCollateral) = _heal(borrower_, maxDepth_);
+
+        if (remainingDebt == 0 && remainingCollateral > 0) {
+            if (tokenIds_.length != healedCollateral) revert IncorrectNumTokenIds(); // Round up healedCollateral here!!!
+
+            // Move collateral from pool to borrower
+            for (uint256 i = 0; i < tokenIds_.length;) {
+                uint256 tokenId = tokenIds_[i];
+                if (_borrowerLockedNFTs[tokenId] != borrower_) revert TokenNotDeposited();
+
+                delete _borrowerLockedNFTs[tokenId];
+
+                unchecked {
+                    ++i;
+                }
+            }
+
+            // get lowest price bucket index
+
+            // Move collateral from borrower to pool
+            _addCollateral(Maths.wad(healedCollateral), 8192); //TODO: _addCollateral returns bucketLps, do we need to do anything with those?
+
+            // Move required collateral from sender to pool
+            emit AddCollateralNFT(borrower_, 8192, tokenIds_);
+            bool subset = isSubset;
+            for (uint256 i = 0; i < tokenIds_.length;) {
+                uint256 tokenId = tokenIds_[i];
+                if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
+
+                _bucketLockedNFTs[tokenId] = true;
+
+                unchecked {
+                    ++i;
+                }
+            }
+        }
     }
 
 

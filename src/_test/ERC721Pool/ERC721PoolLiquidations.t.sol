@@ -280,4 +280,6 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
             }
         );
     }
+
+    function testHealLPBToBorrower() external {}
 }
