@@ -217,6 +217,10 @@ contract ERC721Pool is IERC721Pool, Pool {
         if (remainingDebt == 0 && remainingCollateral > 0) {
             if (tokenIds_.length != healedCollateral) revert IncorrectNumTokenIds(); // Round up healedCollateral here!!!
 
+            // TODO: handle partial (decimal) healedCollateral value
+            // if healedCollateral is decimal
+            // Set tokenIds equal to nearest rounded down integral amount of healedColalteral? I think... revisit
+            
             // Move collateral from pool to borrower
             for (uint256 i = 0; i < tokenIds_.length;) {
                 uint256 tokenId = tokenIds_[i];
@@ -228,8 +232,6 @@ contract ERC721Pool is IERC721Pool, Pool {
                     ++i;
                 }
             }
-
-            // get lowest price bucket index
 
             // Move collateral from borrower to pool
             _addCollateral(Maths.wad(healedCollateral), 8192); //TODO: _addCollateral returns bucketLps, do we need to do anything with those?
@@ -247,6 +249,8 @@ contract ERC721Pool is IERC721Pool, Pool {
                     ++i;
                 }
             }
+
+            // TODO: decrement borrower.collateral here
         }
     }
 

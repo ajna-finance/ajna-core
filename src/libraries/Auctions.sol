@@ -145,6 +145,9 @@ library Auctions {
                 --bucketDepth_;
             }
 
+            // TODO: need to return healedCollateral_ so we can compute numofNFTIds to move
+            // healedCollateral_ = loans_.borrowers[borrower_].collateral - remainingCollateral_;
+            // stack overflow blocking this ^^
             healedDebt_ = debtToHeal - remainingDebt_;
 
             // save remaining debt and collateral after auction clear action
