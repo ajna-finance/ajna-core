@@ -191,7 +191,7 @@ contract ERC721Pool is IERC721Pool, Pool {
     function take(
         address borrower_,
         uint256[] calldata tokenIds_,
-        bytes memory swapCalldata_
+        bytes memory swapCalldata_ //TODO: Is this argument needed for NFTs?
     ) external override {
 
         uint256 numberOfNFTsWad = Maths.wad(tokenIds_.length);
@@ -212,43 +212,33 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256[] calldata tokenIds_,
         uint256 maxDepth_
     ) external override {
-        (uint256 healedCollateral, uint256 remainingDebt, uint256 remainingCollateral) = _heal(borrower_, maxDepth_);
+        uint256 collateralToReimburse = _heal(borrower_, maxDepth_);
 
-        if (remainingDebt == 0 && remainingCollateral > 0) {
-            if (tokenIds_.length != healedCollateral) revert IncorrectNumTokenIds(); // Round up healedCollateral here!!!
+        if (collateralToReimburse != 0 ) {
+            if (tokenIds_.length != collateralToReimburse) revert IncorrectNumTokenIds(); // Round up healedCollateral here!!!
 
-            // TODO: handle partial (decimal) healedCollateral value
-            // if healedCollateral is decimal
-            // Set tokenIds equal to nearest rounded down integral amount of healedColalteral? I think... revisit
+            // TODO: handle partial (decimal) collateralToReimburse value. To be completed after Deposit Take or Arb Take
             
-            // Move collateral from pool to borrower
-            for (uint256 i = 0; i < tokenIds_.length;) {
-                uint256 tokenId = tokenIds_[i];
-                if (_borrowerLockedNFTs[tokenId] != borrower_) revert TokenNotDeposited();
-
-                delete _borrowerLockedNFTs[tokenId];
-
-                unchecked {
-                    ++i;
-                }
-            }
-
-            // Move collateral from borrower to pool
-            _addCollateral(Maths.wad(healedCollateral), 8192); //TODO: _addCollateral returns bucketLps, do we need to do anything with those?
-
-            // Move required collateral from sender to pool
-            emit AddCollateralNFT(borrower_, 8192, tokenIds_);
             bool subset = isSubset;
             for (uint256 i = 0; i < tokenIds_.length;) {
                 uint256 tokenId = tokenIds_[i];
+
+                if (_borrowerLockedNFTs[tokenId] != borrower_) revert TokenNotDeposited();
                 if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
 
+                // Remove from borrower mapping
+                delete _borrowerLockedNFTs[tokenId];
+
+
+                // Move to lender mapping
                 _bucketLockedNFTs[tokenId] = true;
 
                 unchecked {
                     ++i;
                 }
             }
+
+            _addCollateral(Maths.wad(collateralToReimburse), 8192); //TODO: _addCollateral returns bucketLps, do we need to do anything with those?
 
             // TODO: decrement borrower.collateral here
         }

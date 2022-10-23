@@ -96,6 +96,34 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         assertEq(lpRedeemed_, lpRedeem);
     }
 
+    function _take(
+        address from,
+        address borrower,
+        uint256[] memory tokenIds,
+        uint256 bondChange,
+        uint256 givenAmount,
+        uint256 collateralTaken,
+        bool isReward
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
+        _assertTokenTransferEvent(from, address(_pool), givenAmount);
+        ERC721Pool(address(_pool)).take(borrower, tokenIds, new bytes(0));
+    }
+
+    // function _heal(
+    //     address from,
+    //     address borrower,
+    //     uint256 maxDepth,
+    //     uint256 healedDebt
+    // ) internal {
+    //     changePrank(from);
+    //     vm.expectEmit(true, true, false, true);
+    //     emit Heal(borrower, healedDebt);
+    //     ERC20Pool(address(_pool)).heal(borrower, maxDepth);
+    // }
+
 
     /**********************/
     /*** Revert asserts ***/

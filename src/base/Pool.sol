@@ -355,7 +355,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     function _heal(
         address borrower_,
         uint256 maxDepth_
-    ) internal returns (uint256 healedCollateral_, uint256 remainingDebt_, uint256 remainingCollateral_) { //TODO: return healedCollateral_ from auctions.heal
+    ) internal returns (uint256 collateralToReimburse) { //TODO: return healedCollateral_ from auctions.heal
         uint256 poolDebt = borrowerDebt;
         uint256 quoteTokenBalance = IERC20Token(_getArgAddress(0x14)).balanceOf(address(this));
         uint256 reserves = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.liquidationBondEscrowed - reserveAuctionUnclaimed;
@@ -364,12 +364,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 totalForgived;
         uint256 remainingCol;
         (
-            healedDebt,
             totalForgived,
-            remainingDebt_,
-            remainingCollateral_
+            collateralToReimburse
         ) = auctions.heal(loans, buckets, deposits, borrower_, reserves, maxDepth_);
-
+        uint256 healedDebt = borrowerDebt - totalForgived;
         borrowerDebt -= Maths.min(poolDebt, totalForgived);
         emit Heal(borrower_, healedDebt);
     }
