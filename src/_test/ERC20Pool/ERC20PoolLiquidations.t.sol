@@ -492,7 +492,6 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         skip(2 hours);
 
-        // FIXME: reverts with AmountLTMinDebt
         _take(
             {
                 from:            _lender,

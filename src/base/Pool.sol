@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import '@clones/Clone.sol';
-import "forge-std/console.sol";
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
 import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
@@ -590,7 +589,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             bool isRewarded
         ) = auctions.take(borrowerAddress_, borrower, collateral_, poolState.inflator);
 
-        int256  t0repaid      = int256(Maths.wdiv(repayAmount, poolState.inflator)) * -1;
+        int256 t0repaid       = int256(Maths.wdiv(repayAmount, poolState.inflator)) * -1;
         uint256 borrowerDebt  = Maths.wmul(borrower.t0debt, poolState.inflator) - repayAmount;
         borrower.collateral   -= collateralTaken;
         poolState.accruedDebt -= repayAmount;
@@ -598,7 +597,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // check that take doesn't leave borrower debt under min debt amount
         if (
-            borrower.t0debt != 0
+            borrowerDebt != 0
             &&
             borrowerDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loans.noOfLoans())
         ) revert AmountLTMinDebt();

@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import "forge-std/console.sol";
 import './Deposits.sol';
 import './PoolUtils.sol';
 import './Maths.sol';
