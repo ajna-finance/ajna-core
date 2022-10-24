@@ -77,8 +77,7 @@ library Loans {
      *  @param deposits_        Pool deposits, used to calculate borrower MOMP factor.
      *  @param borrowerAddress_ Borrower's address to update.
      *  @param borrower_        Borrower struct with borrower details.
-     *  @param t0debtChange_    Change in debt as if it occurred when debt was first drawn from pool.
-     *  @param poolDebt_        Pool debt.
+     *  @param poolDebt_        Pool debt, used for calculating borrower MOMP factor.
      *  @param poolInflator_    The current pool inflator used to calculate borrower MOMP factor.
      */
     function update(
@@ -86,12 +85,9 @@ library Loans {
         Deposits.Data storage deposits_,
         address borrowerAddress_,
         Borrower memory borrower_,
-        int256 t0debtChange_,
         uint256 poolDebt_,
         uint256 poolInflator_
     ) internal {
-        // TODO: inefficient; would like to mutate this with a += in borrow, -= in repay
-        borrower_.t0debt = Maths.uadd(borrower_.t0debt, t0debtChange_);
         // TODO: inefficient; caller likely knows the current borrower debt
         uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_);
 
