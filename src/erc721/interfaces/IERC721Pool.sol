@@ -30,12 +30,10 @@ interface IERC721Pool is
      *  @dev    Used to initialize pools that only support a subset of tokenIds
      *  @param  tokenIds         Enumerates tokenIds to be allowed in the pool.
      *  @param  rate             Initial interest rate of the pool.
-     *  @param  ajnaTokenAddress Address of the Ajna token.
      */
     function initializeSubset(
         uint256[] memory tokenIds,
-        uint256 rate,
-        address ajnaTokenAddress
+        uint256 rate
     ) external;
 
 }

@@ -19,7 +19,7 @@ abstract contract PoolDeployer {
     /**
      *  @notice Address of the Ajna token, needed for Claimable Reserve Auctions.
      */
-    address internal ajnaTokenAddress = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
+    address immutable ajnaTokenAddress = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
 
     /*****************/
     /*** Modifiers ***/

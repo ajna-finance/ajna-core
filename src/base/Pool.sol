@@ -36,7 +36,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     uint256 public override borrowerDebt;      // [WAD]
     uint256 public override minFee;            // [WAD]
     uint256 public override pledgedCollateral; // [WAD]
-    uint256 public override quoteTokenScale;
 
     uint256 internal debtEma;   // [WAD]
     uint256 internal lupColEma; // [WAD]
@@ -54,7 +53,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     Deposits.Data                      internal deposits;
     Loans.Data                         internal loans;
 
-    address internal ajnaTokenAddress;    //  Address of the Ajna token, needed for Claimable Reserve Auctions.
     uint256 internal poolInitializations;
 
     struct PoolState {
@@ -357,7 +355,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 maxDepth_
     ) external override {
         uint256 poolDebt = borrowerDebt;
-        uint256 quoteTokenBalance = IERC20Token(_getArgAddress(0x14)).balanceOf(address(this));
+        uint256 quoteTokenBalance = IERC20Token(_getArgAddress(20)).balanceOf(address(this));
         uint256 reserves = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.liquidationBondEscrowed - reserveAuctionUnclaimed;
         (
             uint256 healedDebt,
@@ -424,7 +422,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposits.treeSum(),
             auctions.liquidationBondEscrowed,
             curUnclaimedAuctionReserve,
-            IERC20Token(_getArgAddress(0x14)).balanceOf(address(this))
+            IERC20Token(_getArgAddress(20)).balanceOf(address(this))
         );
         uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
         curUnclaimedAuctionReserve += claimable - kickerAward;
@@ -447,7 +445,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         emit ReserveAuction(reserveAuctionUnclaimed, price);
 
-        IERC20Token ajnaToken = IERC20Token(ajnaTokenAddress);
+        IERC20Token ajnaToken = IERC20Token(_getArgAddress(40));
         ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired);
         ajnaToken.burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
@@ -762,11 +760,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20Token(_getArgAddress(0x14)).transferFrom(from_, address(this), amount_ / quoteTokenScale);
+        IERC20Token(_getArgAddress(20)).transferFrom(from_, address(this), amount_ / _getArgUint256(60));
     }
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
-        IERC20Token(_getArgAddress(0x14)).transfer(to_, amount_ / quoteTokenScale);
+        IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(60));
     }
 
     function _hpbIndex() internal view returns (uint256) {
@@ -988,7 +986,10 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function quoteTokenAddress() external pure override returns (address) {
-        return _getArgAddress(0x14);
+        return _getArgAddress(20);
     }
 
+    function quoteTokenScale() external pure override returns (uint256) {
+        return _getArgUint256(60);
+    }
 }

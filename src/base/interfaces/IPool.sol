@@ -29,12 +29,10 @@ interface IPool is
 
     /**
      *  @notice Initializes a new pool, setting initial state variables.
-     *  @param  rate             Initial interest rate of the pool.
-     *  @param  ajnaTokenAddress Address of the Ajna token.
+     *  @param  rate Initial interest rate of the pool.
      */
     function initialize(
-        uint256 rate,
-        address ajnaTokenAddress
+        uint256 rate
     ) external;
 
 }

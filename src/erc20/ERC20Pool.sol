@@ -21,16 +21,12 @@ contract ERC20Pool is IERC20Pool, Pool {
     /****************************/
 
     function initialize(
-        uint256 rate_,
-        address ajnaTokenAddress_
+        uint256 rate_
     ) external override {
-        if (poolInitializations != 0)         revert AlreadyInitialized();
-        if (ajnaTokenAddress_ == address(0))  revert Token0xAddress();
+        if (poolInitializations != 0) revert AlreadyInitialized();
 
         collateralScale = 10**(18 - IERC20Token(_getArgAddress(0)).decimals());
-        quoteTokenScale = 10**(18 - IERC20Token(_getArgAddress(0x14)).decimals());
 
-        ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
         interestRate               = rate_;

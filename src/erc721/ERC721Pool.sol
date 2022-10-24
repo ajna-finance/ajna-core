@@ -30,15 +30,10 @@ contract ERC721Pool is IERC721Pool, Pool {
     /****************************/
 
     function initialize(
-        uint256 rate_,
-        address ajnaTokenAddress_
+        uint256 rate_
     ) external override {
-        if (poolInitializations != 0)         revert AlreadyInitialized();
-        if (ajnaTokenAddress_ == address(0))  revert Token0xAddress();
+        if (poolInitializations != 0) revert AlreadyInitialized();
 
-        quoteTokenScale = 10**(18 - IERC20Token(_getArgAddress(0x14)).decimals());
-
-        ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
         interestRate               = rate_;
@@ -53,8 +48,7 @@ contract ERC721Pool is IERC721Pool, Pool {
 
     function initializeSubset(
         uint256[] memory tokenIds_,
-        uint256 rate_,
-        address ajnaTokenAddress_
+        uint256 rate_
     ) external override {
         isSubset = true;
 
@@ -66,7 +60,7 @@ contract ERC721Pool is IERC721Pool, Pool {
             }
         }
 
-        this.initialize(rate_, ajnaTokenAddress_);
+        this.initialize(rate_);
     }
 
     /***********************************/
