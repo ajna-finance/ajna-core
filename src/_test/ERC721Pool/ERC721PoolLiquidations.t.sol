@@ -201,11 +201,11 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    5 * 1e18,
-                encumberedCollateral: 3.560881043304109325 * 1e18,
-                poolDebt:             35.313915511933770677 * 1e18,
-                actualUtilization:    0.000483752267286764 * 1e18,
-                targetUtilization:    0.712176208660821865 * 1e18,
-                minDebtAmount:        3.531391551193377068 * 1e18,
+                encumberedCollateral: 4.028103499563389533 * 1e18,
+                poolDebt:             39.947446973661202747 * 1e18,
+                actualUtilization:    0.000547225301009058 * 1e18,
+                targetUtilization:    0.811350329890505142 * 1e18,
+                minDebtAmount:        3.994744697366120275 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
                 interestRate:         0.045 * 1e18,
@@ -215,19 +215,19 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              20.343555207629088151 * 1e18,
+                borrowerDebt:              23.012828827714740289 * 1e18,
                 borrowerCollateral:        2 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
-                borrowerCollateralization: 0.974970671765065280 * 1e18
+                borrowerCollateralization: 0.861883162446546169 * 1e18
             }
         );
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              15.221515306868004602 * 1e18,
+                borrowerDebt:              17.218727143819483942 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
-                borrowerCollateralization: 1.954572454221014620 * 1e18
+                borrowerCollateralization: 1.727860269914713433 * 1e18
             }
         );
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
