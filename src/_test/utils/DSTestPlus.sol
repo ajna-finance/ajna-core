@@ -651,36 +651,6 @@ abstract contract DSTestPlus is Test {
         _pool.startClaimableReserveAuction();
     }
 
-    function _assertDeployWith0xAddressRevert(
-        address poolFactory,
-        address collateral,
-        address quote,
-        uint256 interestRate
-    ) internal {
-        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
-        IPoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
-    }
-
-    function _assertDeployWithInvalidRateRevert(
-        address poolFactory,
-        address collateral,
-        address quote,
-        uint256 interestRate
-    ) internal {
-        vm.expectRevert(IPoolFactory.PoolInterestRateInvalid.selector);
-        IPoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
-    }
-
-    function _assertDeployMultipleTimesRevert(
-        address poolFactory,
-        address collateral,
-        address quote,
-        uint256 interestRate
-    ) internal {
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
-        IPoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
-    }
-
     function _lup() internal view returns (uint256 lup_) {
         ( , , , , lup_, ) = _poolUtils.poolPricesInfo(address(_pool));
     }

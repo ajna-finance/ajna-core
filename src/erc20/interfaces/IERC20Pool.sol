@@ -22,4 +22,12 @@ interface IERC20Pool is
     IERC20PoolEvents
 {
 
+    /**
+     *  @notice Initializes a new pool, setting initial state variables.
+     *  @param  rate Initial interest rate of the pool.
+     */
+    function initialize(
+        uint256 rate
+    ) external;
+
 }

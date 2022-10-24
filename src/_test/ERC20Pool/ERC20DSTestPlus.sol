@@ -10,6 +10,7 @@ import { ERC20Pool }        from '../../erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from '../../erc20/ERC20PoolFactory.sol';
 
 import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/IPoolFactory.sol';
 import '../../base/PoolInfoUtils.sol';
 
 import '../../libraries/Maths.sol';
@@ -166,6 +167,36 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
         ERC20Pool(address(_pool)).addCollateral(amount, index);
+    }
+
+    function _assertDeployWith0xAddressRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
+        ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
+    }
+
+    function _assertDeployWithInvalidRateRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        vm.expectRevert(IPoolFactory.PoolInterestRateInvalid.selector);
+        ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
+    }
+
+    function _assertDeployMultipleTimesRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
     }
 
     function _assertMoveCollateralInsufficientLPsRevert(

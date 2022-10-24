@@ -764,10 +764,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40));
     }
 
-    function _hpbIndex() internal view returns (uint256) {
-        return deposits.findIndexOfSum(1);
-    }
-
     function _htp(uint256 inflator_) internal view returns (uint256) {
         return Maths.wmul(loans.getMax().thresholdPrice, inflator_);
     }

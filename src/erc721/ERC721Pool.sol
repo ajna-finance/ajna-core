@@ -30,6 +30,7 @@ contract ERC721Pool is IERC721Pool, Pool {
     /****************************/
 
     function initialize(
+        uint256[] memory tokenIds_,
         uint256 rate_
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
@@ -39,27 +40,20 @@ contract ERC721Pool is IERC721Pool, Pool {
         interestRate               = rate_;
         interestRateUpdate         = block.timestamp;
 
-        loans.init();
-
-        // increment initializations count to ensure these values can't be updated
-        poolInitializations += 1;
-    }
-
-    function initializeSubset(
-        uint256[] memory tokenIds_,
-        uint256 rate_
-    ) external override {
-        isSubset = true;
-
+        uint256 noOfTokens = tokenIds_.length;
+        isSubset = noOfTokens > 0;
         // add subset of tokenIds allowed in the pool
-        for (uint256 id = 0; id < tokenIds_.length;) {
+        for (uint256 id = 0; id < noOfTokens;) {
             tokenIdsAllowed[tokenIds_[id]] = true;
             unchecked {
                 ++id;
             }
         }
 
-        this.initialize(rate_);
+        loans.init();
+
+        // increment initializations count to ensure these values can't be updated
+        poolInitializations += 1;
     }
 
     /***********************************/

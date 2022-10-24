@@ -3,12 +3,12 @@ pragma solidity 0.8.14;
 
 import { ClonesWithImmutableArgs } from '@clones/ClonesWithImmutableArgs.sol';
 
-import '../base/interfaces/IPoolFactory.sol';
+import './interfaces/IERC20PoolFactory.sol';
 import '../base/PoolDeployer.sol';
 
 import './ERC20Pool.sol';
 
-contract ERC20PoolFactory is IPoolFactory, PoolDeployer {
+contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
 
     using ClonesWithImmutableArgs for address;
 

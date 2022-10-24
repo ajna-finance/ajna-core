@@ -24,14 +24,12 @@ interface IERC721Pool is
     IERC721PoolErrors
 {
 
-
     /**
-     *  @notice Called by deployNFTSubsetPool()
-     *  @dev    Used to initialize pools that only support a subset of tokenIds
-     *  @param  tokenIds         Enumerates tokenIds to be allowed in the pool.
-     *  @param  rate             Initial interest rate of the pool.
+     *  @notice Initializes a new pool, setting initial state variables.
+     *  @param  tokenIds  Enumerates tokenIds to be allowed in the pool.
+     *  @param  rate      Initial interest rate of the pool.
      */
-    function initializeSubset(
+    function initialize(
         uint256[] memory tokenIds,
         uint256 rate
     ) external;
