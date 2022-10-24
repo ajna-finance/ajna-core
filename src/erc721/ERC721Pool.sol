@@ -38,7 +38,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         lastInflatorSnapshotUpdate = block.timestamp;
         interestRate               = rate_;
         interestRateUpdate         = block.timestamp;
-        minFee                     = 0.0005 * 10**18;
 
         loans.init();
 

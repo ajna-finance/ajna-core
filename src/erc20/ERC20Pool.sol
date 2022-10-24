@@ -31,7 +31,6 @@ contract ERC20Pool is IERC20Pool, Pool {
         lastInflatorSnapshotUpdate = block.timestamp;
         interestRate               = rate_;
         interestRateUpdate         = block.timestamp;
-        minFee                     = 0.0005 * 10**18;
 
         loans.init();
 

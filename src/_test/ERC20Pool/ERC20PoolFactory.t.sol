@@ -92,7 +92,6 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         assertEq(pool.quoteTokenScale(),    1);
         assertEq(pool.interestRate(),       0.0543 * 10**18);
         assertEq(pool.interestRateUpdate(), _startTime + 333);
-        assertEq(pool.minFee(),             0.0005 * 10**18);
 
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
         assertEq(poolInflatorSnapshot, 10**18);

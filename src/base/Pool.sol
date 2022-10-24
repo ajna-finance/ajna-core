@@ -34,7 +34,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     uint256 public override interestRateUpdate; // [SEC]
 
     uint256 public override borrowerDebt;      // [WAD]
-    uint256 public override minFee;            // [WAD]
     uint256 public override pledgedCollateral; // [WAD]
 
     uint256 internal debtEma;   // [WAD]
@@ -122,7 +121,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         quoteTokenAmountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
-            minFee,
             lenderLastDepositTime,
             fromIndex_,
             toIndex_,
@@ -271,7 +269,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             (borrower.debt + amountToBorrow_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
         ) revert AmountLTMinDebt();
 
-        uint256 debt  = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
+        uint256 debt  = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
         borrower.debt += debt;
 
         uint256 newLup = PoolUtils.indexToPrice(lupId);
@@ -556,7 +554,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         (, uint256 lastDeposit) = buckets.getLenderInfo(index_, msg.sender);
         amount = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState_,
-            minFee,
             lastDeposit,
             index_,
             0,

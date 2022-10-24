@@ -137,7 +137,6 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         assertEq(_NFTCollectionPool.quoteTokenScale(),    1);
         assertEq(_NFTCollectionPool.interestRate(),       0.05 * 10**18);
         assertEq(_NFTCollectionPool.interestRateUpdate(), _startTime);
-        assertEq(_NFTCollectionPool.minFee(),             0.0005 * 10**18);
         assertEq(_NFTCollectionPool.isSubset(),           false);
 
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = _NFTCollectionPool.inflatorInfo();
@@ -203,7 +202,6 @@ contract ERC721PoolFactoryTest is DSTestPlus {
         assertEq(_NFTSubsetOnePool.quoteTokenScale(),    1);
         assertEq(_NFTSubsetOnePool.interestRate(),       0.05 * 10**18);
         assertEq(_NFTSubsetOnePool.interestRateUpdate(), _startTime);
-        assertEq(_NFTSubsetOnePool.minFee(),             0.0005 * 10**18);
         assertEq(_NFTSubsetOnePool.isSubset(),           true);
 
         (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = _NFTSubsetOnePool.inflatorInfo();
