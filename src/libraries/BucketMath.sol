@@ -162,7 +162,7 @@ library BucketMath {
         int256 neutralPrice = int256(Maths.wmul(mompFactor_, inflatorSnapshot_));
 
         int256 sign;
-        if (thresholdPrice <= neutralPrice) {
+        if (thresholdPrice < neutralPrice) {
             // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
             sign = Maths.minInt(
                     1e18,
