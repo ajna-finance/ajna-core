@@ -373,8 +373,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
 
         skip (4 hours);
 
-        uint256[] memory tokenIdsToTake = new uint256[](1);
+        uint256[] memory tokenIdsToTake = new uint256[](2);
         tokenIdsToTake[0] = 1;
+        tokenIdsToTake[1] = 3;
 
         _take(
             {
@@ -387,6 +388,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 isReward: true
             }
         );
+
+         
+
 
         // check state
         // fast forward 68 hrs
