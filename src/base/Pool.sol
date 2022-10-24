@@ -424,29 +424,32 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
         curUnclaimedAuctionReserve += claimable - kickerAward;
-        if (curUnclaimedAuctionReserve == 0) revert NoReserves();
-
-        reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
-        reserveAuctionKicked    = block.timestamp;
-        emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
-        _transferQuoteToken(msg.sender, kickerAward);
+        if (curUnclaimedAuctionReserve != 0) {
+            reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
+            reserveAuctionKicked    = block.timestamp;
+            emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
+            _transferQuoteToken(msg.sender, kickerAward);
+        }
+        else revert NoReserves();
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
         uint256 kicked = reserveAuctionKicked;
-        if (kicked == 0 || block.timestamp - kicked > 72 hours) revert NoReservesAuction();
 
-        amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
-        uint256 price = PoolUtils.reserveAuctionPrice(kicked);
-        uint256 ajnaRequired = Maths.wmul(amount_, price);
-        reserveAuctionUnclaimed -= amount_;
+        if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
+            amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
+            uint256 price = PoolUtils.reserveAuctionPrice(kicked);
+            uint256 ajnaRequired = Maths.wmul(amount_, price);
+            reserveAuctionUnclaimed -= amount_;
 
-        emit ReserveAuction(reserveAuctionUnclaimed, price);
+            emit ReserveAuction(reserveAuctionUnclaimed, price);
 
-        IERC20Token ajnaToken = IERC20Token(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
-        ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired);
-        ajnaToken.burn(ajnaRequired);
-        _transferQuoteToken(msg.sender, amount_);
+            IERC20Token ajnaToken = IERC20Token(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
+            if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
+            ajnaToken.burn(ajnaRequired);
+            _transferQuoteToken(msg.sender, amount_);
+        }
+        else revert NoReservesAuction();
     }
 
 
@@ -757,11 +760,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20Token(_getArgAddress(20)).transferFrom(from_, address(this), amount_ / _getArgUint256(40));
+        if (!IERC20Token(_getArgAddress(20)).transferFrom(from_, address(this), amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
     }
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
-        IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40));
+        if (!IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
     }
 
     function _htp(uint256 inflator_) internal view returns (uint256) {

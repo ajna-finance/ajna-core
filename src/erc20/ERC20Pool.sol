@@ -176,10 +176,10 @@ contract ERC20Pool is IERC20Pool, Pool {
     /************************/
 
     function _transferCollateralFrom(address from_, uint256 amount_) internal {
-        IERC20Token(_getArgAddress(0)).transferFrom(from_, address(this), amount_ / collateralScale);
+        if (!IERC20Token(_getArgAddress(0)).transferFrom(from_, address(this), amount_ / collateralScale)) revert ERC20TransferFailed();
     }
 
     function _transferCollateral(address to_, uint256 amount_) internal {
-        IERC20Token(_getArgAddress(0)).transfer(to_, amount_ / collateralScale);
+        if (!IERC20Token(_getArgAddress(0)).transfer(to_, amount_ / collateralScale)) revert ERC20TransferFailed();
     }
 }

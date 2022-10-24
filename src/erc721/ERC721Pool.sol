@@ -198,7 +198,8 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256 price_
     ) internal pure override returns (uint256) {
         uint256 encumbered = price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
-        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD;
+        //slither-disable-next-line divide-before-multiply
+        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
         return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
     }
 
