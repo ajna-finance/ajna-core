@@ -77,6 +77,7 @@ library Loans {
      *  @param deposits_        Pool deposits, used to calculate borrower MOMP factor.
      *  @param borrowerAddress_ Borrower's address to update.
      *  @param borrower_        Borrower struct with borrower details.
+     *  @param t0debtChange_    Change in debt as if it occurred when debt was first drawn from pool.
      *  @param poolDebt_        Pool debt.
      *  @param poolInflator_    The current pool inflator used to calculate borrower MOMP factor.
      */

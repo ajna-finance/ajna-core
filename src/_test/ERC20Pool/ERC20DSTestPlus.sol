@@ -134,9 +134,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         bool isReward
     ) internal {
         changePrank(from);
-//        vm.expectEmit(true, true, false, true);
-//        emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
-//        _assertTokenTransferEvent(from, address(_pool), givenAmount);
+        vm.expectEmit(true, true, false, true);
+        emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
+        _assertTokenTransferEvent(from, address(_pool), givenAmount);
         ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
     }
 

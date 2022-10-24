@@ -274,11 +274,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         )  revert AmountLTMinDebt();
 
         // increase debt by the origination fee
-        // TODO: rename these to indicate they measure the *change* in debt
-        uint256 debt = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
-        require(debt < uint256(type(int256).max), "BORROWER-DEBT-OVERFLOW");   // TODO: make custom error
-        int256 t0debt = int256(Maths.wdiv(debt, poolState.inflator));
-        borrowerDebt += debt;
+        uint256 debtChange = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
+        if (debtChange >= uint256(type(int256).max)) revert AmountGTMaxDebt();
+        int256 t0debtChange = int256(Maths.wdiv(debtChange, poolState.inflator));
+        borrowerDebt += debtChange;
 
         // FIXME: newLup should be calculated on debt including origination fee
         uint256 newLup = PoolUtils.indexToPrice(lupId);
@@ -291,18 +290,18 @@ abstract contract Pool is Clone, Multicall, IPool {
         ) revert BorrowerUnderCollateralized();
 
         // check borrow won't push pool into a state of under-collateralization
-        poolState.accruedDebt += debt;
+        poolState.accruedDebt += debtChange;
         if (_collateralization(poolState.accruedDebt, poolState.collateral, newLup) < Maths.WAD) revert PoolUnderCollateralized();
 
         loans.update(
             deposits,
             msg.sender,
             borrower,
-            t0debt,
+            t0debtChange,
             poolState.accruedDebt,
             poolState.inflator
         );
-        _updatePool(poolState, t0debt, newLup);
+        _updatePool(poolState, t0debtChange, newLup);
 
         // move borrowed amount from pool to sender
         emit Borrow(msg.sender, newLup, amountToBorrow_);
