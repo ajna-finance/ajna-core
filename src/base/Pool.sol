@@ -443,7 +443,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         emit ReserveAuction(reserveAuctionUnclaimed, price);
 
-        IERC20Token ajnaToken = IERC20Token(_getArgAddress(40));
+        IERC20Token ajnaToken = IERC20Token(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
         ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired);
         ajnaToken.burn(ajnaRequired);
         _transferQuoteToken(msg.sender, amount_);
@@ -757,11 +757,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
-        IERC20Token(_getArgAddress(20)).transferFrom(from_, address(this), amount_ / _getArgUint256(60));
+        IERC20Token(_getArgAddress(20)).transferFrom(from_, address(this), amount_ / _getArgUint256(40));
     }
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
-        IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(60));
+        IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40));
     }
 
     function _hpbIndex() internal view returns (uint256) {
@@ -987,6 +987,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function quoteTokenScale() external pure override returns (uint256) {
-        return _getArgUint256(60);
+        return _getArgUint256(40);
     }
 }

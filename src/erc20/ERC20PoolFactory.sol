@@ -29,7 +29,6 @@ contract ERC20PoolFactory is IPoolFactory, PoolDeployer {
         bytes memory data = abi.encodePacked(
             collateral_,
             quote_,
-            ajnaTokenAddress,
             quoteTokenScale
         );
 

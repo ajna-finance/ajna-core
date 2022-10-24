@@ -30,7 +30,6 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         bytes memory data = abi.encodePacked(
             collateral_,
             quote_,
-            ajnaTokenAddress,
             quoteTokenScale
         );
 
@@ -50,7 +49,6 @@ contract ERC721PoolFactory is IERC721PoolFactory, PoolDeployer {
         bytes memory data = abi.encodePacked(
             collateral_,
             quote_,
-            ajnaTokenAddress,
             quoteTokenScale
         );
 
