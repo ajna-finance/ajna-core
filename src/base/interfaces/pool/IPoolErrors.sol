@@ -21,11 +21,6 @@ interface IPoolErrors {
     error AmountLTMinDebt();
 
     /**
-     *  @notice Borrower is attempting to create or modify a loan such that debt exceeds the maximum a pool can handle.
-     */
-    error AmountGTMaxDebt();
-
-    /**
      *  @notice Kicker is attempting to kick or clear an active auction.
      */
     error AuctionActive();

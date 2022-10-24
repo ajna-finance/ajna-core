@@ -34,7 +34,7 @@ interface IPoolState {
 
     /**
      *  @notice Calculates pool debt with interest due as of the current block height.
-     *  @return debt_ Current amount of borrower debt in pool.
+     *  @return debt_ Current amount of debt owed by borrowers in pool.
      */
     function debt() external view returns (uint256 debt_);
 

@@ -22,7 +22,7 @@ library Loans {
     }
 
     struct Borrower {
-        uint256 t0debt;           // Borrower debt time-adjusted as if it was incurred upon first loan of pool, WAD units.
+        uint256 t0debt;           // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
         uint256 collateral;       // [WAD] Collateral deposited by borrower.
         uint256 mompFactor;       // [WAD] Most Optimistic Matching Price (MOMP) / inflator, used in neutralPrice calc.
     }

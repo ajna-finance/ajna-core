@@ -275,7 +275,6 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // increase debt by the origination fee
         uint256 debtChange = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
-        if (debtChange >= uint256(type(int256).max)) revert AmountGTMaxDebt();
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
         borrowerDebt += debtChange;
 
