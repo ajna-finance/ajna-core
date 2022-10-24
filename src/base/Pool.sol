@@ -147,7 +147,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     function removeAllQuoteToken(
         uint256 index_
     ) external returns (uint256 quoteTokenAmountRemoved_, uint256 redeemedLenderLPs_) {
-        auctions.revertIfHeadClearable(loans);
+        auctions.revertIfAuctionClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -177,7 +177,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 quoteTokenAmountToRemove_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
-        auctions.revertIfHeadClearable(loans);
+        auctions.revertIfAuctionClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -352,16 +352,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         address borrower_,
         uint256 maxDepth_
     ) external override {
-        uint256 poolDebt = borrowerDebt;
+        uint256 poolDebt          = borrowerDebt;
         uint256 quoteTokenBalance = IERC20Token(_getArgAddress(20)).balanceOf(address(this));
-        uint256 reserves = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.liquidationBondEscrowed - reserveAuctionUnclaimed;
-        (
-            uint256 healedDebt,
-            uint256 totalForgived
-
-        ) = auctions.heal(loans, buckets, deposits, borrower_, reserves, maxDepth_);
+        uint256 reserves          = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.liquidationBondEscrowed - reserveAuctionUnclaimed;
+        uint256 healedDebt        = auctions.heal(loans, buckets, deposits, borrower_, reserves, maxDepth_);
         if (healedDebt != 0) {
-            borrowerDebt -= Maths.min(poolDebt, totalForgived);
+            borrowerDebt -= healedDebt;
             emit Heal(borrower_, healedDebt);
         }
     }
@@ -520,7 +516,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToRemove_,
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
-        auctions.revertIfHeadClearable(loans);
+        auctions.revertIfAuctionClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
 

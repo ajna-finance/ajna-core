@@ -554,7 +554,7 @@ abstract contract DSTestPlus is Test {
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('HeadNotCleared()'));
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
         _pool.removeQuoteToken(amount, index);
     }
 
@@ -593,7 +593,7 @@ abstract contract DSTestPlus is Test {
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('HeadNotCleared()'));
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
         _pool.removeAllQuoteToken(index);
     }
 

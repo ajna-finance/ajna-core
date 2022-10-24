@@ -42,7 +42,7 @@ library Auctions {
     /**
      *  @notice Head auction should be cleared prior of executing this action.
      */
-    error HeadNotCleared();
+    error AuctionNotCleared();
     /**
      *  @notice Actor is attempting to take or clear an inactive auction.
      */
@@ -63,7 +63,6 @@ library Auctions {
      *  @param  reserves_      Pool reserves.
      *  @param  bucketDepth_   Max number of buckets heal action should iterate through.
      *  @return healedDebt_    The amount of debt that was healed.
-     *  @return totalForgived_ The amount of total forgived debt in the pool.
      */
     function heal(
         Data storage self,
@@ -74,8 +73,7 @@ library Auctions {
         uint256 reserves_,
         uint256 bucketDepth_
     ) internal returns (
-        uint256 healedDebt_,
-        uint256 totalForgived_
+        uint256 healedDebt_
     )
     {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
@@ -111,15 +109,13 @@ library Auctions {
                 if (remainingDebt != 0 && remainingCol == 0) {
                     if (reserves_ != 0) {
                         uint256 fromReserve =  Maths.min(remainingDebt, reserves_);
-                        reserves_      -= fromReserve;
-                        remainingDebt  -= fromReserve;
-                        totalForgived_ += fromReserve;
+                        reserves_     -= fromReserve;
+                        remainingDebt -= fromReserve;
                     } else {
                         hpbIndex           = Deposits.findIndexOfSum(deposits_, 1);
                         uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
                         uint256 forgiveAmt = Maths.min(remainingDebt, hpbDeposit);
 
-                        totalForgived_ += forgiveAmt;
                         remainingDebt -= forgiveAmt;
 
                         Deposits.remove(deposits_, hpbIndex, forgiveAmt);
@@ -369,7 +365,7 @@ library Auctions {
      *  @notice Check if head auction is clearable (auction is kicked and 72 hours passed since kick time or auction still has debt but no remaining collateral).
      *  @notice Revert if auction is clearable
      */
-    function revertIfHeadClearable(
+    function revertIfAuctionClearable(
         Data storage self,
         Loans.Data storage loans_
     ) internal view {
@@ -384,7 +380,7 @@ library Auctions {
                 (loans_.borrowers[head].debt > 0 && loans_.borrowers[head].collateral == 0)
             )
         ) {
-            revert HeadNotCleared();
+            revert AuctionNotCleared();
         }
     }
 
