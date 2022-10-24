@@ -63,7 +63,6 @@ library Auctions {
      *  @param  reserves_      Pool reserves.
      *  @param  bucketDepth_   Max number of buckets heal action should iterate through.
      *  @return healedDebt_    The amount of debt that was healed.
-     *  @return totalForgived_ The amount of total forgived debt in the pool.
      *  @return collateralToReimburse_ The amount of total forgived debt in the pool.
      */
     function heal(
@@ -76,7 +75,6 @@ library Auctions {
         uint256 bucketDepth_
     ) internal returns (
         uint256 healedDebt_,
-        uint256 totalForgived_,
         uint256 collateralToReimburse_
     )
     {
@@ -102,8 +100,9 @@ library Auctions {
                     clearableDebt         = Maths.min(clearableDebt, Maths.wmul(remainingCol, hpbPrice));
                     uint256 clearableCol  = Maths.wdiv(clearableDebt, hpbPrice);
 
-                    remainingDebt -= clearableDebt;
-                    remainingCol  -= clearableCol;
+                    healedDebt_    += clearableDebt;
+                    remainingDebt  -= clearableDebt;
+                    remainingCol   -= clearableCol;
 
                     Deposits.remove(deposits_, hpbIndex, clearableDebt);
                     buckets_[hpbIndex].collateral += clearableCol;
@@ -114,14 +113,14 @@ library Auctions {
                     if (reserves_ != 0) {
                         uint256 fromReserve =  Maths.min(remainingDebt, reserves_);
                         reserves_      -= fromReserve;
-                        remainingDebt -= fromReserve;
-                        totalForgived_ += fromReserve;
+                        healedDebt_    += fromReserve;
+                        remainingDebt  -= fromReserve;
                     } else {
                         hpbIndex           = Deposits.findIndexOfSum(deposits_, 1);
                         uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
                         uint256 forgiveAmt = Maths.min(remainingDebt, hpbDeposit);
 
-                        totalForgived_ += forgiveAmt;
+                        healedDebt_   += forgiveAmt;
                         remainingDebt -= forgiveAmt;
 
                         Deposits.remove(deposits_, hpbIndex, forgiveAmt);
@@ -143,8 +142,6 @@ library Auctions {
 
                 --bucketDepth_;
             }
-
-            healedDebt_ = debtToHeal - remainingDebt;
 
             // save remaining debt and collateral after auction clear action
             loans_.borrowers[borrower_].debt       = remainingDebt;

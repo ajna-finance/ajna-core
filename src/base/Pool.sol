@@ -361,14 +361,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 reserves = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.liquidationBondEscrowed - reserveAuctionUnclaimed;
 
         uint256 healedDebt;
-        uint256 totalForgived;
-        uint256 remainingCol;
         (
-            totalForgived,
+            healedDebt,
             collateralToReimburse
         ) = auctions.heal(loans, buckets, deposits, borrower_, reserves, maxDepth_);
-        uint256 healedDebt = borrowerDebt - totalForgived;
-        borrowerDebt -= Maths.min(poolDebt, totalForgived);
+        borrowerDebt -= healedDebt;
         emit Heal(borrower_, healedDebt);
     }
 

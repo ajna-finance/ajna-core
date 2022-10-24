@@ -375,6 +375,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
 
         uint256[] memory tokenIdsToTake = new uint256[](1);
         tokenIdsToTake[0] = 1;
+
         _take(
             {
                 from: _lender,
@@ -387,9 +388,10 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
             }
         );
 
-
-
-
+        // check state
+        // fast forward 68 hrs
+        // check excess debt & collateral is in loan
+        // call heal() -> excess collateral goes to borrower
 
     }
 }
