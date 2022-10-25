@@ -197,7 +197,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
 
         _assertPool(
             PoolState({
-                htp:                  5.739575714606494647 * 1e18,
+                htp:                  6.582216822103492762 * 1e18,
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    5 * 1e18,

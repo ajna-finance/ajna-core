@@ -856,7 +856,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function maxThresholdPrice() external view override returns (uint256) {
-        return loans.getMax().thresholdPrice;
+        return Maths.wmul(loans.getMax().thresholdPrice, inflatorSnapshot);
     }
 
     function noOfLoans() external view override returns (uint256) {

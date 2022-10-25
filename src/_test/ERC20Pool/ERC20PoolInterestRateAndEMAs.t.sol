@@ -204,7 +204,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
 
         _assertPool(
             PoolState({
-                htp:                  500.523620446054562664 * 1e18,
+                htp:                  500.566475330265384217 * 1e18,
                 lup:                  601.252968524772188572 * 1e18,
                 poolSize:             11_000.377511961388180000 * 1e18,
                 pledgedCollateral:    10 * 1e18,

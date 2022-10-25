@@ -88,15 +88,13 @@ library Loans {
         uint256 poolDebt_,
         uint256 poolInflator_
     ) internal {
-        // TODO: inefficient; caller likely knows the current borrower debt
-        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_);
 
         // update loan heap
         if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
             _upsert(
                 self,
                 borrowerAddress_,
-                Maths.wdiv(borrowerDebt, borrower_.collateral)
+                Maths.wdiv(borrower_.t0debt, borrower_.collateral)
             );
         } else if (self.indices[borrowerAddress_] != 0) {
             _remove(self, borrowerAddress_);
