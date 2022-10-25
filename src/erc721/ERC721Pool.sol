@@ -206,7 +206,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
         //msg.sender.call(swapCalldata_);
 
-        _pullNFTs(msg.sender, tokenIds_);
+        _pullNFTs(borrower_, tokenIds_);
     }
 
 
