@@ -164,7 +164,7 @@ library Auctions {
      *  @return collateralTaken_  The amount of collateral taken.
      *  @return bondChange_       The change made on the bond size (beeing reward or penalty).
      *  @return isRewarded_       True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
-     */
+    */
     function take(
         Data storage self,
         address borrowerAddress_,
@@ -186,10 +186,6 @@ library Auctions {
             liquidation.kickTime
         );
 
-        // calculate amount
-        quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
-        collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
-
         int256 bpf = PoolUtils.bpf(
             borrower_.debt,
             borrower_.collateral,
@@ -199,26 +195,31 @@ library Auctions {
             auctionPrice
         );
 
-        repayAmount_ = Maths.wmul(quoteTokenAmount_, uint256(1e18 - bpf));
+        // calculate amounts
+        quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
+        repayAmount_      = Maths.wmul(quoteTokenAmount_, uint256(1e18 - Maths.maxInt(0, bpf)));
+
         if (repayAmount_ >= borrower_.debt) {
             repayAmount_      = borrower_.debt;
-            quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - bpf));
+            quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - Maths.maxInt(0, bpf)));
         }
+
+        collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
 
         isRewarded_ = (bpf >= 0);
         if (isRewarded_) {
             // take is below neutralPrice, Kicker is rewarded
             bondChange_ = quoteTokenAmount_ - repayAmount_;
-            liquidation.bondSize += bondChange_;
+            liquidation.bondSize                    += bondChange_;
             self.kickers[liquidation.kicker].locked += bondChange_;
+            self.liquidationBondEscrowed            += bondChange_;
+
         } else {
             // take is above neutralPrice, Kicker is penalized
-            bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(-bpf));
-            liquidation.bondSize -= Maths.min(liquidation.bondSize, bondChange_);
-            if (bondChange_ >= self.kickers[liquidation.kicker].locked) {
-                self.kickers[liquidation.kicker].locked = 0;
-            }
-            else self.kickers[liquidation.kicker].locked -= bondChange_;
+            bondChange_ = Maths.min(liquidation.bondSize, Maths.wmul(quoteTokenAmount_, uint256(-bpf)));
+            liquidation.bondSize                    -= bondChange_;
+            self.kickers[liquidation.kicker].locked -= bondChange_;
+            self.liquidationBondEscrowed            -= bondChange_;
         }
     }
 

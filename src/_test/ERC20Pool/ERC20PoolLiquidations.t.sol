@@ -486,6 +486,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 bond:       0.195342779771472726 * 1e18
             }
         );
+        
         _assertAuction(
             {
                 borrower:    _borrower,
@@ -497,6 +498,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 kickMomp:    9.721295865031779605 * 1e18
             }
         );
+
         _assertKicker(
             {
                 kicker:    _lender,
@@ -512,12 +514,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 from:            _lender,
                 borrower:        _borrower,
                 maxCollateral:   2 * 1e18,
-                bondChange:      0.195828313427972085 * 1e18,
-                givenAmount:     19.582831342797208527 * 1e18,
-                collateralTaken: 2 * 1e18,
+                bondChange:      0.195342779771472726 * 1e18,
+                givenAmount:     19.778659656225180612 * 1e18,
+                collateralTaken: 0.127160642539504961 * 1e18,
                 isReward:        false
             }
         );
+
         _assertAuction(
             {
                 borrower:    _borrower,
@@ -534,7 +537,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 borrower:                  _borrower,
                 borrowerDebt:              0 * 1e18,
-                borrowerCollateral:        0 * 1e18,
+                borrowerCollateral:        1.872839357460495039 * 1e18,
                 borrowerMompFactor:        0,
                 borrowerInflator:          1.013803302006192493 * 1e18,
                 borrowerCollateralization: 1.0 * 1e18,
