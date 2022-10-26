@@ -28,7 +28,13 @@ library Loans {
         uint256 inflatorSnapshot; // [WAD] Current borrower inflator snapshot.
     }
 
+    /**
+     *  @notice The loan to be removed does not exist in loans heap.
+     */
     error NoLoan();
+    /**
+     *  @notice The threshold price of the loan to be inserted in loans heap is zero.
+     */
     error ZeroThresholdPrice();
 
     /***********************/
@@ -176,7 +182,7 @@ library Loans {
 
     /**
      *  @notice Removes loan for given borrower address.
-     *  @param self     Holds tree loan data.
+     *  @param self      Holds tree loan data.
      *  @param borrower_ Borrower address whose loan is being updated or inserted.
      */
     function _remove(Data storage self, address borrower_) internal {
