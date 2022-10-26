@@ -486,7 +486,9 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 bond:       0.195342779771472726 * 1e18
             }
         );
+        uint256 kickTime = block.timestamp;
 
+        uint256 expectedNeutralPrice = 9.721295865031779605 * 1e18;
         _assertAuction(
             {
                 borrower:    _borrower,
@@ -494,8 +496,8 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 kicker:      _lender,
                 bondSize:    0.195342779771472726 * 1e18,
                 bondFactor:  0.01 * 1e18,
-                kickTime:    block.timestamp,
-                kickMomp:    9.721295865031779605 * 1e18
+                kickTime:    kickTime,
+                kickMomp:    expectedNeutralPrice
             }
         );
 
@@ -507,7 +509,11 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             }
         );
 
-        skip(2 hours);
+        // confirm take price exceeds neutral price
+        skip(4 hours);
+        uint256 auctionPrice = PoolUtils.auctionPrice(expectedNeutralPrice, kickTime);
+        assertEq(auctionPrice, 38.885183460127118432 * 1e18);
+        assertGt(auctionPrice, expectedNeutralPrice);
 
         _take(
             {
@@ -515,8 +521,8 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrower:        _borrower,
                 maxCollateral:   2 * 1e18,
                 bondChange:      0.195342779771472726 * 1e18,
-                givenAmount:     19.778659656225180612 * 1e18,
-                collateralTaken: 0.127160642539504961 * 1e18,
+                givenAmount:     19.778862862676474562 * 1e18,
+                collateralTaken: 0.508647795964695085 * 1e18,
                 isReward:        false
             }
         );
@@ -537,9 +543,9 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 borrower:                  _borrower,
                 borrowerDebt:              0 * 1e18,
-                borrowerCollateral:        1.872839357460495039 * 1e18,
+                borrowerCollateral:        1.491352204035304915 * 1e18,
                 borrowerMompFactor:        0,
-                borrowerInflator:          1.013803302006192493 * 1e18,
+                borrowerInflator:          1.013813717847047812 * 1e18,
                 borrowerCollateralization: 1.0 * 1e18,
                 borrowerPendingDebt:       0 * 1e18
             }
@@ -588,6 +594,8 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 bond:       98.533942419792216457 * 1e18
             }
         );
+        uint256 kickTime = block.timestamp;
+        uint256 expectedNeutralPrice = 9.721295865031779605 * 1e18;
         _assertAuction(
             {
                 borrower:    _borrower2,
@@ -595,8 +603,8 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 kicker:      _lender,
                 bondSize:    98.533942419792216457 * 1e18,
                 bondFactor:  0.01 * 1e18,
-                kickTime:    block.timestamp,
-                kickMomp:    9.721295865031779605 * 1e18
+                kickTime:    kickTime,
+                kickMomp:    expectedNeutralPrice
             }
         );
         _assertKicker(
@@ -618,8 +626,11 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             }
         );
 
-        // skip ahead so take can be called on the loan
+        // skip ahead so take can be called on the loan below the neutral price
         skip(10 hours);
+        uint256 auctionPrice = PoolUtils.auctionPrice(expectedNeutralPrice, kickTime);
+        assertEq(auctionPrice, 0.607580991564486240 * 1e18);
+        assertLt(auctionPrice, expectedNeutralPrice);
 
         // perform partial take for 20 collateral
         _take(
