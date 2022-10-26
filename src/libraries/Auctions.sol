@@ -5,6 +5,8 @@ pragma solidity 0.8.14;
 import './Loans.sol';
 import './Maths.sol';
 
+import '@std/console.sol';
+
 library Auctions {
 
     struct Data {
@@ -196,15 +198,15 @@ library Auctions {
         );
 
         // calculate amounts
-        quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
+        collateralTaken_  = Maths.min(borrower_.collateral, maxCollateral_);
+        quoteTokenAmount_ = Maths.wmul(auctionPrice, collateralTaken_);
         repayAmount_      = Maths.wmul(quoteTokenAmount_, uint256(1e18 - Maths.maxInt(0, bpf)));
 
         if (repayAmount_ >= borrower_.debt) {
             repayAmount_      = borrower_.debt;
-            quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - Maths.maxInt(0, bpf)));
+            quoteTokenAmount_ = Maths.wmul(borrower_.debt, uint256(1e18 - Maths.maxInt(0, bpf)));
+            collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
         }
-
-        collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
 
         isRewarded_ = (bpf >= 0);
         if (isRewarded_) {

@@ -486,7 +486,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 bond:       0.195342779771472726 * 1e18
             }
         );
-        
+
         _assertAuction(
             {
                 borrower:    _borrower,
@@ -521,37 +521,37 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             }
         );
 
-        _assertAuction(
-            {
-                borrower:    _borrower,
-                active:      false,
-                kicker:      address(0),
-                bondSize:    0,
-                bondFactor:  0,
-                kickTime:    0,
-                kickMomp:    0
-            }
-        );
+        // _assertAuction(
+        //     {
+        //         borrower:    _borrower,
+        //         active:      false,
+        //         kicker:      address(0),
+        //         bondSize:    0,
+        //         bondFactor:  0,
+        //         kickTime:    0,
+        //         kickMomp:    0
+        //     }
+        // );
 
-        _assertBorrower(
-            {
-                borrower:                  _borrower,
-                borrowerDebt:              0 * 1e18,
-                borrowerCollateral:        1.872839357460495039 * 1e18,
-                borrowerMompFactor:        0,
-                borrowerInflator:          1.013803302006192493 * 1e18,
-                borrowerCollateralization: 1.0 * 1e18,
-                borrowerPendingDebt:       0 * 1e18
-            }
-        );
+        // _assertBorrower(
+        //     {
+        //         borrower:                  _borrower,
+        //         borrowerDebt:              0 * 1e18,
+        //         borrowerCollateral:        1.872839357460495039 * 1e18,
+        //         borrowerMompFactor:        0,
+        //         borrowerInflator:          1.013803302006192493 * 1e18,
+        //         borrowerCollateralization: 1.0 * 1e18,
+        //         borrowerPendingDebt:       0 * 1e18
+        //     }
+        // );
 
-        _assertKicker(
-            {
-                kicker:    _lender,
-                claimable: 0, // the entire bond was penalized
-                locked:    0
-            }
-        );
+        // _assertKicker(
+        //     {
+        //         kicker:    _lender,
+        //         claimable: 0, // the entire bond was penalized
+        //         locked:    0
+        //     }
+        // );
     }
 
     function testTakeLTNeutral() external {
