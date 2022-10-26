@@ -28,6 +28,7 @@ abstract contract DSTestPlus is Test {
     event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
+    event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
     event TransferLPTokens(address owner_, address newOwner_, uint256[] prices_, uint256 lpTokens_);
@@ -131,6 +132,20 @@ abstract contract DSTestPlus is Test {
         (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeAllQuoteToken(index);
         assertEq(removedAmount, amount);
         assertEq(lpRedeemed,    lpRedeem);
+    }
+
+    function _removeCollateral(
+        address from,
+        uint256 amount,
+        uint256 index,
+        uint256 lpRedeem
+    ) internal returns (uint256 lpRedeemed_) {
+        changePrank(from);
+        vm.expectEmit(true, true, true, true);
+        emit RemoveCollateral(from, index, amount);
+        _assertTokenTransferEvent(address(_pool), from, amount);
+        lpRedeemed_ = _pool.removeCollateral(amount, index);
+        assertEq(lpRedeem, lpRedeemed_);
     }
 
     function _removeLiquidity(
@@ -510,6 +525,26 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
         _pool.repay(borrower, amount);
+    }
+
+    function _assertRemoveCollateralInsufficientLPsRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
+        _pool.removeCollateral(amount, index);
+    }
+
+    function _assertRemoveInsufficientCollateralRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
+        _pool.removeCollateral(amount, index);
     }
 
     function _assertRemoveLiquidityInsufficientLPsRevert(

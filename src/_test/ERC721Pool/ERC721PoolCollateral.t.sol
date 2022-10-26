@@ -554,34 +554,28 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // should revert if the actor does not have any LP to remove a token
-        tokenIds = new uint256[](1);
-        tokenIds[0] = 1;
-
         _assertRemoveCollateralInsufficientLPsRevert(
             {
-                from:     _borrower2,
-                tokenIds: tokenIds,
-                index:    1530
+                from:   _borrower2,
+                amount: 1,
+                index:  1530
             }
         );
 
         // should revert if we try to remove a token from a bucket with no collateral
-        changePrank(_borrower);
-        tokenIds[0] = 1;
         _assertRemoveInsufficientCollateralRevert(
             {
-                from:     _borrower,
-                tokenIds: tokenIds,
-                index:    1692
+                from:   _borrower,
+                amount: 1,
+                index:  1692
             }
         );
 
         // remove one token
-        tokenIds[0] = 5;
         _removeCollateral(
             {
                 from:     _borrower,
-                tokenIds: tokenIds,
+                amount:   1,
                 index:    1530,
                 lpRedeem: 487_616.252661175041981841 * 1e27
             }
@@ -606,11 +600,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // remove another token
-        tokenIds[0] = 1;
         _removeCollateral(
             {
                 from:     _borrower,
-                tokenIds: tokenIds,
+                amount:   1,
                 index:    1530,
                 lpRedeem: 487_616.252661175041981841 * 1e27
             }

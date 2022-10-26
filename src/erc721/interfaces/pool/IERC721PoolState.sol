@@ -21,8 +21,19 @@ interface IERC721PoolState {
      *  @param  nftIndex NFT index in borrower's pledged token ids array.
      *  @return tokenId Token id of the NFT.
      */
-    function borrowerNFTIds(
+    function borrowerLockedNFTs(
         address borrower,
+        uint256 nftIndex
+    ) external view returns (uint256 tokenId);
+
+    /**
+     *  @notice Returns the token id of an NFT added in a given bucket.
+     *  @param  index    The bucket index.
+     *  @param  nftIndex NFT index in bucket's added token ids array.
+     *  @return tokenId Token id of the NFT.
+     */
+    function bucketLockedNFTs(
+        uint256 index,
         uint256 nftIndex
     ) external view returns (uint256 tokenId);
 }

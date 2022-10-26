@@ -20,7 +20,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event PledgeCollateral(address indexed borrower_, uint256 amount_);
     event PullCollateral(address indexed borrower_, uint256 amount_);
-    event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 
@@ -109,21 +108,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         assertEq(lpAmount, lpRedeem);
     }
 
-    function _removeCollateral(
-        address from,
-        uint256 amount,
-        uint256 index,
-        uint256 lpRedeem
-    ) internal returns (uint256 lpRedeemed_) {
-        changePrank(from);
-        vm.expectEmit(true, true, true, true);
-        emit RemoveCollateral(from, index, amount);
-        vm.expectEmit(true, true, true, true);
-        emit Transfer(address(_pool), from, amount);
-        lpRedeemed_ = ERC20Pool(address(_pool)).removeCollateral(amount, index);
-        assertEq(lpRedeem, lpRedeemed_);
-    }
-
     function _transferLpTokens(
         address operator,
         address from,
@@ -200,26 +184,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoClaim.selector);
         ERC20Pool(address(_pool)).removeAllQuoteToken(index);
-    }
-
-    function _assertRemoveCollateralInsufficientLPsRevert(
-        address from,
-        uint256 amount,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
-        ERC20Pool(address(_pool)).removeCollateral(amount, index);
-    }
-
-    function _assertRemoveInsufficientCollateralRevert(
-        address from,
-        uint256 amount,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC20Pool(address(_pool)).removeCollateral(amount, index);
     }
 
     function _assertTransferInvalidIndexRevert(

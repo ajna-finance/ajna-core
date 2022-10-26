@@ -79,23 +79,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         ERC721Pool(address(_pool)).pullCollateral(tokenIds);
     }
 
-    function _removeCollateral(
-        address from,
-        uint256[] memory tokenIds,
-        uint256 index,
-        uint256 lpRedeem
-    ) internal returns (uint256 lpRedeemed_) {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit RemoveCollateralNFT(from, index, tokenIds);
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            vm.expectEmit(true, true, false, true);
-            emit Transfer(address(_pool), from, i);
-        }
-        lpRedeemed_ = ERC721Pool(address(_pool)).removeCollateral(tokenIds, index);
-        assertEq(lpRedeem, lpRedeemed_);
-    }
-
 
     /**********************/
     /*** Revert asserts ***/
@@ -119,24 +102,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         ERC721Pool(address(_pool)).pullCollateral(tokenIds);
     }
 
-    function _assertPullNotDepositedCollateralRevert(
-        address from,
-        uint256[] memory tokenIds
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IERC721PoolErrors.TokenNotDeposited.selector);
-        ERC721Pool(address(_pool)).pullCollateral(tokenIds);
-    }
-
-    function _assertPullTokenNotDepositedRevert(
-        address from,
-        uint256[] memory tokenIds
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IERC721PoolErrors.TokenNotDeposited.selector);
-        ERC721Pool(address(_pool)).pullCollateral(tokenIds);
-    }
-
     function _assertPullTokenMismatchRevert(
         address from,
         uint256[] memory tokenIds
@@ -144,36 +109,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         changePrank(from);
         vm.expectRevert(IERC721PoolErrors.TokenMismatch.selector);
         ERC721Pool(address(_pool)).pullCollateral(tokenIds);
-    }
-
-    function _assertRemoveCollateralInsufficientLPsRevert(
-        address from,
-        uint256[] memory tokenIds,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
-        ERC721Pool(address(_pool)).removeCollateral(tokenIds, index);
-    }
-
-    function _assertRemoveInsufficientCollateralRevert(
-        address from,
-        uint256[] memory tokenIds,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC721Pool(address(_pool)).removeCollateral(tokenIds, index);
-    }
-
-    function _assertRemoveNotDepositedTokenRevert(
-        address from,
-        uint256[] memory tokenIds,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IERC721PoolErrors.TokenNotDeposited.selector);
-        ERC721Pool(address(_pool)).removeCollateral(tokenIds, index);
     }
 
 }

@@ -53,16 +53,4 @@ interface IERC721PoolEvents {
         address indexed borrower,
         uint256[] tokenIds
     );
-
-    /**
-     *  @notice Emitted when lender claims unencumbered collateral.
-     *  @param  claimer  Recipient that claimed collateral.
-     *  @param  price    Price at which unencumbered collateral was claimed.
-     *  @param  tokenIds Array of tokenIds to be removed from the pool.
-     */
-    event RemoveCollateralNFT(
-        address indexed claimer,
-        uint256 indexed price,
-        uint256[] tokenIds
-    );
 }
