@@ -96,22 +96,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         assertEq(lpRedeem, lpRedeemed_);
     }
 
-    function _take(
-        address from,
-        address borrower,
-        uint256[] memory tokenIds,
-        uint256 bondChange,
-        uint256 givenAmount,
-        uint256 collateralTaken,
-        bool isReward
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
-        _assertTokenTransferEvent(from, address(_pool), givenAmount);
-        ERC721Pool(address(_pool)).take(borrower, tokenIds, new bytes(0));
-    }
-
 
     /**********************/
     /*** Revert asserts ***/
@@ -150,6 +134,15 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     ) internal {
         changePrank(from);
         vm.expectRevert(IERC721PoolErrors.TokenNotDeposited.selector);
+        ERC721Pool(address(_pool)).pullCollateral(tokenIds);
+    }
+
+    function _assertPullTokenMismatchRevert(
+        address from,
+        uint256[] memory tokenIds
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IERC721PoolErrors.TokenMismatch.selector);
         ERC721Pool(address(_pool)).pullCollateral(tokenIds);
     }
 

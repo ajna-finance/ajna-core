@@ -124,22 +124,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         assertEq(lpRedeem, lpRedeemed_);
     }
 
-    function _take(
-        address from,
-        address borrower,
-        uint256 maxCollateral,
-        uint256 bondChange,
-        uint256 givenAmount,
-        uint256 collateralTaken,
-        bool isReward
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
-        _assertTokenTransferEvent(from, address(_pool), givenAmount);
-        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
-    }
-
     function _transferLpTokens(
         address operator,
         address from,

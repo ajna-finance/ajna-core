@@ -225,7 +225,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 4);
 
         // should fail if trying to pull collateral by an address that pledged different collateral
-        _assertPullTokenNotDepositedRevert(
+        _assertPullTokenMismatchRevert(
             {
                 from:     _borrower2,
                 tokenIds: tokenIdsToRemove
@@ -236,7 +236,18 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         tokenIdsToRemove[0] = 3;
         tokenIdsToRemove[1] = 5;
 
-        // borrower removes some of their deposted NFTS from the pool
+        // should fail if trying to pull collateral in different order than they were pledged
+        _assertPullTokenMismatchRevert(
+            {
+                from:     _borrower,
+                tokenIds: tokenIdsToRemove
+            }
+        );
+
+        // borrower removes some of their deposted NFTS from the pool, proper ordered
+        tokenIdsToRemove = new uint256[](2);
+        tokenIdsToRemove[0] = 5;
+        tokenIdsToRemove[1] = 3;
         _pullCollateral(
             {
                 from:     _borrower,
@@ -277,7 +288,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         // should revert if borrower attempts to remove collateral not in pool
         uint256[] memory tokenIdsToRemove = new uint256[](1);
         tokenIdsToRemove[0] = 51;
-        _assertPullNotDepositedCollateralRevert(
+        _assertPullTokenMismatchRevert(
             {
                 from: _borrower,
                 tokenIds: tokenIdsToRemove
@@ -286,9 +297,9 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // borrower should be able to remove collateral in the pool
         tokenIdsToRemove = new uint256[](3);
-        tokenIdsToRemove[0] = 1;
+        tokenIdsToRemove[0] = 5;
         tokenIdsToRemove[1] = 3;
-        tokenIdsToRemove[2] = 5;
+        tokenIdsToRemove[2] = 1;
 
         _pullCollateral(
             {
@@ -400,8 +411,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
         // remove some unencumbered collateral
         uint256[] memory tokenIdsToRemove = new uint256[](2);
-        tokenIdsToRemove[0] = 3;
-        tokenIdsToRemove[1] = 5;
+        tokenIdsToRemove[0] = 5;
+        tokenIdsToRemove[1] = 3;
 
         // borrower removes some of their deposted NFTS from the pool
         _pullCollateral(

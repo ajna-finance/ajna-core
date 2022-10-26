@@ -580,7 +580,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrowerAddress_,
             poolState.inflator
         );
-        if (borrower.collateral == 0) revert InsufficientCollateral();
+        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
 
         (
             uint256 quoteTokenAmount,

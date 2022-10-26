@@ -18,7 +18,8 @@ interface IERC721PoolErrors {
     error TokenNotDeposited();
 
     /**
-     *  @notice User attempted to take only some auctioned NFTs collateral.
+     *  @notice User attempted to pull or remove a token that was not pledged or is not the next available token to be processed.
+     *  @notice When pulling or taking, tokens will be processed in the reverse order of the time they were pledged by borrower (latest token pledged will be processed first).
      */
-    error PartialTakeNotAllowed();
+    error TokenMismatch();
 }

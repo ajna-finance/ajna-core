@@ -373,15 +373,15 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         
         skip(5 hours);
 
-        uint256[] memory tokenIdsToTake = new uint256[](2);
-        tokenIdsToTake[0] = 1;
-        tokenIdsToTake[1] = 3;
+        // before take: NFTs pledged by auctioned borrower are owned by the pool
+        assertEq(_collateral.ownerOf(3), address(_pool));
+        assertEq(_collateral.ownerOf(1), address(_pool));
 
         _take(
             {
                 from:            _lender,
                 borrower:        _borrower,
-                tokenIds:        tokenIdsToTake,
+                maxCollateral:   2,
                 bondChange:      0.227855642754831547 * 1e18,
                 givenAmount:     22.785564275483154732 * 1e18,
                 collateralTaken: 2 * 1e18,
@@ -439,10 +439,8 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
             }
         );
 
-
-
-
-
-
+        // after take: NFTs pledged by liquidated borrower are owned by the taker
+        assertEq(_collateral.ownerOf(3), _lender);
+        assertEq(_collateral.ownerOf(1), _lender);
     }
 }

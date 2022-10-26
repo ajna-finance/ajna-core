@@ -20,18 +20,12 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** State Variables ***/
     /***********************/
 
-    /// @dev bucket collateral: : NFT Token id => boolean (true if locked)
-    mapping(uint256 => bool) private _bucketLockedNFTs;
+    mapping(uint256 => bool)      public tokenIdsAllowed; // set of tokenIds that can be used for a given NFT Subset type pool
+    mapping(address => uint256[]) public borrowerNFTIds;  // borrower address => array of tokenIds pledged by borrower 
 
-    /// @dev pledged collateral: NFT Token id => borrower address
-    mapping(uint256 => address) private _borrowerLockedNFTs;
+    mapping(uint256 => bool)    private _bucketLockedNFTs;   // NFT Token id => boolean (true if locked)
 
-    /// @dev Set of tokenIds that can be used for a given NFT Subset type pool
-    /// @dev Defaults to length 0 if the whole collection is to be used
-    mapping(uint256 => bool) public tokenIdsAllowed;
-
-
-    bool public isSubset;
+    bool public isSubset; // true if collection is a subset
 
     /****************************/
     /*** Initialize Functions ***/
@@ -94,7 +88,7 @@ contract ERC721Pool is IERC721Pool, Pool {
             uint256 tokenId = tokenIdsToPledge_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
 
-            _borrowerLockedNFTs[tokenId] = borrower_;
+            borrowerNFTIds[borrower_].push(tokenId);
 
             _transferNFT(msg.sender, address(this), tokenId);
 
@@ -111,9 +105,24 @@ contract ERC721Pool is IERC721Pool, Pool {
     ) external override {
         _pullCollateral(Maths.wad(tokenIdsToPull_.length));
 
-        // move collateral from pool to claimer
         emit PullCollateralNFT(msg.sender, tokenIdsToPull_);
-        _pullNFTs(msg.sender, tokenIdsToPull_);
+
+        // move collateral from pool to claimer
+        uint256[] storage pledgedCollateral = borrowerNFTIds[msg.sender];
+        uint256 noOfNFTsPledged = pledgedCollateral.length;
+        for (uint256 i = 0; i < tokenIdsToPull_.length;) {
+            uint256 tokenId = tokenIdsToPull_[i];
+
+            if (pledgedCollateral[--noOfNFTsPledged] != tokenId) revert TokenMismatch();
+
+            pledgedCollateral.pop();
+
+            _transferNFT(address(this), msg.sender, tokenId);
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     /*********************************/
@@ -192,21 +201,36 @@ contract ERC721Pool is IERC721Pool, Pool {
 
     function take(
         address borrower_,
-        uint256[] calldata tokenIds_,
+        uint256 maxTokens_,
         bytes memory swapCalldata_
     ) external override {
 
-        uint256 numberOfNFTsWad = Maths.wad(tokenIds_.length);
-        if (loans.borrowers[borrower_].collateral != numberOfNFTsWad) revert PartialTakeNotAllowed();
+        uint256 collateralTaken = _take(borrower_, Maths.wad(maxTokens_));
+        if (collateralTaken != 0) {
+            uint256 nftsTaken = (collateralTaken / 1e18) + 1; // round up collateral taken: (taken / 1e18) rounds down + 1 = rounds up
 
-        _take(borrower_, numberOfNFTsWad);
+            uint256[] storage pledgedNFTs = borrowerNFTIds[borrower_];
+            uint256 noOfNFTsPledged = pledgedNFTs.length;
 
-        // TODO: implement flashloan functionality
-        // Flash loan full amount to liquidate to borrower
-        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-        //msg.sender.call(swapCalldata_);
+            if (noOfNFTsPledged < nftsTaken) nftsTaken = noOfNFTsPledged;
 
-        _pullNFTs(borrower_, tokenIds_);
+            // TODO: implement flashloan functionality
+            // Flash loan full amount to liquidate to borrower
+            // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
+            //msg.sender.call(swapCalldata_);
+
+            for (uint256 i = 0; i < nftsTaken;) {
+                uint256 tokenId = pledgedNFTs[--noOfNFTsPledged]; // start with taking the last token pledged by borrower
+
+                pledgedNFTs.pop();
+
+                _transferNFT(address(this), msg.sender, tokenId);
+
+                unchecked {
+                    ++i;
+                }
+            }
+        }
     }
 
 
@@ -229,29 +253,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256 encumbered = price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
         collateral_ = (collateral_ / Maths.WAD) * Maths.WAD;
         return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
-    }
-
-    /**
-     *  @notice Performs NFT transfering checks and transfers NFTs (by token Id) from pool to claimer.
-     *  @param borrower_ Address of the borower whose NFTs are being transfered from.
-     *  @param tokenIds_ Array of token ids to be pulled.
-     */
-    function _pullNFTs(
-        address borrower_,
-        uint256[] memory tokenIds_
-    ) internal {
-        for (uint256 i = 0; i < tokenIds_.length;) {
-            uint256 tokenId = tokenIds_[i];
-            if (_borrowerLockedNFTs[tokenId] != borrower_) revert TokenNotDeposited();
-
-            delete _borrowerLockedNFTs[tokenId];
-
-            _transferNFT(address(this), borrower_, tokenId);
-
-            unchecked {
-                ++i;
-            }
-        }
     }
 
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
