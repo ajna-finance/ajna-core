@@ -41,12 +41,14 @@ contract ERC721Pool is IERC721Pool, Pool {
         interestRateUpdate         = block.timestamp;
 
         uint256 noOfTokens = tokenIds_.length;
-        isSubset = noOfTokens > 0;
-        // add subset of tokenIds allowed in the pool
-        for (uint256 id = 0; id < noOfTokens;) {
-            tokenIdsAllowed[tokenIds_[id]] = true;
-            unchecked {
-                ++id;
+        if (noOfTokens > 0) {
+            isSubset = true;
+            // add subset of tokenIds allowed in the pool
+            for (uint256 id = 0; id < noOfTokens;) {
+                tokenIdsAllowed[tokenIds_[id]] = true;
+                unchecked {
+                    ++id;
+                }
             }
         }
 
