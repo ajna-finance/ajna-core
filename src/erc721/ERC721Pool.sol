@@ -20,11 +20,11 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** State Variables ***/
     /***********************/
 
-    mapping(uint256 => bool)      public tokenIdsAllowed; // set of tokenIds that can be used for a given NFT Subset type pool
-    mapping(address => uint256[]) public borrowerLockedNFTs;  // borrower address => array of tokenIds pledged by borrower
-    mapping(uint256 => uint256[]) public bucketLockedNFTs;    // bucket id => array of tokenIds added in bucket
+    mapping(uint256 => bool)      public tokenIdsAllowed;    // set of tokenIds that can be used for a given NFT Subset type pool
+    mapping(address => uint256[]) public borrowerLockedNFTs; // borrower address => array of tokenIds pledged by borrower
+    mapping(uint256 => uint256[]) public bucketLockedNFTs;   // bucket id => array of tokenIds added in bucket
 
-    bool public isSubset; // true if collection is a subset
+    bool public isSubset; // true if pool is a subset pool
 
     /****************************/
     /*** Initialize Functions ***/
@@ -98,7 +98,6 @@ contract ERC721Pool is IERC721Pool, Pool {
     }
 
     // TODO: check for reentrancy
-    // TODO: check for whole units of collateral
     function pullCollateral(
         uint256[] calldata tokenIdsToPull_
     ) external override {
