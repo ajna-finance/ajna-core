@@ -156,15 +156,15 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
     function testKick() external {
         _assertAuction(
             {
-                borrower:    _borrower,
-                active:      false,
-                kicker:      address(0),
-                bondSize:    0,
-                bondFactor:  0,
-                kickTime:    0,
-                kickMomp:    0,
-                totalBondEscrowed:    0,
-                auctionPrice:    0
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0
             }
         );
 
@@ -723,7 +723,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
     function testTakeReverts() external {
 
-                // should revert if there's no auction started
+        // should revert if there's no auction started
         _assertTakeNoAuctionRevert(
             {
                 from:          _lender,
@@ -802,6 +802,5 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         emit log_named_uint("mompFactor ",           mompFactor);
         emit log_named_uint("collateralEncumbered", PoolUtils.encumberance(borrowerDebt, _lup()));
         emit log_named_uint("collateralization   ", PoolUtils.collateralization(borrowerDebt, collateralDeposited, _lup()));
-     }
-
+    }
 }

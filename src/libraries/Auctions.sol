@@ -188,7 +188,6 @@ library Auctions {
             liquidation.kickTime
         );
 
-
         // calculate amounts
         collateralTaken_  = Maths.min(borrower_.collateral, maxCollateral_);
         quoteTokenAmount_ = Maths.wmul(auctionPrice, collateralTaken_);
