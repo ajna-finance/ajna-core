@@ -15,12 +15,6 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
 
-    uint256 internal _i9_91 = 3696;
-    uint256 internal _i9_81 = 3698;
-    uint256 internal _i9_72 = 3700;
-    uint256 internal _i9_62 = 3702;
-    uint256 internal _i9_52 = 3704;
-
     function setUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
@@ -118,7 +112,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 823.649613971736296163 * 1e18,
-                borrowerDebt:         8_006.941586538461542154 * 1e18,
+                poolDebt:             8_006.941586538461542154 * 1e18,
                 actualUtilization:    0.109684131322444679 * 1e18,
                 targetUtilization:    1e18,
                 minDebtAmount:        400.347079326923077108 * 1e18,
@@ -134,9 +128,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              19.268509615384615394 * 1e18,
                 borrowerCollateral:        2 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 1.009034539679184679 * 1e18,
-                borrowerPendingDebt:       19.268509615384615394 * 1e18
+                borrowerCollateralization: 1.009034539679184679 * 1e18
             }
         );
         _assertBorrower(
@@ -145,9 +137,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              7_987.673076923076926760 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 1.217037273735858713 * 1e18,
-                borrowerPendingDebt:       7_987.673076923076926760 * 1e18
+                borrowerCollateralization: 1.217037273735858713 * 1e18
             }
         );
         _assertReserveAuction(
@@ -195,15 +185,15 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
         _assertPool(
             PoolState({
-                htp:                  8.097846143253778448 * 1e18,
+                htp:                  8.209538814158655264 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
                 poolSize:             73_094.502279691716022000 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
-                encumberedCollateral: 835.035237319063220561 * 1e18,
-                borrowerDebt:         8_117.624599705640061721 * 1e18,
-                actualUtilization:    0.111056568504208946 * 1e18,
+                encumberedCollateral: 835.010119425512354679 * 1e18,
+                poolDebt:             8_117.380421230925720814 * 1e18,
+                actualUtilization:    0.111053227918158028 * 1e18,
                 targetUtilization:    0.833368500318426368 * 1e18,
-                minDebtAmount:        811.762459970564006172* 1e18,
+                minDebtAmount:        811.738042123092572081 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
                 interestRate:         0.045 * 1e18,
@@ -216,20 +206,16 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              19.778456451861613480 * 1e18,
                 borrowerCollateral:        2 * 1e18,
                 borrowerMompFactor:        9.917184843435912074 * 1e18,
-                borrowerInflator:          1.013792886272348689 * 1e18,
-                borrowerCollateralization: 0.983018658578564579 * 1e18,
-                borrowerPendingDebt:       19.778456451861613480 * 1e18
+                borrowerCollateralization: 0.983018658578564579 * 1e18
             }
         );
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              7_987.673076923076926760 * 1e18,
+                borrowerDebt:              8_097.846143253778448241 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 1.217037273735858713 * 1e18,
-                borrowerPendingDebt:       8_097.846143253778448241 * 1e18
+                borrowerCollateralization: 1.200479200648987171 * 1e18
             }
         );
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
@@ -253,7 +239,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
         _assertReserveAuction(
             {
-                reserves:                   23.872320013924039721 * 1e18,
+                reserves:                   23.628141539209698814 * 1e18,
                 claimableReserves :         0,
                 claimableReservesRemaining: 0,
                 auctionPrice:               0,
@@ -504,14 +490,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 locked:    0.195342779771472726 * 1e18
             }
         );
-
         skip(2 hours);
 
         _take(
             {
                 from:            _lender,
                 borrower:        _borrower,
-                maxCollateral:   2 * 1e18,
+                maxCollateral:   200 * 1e18,
                 bondChange:      0.195828313427972085 * 1e18,
                 givenAmount:     19.582831342797208527 * 1e18,
                 collateralTaken: 2 * 1e18,
@@ -536,9 +521,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              0 * 1e18,
                 borrowerCollateral:        0 * 1e18,
                 borrowerMompFactor:        0,
-                borrowerInflator:          1.013803302006192493 * 1e18,
-                borrowerCollateralization: 1.0 * 1e18,
-                borrowerPendingDebt:       0 * 1e18
+                borrowerCollateralization: 1.0 * 1e18
             }
         );
 
@@ -552,7 +535,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
     }
 
     function testTakeLTNeutral() external {
-         
+
         // Borrower2 borrows
         _borrow(
             {
@@ -568,12 +551,10 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              9_719.336538461538466020 * 1e18,
+                borrowerDebt:              9_853.394241979221645666 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 1.000201590567677913 * 1e18,
-                borrowerPendingDebt:       9_853.394241979221645666 * 1e18
+                borrowerCollateralization: 0.986593617011217057 * 1e18
             }
         );
         _kick(
@@ -609,9 +590,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerDebt:              9_976.561670003961916237 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
                 borrowerMompFactor:        9.818751856078723036 * 1e18,
-                borrowerInflator:          1.013792886272348689 * 1e18,
-                borrowerCollateralization: 0.974413448899967463 * 1e18,
-                borrowerPendingDebt:       9_976.561670003961916237 * 1e18
+                borrowerCollateralization: 0.974413448899967463 * 1e18
             }
         );
 
@@ -651,12 +630,10 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              9_965.044074140935163953 * 1e18,
+                borrowerDebt:              9_965.044074140935162829 * 1e18,
                 borrowerCollateral:        980 * 1e18,
                 borrowerMompFactor:        9.684667957374334904 * 1e18,
-                borrowerInflator:          1.013844966011693846 * 1e18,
-                borrowerCollateralization: 0.956028882245805301 * 1e18,
-                borrowerPendingDebt:       9_965.044074140935163953 * 1e18
+                borrowerCollateralization: 0.956028882245805301 * 1e18
             }
         );
 
@@ -693,12 +670,10 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              9_375.568996125070613905 * 1e18,
+                borrowerDebt:              9_375.568996125070612781 * 1e18,
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.588542815647469183 * 1e18,
-                borrowerInflator:          1.013844966011693846 * 1e18,
-                borrowerCollateralization: 0,
-                borrowerPendingDebt:       9_375.568996125070613905 * 1e18
+                borrowerCollateralization: 0
             }
         );
 
@@ -710,7 +685,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 maxCollateral: 10 * 1e18
             }
         );
-        
+
     }
 
     function testTakeReverts() external {
@@ -785,19 +760,14 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
     function _logBorrowerInfo(address borrower_) internal {
         (
             uint256 borrowerDebt,
-            uint256 borrowerPendingDebt,
             uint256 collateralDeposited,
-            uint256 mompFactor,
-            uint256 borrowerInflator
-
+            uint256 mompFactor
         ) = _poolUtils.borrowerInfo(address(_pool), borrower_);
 
         emit log_named_uint("borrowerDebt        ", borrowerDebt);
-        emit log_named_uint("borrowerPendingDebt ", borrowerPendingDebt);
         emit log_named_uint("collateralDeposited ", collateralDeposited);
         emit log_named_uint("mompFactor ",           mompFactor);
         emit log_named_uint("collateralEncumbered", PoolUtils.encumberance(borrowerDebt, _lup()));
         emit log_named_uint("collateralization   ", PoolUtils.collateralization(borrowerDebt, collateralDeposited, _lup()));
-        emit log_named_uint("borrowerInflator    ", borrowerInflator);
     }
 }

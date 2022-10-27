@@ -159,6 +159,7 @@ library Auctions {
      *  @param  borrowerAddress_  Borrower address in auction.
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
      *  @param  maxCollateral_    The max collateral amount to be taken from auction.
+     *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
      *  @return quoteTokenAmount_ The quote token amount that taker should pay for collateral taken.
      *  @return repayAmount_      The amount of debt (quote tokens) that is recovered / repayed by take.
      *  @return collateralTaken_  The amount of collateral taken.
@@ -169,7 +170,8 @@ library Auctions {
         Data storage self,
         address borrowerAddress_,
         Loans.Borrower memory borrower_,
-        uint256 maxCollateral_
+        uint256 maxCollateral_,
+        uint256 poolInflator_
     ) internal returns (
         uint256 quoteTokenAmount_,
         uint256 repayAmount_,
@@ -187,22 +189,23 @@ library Auctions {
         );
 
         // calculate amount
-        quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
-        collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+        quoteTokenAmount_    = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
+        collateralTaken_     = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_) - repayAmount_;
 
         int256 bpf = PoolUtils.bpf(
-            borrower_.debt,
+            borrowerDebt,
             borrower_.collateral,
             borrower_.mompFactor,
-            borrower_.inflatorSnapshot,
+            poolInflator_,
             liquidation.bondFactor,
             auctionPrice
         );
 
         repayAmount_ = Maths.wmul(quoteTokenAmount_, uint256(1e18 - bpf));
-        if (repayAmount_ >= borrower_.debt) {
-            repayAmount_      = borrower_.debt;
-            quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - bpf));
+        if (repayAmount_ >= borrowerDebt) {
+            repayAmount_      = borrowerDebt;
+            quoteTokenAmount_ = Maths.wdiv(borrowerDebt, uint256(1e18 - bpf));
         }
 
         isRewarded_ = (bpf >= 0);

@@ -316,9 +316,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 borrowerDebt:              10_009.615384615384620000 * 1e18,
                 borrowerCollateral:        50 * 1e18,
                 borrowerMompFactor:        3_025.946482308870940904 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 15.115198566768615646 * 1e18,
-                borrowerPendingDebt:       10_009.615384615384620000 * 1e18
+                borrowerCollateralization: 15.115198566768615646 * 1e18
             }
         );
         _assertPoolPrices(
@@ -339,7 +337,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
         assertEq(_pool.depositSize(),       150_000 * _quotePoolPrecision);
-        assertEq(_pool.borrowerDebt(),      debt);
+        assertEq(_pool.debt(),              debt);
         assertEq(_pool.pledgedCollateral(), col);
 
         _assertBucket(
@@ -386,9 +384,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 borrowerDebt:              5_009.615384615384620000 * 1e18,
                 borrowerCollateral:        50 * 1e18,
                 borrowerMompFactor:        3_025.946482308870940904 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 30.201385236096216664 * 1e18,
-                borrowerPendingDebt:       5_009.615384615384620000 * 1e18
+                borrowerCollateralization: 30.201385236096216664 * 1e18
             }
         );
         _assertPoolPrices(
@@ -409,7 +405,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
         assertEq(_pool.depositSize(),       150_000 * _quotePoolPrecision);
-        assertEq(_pool.borrowerDebt(),      debt);
+        assertEq(_pool.debt(),              debt);
         assertEq(_pool.pledgedCollateral(), col);
 
         _assertBucket(
@@ -455,9 +451,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 borrowerDebt:              5_009.615384615384620000 * 1e18,
                 borrowerCollateral:        1.655553200925393083 * 1e18,
                 borrowerMompFactor:        3_025.946482308870940904 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 1 * 1e18,
-                borrowerPendingDebt:       5_009.615384615384620000 * 1e18
+                borrowerCollateralization: 1 * 1e18
             }
         );
         _assertPoolPrices(
@@ -478,7 +472,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
         assertEq(_pool.depositSize(),       150_000 * _quotePoolPrecision);
-        assertEq(_pool.borrowerDebt(),      debt);
+        assertEq(_pool.debt(),              debt);
         assertEq(_pool.pledgedCollateral(), col);
     }
 
