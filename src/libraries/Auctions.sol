@@ -5,8 +5,6 @@ pragma solidity 0.8.14;
 import './Loans.sol';
 import './Maths.sol';
 
-import '@std/console.sol';
-
 library Auctions {
 
     struct Data {
@@ -177,7 +175,7 @@ library Auctions {
         uint256 repayAmount_,
         uint256 collateralTaken_,
         uint256 bondChange_,
-        bool isRewarded_
+        bool    isRewarded_
     ) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         if (liquidation.kickTime == 0) revert NoAuction();
