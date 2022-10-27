@@ -23,32 +23,37 @@ interface IPoolState {
         uint256 kickTime,
         uint256 kickPrice,
         address prev,
-        address next
+        address next,
+        uint256 totalBondEscrowed
     );
 
     /**
-     *  @notice Returns the `borrowerDebt` state variable.
-     *  @return borrowerDebt_ Total amount of borrower debt in pool.
+     *  @notice Calculates pool debt as of the last time interest owed to lenders accrued.
+     *  @return accruedDebt_ Borrower debt as of the last interest accrual.
      */
-    function borrowerDebt() external view returns (uint256 borrowerDebt_);
+    function accruedDebt() external view returns (uint256 accruedDebt_);
+
+    /**
+     *  @notice Calculates pool debt with interest due as of the current block height.
+     *  @return debt_ Current amount of debt owed by borrowers in pool.
+     */
+    function debt() external view returns (uint256 debt_);
 
     /**
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  borrower   Address of the borrower.
-     *  @return debt       Amount of debt that the borrower has, in quote token.
+     *  @return t0debt     Amount of debt borrower would have had if their loan was the first debt drawn from the pool
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
      *  @return mompFactor Momp / borrowerInflatorSnapshot factor used.
-     *  @return inflator   Snapshot of inflator value used to track interest on loans.
      */
     function borrowers(address borrower)
         external
         view
         returns (
-            uint256 debt,
+            uint256 t0debt,
             uint256 collateral,
-            uint256 mompFactor,
-            uint256 inflator
+            uint256 mompFactor
         );
 
     /**
@@ -80,7 +85,7 @@ interface IPoolState {
 
     /**
      *  @notice Returns the `interestRate` state variable.
-     *  @return interestRate TODO
+     *  @return Current annual percentage rate of the pool
      */
     function interestRate() external view returns (uint256);
 
@@ -127,7 +132,7 @@ interface IPoolState {
      *  @notice Returns the amount of liquidation bond across all liquidators.
      *  @return Total amount of quote token being escrowed.
      */
-    function liquidationBondEscrowed() external view returns (uint256);
+    function totalBondEscrowed() external view returns (uint256);
 
     /**
      *  @notice Returns the `lupColEma` state variable.

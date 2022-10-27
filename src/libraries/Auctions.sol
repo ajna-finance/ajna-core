@@ -10,7 +10,7 @@ library Auctions {
     struct Data {
         address head;
         address tail;
-        uint256 liquidationBondEscrowed; // [WAD]
+        uint256 totalBondEscrowed; // [WAD]
         mapping(address => Liquidation) liquidations;
         mapping(address => Kicker)      kickers;
     }
@@ -45,7 +45,7 @@ library Auctions {
 
     /**
      *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
-     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
+     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from totalBondEscrowed.
      *  @param  borrower_          Borrower whose loan is being placed in queue.
      *  @param  collateralization_ Borrower's collateralization.
      */
@@ -128,8 +128,8 @@ library Auctions {
             kickAuctionAmount_ = bondSize - kicker.claimable;
             kicker.claimable = 0;
         }
-        // update liquidationBondEscrowed accumulator
-        self.liquidationBondEscrowed += bondSize;
+        // update totalBondEscrowed accumulator
+        self.totalBondEscrowed += bondSize;
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
@@ -159,6 +159,7 @@ library Auctions {
      *  @param  borrowerAddress_  Borrower address in auction.
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
      *  @param  maxCollateral_    The max collateral amount to be taken from auction.
+     *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
      *  @return quoteTokenAmount_ The quote token amount that taker should pay for collateral taken.
      *  @return repayAmount_      The amount of debt (quote tokens) that is recovered / repayed by take.
      *  @return collateralTaken_  The amount of collateral taken.
@@ -169,7 +170,8 @@ library Auctions {
         Data storage self,
         address borrowerAddress_,
         Loans.Borrower memory borrower_,
-        uint256 maxCollateral_
+        uint256 maxCollateral_,
+        uint256 poolInflator_
     ) internal returns (
         uint256 quoteTokenAmount_,
         uint256 repayAmount_,
@@ -186,23 +188,26 @@ library Auctions {
             liquidation.kickTime
         );
 
-        int256 bpf = PoolUtils.bpf(
-            borrower_.debt,
-            borrower_.collateral,
-            borrower_.mompFactor,
-            borrower_.inflatorSnapshot,
-            liquidation.bondFactor,
-            auctionPrice
-        );
 
         // calculate amounts
         collateralTaken_  = Maths.min(borrower_.collateral, maxCollateral_);
         quoteTokenAmount_ = Maths.wmul(auctionPrice, collateralTaken_);
+        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_);
+
+        int256 bpf = PoolUtils.bpf(
+            borrowerDebt,
+            borrower_.collateral,
+            borrower_.mompFactor,
+            poolInflator_,
+            liquidation.bondFactor,
+            auctionPrice
+        );
+
         repayAmount_      = Maths.wmul(quoteTokenAmount_, uint256(1e18 - Maths.maxInt(0, bpf)));
 
-        if (repayAmount_ >= borrower_.debt) {
-            repayAmount_      = borrower_.debt;
-            quoteTokenAmount_ = Maths.wmul(borrower_.debt, uint256(1e18 - Maths.maxInt(0, bpf)));
+        if (repayAmount_ >= borrowerDebt) {
+            repayAmount_      = borrowerDebt;
+            quoteTokenAmount_ = Maths.wmul(borrowerDebt, uint256(1e18 - Maths.maxInt(0, bpf)));
             collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
         }
 
@@ -212,14 +217,14 @@ library Auctions {
             bondChange_ = quoteTokenAmount_ - repayAmount_;
             liquidation.bondSize                    += bondChange_;
             self.kickers[liquidation.kicker].locked += bondChange_;
-            self.liquidationBondEscrowed            += bondChange_;
+            self.totalBondEscrowed                  += bondChange_;
 
         } else {
             // take is above neutralPrice, Kicker is penalized
             bondChange_ = Maths.min(liquidation.bondSize, Maths.wmul(quoteTokenAmount_, uint256(-bpf)));
             liquidation.bondSize                    -= bondChange_;
             self.kickers[liquidation.kicker].locked -= bondChange_;
-            self.liquidationBondEscrowed            -= bondChange_;
+            self.totalBondEscrowed                  -= bondChange_;
         }
     }
 
