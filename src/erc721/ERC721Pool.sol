@@ -20,9 +20,9 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** State Variables ***/
     /***********************/
 
-    mapping(uint256 => bool)      public tokenIdsAllowed;    // set of tokenIds that can be used for a given NFT Subset type pool
-    mapping(address => uint256[]) public borrowerLockedNFTs; // borrower address => array of tokenIds pledged by borrower
-    mapping(uint256 => uint256[]) public bucketLockedNFTs;   // bucket id => array of tokenIds added in bucket
+    mapping(uint256 => bool)      public tokenIdsAllowed;  // set of tokenIds that can be used for a given NFT Subset type pool
+    mapping(address => uint256[]) public borrowerTokenIds; // borrower address => array of tokenIds pledged by borrower
+    mapping(uint256 => uint256[]) public bucketTokenIds;   // bucket id => array of tokenIds added in bucket
 
     bool public isSubset; // true if pool is a subset pool
 
@@ -87,7 +87,7 @@ contract ERC721Pool is IERC721Pool, Pool {
             uint256 tokenId = tokenIdsToPledge_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
 
-            borrowerLockedNFTs[borrower_].push(tokenId);
+            borrowerTokenIds[borrower_].push(tokenId);
 
             _transferNFT(msg.sender, address(this), tokenId);
 
@@ -106,7 +106,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         emit PullCollateralNFT(msg.sender, tokenIdsToPull_);
 
         // move collateral from pool to claimer
-        uint256[] storage pledgedCollateral = borrowerLockedNFTs[msg.sender];
+        uint256[] storage pledgedCollateral = borrowerTokenIds[msg.sender];
         uint256 noOfNFTsPledged = pledgedCollateral.length;
         for (uint256 i = 0; i < tokenIdsToPull_.length;) {
             uint256 tokenId = tokenIdsToPull_[i];
@@ -141,7 +141,7 @@ contract ERC721Pool is IERC721Pool, Pool {
             uint256 tokenId = tokenIdsToAdd_[i];
             if (subset && !tokenIdsAllowed[tokenId]) revert OnlySubset();
 
-            bucketLockedNFTs[index_].push(tokenId);
+            bucketTokenIds[index_].push(tokenId);
 
             _transferNFT(msg.sender, address(this), tokenId);
 
@@ -162,7 +162,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_);
 
         // move collateral from pool to lender
-        uint256[] storage addedNFTs = bucketLockedNFTs[index_];
+        uint256[] storage addedNFTs = bucketTokenIds[index_];
         uint256 noOfNFTsInBucket = addedNFTs.length;
         for (uint256 i = 0; i < noOfNFTsToRemove_;) {
             uint256 tokenId = addedNFTs[--noOfNFTsInBucket]; // start with removing the last token added in bucket
@@ -209,7 +209,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         if (collateralTaken != 0) {
             uint256 nftsTaken = (collateralTaken / 1e18) + 1; // round up collateral taken: (taken / 1e18) rounds down + 1 = rounds up
 
-            uint256[] storage pledgedNFTs = borrowerLockedNFTs[borrower_];
+            uint256[] storage pledgedNFTs = borrowerTokenIds[borrower_];
             uint256 noOfNFTsPledged = pledgedNFTs.length;
 
             if (noOfNFTsPledged < nftsTaken) nftsTaken = noOfNFTsPledged;
