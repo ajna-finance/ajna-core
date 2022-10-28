@@ -11,7 +11,7 @@ library Auctions {
     struct Data {
         address head;
         address tail;
-        uint256 liquidationBondEscrowed; // [WAD]
+        uint256 totalBondEscrowed; // [WAD]
         mapping(address => Liquidation) liquidations;
         mapping(address => Kicker)      kickers;
     }
@@ -206,8 +206,8 @@ library Auctions {
             kickAuctionAmount_ = bondSize - kicker.claimable;
             kicker.claimable = 0;
         }
-        // update liquidationBondEscrowed accumulator
-        self.liquidationBondEscrowed += bondSize;
+        // update totalBondEscrowed accumulator
+        self.totalBondEscrowed += bondSize;
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
@@ -243,7 +243,7 @@ library Auctions {
      *  @return collateralTaken_  The amount of collateral taken.
      *  @return bondChange_       The change made on the bond size (beeing reward or penalty).
      *  @return isRewarded_       True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
-     */
+    */
     function take(
         Data storage self,
         address borrowerAddress_,
@@ -255,7 +255,7 @@ library Auctions {
         uint256 repayAmount_,
         uint256 collateralTaken_,
         uint256 bondChange_,
-        bool isRewarded_
+        bool    isRewarded_
     ) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         if (liquidation.kickTime == 0) revert NoAuction();
@@ -266,10 +266,10 @@ library Auctions {
             liquidation.kickTime
         );
 
-        // calculate amount
-        quoteTokenAmount_    = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
-        collateralTaken_     = Maths.wdiv(quoteTokenAmount_, auctionPrice);
-        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_) - repayAmount_;
+        // calculate amounts
+        collateralTaken_     = Maths.min(borrower_.collateral, maxCollateral_);
+        quoteTokenAmount_    = Maths.wmul(auctionPrice, collateralTaken_);
+        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_);
 
         int256 bpf = PoolUtils.bpf(
             borrowerDebt,
@@ -280,26 +280,28 @@ library Auctions {
             auctionPrice
         );
 
-        repayAmount_ = Maths.wmul(quoteTokenAmount_, uint256(1e18 - bpf));
+        repayAmount_      = Maths.wmul(quoteTokenAmount_, uint256(1e18 - Maths.maxInt(0, bpf)));
+
         if (repayAmount_ >= borrowerDebt) {
             repayAmount_      = borrowerDebt;
-            quoteTokenAmount_ = Maths.wdiv(borrowerDebt, uint256(1e18 - bpf));
+            quoteTokenAmount_ = Maths.wmul(borrowerDebt, uint256(1e18 - Maths.maxInt(0, bpf)));
+            collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
         }
 
         isRewarded_ = (bpf >= 0);
         if (isRewarded_) {
             // take is below neutralPrice, Kicker is rewarded
             bondChange_ = quoteTokenAmount_ - repayAmount_;
-            liquidation.bondSize += bondChange_;
+            liquidation.bondSize                    += bondChange_;
             self.kickers[liquidation.kicker].locked += bondChange_;
+            self.totalBondEscrowed                  += bondChange_;
+
         } else {
             // take is above neutralPrice, Kicker is penalized
-            bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(-bpf));
-            liquidation.bondSize -= Maths.min(liquidation.bondSize, bondChange_);
-            if (bondChange_ >= self.kickers[liquidation.kicker].locked) {
-                self.kickers[liquidation.kicker].locked = 0;
-            }
-            else self.kickers[liquidation.kicker].locked -= bondChange_;
+            bondChange_ = Maths.min(liquidation.bondSize, Maths.wmul(quoteTokenAmount_, uint256(-bpf)));
+            liquidation.bondSize                    -= bondChange_;
+            self.kickers[liquidation.kicker].locked -= bondChange_;
+            self.totalBondEscrowed                  -= bondChange_;
         }
     }
 

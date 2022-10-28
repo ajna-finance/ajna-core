@@ -168,13 +168,15 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
     function testKickSubsetPool() external {
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     false,
-                kicker:     address(0),
-                bondSize:   0,
-                bondFactor: 0,
-                kickTime:   0,
-                kickMomp:   0
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0
             }
         );
 
@@ -233,13 +235,15 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
         _assertAuction(
             {
-                borrower:   _borrower,
-                active:     true,
-                kicker:     _lender,
-                bondSize:   0.227287198298417188 * 1e18,
-                bondFactor: 0.01 * 1e18,
-                kickTime:   block.timestamp,
-                kickMomp:   9.917184843435912074 * 1e18
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.227287198298417188 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.917184843435912074 * 1e18,
+                totalBondEscrowed: 0.227287198298417188 * 1e18,
+                auctionPrice:      317.349914989949186368 * 1e18
             }
         );
         _assertKicker(
