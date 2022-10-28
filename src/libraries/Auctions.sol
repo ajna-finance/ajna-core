@@ -267,8 +267,8 @@ library Auctions {
         );
 
         // calculate amounts
-        collateralTaken_  = Maths.min(borrower_.collateral, maxCollateral_);
-        quoteTokenAmount_ = Maths.wmul(auctionPrice, collateralTaken_);
+        collateralTaken_     = Maths.min(borrower_.collateral, maxCollateral_);
+        quoteTokenAmount_    = Maths.wmul(auctionPrice, collateralTaken_);
         uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_);
 
         int256 bpf = PoolUtils.bpf(
