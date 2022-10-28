@@ -110,7 +110,7 @@ class PoolHelper:
     # TODO: Move this functionality into SDK to insulate consumer from implementation logic.
 
     def borrowerInfo(self, borrower_address):
-        # returns (debt, pendingDebt, collateral, mompFactor, inflatorSnapshot)
+        # returns (debt, collateral, mompFactor)
         return self.pool_info_utils.borrowerInfo(self.pool.address, borrower_address)
 
     def bucketInfo(self, index):
