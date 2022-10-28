@@ -99,6 +99,8 @@ Running SDK setup script will create a basic setup for testing SDK by:
 }
 ```
 - funding test addresses with DAI, MKR and Bored Apes NFTs. Addresses and balances to fund are set in `sdk-setup.json` file.
+Tokens configuration section contains addresses of DAI contract and reserve, MKR contract and reserve and Bored Ape contract. (sample provided for mainnet)
+Accounts configuration section contains test addresses and balances to fund.
 For ERC20 tokens the number of tokens to be funded should be provided.
 For ERC721 tokens the id of token to be funded should be provided.
 ```

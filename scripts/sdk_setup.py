@@ -21,18 +21,24 @@ def main():
     with open('scripts/sdk-setup.json', 'r') as setupfile:
         sdk_config = json.load(setupfile)
 
-    dai_contract = Contract('0x6b175474e89094c44da98b954eedeac495271d0f')
-    dai_reserve = accounts.at('0x616eFd3E811163F8fc180611508D72D842EA7D07', True);
+    dai_config = sdk_config.get('tokens').get('DAI')
 
-    mkr_contract = Contract('0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2')
-    mkr_reserve = accounts.at('0x0a3f6849f78076aefaDf113F5BED87720274dDC0', True);
+    dai_contract = Contract(dai_config.get('address'))
+    dai_reserve = accounts.at(dai_config.get('reserve'), True);
 
-    ape_contract = Contract('0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D')
+    mkr_config = sdk_config.get('tokens').get('MKR')
 
-    for addresses in sdk_config.items():
+    mkr_contract = Contract(mkr_config.get('address'))
+    mkr_reserve = accounts.at(mkr_config.get('reserve'), True);
+
+    bored_ape_config = sdk_config.get('tokens').get('BOREDAPE')
+    ape_contract = Contract(bored_ape_config.get('address'))
+
+    test_accounts = sdk_config.get('accounts')
+    for addresses in test_accounts.items():
         address = addresses[0]
 
-        balances = sdk_config.get(address)
+        balances = test_accounts.get(address)
         for token in balances:
             if token == 'DAI':
                 balance = balances.get(token)
