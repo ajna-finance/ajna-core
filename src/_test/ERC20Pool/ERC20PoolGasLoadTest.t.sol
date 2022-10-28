@@ -1,28 +1,42 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity 0.8.14;
 
-import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
+import { ERC20DSTestPlus } from './ERC20DSTestPlus.sol';
 
 import '../utils/Tokens.sol';
 
 import '../../erc20/ERC20Pool.sol';
 import '../../erc20/ERC20PoolFactory.sol';
 
+import '../../base/PoolInfoUtils.sol';
+
 import '../../libraries/BucketMath.sol';
 
-contract ERC20PoolGasLoadTest is ERC20HelperContract {
+contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
+
+    Token internal _collateral;
+    Token internal _quote;
+
     address[] private _lenders;
     address[] private _borrowers;
     uint16 private constant LENDERS     = 2_000;
     uint16 private constant LOANS_COUNT = 8_000;
 
     function setUp() public {
+
+        _collateral = new Token("Collateral", "C");
+        _quote      = new Token("Quote", "Q");
+        _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
+        _poolUtils  = new PoolInfoUtils();
+
+        skip(1 hours); // avoid deposit time to be the same as bucket bankruptcy time
+
         _setupLendersAndDeposits(LENDERS);
         _setupBorrowersAndLoans(LOANS_COUNT);
     }
 
     function testLoadERC20PoolFuzzyPartialRepay(uint256 borrowerId_) public {
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
 
         vm.assume(borrowerId_ <= LOANS_COUNT);
         address borrower = _borrowers[borrowerId_];
@@ -30,11 +44,11 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         vm.prank(borrower);
         _pool.repay(borrower, 100 * 1e18);
 
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
     }
 
     function testLoadERC20PoolGasFuzzyFullRepay(uint256 borrowerId_) public {
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
 
         vm.assume(borrowerId_ <= LOANS_COUNT);
         skip(15 hours);
@@ -43,11 +57,11 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         vm.prank(borrower);
         _pool.repay(borrower, debt);
 
-        assertEq(_pool.noOfLoans(), LOANS_COUNT - 1);
+        assertEq(_noOfLoans(), LOANS_COUNT - 1);
     }
 
     function testLoadERC20PoolGasFuzzyBorrowExisting(uint256 borrowerId_) public {
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
 
         vm.assume(borrowerId_ <= LOANS_COUNT);
         skip(15 hours);
@@ -55,13 +69,13 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         vm.prank(borrower);
         _pool.borrow(1_000 * 1e18, 5_000);
 
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
     }
 
     function testLoadERC20PoolGasBorrowNew() public {
         uint256 snapshot = vm.snapshot();
 
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
 
         address newBorrower = makeAddr("newBorrower");
 
@@ -75,68 +89,68 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
         _pool.borrow(1_000 * 1e18, 5_000);
         vm.stopPrank();
 
-        assertEq(_pool.noOfLoans(), LOANS_COUNT + 1);
+        assertEq(_noOfLoans(), LOANS_COUNT + 1);
 
         vm.revertTo(snapshot);
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
     }
 
     function testLoadERC20PoolGasExercisePartialRepayForAllBorrowers() public {
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
 
         for (uint256 i; i < LOANS_COUNT; i++) {
             uint256 snapshot = vm.snapshot();
             skip(15 hours);
-            assertEq(_pool.noOfLoans(), LOANS_COUNT);
+            assertEq(_noOfLoans(), LOANS_COUNT);
 
             address borrower = _borrowers[i];
             vm.prank(borrower);
             _pool.repay(borrower, 100 * 1e18);
 
-            assertEq(_pool.noOfLoans(), LOANS_COUNT);
+            assertEq(_noOfLoans(), LOANS_COUNT);
             vm.revertTo(snapshot);
         }
 
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
     }
 
     function testLoadERC20PoolGasExerciseRepayAllForAllBorrowers() public {
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
 
         for (uint256 i; i < LOANS_COUNT; i++) {
             uint256 snapshot = vm.snapshot();
             skip(15 hours);
-            assertEq(_pool.noOfLoans(), LOANS_COUNT);
+            assertEq(_noOfLoans(), LOANS_COUNT);
 
             address borrower = _borrowers[i];
             (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
             vm.prank(borrower);
             _pool.repay(borrower, debt);
 
-            assertEq(_pool.noOfLoans(), LOANS_COUNT - 1);
+            assertEq(_noOfLoans(), LOANS_COUNT - 1);
             vm.revertTo(snapshot);
         }
 
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
     }
 
     function testLoadERC20PoolGasExerciseBorrowMoreForAllBorrowers() public {
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
 
         for (uint256 i; i < LOANS_COUNT; i++) {
             uint256 snapshot = vm.snapshot();
             skip(15 hours);
-            assertEq(_pool.noOfLoans(), LOANS_COUNT);
+            assertEq(_noOfLoans(), LOANS_COUNT);
 
             address borrower = _borrowers[i];
             vm.prank(borrower);
             _pool.borrow(1_000 * 1e18, 5_000);
 
-            assertEq(_pool.noOfLoans(), LOANS_COUNT);
+            assertEq(_noOfLoans(), LOANS_COUNT);
             vm.revertTo(snapshot);
         }
 
-        assertEq(_pool.noOfLoans(), LOANS_COUNT);
+        assertEq(_noOfLoans(), LOANS_COUNT);
     }
 
     function testLoadERC20PoolGasFuzzyAddRemoveQuoteToken(uint256 index_) public {
@@ -242,5 +256,28 @@ contract ERC20PoolGasLoadTest is ERC20HelperContract {
 
             _borrowers.push(borrower);
         }
+    }
+
+    function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_quote), operator_, mintAmount_);
+
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+        vm.prank(operator_);
+        _collateral.approve(address(_pool), type(uint256).max);
+    }
+
+    function _mintCollateralAndApproveTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_collateral), operator_, mintAmount_);
+
+        vm.prank(operator_);
+        _collateral.approve(address(_pool), type(uint256).max);
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+
+    }
+
+    function _noOfLoans() internal view returns (uint256 loans_) {
+        (, , loans_) = _pool.loansInfo();
     }
 }

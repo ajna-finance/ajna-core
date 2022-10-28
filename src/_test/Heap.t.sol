@@ -234,12 +234,12 @@ contract HeapTest is DSTestPlus {
 
     function testHeapUpsertRequireChecks() public {
         address b1 = makeAddr("b1");
-        vm.expectRevert("H:I:VAL_EQ_0");
+        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
         _loans.upsertTp(b1, 0);
 
         _loans.upsertTp(b1, 100 * 1e18);
 
-        vm.expectRevert("H:I:VAL_EQ_0");
+        vm.expectRevert(abi.encodeWithSignature('ZeroThresholdPrice()'));
         _loans.upsertTp(b1, 0);
     }
 
@@ -277,7 +277,7 @@ contract HeapTest is DSTestPlus {
         assertEq(_loans.getMaxBorrower(), b6);
         assertEq(_loans.getTotalTps(),    7);
 
-        vm.expectRevert("H:R:NO_BORROWER");
+        vm.expectRevert(abi.encodeWithSignature('NoLoan()'));
         _loans.removeTp(address(100));
     }
 

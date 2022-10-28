@@ -168,13 +168,13 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
     function testKickSubsetPool() external {
         _assertAuction(
             {
-                borrower:    _borrower,
-                active:      false,
-                kicker:      address(0),
-                bondSize:    0,
-                bondFactor:  0,
-                kickTime:    0,
-                kickMomp:    0
+                borrower:   _borrower,
+                active:     false,
+                kicker:     address(0),
+                bondSize:   0,
+                bondFactor: 0,
+                kickTime:   0,
+                kickMomp:   0
             }
         );
 
@@ -201,11 +201,11 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 lup:                  9.917184843435912074 * 1e18,
                 poolSize:             73_000 * 1e18,
                 pledgedCollateral:    5 * 1e18,
-                encumberedCollateral: 4.028103499563389533 * 1e18,
-                poolDebt:             39.947446973661202747 * 1e18,
-                actualUtilization:    0.000547225301009058 * 1e18,
+                encumberedCollateral: 4.056751649452525709 * 1e18,
+                poolDebt:             40.231555971534224231 * 1e18,
+                actualUtilization:    0.000551117205089510 * 1e18,
                 targetUtilization:    0.811350329890505142 * 1e18,
-                minDebtAmount:        3.994744697366120275 * 1e18,
+                minDebtAmount:        4.023155597153422423 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower2),
                 interestRate:         0.045 * 1e18,
@@ -233,13 +233,13 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
         _assertAuction(
             {
-                borrower:    _borrower,
-                active:      true,
-                kicker:      _lender,
-                bondSize:    0.227287198298417188 * 1e18,
-                bondFactor:  0.01 * 1e18,
-                kickTime:    block.timestamp,
-                kickMomp:    9.917184843435912074 * 1e18
+                borrower:   _borrower,
+                active:     true,
+                kicker:     _lender,
+                bondSize:   0.227287198298417188 * 1e18,
+                bondFactor: 0.01 * 1e18,
+                kickTime:   block.timestamp,
+                kickMomp:   9.917184843435912074 * 1e18
             }
         );
         _assertKicker(

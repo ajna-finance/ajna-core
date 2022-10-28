@@ -1,20 +1,13 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity 0.8.14;
 
-import { Clone } from '@clones/Clone.sol';
-
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-
 import './interfaces/IERC721Pool.sol';
-
 import '../base/Pool.sol';
 
 contract ERC721Pool is IERC721Pool, Pool {
-    using SafeERC20 for ERC20;
-    using Buckets   for mapping(uint256 => Buckets.Bucket);
-    using Loans     for Loans.Data;
+    using Buckets for mapping(uint256 => Buckets.Bucket);
+    using Loans   for Loans.Data;
 
     /***********************/
     /*** State Variables ***/
@@ -30,7 +23,6 @@ contract ERC721Pool is IERC721Pool, Pool {
     /// @dev Defaults to length 0 if the whole collection is to be used
     mapping(uint256 => bool) public tokenIdsAllowed;
 
-
     bool public isSubset;
 
     /****************************/
@@ -38,43 +30,32 @@ contract ERC721Pool is IERC721Pool, Pool {
     /****************************/
 
     function initialize(
-        uint256 rate_,
-        address ajnaTokenAddress_
+        uint256[] memory tokenIds_,
+        uint256 rate_
     ) external override {
-        if (poolInitializations != 0)         revert AlreadyInitialized();
-        if (ajnaTokenAddress_ == address(0))  revert Token0xAddress();
+        if (poolInitializations != 0) revert AlreadyInitialized();
 
-        quoteTokenScale = 10**(18 - quoteToken().decimals());
-
-        ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
         interestRate               = rate_;
         interestRateUpdate         = block.timestamp;
-        minFee                     = 0.0005 * 10**18;
+
+        uint256 noOfTokens = tokenIds_.length;
+        if (noOfTokens > 0) {
+            isSubset = true;
+            // add subset of tokenIds allowed in the pool
+            for (uint256 id = 0; id < noOfTokens;) {
+                tokenIdsAllowed[tokenIds_[id]] = true;
+                unchecked {
+                    ++id;
+                }
+            }
+        }
 
         loans.init();
 
         // increment initializations count to ensure these values can't be updated
         poolInitializations += 1;
-    }
-
-    function initializeSubset(
-        uint256[] memory tokenIds_,
-        uint256 rate_,
-        address ajnaTokenAddress_
-    ) external override {
-        isSubset = true;
-
-        // add subset of tokenIds allowed in the pool
-        for (uint256 id = 0; id < tokenIds_.length;) {
-            tokenIdsAllowed[tokenIds_[id]] = true;
-            unchecked {
-                ++id;
-            }
-        }
-
-        this.initialize(rate_, ajnaTokenAddress_);
     }
 
     /***********************************/
@@ -177,14 +158,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         emit ArbTake(borrower_, index_, amount_, 0, 0);
     }
 
-    function clear(address borrower_, uint256 maxDepth_) external override {
-        // TODO: implement
-        uint256[] memory tokenIdsReturned = new uint256[](1);
-        tokenIdsReturned[0] = 0;
-        uint256 debtCleared = maxDepth_ * 10_000;
-        emit ClearNFT(borrower_, _hpbIndex(), debtCleared, tokenIdsReturned, 0);
-    }
-
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit DepositTake(borrower_, index_, amount_, 0, 0);
@@ -227,7 +200,8 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256 price_
     ) internal pure override returns (uint256) {
         uint256 encumbered = price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
-        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD;
+        //slither-disable-next-line divide-before-multiply
+        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
         return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
     }
 
@@ -256,19 +230,12 @@ contract ERC721Pool is IERC721Pool, Pool {
 
     function _transferNFT(address from_, address to_, uint256 tokenId_) internal {
         //slither-disable-next-line calls-loop
-        collateral().safeTransferFrom(from_, to_, tokenId_);
+        IERC721Token(_getArgAddress(0)).safeTransferFrom(from_, to_, tokenId_);
     }
 
     /************************/
     /*** Helper Functions ***/
     /************************/
-
-    /** @dev Collateral tokens are always non-fungible
-     *  @dev Pure function used to facilitate accessing token via clone state
-     */
-    function collateral() public pure returns (ERC721) {
-        return ERC721(_getArgAddress(0));
-    }
 
     /** @notice Implementing this method allows contracts to receive ERC721 tokens
      *  @dev https://forum.openzeppelin.com/t/erc721holder-ierc721receiver-and-onerc721received/11828

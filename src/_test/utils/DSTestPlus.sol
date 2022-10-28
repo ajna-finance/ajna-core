@@ -25,6 +25,7 @@ abstract contract DSTestPlus is Test {
     // Pool events
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
+    event Heal(address indexed borrower, uint256 healedDebt);
     event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
@@ -99,6 +100,18 @@ abstract contract DSTestPlus is Test {
         emit Borrow(from, newLup, amount);
         _assertTokenTransferEvent(address(_pool), from, amount);
         _pool.borrow(amount, indexLimit);
+    }
+
+    function _heal(
+        address from,
+        address borrower,
+        uint256 maxDepth,
+        uint256 healedDebt
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Heal(borrower, healedDebt);
+        _pool.heal(borrower, maxDepth);
     }
 
     function _kick(
@@ -233,7 +246,7 @@ abstract contract DSTestPlus is Test {
             uint256 auctionKickMomp,
             ,
         ) = _pool.auctionInfo(borrower);
-        (, uint256 lockedBonds) = _pool.kickers(kicker);
+        (, uint256 lockedBonds) = _pool.kickerInfo(kicker);
 
         assertEq(auctionKickTime != 0,  active);
         assertEq(auctionKicker,         kicker);
@@ -283,7 +296,7 @@ abstract contract DSTestPlus is Test {
         assertEq(loansCount,  state_.loans);
         assertEq(maxBorrower, state_.maxBorrower);
 
-        uint256 poolInflatorSnapshot = _pool.inflatorSnapshot();
+        (uint256 poolInflatorSnapshot, ) = _pool.inflatorInfo();
         assertGe(poolInflatorSnapshot, 1e18);
         assertGe(pendingInflator,      poolInflatorSnapshot);
 
@@ -297,7 +310,7 @@ abstract contract DSTestPlus is Test {
         uint256 lpBalance,
         uint256 depositTime
     ) internal {
-        (uint256 curLpBalance, uint256 time) = _pool.lenders(index, lender);
+        (uint256 curLpBalance, uint256 time) = _pool.lenderInfo(index, lender);
         assertEq(curLpBalance, lpBalance);
         assertEq(time,       depositTime);
     }
@@ -351,12 +364,22 @@ abstract contract DSTestPlus is Test {
         );
     }
 
+    function _assertEMAs(
+        uint256 debtEma,
+        uint256 lupColEma
+    ) internal {
+        (uint256 curDebtEma, uint256 curLupColEma) = _pool.emasInfo();
+
+        assertEq(curDebtEma,   debtEma);
+        assertEq(curLupColEma, lupColEma);
+    }
+
     function _assertKicker(
         address kicker,
         uint256 claimable,
         uint256 locked
     ) internal {
-        (uint256 curClaimable, uint256 curLocked) = _pool.kickers(kicker);
+        (uint256 curClaimable, uint256 curLocked) = _pool.kickerInfo(kicker);
 
         assertEq(curClaimable, claimable);
         assertEq(curLocked,    locked);
@@ -367,9 +390,10 @@ abstract contract DSTestPlus is Test {
         address maxBorrower,
         uint256 maxThresholdPrice
     ) internal {
-        assertEq(_pool.noOfLoans(),         noOfLoans);
-        assertEq(_pool.maxBorrower(),       maxBorrower);
-        assertEq(_pool.maxThresholdPrice(), maxThresholdPrice);
+        (address curMaxBorrower, uint256 curTpPrice, uint256 curNoOfLoans) = _pool.loansInfo();
+        assertEq(curNoOfLoans,   noOfLoans);
+        assertEq(curMaxBorrower, maxBorrower);
+        assertEq(curTpPrice,     maxThresholdPrice);
     }
 
     function _assertPoolPrices(
@@ -428,13 +452,23 @@ abstract contract DSTestPlus is Test {
     /*** Revert asserts ***/
     /**********************/
 
+    function _assertAddLiquidityBankruptcyBlockRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
+        _pool.addQuoteToken(amount, index);
+    }
+
     function _assertBorrowAuctionActiveRevert(
         address from,
         uint256 amount,
         uint256 indexLimit
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
         _pool.borrow(amount, indexLimit);
     }
 
@@ -468,12 +502,30 @@ abstract contract DSTestPlus is Test {
         _pool.borrow(amount, indexLimit);
     }
 
+    function _assertHealOnNotClearableAuctionRevert(
+        address from,
+        address borrower
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotClearable()'));
+        _pool.heal(borrower, 1);
+    }
+
+    function _assertHealOnNotKickedAuctionRevert(
+        address from,
+        address borrower
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
+        _pool.heal(borrower, 1);
+    }
+
     function _assertKickAuctionActiveRevert(
         address from,
         address borrower
     ) internal {
         changePrank(from);
-        vm.expectRevert(IPoolErrors.AuctionActive.selector);
+        vm.expectRevert(abi.encodeWithSignature('AuctionActive()'));
         _pool.kick(borrower);
     }
 
@@ -506,6 +558,16 @@ abstract contract DSTestPlus is Test {
         _pool.repay(borrower, amount);
     }
 
+    function _assertRemoveLiquidityAuctionNotClearedRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
+        _pool.removeQuoteToken(amount, index);
+    }
+
     function _assertRemoveLiquidityInsufficientLPsRevert(
         address from,
         uint256 amount,
@@ -536,6 +598,15 @@ abstract contract DSTestPlus is Test {
         _pool.removeQuoteToken(amount, index);
     }
 
+    function _assertRemoveAllLiquidityAuctionNotClearedRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
+        _pool.removeAllQuoteToken(index);
+    }
+
     function _assertRemoveAllLiquidityLupBelowHtpRevert(
         address from,
         uint256 index
@@ -543,6 +614,17 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
         _pool.removeAllQuoteToken(index);
+    }
+
+    function _assertMoveLiquidityBankruptcyBlockRevert(
+        address from,
+        uint256 amount,
+        uint256 fromIndex,
+        uint256 toIndex
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
+        _pool.moveQuoteToken(amount, fromIndex, toIndex);
     }
 
     function _assertMoveLiquidityLupBelowHtpRevert(
@@ -577,36 +659,6 @@ abstract contract DSTestPlus is Test {
     function _assertTakeReservesNoReservesRevert() internal {
         vm.expectRevert(IPoolErrors.NoReserves.selector);
         _pool.startClaimableReserveAuction();
-    }
-
-    function _assertDeployWith0xAddressRevert(
-        address poolFactory,
-        address collateral,
-        address quote,
-        uint256 interestRate
-    ) internal {
-        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
-        IPoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
-    }
-
-    function _assertDeployWithInvalidRateRevert(
-        address poolFactory,
-        address collateral,
-        address quote,
-        uint256 interestRate
-    ) internal {
-        vm.expectRevert(IPoolFactory.PoolInterestRateInvalid.selector);
-        IPoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
-    }
-
-    function _assertDeployMultipleTimesRevert(
-        address poolFactory,
-        address collateral,
-        address quote,
-        uint256 interestRate
-    ) internal {
-        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
-        IPoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
     }
 
     function _lup() internal view returns (uint256 lup_) {
