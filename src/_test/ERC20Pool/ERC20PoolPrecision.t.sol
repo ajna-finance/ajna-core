@@ -12,6 +12,8 @@ import '../../base/PoolInfoUtils.sol';
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
 
+import 'forge-std/console.sol';
+
 contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
 
     uint256 internal _lpPoolPrecision         = 10**27;
@@ -436,11 +438,17 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
 
+
+        console.log("Amount to transfer -->",unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale());
+
         //  FIXME: check balances
-        // assertEq(_collateral.balanceOf(address(_pool)),   1.7 * _collateralPrecision);
+        assertEq(_collateral.balanceOf(address(_pool)),   (166 * _collateralPrecision)/100);
         // assertEq(_collateral.balanceOf(_borrower), 148.30 * _collateralPrecision);
         assertEq(_quote.balanceOf(address(_pool)),   145_000 * _quotePrecision);
         assertEq(_quote.balanceOf(_borrower), 5_000 * _quotePrecision);
+
+        // assertEq(_collateral.balanceOf(address(_pool)),   (50 * 1e18) / ERC20Pool(address(_pool)).collateralScale() - (unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale()));
+        // assertEq(_collateral.balanceOf(_borrower), (100 * 1e18) / ERC20Pool(address(_pool)).collateralScale() + (unencumberedCollateral / ERC20Pool(address(_pool)).collateralScale()));
 
         // check pool state
         debt = 5_009.615384615384620000 * 1e18;
