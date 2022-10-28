@@ -31,7 +31,7 @@ def main():
     mkr_contract = Contract(mkr_config.get('address'))
     mkr_reserve = accounts.at(mkr_config.get('reserve'), True);
 
-    bored_ape_config = sdk_config.get('tokens').get('BOREDAPE')
+    bored_ape_config = sdk_config.get('tokens').get('BAYC')
     ape_contract = Contract(bored_ape_config.get('address'))
 
     test_accounts = sdk_config.get('accounts')
@@ -50,7 +50,7 @@ def main():
                 print(f"=== Transfer {balance} MKR to {address} ===")
                 mkr_contract.transfer(address, balance * 1e18, {'from': mkr_reserve})
 
-            if token == 'BOREDAPE':
+            if token == 'BAYC':
                 for tokenId in balances.get(token):         
                     print(f"=== Transfer Bored Ape {tokenId} to {address} ===")
                     ape_owner = accounts.at(ape_contract.ownerOf(tokenId), True);

@@ -108,12 +108,12 @@ For ERC721 tokens the id of token to be funded should be provided.
     "0x66aB6D9362d4F35596279692F0251Db635165871": {
         "DAI": 11000,
         "MKR": 100,
-        "BOREDAPE": [5, 6, 7]
+        "BAYC": [5, 6, 7]
     },
     "0x33A4622B82D4c04a53e170c638B944ce27cffce3": {
         "DAI": 22000,
         "MKR": 50,
-        "BOREDAPE": [8, 9, 10]
+        "BAYC": [8, 9, 10]
     }
 }
 ```
