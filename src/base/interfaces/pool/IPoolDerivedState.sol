@@ -8,24 +8,6 @@ pragma solidity 0.8.14;
 interface IPoolDerivedState {
 
     /**
-     *  @notice Returns the amount of quote tokens deposited at a given bucket.
-     *  @param  index_  The price bucket index for which the value should be calculated.
-     *  @return Amount of quote tokens in bucket.
-     */
-    function bucketDeposit(
-        uint256 index_
-    ) external view returns (uint256);
-
-    /**
-     *  @notice Returns the multiplier of a given bucket.
-     *  @param  index_  The price bucket index for which the value should be calculated.
-     *  @return Bucket multiplier.
-     */
-    function bucketScale(
-        uint256 index_
-    ) external view returns (uint256);
-
-    /**
      *  @notice Returns the bucket index for a given debt amount.
      *  @param  debt_  The debt amount to calculate bucket index for.
      *  @return Bucket index.

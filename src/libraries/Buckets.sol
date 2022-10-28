@@ -7,15 +7,21 @@ import './PoolUtils.sol';
 library Buckets {
 
     struct Lender {
-        uint256 lps; // [RAY] Lender LP accumulator
-        uint256 ts;  // timestamp of last deposit
+        uint256 lps;         // [RAY] Lender LP accumulator
+        uint256 depositTime; // timestamp of last deposit
     }
 
     struct Bucket {
         uint256 lps;                        // [RAY] Bucket LP accumulator
         uint256 collateral;                 // [WAD] Available collateral tokens deposited in the bucket
+        uint256 bankruptcyTime;             // Timestamp when bucket become insolvent, 0 if healthy
         mapping(address => Lender) lenders; // lender address to Lender struct mapping
     }
+
+    /**
+     *  @notice Operation cannot be executed in the same block when bucket becomes insolvent.
+     */
+    error BucketBankruptcyBlock();
 
     /***********************************/
     /*** Bucket Management Functions ***/
@@ -34,6 +40,7 @@ library Buckets {
         uint256 quoteTokenAmountToAdd_,
         uint256 index_
     ) internal returns (uint256 addedLPs_) {
+
         // calculate amount of LPs to be added for the amount of quote tokens added to bucket
         addedLPs_ = quoteTokensToLPs(
             self,
@@ -44,11 +51,15 @@ library Buckets {
 
         // update bucket LPs balance
         Bucket storage bucket = self[index_];
+        // cannot deposit in the same block when bucket becomes insolvent
+        if (bucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
         bucket.lps += addedLPs_;
+
         // update lender LPs balance and deposit timestamp
         Lender storage lender = bucket.lenders[msg.sender];
-        lender.lps += addedLPs_;
-        lender.ts  = block.timestamp;
+        if (bucket.bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
+        else lender.lps += addedLPs_;
+        lender.depositTime = block.timestamp;
     }
 
     /**
@@ -64,6 +75,7 @@ library Buckets {
         uint256 collateralAmountToAdd_,
         uint256 index_
     ) internal returns (uint256 addedLPs_) {
+
         // calculate amount of LPs to be added for the amount of collateral added to bucket
         (addedLPs_, ) = collateralToLPs(
             self,
@@ -73,10 +85,16 @@ library Buckets {
         );
         // update bucket LPs balance and collateral
         Bucket storage bucket = self[index_];
+        // cannot deposit in the same block when bucket becomes insolvent
+        if (bucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
         bucket.lps += addedLPs_;
         bucket.collateral += collateralAmountToAdd_;
+
         // update lender LPs balance
-        bucket.lenders[msg.sender].lps += addedLPs_;
+        Lender storage lender = bucket.lenders[msg.sender];
+        if (bucket.bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
+        else lender.lps += addedLPs_;
+        lender.depositTime = block.timestamp;
     }
 
     /**
@@ -93,14 +111,25 @@ library Buckets {
         uint256 fromIndex_,
         uint256 toIndex_
     ) internal {
+
+        Bucket storage toBucket = self[toIndex_];
+        // cannot move in the same block when target bucket becomes insolvent
+        if (toBucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
+
         // update buckets LPs balance
         Bucket storage fromBucket = self[fromIndex_];
-        Bucket storage toBucket   = self[toIndex_];
         fromBucket.lps -= fromLPsAmount_;
         toBucket.lps   += toLPsAmount_;
-        // update lender LPs balance
-        fromBucket.lenders[msg.sender].lps -= fromLPsAmount_;
-        toBucket.lenders[msg.sender].lps   += toLPsAmount_;
+        // update lender LPs balance in from bucket
+        Lender storage fromLender = fromBucket.lenders[msg.sender];
+        fromLender.lps -= fromLPsAmount_;
+
+        // update lender LPs balance and deposit time in target bucket
+        Lender storage lender = toBucket.lenders[msg.sender];
+        if (toBucket.bankruptcyTime >= lender.depositTime) lender.lps = toLPsAmount_;
+        else lender.lps += toLPsAmount_;
+        // set deposit time to the greater of the lender's from bucket and the target bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
+        lender.depositTime = Maths.max(fromLender.depositTime, toBucket.bankruptcyTime + 1);
     }
 
     /**
@@ -155,8 +184,8 @@ library Buckets {
     ) internal {
         // move lp tokens to the new owner address
         Lender storage newOwner = self[index_].lenders[newOwner_];
-        newOwner.lps += lpsAmount_;
-        newOwner.ts  = Maths.max(depositTime_, newOwner.ts);
+        newOwner.lps         += lpsAmount_;
+        newOwner.depositTime = Maths.max(depositTime_, newOwner.depositTime);
         // reset owner lp balance for this index
         delete self[index_].lenders[owner_];
     }
@@ -199,26 +228,26 @@ library Buckets {
     ) internal view returns (uint256, uint256) {
         uint256 bucketCollateral = self[index_].collateral;
         uint256 bucketLPs        = self[index_].lps;
-        if (bucketLPs == 0) {
-            return  (Maths.RAY, bucketCollateral);
-        }
+        if (bucketLPs == 0) return (Maths.RAY, bucketCollateral);
+
         uint256 bucketSize = quoteToken_ * 10**18 + PoolUtils.indexToPrice(index_) * bucketCollateral;  // 10^36 + // 10^36
         return (bucketSize * 10**18 / bucketLPs, bucketCollateral); // 10^27
     }
 
     /**
      *  @notice Returns the lender info for a given bucket.
-     *  @param  index_  Index of the bucket.
-     *  @param  lender_ Lender's address.
-     *  @return LPs balance of lender in current bucket.
-     *  @return Timestamp of last lender deposit in current bucket.
+     *  @param  index_       Index of the bucket.
+     *  @param  lender_      Lender's address.
+     *  @return lpBalance_   LPs balance of lender in current bucket.
+     *  @return depositTime_ Timestamp of last lender deposit in current bucket.
      */
     function getLenderInfo(
         mapping(uint256 => Bucket) storage self,
         uint256 index_,
         address lender_
-    ) internal view returns (uint256, uint256) {
-        return (self[index_].lenders[lender_].lps, self[index_].lenders[lender_].ts);
+    ) internal view returns (uint256 lpBalance_, uint256 depositTime_) {
+        depositTime_ = self[index_].lenders[lender_].depositTime;
+        if (self[index_].bankruptcyTime < depositTime_) lpBalance_ = self[index_].lenders[lender_].lps;
     }
 
     /**

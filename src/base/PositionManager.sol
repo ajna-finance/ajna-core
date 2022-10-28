@@ -80,7 +80,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             if (!positionPrice.contains(params_.indexes[i])) require(positionPrice.add(params_.indexes[i]), "PM:ME:ADD_FAIL");
 
             // update PositionManager accounting
-            (uint256 lpBalance, ) = pool.lenders(params_.indexes[i], params_.owner);
+            (uint256 lpBalance, ) = pool.lenderInfo(params_.indexes[i], params_.owner);
             lps[params_.tokenId][params_.indexes[i]] += lpBalance;
 
             // increment call counter in gas efficient way by skipping safemath checks
@@ -107,7 +107,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
 
         IPool pool = IPool(params_.pool);
-        uint256 bucketDeposit = pool.bucketDeposit(params_.fromIndex);
+        (, , , uint256 bucketDeposit, ) = pool.bucketInfo(params_.fromIndex);
         uint256 maxQuote      = pool.lpsToQuoteTokens(
             bucketDeposit,
             lps[params_.tokenId][params_.fromIndex],

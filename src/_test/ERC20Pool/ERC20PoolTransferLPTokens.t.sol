@@ -180,7 +180,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       indexes[0],
                 lpBalance:   10_000 * 1e27,
-                depositTime: 3600
+                depositTime: _startTime + 1 hours
             }
         );
         _assertLenderLpBalance(
@@ -196,7 +196,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       indexes[1],
                 lpBalance:   20_000 * 1e27,
-                depositTime: 3600
+                depositTime: _startTime + 1 hours
             }
         );
         _assertLenderLpBalance(
@@ -212,7 +212,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       indexes[2],
                 lpBalance:   30_000 * 1e27,
-                depositTime: 3600
+                depositTime: _startTime + 1 hours
             }
         );
         _assertLenderLpBalance(
@@ -264,7 +264,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       indexes[0],
                 lpBalance:   10_000 * 1e27,
-                depositTime: 3600
+                depositTime: _startTime + 1 hours
             }
         );
         _assertLenderLpBalance(
@@ -280,7 +280,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       indexes[1],
                 lpBalance:   20_000 * 1e27,
-                depositTime: 3600
+                depositTime: _startTime + 1 hours
             }
         );
         _assertLenderLpBalance(
@@ -296,7 +296,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       indexes[2],
                 lpBalance:   30_000 * 1e27,
-                depositTime: 3600
+                depositTime: _startTime + 1 hours
             }
         );
     }
@@ -342,7 +342,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       depositIndexes[0],
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -358,7 +358,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       depositIndexes[1],
                 lpBalance:   20_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -374,7 +374,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       depositIndexes[2],
                 lpBalance:   30_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -425,7 +425,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       depositIndexes[0],
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -433,7 +433,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       depositIndexes[1],
                 lpBalance:   20_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -457,7 +457,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       depositIndexes[2],
                 lpBalance:   30_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
     }
@@ -528,7 +528,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       indexes[0],
                 lpBalance:   10_000 * 1e27,
-                depositTime: 3600
+                depositTime: _startTime + 1 hours
             }
         );
         _assertLenderLpBalance(
@@ -536,7 +536,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       indexes[0],
                 lpBalance:   5_000 * 1e27,
-                depositTime: 7200
+                depositTime: _startTime + 2 hours
             }
         );
         _assertLenderLpBalance(
@@ -544,7 +544,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       indexes[1],
                 lpBalance:   20_000 * 1e27,
-                depositTime: 3600
+                depositTime: _startTime + 1 hours
             }
         );
         _assertLenderLpBalance(
@@ -552,7 +552,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       indexes[1],
                 lpBalance:   10_000 * 1e27,
-                depositTime: 7200
+                depositTime: _startTime + 2 hours
             }
         );
         _assertLenderLpBalance(
@@ -560,7 +560,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender1,
                 index:       indexes[2],
                 lpBalance:   30_000 * 1e27,
-                depositTime: 3600
+                depositTime: _startTime + 1 hours
             }
         );
         _assertLenderLpBalance(
@@ -568,7 +568,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       indexes[2],
                 lpBalance:   15_000 * 1e27,
-                depositTime: 7200
+                depositTime: _startTime + 2 hours
             }
         );
 
@@ -613,7 +613,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       indexes[0],
                 lpBalance:   15_000 * 1e27,
-                depositTime: 7200
+                depositTime: _startTime + 2 hours
             }
         );
         _assertLenderLpBalance(
@@ -629,7 +629,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       indexes[1],
                 lpBalance:   30_000 * 1e27,
-                depositTime: 7200
+                depositTime: _startTime + 2 hours
             }
         );
         _assertLenderLpBalance(
@@ -645,7 +645,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
                 lender:      _lender2,
                 index:       indexes[2],
                 lpBalance:   45_000 * 1e27,
-                depositTime: 7200
+                depositTime: _startTime + 2 hours
             }
         );
     }

@@ -6,8 +6,11 @@ import './Maths.sol';
 import './BucketMath.sol';
 
 library PoolUtils {
-    uint256 private constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
-    uint256 private constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
+    uint256 internal constant WAD_WEEKS_PER_YEAR  = 52 * 10**18;
+    uint256 internal constant MINUTE_HALF_LIFE    = 0.988514020352896135_356867505 * 1e27;  // 0.5^(1/60)
+
+    // minimum fee that can be applied for early withdraw penalty
+    uint256 internal constant MIN_FEE = 0.0005 * 10**18;
 
     function auctionPrice(
         uint256 referencePrice,
@@ -51,11 +54,10 @@ library PoolUtils {
     }
 
     function feeRate(
-        uint256 interestRate_,
-        uint256 minFee_
+        uint256 interestRate_
     ) internal pure returns (uint256) {
         // greater of the current annualized interest rate divided by 52 (one week of interest) or 5 bps
-        return Maths.max(Maths.wdiv(interestRate_, WAD_WEEKS_PER_YEAR), minFee_);
+        return Maths.max(Maths.wdiv(interestRate_, WAD_WEEKS_PER_YEAR), MIN_FEE);
     }
 
     function pendingInterestFactor(
@@ -95,7 +97,6 @@ library PoolUtils {
 
     function applyEarlyWithdrawalPenalty(
         Pool.PoolState memory poolState_,
-        uint256 minFee_,
         uint256 depositTime_,
         uint256 fromIndex_,
         uint256 toIndex_,
@@ -107,7 +108,7 @@ library PoolUtils {
             bool applyPenalty = indexToPrice(fromIndex_) > ptp;
             if (toIndex_ != 0) applyPenalty = applyPenalty && indexToPrice(toIndex_) < ptp;
             if (applyPenalty) {
-                amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate(poolState_.rate, minFee_));
+                amountWithPenalty_ =  Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate(poolState_.rate));
             }
         }
     }

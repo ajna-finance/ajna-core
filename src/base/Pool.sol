@@ -3,9 +3,6 @@
 pragma solidity 0.8.14;
 
 import '@clones/Clone.sol';
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
 import './interfaces/IPool.sol';
@@ -18,8 +15,6 @@ import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 
 abstract contract Pool is Clone, Multicall, IPool {
-    using SafeERC20 for ERC20;
-
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
@@ -35,30 +30,27 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** State Variables ***/
     /***********************/
 
-    uint256 public override inflatorSnapshot;           // [WAD]
-    uint256 public override lastInflatorSnapshotUpdate; // [SEC]
-    uint256 public override minFee;                     // [WAD]
-    uint256 public override interestRate;               // [WAD]
-    uint256 public override interestRateUpdate;         // [SEC]
+    uint256 public override interestRate;       // [WAD]
+    uint256 public override interestRateUpdate; // [SEC]
+    uint256 public override pledgedCollateral;  // [WAD]
 
-    uint256 public override quoteTokenScale;
-    uint256 public override pledgedCollateral; // [WAD]
+    uint256 internal debtEma;   // [WAD]
+    uint256 internal lupColEma; // [WAD]
 
-    uint256 public override debtEma;      // [WAD]
-    uint256 public override lupColEma;    // [WAD]
+    uint256 internal inflatorSnapshot;           // [WAD]
+    uint256 internal lastInflatorSnapshotUpdate; // [SEC]
 
-    uint256 public override reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
-    uint256 public override reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+    uint256 internal reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
+    uint256 internal reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
 
-    mapping(uint256 => Buckets.Bucket)              public override buckets;     // deposit index -> bucket
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
-    Auctions.Data internal auctions;
-    Deposits.Data internal deposits;
-    Loans.Data    internal loans;
-    address       internal ajnaTokenAddress;    // Address of the Ajna token, needed for Claimable Reserve Auctions.
-    uint256       internal poolInitializations;
-    uint256       internal t0poolDebt;          // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
+    Auctions.Data                      internal auctions;
+    mapping(uint256 => Buckets.Bucket) internal buckets;              // deposit index -> bucket
+    Deposits.Data                      internal deposits;
+    Loans.Data                         internal loans;
+    uint256                            internal poolInitializations;
+    uint256                            internal t0poolDebt;           // Pool debt as if the whole amount was incurred upon the first loan. [WAD]
 
     struct PoolState {
         uint256 accruedDebt;
@@ -90,7 +82,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // move quote token amount from lender to pool
         emit AddQuoteToken(msg.sender, index_, quoteTokenAmountToAdd_, newLup);
-        quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenAmountToAdd_ / quoteTokenScale);
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToAdd_);
     }
 
     function approveLpOwnership(
@@ -127,7 +119,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         quoteTokenAmountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
-            minFee,
             lenderLastDepositTime,
             fromIndex_,
             toIndex_,
@@ -154,6 +145,8 @@ abstract contract Pool is Clone, Multicall, IPool {
     function removeAllQuoteToken(
         uint256 index_
     ) external returns (uint256 quoteTokenAmountRemoved_, uint256 redeemedLenderLPs_) {
+        auctions.revertIfAuctionClearable(loans);
+
         PoolState memory poolState = _accruePoolInterest();
 
         (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(
@@ -182,6 +175,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 quoteTokenAmountToRemove_,
         uint256 index_
     ) external override returns (uint256 bucketLPs_) {
+        auctions.revertIfAuctionClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -254,43 +248,49 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 amountToBorrow_,
         uint256 limitIndex_
     ) external override {
-
         // if borrower auctioned then it cannot draw more debt
-        (bool auctionKicked, ) = auctions.getStatus(msg.sender);
-        if (auctionKicked) revert AuctionActive();
+        auctions.revertIfActive(msg.sender);
 
-        PoolState memory poolState = _accruePoolInterest();
-
-        uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
-        if (lupId > limitIndex_) revert LimitIndexReached();
-
+        PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
-        uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
-        uint256 loansCount = loans.noOfLoans();
+        uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
+        uint256 loansCount             = loans.noOfLoans();
         if (
             loansCount >= 10
             &&
             (borrowerDebt + amountToBorrow_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-        )  revert AmountLTMinDebt();
+        ) revert AmountLTMinDebt();
 
         // increase debt by the origination fee
-        uint256 debtChange = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate, minFee) + Maths.WAD);
+        uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
         borrowerDebt += debtChange;
 
-        // FIXME: newLup should be calculated on debt including origination fee
+        // calculate the new LUP
+        uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
+        if (lupId > limitIndex_) revert LimitIndexReached();
         uint256 newLup = PoolUtils.indexToPrice(lupId);
 
         // check borrow won't push borrower into a state of under-collateralization
         if (
-            _collateralization(borrowerDebt, borrower.collateral, newLup) < Maths.WAD
+            _collateralization(
+                borrowerDebt,
+                borrower.collateral,
+                newLup
+            ) < Maths.WAD
             ||
             borrower.collateral == 0
         ) revert BorrowerUnderCollateralized();
 
         // check borrow won't push pool into a state of under-collateralization
         poolState.accruedDebt += debtChange;
-        if (_collateralization(poolState.accruedDebt, poolState.collateral, newLup) < Maths.WAD) revert PoolUnderCollateralized();
+        if (
+            _collateralization(
+                poolState.accruedDebt,
+                poolState.collateral,
+                newLup
+            ) < Maths.WAD
+        ) revert PoolUnderCollateralized();
 
         borrower.t0debt += t0debtChange;
         loans.update(
@@ -305,7 +305,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // move borrowed amount from pool to sender
         emit Borrow(msg.sender, newLup, amountToBorrow_);
-        quoteToken().safeTransfer(msg.sender, amountToBorrow_ / quoteTokenScale);
+        _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
     function repay(
@@ -327,7 +327,8 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         if (borrowerDebt != 0) {
             uint256 loansCount = loans.noOfLoans();
-            if (loansCount >= 10
+            if (
+                loansCount >= 10
                 &&
                 (borrowerDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
             ) revert AmountLTMinDebt();
@@ -337,7 +338,11 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         auctions.checkAndRemove(
             borrowerAddress_,
-            _collateralization(borrowerDebt, borrower.collateral, newLup)
+            _collateralization(
+                borrowerDebt,
+                borrower.collateral,
+                newLup
+            )
         );
         borrower.t0debt -= t0repaidDebt;
         loans.update(
@@ -352,7 +357,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // move amount to repay from sender to pool
         emit Repay(borrowerAddress_, newLup, quoteTokenAmountToRepay);
-        quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenAmountToRepay / quoteTokenScale);
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToRepay);
     }
 
 
@@ -360,10 +365,29 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
-    function kick(address borrowerAddress_) external override {
+    function heal(
+        address borrower_,
+        uint256 maxDepth_
+    ) external override {
+        uint256 poolDebt          = Maths.wmul(t0poolDebt, inflatorSnapshot);
+        uint256 quoteTokenBalance = IERC20Token(_getArgAddress(20)).balanceOf(address(this));
+        uint256 reserves          = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
+        uint256 healedDebt        = auctions.heal(
+            loans,
+            buckets,
+            deposits,
+            borrower_,
+            reserves, maxDepth_,
+            inflatorSnapshot
+        );
+        if (healedDebt != 0) {
+            t0poolDebt -= Maths.wdiv(healedDebt, inflatorSnapshot);
+            emit Heal(borrower_, healedDebt);
+        }
+    }
 
-        (bool auctionKicked, ) = auctions.getStatus(borrowerAddress_);
-        if (auctionKicked) revert AuctionActive();
+    function kick(address borrowerAddress_) external override {
+        auctions.revertIfActive(borrowerAddress_);
 
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
@@ -371,15 +395,23 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 lup = _lup(poolState.accruedDebt);
         uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
-        if (_collateralization(borrowerDebt, borrower.collateral, lup) >= Maths.WAD) revert BorrowerOk();
-
-        poolState.accruedDebt += loans.kick(
-                borrowerAddress_,
+        if (
+            _collateralization(
                 borrowerDebt,
-                poolState.inflator,
-                poolState.rate
-            );
+                borrower.collateral,
+                lup
+            ) >= Maths.WAD
+        ) revert BorrowerOk();
 
+        uint256 kickPenalty = loans.kick(
+            borrowerAddress_,
+            borrowerDebt,
+            poolState.inflator,
+            poolState.rate
+        );
+        poolState.accruedDebt += kickPenalty;
+        t0poolDebt += Maths.wdiv(kickPenalty, poolState.inflator);
+        
         // kick auction
         uint256 kickAuctionAmount = auctions.kick(
             borrowerAddress_,
@@ -392,7 +424,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         _updatePool(poolState, lup);
 
         emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral);
-        quoteToken().safeTransferFrom(msg.sender, address(this), kickAuctionAmount / quoteTokenScale);
+        _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
 
@@ -407,31 +439,36 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposits.treeSum(),
             auctions.totalBondEscrowed,
             curUnclaimedAuctionReserve,
-            quoteToken().balanceOf(address(this))
+            IERC20Token(_getArgAddress(20)).balanceOf(address(this))
         );
         uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
         curUnclaimedAuctionReserve += claimable - kickerAward;
-        if (curUnclaimedAuctionReserve == 0) revert NoReserves();
-
-        reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
-        reserveAuctionKicked    = block.timestamp;
-        emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
-        quoteToken().safeTransfer(msg.sender, kickerAward / quoteTokenScale);
+        if (curUnclaimedAuctionReserve != 0) {
+            reserveAuctionUnclaimed = curUnclaimedAuctionReserve;
+            reserveAuctionKicked    = block.timestamp;
+            emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
+            _transferQuoteToken(msg.sender, kickerAward);
+        }
+        else revert NoReserves();
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
         uint256 kicked = reserveAuctionKicked;
-        if (kicked == 0 || block.timestamp - kicked > 72 hours) revert NoReservesAuction();
 
-        amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
-        uint256 price = PoolUtils.reserveAuctionPrice(kicked);
-        uint256 ajnaRequired = Maths.wmul(amount_, price);
-        reserveAuctionUnclaimed -= amount_;
+        if (kicked != 0 && block.timestamp - kicked <= 72 hours) {
+            amount_ = Maths.min(reserveAuctionUnclaimed, maxAmount_);
+            uint256 price = PoolUtils.reserveAuctionPrice(kicked);
+            uint256 ajnaRequired = Maths.wmul(amount_, price);
+            reserveAuctionUnclaimed -= amount_;
 
-        emit ReserveAuction(reserveAuctionUnclaimed, price);
-        ERC20(ajnaTokenAddress).safeTransferFrom(msg.sender, address(this), ajnaRequired);
-        ERC20Burnable(ajnaTokenAddress).burn(ajnaRequired);
-        quoteToken().safeTransfer(msg.sender, amount_ / quoteTokenScale);
+            emit ReserveAuction(reserveAuctionUnclaimed, price);
+
+            IERC20Token ajnaToken = IERC20Token(0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079);
+            if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
+            ajnaToken.burn(ajnaRequired);
+            _transferQuoteToken(msg.sender, amount_);
+        }
+        else revert NoReservesAuction();
     }
 
 
@@ -454,7 +491,11 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         auctions.checkAndRemove(
             borrowerAddress_,
-            _collateralization(Maths.wmul(borrower.t0debt, poolState.inflator) , borrower.collateral, newLup)
+            _collateralization(
+                Maths.wmul(borrower.t0debt, poolState.inflator),
+                borrower.collateral,
+                newLup
+            )
         );
         loans.update(
             deposits,
@@ -509,6 +550,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToRemove_,
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
+        auctions.revertIfAuctionClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -545,7 +587,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         (, uint256 lastDeposit) = buckets.getLenderInfo(index_, msg.sender);
         amount = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState_,
-            minFee,
             lastDeposit,
             index_,
             0,
@@ -556,7 +597,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // move quote token amount from pool to lender
         emit RemoveQuoteToken(msg.sender, index_, amount, newLup);
-        quoteToken().safeTransfer(msg.sender, amount / quoteTokenScale);
+        _transferQuoteToken(msg.sender, amount);
     }
 
 
@@ -605,7 +646,11 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         auctions.checkAndRemove(
             borrowerAddress_,
-            _collateralization(borrowerDebt, borrower.collateral, newLup)
+            _collateralization(
+                borrowerDebt,
+                borrower.collateral,
+                newLup
+            )
         );
         borrower.t0debt -= t0repaidDebt;
         loans.update(
@@ -619,7 +664,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         t0poolDebt -= t0repaidDebt;
 
         emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
-        quoteToken().safeTransferFrom(msg.sender, address(this), quoteTokenAmount / quoteTokenScale);
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
         return collateralTaken;
     }
 
@@ -629,12 +674,15 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*****************************/
 
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
+        uint256 t0Debt = t0poolDebt;
+
         poolState_.collateral  = pledgedCollateral;
         poolState_.inflator    = inflatorSnapshot;
-        // TODO: when new interest has accrued, this gets overwriten, wasting a storage read and multiplication
-        poolState_.accruedDebt = Maths.wmul(t0poolDebt, poolState_.inflator);
 
-        if (t0poolDebt != 0) {
+        if (t0Debt != 0) {
+            // TODO: when new interest has accrued, this gets overwriten, wasting a multiplication
+            poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
+
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
             poolState_.isNewInterestAccrued = elapsed != 0;
             if (poolState_.isNewInterestAccrued) {
@@ -655,7 +703,7 @@ abstract contract Pool is Clone, Multicall, IPool {
                 }
 
                 // Calculate pool debt using the new inflator
-                poolState_.accruedDebt = Maths.wmul(t0poolDebt, poolState_.inflator);
+                poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
             }
         }
     }
@@ -692,7 +740,13 @@ abstract contract Pool is Clone, Multicall, IPool {
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
-            if (_collateralization(poolState_.accruedDebt, poolState_.collateral, lup_) != Maths.WAD) {
+            if (
+                _collateralization(
+                    poolState_.accruedDebt,
+                    poolState_.collateral,
+                    lup_
+                ) != Maths.WAD
+            ) {
 
                 int256 actualUtilization = int256(
                     deposits.utilization(
@@ -732,8 +786,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         }
     }
 
-    function _hpbIndex() internal view returns (uint256) {
-        return deposits.findIndexOfSum(1);
+    function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
+        if (!IERC20Token(_getArgAddress(20)).transferFrom(from_, address(this), amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
+    }
+
+    function _transferQuoteToken(address to_, uint256 amount_) internal {
+        if (!IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
     }
 
     function _htp(uint256 inflator_) internal view returns (uint256) {
@@ -778,7 +836,18 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function borrowers(address borrower_) external view override returns (uint256, uint256, uint256) {
+    function borrowerInfo(
+        address borrower_
+    )
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
         return (
             loans.borrowers[borrower_].t0debt,
             loans.borrowers[borrower_].collateral,
@@ -786,16 +855,27 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function bucketDeposit(uint256 index_) external view override returns (uint256) {
-        return deposits.valueAt(index_);
-    }
-
-    function bucketScale(uint256 index_) external view override returns (uint256) {
-        return deposits.scale(index_);
-    }
-
-    function collateralAddress() external pure override returns (address) {
-        return _getArgAddress(0);
+    function bucketInfo(
+        uint256 index_
+    )
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            buckets[index_].lps,
+            buckets[index_].collateral,
+            buckets[index_].bankruptcyTime,
+            deposits.valueAt(index_),
+            deposits.scale(index_)
+        );
     }
 
     // TODO: only PoolInfoUtils should access this
@@ -824,19 +904,66 @@ abstract contract Pool is Clone, Multicall, IPool {
         return deposits.utilization(debt_, collateral_);
     }
 
-    function kickers(address kicker_) external view override returns (uint256, uint256) {
+    function emasInfo()
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256
+        )
+    {
+        return (
+            debtEma,
+            lupColEma
+        );
+    }
+
+    function inflatorInfo()
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256
+        )
+    {
+        return (
+            inflatorSnapshot,
+            lastInflatorSnapshotUpdate
+        );
+    }
+
+    function kickerInfo(
+        address kicker_
+    )
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256
+    )
+    {
         return(
             auctions.kickers[kicker_].claimable,
             auctions.kickers[kicker_].locked
         );
     }
 
-    function lenders(uint256 index_, address lender_) external view override returns (uint256, uint256) {
+    function lenderInfo(
+        uint256 index_,
+        address lender_
+    )
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256
+        )
+    {
         return buckets.getLenderInfo(index_, lender_);
-    }
-
-    function totalBondEscrowed() external view override returns (uint256) {
-        return auctions.totalBondEscrowed;
     }
 
     function lpsToQuoteTokens(
@@ -852,31 +979,49 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function maxBorrower() external view override returns (address) {
-        return loans.getMax().borrower;
+    function loansInfo()
+        external
+        view
+        override
+        returns (
+            address,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            loans.getMax().borrower,
+            Maths.wmul(loans.getMax().thresholdPrice, inflatorSnapshot),
+            loans.noOfLoans()
+        );
     }
 
-    function maxThresholdPrice() external view override returns (uint256) {
-        return Maths.wmul(loans.getMax().thresholdPrice, inflatorSnapshot);
+    function reservesInfo()
+        external
+        view
+        override
+        returns (
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            auctions.totalBondEscrowed,
+            reserveAuctionUnclaimed,
+            reserveAuctionKicked
+        );
     }
 
-    function noOfLoans() external view override returns (uint256) {
-        return loans.noOfLoans();
+    function collateralAddress() external pure override returns (address) {
+        return _getArgAddress(0);
     }
 
     function quoteTokenAddress() external pure override returns (address) {
-        return _getArgAddress(0x14);
+        return _getArgAddress(20);
     }
 
-    /************************/
-    /*** Helper Functions ***/
-    /************************/
-
-    /**
-     *  @dev Pure function used to facilitate accessing token via clone state.
-     */
-    function quoteToken() public pure returns (ERC20) {
-        return ERC20(_getArgAddress(0x14));
+    function quoteTokenScale() external pure override returns (uint256) {
+        return _getArgUint256(40);
     }
-
 }

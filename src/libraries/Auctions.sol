@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import './Buckets.sol';
 import './Loans.sol';
 import './Maths.sol';
 
@@ -19,7 +20,7 @@ library Auctions {
         address kicker;      // address that initiated liquidation
         uint256 bondSize;    // liquidation bond size
         uint256 bondFactor;  // bond factor used to start liquidation
-        uint128 kickTime;    // timestamp when liquidation was started
+        uint256 kickTime;    // timestamp when liquidation was started
         uint256 kickMomp;    // Momp when liquidation was started
         address prev;        // previous liquidated borrower in auctions queue
         address next;        // next liquidated borrower in auctions queue
@@ -30,6 +31,18 @@ library Auctions {
         uint256 locked;    // kicker's balance of tokens locked in auction bonds
     }
 
+    /**
+     *  @notice The action cannot be executed on an active auction.
+     */
+    error AuctionActive();
+    /**
+     *  @notice Attempted auction to clear doesn't meet conditions.
+     */
+    error AuctionNotClearable();
+    /**
+     *  @notice Head auction should be cleared prior of executing this action.
+     */
+    error AuctionNotCleared();
     /**
      *  @notice Actor is attempting to take or clear an inactive auction.
      */
@@ -44,8 +57,101 @@ library Auctions {
     /*********************************/
 
     /**
+     *  @notice Heals the debt of the given loan / borrower.
+     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
+     *  @param  borrower_      Borrower whose debt is healed.
+     *  @param  reserves_      Pool reserves.
+     *  @param  bucketDepth_   Max number of buckets heal action should iterate through.
+     *  @param  poolInflator_  The pool's inflator, used to calculate borrower debt.
+     *  @return healedDebt_    The amount of debt that was healed.
+     */
+    function heal(
+        Data storage self,
+        Loans.Data storage loans_,
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        address borrower_,
+        uint256 reserves_,
+        uint256 bucketDepth_,
+        uint256 poolInflator_
+    ) internal returns (
+        uint256 healedDebt_
+    )
+    {
+        uint256 kickTime = self.liquidations[borrower_].kickTime;
+        if (kickTime == 0) revert NoAuction();
+
+        uint256 debtToHeal   = Maths.wmul(loans_.borrowers[borrower_].t0debt, poolInflator_);
+        uint256 remainingCol = loans_.borrowers[borrower_].collateral;
+        if (
+            (block.timestamp - kickTime > 72 hours)
+            ||
+            (debtToHeal > 0 && remainingCol == 0)
+        ) {
+            uint256 remainingDebt = debtToHeal;
+
+            while (bucketDepth_ > 0) {
+                // auction has debt to cover with remaining collateral
+                uint256 hpbIndex;
+                if (remainingDebt != 0 && remainingCol != 0) {
+                    hpbIndex              = Deposits.findIndexOfSum(deposits_, 1);
+                    uint256 hpbPrice      = PoolUtils.indexToPrice(hpbIndex);
+                    uint256 clearableDebt = Maths.min(remainingDebt, Deposits.valueAt(deposits_, hpbIndex));
+                    clearableDebt         = Maths.min(clearableDebt, Maths.wmul(remainingCol, hpbPrice));
+                    uint256 clearableCol  = Maths.wdiv(clearableDebt, hpbPrice);
+
+                    remainingDebt -= clearableDebt;
+                    remainingCol  -= clearableCol;
+
+                    Deposits.remove(deposits_, hpbIndex, clearableDebt);
+                    buckets_[hpbIndex].collateral += clearableCol;
+                }
+
+                // there's still debt to cover but no collateral left to auction, use reserve or forgive amount form next HPB
+                if (remainingDebt != 0 && remainingCol == 0) {
+                    if (reserves_ != 0) {
+                        uint256 fromReserve =  Maths.min(remainingDebt, reserves_);
+                        reserves_     -= fromReserve;
+                        remainingDebt -= fromReserve;
+                    } else {
+                        hpbIndex           = Deposits.findIndexOfSum(deposits_, 1);
+                        uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
+                        uint256 forgiveAmt = Maths.min(remainingDebt, hpbDeposit);
+
+                        remainingDebt -= forgiveAmt;
+
+                        Deposits.remove(deposits_, hpbIndex, forgiveAmt);
+
+                        if (buckets_[hpbIndex].collateral == 0 && forgiveAmt >= hpbDeposit) {
+                            // existing LPB and LP tokens for the bucket shall become unclaimable.
+                            buckets_[hpbIndex].lps = 0;
+                            buckets_[hpbIndex].bankruptcyTime = block.timestamp;
+                        }
+                    }
+                }
+
+                // no more debt to cover, remove auction from queue
+                if (remainingDebt == 0) {
+                    _removeAuction(self, borrower_);
+                    // TODO figure out what to do with remaining collateral in NFT case
+                    break;
+                }
+
+                --bucketDepth_;
+            }
+
+            healedDebt_ = debtToHeal - remainingDebt;
+
+            // save remaining debt and collateral after auction clear action
+            loans_.borrowers[borrower_].t0debt     = Maths.wdiv(remainingDebt, poolInflator_);
+            loans_.borrowers[borrower_].collateral = remainingCol;
+        } else {
+            revert AuctionNotClearable();
+        }
+    }
+
+    /**
      *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
-     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from totalBondEscrowed.
      *  @param  borrower_          Borrower whose loan is being placed in queue.
      *  @param  collateralization_ Borrower's collateralization.
      */
@@ -56,35 +162,7 @@ library Auctions {
     ) internal {
 
         if (collateralization_ >= Maths.WAD && self.liquidations[borrower_].kickTime != 0) {
-
-            Liquidation memory liquidation = self.liquidations[borrower_];
-            // update kicker balances
-            Kicker storage kicker = self.kickers[liquidation.kicker];
-            kicker.locked    -= liquidation.bondSize;
-            kicker.claimable += liquidation.bondSize;
-
-            if (self.head == borrower_ && self.tail == borrower_) {
-                // liquidation is the head and tail
-                self.head = address(0);
-                self.tail = address(0);
-
-            } else if(self.head == borrower_) {
-                // liquidation is the head
-                self.liquidations[liquidation.next].prev = address(0);
-                self.head = liquidation.next;
-
-            } else if(self.tail == borrower_) {
-                // liquidation is the tail
-                self.liquidations[liquidation.prev].next = address(0);
-                self.tail = liquidation.prev;
-
-            } else {
-                // liquidation is in the middle
-                self.liquidations[liquidation.prev].next = liquidation.next;
-                self.liquidations[liquidation.next].prev = liquidation.prev;
-            }
-            // delete liquidation
-            delete self.liquidations[borrower_];
+            _removeAuction(self, borrower_);
         }
     }
 
@@ -133,11 +211,11 @@ library Auctions {
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
-        liquidation.kicker   = msg.sender;
-        liquidation.kickTime = uint128(block.timestamp);
-        liquidation.kickMomp = momp_;
-        liquidation.bondSize       = bondSize;
-        liquidation.bondFactor     = bondFactor;
+        liquidation.kicker     = msg.sender;
+        liquidation.kickTime   = block.timestamp;
+        liquidation.kickMomp   = momp_;
+        liquidation.bondSize   = bondSize;
+        liquidation.bondFactor = bondFactor;
 
         liquidation.next = address(0);
         if (self.head != address(0)) {
@@ -227,23 +305,90 @@ library Auctions {
         }
     }
 
+
+    /***************************/
+    /***  Internal Functions ***/
+    /***************************/
+
+    /**
+     *  @notice Removes auction and repairs the queue order.
+     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
+     *  @param  borrower_ Auctioned borrower address.
+     */
+    function _removeAuction(
+        Data storage self,
+        address borrower_
+    ) internal {
+
+        Liquidation memory liquidation = self.liquidations[borrower_];
+        // update kicker balances
+        Kicker storage kicker = self.kickers[liquidation.kicker];
+        kicker.locked    -= liquidation.bondSize;
+        kicker.claimable += liquidation.bondSize;
+
+        if (self.head == borrower_ && self.tail == borrower_) {
+            // liquidation is the head and tail
+            self.head = address(0);
+            self.tail = address(0);
+
+        } else if(self.head == borrower_) {
+            // liquidation is the head
+            self.liquidations[liquidation.next].prev = address(0);
+            self.head = liquidation.next;
+
+        } else if(self.tail == borrower_) {
+            // liquidation is the tail
+            self.liquidations[liquidation.prev].next = address(0);
+            self.tail = liquidation.prev;
+
+        } else {
+            // liquidation is in the middle
+            self.liquidations[liquidation.prev].next = liquidation.next;
+            self.liquidations[liquidation.next].prev = liquidation.prev;
+        }
+        // delete liquidation
+         delete self.liquidations[borrower_];
+    }
+
+
     /**********************/
     /*** View Functions ***/
     /**********************/
 
     /**
-     *  @notice Retrieves status of auction for a given borrower address.
-     *  @param  borrower_ Borrower address to get auction status for.
-     *  @return kicked_   True if auction was kicked (kick time is different than 0).
-     *  @return started_  True if auction is started (more than 1 hours elapsed since it was kicked).
+     *  @notice Check if there is an ongoing auction for current borrower and revert if such.
+     *  @dev    Used to prevent an auctioned borrower to draw more debt or while in liquidation.
+     *  @dev    Used to prevent kick on an auctioned borrower.
+     *  @param  borrower_ Borrower address to check auction status for.
      */
-    function getStatus(
+    function revertIfActive(
         Data storage self,
         address borrower_
-    ) internal view returns (bool kicked_, bool started_) {
-        uint256 kickTime = self.liquidations[borrower_].kickTime;
-        kicked_  = kickTime != 0;
-        started_ = kicked_ && (block.timestamp - kickTime > 1 hours);
+    ) internal view {
+        if (self.liquidations[borrower_].kickTime != 0) revert AuctionActive();
+    }
+
+    /**
+     *  @notice Check if head auction is clearable (auction is kicked and 72 hours passed since kick time or auction still has debt but no remaining collateral).
+     *  @notice Revert if auction is clearable
+     */
+    function revertIfAuctionClearable(
+        Data storage self,
+        Loans.Data storage loans_
+    ) internal view {
+        address head     = self.head;
+        uint256 kickTime = self.liquidations[head].kickTime;
+        if (
+            kickTime != 0
+            &&
+            (
+                block.timestamp - kickTime > 72 hours
+                ||
+                (loans_.borrowers[head].t0debt > 0 && loans_.borrowers[head].collateral == 0)
+            )
+        ) {
+            revert AuctionNotCleared();
+        }
     }
 
 }

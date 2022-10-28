@@ -46,7 +46,7 @@ interface IPoolState {
      *  @return collateral Amount of collateral that the borrower has deposited, in collateral token.
      *  @return mompFactor Momp / borrowerInflatorSnapshot factor used.
      */
-    function borrowers(address borrower)
+    function borrowerInfo(address borrower)
         external
         view
         returns (
@@ -61,26 +61,46 @@ interface IPoolState {
      *  @param  index               Bucket index.
      *  @return lpAccumulator       Amount of LPs accumulated in current bucket.
      *  @return availableCollateral Amount of collateral available in current bucket.
+     *  @return bankruptcyTime      Timestamp when bucket become insolvent, 0 if healthy.
+     *  @return bucketDeposit       Amount of quote tokens in bucket.
+     *  @return bucketScale         Bucket multiplier.
      */
-    function buckets(uint256 index)
+    function bucketInfo(uint256 index)
         external
         view
         returns (
             uint256 lpAccumulator,
-            uint256 availableCollateral
+            uint256 availableCollateral,
+            uint256 bankruptcyTime,
+            uint256 bucketDeposit,
+            uint256 bucketScale
         );
 
     /**
-     *  @notice Returns the `debtEma` state variable.
-     *  @return Exponential debt moving average.
+     *  @notice Returns information about the pool EMA (Exponential Moving Average) variables.
+     *  @return debtEma   Exponential debt moving average.
+     *  @return lupColEma Exponential LUP * pledged collateral moving average.
      */
-    function debtEma() external view returns (uint256);
+    function emasInfo()
+        external
+        view
+        returns (
+            uint256 debtEma,
+            uint256 lupColEma
+    );
 
     /**
-     *  @notice Returns the `inflatorSnapshot` state variable.
-     *  @return A snapshot of the last inflator value, in RAY units.
+     *  @notice Returns information about pool inflator.
+     *  @return inflatorSnapshot A snapshot of the last inflator value.
+     *  @return lastUpdate       The timestamp of the last `inflatorSnapshot` update.
      */
-    function inflatorSnapshot() external view returns (uint256);
+    function inflatorInfo()
+        external
+        view
+        returns (
+            uint256 inflatorSnapshot,
+            uint256 lastUpdate
+    );
 
     /**
      *  @notice Returns the `interestRate` state variable.
@@ -94,7 +114,13 @@ interface IPoolState {
      */
     function interestRateUpdate() external view returns (uint256);
 
-    function kickers(address kicker)
+    /**
+     *  @notice Returns details about kicker balances.
+     *  @param  kicker    The address of the kicker to retrieved info for.
+     *  @return claimable Amount of quote token kicker can claim / withdraw from pool at any time.
+     *  @return locked    Amount of quote token kicker locked in auctions (as bonds).
+     */
+    function kickerInfo(address kicker)
         external
         view
         returns (
@@ -103,20 +129,13 @@ interface IPoolState {
         );
 
     /**
-     *  @notice Returns the `lastInflatorSnapshotUpdate` state variable.
-     *  @return The timestamp of the last `inflatorSnapshot` update.
-     */
-    function lastInflatorSnapshotUpdate() external view returns (uint256);
-
-    /**
      *  @notice Mapping of buckets indexes and owner addresses to {Lender} structs.
-     *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  index            Bucket index.
      *  @param  lp               Address of the liquidity provider.
      *  @return lpBalance        Amount of LPs owner has in current bucket.
      *  @return lastQuoteDeposit Time the user last deposited quote token.
      */
-    function lenders(
+    function lenderInfo(
         uint256 index,
         address lp
     )
@@ -128,51 +147,39 @@ interface IPoolState {
     );
 
     /**
-     *  @notice Returns the amount of liquidation bond across all liquidators.
-     *  @return Total amount of quote token being escrowed.
+     *  @notice Returns information about pool loans.
+     *  @return maxBorrower       Borrower address with highest threshold price.
+     *  @return maxThresholdPrice Highest threshold price in pool.
+     *  @return noOfLoans         Total number of loans.
      */
-    function totalBondEscrowed() external view returns (uint256);
+    function loansInfo()
+        external
+        view
+        returns (
+            address maxBorrower,
+            uint256 maxThresholdPrice,
+            uint256 noOfLoans
+    );
 
     /**
-     *  @notice Returns the `lupColEma` state variable.
-     *  @return Exponential LUP * pledged collateral moving average.
+     *  @notice Returns information about pool reserves.
+     *  @return liquidationBondEscrowed Amount of liquidation bond across all liquidators.
+     *  @return reserveAuctionUnclaimed Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+     *  @return reserveAuctionKicked    Time a Claimable Reserve Auction was last kicked.
      */
-    function lupColEma() external view returns (uint256);
-
-    /**
-     *  @notice Returns the borrower address with highest threshold price in pool.
-     *  @return Borrower address with highest threshold price.
-     */
-    function maxBorrower() external view returns (address);
-
-    /**
-     *  @notice Returns the highest threshold price in pool.
-     *  @return Highest threshold price in pool.
-     */
-    function maxThresholdPrice() external view returns (uint256);
-
-    /**
-     *  @notice Returns the total number of loans within pool.
-     *  @return Total number of loans.
-     */
-    function noOfLoans() external view returns (uint256);
+    function reservesInfo()
+        external
+        view
+        returns (
+            uint256 liquidationBondEscrowed,
+            uint256 reserveAuctionUnclaimed,
+            uint256 reserveAuctionKicked
+    );
 
     /**
      *  @notice Returns the `pledgedCollateral` state variable.
      *  @return The total pledged collateral in the system, in WAD units.
      */
     function pledgedCollateral() external view returns (uint256);
-
-    /**
-     *  @notice Returns the amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
-     *  @return Unclaimed Auction Reserve.
-     */
-    function reserveAuctionUnclaimed() external view returns (uint256);
-
-    /**
-     *  @notice Returns the Time a Claimable Reserve Auction was last kicked.
-     *  @return Time a Claimable Reserve Auction was last kicked.
-     */
-    function reserveAuctionKicked() external view returns (uint256);
 
 }

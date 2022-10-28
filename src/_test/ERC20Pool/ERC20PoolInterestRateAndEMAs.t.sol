@@ -216,7 +216,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 loans:                1,
                 maxBorrower:          _borrower,
                 interestRate:         0.045 * 1e18,
-                interestRateUpdate:   54000
+                interestRateUpdate:   _startTime + 15 hours
             })
         );
     }
@@ -344,8 +344,12 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        assertEq(_pool.debtEma(),   0);
-        assertEq(_pool.lupColEma(), 0);
+        _assertEMAs(
+            {
+                debtEma:   0,
+                lupColEma: 0
+            }
+        );
 
         // borrower 1 borrows 500 quote from the pool
         _pledgeCollateral(
@@ -381,8 +385,12 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        assertEq(_pool.debtEma(),   0);
-        assertEq(_pool.lupColEma(), 0);
+        _assertEMAs(
+            {
+                debtEma:   0,
+                lupColEma: 0
+            }
+        );
 
         _pledgeCollateral(
             {
@@ -417,8 +425,12 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        assertEq(_pool.debtEma(),   0);
-        assertEq(_pool.lupColEma(), 0);
+        _assertEMAs(
+            {
+                debtEma:   0,
+                lupColEma: 0
+            }
+        );
 
         skip(10 days);
 
@@ -449,7 +461,11 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-        assertEq(_pool.debtEma(),   95.440014344854493304 * 1e18);
-        assertEq(_pool.lupColEma(), 3_084.610933645840358918 * 1e18);
+        _assertEMAs(
+            {
+                debtEma:   95.440014344854493304 * 1e18,
+                lupColEma: 3_084.610933645840358918 * 1e18
+            }
+        );
     }
 }

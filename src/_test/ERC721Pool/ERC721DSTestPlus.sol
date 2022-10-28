@@ -11,6 +11,7 @@ import { ERC721Pool }        from '../../erc721/ERC721Pool.sol';
 import { ERC721PoolFactory } from '../../erc721/ERC721PoolFactory.sol';
 
 import '../../erc721/interfaces/IERC721Pool.sol';
+import '../../base/interfaces/IPoolFactory.sol';
 import '../../base/interfaces/IPool.sol';
 import '../../base/PoolInfoUtils.sol';
 
@@ -93,13 +94,46 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             emit Transfer(address(_pool), from, i);
         }
         lpRedeemed_ = ERC721Pool(address(_pool)).removeCollateral(tokenIds, index);
-        assertEq(lpRedeem, lpRedeemed_);
+        assertEq(lpRedeemed_, lpRedeem);
     }
 
 
     /**********************/
     /*** Revert asserts ***/
     /**********************/
+
+    function _assertDeployWith0xAddressRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        uint256[] memory tokenIds;
+        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
+        ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
+    }
+
+    function _assertDeployWithInvalidRateRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        uint256[] memory tokenIds;
+        vm.expectRevert(IPoolFactory.PoolInterestRateInvalid.selector);
+        ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
+    }
+
+    function _assertDeployMultipleTimesRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        uint256[] memory tokenIds;
+        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        ERC721PoolFactory(poolFactory).deployPool(collateral, quote, tokenIds, interestRate);
+    }
 
     function _assertPledgeCollateralNotInSubsetRevert(
         address from,
@@ -192,14 +226,15 @@ abstract contract ERC721HelperContract is ERC721DSTestPlus {
 
     function _deployCollectionPool() internal returns (ERC721Pool) {
         _startTime = block.timestamp;
-        address contractAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18);
+        uint256[] memory tokenIds;
+        address contractAddress = new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), tokenIds, 0.05 * 10**18);
         vm.makePersistent(contractAddress);
         return ERC721Pool(contractAddress);
     }
 
     function _deploySubsetPool(uint256[] memory subsetTokenIds_) internal returns (ERC721Pool) {
         _startTime = block.timestamp;
-        return ERC721Pool(new ERC721PoolFactory().deploySubsetPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
+        return ERC721Pool(new ERC721PoolFactory().deployPool(address(_collateral), address(_quote), subsetTokenIds_, 0.05 * 10**18));
     }
 
     function _mintAndApproveQuoteTokens(address operator_, uint256 mintAmount_) internal {

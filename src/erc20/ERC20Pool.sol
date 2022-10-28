@@ -2,18 +2,13 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-import '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-
 import './interfaces/IERC20Pool.sol';
-
 import '../base/Pool.sol';
 
 contract ERC20Pool is IERC20Pool, Pool {
-    using SafeERC20 for ERC20;
-    using Buckets   for mapping(uint256 => Buckets.Bucket);
-    using Deposits  for Deposits.Data;
-    using Loans     for Loans.Data;
+    using Buckets  for mapping(uint256 => Buckets.Bucket);
+    using Deposits for Deposits.Data;
+    using Loans    for Loans.Data;
 
     /***********************/
     /*** State Variables ***/
@@ -26,21 +21,16 @@ contract ERC20Pool is IERC20Pool, Pool {
     /****************************/
 
     function initialize(
-        uint256 rate_,
-        address ajnaTokenAddress_
+        uint256 rate_
     ) external override {
-        if (poolInitializations != 0)         revert AlreadyInitialized();
-        if (ajnaTokenAddress_ == address(0))  revert Token0xAddress();
+        if (poolInitializations != 0) revert AlreadyInitialized();
 
-        collateralScale = 10**(18 - collateral().decimals());
-        quoteTokenScale = 10**(18 - quoteToken().decimals());
+        collateralScale = 10**(18 - IERC20Token(_getArgAddress(0)).decimals());
 
-        ajnaTokenAddress           = ajnaTokenAddress_;
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
         interestRate               = rate_;
         interestRateUpdate         = block.timestamp;
-        minFee                     = 0.0005 * 10**18;
 
         loans.init();
 
@@ -60,7 +50,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move collateral from sender to pool
         emit PledgeCollateral(borrower_, collateralAmountToPledge_);
-        collateral().safeTransferFrom(msg.sender, address(this), collateralAmountToPledge_ / collateralScale);
+        _transferCollateralFrom(msg.sender, collateralAmountToPledge_);
     }
 
     function pullCollateral(
@@ -70,7 +60,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move collateral from pool to sender
         emit PullCollateral(msg.sender, collateralAmountToPull_);
-        collateral().safeTransfer(msg.sender, collateralAmountToPull_ / collateralScale);
+        _transferCollateral(msg.sender, collateralAmountToPull_);
     }
 
     /*********************************/
@@ -85,7 +75,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move required collateral from sender to pool
         emit AddCollateral(msg.sender, index_, collateralAmountToAdd_);
-        collateral().safeTransferFrom(msg.sender, address(this), collateralAmountToAdd_ / collateralScale);
+        _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
     function moveCollateral(
@@ -138,7 +128,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountRemoved_);
-        collateral().safeTransfer(msg.sender, collateralAmountRemoved_ / collateralScale);
+        _transferCollateral(msg.sender, collateralAmountRemoved_);
     }
 
     function removeCollateral(
@@ -149,7 +139,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // move collateral from pool to lender
         emit RemoveCollateral(msg.sender, index_, collateralAmountToRemove_);
-        collateral().safeTransfer(msg.sender, collateralAmountToRemove_ / collateralScale);
+        _transferCollateral(msg.sender, collateralAmountToRemove_);
     }
 
     /*******************************/
@@ -159,12 +149,6 @@ contract ERC20Pool is IERC20Pool, Pool {
     function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
         // TODO: implement
         emit ArbTake(borrower_, index_, amount_, 0, 0);
-    }
-
-    function clear(address borrower_, uint256 maxDepth_) external override {
-        // TODO: implement
-        uint256 debtCleared = maxDepth_ * 10_000;
-        emit Clear(borrower_, _hpbIndex(), debtCleared, 0, 0);
     }
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
@@ -184,17 +168,18 @@ contract ERC20Pool is IERC20Pool, Pool {
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
         //msg.sender.call(swapCalldata_);
 
-        collateral().safeTransfer(msg.sender, collateralTaken);
+        _transferCollateral(msg.sender, collateralTaken);
     }
 
     /************************/
     /*** Helper Functions ***/
     /************************/
 
-    /**
-     *  @dev Pure function used to facilitate accessing token via clone state.
-     */
-    function collateral() public pure returns (ERC20) {
-        return ERC20(_getArgAddress(0));
+    function _transferCollateralFrom(address from_, uint256 amount_) internal {
+        if (!IERC20Token(_getArgAddress(0)).transferFrom(from_, address(this), amount_ / collateralScale)) revert ERC20TransferFailed();
+    }
+
+    function _transferCollateral(address to_, uint256 amount_) internal {
+        if (!IERC20Token(_getArgAddress(0)).transfer(to_, amount_ / collateralScale)) revert ERC20TransferFailed();
     }
 }
