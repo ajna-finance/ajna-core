@@ -120,7 +120,7 @@ library BucketMath {
         elapsedHours -= Maths.min(elapsedHours, 1e18);  // price locked during cure period
 
         int256 timeAdjustment = PRBMathSD59x18.mul(-1 * 1e18, int256(elapsedHours));
-        price_ = 10 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
+        price_ = 32 * Maths.wmul(referencePrice, uint256(PRBMathSD59x18.exp2(timeAdjustment)));
     }
 
     function pendingInterestFactor(
@@ -162,7 +162,7 @@ library BucketMath {
         int256 neutralPrice = int256(Maths.wmul(mompFactor_, inflatorSnapshot_));
 
         int256 sign;
-        if (thresholdPrice <= neutralPrice) {
+        if (thresholdPrice < neutralPrice) {
             // BPF = BondFactor * min(1, max(-1, (neutralPrice - price) / (neutralPrice - thresholdPrice)))
             sign = Maths.minInt(
                     1e18,

@@ -16,13 +16,13 @@ library Auctions {
     }
 
     struct Liquidation {
-        address kicker;          // address that initiated liquidation
-        uint256 bondSize;        // liquidation bond size
-        uint256 bondFactor;      // bond factor used to start liquidation
-        uint128 kickTime;        // timestamp when liquidation was started
-        uint128 kickPriceIndex;  // HPB price index at liquidation kick time
-        address prev;            // previous liquidated borrower in auctions queue
-        address next;            // next liquidated borrower in auctions queue
+        address kicker;      // address that initiated liquidation
+        uint256 bondSize;    // liquidation bond size
+        uint256 bondFactor;  // bond factor used to start liquidation
+        uint128 kickTime;    // timestamp when liquidation was started
+        uint256 kickMomp;    // Momp when liquidation was started
+        address prev;        // previous liquidated borrower in auctions queue
+        address next;        // next liquidated borrower in auctions queue
     }
 
     struct Kicker {
@@ -94,7 +94,6 @@ library Auctions {
      *  @param  borrowerDebt_      Borrower debt to be recovered.
      *  @param  thresholdPrice_    Current threshold price (used to calculate bond factor).
      *  @param  momp_              Current MOMP (used to calculate bond factor).
-     *  @param  hpbIndex_          Current HPB index.
      *  @return kickAuctionAmount_ The amount that kicker should send to pool in order to kick auction.
      */
     function kick(
@@ -102,8 +101,7 @@ library Auctions {
         address borrower_,
         uint256 borrowerDebt_,
         uint256 thresholdPrice_,
-        uint256 momp_,
-        uint256 hpbIndex_
+        uint256 momp_
     ) internal returns (uint256 kickAuctionAmount_) {
 
         uint256 bondFactor;
@@ -135,9 +133,9 @@ library Auctions {
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
-        liquidation.kicker         = msg.sender;
-        liquidation.kickTime       = uint128(block.timestamp);
-        liquidation.kickPriceIndex = uint128(hpbIndex_);
+        liquidation.kicker   = msg.sender;
+        liquidation.kickTime = uint128(block.timestamp);
+        liquidation.kickMomp = momp_;
         liquidation.bondSize       = bondSize;
         liquidation.bondFactor     = bondFactor;
 
@@ -161,6 +159,7 @@ library Auctions {
      *  @param  borrowerAddress_  Borrower address in auction.
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
      *  @param  maxCollateral_    The max collateral amount to be taken from auction.
+     *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
      *  @return quoteTokenAmount_ The quote token amount that taker should pay for collateral taken.
      *  @return repayAmount_      The amount of debt (quote tokens) that is recovered / repayed by take.
      *  @return collateralTaken_  The amount of collateral taken.
@@ -171,42 +170,42 @@ library Auctions {
         Data storage self,
         address borrowerAddress_,
         Loans.Borrower memory borrower_,
-        uint256 maxCollateral_
-    )
-        internal
-        returns (
-            uint256 quoteTokenAmount_,
-            uint256 repayAmount_,
-            uint256 collateralTaken_,
-            uint256 bondChange_,
-            bool isRewarded_
-        )
-    {
+        uint256 maxCollateral_,
+        uint256 poolInflator_
+    ) internal returns (
+        uint256 quoteTokenAmount_,
+        uint256 repayAmount_,
+        uint256 collateralTaken_,
+        uint256 bondChange_,
+        bool isRewarded_
+    ) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         if (liquidation.kickTime == 0) revert NoAuction();
         if (block.timestamp - liquidation.kickTime <= 1 hours) revert TakeNotPastCooldown();
 
         uint256 auctionPrice = PoolUtils.auctionPrice(
-            PoolUtils.indexToPrice(liquidation.kickPriceIndex),
+            liquidation.kickMomp,
             liquidation.kickTime
         );
+
         // calculate amount
-        quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
-        collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+        quoteTokenAmount_    = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
+        collateralTaken_     = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_) - repayAmount_;
 
         int256 bpf = PoolUtils.bpf(
-            borrower_.debt,
+            borrowerDebt,
             borrower_.collateral,
             borrower_.mompFactor,
-            borrower_.inflatorSnapshot,
+            poolInflator_,
             liquidation.bondFactor,
             auctionPrice
         );
 
         repayAmount_ = Maths.wmul(quoteTokenAmount_, uint256(1e18 - bpf));
-        if (repayAmount_ >= borrower_.debt) {
-            repayAmount_      = borrower_.debt;
-            quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - bpf));
+        if (repayAmount_ >= borrowerDebt) {
+            repayAmount_      = borrowerDebt;
+            quoteTokenAmount_ = Maths.wdiv(borrowerDebt, uint256(1e18 - bpf));
         }
 
         isRewarded_ = (bpf >= 0);

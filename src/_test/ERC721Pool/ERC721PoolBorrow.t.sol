@@ -208,7 +208,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
-                borrowerDebt:         0,
+                poolDebt:             0,
                 actualUtilization:    0,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        0,
@@ -268,7 +268,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 poolSize:             30_000 * 1e18,
                 pledgedCollateral:    Maths.wad(3),
                 encumberedCollateral: 0.997340520100278804 * 1e18,
-                borrowerDebt:         3_002.88461538461538600 * 1e18,
+                poolDebt:             3_002.88461538461538600 * 1e18,
                 actualUtilization:    0.100096153846153846 * 1e18,
                 targetUtilization:    1 * 1e18,
                 minDebtAmount:        3_002.88461538461538600 * 1e18 / 10,
@@ -297,9 +297,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 borrowerDebt:              3_002.884615384615386000 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_010.892022197881557845 * 1e18,
-                borrowerInflator:          1 * 1e18,
-                borrowerCollateralization: 3.007999714779824033 * 1e18,
-                borrowerPendingDebt:       3_002.884615384615386000 * 1e18
+                borrowerCollateralization: 3.007999714779824033 * 1e18
             }
         );
 
@@ -327,12 +325,12 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         // check pool state after partial repay
         _assertPool(
             PoolState({
-                htp:                  502.333658244714424687 * 1e18,
+                htp:                  503.022258079721182348 * 1e18,
                 lup:                  PoolUtils.indexToPrice(2550),
                 poolSize:             30_003.520235392247040000 * 1e18,
                 pledgedCollateral:    Maths.wad(3),
                 encumberedCollateral: 0.500516446164039921 * 1e18,
-                borrowerDebt:         1507.000974734143274062 * 1e18,
+                poolDebt:             1507.000974734143274062 * 1e18,
                 actualUtilization:    0.050227472073642885 * 1e18,
                 targetUtilization:    0.166838815388013307 * 1e18,
                 minDebtAmount:        150.700097473414327406 * 1e18,
@@ -342,7 +340,6 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 interestRateUpdate:   _startTime + 10 days
             })
         );
-
         // check bucket state after partial repay
         _assertBucket(
             {
@@ -361,9 +358,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 borrowerDebt:              1_507.000974734143274062 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_006.770336295505368176 * 1e18,
-                borrowerInflator:          1.001370801704613834 * 1e18,
-                borrowerCollateralization: 5.993809040625961846 * 1e18,
-                borrowerPendingDebt:       1_507.000974734143274062 * 1e18
+                borrowerCollateralization: 5.993809040625961846 * 1e18
             }
         );
 
@@ -374,12 +369,10 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              1_507.000974734143274062 * 1e18,
+                borrowerDebt:              1_508.860066921599065131 * 1e18,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_006.770336295505368176 * 1e18,
-                borrowerInflator:          1.001370801704613834 * 1e18,
-                borrowerCollateralization: 5.993809040625961846 * 1e18,
-                borrowerPendingDebt:       1_508.860066921599064643 * 1e18
+                borrowerCollateralization: 5.986423966420065589 * 1e18
             }
         );
 
@@ -391,8 +384,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             {
                 from:     _borrower,
                 borrower: _borrower,
-                amount:   1_508.860066921599064643 * 1e18,
-                repaid:   1_508.860066921599064643 * 1e18,
+                amount:   1_508.860066921599065131 * 1e18,
+                repaid:   1_508.860066921599065131 * 1e18,
                 newLup:   BucketMath.MAX_PRICE
             }
         );
@@ -403,8 +396,8 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         assertEq(_collateral.balanceOf(_borrower),      49);
         assertEq(_collateral.balanceOf(address(_pool)), 3);
 
-        assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599064643 * 1e18);
-        assertEq(_quote.balanceOf(_borrower),      991.139933078400935357 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599065131 * 1e18);
+        assertEq(_quote.balanceOf(_borrower),      991.139933078400934869 * 1e18);
 
         // borrower pulls collateral
         uint256[] memory tokenIdsToRemove = tokenIdsToAdd;
@@ -423,7 +416,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 poolSize:             30_005.105213052294392423 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
-                borrowerDebt:         0,
+                poolDebt:             0,
                 actualUtilization:    0,
                 targetUtilization:    0.000000452724663788 * 1e18,
                 minDebtAmount:        0,
@@ -454,9 +447,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 borrowerDebt:              0,
                 borrowerCollateral:        0,
                 borrowerMompFactor:        0,
-                borrowerInflator:          1.002606129793584586 * 1e18,
-                borrowerCollateralization: 1 * 1e18,
-                borrowerPendingDebt:       0
+                borrowerCollateralization: 1 * 1e18
             }
         );
 
