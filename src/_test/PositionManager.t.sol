@@ -2099,6 +2099,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
         address testAddress1  = makeAddr("testAddress1");
         uint256 mintAmount   = 50_000 * 1e18;
         address testAddress2 = makeAddr("testAddress2");
+        uint256 currentTime = block.timestamp;
 
         _mintQuoteAndApproveManagerTokens(testAddress1, mintAmount);
 
@@ -2142,7 +2143,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      testAddress1,
                 index:       indexes[0],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2158,7 +2159,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      testAddress1,
                 index:       indexes[1],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2174,7 +2175,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      testAddress1,
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2223,7 +2224,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2239,7 +2240,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[1],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2255,7 +2256,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
 
@@ -2299,7 +2300,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      testAddress1,
                 index:       indexes[0],
                 lpBalance:   1_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2307,7 +2308,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2315,7 +2316,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      testAddress1,
                 index:       indexes[1],
                 lpBalance:   2_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2323,7 +2324,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[1],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2331,7 +2332,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      testAddress1,
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2339,7 +2340,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
 
@@ -2377,7 +2378,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   4_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2393,7 +2394,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[1],
                 lpBalance:   5_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2409,7 +2410,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[2],
                 lpBalance:   6_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
 
@@ -2446,7 +2447,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   0,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2462,7 +2463,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[1],
                 lpBalance:   9_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2478,7 +2479,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[2],
                 lpBalance:   6_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
 
@@ -2549,7 +2550,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   0,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2565,7 +2566,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      testAddress2,
                 index:       indexes[1],
                 lpBalance:   9_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
@@ -2589,7 +2590,7 @@ contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
                 lender:      testAddress2,
                 index:       indexes[2],
                 lpBalance:   6_000 * 1e27,
-                depositTime: 0
+                depositTime: currentTime
             }
         );
         _assertLenderLpBalance(
