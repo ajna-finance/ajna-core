@@ -62,6 +62,7 @@ library Auctions {
      *  @param  borrower_      Borrower whose debt is healed.
      *  @param  reserves_      Pool reserves.
      *  @param  bucketDepth_   Max number of buckets heal action should iterate through.
+     *  @param  poolInflator_  The pool's inflator, used to calculate borrower debt.
      *  @return healedDebt_    The amount of debt that was healed.
      */
     function heal(
@@ -71,7 +72,8 @@ library Auctions {
         Deposits.Data storage deposits_,
         address borrower_,
         uint256 reserves_,
-        uint256 bucketDepth_
+        uint256 bucketDepth_,
+        uint256 poolInflator_
     ) internal returns (
         uint256 healedDebt_
     )
@@ -79,7 +81,7 @@ library Auctions {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
         if (kickTime == 0) revert NoAuction();
 
-        uint256 debtToHeal   = loans_.borrowers[borrower_].debt;
+        uint256 debtToHeal   = Maths.wmul(loans_.borrowers[borrower_].t0debt, poolInflator_);
         uint256 remainingCol = loans_.borrowers[borrower_].collateral;
         if (
             (block.timestamp - kickTime > 72 hours)
@@ -141,7 +143,7 @@ library Auctions {
             healedDebt_ = debtToHeal - remainingDebt;
 
             // save remaining debt and collateral after auction clear action
-            loans_.borrowers[borrower_].debt       = remainingDebt;
+            loans_.borrowers[borrower_].t0debt     = Maths.wdiv(remainingDebt, poolInflator_);
             loans_.borrowers[borrower_].collateral = remainingCol;
         } else {
             revert AuctionNotClearable();
@@ -235,6 +237,7 @@ library Auctions {
      *  @param  borrowerAddress_  Borrower address in auction.
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
      *  @param  maxCollateral_    The max collateral amount to be taken from auction.
+     *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
      *  @return quoteTokenAmount_ The quote token amount that taker should pay for collateral taken.
      *  @return repayAmount_      The amount of debt (quote tokens) that is recovered / repayed by take.
      *  @return collateralTaken_  The amount of collateral taken.
@@ -245,7 +248,8 @@ library Auctions {
         Data storage self,
         address borrowerAddress_,
         Loans.Borrower memory borrower_,
-        uint256 maxCollateral_
+        uint256 maxCollateral_,
+        uint256 poolInflator_
     ) internal returns (
         uint256 quoteTokenAmount_,
         uint256 repayAmount_,
@@ -263,22 +267,23 @@ library Auctions {
         );
 
         // calculate amount
-        quoteTokenAmount_ = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
-        collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+        quoteTokenAmount_    = Maths.wmul(auctionPrice, Maths.min(borrower_.collateral, maxCollateral_));
+        collateralTaken_     = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_) - repayAmount_;
 
         int256 bpf = PoolUtils.bpf(
-            borrower_.debt,
+            borrowerDebt,
             borrower_.collateral,
             borrower_.mompFactor,
-            borrower_.inflatorSnapshot,
+            poolInflator_,
             liquidation.bondFactor,
             auctionPrice
         );
 
         repayAmount_ = Maths.wmul(quoteTokenAmount_, uint256(1e18 - bpf));
-        if (repayAmount_ >= borrower_.debt) {
-            repayAmount_      = borrower_.debt;
-            quoteTokenAmount_ = Maths.wdiv(borrower_.debt, uint256(1e18 - bpf));
+        if (repayAmount_ >= borrowerDebt) {
+            repayAmount_      = borrowerDebt;
+            quoteTokenAmount_ = Maths.wdiv(borrowerDebt, uint256(1e18 - bpf));
         }
 
         isRewarded_ = (bpf >= 0);
@@ -377,7 +382,7 @@ library Auctions {
             (
                 block.timestamp - kickTime > 72 hours
                 ||
-                (loans_.borrowers[head].debt > 0 && loans_.borrowers[head].collateral == 0)
+                (loans_.borrowers[head].t0debt > 0 && loans_.borrowers[head].collateral == 0)
             )
         ) {
             revert AuctionNotCleared();
