@@ -251,14 +251,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         // if borrower auctioned then it cannot draw more debt
         auctions.revertIfActive(msg.sender);
 
-        PoolState memory poolState = _accruePoolInterest();
-
-        uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
-        if (lupId > limitIndex_) revert LimitIndexReached();
-
+        PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
-        uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
-        uint256 loansCount = loans.noOfLoans();
+        uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
+        uint256 loansCount             = loans.noOfLoans();
         if (
             loansCount >= 10
             &&
@@ -270,7 +266,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
         borrowerDebt += debtChange;
 
-        // FIXME: newLup should be calculated on debt including origination fee
+        // calculate the new LUP
+        uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
+        if (lupId > limitIndex_) revert LimitIndexReached();
         uint256 newLup = PoolUtils.indexToPrice(lupId);
 
         // check borrow won't push borrower into a state of under-collateralization
