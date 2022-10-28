@@ -676,12 +676,15 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*****************************/
 
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
+        uint256 t0Debt = t0poolDebt;
+
         poolState_.collateral  = pledgedCollateral;
         poolState_.inflator    = inflatorSnapshot;
-        // TODO: when new interest has accrued, this gets overwriten, wasting a storage read and multiplication
-        poolState_.accruedDebt = Maths.wmul(t0poolDebt, poolState_.inflator);
 
-        if (t0poolDebt != 0) {
+        if (t0Debt != 0) {
+            // TODO: when new interest has accrued, this gets overwriten, wasting a multiplication
+            poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
+
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
             poolState_.isNewInterestAccrued = elapsed != 0;
             if (poolState_.isNewInterestAccrued) {
@@ -702,7 +705,7 @@ abstract contract Pool is Clone, Multicall, IPool {
                 }
 
                 // Calculate pool debt using the new inflator
-                poolState_.accruedDebt = Maths.wmul(t0poolDebt, poolState_.inflator);
+                poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
             }
         }
     }
