@@ -120,14 +120,16 @@ library Buckets {
         Bucket storage fromBucket = self[fromIndex_];
         fromBucket.lps -= fromLPsAmount_;
         toBucket.lps   += toLPsAmount_;
-        // update lender LPs balance
-        fromBucket.lenders[msg.sender].lps -= fromLPsAmount_;
+        // update lender LPs balance in from bucket
+        Lender storage fromLender = fromBucket.lenders[msg.sender];
+        fromLender.lps -= fromLPsAmount_;
 
-        // update lender LPs balance
+        // update lender LPs balance and deposit time in target bucket
         Lender storage lender = toBucket.lenders[msg.sender];
         if (toBucket.bankruptcyTime >= lender.depositTime) lender.lps = toLPsAmount_;
         else lender.lps += toLPsAmount_;
-        lender.depositTime = block.timestamp;
+        // set deposit time to the greater of the lender's from bucket and the target bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
+        lender.depositTime = Maths.max(fromLender.depositTime, toBucket.bankruptcyTime + 1);
     }
 
     /**

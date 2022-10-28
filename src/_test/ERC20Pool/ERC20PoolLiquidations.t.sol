@@ -1526,6 +1526,36 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 exchangeRate: 0.999999999999999999484545454 * 1e27
             }
         );
+
+        // when moving to a bucket that was marked insolvent, the deposit time should be the greater between from bucket deposit time and insolvency time + 1
+        changePrank(_lender);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   0,
+                depositTime: _startTime
+            }
+        );
+        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   1_000.000000000000000515454546000 * 1e27,
+                depositTime: _startTime + 100 days + 10 hours + 1 // _i9_91 bucket insolvency time + 1 (since deposit in _i9_52 from bucket was done before _i9_91 target bucket become insolvent)
+            }
+        );
+        _pool.addQuoteToken(1_000 * 1e18, _i9_52);
+        _pool.moveQuoteToken(1_000 * 1e18, _i9_52, _i9_91);
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   2_000.000000000000001438852689000 * 1e27,
+                depositTime: _startTime + 100 days + 10 hours + 1 hours // time of deposit in _i9_52 from bucket (since deposit in _i9_52 from bucket was done after _i9_91 target bucket become insolvent)
+            }
+        );
     }
 
     function testAuctionPrice() external {
