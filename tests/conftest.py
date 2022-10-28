@@ -346,24 +346,25 @@ class TestUtils:
     @staticmethod
     def validate_pool(pool_helper, borrowers):
         pool = pool_helper.pool
+        poolDebt = pool.debt()
 
         # if pool is collateralized...
         if pool_helper.lupIndex() > pool_helper.price_to_index_safe(pool_helper.htp()):
             # ...ensure debt is less than the size of the pool
-            assert pool.borrowerDebt() <= pool.depositSize()
+            assert poolDebt <= pool.depositSize()
 
         # if there are no borrowers in the pool, ensure there is no debt
         (_, loansCount, _, inflator, interestFactor) = pool_helper.loansInfo()
         if loansCount == 0:
-            assert pool.borrowerDebt() == 0
+            assert poolDebt == 0
 
         # loan count should be decremented as borrowers repay debt
         if loansCount > 0:
-            assert pool.borrowerDebt() > 0
+            assert poolDebt > 0
 
         borrowers_with_debt = 0
         for borrower in borrowers:
-            (debt, pending_debt, _, _, _) = pool_helper.borrowerInfo(borrower.address)
+            (debt, _, _) = pool_helper.borrowerInfo(borrower.address)
             if debt > 0:
                 borrowers_with_debt += 1
         assert borrowers_with_debt == loansCount
@@ -395,7 +396,7 @@ class TestUtils:
 
         lup_index = pool_helper.lupIndex()
         htp_index = pool_helper.price_to_index_safe(pool_helper.htp())
-        ptp_index = pool_helper.price_to_index_safe(int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral()))
+        ptp_index = pool_helper.price_to_index_safe(int(pool.debt() * 1e18 / pool.pledgedCollateral()))
 
         min_bucket_index = max(0, pool_helper.priceToIndex(pool_helper.hpb()) - 3)  # HPB
         max_bucket_index = min(7388, max(lup_index, htp_index) + 3) if htp_index < 7388 else min(7388, lup_index + 3)
@@ -440,19 +441,21 @@ class TestUtils:
     @staticmethod
     def summarize_pool(pool_helper):
         pool = pool_helper.pool
+        poolDebt = pool.debt()
+
         (_, poolCollateralization, poolActualUtilization, poolTargetUtilization) = pool_helper.utilizationInfo()
         (_, loansCount, _, _, _) = pool_helper.loansInfo()
         print(f"actual utlzn:   {poolActualUtilization/1e18:>12.1%}  "
               f"target utlzn:   {poolTargetUtilization/1e18:>12.1%}  "
               f"collateralization: {poolCollateralization/1e18:>9.1%}  "
-              f"borrowerDebt:   {pool.borrowerDebt()/1e18:>12.1f}  "
+              f"borrowerDebt:   {poolDebt/1e18:>12.1f}  "
               f"loan count:     {loansCount:>8}")
 
         contract_quote_balance = pool_helper.quoteToken().balanceOf(pool)
-        reserves = contract_quote_balance + pool.borrowerDebt() - pool.depositSize()
+        reserves = contract_quote_balance + poolDebt - pool.depositSize()
         pledged_collateral = pool.pledgedCollateral()
         if pledged_collateral > 0:
-            ptp = pool.borrowerDebt() * 10 ** 18 / pledged_collateral
+            ptp = poolDebt * 10 ** 18 / pledged_collateral
             ptp_index = pool_helper.priceToIndex(ptp)
         else:
             ptp = 0
@@ -464,7 +467,7 @@ class TestUtils:
 
         lup = pool_helper.lup()
         htp = pool_helper.htp()
-        ptp = int(pool.borrowerDebt() * 1e18 / pool.pledgedCollateral())
+        ptp = int(poolDebt * 1e18 / pool.pledgedCollateral())
         print(f"lup:            {lup/1e18:>12.3f}  "
               f"htp:            {htp/1e18:>12.3f}  "
               f"ptp:            {ptp/1e18:>12.3f}")

@@ -102,7 +102,7 @@ def add_initial_liquidity(lenders, pool_helper):
 
 def draw_initial_debt(borrowers, pool_helper, test_utils, chain, target_utilization):
     pool = pool_helper.pool
-    target_debt = (pool.depositSize() - pool.borrowerDebt()) * target_utilization
+    target_debt = (pool.depositSize() - pool.debt()) * target_utilization
     sleep_amount = max(1, int(12 * 3600 / NUM_LENDERS))
     for borrower_index in range(0, len(borrowers) - 1):
         # determine amount we want to borrow and how much collateral should be deposited
@@ -161,32 +161,28 @@ def get_time_between_interactions(actor_index):
     return 333 * math.exp(actor_index/10) + 3600
 
 
-# for debugging discrepancy between pending borrower debt and pending pool debt
+# for debugging discrepancy between borrower debt and pool debt
 def aggregate_borrower_debt(borrowers, pool_helper, debug=False):
     total_debt = 0
-    total_pending_debt = 0
     for i in range(0, len(borrowers) - 1):
         borrower = borrowers[i]
-        (debt, pending_debt, _, _, inflatorSnap) = pool_helper.borrowerInfo(borrower.address)
-        if debt > 0:
-            log(f"   borrower {i:>4}     debt: {debt/1e18:>15.3f}     pending_debt:   {pending_debt/1e18:>15.3f}")
+        (debt, _, _) = pool_helper.borrowerInfo(borrower.address)
+        if debug and debt > 0:
+            log(f"   borrower {i:>4}     debt: {debt/1e18:>15.3f}")
         total_debt += debt
-        total_pending_debt += pending_debt
-    return total_debt, total_pending_debt
+    return total_debt
 
 
 # for debugging debt-with-no-loans issue
 def log_borrower_stats(borrowers, pool_helper, chain, debug=False):
     pool = pool_helper.pool
-    borrower_debt = pool.borrowerDebt()
-    (_, loansCount, _, inflator, interestFactor) = pool_helper.loansInfo()
-    assert 1e18 <= interestFactor < 2e18
-    pending_borrower_debt = borrower_debt * interestFactor / 10 ** 18
+    poolDebt = pool.debt()
+    agg_borrower_debt = aggregate_borrower_debt(borrowers, pool_helper, debug)
+    (_, loansCount, _, _, _) = pool_helper.loansInfo()
 
-    (agg_borrower_debt, agg_pending_borrower_debt) = aggregate_borrower_debt(borrowers, pool_helper, debug)
-    log(f"  pool debt:  {pending_borrower_debt / 1e18:>15.3f}"
-        f"  borrower:   {agg_pending_borrower_debt / 1e18:>15.3f}"
-        f"  diff:       {(pending_borrower_debt - agg_pending_borrower_debt) / 1e18:>9.6f}"
+    log(f"  pool debt:  {poolDebt / 1e18:>15.3f}"
+        f"  borrower:   {agg_borrower_debt / 1e18:>15.3f}"
+        f"  diff:       {(poolDebt - agg_borrower_debt) / 1e18:>9.6f}"
         f"  loan count: {loansCount:>3}\n")
     chain.sleep(14)
 
@@ -195,7 +191,7 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
     pool = pool_helper.pool
 
     # prevent invalid actions
-    (_, pending_debt, collateral_deposited, _, _) = pool_helper.borrowerInfo(borrower.address)
+    (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower.address)
     if not ensure_pool_is_funded(pool, borrow_amount, "borrow"):
         # ensure_pool_is_funded logs a message
         return
@@ -218,8 +214,8 @@ def pledge_and_borrow(pool_helper, borrower, borrower_index, collateral_to_depos
     pool.pledgeCollateral(borrower, collateral_to_deposit, {"from": borrower})
 
     # draw debt
-    (_, pending_debt, collateral_deposited, _, _) = pool_helper.borrowerInfo(borrower.address)
-    new_total_debt = pending_debt + borrow_amount + pool_helper.get_origination_fee(borrow_amount)
+    (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower.address)
+    new_total_debt = debt + borrow_amount + pool_helper.get_origination_fee(borrow_amount)
     threshold_price = new_total_debt * 10**18 / collateral_deposited
     log(f" borrower {borrower_index:>4} drawing {borrow_amount / 1e18:>8.1f} from bucket {pool_helper.lup() / 1e18:>6.3f} "
         f"with {collateral_deposited / 1e18:>6.1f} collateral deposited, "
@@ -286,7 +282,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils,
 def draw_debt(borrower, borrower_index, pool_helper, test_utils, collateralization=1.1):
     # Draw debt based on added liquidity
     borrow_amount = get_cumulative_bucket_deposit(pool_helper, (borrower_index % 4) + 1)
-    pool_quote_on_deposit = pool_helper.pool.depositSize() - pool_helper.pool.borrowerDebt()
+    pool_quote_on_deposit = pool_helper.pool.depositSize() - pool_helper.pool.debt()
     borrow_amount = min(pool_quote_on_deposit / 2, borrow_amount)
     collateral_to_deposit = borrow_amount / pool_helper.lup() * collateralization * 10**18
 
@@ -337,7 +333,7 @@ def remove_quote_token(lender, lender_index, price, pool_helper):
 
 def repay(borrower, borrower_index, pool_helper, test_utils):
     dai = pool_helper.quoteToken()
-    (_, pending_debt, collateral_deposited, _, _) = pool_helper.borrowerInfo(borrower)
+    (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower)
     quote_balance = dai.balanceOf(borrower)
     (_, _, _, min_debt) = pool_helper.utilizationInfo()
 
@@ -345,33 +341,33 @@ def repay(borrower, borrower_index, pool_helper, test_utils):
         log(f" borrower {borrower_index:>4} only has {quote_balance/1e18:.1f} quote token and will not repay debt")
         return
 
-    if pending_debt > 100 * 10**18:
-        repay_amount = min(pending_debt, quote_balance)
+    if debt > 100 * 10**18:
+        repay_amount = min(debt, quote_balance)
 
         # if partial repayment, ensure we're not leaving a dust amount
-        if repay_amount != pending_debt and pending_debt - repay_amount < min_debt:
-            log(f" borrower {borrower_index:>4} not repaying loan of {pending_debt / 1e18:.1f}; "
+        if repay_amount != debt and debt - repay_amount < min_debt:
+            log(f" borrower {borrower_index:>4} not repaying loan of {debt / 1e18:.1f}; "
                   f"repayment would drop below min debt amount of {min_debt / 1e18:.1f}")
             return
 
         # do the repayment
         repay_amount = int(repay_amount * 1.01)
-        log(f" borrower {borrower_index:>4} repaying {repay_amount/1e18:.1f} of {pending_debt/1e18:.1f} debt")
+        log(f" borrower {borrower_index:>4} repaying {repay_amount/1e18:.1f} of {debt/1e18:.1f} debt")
         tx = pool_helper.pool.repay(borrower, repay_amount, {"from": borrower})
 
         # withdraw appropriate amount of collateral to maintain a target-utilization-friendly collateralization
-        (_, pending_debt, collateral_deposited, _, _) = pool_helper.borrowerInfo(borrower)
-        collateral_encumbered = int((pending_debt * 10**18) / pool_helper.lup())
+        (debt, collateral_deposited, _) = pool_helper.borrowerInfo(borrower)
+        collateral_encumbered = int((debt * 10**18) / pool_helper.lup())
         collateral_to_withdraw = int(collateral_deposited - (collateral_encumbered * 1.667))
         log(f" borrower {borrower_index:>4}, with {collateral_deposited/1e18:.1f} deposited "
               f"and {collateral_encumbered/1e18:.1f} encumbered, "
               f"is withdrawing {collateral_deposited/1e18:.1f} collateral")
         assert collateral_to_withdraw > 0
         tx = pool_helper.pool.pullCollateral(collateral_to_withdraw, {"from": borrower})
-    elif pending_debt == 0:
+    elif debt == 0:
         log(f" borrower {borrower_index:>4} has no debt to repay")
     else:
-        log(f" borrower {borrower_index:>4} will not repay dusty {pending_debt/1e18:.1f} debt")
+        log(f" borrower {borrower_index:>4} will not repay dusty {debt/1e18:.1f} debt")
 
 
 def test_stable_volatile_one(pool_helper, lenders, borrowers, test_utils, chain):
