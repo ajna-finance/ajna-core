@@ -65,7 +65,7 @@ def scaled_pool(deployer):
 @pytest.fixture
 def lenders(ajna_protocol, scaled_pool):
     amount = 200_000 * 10**18  # 200,000 DAI for each lender
-    dai_client = ajna_protocol.get_token(scaled_pool.quoteToken())
+    dai_client = ajna_protocol.get_token(scaled_pool.quoteTokenAddress())
 
     lenders = []
     for _ in range(10):
@@ -82,8 +82,8 @@ def lenders(ajna_protocol, scaled_pool):
 @pytest.fixture
 def borrowers(ajna_protocol, scaled_pool):
     amount = 100 * 10**18  # 100 MKR for each borrower
-    dai_client = ajna_protocol.get_token(scaled_pool.quoteToken())
-    mkr_client = ajna_protocol.get_token(scaled_pool.collateral())
+    dai_client = ajna_protocol.get_token(scaled_pool.quoteTokenAddress())
+    mkr_client = ajna_protocol.get_token(scaled_pool.collateralAddress())
 
     borrowers = []
     for _ in range(10):
