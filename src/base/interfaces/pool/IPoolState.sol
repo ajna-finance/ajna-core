@@ -23,8 +23,7 @@ interface IPoolState {
         uint256 kickTime,
         uint256 kickPrice,
         address prev,
-        address next,
-        uint256 totalBondEscrowed
+        address next
     );
 
     /**

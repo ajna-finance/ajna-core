@@ -765,8 +765,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             uint256,
             uint256,
             address,
-            address,
-            uint256
+            address
         )
     {
         return (
@@ -775,8 +774,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             auctions.liquidations[borrower_].kickTime,
             auctions.liquidations[borrower_].kickMomp,
             auctions.liquidations[borrower_].prev,
-            auctions.liquidations[borrower_].next,
-            auctions.totalBondEscrowed
+            auctions.liquidations[borrower_].next
         );
     }
 

@@ -39,7 +39,6 @@ abstract contract DSTestPlus is Test {
     PoolInfoUtils internal _poolUtils;
     uint256       internal _startTime;
 
-
     uint256 internal _p9_91     = 9.917184843435912074 * 1e18;
     uint256 internal _p9_81     = 9.818751856078723036 * 1e18;
     uint256 internal _p9_72     = 9.721295865031779605 * 1e18;
@@ -234,8 +233,6 @@ abstract contract DSTestPlus is Test {
             uint256 auctionKickTime,
             uint256 auctionKickMomp,
             ,
-            ,
-            uint256 auctionTotalBondEscrowed
         ) = _pool.auctionInfo(borrower);
         (, uint256 lockedBonds) = _pool.kickers(kicker);
 
@@ -245,7 +242,7 @@ abstract contract DSTestPlus is Test {
         assertEq(auctionBondFactor,        bondFactor);
         assertEq(auctionKickTime,          kickTime);
         assertEq(auctionKickMomp,          kickMomp);
-        assertEq(auctionTotalBondEscrowed, totalBondEscrowed);
+        assertEq(_pool.totalBondEscrowed(), totalBondEscrowed);
         assertEq(PoolUtils.auctionPrice(auctionKickMomp, auctionKickTime), auctionPrice);
     }
 
