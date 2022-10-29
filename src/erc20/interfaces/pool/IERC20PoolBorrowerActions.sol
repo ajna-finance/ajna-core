@@ -15,12 +15,4 @@ interface IERC20PoolBorrowerActions {
         address borrower,
         uint256 amount
     ) external;
-
-    /**
-     *  @notice Called by borrowers to remove an amount of collateral.
-     *  @param  amount The amount of collateral in deposit tokens to be removed from a position.
-     */
-    function pullCollateral(
-        uint256 amount
-    ) external;
 }

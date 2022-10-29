@@ -167,6 +167,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower2),     53);
         assertEq(_collateral.balanceOf(address(_pool)), 0);
 
+        // borrower is owner of NFTs
+        assertEq(_collateral.ownerOf(1), _borrower);
+        assertEq(_collateral.ownerOf(3), _borrower);
+        assertEq(_collateral.ownerOf(5), _borrower);
+
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -188,16 +193,21 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower2),     53);
         assertEq(_collateral.balanceOf(address(_pool)), 3);
 
-        uint256[] memory tokenIdsToRemove = new uint256[](1);
-        tokenIdsToRemove[0] = 3;
+        // pool is owner of pledged NFTs
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), address(_pool));
+        assertEq(_collateral.ownerOf(5), address(_pool));
 
         // should fail if trying to pull collateral by an address without pledged collateral
         _assertPullInsufficientCollateralRevert(
             {
-                from:     _lender,
-                tokenIds: tokenIdsToRemove
+                from:   _lender,
+                amount: 3
             }
         );
+
+        // borrower2 is owner of NFT
+        assertEq(_collateral.ownerOf(53), _borrower2);
 
         tokenIdsToAdd = new uint256[](1);
         tokenIdsToAdd[0] = 53;
@@ -216,34 +226,14 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower2),     52);
         assertEq(_collateral.balanceOf(address(_pool)), 4);
 
-        // should fail if trying to pull collateral by an address that pledged different collateral
-        _assertPullTokenMismatchRevert(
-            {
-                from:     _borrower2,
-                tokenIds: tokenIdsToRemove
-            }
-        );
+        // pool is owner of pledged NFT
+        assertEq(_collateral.ownerOf(53), address(_pool));
 
-        tokenIdsToRemove = new uint256[](2);
-        tokenIdsToRemove[0] = 3;
-        tokenIdsToRemove[1] = 5;
-
-        // should fail if trying to pull collateral in different order than they were pledged
-        _assertPullTokenMismatchRevert(
-            {
-                from:     _borrower,
-                tokenIds: tokenIdsToRemove
-            }
-        );
-
-        // borrower removes some of their deposted NFTS from the pool, proper ordered
-        tokenIdsToRemove = new uint256[](2);
-        tokenIdsToRemove[0] = 5;
-        tokenIdsToRemove[1] = 3;
+        // borrower removes some of their deposted NFTS from the pool
         _pullCollateral(
             {
-                from:     _borrower,
-                tokenIds: tokenIdsToRemove
+                from:   _borrower,
+                amount: 2
             }
         );
 
@@ -253,17 +243,29 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(_borrower),      51);
         assertEq(_collateral.balanceOf(address(_pool)), 2);
 
-        // should fail if borrower tries to pull again same NFTs
+        // pool is owner of remaining pledged NFT
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        // borrower is owner of 2 pulled NFTs
+        assertEq(_collateral.ownerOf(3), _borrower);
+        assertEq(_collateral.ownerOf(5), _borrower);
+
+
+        // should fail if borrower tries to pull more NFTs than remaining in pool
         _assertPullInsufficientCollateralRevert(
             {
-                from:     _borrower,
-                tokenIds: tokenIdsToRemove
+                from:   _borrower,
+                amount: 3
             }
         );
     }
 
     // TODO: finish implementing
     function testPullCollateralNotInPool() external {
+        // borrower is owner of NFTs
+        assertEq(_collateral.ownerOf(1), _borrower);
+        assertEq(_collateral.ownerOf(3), _borrower);
+        assertEq(_collateral.ownerOf(5), _borrower);
+
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 1;
         tokenIdsToAdd[1] = 3;
@@ -277,28 +279,30 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             }
         );
 
-        // should revert if borrower attempts to remove collateral not in pool
-        uint256[] memory tokenIdsToRemove = new uint256[](1);
-        tokenIdsToRemove[0] = 51;
-        _assertPullTokenMismatchRevert(
+        // pool is owner of pledged NFTs
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        assertEq(_collateral.ownerOf(3), address(_pool));
+        assertEq(_collateral.ownerOf(5), address(_pool));
+
+        // should revert if borrower attempts to remove more collateral than pledged from pool
+        _assertPullInsufficientCollateralRevert(
             {
-                from: _borrower,
-                tokenIds: tokenIdsToRemove
+                from:   _borrower,
+                amount: 5
             }
         );
 
         // borrower should be able to remove collateral in the pool
-        tokenIdsToRemove = new uint256[](3);
-        tokenIdsToRemove[0] = 5;
-        tokenIdsToRemove[1] = 3;
-        tokenIdsToRemove[2] = 1;
-
         _pullCollateral(
             {
-                from:     _borrower,
-                tokenIds: tokenIdsToRemove
+                from:   _borrower,
+                amount: 3
             }
         );
+        // borrower is owner of pulled NFTs
+        assertEq(_collateral.ownerOf(1), _borrower);
+        assertEq(_collateral.ownerOf(3), _borrower);
+        assertEq(_collateral.ownerOf(5), _borrower);
     }
 
     function testPullCollateralPartiallyEncumbered() external {
@@ -401,16 +405,11 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
             })
         );
 
-        // remove some unencumbered collateral
-        uint256[] memory tokenIdsToRemove = new uint256[](2);
-        tokenIdsToRemove[0] = 5;
-        tokenIdsToRemove[1] = 3;
-
-        // borrower removes some of their deposted NFTS from the pool
+        // borrower removes some of their deposited NFTS from the pool
         _pullCollateral(
             {
-                from:     _borrower,
-                tokenIds: tokenIdsToRemove
+                from:   _borrower,
+                amount: 2
             }
         );
 
@@ -501,13 +500,10 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(PoolUtils.encumberance(_pool.debt(), _lup()), 2.992021560300836411 * 1e18);
 
         // should revert if borrower attempts to pull more collateral than is unencumbered
-        uint256[] memory tokenIdsToRemove = new uint256[](2);
-        tokenIdsToRemove[0] = 3;
-        tokenIdsToRemove[1] = 5;
         _assertPullInsufficientCollateralRevert(
             {
-                from:     _borrower,
-                tokenIds: tokenIdsToRemove
+                from:   _borrower,
+                amount: 2
             }
         );
     }

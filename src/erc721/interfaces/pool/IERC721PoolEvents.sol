@@ -28,13 +28,4 @@ interface IERC721PoolEvents {
         uint256[] tokenIds
     );
 
-    /**
-     *  @notice Emitted when borrower removes collateral from the pool.
-     *  @param  borrower `msg.sender`.
-     *  @param  tokenIds Array of tokenIds to be removed from the pool.
-     */
-    event PullCollateralNFT(
-        address indexed borrower,
-        uint256[] tokenIds
-    );
 }

@@ -23,8 +23,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     // Pool events
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
     event PledgeCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
-    event PullCollateralNFT(address indexed borrower_, uint256[] tokenIds_);
-    event RemoveCollateralNFT(address indexed claimer_, uint256 indexed price_, uint256[] tokenIds_);
 
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
 
@@ -64,20 +62,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             emit Transfer(from, address(_pool), i);
         }
         ERC721Pool(address(_pool)).pledgeCollateral(borrower, tokenIds);
-    }
-
-    function _pullCollateral(
-        address from,
-        uint256[] memory tokenIds
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateralNFT(from, tokenIds);
-        for (uint256 i = 0; i < tokenIds.length; i++) {
-            vm.expectEmit(true, true, false, true);
-            emit Transfer(address(_pool), from, i);
-        }
-        ERC721Pool(address(_pool)).pullCollateral(tokenIds);
     }
 
 
@@ -125,24 +109,6 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         changePrank(from);
         vm.expectRevert(IERC721PoolErrors.OnlySubset.selector);
         ERC721Pool(address(_pool)).pledgeCollateral(from, tokenIds);
-    }
-
-    function _assertPullInsufficientCollateralRevert(
-        address from,
-        uint256[] memory tokenIds
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC721Pool(address(_pool)).pullCollateral(tokenIds);
-    }
-
-    function _assertPullTokenMismatchRevert(
-        address from,
-        uint256[] memory tokenIds
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IERC721PoolErrors.TokenMismatch.selector);
-        ERC721Pool(address(_pool)).pullCollateral(tokenIds);
     }
 
 }

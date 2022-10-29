@@ -29,6 +29,7 @@ abstract contract DSTestPlus is Test {
     event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
+    event PullCollateral(address indexed borrower_, uint256 amount_);
     event RemoveCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event RemoveQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
@@ -143,6 +144,16 @@ abstract contract DSTestPlus is Test {
         (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(amount, fromIndex, toIndex);
         assertEq(lpbFrom, lpRedeemFrom);
         assertEq(lpbTo,   lpRedeemTo);
+    }
+
+    function _pullCollateral(
+        address from,
+        uint256 amount 
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit PullCollateral(from, amount);
+        _pool.pullCollateral(amount);
     }
 
     function _removeAllLiquidity(
@@ -571,6 +582,15 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.BorrowerOk.selector);
         _pool.kick(borrower);
+    }
+
+    function _assertPullInsufficientCollateralRevert(
+        address from,
+        uint256 amount
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
+        _pool.pullCollateral(amount);
     }
 
     function _assertRepayNoDebtRevert(

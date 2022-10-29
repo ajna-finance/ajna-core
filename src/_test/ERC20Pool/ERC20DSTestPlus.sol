@@ -20,7 +20,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     // Pool events
     event AddCollateral(address indexed actor_, uint256 indexed price_, uint256 amount_);
     event PledgeCollateral(address indexed borrower_, uint256 amount_);
-    event PullCollateral(address indexed borrower_, uint256 amount_);
 
     event Transfer(address indexed from, address indexed to, uint256 value);
 
@@ -81,16 +80,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
         ERC20Pool(address(_pool)).pledgeCollateral(borrower, amount);
-    }
-
-    function _pullCollateral(
-        address from,
-        uint256 amount 
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit PullCollateral(from, amount);
-        ERC20Pool(address(_pool)).pullCollateral(amount);
     }
 
     function _removeAllCollateral(
@@ -198,15 +187,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
         ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
-    }
-
-    function _assertPullInsufficientCollateralRevert(
-        address from,
-        uint256 amount
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC20Pool(address(_pool)).pullCollateral(amount);
     }
 
     function _assertRemoveAllCollateralNoClaimRevert(

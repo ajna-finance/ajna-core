@@ -79,22 +79,17 @@ contract ERC721Pool is IERC721Pool, Pool {
         }
     }
 
-    // TODO: check for reentrancy
     function pullCollateral(
-        uint256[] calldata tokenIdsToPull_
+        uint256 noOfNFTsToPull_
     ) external override {
-        _pullCollateral(Maths.wad(tokenIdsToPull_.length));
+        _pullCollateral(Maths.wad(noOfNFTsToPull_));
 
-        emit PullCollateralNFT(msg.sender, tokenIdsToPull_);
+        emit PullCollateral(msg.sender, noOfNFTsToPull_);
 
-        // move collateral from pool to claimer
         uint256[] storage pledgedCollateral = borrowerTokenIds[msg.sender];
         uint256 noOfNFTsPledged = pledgedCollateral.length;
-        for (uint256 i = 0; i < tokenIdsToPull_.length;) {
-            uint256 tokenId = tokenIdsToPull_[i];
-
-            if (pledgedCollateral[--noOfNFTsPledged] != tokenId) revert TokenMismatch();
-
+        for (uint256 i = 0; i < noOfNFTsToPull_;) {
+            uint256 tokenId = pledgedCollateral[--noOfNFTsPledged];  // start with pulling the last token added in bucket
             pledgedCollateral.pop();
 
             _transferNFT(address(this), msg.sender, tokenId);
@@ -109,7 +104,6 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** Lender External Functions ***/
     /*********************************/
 
-    // TODO: does pool state need to be updated with collateral deposited as well?
     function addCollateral(
         uint256[] calldata tokenIdsToAdd_,
         uint256 index_
@@ -133,8 +127,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         }
     }
 
-    // TODO: finish implementing
-    // TODO: check for reentrancy
     function removeCollateral(
         uint256 noOfNFTsToRemove_,
         uint256 index_
@@ -148,7 +140,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256 noOfNFTsInBucket = addedNFTs.length;
         for (uint256 i = 0; i < noOfNFTsToRemove_;) {
             uint256 tokenId = addedNFTs[--noOfNFTsInBucket]; // start with removing the last token added in bucket
-
             addedNFTs.pop();
 
             _transferNFT(address(this), msg.sender, tokenId);
@@ -181,7 +172,7 @@ contract ERC721Pool is IERC721Pool, Pool {
 
         uint256 collateralTaken = _take(borrower_, Maths.wad(maxTokens_));
         if (collateralTaken != 0) {
-            uint256 nftsTaken = (collateralTaken / 1e18) + 1; // round up collateral taken: (taken / 1e18) rounds down + 1 = rounds up
+            uint256 nftsTaken = (collateralTaken / 1e18) + 1; // round up collateral taken: (taken / 1e18) rounds down + 1 = rounds up TODO: fix this
 
             uint256[] storage pledgedNFTs = borrowerTokenIds[borrower_];
             uint256 noOfNFTsPledged = pledgedNFTs.length;
@@ -195,7 +186,6 @@ contract ERC721Pool is IERC721Pool, Pool {
 
             for (uint256 i = 0; i < nftsTaken;) {
                 uint256 tokenId = pledgedNFTs[--noOfNFTsPledged]; // start with taking the last token pledged by borrower
-
                 pledgedNFTs.pop();
 
                 _transferNFT(address(this), msg.sender, tokenId);
