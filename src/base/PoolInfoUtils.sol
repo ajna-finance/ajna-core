@@ -2,8 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
-
 import './interfaces/IPool.sol';
 
 import '../libraries/PoolUtils.sol';
@@ -14,22 +12,23 @@ contract PoolInfoUtils {
         external
         view
         returns (
-            uint256 debt_,             // accrued debt (WAD)
-            uint256 pendingDebt_,      // accrued debt (WAD)
-            uint256 collateral_,       // deposited collateral including encumbered (WAD)
-            uint256 mompFactor_,       // MOMP / inflator, used in neutralPrice calc (WAD)
-            uint256 inflatorSnapshot_  // used to calculate pending interest (WAD)
+            uint256 debt_,             // current debt owed by borrower              (WAD)
+            uint256 collateral_,       // deposited collateral including encumbered  (WAD)
+            uint256 mompFactor_        // MOMP / inflator, used in neutralPrice calc (WAD)
         )
     {
         IPool pool = IPool(ajnaPool_);
 
-        uint256 poolInflatorSnapshot       = pool.inflatorSnapshot();
-        uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
-        uint256 interestRate               = pool.interestRate();
+        (
+            uint256 poolInflatorSnapshot,
+            uint256 lastInflatorSnapshotUpdate
+        ) = pool.inflatorInfo();
+        uint256 interestRate = pool.interestRate();
 
         uint256 pendingInflator = PoolUtils.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        (debt_, collateral_, mompFactor_, inflatorSnapshot_) = pool.borrowers(borrower_);
-        pendingDebt_ = (debt_ != 0) ? Maths.wmul(debt_, Maths.wdiv(pendingInflator, inflatorSnapshot_)) : 0;
+        uint256 t0debt;
+        (t0debt, collateral_, mompFactor_)  = pool.borrowerInfo(borrower_);
+        debt_ = Maths.wmul(t0debt, pendingInflator);
     }
 
     /**
@@ -56,11 +55,9 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        price_                        = PoolUtils.indexToPrice(index_);
-        quoteTokens_                  = pool.bucketDeposit(index_); // quote token in bucket, deposit + interest (WAD)
-        scale_                        = pool.bucketScale(index_);     // lender interest multiplier (WAD)
+        price_ = PoolUtils.indexToPrice(index_);
 
-        (bucketLPs_, collateral_) = pool.buckets(index_);
+        (bucketLPs_, collateral_, , quoteTokens_, scale_) = pool.bucketInfo(index_);
         if (bucketLPs_ == 0) {
             exchangeRate_ = Maths.RAY;
         } else {
@@ -90,12 +87,13 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
         poolSize_    = pool.depositSize();
-        loansCount_  = pool.noOfLoans();
-        maxBorrower_ = pool.maxBorrower();
+        (maxBorrower_, , loansCount_)  = pool.loansInfo();
 
-        uint256 inflatorSnapshot           = pool.inflatorSnapshot();
-        uint256 lastInflatorSnapshotUpdate = pool.lastInflatorSnapshotUpdate();
-        uint256 interestRate               = pool.interestRate();
+        (
+            uint256 inflatorSnapshot,
+            uint256 lastInflatorSnapshotUpdate
+        ) = pool.inflatorInfo();
+        uint256 interestRate = pool.interestRate();
 
         pendingInflator_       = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         pendingInterestFactor_ = PoolUtils.pendingInterestFactor(interestRate, block.timestamp - lastInflatorSnapshotUpdate);
@@ -125,9 +123,11 @@ contract PoolInfoUtils {
         IPool pool = IPool(ajnaPool_);
         hpbIndex_ = pool.depositIndex(1);
         hpb_      = PoolUtils.indexToPrice(hpbIndex_);
-        htp_      = Maths.wmul(pool.maxThresholdPrice(), pool.inflatorSnapshot());
+        (, uint256 maxThresholdPrice, ) = pool.loansInfo();
+        (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
+        htp_      = Maths.wmul(maxThresholdPrice, inflatorSnapshot);
         if (htp_ != 0) htpIndex_ = PoolUtils.priceToIndex(htp_);
-        lupIndex_ = pool.depositIndex(pool.borrowerDebt());
+        lupIndex_ = pool.depositIndex(pool.debt());
         lup_      = PoolUtils.indexToPrice(lupIndex_);
     }
 
@@ -151,14 +151,12 @@ contract PoolInfoUtils {
         )
     {
         IPool pool = IPool(ajnaPool_);
-        uint256 poolDebt = pool.borrowerDebt();
+        uint256 poolDebt = pool.accruedDebt();
         uint256 poolSize = pool.depositSize();
 
-        uint256 quoteTokenBalance = ERC20(pool.quoteTokenAddress()).balanceOf(ajnaPool_);
+        uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_);
 
-        uint256 bondEscrowed     = pool.liquidationBondEscrowed();
-        uint256 unclaimedReserve = pool.reserveAuctionUnclaimed();
-        uint256 auctionKickTime  = pool.reserveAuctionKicked();
+        (uint256 bondEscrowed, uint256 unclaimedReserve, uint256 auctionKickTime) = pool.reservesInfo();
 
         reserves_ = poolDebt + quoteTokenBalance - poolSize - bondEscrowed - unclaimedReserve;
         claimableReserves_ = PoolUtils.claimableReserves(
@@ -193,14 +191,16 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        uint256 poolDebt       = pool.borrowerDebt();
+        uint256 poolDebt       = pool.debt();
         uint256 poolCollateral = pool.pledgedCollateral();
+        (, , uint256 noOfLoans) = pool.loansInfo();
 
-        if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, pool.noOfLoans());
+        if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, noOfLoans);
         uint256 currentLup      = PoolUtils.indexToPrice(pool.depositIndex(poolDebt));
         poolCollateralization_ = PoolUtils.collateralization(poolDebt, poolCollateral, currentLup);
         poolActualUtilization_ = pool.depositUtilization(poolDebt, poolCollateral);
-        poolTargetUtilization_ = PoolUtils.poolTargetUtilization(pool.debtEma(), pool.lupColEma());
+        (uint256 debtEma, uint256 lupColEma) = pool.emasInfo();
+        poolTargetUtilization_ = PoolUtils.poolTargetUtilization(debtEma, lupColEma);
     }
 
     /**
@@ -215,7 +215,7 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        uint256 poolDebt       = pool.borrowerDebt();
+        uint256 poolDebt       = pool.debt();
         uint256 poolCollateral = pool.pledgedCollateral();
         uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
 
@@ -241,7 +241,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        uint256 currentLupIndex = pool.depositIndex(pool.borrowerDebt());
+        uint256 currentLupIndex = pool.depositIndex(pool.debt());
         return PoolUtils.indexToPrice(currentLupIndex);
     }
 
@@ -250,7 +250,7 @@ contract PoolInfoUtils {
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
 
-        return pool.depositIndex(pool.borrowerDebt());
+        return pool.depositIndex(pool.debt());
     }
 
     function hpb(
@@ -274,8 +274,9 @@ contract PoolInfoUtils {
         address ajnaPool_
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
-
-        return Maths.wmul(pool.maxThresholdPrice(), pool.inflatorSnapshot());
+        (, uint256 maxThresholdPrice, ) = pool.loansInfo();
+        (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
+        return Maths.wmul(maxThresholdPrice, inflatorSnapshot);
     }
 
 }

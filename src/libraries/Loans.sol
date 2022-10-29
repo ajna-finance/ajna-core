@@ -22,12 +22,19 @@ library Loans {
     }
 
     struct Borrower {
-        uint256 debt;             // [WAD] Borrower debt.
+        uint256 t0debt;           // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
         uint256 collateral;       // [WAD] Collateral deposited by borrower.
         uint256 mompFactor;       // [WAD] Most Optimistic Matching Price (MOMP) / inflator, used in neutralPrice calc.
-        uint256 inflatorSnapshot; // [WAD] Current borrower inflator snapshot.
     }
 
+    /**
+     *  @notice The loan to be removed does not exist in loans heap.
+     */
+    error NoLoan();
+    /**
+     *  @notice The threshold price of the loan to be inserted in loans heap is zero.
+     */
+    error ZeroThresholdPrice();
 
     /***********************/
     /***  Initialization ***/
@@ -39,7 +46,6 @@ library Loans {
      *  @param self Holds tree loan data.
      */
     function init(Data storage self) internal {
-        require(self.loans.length == 0, "H:ALREADY_INIT");
         self.loans.push(Loan(address(0), 0));
     }
 
@@ -54,7 +60,7 @@ library Loans {
      *  @param  debt_         Accrued debt of borrower to be kicked.
      *  @param  inflator_     Pool current inflator.
      *  @param  rate_         Pool interest rate.
-     *  @return kickPenalty_  Liquidation penalty added to the debt of the borrower and poolstate debt. 
+     *  @return kickPenalty_  Liquidation penalty added to the debt of the borrower and poolstate debt.
      */
     function kick(
         Data storage self,
@@ -69,8 +75,7 @@ library Loans {
         // update borrower balance
         Borrower storage borrower = self.borrowers[borrower_];
         kickPenalty_              = Maths.wmul(Maths.wdiv(rate_, 4 * 1e18), debt_); // when loan is kicked, penalty of three months of interest is added
-        borrower.debt             = debt_ + kickPenalty_; 
-        borrower.inflatorSnapshot = inflator_;
+        borrower.t0debt           = Maths.wdiv(debt_ + kickPenalty_, inflator_);
     }
 
     /**
@@ -79,31 +84,33 @@ library Loans {
      *  @param deposits_        Pool deposits, used to calculate borrower MOMP factor.
      *  @param borrowerAddress_ Borrower's address to update.
      *  @param borrower_        Borrower struct with borrower details.
-     *  @param poolDebt_        Pool debt.
+     *  @param poolDebt_        Pool debt, used for calculating borrower MOMP factor.
+     *  @param poolInflator_    The current pool inflator used to calculate borrower MOMP factor.
      */
     function update(
         Data storage self,
         Deposits.Data storage deposits_,
         address borrowerAddress_,
         Borrower memory borrower_,
-        uint256 poolDebt_
+        uint256 poolDebt_,
+        uint256 poolInflator_
     ) internal {
 
         // update loan heap
-        if (borrower_.debt != 0 && borrower_.collateral != 0) {
+        if (borrower_.t0debt != 0 && borrower_.collateral != 0) {
             _upsert(
                 self,
                 borrowerAddress_,
-                Maths.wdiv(Maths.wdiv(borrower_.debt, borrower_.inflatorSnapshot), borrower_.collateral)
+                Maths.wdiv(borrower_.t0debt, borrower_.collateral)
             );
         } else if (self.indices[borrowerAddress_] != 0) {
             _remove(self, borrowerAddress_);
         }
 
-        // update borrower balance
-        if (borrower_.debt != 0) borrower_.mompFactor = Deposits.mompFactor(
+        // update borrower
+        if (borrower_.t0debt != 0) borrower_.mompFactor = Deposits.mompFactor(
             deposits_,
-            borrower_.inflatorSnapshot,
+            poolInflator_,
             poolDebt_,
             self.loans.length - 1
         );
@@ -175,12 +182,12 @@ library Loans {
 
     /**
      *  @notice Removes loan for given borrower address.
-     *  @param self     Holds tree loan data.
+     *  @param self      Holds tree loan data.
      *  @param borrower_ Borrower address whose loan is being updated or inserted.
      */
     function _remove(Data storage self, address borrower_) internal {
         uint256 i_ = self.indices[borrower_];
-        require(i_ != 0, "H:R:NO_BORROWER");
+        if (i_ == 0) revert NoLoan();
 
         delete self.indices[borrower_];
         uint256 tailIndex = self.loans.length - 1;
@@ -204,7 +211,7 @@ library Loans {
         address borrower_,
         uint256 thresholdPrice_
     ) internal {
-        require(thresholdPrice_ != 0, "H:I:VAL_EQ_0");
+        if (thresholdPrice_ == 0) revert ZeroThresholdPrice();
         uint256 i = self.indices[borrower_];
 
         // Loan exists, update in place.
@@ -230,23 +237,16 @@ library Loans {
     /**********************/
 
     /**
-     *  @notice Accrues borrower interest and returns updated borrower struct.
+     *  @notice Returns borrower struct.
      *  @param self Holds tree loan data.
-     *  @param borrowerAddress_ Borrower's address to accrue interest.
-     *  @param poolInflator_    Current pool inflator.
-     *  @return Borrower struct containing borrower updated info.
+     *  @param borrowerAddress_ Borrower's address.
+     *  @return Borrower struct containing borrower info.
      */
-    function accrueBorrowerInterest(
+    function getBorrowerInfo(
         Data storage self,
-        address borrowerAddress_,
-        uint256 poolInflator_
+        address borrowerAddress_
     ) internal view returns (Borrower memory) {
-        Borrower memory borrower = self.borrowers[borrowerAddress_];
-        if (borrower.debt != 0) {
-            borrower.debt = Maths.wmul(borrower.debt, Maths.wdiv(poolInflator_, borrower.inflatorSnapshot));
-        }
-        borrower.inflatorSnapshot = poolInflator_;
-        return borrower;
+        return self.borrowers[borrowerAddress_];
     }
 
     /**

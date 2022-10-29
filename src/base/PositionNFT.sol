@@ -4,7 +4,6 @@ pragma solidity 0.8.14;
 import { Base64 } from '@base64-sol/base64.sol';
 
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-import '@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol';  // TODO: determine if tokens should be burnable
 import '@openzeppelin/contracts/utils/Strings.sol';
 
 import './interfaces/IPositionManager.sol';

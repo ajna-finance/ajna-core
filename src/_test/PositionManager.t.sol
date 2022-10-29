@@ -201,7 +201,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress,
                 index:       indexes[0],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -217,7 +217,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress,
                 index:       indexes[1],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -233,7 +233,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress,
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -282,7 +282,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -298,7 +298,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[1],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -314,7 +314,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -358,7 +358,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress,
                 index:       indexes[0],
                 lpBalance:   1_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -366,7 +366,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -374,7 +374,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress,
                 index:       indexes[1],
                 lpBalance:   2_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -382,7 +382,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[1],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -390,7 +390,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress,
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -398,7 +398,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -436,7 +436,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   4_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -452,7 +452,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[1],
                 lpBalance:   5_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -468,7 +468,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[2],
                 lpBalance:   6_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -552,7 +552,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testLender1,
                 index:       indexes[0],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -560,7 +560,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testLender2,
                 index:       indexes[0],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -576,7 +576,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testLender1,
                 index:       indexes[1],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -600,7 +600,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testLender1,
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -632,7 +632,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testLender2,
                 index:       indexes[3],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -691,7 +691,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -707,7 +707,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[1],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -723,7 +723,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -784,7 +784,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[0],
                 lpBalance:   6_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -800,7 +800,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[1],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -816,7 +816,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[2],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -832,7 +832,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       indexes[3],
                 lpBalance:   3_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -898,7 +898,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testMinter,
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -954,7 +954,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -996,7 +996,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testReceiver,
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1047,7 +1047,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testMinter,
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1104,7 +1104,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -1166,7 +1166,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testReceiver,
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1337,7 +1337,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress1,
                 index:       mintIndex,
                 lpBalance:   2_500 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1345,7 +1345,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress2,
                 index:       mintIndex,
                 lpBalance:   5_500 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1418,7 +1418,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress2,
                 index:       mintIndex,
                 lpBalance:   5_500 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1426,7 +1426,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       mintIndex,
                 lpBalance:   2_500 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1489,7 +1489,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testAddress2,
                 index:       mintIndex,
                 lpBalance:   5_500 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1497,7 +1497,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       mintIndex,
                 lpBalance:   0,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1521,7 +1521,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       moveIndex,
                 lpBalance:   2_500 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -1568,7 +1568,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       mintIndex,
                 lpBalance:   5_500 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1592,7 +1592,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       moveIndex,
                 lpBalance:   2_500 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -1639,7 +1639,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       mintIndex,
                 lpBalance:   0 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1663,7 +1663,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       moveIndex,
                 lpBalance:   8_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -1705,7 +1705,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testMinter,
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1746,7 +1746,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -1776,7 +1776,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testMinter,
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1862,7 +1862,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testMinter,
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1870,7 +1870,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testReceiver,
                 index:       testIndexPrice,
                 lpBalance:   25_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1894,7 +1894,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testReceiver,
                 index:       2551,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1935,7 +1935,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testReceiver,
                 index:       testIndexPrice,
                 lpBalance:   25_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1943,7 +1943,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      address(_positionManager),
                 index:       testIndexPrice,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -1959,7 +1959,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testReceiver,
                 index:       2551,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -2020,7 +2020,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testReceiver,
                 index:       testIndexPrice,
                 lpBalance:   40_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(
@@ -2044,7 +2044,7 @@ contract PositionManagerTest is PositionManagerHelperContract {
                 lender:      testReceiver,
                 index:       2551,
                 lpBalance:   15_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
         _assertLenderLpBalance(

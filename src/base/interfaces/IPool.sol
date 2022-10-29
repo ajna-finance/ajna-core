@@ -27,14 +27,24 @@ interface IPool is
     IPoolErrors
 {
 
-    /**
-     *  @notice Initializes a new pool, setting initial state variables.
-     *  @param  rate             Initial interest rate of the pool.
-     *  @param  ajnaTokenAddress Address of the Ajna token.
-     */
-    function initialize(
-        uint256 rate,
-        address ajnaTokenAddress
-    ) external;
+}
 
+interface IERC20Token {
+    function balanceOf(address account) external view returns (uint256);
+    function burn(uint256 amount) external;
+    function decimals() external view returns (uint8);
+    function transfer(address to, uint256 amount) external returns (bool);
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) external returns (bool);
+}
+
+interface IERC721Token {
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external;
 }

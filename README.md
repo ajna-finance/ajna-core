@@ -77,3 +77,43 @@ pip install solc-select && solc-select install 0.8.14 && solc-select use 0.8.14
 ```bash
 make analyze
 ```
+
+
+## Run SDK testnet setup
+
+- start brownie console
+```bash
+brownie console
+```
+- in brownie console run SDK setup script
+```bash
+run('sdk_setup')
+```
+
+Running SDK setup script will create a basic setup for testing SDK by:
+- deploying ERC20 and ERC721 pool factories and generating `brownie-out/ajna-sdk.json` config file with deployed addresses
+```
+{
+    "erc20factory": "0x8b1B440724DCe2EE9779B58af841Ec59F545838B",
+    "erc721factory": "0xC6D563d5c2243b27e7294511063f563ED701EA2C"
+}
+```
+- funding test addresses with DAI, MKR and Bored Apes NFTs. Addresses and balances to fund are set in `sdk-setup.json` file.
+Tokens configuration section contains addresses of DAI contract and reserve, MKR contract and reserve and Bored Ape contract. (sample provided for mainnet)
+Accounts configuration section contains test addresses and balances to fund.
+For ERC20 tokens the number of tokens to be funded should be provided.
+For ERC721 tokens the id of token to be funded should be provided.
+```
+{
+    "0x66aB6D9362d4F35596279692F0251Db635165871": {
+        "DAI": 11000,
+        "MKR": 100,
+        "BAYC": [5, 6, 7]
+    },
+    "0x33A4622B82D4c04a53e170c638B944ce27cffce3": {
+        "DAI": 22000,
+        "MKR": 50,
+        "BAYC": [8, 9, 10]
+    }
+}
+```
