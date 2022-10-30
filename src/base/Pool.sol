@@ -316,12 +316,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.t0debt == 0) revert NoDebt();
 
-        uint256 t0maxAmountToRepay = Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator);
-        uint256 t0repaidDebt = Maths.min(borrower.t0debt, t0maxAmountToRepay);
+        uint256 t0repaidDebt = Maths.min(borrower.t0debt, Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator));
 
         (
             uint256 quoteTokenAmountToRepay, 
-            uint256 borrowerDebt,
             uint256 newLup
         ) = _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
@@ -508,20 +506,19 @@ abstract contract Pool is Clone, Multicall, IPool {
         Loans.Borrower memory borrower
     ) internal returns(
         uint256 quoteTokenAmountToRepay_, 
-        uint256 borrowerDebt_,
         uint256 newLup_
     ) {
         quoteTokenAmountToRepay_ = Maths.wmul(t0repaidDebt, poolState.inflator);
-        borrowerDebt_            = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
+        uint256 borrowerDebt     = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
         poolState.accruedDebt    -= quoteTokenAmountToRepay_;
 
         // check that repay or take doesn't leave borrower debt under min debt amount
-        if (borrowerDebt_ != 0) {
+        if (borrowerDebt != 0) {
             uint256 loansCount = loans.noOfLoans();
             if (
                 loansCount >= 10
                 &&
-                (borrowerDebt_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
+                (borrowerDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
             ) revert AmountLTMinDebt();
         }
 
@@ -530,7 +527,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         auctions.checkAndRemove(
             borrowerAddress,
             _collateralization(
-                borrowerDebt_,
+                borrowerDebt,
                 borrower.collateral,
                 newLup_
             )
@@ -639,13 +636,12 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         (
             uint256 quoteTokenAmount,
-            uint256 repayAmount,
+            uint256 t0repaidDebt,
             uint256 collateralTaken,
             uint256 bondChange,
             bool isRewarded
         ) = auctions.take(borrowerAddress_, borrower, collateral_, poolState.inflator);
 
-        uint256 t0repaidDebt = Maths.wdiv(repayAmount, poolState.inflator);
         borrower.collateral  -= collateralTaken;
         poolState.collateral -= collateralTaken;
 
