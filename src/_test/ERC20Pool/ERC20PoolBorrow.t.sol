@@ -18,7 +18,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
     address internal _lender1;
-    uint internal _anonBorrowerCount = 0;
 
     uint256 highest = 2550;
     uint256 high    = 2551;
@@ -97,24 +96,6 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 interestRateUpdate:   _startTime
             })
         );
-    }
-
-    /**
-     *  @dev Creates debt for an anonymous non-player borrower not otherwise involved in the test.
-     **/
-    function _anonBorrowerDrawsDebt(uint256 loanAmount) internal {
-        _anonBorrowerCount += 1;
-        address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
-        vm.stopPrank();
-        _mintCollateralAndApproveTokens(borrower,  100 * 1e18);
-        _pledgeCollateral(
-            {
-                from:     borrower,
-                borrower: borrower,
-                amount:   100 * 1e18
-            }
-        );
-        _pool.borrow(loanAmount, 7_777);
     }
 
     function testPoolBorrowAndRepay() external {
@@ -685,7 +666,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     function testMinBorrowAmountCheck() external {
         // 10 borrowers draw debt
         for (uint i=0; i<10; ++i) {
-            _anonBorrowerDrawsDebt(1_200 * 1e18);
+            _anonBorrowerDrawsDebt(100 * 1e18, 1_200 * 1e18, 7777);
         }
         (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(loansCount, 10);
@@ -847,7 +828,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
 
         // 9 other borrowers draw debt
         for (uint i=0; i<9; ++i) {
-            _anonBorrowerDrawsDebt(1_000 * 1e18);
+            _anonBorrowerDrawsDebt(100 * 1e18, 1_000 * 1e18, 7777);
         }
         (, uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
         assertEq(loansCount, 10);
