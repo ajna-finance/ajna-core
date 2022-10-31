@@ -254,17 +254,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
-        uint256 loansCount             = loans.noOfLoans();
-        if (
-            loansCount >= 10
-            &&
-            (borrowerDebt + amountToBorrow_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-        ) revert AmountLTMinDebt();
 
         // increase debt by the origination fee
         uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
         borrowerDebt += debtChange;
+        _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
         // calculate the new LUP
         uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
@@ -513,14 +508,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         poolState.accruedDebt    -= quoteTokenAmountToRepay_;
 
         // check that repay or take doesn't leave borrower debt under min debt amount
-        if (borrowerDebt != 0) {
-            uint256 loansCount = loans.noOfLoans();
-            if (
-                loansCount >= 10
-                &&
-                (borrowerDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-            ) revert AmountLTMinDebt();
-        }
+        _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
         newLup_ = _lup(poolState.accruedDebt);
 
@@ -545,6 +533,16 @@ abstract contract Pool is Clone, Multicall, IPool {
         t0poolDebt -= t0repaidDebt;
     }
 
+    function _checkMinDebt(uint256 accruedDebt_,  uint256 borrowerDebt_) internal view {
+        if (borrowerDebt_ != 0) {
+            uint256 loansCount = loans.noOfLoans();
+            if (
+                loansCount >= 10
+                &&
+                (borrowerDebt_ < PoolUtils.minDebtAmount(accruedDebt_, loansCount))
+            ) revert AmountLTMinDebt();
+        }
+    }
 
     /*********************************/
     /*** Lender Internal Functions ***/
