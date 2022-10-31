@@ -145,9 +145,8 @@ library Auctions {
             // save remaining debt and collateral after auction clear action
             loans_.borrowers[borrower_].t0debt     = Maths.wdiv(remainingDebt, poolInflator_);
             loans_.borrowers[borrower_].collateral = remainingCol;
-        } else {
-            revert AuctionNotClearable();
         }
+        else revert AuctionNotClearable();
     }
 
     /**
@@ -326,6 +325,9 @@ library Auctions {
         kicker.locked    -= liquidation.bondSize;
         kicker.claimable += liquidation.bondSize;
 
+        // remove auction bond size from bond escrow accumulator 
+        self.totalBondEscrowed -= liquidation.bondSize;
+
         if (self.head == borrower_ && self.tail == borrower_) {
             // liquidation is the head and tail
             self.head = address(0);
@@ -346,6 +348,7 @@ library Auctions {
             self.liquidations[liquidation.prev].next = liquidation.next;
             self.liquidations[liquidation.next].prev = liquidation.prev;
         }
+
         // delete liquidation
          delete self.liquidations[borrower_];
     }
@@ -386,9 +389,7 @@ library Auctions {
                 ||
                 (loans_.borrowers[head].t0debt > 0 && loans_.borrowers[head].collateral == 0)
             )
-        ) {
-            revert AuctionNotCleared();
-        }
+        ) revert AuctionNotCleared();
     }
 
 }
