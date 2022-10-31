@@ -61,4 +61,10 @@ interface IPoolLiquidationActions {
         uint256 maxAmount,
         bytes memory swapCalldata
     ) external;
+
+    /**
+     *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
+     */
+    function withdrawBonds() external;
+
 }
