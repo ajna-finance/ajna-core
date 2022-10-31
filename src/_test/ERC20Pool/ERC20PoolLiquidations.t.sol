@@ -1649,6 +1649,30 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
     }
 
+    function testAuctionPrice() external {
+        skip(6238);
+        uint256 referencePrice = 8_678.5 * 1e18;
+        uint256 kickTime = block.timestamp;
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 277_712.0 * 1e18);
+        skip(1444); // price should not change in the first hour
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 277_712.0 * 1e18);
+
+        skip(5756);     // 2 hours
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 138_856.0 * 1e18);
+        skip(2394);     // 2 hours, 39 minutes, 54 seconds
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 87_574.910740335995562528 * 1e18);
+        skip(2586);     // 3 hours, 23 minutes
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 53_227.960156860514117568 * 1e18);
+        skip(3);        // 3 seconds later
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 53_197.223359425583052544 * 1e18);
+        skip(20153);    // 8 hours, 35 minutes, 53 seconds
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 1_098.262930507548946240 * 1e18);
+        skip(97264);    // 36 hours
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 0.000008082482836960 * 1e18);
+        skip(129600);   // 72 hours
+        assertEq(PoolUtils.auctionPrice(referencePrice, kickTime), 0);
+    }
+
     // TODO: move to DSTestPlus?
     function _logBorrowerInfo(address borrower_) internal {
         (
