@@ -15,7 +15,7 @@ contract ERC721Pool is IERC721Pool, Pool {
 
     mapping(uint256 => bool)      public tokenIdsAllowed;  // set of tokenIds that can be used for a given NFT Subset type pool
     mapping(address => uint256[]) public borrowerTokenIds; // borrower address => array of tokenIds pledged by borrower
-    mapping(uint256 => uint256[]) public bucketTokenIds;   // bucket id => array of tokenIds added in bucket
+    uint256[]                     public bucketTokenIds;   // array of tokenIds added in pool buckets
 
     bool public isSubset; // true if pool is a subset pool
 
@@ -88,7 +88,7 @@ contract ERC721Pool is IERC721Pool, Pool {
 
         // move required collateral from sender to pool
         emit AddCollateralNFT(msg.sender, index_, tokenIdsToAdd_);
-        _transferFromSenderToPool(bucketTokenIds[index_], tokenIdsToAdd_);
+        _transferFromSenderToPool(bucketTokenIds, tokenIdsToAdd_);
     }
 
     function removeCollateral(
@@ -98,7 +98,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         bucketLPs_ = _removeCollateral(Maths.wad(noOfNFTsToRemove_), index_);
 
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_);
-        _transferFromPoolToSender(bucketTokenIds[index_], noOfNFTsToRemove_);
+        _transferFromPoolToSender(bucketTokenIds, noOfNFTsToRemove_);
     }
 
     /*******************************/

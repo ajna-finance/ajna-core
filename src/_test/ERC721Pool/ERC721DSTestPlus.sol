@@ -109,7 +109,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         (, uint256 noOfTokens, , , ) = _pool.bucketInfo(index);
         noOfTokens = noOfTokens / 1e18;
         for (uint256 i = 0; i < amount; i++) {
-            uint256 tokenId = ERC721Pool(address(_pool)).bucketTokenIds(index, --noOfTokens);
+            uint256 tokenId = ERC721Pool(address(_pool)).bucketTokenIds(--noOfTokens);
             assertEq(_collateral.ownerOf(tokenId), address(_pool)); // token is owned by pool
             tokenIds[i] = tokenId;
         }

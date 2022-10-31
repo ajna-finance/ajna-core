@@ -28,12 +28,10 @@ interface IERC721PoolState {
 
     /**
      *  @notice Returns the token id of an NFT added in a given bucket.
-     *  @param  index    The bucket index.
      *  @param  nftIndex NFT index in bucket's token ids array.
      *  @return tokenId  Token id of the NFT.
      */
     function bucketTokenIds(
-        uint256 index,
         uint256 nftIndex
     ) external view returns (uint256 tokenId);
 }
