@@ -52,5 +52,5 @@ interface IPoolLiquidationActions {
     /**
      *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
      */
-    function withdrawAuctionBonds() external;
+    function withdrawBonds() external;
 }

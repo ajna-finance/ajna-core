@@ -347,7 +347,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         // kicker withdraws his auction bonds
         changePrank(_lender);
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
-        _pool.withdrawAuctionBonds();
+        _pool.withdrawBonds();
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
         _assertKicker(
             {
@@ -438,7 +438,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         // kicker withdraws his auction bonds
         changePrank(_lender);
         assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
-        _pool.withdrawAuctionBonds();
+        _pool.withdrawBonds();
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
         _assertKicker(
             {
@@ -963,7 +963,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
         // kicker withdraws his auction bonds
         assertEq(_quote.balanceOf(_lender), 46_293.885066015721543543 * 1e18);
-        _pool.withdrawAuctionBonds();
+        _pool.withdrawBonds();
         assertEq(_quote.balanceOf(_lender), 46_398.494818351158622400 * 1e18);
         _assertKicker(
             {

@@ -239,7 +239,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         emit TransferLPTokens(owner_, newOwner_, indexes_, tokensTransferred);
     }
 
-    function withdrawAuctionBonds() external {
+    function withdrawBonds() external {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
         auctions.kickers[msg.sender].claimable = 0;
         _transferQuoteToken(msg.sender, claimable);
