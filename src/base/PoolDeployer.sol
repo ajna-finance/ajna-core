@@ -16,11 +16,6 @@ abstract contract PoolDeployer {
     /// @dev SubsetHash => CollateralAddress => QuoteAddress => Pool Address
     mapping(bytes32 => mapping(address => mapping(address => address))) public deployedPools;
 
-    /**
-     *  @notice Address of the Ajna token, needed for Claimable Reserve Auctions.
-     */
-    address internal ajnaTokenAddress = 0x9a96ec9B57Fb64FbC60B423d1f4da7691Bd35079;
-
     /*****************/
     /*** Modifiers ***/
     /*****************/

@@ -21,11 +21,6 @@ interface IPoolErrors {
     error AmountLTMinDebt();
 
     /**
-     *  @notice Kicker is attempting to kick or clear an active auction.
-     */
-    error AuctionActive();
-
-    /**
      *  @notice Borrower has a healthy over-collateralized position.
      */
     error BorrowerOk();
@@ -110,13 +105,12 @@ interface IPoolErrors {
     error NoReserves();
 
     /**
+     *  @notice Underlying ERC20 transfer failed.
+     */
+    error ERC20TransferFailed();
+
+    /**
      *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
      */
     error PoolUnderCollateralized();
-
-    /**
-     *  @notice Pool cannot be initialized with 0x address for Ajna token.
-     */
-    error Token0xAddress();
-
 }

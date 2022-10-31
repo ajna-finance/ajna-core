@@ -289,7 +289,7 @@ library Deposits {
             } else {
                 scaled = self.scaling[index];
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
-                self.values[index] -= Maths.wdiv(x_, sc);
+                self.values[index] -= Maths.min(self.values[index], Maths.wdiv(x_, sc));
             }
 
             j = j >> 1;

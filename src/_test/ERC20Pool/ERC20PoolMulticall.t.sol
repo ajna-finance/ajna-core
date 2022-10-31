@@ -93,7 +93,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       2550,
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -111,7 +111,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       2551,
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -129,7 +129,7 @@ contract ERC20PoolMulticallTest is ERC20HelperContract {
                 lender:      _lender,
                 index:       2552,
                 lpBalance:   10_000 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
     }
