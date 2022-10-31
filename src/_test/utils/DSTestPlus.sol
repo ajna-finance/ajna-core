@@ -149,7 +149,7 @@ abstract contract DSTestPlus is Test {
     function _pullCollateral(
         address from,
         uint256 amount 
-    ) internal {
+    ) internal virtual {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit PullCollateral(from, amount);
@@ -178,7 +178,7 @@ abstract contract DSTestPlus is Test {
         uint256 amount,
         uint256 index,
         uint256 lpRedeem
-    ) internal returns (uint256 lpRedeemed_) {
+    ) internal virtual returns (uint256 lpRedeemed_) {
         changePrank(from);
         vm.expectEmit(true, true, true, true);
         emit RemoveCollateral(from, index, amount);
@@ -239,7 +239,7 @@ abstract contract DSTestPlus is Test {
         uint256 givenAmount,
         uint256 collateralTaken,
         bool isReward
-    ) internal {
+    ) internal virtual {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
