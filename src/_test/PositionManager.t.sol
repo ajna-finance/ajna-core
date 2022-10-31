@@ -16,7 +16,7 @@ import '../base/PositionManager.sol';
 import '../libraries/Maths.sol';
 
 // TODO: test this against ERC721Pool
-abstract contract PositionManagerHelperContract is ERC20HelperContract {
+abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {
 
     PositionManager  internal _positionManager;
 
@@ -44,7 +44,7 @@ abstract contract PositionManagerHelperContract is ERC20HelperContract {
     }
 }
 
-contract PositionManagerERC20Test is PositionManagerHelperContract {
+contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract {
 
     /**
      *  @notice Tests base NFT minting functionality.
@@ -2064,7 +2064,7 @@ contract PositionManagerERC20Test is PositionManagerHelperContract {
 
 }
 
-abstract contract PositionManagerERC721HelperContract is ERC721HelperContract {
+abstract contract PositionManagerERC721PoolHelperContract is ERC721HelperContract {
 
     PositionManager  internal _positionManager;
 
@@ -2093,7 +2093,7 @@ abstract contract PositionManagerERC721HelperContract is ERC721HelperContract {
     }
 }
 
-contract PositionManagerERC721Test is PositionManagerERC721HelperContract {
+contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContract {
     function testPositionFlowForERC721Pool() external {
 
         address testAddress1  = makeAddr("testAddress1");
