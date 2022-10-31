@@ -343,6 +343,19 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 locked:    0
             }
         );
+
+        // kicker withdraws his auction bonds
+        changePrank(_lender);
+        assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
+        _pool.withdrawBonds();
+        assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0
+            }
+        );
     }
 
     function testKickAndSaveByPledgeCollateral() external {
@@ -418,6 +431,19 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 kicker:    _lender,
                 claimable: 0.195342779771472726 * 1e18,
+                locked:    0
+            }
+        );
+
+        // kicker withdraws his auction bonds
+        changePrank(_lender);
+        assertEq(_quote.balanceOf(_lender), 46_999.804657220228527274 * 1e18);
+        _pool.withdrawBonds();
+        assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
                 locked:    0
             }
         );
@@ -932,6 +958,18 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.588542815647469183 * 1e18,
                 borrowerCollateralization: 1 * 1e18
+            }
+        );
+
+        // kicker withdraws his auction bonds
+        assertEq(_quote.balanceOf(_lender), 46_293.885066015721543543 * 1e18);
+        _pool.withdrawBonds();
+        assertEq(_quote.balanceOf(_lender), 46_398.494818351158622400 * 1e18);
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0
             }
         );
     }
