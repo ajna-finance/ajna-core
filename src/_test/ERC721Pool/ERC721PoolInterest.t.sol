@@ -383,23 +383,3 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         assertEq(expectedPoolDebt, expectedBorrower1Debt + expectedBorrower2Debt + expectedBorrower3Debt);
     }
 }
-
-contract ERC721PoolCollectionInterestTest is ERC721PoolInterestTest {
-
-    function createPool() external override returns (ERC721Pool) {
-        return _deployCollectionPool();
-    }
-
-    function testLenderInterestMargin() external {
-        // check empty pool
-        assertEq(_poolUtils.lenderInterestMargin(address(_pool)), 0.85 * 1e18);
-
-        // test lender interest margin for various amounts of utilization
-        assertEq(PoolUtils.lenderInterestMargin(0.01 * 1e18), 0.850501675988110546 * 1e18);
-        assertEq(PoolUtils.lenderInterestMargin(0.23 * 1e18), 0.862515153185046657 * 1e18);
-        assertEq(PoolUtils.lenderInterestMargin(0.67 * 1e18), 0.896343651549832236 * 1e18);
-        assertEq(PoolUtils.lenderInterestMargin(0.88 * 1e18), 0.926013637770085897 * 1e18);
-        assertEq(PoolUtils.lenderInterestMargin(1 * 1e18),    1e18);
-        assertEq(PoolUtils.lenderInterestMargin(1.03 * 1e18), 1e18);
-    }
-}
