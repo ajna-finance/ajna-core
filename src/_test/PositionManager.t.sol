@@ -124,7 +124,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, testAddress, indexes
+            tokenId, indexes
         );
 
         // should revert if access hasn't been granted to transfer LP tokens
@@ -256,7 +256,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, testAddress, indexes
+            tokenId, indexes
         );
         // allow position manager to take ownership of the position
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
@@ -662,7 +662,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         lender1Indexes[2] = 2552;
 
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId1, testLender1, lender1Indexes
+            tokenId1, lender1Indexes
         );
 
         // allow position manager to take ownership of lender 1's position
@@ -762,7 +762,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         newIndexes[1] = 2553;
 
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, testLender2, newIndexes
+            tokenId2, newIndexes
         );
 
         vm.expectEmit(true, true, true, true);
@@ -930,7 +930,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, testMinter, indexes
+            tokenId, indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -1079,7 +1079,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, testMinter, indexes
+            tokenId, indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -1241,7 +1241,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, testMinter, indexes
+            tokenId, indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -1400,7 +1400,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256[] memory indexes = new uint256[](1);
         indexes[0] = mintIndex;
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId1, testAddress1, indexes
+            tokenId1, indexes
         );
         changePrank(testAddress1);
         _positionManager.memorializePositions(memorializeParams);
@@ -1542,7 +1542,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
 
         // memorialize positions of testAddress2
         memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId2, testAddress2, indexes
+            tokenId2, indexes
         );
         changePrank(testAddress2);
         _positionManager.memorializePositions(memorializeParams);
@@ -1729,7 +1729,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, testMinter, indexes
+            tokenId, indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -1918,7 +1918,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 15_000 * 1e27);
         // memorialize positions of testMinter
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, testMinter, indexes
+            tokenId, indexes
         );
         _positionManager.memorializePositions(memorializeParams);
 
@@ -2112,7 +2112,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         uint256 tokenId = _mintNFT(minter, lender, address(_pool));
         assertEq(_positionManager.ownerOf(tokenId), lender);
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, lender, indexes
+            tokenId, indexes
         );
         _positionManager.memorializePositions(memorializeParams);
         _assertLenderLpBalance(
@@ -2395,7 +2395,7 @@ contract PositionManagerERC721PoolTest is PositionManagerERC721PoolHelperContrac
 
         // construct memorialize params struct
         IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
-            tokenId, testAddress1, indexes
+            tokenId, indexes
         );
         // allow position manager to take ownership of the position
         _pool.approveLpOwnership(address(_positionManager), indexes[0], 3_000 * 1e27);
