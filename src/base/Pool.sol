@@ -1021,12 +1021,17 @@ abstract contract Pool is Clone, Multicall, IPool {
         return _getArgUint256(40);
     }
 
+    /**
+     *  @notice Called by LPB removal functions assess whether or not LPB is locked.
+     *  @param  index_   The bucket index from which LPB is attempting to be removed.
+     *  @param  inflator_ The pool inflator used to properly assess t0DebtInAuction.
+     */
     function _checkAuctionDebtLock(
         uint256 index_,
-        uint256 poolInflator
+        uint256 inflator_
     ) internal view {
         // deposit in buckets within liquidation debt from the top-of-book down are frozen.
-        if(index_ <= deposits.findIndexOfSum(Maths.wmul(t0DebtInAuction, poolInflator))) revert DepositLockedByAuctionDebt();
+        if(index_ <= deposits.findIndexOfSum(Maths.wmul(t0DebtInAuction, inflator_))) revert DepositLockedByAuctionDebt();
     }
 
 }
