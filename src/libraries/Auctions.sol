@@ -238,7 +238,7 @@ library Auctions {
      *  @param  maxCollateral_    The max collateral amount to be taken from auction.
      *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
      *  @return quoteTokenAmount_ The quote token amount that taker should pay for collateral taken.
-     *  @return repayAmount_      The amount of debt (quote tokens) that is recovered / repayed by take.
+     *  @return t0repayAmount_    The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
      *  @return collateralTaken_  The amount of collateral taken.
      *  @return bondChange_       The change made on the bond size (beeing reward or penalty).
      *  @return isRewarded_       True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
@@ -251,7 +251,7 @@ library Auctions {
         uint256 poolInflator_
     ) internal returns (
         uint256 quoteTokenAmount_,
-        uint256 repayAmount_,
+        uint256 t0repayAmount_,
         uint256 collateralTaken_,
         uint256 bondChange_,
         bool    isRewarded_
@@ -270,6 +270,7 @@ library Auctions {
         quoteTokenAmount_    = Maths.wmul(auctionPrice, collateralTaken_);
         uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_);
 
+        // calculate the bond payment factor
         int256 bpf = PoolUtils.bpf(
             borrowerDebt,
             borrower_.collateral,
@@ -279,10 +280,10 @@ library Auctions {
             auctionPrice
         );
 
-        repayAmount_      = Maths.wmul(quoteTokenAmount_, uint256(1e18 - Maths.maxInt(0, bpf)));
-
-        if (repayAmount_ >= borrowerDebt) {
-            repayAmount_      = borrowerDebt;
+        // determine how much of the loan will be repaid
+        t0repayAmount_ = Maths.wdiv(Maths.wmul(quoteTokenAmount_, uint256(1e18 - Maths.maxInt(0, bpf))), poolInflator_);
+        if (t0repayAmount_ >= borrower_.t0debt) {
+            t0repayAmount_    = borrower_.t0debt;
             quoteTokenAmount_ = Maths.wmul(borrowerDebt, uint256(1e18 - Maths.maxInt(0, bpf)));
             collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
         }
@@ -290,7 +291,7 @@ library Auctions {
         isRewarded_ = (bpf >= 0);
         if (isRewarded_) {
             // take is below neutralPrice, Kicker is rewarded
-            bondChange_ = quoteTokenAmount_ - repayAmount_;
+            bondChange_ = quoteTokenAmount_ - Maths.wmul(t0repayAmount_, poolInflator_);
             liquidation.bondSize                    += bondChange_;
             self.kickers[liquidation.kicker].locked += bondChange_;
             self.totalBondEscrowed                  += bondChange_;

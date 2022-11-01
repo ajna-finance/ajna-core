@@ -357,6 +357,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
 
     uint256 public constant LARGEST_AMOUNT = type(uint256).max / 10**27;
 
+    uint  internal _anonBorrowerCount = 0;
     Token internal _collateral;
     Token internal _quote;
 
@@ -367,6 +368,24 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));
         _poolUtils  = new PoolInfoUtils();
         _startTime  = block.timestamp;
+    }
+
+    /**
+     *  @dev Creates debt for an anonymous non-player borrower not otherwise involved in the test.
+     **/
+    function _anonBorrowerDrawsDebt(uint256 collateralAmount, uint256 loanAmount, uint256 limitIndex) internal {
+        _anonBorrowerCount += 1;
+        address borrower = makeAddr(string(abi.encodePacked("anonBorrower", _anonBorrowerCount)));
+        vm.stopPrank();
+        _mintCollateralAndApproveTokens(borrower,  collateralAmount);
+        _pledgeCollateral(
+            {
+                from:     borrower,
+                borrower: borrower,
+                amount:   collateralAmount
+            }
+        );
+        _pool.borrow(loanAmount, limitIndex);
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {

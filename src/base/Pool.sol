@@ -260,17 +260,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
-        uint256 loansCount             = loans.noOfLoans();
-        if (
-            loansCount >= 10
-            &&
-            (borrowerDebt + amountToBorrow_ < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-        ) revert AmountLTMinDebt();
 
         // increase debt by the origination fee
         uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
         borrowerDebt += debtChange;
+        _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
         // calculate the new LUP
         uint256 lupId = _lupIndex(poolState.accruedDebt + amountToBorrow_);
@@ -318,54 +313,21 @@ abstract contract Pool is Clone, Multicall, IPool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_
     ) external override {
-
-        PoolState memory poolState = _accruePoolInterest();
-
+        PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.t0debt == 0) revert NoDebt();
-        uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
 
-        uint256 t0maxAmountToRepay = Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator);
-        uint256 t0repaidDebt = Maths.min(borrower.t0debt, t0maxAmountToRepay);
-        uint256 quoteTokenAmountToRepay = Maths.wmul(t0repaidDebt, poolState.inflator);
-        borrowerDebt          -= quoteTokenAmountToRepay;
-        poolState.accruedDebt -= quoteTokenAmountToRepay;
+        uint256 t0repaidDebt = Maths.min(borrower.t0debt, Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator));
 
-        if (borrowerDebt != 0) {
-            uint256 loansCount = loans.noOfLoans();
-            if (
-                loansCount >= 10
-                &&
-                (borrowerDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loansCount))
-            ) revert AmountLTMinDebt();
-        }
-
-        uint256 newLup = _lup(poolState.accruedDebt);
-
-        auctions.checkAndRemove(
-            borrowerAddress_,
-            _collateralization(
-                borrowerDebt,
-                borrower.collateral,
-                newLup
-            )
-        );
-        borrower.t0debt -= t0repaidDebt;
-        loans.update(
-            deposits,
-            borrowerAddress_,
-            borrower,
-            poolState.accruedDebt,
-            poolState.inflator
-        );
-        _updatePool(poolState, newLup);
-        t0poolDebt -= t0repaidDebt;
+        (
+            uint256 quoteTokenAmountToRepay, 
+            uint256 newLup
+        ) = _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
         // move amount to repay from sender to pool
         emit Repay(borrowerAddress_, newLup, quoteTokenAmountToRepay);
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmountToRepay);
     }
-
 
     /*****************************/
     /*** Liquidation Functions ***/
@@ -538,6 +500,55 @@ abstract contract Pool is Clone, Multicall, IPool {
         _updatePool(poolState, curLup);
     }
 
+    function _payLoan(
+        uint256 t0repaidDebt, 
+        PoolState memory poolState, 
+        address borrowerAddress,
+        Loans.Borrower memory borrower
+    ) internal returns(
+        uint256 quoteTokenAmountToRepay_, 
+        uint256 newLup_
+    ) {
+        quoteTokenAmountToRepay_ = Maths.wmul(t0repaidDebt, poolState.inflator);
+        uint256 borrowerDebt     = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
+        poolState.accruedDebt    -= quoteTokenAmountToRepay_;
+
+        // check that repay or take doesn't leave borrower debt under min debt amount
+        _checkMinDebt(poolState.accruedDebt, borrowerDebt);
+
+        newLup_ = _lup(poolState.accruedDebt);
+
+        auctions.checkAndRemove(
+            borrowerAddress,
+            _collateralization(
+                borrowerDebt,
+                borrower.collateral,
+                newLup_
+            )
+        );
+        
+        borrower.t0debt -= t0repaidDebt;
+        loans.update(
+            deposits,
+            borrowerAddress,
+            borrower,
+            poolState.accruedDebt,
+            poolState.inflator
+        );
+        _updatePool(poolState, newLup_);
+        t0poolDebt -= t0repaidDebt;
+    }
+
+    function _checkMinDebt(uint256 accruedDebt_,  uint256 borrowerDebt_) internal view {
+        if (borrowerDebt_ != 0) {
+            uint256 loansCount = loans.noOfLoans();
+            if (
+                loansCount >= 10
+                &&
+                (borrowerDebt_ < PoolUtils.minDebtAmount(accruedDebt_, loansCount))
+            ) revert AmountLTMinDebt();
+        }
+    }
 
     /*********************************/
     /*** Lender Internal Functions ***/
@@ -629,45 +640,16 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         (
             uint256 quoteTokenAmount,
-            uint256 repayAmount,
+            uint256 t0repaidDebt,
             uint256 collateralTaken,
             uint256 bondChange,
             bool isRewarded
         ) = auctions.take(borrowerAddress_, borrower, collateral_, poolState.inflator);
 
-        uint256 t0repaidDebt  = Maths.wdiv(repayAmount, poolState.inflator);
-        uint256 borrowerDebt  = Maths.wmul(borrower.t0debt, poolState.inflator) - repayAmount;
-        borrower.collateral   -= collateralTaken;
-        poolState.accruedDebt -= repayAmount;
-        poolState.collateral  -= collateralTaken;
+        borrower.collateral  -= collateralTaken;
+        poolState.collateral -= collateralTaken;
 
-        // check that take doesn't leave borrower debt under min debt amount
-        if (
-            borrowerDebt != 0
-            &&
-            borrowerDebt < PoolUtils.minDebtAmount(poolState.accruedDebt, loans.noOfLoans())
-        ) revert AmountLTMinDebt();
-
-        uint256 newLup = _lup(poolState.accruedDebt);
-
-        auctions.checkAndRemove(
-            borrowerAddress_,
-            _collateralization(
-                borrowerDebt,
-                borrower.collateral,
-                newLup
-            )
-        );
-        borrower.t0debt -= t0repaidDebt;
-        loans.update(
-            deposits,
-            borrowerAddress_,
-            borrower,
-            poolState.accruedDebt,
-            poolState.inflator
-        );
-        _updatePool(poolState, newLup);
-        t0poolDebt -= t0repaidDebt;
+        _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
         emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
