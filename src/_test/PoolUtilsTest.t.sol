@@ -80,11 +80,10 @@ contract PoolUtilsTest is DSTestPlus {
      *  @notice Tests fee rate for early withdrawals
      */
     function testFeeRate() external {
-        uint256 interestRate = 0.05 * 1e18;
-        uint256 minFees = 0.005 * 1e18;
-        assertEq(PoolUtils.feeRate(interestRate, minFees),  minFees);
-        assertEq(PoolUtils.feeRate(52 * 1e18, minFees),     1 * 1e18);
-        assertEq(PoolUtils.feeRate(26 * 1e18, minFees),     0.5 * 1e18);
+        uint256 interestRate = 0.12 * 1e18;
+        assertEq(PoolUtils.feeRate(interestRate),  0.002307692307692308 * 1e18);
+        assertEq(PoolUtils.feeRate(0.52 * 1e18),     0.01 * 1e18);
+        assertEq(PoolUtils.feeRate(0.26 * 1e18),     0.005 * 1e18);
     }
 
     /**
@@ -124,22 +123,21 @@ contract PoolUtilsTest is DSTestPlus {
         poolState_.collateral = 5 * 1e18;
         poolState_.accruedDebt = 8000 * 1e18; 
         poolState_.rate = 0.05 * 1e18;
-        uint256 minFee = 0.5 * 1e18;
         skip(4 days);
         uint256 depositTime = block.timestamp - 2 days;
         uint256 fromIndex  = 1524; // price -> 2_000.221618840727700609 * 1e18
         uint256 toIndex  = 1000; // price -> 146.575625611106531706 * 1e18
         uint256 amount  = 100000 * 1e18;
 
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, minFee, depositTime, fromIndex, toIndex, amount),            amount);
+        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, depositTime, fromIndex, toIndex, amount),            amount);
 
         poolState_.collateral = 2 * 1e18;
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, minFee, depositTime, fromIndex, toIndex, amount),            amount);
+        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, depositTime, fromIndex, toIndex, amount),            amount);
 
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, minFee, block.timestamp - 4 hours, fromIndex, 0, amount),    50_000 * 1e18);
+        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, block.timestamp - 4 hours, fromIndex, 0, amount),    99903.8461538461538 * 1e18);
 
         poolState_.collateral = 0;
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, minFee, block.timestamp - 4 hours, fromIndex, 0, amount),    amount);
+        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, block.timestamp - 4 hours, fromIndex, 0, amount),    amount);
     }
 
     /**
