@@ -187,13 +187,13 @@ contract ERC20Pool is IERC20Pool, Pool {
         _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
         emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
 
         // TODO: implement flashloan functionality
         // Flash loan full amount to liquidate to borrower
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
         //msg.sender.call(swapCalldata_);
 
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
         _transferCollateral(msg.sender, collateralTaken);
     }
 

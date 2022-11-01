@@ -149,16 +149,16 @@ contract ERC721Pool is IERC721Pool, Pool {
 
         emit Take(borrowerAddress_, quoteTokenAmount, collateralNeeded, bondChange, isRewarded);
 
+        // TODO: implement flashloan functionality
+        // Flash loan full amount to liquidate to borrower
+        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
+        //msg.sender.call(swapCalldata_);
+
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
         _transferQuoteTokenFrom(msg.sender, quoteTokenAmount + collateralDifference);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (collateralDifference != 0) _transferQuoteToken(borrowerAddress_, collateralDifference);
-
-        // TODO: implement flashloan functionality
-        // Flash loan full amount to liquidate to borrower
-        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-        //msg.sender.call(swapCalldata_);
 
         // transfer rounded collateral from pool to taker
         _transferFromPoolToSender(borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
