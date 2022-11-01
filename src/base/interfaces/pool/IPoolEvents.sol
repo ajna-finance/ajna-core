@@ -106,6 +106,28 @@ interface IPoolEvents {
     );
 
     /**
+     *  @notice Emitted when borrower removes pledged collateral from the pool.
+     *  @param  borrower `msg.sender`.
+     *  @param  amount   Amount of collateral (or number of NFTs) removed from the pool.
+     */
+    event PullCollateral(
+        address indexed borrower,
+        uint256 amount
+    );
+
+    /**
+     *  @notice Emitted when lender claims unencumbered collateral.
+     *  @param  claimer Recipient that claimed collateral.
+     *  @param  price   Price at which unencumbered collateral was claimed.
+     *  @param  amount  The amount of collateral (or number of NFT tokens) transferred to the claimer.
+     */
+    event RemoveCollateral(
+        address indexed claimer,
+        uint256 indexed price,
+        uint256 amount
+    );
+
+    /**
      *  @notice Emitted when lender removes quote token from the pool.
      *  @param  lender Recipient that removed quote tokens.
      *  @param  price  Price at which quote tokens were removed.

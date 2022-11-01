@@ -636,7 +636,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
-        if (borrower.collateral == 0) revert InsufficientCollateral();
+        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
 
         (
             uint256 quoteTokenAmount,

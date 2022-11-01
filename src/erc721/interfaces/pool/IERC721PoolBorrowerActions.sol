@@ -15,12 +15,4 @@ interface IERC721PoolBorrowerActions {
         address borrower,
         uint256[] calldata tokenIds
     ) external;
-
-    /**
-     *  @notice Called by borrowers to remove an amount of collateral.
-     *  @param  tokenIds Array of tokenIds to be removed from the pool.
-     */
-    function pullCollateral(
-        uint256[] calldata tokenIds
-    ) external;
 }

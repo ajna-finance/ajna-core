@@ -41,26 +41,4 @@ interface IERC20PoolEvents {
         address indexed borrower,
         uint256 amount
     );
-
-    /**
-     *  @notice Emitted when borrower removes pledged collateral from the pool.
-     *  @param  borrower `msg.sender`.
-     *  @param  amount   Amount of collateral removed from the pool.
-     */
-    event PullCollateral(
-        address indexed borrower,
-        uint256 amount
-    );
-
-    /**
-     *  @notice Emitted when lender claims unencumbered collateral.
-     *  @param  claimer Recipient that claimed collateral.
-     *  @param  price   Price at which unencumbered collateral was claimed.
-     *  @param  amount  The amount of collateral transferred to the claimer.
-     */
-    event RemoveCollateral(
-        address indexed claimer,
-        uint256 indexed price,
-        uint256 amount
-    );
 }

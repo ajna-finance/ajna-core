@@ -169,12 +169,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         );
 
         // lender removes all collateral from bucket
-        uint256[] memory tokenIdsToRemove = new uint256[](2);
-        tokenIdsToRemove = tokenIdsToAdd;
         _removeCollateral(
             {
                 from:     _lender,
-                tokenIds: tokenIdsToRemove,
+                amount:   3,
                 index:    testIndex,
                 lpRedeem: 9_032.676066593644673535 * 1e27
             }
@@ -342,12 +340,10 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         );
 
         // bidder withdraws unused collateral
-        uint256[] memory tokenIdsToRemove = new uint256[](1);
-        tokenIdsToRemove[0] = 65;
         (uint256 amount) = _removeCollateral(
             {
                 from:     _bidder,
-                tokenIds: tokenIdsToRemove,
+                amount:   1,
                 index:    2350,
                 lpRedeem: 8_163.390885531103433780933317567 * 1e27
             }
@@ -365,39 +361,21 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         skip(7200);
 
         changePrank(_lender);
-        tokenIdsToRemove = new uint256[](4);
-        tokenIdsToRemove[0] = 1;
-        tokenIdsToRemove[1] = 3;
-        tokenIdsToRemove[2] = 5;
-        tokenIdsToRemove[3] = 51;
 
         // should revert if lender attempts to remove more collateral than available in the bucket
         _assertRemoveInsufficientCollateralRevert(
             {
-                from:     _lender,
-                tokenIds: tokenIdsToRemove,
-                index:    2350
-            }
-        );
-
-        // should revert if lender attempts to remove collateral not available in the bucket
-        tokenIdsToRemove = new uint256[](1);
-        tokenIdsToRemove[0] = 1;
-        _assertRemoveNotDepositedTokenRevert(
-            {
-                from:     _lender,
-                tokenIds: tokenIdsToRemove,
-                index:    2350
+                from:   _lender,
+                amount: 4,
+                index:  2350
             }
         );
 
         // lender exchanges their lp for collateral
-        tokenIdsToRemove = new uint256[](1);
-        tokenIdsToRemove[0] = 73;
         (amount) = _removeCollateral(
             {
                 from:     _lender,
-                tokenIds: tokenIdsToRemove,
+                amount:   1,
                 index:    2350,
                 lpRedeem: 8_163.390885531103433780933317567 * 1e27
             }
@@ -426,13 +404,11 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         );
 
         // should revert if lender2 attempts to remove more collateral than lp is available for
-        tokenIdsToRemove = new uint256[](1);
-        tokenIdsToRemove[0] = 74;
         _assertRemoveCollateralInsufficientLPsRevert(
             {
-                from:     _lender2,
-                tokenIds: tokenIdsToRemove,
-                index:    2350
+                from:   _lender2,
+                amount: 1,
+                index:  2350
             }
         );
     }

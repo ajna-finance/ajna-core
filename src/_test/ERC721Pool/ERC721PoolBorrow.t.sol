@@ -399,12 +399,11 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         assertEq(_quote.balanceOf(address(_pool)), 30_008.860066921599065131 * 1e18);
         assertEq(_quote.balanceOf(_borrower),      991.139933078400934869 * 1e18);
 
-        // borrower pulls collateral
-        uint256[] memory tokenIdsToRemove = tokenIdsToAdd;
+        // borrower pulls collateral from pool
         _pullCollateral(
             {
-                from:     _borrower,
-                tokenIds: tokenIdsToRemove
+                from:   _borrower,
+                amount: 3
             }
         );
 

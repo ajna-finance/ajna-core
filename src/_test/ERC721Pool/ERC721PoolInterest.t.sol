@@ -160,12 +160,11 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
 
         // borrower pulls some of their collateral after some time has passed
         skip(10 days);
-        uint256[] memory tokenIdsToRemove = new uint256[](1);
-        tokenIdsToRemove[0] = 1;
+
         _pullCollateral(
             {
-                from:     _borrower,
-                tokenIds: tokenIdsToRemove
+                from:   _borrower,
+                amount: 1
             }
         );
 

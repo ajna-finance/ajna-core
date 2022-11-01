@@ -50,7 +50,21 @@ interface IPoolLiquidationActions {
     ) external;
 
     /**
+     *  @notice Called by actors to purchase collateral from the auction in exchange for quote token.
+     *  @param  borrower     Address of the borower take is being called upon.
+     *  @param  maxAmount    Max amount of collateral that will be taken from the auction (max number of NFTs in case of ERC721 pool).
+     *  @param  swapCalldata If provided, delegate call will be invoked after sending collateral to msg.sender,
+     *                       such that sender will have a sufficient quote token balance prior to payment.
+     */
+    function take(
+        address borrower,
+        uint256 maxAmount,
+        bytes memory swapCalldata
+    ) external;
+
+    /**
      *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
      */
     function withdrawBonds() external;
+
 }
