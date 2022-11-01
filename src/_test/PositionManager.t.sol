@@ -2230,6 +2230,82 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         _positionManager.ownerOf(tokenId);
     }
 
+    function test3rdPartyMinterAndRedeemer() external {
+        address lender = makeAddr("lender");
+        address minter = makeAddr("minter");
+        uint256 mintAmount  = 10000 * 1e18;
+
+        _mintQuoteAndApproveManagerTokens(lender, mintAmount);
+
+        // call pool contract directly to add quote tokens
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = 2550;
+
+        _addLiquidity(
+            {
+                from:   lender,
+                amount: 10_000 * 1e18,
+                index:  2550,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      lender,
+                index:       2550,
+                lpBalance:   10_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      minter,
+                index:       2550,
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        // allow position manager to take ownership of the position
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 10_000 * 1e27);
+
+        // 3rd party minter mints NFT and memorialize lender positions
+        changePrank(minter);
+        uint256 tokenId = _mintNFT(minter, lender, address(_pool));
+        assertEq(_positionManager.ownerOf(tokenId), lender);
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // lender transfers NFT ownership to minter
+        changePrank(lender);
+        _positionManager.safeTransferFrom(lender, minter, tokenId);
+        assertEq(_positionManager.ownerOf(tokenId), minter);
+
+        // minter is owner so can reddeem LPs
+        changePrank(minter);
+        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+            tokenId, address(_pool), indexes
+        );
+        _positionManager.reedemPositions(reedemParams);
+        _assertLenderLpBalance(
+            {
+                lender:      lender,
+                index:       2550,
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      minter,
+                index:       2550,
+                lpBalance:   10_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+    }
+
     function testMayInteractReverts() external {
         address lender  = makeAddr("lender");
         address lender1 = makeAddr("lender1");
