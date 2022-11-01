@@ -42,7 +42,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     uint256 internal reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 internal reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
-    uint256 internal t0DebtInAuction;
+    uint256 internal t0DebtInAuction;         // Total debt in auction used to restrict LPB holder from withdrawing
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
@@ -377,7 +377,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             ) >= Maths.WAD
         ) revert BorrowerOk();
 
-        (uint256 kickPenalty, uint256 totalBorrowerDebt)= loans.kick(
+        (uint256 kickPenalty, uint256 t0borrowerDebt)= loans.kick(
             borrowerAddress_,
             borrowerDebt,
             poolState.inflator,
@@ -395,7 +395,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
 
         // update pool state
-        t0DebtInAuction += totalBorrowerDebt;
+        t0DebtInAuction += t0borrowerDebt;
         _updatePool(poolState, lup);
 
         emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral);
