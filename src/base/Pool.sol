@@ -618,45 +618,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
 
-    /**************************************/
-    /*** Liquidation Internal Functions ***/
-    /**************************************/
-
-    /**
-     *  @notice Performs take checks, calculates amounts and bpf reward / penalty.
-     *  @dev Internal support method assisting in the ERC20 and ERC721 pool take calls.
-     *  @param borrowerAddress_   Address of the borower take is being called upon.
-     *  @param collateral_        Max amount of collateral to take, submited by the taker.
-     *  @return collateralTaken_  Amount of collateral taken from the auction and sent to the taker.
-     */
-    function _take(
-        address borrowerAddress_,
-        uint256 collateral_
-    ) internal returns(uint256) {
-
-        PoolState      memory poolState = _accruePoolInterest();
-        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
-        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
-
-        (
-            uint256 quoteTokenAmount,
-            uint256 t0repaidDebt,
-            uint256 collateralTaken,
-            uint256 bondChange,
-            bool isRewarded
-        ) = auctions.take(borrowerAddress_, borrower, collateral_, poolState.inflator);
-
-        borrower.collateral  -= collateralTaken;
-        poolState.collateral -= collateralTaken;
-
-        _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
-
-        emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
-        return collateralTaken;
-    }
-
-
     /*****************************/
     /*** Pool Helper Functions ***/
     /*****************************/
