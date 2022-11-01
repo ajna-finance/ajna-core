@@ -42,7 +42,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     uint256 internal reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 internal reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
-    uint256 internal t0DebtInAuction;         // Total debt in auction used to restrict LPB holder from withdrawing
+    uint256 internal t0DebtInAuction;         // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
