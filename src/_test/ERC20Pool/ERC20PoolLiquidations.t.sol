@@ -262,6 +262,12 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrower:   _borrower2
             }
         );
+
+        _assertDepositLockedByAuctionDebtRevert({
+            operator:  _lender,
+            amount:    100 * 1e18,
+            index:     _i9_91
+        });
     }
 
     function testKickAndSaveByRepay() external {
