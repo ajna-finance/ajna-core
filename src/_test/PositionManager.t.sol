@@ -2061,4 +2061,73 @@ contract PositionManagerTest is PositionManagerHelperContract {
         assertFalse(_positionManager.isIndexInPosition(tokenId, testIndexPrice));
     }
 
+    function test3rdPartyMintAndMemorializePositions() external {
+        address lender = makeAddr("lender");
+        address minter = makeAddr("minter");
+        uint256 mintAmount  = 10000 * 1e18;
+
+        _mintQuoteAndApproveManagerTokens(lender, mintAmount);
+
+        // call pool contract directly to add quote tokens
+        uint256[] memory indexes = new uint256[](1);
+        indexes[0] = 2550;
+
+        _addLiquidity(
+            {
+                from:   lender,
+                amount: 10_000 * 1e18,
+                index:  indexes[0],
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      lender,
+                index:       indexes[0],
+                lpBalance:   10_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      minter,
+                index:       indexes[0],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        // allow position manager to take ownership of the position
+        _pool.approveLpOwnership(address(_positionManager), indexes[0], 10_000 * 1e27);
+
+        // 3rd party minter mints NFT and memorialize lender positions
+        uint256 tokenId = _mintNFT(minter, address(_pool));
+        assertEq(_positionManager.ownerOf(tokenId), minter);
+        IPositionManagerOwnerActions.MemorializePositionsParams memory memorializeParams = IPositionManagerOwnerActions.MemorializePositionsParams(
+            tokenId, lender, indexes
+        );
+        _positionManager.memorializePositions(memorializeParams);
+
+        // 3rd party minter redeems lender positions
+        IPositionManagerOwnerActions.RedeemPositionsParams memory reedemParams = IPositionManagerOwnerActions.RedeemPositionsParams(
+            minter, tokenId, address(_pool), indexes
+        );
+        _positionManager.reedemPositions(reedemParams);
+        _assertLenderLpBalance(
+            {
+                lender:      lender,
+                index:       indexes[0],
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      minter,
+                index:       indexes[0],
+                lpBalance:   10_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+    }
+
 }
