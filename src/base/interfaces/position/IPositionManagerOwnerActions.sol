@@ -23,12 +23,10 @@ interface IPositionManagerOwnerActions {
     /**
      *  @notice Struct holding parameters for burning an NFT.
      *  @param  tokenId   The tokenId of the NFT to burn.
-     *  @param  recipient The NFT owner address.
      *  @param  pool      The pool address to burn the token from.
      */
     struct BurnParams {
         uint256 tokenId;
-        address recipient;
         address pool;
     }
 
@@ -45,12 +43,10 @@ interface IPositionManagerOwnerActions {
     /**
      *  @notice Struct holding parameters for tracking positions.
      *  @param  tokenId The tokenId of the NFT.
-     *  @param  owner   The NFT owner address.
      *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
      */
     struct MemorializePositionsParams {
         uint256 tokenId;
-        address owner;
         uint256[] indexes;
     }
 
@@ -89,14 +85,12 @@ interface IPositionManagerOwnerActions {
 
     /**
      *  @notice Struct holding parameters for moving the liquidity of a position.
-     *  @param  owner     The NFT owner address.
      *  @param  tokenId   The tokenId of the NFT.
      *  @param  pool      The pool address to move quote tokens.
      *  @param  fromIndex The price bucket index from which liquidity should be moved.
      *  @param  toIndex   The price bucket index to which liquidity should be moved.
      */
     struct MoveLiquidityParams {
-        address owner;
         uint256 tokenId;
         address pool;
         uint256 fromIndex;
@@ -115,12 +109,10 @@ interface IPositionManagerOwnerActions {
     /**
      *  @notice Struct holding parameters for tracking positions.
      *  @param  tokenId The tokenId of the NFT.
-     *  @param  owner   The NFT owner address.
      *  @param  pool    The pool address to reedem positions.
      *  @param  indexes The array of price buckets index with LP tokens to be tracked by a NFT.
      */
     struct RedeemPositionsParams {
-        address owner;
         uint256 tokenId;
         address pool;
         uint256[] indexes;
