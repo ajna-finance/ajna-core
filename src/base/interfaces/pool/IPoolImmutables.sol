@@ -12,12 +12,6 @@ interface IPoolImmutables {
     function collateralAddress() external pure returns (address);
 
     /**
-     *  @notice Returns the `minFee` state variable.
-     *  @return minimum fee that can be applied for early withdraw penalty
-     */
-    function minFee() external view returns (uint256);
-
-    /**
      *  @notice Returns the address of the pools quote token
      */
     function quoteTokenAddress() external pure returns (address);

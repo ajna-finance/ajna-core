@@ -1,0 +1,27 @@
+{
+    "tokens": {
+        "DAI": {
+            "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            "reserve": "0x616eFd3E811163F8fc180611508D72D842EA7D07"
+        },
+        "MKR": {
+            "address": "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2",
+            "reserve": "0x0a3f6849f78076aefaDf113F5BED87720274dDC0"
+        },
+        "BAYC": {
+            "address": "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"
+        }
+    },
+    "accounts": {
+        "0x66aB6D9362d4F35596279692F0251Db635165871": {
+            "DAI": 11000,
+            "MKR": 100,
+            "BAYC": [5, 6, 7]
+        },
+        "0x33A4622B82D4c04a53e170c638B944ce27cffce3": {
+            "DAI": 22000,
+            "MKR": 50,
+            "BAYC": [8, 9, 10]
+        }
+    }
+}

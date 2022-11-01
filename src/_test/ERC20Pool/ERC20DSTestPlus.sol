@@ -10,6 +10,7 @@ import { ERC20Pool }        from '../../erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from '../../erc20/ERC20PoolFactory.sol';
 
 import '../../base/interfaces/IPool.sol';
+import '../../base/interfaces/IPoolFactory.sol';
 import '../../base/PoolInfoUtils.sol';
 
 import '../../libraries/Maths.sol';
@@ -158,6 +159,46 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     /*** Revert asserts ***/
     /**********************/
 
+    function _assertAddCollateralBankruptcyBlockRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('BucketBankruptcyBlock()'));
+        ERC20Pool(address(_pool)).addCollateral(amount, index);
+    }
+
+    function _assertDeployWith0xAddressRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        vm.expectRevert(IPoolFactory.DeployWithZeroAddress.selector);
+        ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
+    }
+
+    function _assertDeployWithInvalidRateRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        vm.expectRevert(IPoolFactory.PoolInterestRateInvalid.selector);
+        ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
+    }
+
+    function _assertDeployMultipleTimesRevert(
+        address poolFactory,
+        address collateral,
+        address quote,
+        uint256 interestRate
+    ) internal {
+        vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
+        ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
+    }
+
     function _assertMoveCollateralInsufficientLPsRevert(
         address from,
         uint256 amount,
@@ -216,6 +257,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoClaim.selector);
         ERC20Pool(address(_pool)).removeAllQuoteToken(index);
+    }
+
+    function _assertRemoveCollateralAuctionNotClearedRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
+        ERC20Pool(address(_pool)).removeCollateral(amount, index);
     }
 
     function _assertRemoveCollateralInsufficientLPsRevert(
@@ -310,6 +361,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
     Token internal _quote;
 
     constructor() {
+        vm.createSelectFork(vm.envString("ETH_RPC_URL"));
         _collateral = new Token("Collateral", "C");
         _quote      = new Token("Quote", "Q");
         _pool       = ERC20Pool(new ERC20PoolFactory().deployPool(address(_collateral), address(_quote), 0.05 * 10**18));

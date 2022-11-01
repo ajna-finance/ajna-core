@@ -582,7 +582,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 lender:      _borrower,
                 index:       1530,
                 lpBalance:   487_616.252661175041981841 * 1e27,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 
@@ -611,7 +611,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 lender:      _borrower,
                 index:       1530,
                 lpBalance:   0,
-                depositTime: 0
+                depositTime: _startTime
             }
         );
 

@@ -426,9 +426,12 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
                 interestRateUpdate:   _startTime + 10 days
             })
         );
-
-        assertEq(_pool.debtEma(),      116.548760023014994270 * 1e18);
-        assertEq(_pool.lupColEma(),    257_438_503.676217090117659874 * 1e18);
+        _assertEMAs(
+            {
+                debtEma:   116.548760023014994270 * 1e18,
+                lupColEma: 257_438_503.676217090117659874 * 1e18
+            }
+        );
 
         // check bucket state after fully repay
         _assertBucket(

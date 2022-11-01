@@ -67,6 +67,17 @@ interface IPoolEvents {
     );
 
     /**
+     *  @notice Emitted when an actor settles debt in a completed liquidation
+     *  @param  borrower   Identifies the loan under liquidation.
+     *  @param  healedDebt Amount of pool debt healed in this transaction.
+     *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
+     */
+    event Heal(
+        address indexed borrower,
+        uint256 healedDebt
+    );
+
+    /**
      *  @notice Emitted when a liquidation is initiated.
      *  @param  borrower   Identifies the loan being liquidated.
      *  @param  debt       Debt the liquidation will attempt to cover.

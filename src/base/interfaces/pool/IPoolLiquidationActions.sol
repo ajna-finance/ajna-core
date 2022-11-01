@@ -19,17 +19,6 @@ interface IPoolLiquidationActions {
     ) external;
 
     /**
-     *  @notice Called by actors to settle an amount of debt in a completed liquidation.
-     *  @param  borrower Identifies the loan under liquidation.
-     *  @param  maxDepth Measured from HPB, maximum number of buckets deep to settle debt.
-     *  @dev maxDepth is used to prevent unbounded iteration clearing large liquidations.
-     */
-    function clear(
-        address borrower,
-        uint256 maxDepth
-    ) external;
-
-    /**
      *  @notice Called by actors to purchase collateral using quote token already on the book.
      *  @param  borrower Identifies the loan under liquidation.
      *  @param  amount   Amount of bucket deposit to use to exchange for collateral.
@@ -42,10 +31,26 @@ interface IPoolLiquidationActions {
     ) external;
 
     /**
+     *  @notice Called by actors to settle an amount of debt in a completed liquidation.
+     *  @param  borrower Identifies the loan under liquidation.
+     *  @param  maxDepth Measured from HPB, maximum number of buckets deep to settle debt.
+     *  @dev maxDepth is used to prevent unbounded iteration clearing large liquidations.
+     */
+    function heal(
+        address borrower,
+        uint256 maxDepth
+    ) external;
+
+    /**
      *  @notice Called by actors to initiate a liquidation.
      *  @param  borrower Identifies the loan to liquidate.
      */
     function kick(
         address borrower
     ) external;
+
+    /**
+     *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
+     */
+    function withdrawBonds() external;
 }
