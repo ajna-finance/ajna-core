@@ -127,19 +127,19 @@ contract ERC721Pool is IERC721Pool, Pool {
         (
             uint256 quoteTokenAmount,
             uint256 t0repaidDebt,
-            uint256 collateralToCoverDebt,
+            uint256 takeCollateral,
             uint256 auctionPrice,
             uint256 bondChange,
             bool isRewarded
         ) = auctions.take(borrowerAddress_, borrower, Maths.wad(collateral_), poolState.inflator);
 
-        uint256 collateralDifference;
-        uint256 collateralTaken = (collateralToCoverDebt / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-        if (collateralTaken != collateralToCoverDebt) { // collateral taken not a round number
+        uint256 excessQuoteToken;
+        uint256 collateralTaken = (takeCollateral / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
+        if (collateralTaken !=  takeCollateral) { // collateral taken not a round number
             collateralTaken += 1e18; // round up collateral to take
-             // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
-             // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-            collateralDifference = Maths.wmul(collateralTaken - collateralToCoverDebt, auctionPrice);
+            // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
+            // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
+            excessQuoteToken = Maths.wmul(collateralTaken - takeCollateral, auctionPrice);
         }
 
         borrower.collateral  -= collateralTaken;
@@ -147,7 +147,7 @@ contract ERC721Pool is IERC721Pool, Pool {
 
         _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
-        emit Take(borrowerAddress_, quoteTokenAmount, collateralToCoverDebt, bondChange, isRewarded);
+        emit Take(borrowerAddress_, quoteTokenAmount, takeCollateral, bondChange, isRewarded);
 
         // TODO: implement flashloan functionality
         // Flash loan full amount to liquidate to borrower
@@ -155,10 +155,10 @@ contract ERC721Pool is IERC721Pool, Pool {
         //msg.sender.call(swapCalldata_);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount + collateralDifference);
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount + excessQuoteToken);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
-        if (collateralDifference != 0) _transferQuoteToken(borrowerAddress_, collateralDifference);
+        if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
 
         // transfer rounded collateral from pool to taker
         _transferFromPoolToSender(borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
