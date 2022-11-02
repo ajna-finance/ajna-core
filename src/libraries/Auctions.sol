@@ -240,6 +240,7 @@ library Auctions {
      *  @return quoteTokenAmount_ The quote token amount that taker should pay for collateral taken.
      *  @return t0repayAmount_    The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
      *  @return collateralTaken_  The amount of collateral taken.
+     *  @return auctionPrice_     The price of current auction.
      *  @return bondChange_       The change made on the bond size (beeing reward or penalty).
      *  @return isRewarded_       True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
     */
@@ -253,6 +254,7 @@ library Auctions {
         uint256 quoteTokenAmount_,
         uint256 t0repayAmount_,
         uint256 collateralTaken_,
+        uint256 auctionPrice_,
         uint256 bondChange_,
         bool    isRewarded_
     ) {
@@ -260,14 +262,14 @@ library Auctions {
         if (liquidation.kickTime == 0) revert NoAuction();
         if (block.timestamp - liquidation.kickTime <= 1 hours) revert TakeNotPastCooldown();
 
-        uint256 auctionPrice = PoolUtils.auctionPrice(
+        auctionPrice_ = PoolUtils.auctionPrice(
             liquidation.kickMomp,
             liquidation.kickTime
         );
 
         // calculate amounts
         collateralTaken_     = Maths.min(borrower_.collateral, maxCollateral_);
-        quoteTokenAmount_    = Maths.wmul(auctionPrice, collateralTaken_);
+        quoteTokenAmount_    = Maths.wmul(auctionPrice_, collateralTaken_);
         uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_);
 
         // calculate the bond payment factor
@@ -277,7 +279,7 @@ library Auctions {
             borrower_.mompFactor,
             poolInflator_,
             liquidation.bondFactor,
-            auctionPrice
+            auctionPrice_
         );
 
         // determine how much of the loan will be repaid
@@ -286,7 +288,7 @@ library Auctions {
         if (t0repayAmount_ >= borrower_.t0debt) {
             t0repayAmount_    = borrower_.t0debt;
             quoteTokenAmount_ = Maths.wdiv(borrowerDebt, factor);
-            collateralTaken_  = Maths.min(Maths.wdiv(quoteTokenAmount_, auctionPrice), collateralTaken_);
+            collateralTaken_  = Maths.min(Maths.wdiv(quoteTokenAmount_, auctionPrice_), collateralTaken_);
         }
 
         isRewarded_ = (bpf >= 0);
