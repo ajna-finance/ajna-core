@@ -50,6 +50,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /*****************/
 
     modifier mayInteract(address pool_, uint256 tokenId_) {
+        _requireMinted(tokenId_);
         require(_isApprovedOrOwner(msg.sender, tokenId_), "PM:NO_AUTH");
         require(pool_ == poolKey[tokenId_], "PM:W_POOL");
         _;
@@ -71,6 +72,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     /// TODO: (X) indexes can be memorialized at a time
     function memorializePositions(MemorializePositionsParams calldata params_) external override {
+        address owner = ownerOf(params_.tokenId);
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
         IPool pool = IPool(poolKey[params_.tokenId]);
@@ -80,7 +82,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             if (!positionPrice.contains(params_.indexes[i])) require(positionPrice.add(params_.indexes[i]), "PM:ME:ADD_FAIL");
 
             // update PositionManager accounting
-            (uint256 lpBalance, ) = pool.lenderInfo(params_.indexes[i], params_.owner);
+            (uint256 lpBalance, ) = pool.lenderInfo(params_.indexes[i], owner);
             lps[params_.tokenId][params_.indexes[i]] += lpBalance;
 
             // increment call counter in gas efficient way by skipping safemath checks
@@ -90,8 +92,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         }
 
         // update pool lp token accounting and transfer ownership of lp tokens to PositionManager contract
-        emit MemorializePosition(params_.owner, params_.tokenId);
-        pool.transferLPTokens(params_.owner, address(this), params_.indexes);
+        emit MemorializePosition(owner, params_.tokenId);
+        pool.transferLPTokens(owner, address(this), params_.indexes);
     }
 
     function mint(MintParams calldata params_) external override payable returns (uint256 tokenId_) {
@@ -105,6 +107,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     function moveLiquidity(MoveLiquidityParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
+        address owner = ownerOf(params_.tokenId);
 
         IPool pool = IPool(params_.pool);
         (, , , uint256 bucketDeposit, ) = pool.bucketInfo(params_.fromIndex);
@@ -120,7 +123,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         if (!positionPrice.contains(params_.toIndex)) require(positionPrice.add(params_.toIndex), "PM:MV:ADD_FAIL");
 
         // move quote tokens in pool
-        emit MoveLiquidity(params_.owner, params_.tokenId);
+        emit MoveLiquidity(owner, params_.tokenId);
         (uint256 lpbAmountFrom, uint256 lpbAmountTo) = pool.moveQuoteToken(maxQuote, params_.fromIndex, params_.toIndex);
 
         // update tracked LPs
@@ -129,6 +132,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     }
 
     function reedemPositions(RedeemPositionsParams calldata params_) external override mayInteract(params_.pool, params_.tokenId) {
+        address owner = ownerOf(params_.tokenId);
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
 
         IPool pool = IPool(poolKey[params_.tokenId]);
@@ -141,7 +145,7 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
             uint256 lpAmount = lps[params_.tokenId][params_.indexes[i]];
             delete lps[params_.tokenId][params_.indexes[i]];
 
-            pool.approveLpOwnership(params_.owner, params_.indexes[i], lpAmount);
+            pool.approveLpOwnership(owner, params_.indexes[i], lpAmount);
 
             // increment call counter in gas efficient way by skipping safemath checks
             unchecked {
@@ -150,8 +154,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         }
 
         // update pool lp token accounting and transfer ownership of lp tokens from PositionManager contract
-        emit RedeemPosition(params_.owner, params_.tokenId);
-        pool.transferLPTokens(address(this), params_.owner, params_.indexes);
+        emit RedeemPosition(owner, params_.tokenId);
+        pool.transferLPTokens(address(this), owner, params_.indexes);
     }
 
     /**************************/
