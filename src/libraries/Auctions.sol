@@ -286,13 +286,13 @@ library Auctions {
         if (t0repayAmount_ >= borrower_.t0debt) {
             t0repayAmount_    = borrower_.t0debt;
             quoteTokenAmount_ = Maths.wdiv(borrowerDebt, factor);
-            collateralTaken_  = Maths.wdiv(quoteTokenAmount_, auctionPrice);
+            collateralTaken_  = Maths.min(Maths.wdiv(quoteTokenAmount_, auctionPrice), collateralTaken_);
         }
 
         isRewarded_ = (bpf >= 0);
         if (isRewarded_) {
             // take is below neutralPrice, Kicker is rewarded
-            bondChange_ = quoteTokenAmount_ - Maths.wmul(t0repayAmount_, poolInflator_);
+            bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(bpf));
             liquidation.bondSize                    += bondChange_;
             self.kickers[liquidation.kicker].locked += bondChange_;
             self.totalBondEscrowed                  += bondChange_;
