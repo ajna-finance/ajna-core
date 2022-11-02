@@ -6,8 +6,8 @@ import './interfaces/IERC721Pool.sol';
 import '../base/Pool.sol';
 
 contract ERC721Pool is IERC721Pool, Pool {
-    using Buckets for mapping(uint256 => Buckets.Bucket);
-    using Loans   for Loans.Data;
+    using Auctions for Auctions.Data;
+    using Loans    for Loans.Data;
 
     /***********************/
     /*** State Variables ***/
@@ -116,26 +116,52 @@ contract ERC721Pool is IERC721Pool, Pool {
     }
 
     function take(
-        address borrower_,
-        uint256 maxTokens_,
+        address borrowerAddress_,
+        uint256 collateral_,
         bytes memory swapCalldata_
     ) external override {
+        PoolState      memory poolState = _accruePoolInterest();
+        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
 
-        uint256 collateralTaken = _take(borrower_, Maths.wad(maxTokens_));
-        if (collateralTaken != 0) {
-            uint256 nftsTaken = (collateralTaken / 1e18) + 1; // round up collateral taken: (taken / 1e18) rounds down + 1 = rounds up TODO: fix this
+        (
+            uint256 quoteTokenAmount,
+            uint256 t0repaidDebt,
+            uint256 takeCollateral,
+            uint256 auctionPrice,
+            uint256 bondChange,
+            bool isRewarded
+        ) = auctions.take(borrowerAddress_, borrower, Maths.wad(collateral_), poolState.inflator);
 
-            uint256[] storage pledgedNFTs = borrowerTokenIds[borrower_];
-            uint256 noOfNFTsPledged = pledgedNFTs.length;
-
-            if (noOfNFTsPledged < nftsTaken) nftsTaken = noOfNFTsPledged;
-
-            // TODO: implement flashloan functionality
-            // Flash loan full amount to liquidate to borrower
-            // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-            //msg.sender.call(swapCalldata_);
-            _transferFromPoolToSender(pledgedNFTs, nftsTaken);
+        uint256 excessQuoteToken;
+        uint256 collateralTaken = (takeCollateral / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
+        if (collateralTaken !=  takeCollateral) { // collateral taken not a round number
+            collateralTaken += 1e18; // round up collateral to take
+            // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
+            // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
+            excessQuoteToken = Maths.wmul(collateralTaken - takeCollateral, auctionPrice);
         }
+
+        borrower.collateral  -= collateralTaken;
+        poolState.collateral -= collateralTaken;
+
+        _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
+
+        emit Take(borrowerAddress_, quoteTokenAmount, takeCollateral, bondChange, isRewarded);
+
+        // TODO: implement flashloan functionality
+        // Flash loan full amount to liquidate to borrower
+        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
+        //msg.sender.call(swapCalldata_);
+
+        // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount + excessQuoteToken);
+
+        // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
+        if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
+
+        // transfer rounded collateral from pool to taker
+        _transferFromPoolToSender(borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
     }
 
 

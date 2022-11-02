@@ -6,6 +6,7 @@ import './interfaces/IERC20Pool.sol';
 import '../base/Pool.sol';
 
 contract ERC20Pool is IERC20Pool, Pool {
+    using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;
@@ -156,18 +157,43 @@ contract ERC20Pool is IERC20Pool, Pool {
         emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
+    /**
+     *  @notice Performs take checks, calculates amounts and bpf reward / penalty.
+     *  @dev Internal support method assisting in the ERC20 and ERC721 pool take calls.
+     *  @param borrowerAddress_   Address of the borower take is being called upon.
+     *  @param collateral_        Max amount of collateral to take, submited by the taker.
+     */
     function take(
-        address borrower_,
-        uint256 maxCollateral_,
+        address borrowerAddress_,
+        uint256 collateral_,
         bytes memory swapCalldata_
     ) external override {
-        uint256 collateralTaken = _take(borrower_, maxCollateral_);
+        PoolState      memory poolState = _accruePoolInterest();
+        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
+
+        (
+            uint256 quoteTokenAmount,
+            uint256 t0repaidDebt,
+            uint256 collateralTaken,
+            ,
+            uint256 bondChange,
+            bool isRewarded
+        ) = auctions.take(borrowerAddress_, borrower, collateral_, poolState.inflator);
+
+        borrower.collateral  -= collateralTaken;
+        poolState.collateral -= collateralTaken;
+
+        _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
+
+        emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
 
         // TODO: implement flashloan functionality
         // Flash loan full amount to liquidate to borrower
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
         //msg.sender.call(swapCalldata_);
 
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
         _transferCollateral(msg.sender, collateralTaken);
     }
 
