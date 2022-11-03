@@ -928,6 +928,18 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
+    function lpsToCollateral(
+        uint256 deposit_,
+        uint256 lpTokens_,
+        uint256 index_
+    ) external view override returns (uint256 collateralAmount) {
+        (collateralAmount, ) = buckets.lpsToCollateral(
+            deposit_,
+            lpTokens_,
+            index_
+        );
+    }
+
     function loansInfo()
         external
         view
