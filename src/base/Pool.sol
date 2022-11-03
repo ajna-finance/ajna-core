@@ -323,8 +323,6 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 t0repaidDebt = Maths.min(borrower.t0debt, Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator));
 
-        if (auctions.isActive(borrowerAddress_)) t0DebtInAuction -= t0repaidDebt;
-
         (
             uint256 quoteTokenAmountToRepay, 
             uint256 newLup
@@ -523,6 +521,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 quoteTokenAmountToRepay_, 
         uint256 newLup_
     ) {
+
+        if (auctions.isActive(borrowerAddress)) t0DebtInAuction -= t0repaidDebt;
+
         quoteTokenAmountToRepay_ = Maths.wmul(t0repaidDebt, poolState.inflator);
         uint256 borrowerDebt     = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
         poolState.accruedDebt    -= quoteTokenAmountToRepay_;
