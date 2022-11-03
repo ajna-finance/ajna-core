@@ -176,7 +176,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         buckets.addLPs(msg.sender, Maths.wmul(collateralArbed, bucketPrice - auctionPrice), index_);
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
-        if (isRewarded) buckets.addLPs(liquidation.kicker, Maths.wmul(collateralArbed, bucketPrice - auctionPrice), index_);
+        if (isRewarded) buckets.addLPs(liquidation.kicker, bondChange, index_);
 
         _payLoan(quoteTokenAmount, poolState, borrowerAddress_, borrower); // TODO should quoteTokenAmount be expressed in t0 debt or it is already?
 
