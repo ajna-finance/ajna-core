@@ -170,9 +170,12 @@ contract ERC20Pool is IERC20Pool, Pool {
         if (auctionPrice >= bucketPrice) revert BadArbTakePrice();
 
         // collateral is moved from the loan to the bucket’s claimable collateral
-        borrower.collateral  -= collateralArbed;
+        borrower.collateral         -= collateralArbed;
+        buckets[index_].collateral += collateralArbed;
+
         // quote token are removed from the bucket’s deposit
         deposits.remove(index_, quoteTokenAmount);
+
         // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         buckets.addLPs(msg.sender, Maths.wmul(collateralArbed, bucketPrice - auctionPrice), index_);
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
