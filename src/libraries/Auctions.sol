@@ -231,6 +231,18 @@ library Auctions {
         self.tail = borrower_;
     }
 
+    /**
+     *  @notice Performs arb take collateral on an auction and updates bond size and kicker balance in case kicker is penalized.
+     *  @notice Logic of kicker being rewarded happens outside this function as bond change will be given as LPs in the arbed bucket.
+     *  @param  liquidation_      The auction to be arbed.
+     *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
+     *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
+     *  @return quoteTokenAmount_ The quote token amount that taker should pay for collateral taken.
+     *  @return collateralArbed_  The amount of collateral arbed.
+     *  @return auctionPrice_     The price of current auction.
+     *  @return bondChange_       The change made on the bond size (beeing reward or penalty).
+     *  @return isRewarded_       True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
+    */
     function arbTake(
         Data storage self,
         Liquidation storage liquidation_,
@@ -378,6 +390,17 @@ library Auctions {
          delete self.liquidations[borrower_];
     }
 
+    /**
+     *  @notice Utility function to validate take and calculate take's parameters.
+     *  @param  liquidation_  Liquidation struct holding auction details.
+     *  @param  borrower_     Borrower struct holding details of the borrower being liquidated.
+     *  @param  poolInflator_ The pool's inflator, used to calculate borrower debt.
+     *  @return auctionPrice_ The price of current auction.
+     *  @return borrowerDebt_ The debt of auctioned borrower.
+     *  @return bpf_          The bond penalty factor.
+     *  @return factor_       The take factor, calculated based on bond penalty factor.
+     *  @return isRewarded_   True if the kicker should be rewarded. False for penalized.
+     */
     function _validateTake(
         Liquidation storage liquidation_,
         Loans.Borrower memory borrower_,
@@ -385,9 +408,9 @@ library Auctions {
     ) internal view returns (
         uint256 auctionPrice_,
         uint256 borrowerDebt_,
-        int256 bpf_,
+        int256  bpf_,
         uint256 factor_,
-        bool isRewarded_
+        bool    isRewarded_
     ) {
         if (liquidation_.kickTime == 0) revert NoAuction();
         if (block.timestamp - liquidation_.kickTime <= 1 hours) revert TakeNotPastCooldown();
