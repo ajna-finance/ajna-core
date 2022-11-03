@@ -21,6 +21,11 @@ interface IPoolErrors {
     error AmountLTMinDebt();
 
     /**
+     *  @notice The bucket price used to arb take is lower than the auction price.
+     */
+    error BadArbTakePrice();
+
+    /**
      *  @notice Borrower has a healthy over-collateralized position.
      */
     error BorrowerOk();

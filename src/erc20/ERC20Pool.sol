@@ -147,9 +147,40 @@ contract ERC20Pool is IERC20Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function arbTake(address borrower_, uint256 amount_, uint256 index_) external override {
-        // TODO: implement
-        emit ArbTake(borrower_, index_, amount_, 0, 0);
+    function arbTake(
+        address borrowerAddress_,
+        uint256 index_
+    ) external override {
+        PoolState      memory poolState = _accruePoolInterest();
+        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
+
+        Auctions.Liquidation storage liquidation = auctions.liquidations[borrowerAddress_];
+        uint256 bucketDeposit = deposits.valueAt(index_);
+        (
+            uint256 quoteTokenAmount,
+            uint256 collateralArbed,
+            uint256 auctionPrice,
+            uint256 bondChange,
+            bool isRewarded
+        ) = auctions.arbTake(liquidation, borrower, bucketDeposit, poolState.inflator);
+
+        // cannot arb with a price lower than or equal with the auction price
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        if (auctionPrice >= bucketPrice) revert BadArbTakePrice();
+
+        // collateral is moved from the loan to the bucket’s claimable collateral
+        borrower.collateral  -= collateralArbed;
+        // quote token are removed from the bucket’s deposit
+        deposits.remove(index_, quoteTokenAmount);
+        // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+        buckets.addLPs(msg.sender, Maths.wmul(collateralArbed, bucketPrice - auctionPrice), index_);
+        // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+        if (isRewarded) buckets.addLPs(liquidation.kicker, Maths.wmul(collateralArbed, bucketPrice - auctionPrice), index_);
+
+        _payLoan(quoteTokenAmount, poolState, borrowerAddress_, borrower); // TODO should quoteTokenAmount be expressed in t0 debt or it is already?
+
+        emit ArbTake(borrowerAddress_, index_, quoteTokenAmount, collateralArbed, bondChange, isRewarded);
     }
 
     function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {

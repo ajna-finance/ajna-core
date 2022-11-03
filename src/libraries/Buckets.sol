@@ -97,6 +97,18 @@ library Buckets {
         lender.depositTime = block.timestamp;
     }
 
+    function addLPs(
+        mapping(uint256 => Bucket) storage self,
+        address lender_,
+        uint256 lpsAmount_,
+        uint256 index_
+    ) internal {
+        Lender storage lender = self[index_].lenders[lender_];
+        if (self[index_].bankruptcyTime >= lender.depositTime) lender.lps = lpsAmount_;
+        else lender.lps += lpsAmount_;
+        lender.depositTime = block.timestamp;
+    }
+
     /**
      *  @notice Moves LPs between buckets and updates lender balance accordingly.
      *  @param  fromLPsAmount_ The amount of LPs to move from origin bucket.
