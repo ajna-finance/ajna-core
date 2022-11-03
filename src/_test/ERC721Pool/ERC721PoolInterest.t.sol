@@ -133,6 +133,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 borrowerCollateralization: 1.802082315437752200 * 1e18
             }
         );
+        return;
 
         // borrower pledge additional collateral after some time has passed
         skip(10 days);
