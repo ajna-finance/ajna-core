@@ -376,10 +376,10 @@ library Auctions {
     }
 
     /**
-     *  @notice Check if there is an ongoing auction for current borrower and revert if such.
-     *  @dev    Used to prevent an auctioned borrower to draw more debt or while in liquidation.
-     *  @dev    Used to prevent kick on an auctioned borrower.
+     *  @notice Returns true if borrower is in auction.
+     *  @dev    Used to accuratley increment and decrement t0DebtInAuction.
      *  @param  borrower_ Borrower address to check auction status for.
+     *  @return  active_ Boolean, based on if borrower is in auction.
      */
     function isActive(
         Data storage self,
