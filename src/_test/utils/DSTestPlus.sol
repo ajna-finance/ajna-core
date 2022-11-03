@@ -73,6 +73,15 @@ abstract contract DSTestPlus is Test {
         uint256 interestRateUpdate;
     }
 
+    mapping(address => uint256[]) lendersDepositedIndex;
+    address[] lenders;
+    mapping(address => bool) lenderExist;
+
+    address[] borrowers;
+    mapping(address => bool) borrowerExist;
+
+    uint256[] bucketsUsed;
+
     /*****************************/
     /*** Actor actions asserts ***/
     /*****************************/
@@ -88,6 +97,12 @@ abstract contract DSTestPlus is Test {
         emit AddQuoteToken(from, index, amount, newLup);
         _assertTokenTransferEvent(from, address(_pool), amount);
         _pool.addQuoteToken(amount, index);
+        if (!lenderExist[from]) {
+            lenderExist[from] = true;
+            lenders.push(from);
+        }
+        lendersDepositedIndex[from].push(index);
+        bucketsUsed.push(index);
     }
 
     function _borrow(
@@ -101,6 +116,10 @@ abstract contract DSTestPlus is Test {
         emit Borrow(from, newLup, amount);
         _assertTokenTransferEvent(address(_pool), from, amount);
         _pool.borrow(amount, indexLimit);
+        if (!borrowerExist[from]) {
+            borrowerExist[from] = true;
+            borrowers.push(from);
+        }
     }
 
     function _heal(
@@ -144,6 +163,12 @@ abstract contract DSTestPlus is Test {
         (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(amount, fromIndex, toIndex);
         assertEq(lpbFrom, lpRedeemFrom);
         assertEq(lpbTo,   lpRedeemTo);
+        if (!lenderExist[from]) {
+            lenderExist[from] = true;
+            lenders.push(from);
+        }
+        lendersDepositedIndex[from].push(toIndex);
+        bucketsUsed.push(toIndex);
     }
 
     function _pullCollateral(

@@ -27,6 +27,102 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     /*** Utilities ***/
     /*****************/
 
+    mapping(address => uint256[]) bidderDepositedIndex;
+    address[] bidders;
+    mapping(address => bool) bidderExist;
+ 
+    function repayDebt(
+        address borrower
+    ) internal {
+        changePrank(borrower);
+        uint256 borrowerT0debt;
+        uint256 borrowerCollateral;
+        (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
+
+        // calculate current pool Inflator
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorSnapshotUpdate) = _pool.inflatorInfo();
+
+        uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
+        uint256 factor = PoolUtils.pendingInterestFactor(_pool.interestRate(), elapsed);
+
+        uint256 currentPoolInflator = Maths.wmul(poolInflatorSnapshot, factor);
+
+        // Calculate current debt of borrower
+        uint256 currentDebt = Maths.wmul(currentPoolInflator, borrowerT0debt);
+
+        // mint quote tokens to borrower address equivalent to the current debt
+        deal(_pool.quoteTokenAddress(), borrower, currentDebt);
+
+        // repay current debt ( all debt )
+        if(currentDebt > 0){
+            _pool.repay(borrower, currentDebt);
+        }
+
+        // pull borrower's all collateral  
+        _pullCollateral(borrower, borrowerCollateral);
+
+        // check borrower state after repay of loan and pull collateral
+        (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
+        assertEq(borrowerT0debt,     0);
+        assertEq(borrowerCollateral, 0);
+    }
+
+    function redeemLendersLp(
+        address lender,
+        uint256[] memory indexes
+    ) internal {
+        changePrank(lender);
+
+        // Redeem all lps of lender from all buckets as quote token and collateral token
+        for( uint j = 0; j < indexes.length ; j++ ){
+            uint256 bucketIndex = indexes[j];
+            (uint256 lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+
+            // check if lender has lp balance to be redeemed
+            if(lenderLpBalance > 0 ){
+                // redeeming lp of lender from a bucket as quote token
+                (, uint256 lpRedeemed) = _pool.removeAllQuoteToken(bucketIndex);
+                
+                // Check if lender has more lps to be redeemed
+                if(lpRedeemed < lenderLpBalance){
+                    // redeeming lp of lender from a bucket as collateral Token
+                    (, uint256 morelpRedeemed) = ERC20Pool(address(_pool)).removeAllCollateral(bucketIndex);
+                    lpRedeemed += morelpRedeemed;
+                }
+
+                // check if all lps are redeemed
+                assertEq(lenderLpBalance, lpRedeemed);
+            }
+        }
+    }
+
+    function validateEmpty(
+        uint256[] memory buckets
+    ) internal {
+        for(uint256 i = 0; i < buckets.length ; i++){
+            uint256 bucketIndex = buckets[i];
+            (, , , uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+
+            // Checking if all bucket lps are redeemed
+            assertEq(bucketLps, 0 );
+        }
+    }
+
+    modifier tearDown {
+        _;
+        for(uint i = 0; i < borrowers.length ; i++ ){
+            repayDebt(borrowers[i]);
+        }
+        
+        for(uint i = 0; i < lenders.length ; i++ ){
+            redeemLendersLp(lenders[i], lendersDepositedIndex[lenders[i]]);
+        }
+
+        for(uint i = 0; i < bidders.length ; i++ ){
+            redeemLendersLp(bidders[i], bidderDepositedIndex[bidders[i]]);
+        }
+        validateEmpty(bucketsUsed);
+    }
     /*****************************/
     /*** Actor actions asserts ***/
     /*****************************/
@@ -51,6 +147,12 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(from, address(_pool), amount);
         return ERC20Pool(address(_pool)).addCollateral(amount, index);
+        if (!bidderExist[from]) {
+            bidderExist[from] = true;
+            bidders.push(from);
+        }
+        bidderDepositedIndex[from].push(index);
+        bucketsUsed.push(index); 
     }
 
     function _moveCollateral(
@@ -67,6 +169,9 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         (uint256 lpbFrom, uint256 lpbTo) = ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
         assertEq(lpbFrom, lpRedeemFrom);
         assertEq(lpbTo,   lpRedeemTo);
+        if(bidderExist[from]){
+            bidderDepositedIndex[from].push(toIndex);
+        }
     }
 
     function _pledgeCollateral(
@@ -109,6 +214,22 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         vm.expectEmit(true, true, true, true);
         emit TransferLPTokens(from, to, indexes, lpBalance);
         _pool.transferLPTokens(from, to, indexes);
+        for(uint256 i = 0; i < indexes.length ;i++ ){
+            if(lenderExist[from]){
+                if(i==0 && !lenderExist[to]){
+                    lenderExist[to] = true;
+                    lenders.push(to);
+                }
+                lendersDepositedIndex[to].push(indexes[i]);
+            }
+            else{
+                if(i==0 && !bidderExist[to]){
+                    bidderExist[to] = true;
+                    bidders.push(to);
+                }
+                bidderDepositedIndex[to].push(indexes[i]);
+            }
+        }
     }
 
 
@@ -304,6 +425,7 @@ abstract contract ERC20HelperContract is ERC20DSTestPlus {
             }
         );
         _pool.borrow(loanAmount, limitIndex);
+        borrowers.push(borrower);
     }
 
     function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
