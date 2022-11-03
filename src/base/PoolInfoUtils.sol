@@ -150,9 +150,9 @@ contract PoolInfoUtils {
             uint256 timeRemaining_
         )
     {
-        IPool pool = IPool(ajnaPool_);
-        uint256 poolDebt = pool.accruedDebt();
-        uint256 poolSize = pool.depositSize();
+        IPool pool           = IPool(ajnaPool_);
+        (,uint256 poolDebt,) = pool.debtInfo();
+        uint256 poolSize     = pool.depositSize();
 
         uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_);
 
