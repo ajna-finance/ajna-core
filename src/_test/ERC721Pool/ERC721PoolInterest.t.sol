@@ -122,7 +122,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        uint256 expectedDebt = 5_012.354868151222773335 * 1e18;
+        uint256 expectedDebt = 5_004.807692307692310000 * 1e18;
         assertEq(_pool.debt(), expectedDebt);
         _assertBorrower(
             {
@@ -130,10 +130,9 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_010.892022197881557845 * 1e18,
-                borrowerCollateralization: 1.802082315437752200 * 1e18
+                borrowerCollateralization: 1.804799828867894420 * 1e18
             }
         );
-        return;
 
         // borrower pledge additional collateral after some time has passed
         skip(10 days);
@@ -147,15 +146,15 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        expectedDebt = 5_019.913425024098425550 * 1e18;
+        expectedDebt = 5_012.354868151222773335 * 1e18;
         assertEq(_pool.debt(), expectedDebt);
         _assertBorrower(
             {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        4 * 1e18,
-                borrowerMompFactor:        3_001.831760341859136562 * 1e18,
-                borrowerCollateralization: 2.399158525076298559 * 1e18
+                borrowerMompFactor:        3_006.358478158173141857 * 1e18,
+                borrowerCollateralization: 2.402776420583669600 * 1e18
             }
         );
 
@@ -169,20 +168,20 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        expectedDebt = 5_028.241003157279923828 * 1e18;
+        expectedDebt = 5_020.669907328529218397 * 1e18;
         assertEq(_pool.debt(), expectedDebt);
         _assertBorrower(
             {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        3 * 1e18,
-                borrowerMompFactor:        2_996.860242765192441905 * 1e18,
-                borrowerCollateralization: 1.796388848689221982 * 1e18
+                borrowerMompFactor:        3_001.379463606664041733 * 1e18,
+                borrowerCollateralization: 1.799097776455867782 * 1e18
             }
         );
 
         // borrower borrows some additional quote after some time has passed
-        skip(864000);
+        skip(10 days);
 
         _borrow(
             {
@@ -193,15 +192,15 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        expectedDebt = 6_038.697103647272764390 * 1e18;
+        expectedDebt = 6_031.112190940595898550 * 1e18;
         assertEq(_pool.debt(), expectedDebt);
         _assertBorrower(
             {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedDebt,
                 borrowerCollateral:        3 * 1e18,
-                borrowerMompFactor:        2_991.401082754081650235 * 1e18,
-                borrowerCollateralization: 1.495798830701089203 * 1e18
+                borrowerMompFactor:        2_995.912071263145122807 * 1e18,
+                borrowerCollateralization: 1.497679993444945851 * 1e18
             }
         );
 
@@ -209,14 +208,14 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         deal(address(_quote), _borrower, 20_000 * 1e18);
 
         // borrower repays their loan after some additional time
-        skip(864000);
+        skip(10 days);
 
         _repay(
             {
                 from:     _borrower,
                 borrower: _borrower,
-                amount:   6_050.820567269683912616 * 1e18,
-                repaid:   6_050.820567269683912616 * 1e18,
+                amount:   6_043.220426872049838854 * 1e18,
+                repaid:   6_043.220426872049838854 * 1e18,
                 newLup:   BucketMath.MAX_PRICE
             }
         );

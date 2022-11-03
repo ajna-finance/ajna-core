@@ -24,6 +24,7 @@ contract PoolInfoUtils {
             uint256 lastInflatorSnapshotUpdate
         ) = pool.inflatorInfo();
         uint256 interestRate = pool.interestRate();
+        console.log("PoolInfoUtils.borrowerInfo interestRate", interestRate);
 
         uint256 pendingInflator = PoolUtils.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
         console.log("PoolInfoUtils.borrowerInfo pendingInflator", pendingInflator);
