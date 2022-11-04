@@ -265,19 +265,19 @@ library Auctions {
 
         // determine how much of the loan will be repaid
         if (borrowerDebt >= bucketDeposit_) {
-            collateralArbed_ = Maths.wdiv(bucketDeposit_, Maths.wmul(auctionPrice_, factor));
+            t0repayAmount_    = Maths.wdiv(bucketDeposit_, poolInflator_);
+            quoteTokenAmount_ = bucketDeposit_;
         } else {
-            collateralArbed_ = Maths.wdiv(borrowerDebt, Maths.wmul(auctionPrice_, factor));
+            t0repayAmount_    = borrower_.t0debt;
+            quoteTokenAmount_ = Maths.wmul(t0repayAmount_, poolInflator_);
         }
 
-        if (collateralArbed_ > borrower_.collateral) collateralArbed_ = borrower_.collateral;
-        quoteTokenAmount_ = Maths.wmul(Maths.wmul(factor, collateralArbed_), auctionPrice_);
+        collateralArbed_ = Maths.wdiv(quoteTokenAmount_, auctionPrice_);
 
-        t0repayAmount_ = Maths.wdiv(quoteTokenAmount_, poolInflator_);
-        if (t0repayAmount_ >= borrower_.t0debt) {
-            t0repayAmount_    = borrower_.t0debt;
-            quoteTokenAmount_ = Maths.wdiv(borrowerDebt, factor);
-            collateralArbed_  = Maths.wdiv(quoteTokenAmount_, auctionPrice_);
+        if (collateralArbed_ > borrower_.collateral) {
+            collateralArbed_  = borrower_.collateral;
+            quoteTokenAmount_ = Maths.wmul(collateralArbed_, auctionPrice_);
+            t0repayAmount_    = Maths.wdiv(quoteTokenAmount_, poolInflator_);
         }
 
         if (!isRewarded_) {
@@ -287,7 +287,7 @@ library Auctions {
             self.kickers[liquidation_.kicker].locked -= bondChange_;
             self.totalBondEscrowed                   -= bondChange_;
         } else {
-            bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(bpf));
+            bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(bpf)); // wil be rewarded as LPBs
         }
     }
 

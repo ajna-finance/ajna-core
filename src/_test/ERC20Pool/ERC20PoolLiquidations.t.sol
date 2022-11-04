@@ -1728,14 +1728,32 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             }
         );
 
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 1 * 1e18,
+                index:  _i9_52,
+                newLup: 9.721295865031779605 * 1e18
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000 * 1e27,
+                collateral:   0,
+                deposit:      2_027.006589100074751447 * 1e18,
+                exchangeRate: 1.013503294550037375723500000 * 1e27
+            }
+        );
+
         _arbTake(
             {
                 from:             taker,
                 borrower:         _borrower,
                 index:            _i9_91,
                 collateralArbed:  2 * 1e18,
-                quoteTokenAmount: 19.248165812762923640 * 1e18,
-                bondChange:       0.192481658127629236 * 1e18,
+                quoteTokenAmount: 19.442591730063559232 * 1e18,
+                bondChange:       0.194425917300635592 * 1e18,
                 isReward:         true
             }
         );
@@ -1752,7 +1770,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 lender:      _lender,
                 index:       _i9_91,
-                lpBalance:   2_000.000000000192481658127629236 * 1e27,
+                lpBalance:   2_000.000000000194425917300635592 * 1e27,
                 depositTime: _startTime + 100 days + 6 hours
             }
         );
@@ -1761,14 +1779,14 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 index:        _i9_91,
                 lpBalance:    2_000 * 1e27,
                 collateral:   2 * 1e18,
-                deposit:      2_007.758423287311827813 * 1e18,
-                exchangeRate: 1.013796396487091825980500000 * 1e27
+                deposit:      2_007.563997370011192221 * 1e18,
+                exchangeRate: 1.013699183528441508184500000 * 1e27
             }
         );
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              0.530900258452593109 * 1e18,
+                borrowerDebt:              0.336474341151957517 * 1e18,
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.588739842524087291 * 1e18,
                 borrowerCollateralization: 0
