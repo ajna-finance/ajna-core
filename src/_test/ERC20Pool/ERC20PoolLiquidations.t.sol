@@ -1653,6 +1653,130 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
     }
 
+    function testInterestsAccumulationWithAllLoansAuctioned() external {
+        // Borrower2 borrows
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_730 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     9.721295865031779605 * 1e18
+            }
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              19.534277977147272573 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowerMompFactor:        9.917184843435912074 * 1e18,
+                borrowerCollateralization: 0.995306391810796636 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_853.394241979221645666 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerCollateralization: 0.986593617011217057 * 1e18
+            }
+        );
+        _assertLoans(
+            {
+                noOfLoans:         2,
+                maxBorrower:       _borrower2,
+                maxThresholdPrice: 9.719336538461538466 * 1e18
+            }
+        );
+
+        // kick first loan
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower2,
+                debt:       9_853.394241979221645666 * 1e18,
+                collateral: 1_000 * 1e18,
+                bond:       98.533942419792216457 * 1e18
+            }
+        );
+        _assertLoans(
+            {
+                noOfLoans:         1,
+                maxBorrower:       _borrower,
+                maxThresholdPrice: 9.767138988573636287 * 1e18
+            }
+        );
+
+        // kick 2nd loan
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.534277977147272573 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.195342779771472726 * 1e18
+            }
+        );
+        _assertLoans(
+            {
+                noOfLoans:         0,
+                maxBorrower:       address(0),
+                maxThresholdPrice: 0
+            }
+        );
+
+        _assertPool(
+            PoolState({
+                htp:                  0,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             73_118.781595119199960000 * 1e18,
+                pledgedCollateral:    1_002 * 1e18,
+                encumberedCollateral: 1_028.267844818693957410 * 1e18,
+                poolDebt:             9_996.095947981109188810 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1.026215413990712532 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   _startTime + 100 days
+            })
+        );
+
+        // force pool interest accumulation 
+        skip(14 hours);
+
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 1 * 1e18,
+                index:  _i9_91,
+                newLup: 9.721295865031779605 * 1e18
+            }
+        );
+
+        _assertPool(
+            PoolState({
+                htp:                  0,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             73_120.392679807500549985 * 1e18,
+                pledgedCollateral:    1_002 * 1e18,
+                encumberedCollateral: 1_028.341798247607959833 * 1e18,
+                poolDebt:             9_996.814871143815802222 * 1e18,
+                actualUtilization:    0,
+                targetUtilization:    1.026254142489845669 * 1e18,
+                minDebtAmount:        0,
+                loans:                0,
+                maxBorrower:          address(0),
+                interestRate:         0.0405 * 1e18,
+                interestRateUpdate:   _startTime + 100 days + 14 hours
+            })
+        );
+    }
+
     // TODO: move to DSTestPlus?
     function _logBorrowerInfo(address borrower_) internal {
         (
