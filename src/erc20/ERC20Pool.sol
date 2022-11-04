@@ -168,7 +168,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         // cannot arb with a price lower than or equal with the auction price
         uint256 bucketPrice = PoolUtils.indexToPrice(index_);
-        if (auctionPrice >= bucketPrice) revert BadArbTakePrice();
+        if (auctionPrice >= bucketPrice) revert AuctionPriceGteQArbPrice();
 
         // collateral is moved from the loan to the bucket’s claimable collateral
         borrower.collateral         -= collateralArbed;
