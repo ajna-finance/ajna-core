@@ -344,36 +344,36 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         );
 
         // check pool and borrower debt to confirm interest has accumulated
-        uint256 expectedPoolDebt = 13_263.563121817930265545 * 1e18;
+        uint256 expectedPoolDebt = 13_263.471703022178416340 * 1e18;
         assertEq(_pool.debt(), expectedPoolDebt);
 
-        uint256 expectedBorrower1Debt = 8_008.332217347647994785 * 1e18;
+        uint256 expectedBorrower1Debt = 8_008.240798551896146546 * 1e18;
         _assertBorrower(
             {
                 borrower:                  _borrower,
                 borrowerDebt:              expectedBorrower1Debt,
                 borrowerCollateral:        3 * 1e18,
                 borrowerMompFactor:        3_010.892022197881557845 * 1e18,
-                borrowerCollateralization: 1.122298268324325207 * 1e18
+                borrowerCollateralization: 1.122311080021518821 * 1e18
             }
         );
-        uint256 expectedBorrower2Debt = 2_752.769925156330517621 * 1e18;
+        uint256 expectedBorrower2Debt = 2_752.769925156330518052 * 1e18;
         _assertBorrower(
             {
                 borrower:                  _borrower2,
                 borrowerDebt:              expectedBorrower2Debt,
                 borrowerCollateral:        1 * 1e18,
-                borrowerMompFactor:        3_010.788911223004295676 * 1e18,
+                borrowerMompFactor:        3_010.823281155608819803 * 1e18,
                 borrowerCollateralization: 1.088326500707555859 * 1e18
             }
         );
-        uint256 expectedBorrower3Debt = 2_502.460979313951753139 * 1e18;
+        uint256 expectedBorrower3Debt = 2_502.460979313951751742 * 1e18;
         _assertBorrower(
             {
                 borrower:                  _borrower3,
                 borrowerDebt:              expectedBorrower3Debt,
                 borrowerCollateral:        1 * 1e18,
-                borrowerMompFactor:        3_010.720172534836531431 * 1e18,
+                borrowerMompFactor:        3_010.754541682748353480 * 1e18,
                 borrowerCollateralization: 1.197186483491030227 * 1e18
             }
         );

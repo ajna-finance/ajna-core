@@ -769,21 +769,21 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 index:    1606,
                 penalty:  penalty,
                 newLup:   PoolUtils.indexToPrice(1663),
-                lpRedeem: 1_699.988732998890538932348791152 * 1e27
+                lpRedeem: 1_699.992488670769259236317168938 * 1e27
             }
         );
 
         // lender removes all quote token, including interest, from the bucket
         skip(1 days);
         assertGt(PoolUtils.indexToPrice(1606), _htp());
-        uint256 expectedWithdrawal2 = 1_700.144368656943031197 * 1e18;
+        uint256 expectedWithdrawal2 = 1_700.136856335210791693 * 1e18;
         _removeAllLiquidity(
             {
                 from:     _lender,
                 amount:   expectedWithdrawal2,
                 index:    1606,
                 newLup:   PoolUtils.indexToPrice(1663),
-                lpRedeem: 1_700.011267001109461067651208848 * 1e27
+                lpRedeem: 1_700.007511329230740763682831062 * 1e27
             }
         );
         assertEq(_quote.balanceOf(_lender), lenderBalanceBefore + expectedWithdrawal1 + expectedWithdrawal2);
@@ -810,8 +810,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 index:        1663,
                 lpBalance:    3_400 * 1e27,
                 collateral:   0,
-                deposit:      3_400.266201547377064 * 1e18,
-                exchangeRate: 1.00007829457275796 * 1e27
+                deposit:      3_400.258688868961711800 * 1e18,
+                exchangeRate: 1.000076084961459327000000000 * 1e27
             }
         );
         _assertLenderLpBalance(
@@ -1116,7 +1116,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
 
         uint256 ptp = Maths.wdiv(_pool.debt(), 10 * 1e18);
-        assertEq(ptp, 500.489339180327335288 * 1e18);
+        assertEq(ptp, 500.480769230769231000 * 1e18);
 
         // lender moves some liquidity below the pool threshold price; penalty should be assessed
         skip(16 hours);
@@ -1127,7 +1127,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 fromIndex:    2873,
                 toIndex:      2954,
                 newLup:       _lup(),
-                lpRedeemFrom: 2_499.880458897159855582175961109 * 1e27,
+                lpRedeemFrom: 2_499.899333909953254268257527496 * 1e27,
                 lpRedeemTo:   2_497.596153846153845 * 1e27
             }
         );
@@ -1153,7 +1153,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 fromIndex:    2873,
                 toIndex:      2954,
                 newLup:       _lup(),
-                lpRedeemFrom: 2_499.791307594218224136823992573 * 1e27,
+                lpRedeemFrom: 2_499.810182702901761331141452320 * 1e27,
                 lpRedeemTo:   2_500 * 1e27
             }
         );
@@ -1175,10 +1175,10 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         _removeAllLiquidity(
             {
                 from:     _lender,
-                amount:   5_004.057192447017367276 * 1e18,
+                amount:   5_003.981613396490344248 * 1e18,
                 index:    2873,
                 newLup:   601.252968524772188572 * 1e18,
-                lpRedeem: 5_000.328233508621920281000046318 * 1e27
+                lpRedeem: 5_000.290483387144984400601020184 * 1e27
             }
         );
         _removeAllLiquidity(

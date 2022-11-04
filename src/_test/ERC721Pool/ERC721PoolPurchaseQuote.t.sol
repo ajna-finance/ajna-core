@@ -345,7 +345,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:     _bidder,
                 amount:   1,
                 index:    2350,
-                lpRedeem: 8_163.390885531103433780933317567 * 1e27
+                lpRedeem: 8_163.410994703135015570995187758 * 1e27
             }
         );
 
@@ -377,7 +377,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 from:     _lender,
                 amount:   1,
                 index:    2350,
-                lpRedeem: 8_163.390885531103433780933317567 * 1e27
+                lpRedeem: 8_163.410994703135015570995187758 * 1e27
             }
         );
 
