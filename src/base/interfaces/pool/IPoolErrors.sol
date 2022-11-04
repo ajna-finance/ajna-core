@@ -118,5 +118,5 @@ interface IPoolErrors {
     /**
      *  @notice Lender is attempting to remove quote tokens from a bucket that exists above active auction debt from top-of-book downward.
      */
-    error DepositLockedByAuctionDebt();
+    error RemoveDepositLockedByAuctionDebt();
 }

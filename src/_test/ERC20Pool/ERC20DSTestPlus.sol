@@ -275,7 +275,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         uint256 index
     ) internal {
         changePrank(operator);
-        vm.expectRevert(IPoolErrors.DepositLockedByAuctionDebt.selector);
+        vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
         _pool.removeQuoteToken(amount, index);
     }
 
