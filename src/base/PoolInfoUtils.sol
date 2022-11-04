@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import './interfaces/IPool.sol';
-import "forge-std/console.sol";
 import '../libraries/PoolUtils.sol';
 
 contract PoolInfoUtils {
@@ -24,10 +23,8 @@ contract PoolInfoUtils {
             uint256 lastInflatorSnapshotUpdate
         ) = pool.inflatorInfo();
         uint256 interestRate = pool.interestRate();
-        console.log("PoolInfoUtils.borrowerInfo interestRate", interestRate);
 
         uint256 pendingInflator = PoolUtils.pendingInflator(poolInflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        console.log("PoolInfoUtils.borrowerInfo pendingInflator", pendingInflator);
         uint256 t0debt;
         (t0debt, collateral_, mompFactor_)  = pool.borrowerInfo(borrower_);
         debt_ = Maths.wmul(t0debt, pendingInflator);

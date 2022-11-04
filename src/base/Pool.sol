@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import '@clones/Clone.sol';
-import "forge-std/console.sol";
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
 import './interfaces/IPool.sol';
@@ -268,11 +267,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
         // increase debt by the origination fee
-        console.log("borrow interestRate %s, feeRate %s", interestRate, PoolUtils.feeRate(interestRate));
         uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
         borrowerDebt += debtChange;
-        console.log("borrow borrowerDebt %s, inflator %s", borrowerDebt, poolState.inflator);
         _checkMinDebt(poolState.accruedDebt, borrowerDebt);
 
         // calculate the new LUP
