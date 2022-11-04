@@ -1787,6 +1787,15 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 auctionPrice:      9.721295865031779616 * 1e18
             }
         );
+
+        // arb take should fail on an auction without any remaining collateral to auction
+        _assertArbTakeInsufficentCollateralRevert(
+            {
+                from:     taker,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
     }
 
 
@@ -1941,6 +1950,67 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 0,
                 auctionPrice:      0
+            }
+        );
+    }
+
+    function testArbTakeReverts() external {
+
+        // should revert if there's no auction started
+        _assertArbTakeNoAuctionRevert(
+            {
+                from:     _lender,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
+
+        skip(100 days);
+
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.534277977147272573 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.195342779771472726 * 1e18
+            }
+        );
+
+        // should revert if auction in grace period
+        _assertArbTakeAuctionInCooldownRevert(
+            {
+                from:     _lender,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
+
+        skip(2 hours);
+
+        address taker = makeAddr("taker");
+
+        // should revert if auction price is greater than the bucket price
+        _assertArbTakeAuctionPriceGreaterThanBucketPriceRevert(
+            {
+                from:     taker,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
+
+        skip(4 hours);
+
+        // 10 borrowers draw debt to enable the min debt check
+        for (uint i=0; i<10; ++i) {
+            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7777);
+        }        
+        // should revert if auction leaves borrower with debt under minimum pool debt
+        _assertArbTakeDebtUnderMinPoolDebtRevert(
+            {
+                from:     taker,
+                borrower: _borrower,
+                index:    _i9_91
             }
         );
     }
