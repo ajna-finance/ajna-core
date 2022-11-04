@@ -258,11 +258,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         auctions.revertIfActive(msg.sender);
 
         PoolState memory poolState     = _accruePoolInterest();
-
-        // if this is the first loan, update the inflator timestamp
-        if (poolState.inflator == 10**18) 
-            lastInflatorSnapshotUpdate = block.timestamp;
-
         Loans.Borrower memory borrower = loans.getBorrowerInfo(msg.sender);
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
@@ -733,6 +728,9 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         if (poolState_.isNewInterestAccrued) {
             inflatorSnapshot           = poolState_.inflator;
+            lastInflatorSnapshotUpdate = block.timestamp;
+        } else if (poolState_.accruedDebt == 0) {
+            inflatorSnapshot           = Maths.WAD;
             lastInflatorSnapshotUpdate = block.timestamp;
         }
     }
