@@ -1762,7 +1762,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             PoolState({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_119.781595119199960000 * 1e18,
+                poolSize:             73_120.392679807500549985 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_028.341798247607959833 * 1e18,
                 poolDebt:             9_996.814871143815802222 * 1e18,
