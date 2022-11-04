@@ -97,14 +97,19 @@ library Buckets {
         lender.depositTime = block.timestamp;
     }
 
+    /**
+     *  @notice Add amount of LPs for a given lender in a given bucket.
+     *  @param  bucket_    Bucket to record lender LPs.
+     *  @param  lender_    Lender address to add LPs for in the given bucket.
+     *  @param  lpsAmount_ Amount of LPs to be recorded for the given lender.
+     */
     function addLPs(
-        mapping(uint256 => Bucket) storage self,
+        Bucket storage bucket_,
         address lender_,
-        uint256 lpsAmount_,
-        uint256 index_
+        uint256 lpsAmount_
     ) internal {
-        Lender storage lender = self[index_].lenders[lender_];
-        if (self[index_].bankruptcyTime >= lender.depositTime) lender.lps = lpsAmount_;
+        Lender storage lender = bucket_.lenders[lender_];
+        if (bucket_.bankruptcyTime >= lender.depositTime) lender.lps = lpsAmount_;
         else lender.lps += lpsAmount_;
         lender.depositTime = block.timestamp;
     }
