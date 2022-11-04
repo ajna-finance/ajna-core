@@ -642,12 +642,14 @@ abstract contract Pool is Clone, Multicall, IPool {
 
                 // Scale the fenwick tree to update amount of debt owed to lenders
                 uint256 newHtp = _htp(poolState_.inflator);
-                deposits.accrueInterest(
-                    poolState_.accruedDebt,
-                    poolState_.collateral,
-                    newHtp,
-                    factor
-                );
+                if (newHtp != 0) {
+                    deposits.accrueInterest(
+                        poolState_.accruedDebt,
+                        poolState_.collateral,
+                        newHtp,
+                        factor
+                    );
+                }
 
                 // After debt owed to lenders has accrued, calculate current debt owed by borrowers
                 poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
