@@ -103,7 +103,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        if(_isAuctionDebtLocked(fromIndex_, poolState.inflator)) revert RemoveDepositLockedByAuctionDebt();
+        _checkIfAuctionDebtLocked(fromIndex_, poolState.inflator);
         (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
@@ -151,7 +151,8 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        if(_isAuctionDebtLocked(index_, poolState.inflator)) revert RemoveDepositLockedByAuctionDebt();
+        _checkIfAuctionDebtLocked(index_, poolState.inflator);
+
         (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(
             index_,
             msg.sender
@@ -182,7 +183,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
 
-        if(_isAuctionDebtLocked(index_, poolState.inflator)) revert RemoveDepositLockedByAuctionDebt();
+        _checkIfAuctionDebtLocked(index_, poolState.inflator);
         uint256 deposit = deposits.valueAt(index_);
         if (quoteTokenAmountToRemove_ > deposit) revert InsufficientLiquidity();
 
@@ -994,13 +995,19 @@ abstract contract Pool is Clone, Multicall, IPool {
      *  @notice Called by LPB removal functions assess whether or not LPB is locked.
      *  @param  index_   The bucket index from which LPB is attempting to be removed.
      *  @param  inflator_ The pool inflator used to properly assess t0DebtInAuction.
+     *  @return isLocked_ Boolean signifying if lender can move deposit.
      */
     function _isAuctionDebtLocked(
         uint256 index_,
         uint256 inflator_
-    ) internal view returns (bool active_) {
+    ) internal view returns (bool isLocked_) {
         // deposit in buckets within liquidation debt from the top-of-book down are frozen.
-        if (t0DebtInAuction != 0 ) active_ = index_ <= deposits.findIndexOfSum(Maths.wmul(t0DebtInAuction, inflator_));
+        if (t0DebtInAuction != 0 ) isLocked_ = index_ <= deposits.findIndexOfSum(Maths.wmul(t0DebtInAuction, inflator_));
     }
+
+    function _checkIfAuctionDebtLocked(
+        uint256 index_,
+        uint256 inflator_
+    ) internal view { if (_isAuctionDebtLocked(index_, inflator_)) revert RemoveDepositLockedByAuctionDebt(); } 
 
 }
