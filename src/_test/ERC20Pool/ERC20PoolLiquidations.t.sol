@@ -275,7 +275,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0 * 1e18,
+                totalBondEscrowed: 0,
                 auctionPrice:      0
             }
         );
@@ -1768,7 +1768,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              0.264811038950235289 * 1e18,
+                borrowerDebt:              0.530900258452593109 * 1e18,
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.588739842524087291 * 1e18,
                 borrowerCollateralization: 0
@@ -1877,69 +1877,71 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             }
         );
 
-        // --- GET OVERFLOW HERE IF I UNCOMMENT ARBTAKE--
+        _arbTake(
+            {
+                from:             taker,
+                borrower:         _borrower,
+                index:            _i10016,
+                collateralArbed:  0.254322591527323120 * 1e18,
+                quoteTokenAmount: 19.778761259189860403 * 1e18,
+                bondChange:       0.195342779771472726 * 1e18,
+                isReward:         false
+            }
+        );
 
-        // _arbTake(
-        //     {
-        //         from:             taker,
-        //         borrower:         _borrower,
-        //         index:            _i10016,
-        //         collateralArbed:  2 * 1e18,
-        //         quoteTokenAmount: 19.248165812762923640 * 1e18,
-        //         bondChange:       0.192481658127629236 * 1e18,
-        //         isReward:         true
-        //     }
-        // );
-
-        // --- --
-
-
-        // _assertLenderLpBalance(
-        //     {
-        //         lender:      taker,
-        //         index:       _i9_91,
-        //         lpBalance:   0.000000000391777956808264916 * 1e27,
-        //         depositTime: _startTime + 100 days + 6 hours
-        //     }
-        // );
-        // _assertLenderLpBalance(
-        //     {
-        //         lender:      _lender,
-        //         index:       _i9_91,
-        //         lpBalance:   2_000.000000000192481658127629236 * 1e27,
-        //         depositTime: _startTime + 100 days + 6 hours
-        //     }
-        // );
-        // _assertBucket(
-        //     {
-        //         index:        _i9_91,
-        //         lpBalance:    2_000 * 1e27,
-        //         collateral:   2 * 1e18,
-        //         deposit:      2_007.758423287311827813 * 1e18,
-        //         exchangeRate: 1.013796396487091825980500000 * 1e27
-        //     }
-        // );
-        // _assertBorrower(
-        //     {
-        //         borrower:                  _borrower,
-        //         borrowerDebt:              0.264811038950235289 * 1e18,
-        //         borrowerCollateral:        0,
-        //         borrowerMompFactor:        9.588739842524087291 * 1e18,
-        //         borrowerCollateralization: 0
-        //     }
-        // );
-        // _assertAuction(
-        //     {
-        //         borrower:          _borrower,
-        //         active:            true,
-        //         kicker:            _lender,
-        //         bondSize:          0.195342779771472726 * 1e18,
-        //         bondFactor:        0.01 * 1e18,
-        //         kickTime:          block.timestamp - 6 hours,
-        //         kickMomp:          9.721295865031779605 * 1e18,
-        //         totalBondEscrowed: 0.195342779771472726 * 1e18,
-        //         auctionPrice:      9.721295865031779616 * 1e18
-        //     }
-        // );
+        _assertLenderLpBalance(
+            {
+                lender:      taker,
+                index:       _i10016,
+                lpBalance:   0.000002527643880967256869570 * 1e27, // arb taker was rewarded LPBs in arbed bucket
+                depositTime: _startTime + 100 days + 3 hours
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i10016,
+                lpBalance:   1_000 * 1e27,
+                depositTime: _startTime + 100 days + 3 hours
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0 // kicker was penalized
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i10016,
+                lpBalance:    1_000 * 1e27,                         // LP balance is the same in arbed bucket
+                collateral:   0.254322591527323120 * 1e18,          // arbed collateral added to the arbed bucket
+                deposit:      980.221238740810139596 * 1e18,        // quote token amount is diminished in arbed bucket
+                exchangeRate: 3.527643880967256869583690323 * 1e27
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0,
+                borrowerCollateral:        1.745677408472676880 * 1e18,
+                borrowerMompFactor:        0,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0
+            }
+        );
     }
 }

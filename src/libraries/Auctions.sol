@@ -238,6 +238,7 @@ library Auctions {
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
      *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
      *  @return quoteTokenAmount_ The quote token amount that taker should pay for collateral taken.
+     *  @return t0repayAmount_    The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
      *  @return collateralArbed_  The amount of collateral arbed.
      *  @return auctionPrice_     The price of current auction.
      *  @return bondChange_       The change made on the bond size (beeing reward or penalty).
@@ -251,6 +252,7 @@ library Auctions {
         uint256 poolInflator_
     ) internal returns (
         uint256 quoteTokenAmount_,
+        uint256 t0repayAmount_,
         uint256 collateralArbed_,
         uint256 auctionPrice_,
         uint256 bondChange_,
@@ -270,6 +272,13 @@ library Auctions {
 
         if (collateralArbed_ > borrower_.collateral) collateralArbed_ = borrower_.collateral;
         quoteTokenAmount_ = Maths.wmul(Maths.wmul(factor, collateralArbed_), auctionPrice_);
+
+        t0repayAmount_ = Maths.wdiv(quoteTokenAmount_, poolInflator_);
+        if (t0repayAmount_ >= borrower_.t0debt) {
+            t0repayAmount_    = borrower_.t0debt;
+            quoteTokenAmount_ = Maths.wdiv(borrowerDebt, factor);
+            collateralArbed_  = Maths.wdiv(quoteTokenAmount_, auctionPrice_);
+        }
 
         if (!isRewarded_) {
             // take is above neutralPrice, Kicker is penalized

@@ -159,6 +159,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint256 bucketDeposit = deposits.valueAt(index_);
         (
             uint256 quoteTokenAmount,
+            uint256 t0repaidDebt,
             uint256 collateralArbed,
             uint256 auctionPrice,
             uint256 bondChange,
@@ -181,7 +182,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         // the bondholder/kicker is awarded bond change worth of LPB in the bucket
         if (isRewarded) buckets.addLPs(liquidation.kicker, bondChange, index_);
 
-        _payLoan(quoteTokenAmount, poolState, borrowerAddress_, borrower); // TODO should quoteTokenAmount be expressed in t0 debt or it is already?
+        _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
         emit ArbTake(borrowerAddress_, index_, quoteTokenAmount, collateralArbed, bondChange, isRewarded);
     }
