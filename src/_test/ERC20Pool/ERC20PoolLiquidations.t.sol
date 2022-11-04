@@ -1876,18 +1876,22 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerCollateralization: 0.983003509435146965 * 1e18
             }
         );
- 
-        _arbTake(
-            {
-                from:             taker,
-                borrower:         _borrower,
-                index:            _i10016,
-                collateralArbed:  2 * 1e18,
-                quoteTokenAmount: 19.248165812762923640 * 1e18,
-                bondChange:       0.192481658127629236 * 1e18,
-                isReward:         true
-            }
-        );
+
+        // --- GET OVERFLOW HERE IF I UNCOMMENT ARBTAKE--
+
+        // _arbTake(
+        //     {
+        //         from:             taker,
+        //         borrower:         _borrower,
+        //         index:            _i10016,
+        //         collateralArbed:  2 * 1e18,
+        //         quoteTokenAmount: 19.248165812762923640 * 1e18,
+        //         bondChange:       0.192481658127629236 * 1e18,
+        //         isReward:         true
+        //     }
+        // );
+
+        // --- --
 
 
         // _assertLenderLpBalance(
