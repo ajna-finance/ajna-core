@@ -623,35 +623,33 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*****************************/
 
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
-        uint256 t0Debt = t0poolDebt;
-
-        poolState_.collateral  = pledgedCollateral;
-        poolState_.inflator    = inflatorSnapshot;
+        uint256 t0Debt        = t0poolDebt;
+        poolState_.collateral = pledgedCollateral;
+        poolState_.inflator   = inflatorSnapshot;
 
         if (t0Debt != 0) {
-            // TODO: when new interest has accrued, this gets overwriten, wasting a multiplication
+            // Calculate prior pool debt
             poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
 
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
             poolState_.isNewInterestAccrued = elapsed != 0;
+
             if (poolState_.isNewInterestAccrued) {
+                // Scale the borrower inflator to update amount of interest owed by borrowers
                 poolState_.rate = interestRate;
                 uint256 factor = PoolUtils.pendingInterestFactor(poolState_.rate, elapsed);
-                // Scale the borrower inflator to update amount of interest owed by borrowers
                 poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
 
                 // Scale the fenwick tree to update amount of debt owed to lenders
                 uint256 newHtp = _htp(poolState_.inflator);
-                if (newHtp != 0) {
-                    deposits.accrueInterest(
-                        poolState_.accruedDebt,
-                        poolState_.collateral,
-                        newHtp,
-                        factor
-                    );
-                }
+                deposits.accrueInterest(
+                    poolState_.accruedDebt,
+                    poolState_.collateral,
+                    newHtp,
+                    factor
+                );
 
-                // Calculate pool debt using the new inflator
+                // After debt owed to lenders has accrued, calculate current debt owed by borrowers
                 poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
             }
         }

@@ -467,7 +467,8 @@ class TestUtils:
 
         lup = pool_helper.lup()
         htp = pool_helper.htp()
-        ptp = int(poolDebt * 1e18 / pool.pledgedCollateral())
+        poolCollateral = pool.pledgedCollateral()
+        ptp = int(poolDebt * 1e18 / poolCollateral) if poolCollateral else 0
         print(f"lup:            {lup/1e18:>12.3f}  "
               f"htp:            {htp/1e18:>12.3f}  "
               f"ptp:            {ptp/1e18:>12.3f}")
