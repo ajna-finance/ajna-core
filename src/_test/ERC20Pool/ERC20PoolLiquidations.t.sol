@@ -1903,14 +1903,14 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 index:        _i9_91,
                 lpBalance:    2_000.578393654229960874988756440 * 1e27,
                 collateral:   2 * 1e18,
-                deposit:      2_007.563997370011192221 * 1e18,
-                exchangeRate: 1.013406109696938217842432503 * 1e27
+                deposit:      2_007.758423287311827813 * 1e18,
+                exchangeRate: 1.013503294550037375726499132 * 1e27
             }
         );
         _assertBorrower(
             {
                 borrower:                  _borrower,
-                borrowerDebt:              0.336474341151957517 * 1e18,
+                borrowerDebt:              0.530900258452593109 * 1e18,
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.588739842524087291 * 1e18,
                 borrowerCollateralization: 0

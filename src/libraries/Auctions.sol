@@ -266,10 +266,10 @@ library Auctions {
         // determine how much of the loan will be repaid
         if (borrowerDebt >= bucketDeposit_) {
             t0repayAmount_    = Maths.wdiv(bucketDeposit_, poolInflator_);
-            quoteTokenAmount_ = bucketDeposit_;
+            quoteTokenAmount_ = Maths.wdiv(bucketDeposit_, factor);
         } else {
             t0repayAmount_    = borrower_.t0debt;
-            quoteTokenAmount_ = Maths.wmul(t0repayAmount_, poolInflator_);
+            quoteTokenAmount_ = Maths.wdiv(Maths.wmul(t0repayAmount_, poolInflator_), factor);
         }
 
         collateralArbed_ = Maths.wdiv(quoteTokenAmount_, auctionPrice_);
@@ -277,7 +277,7 @@ library Auctions {
         if (collateralArbed_ > borrower_.collateral) {
             collateralArbed_  = borrower_.collateral;
             quoteTokenAmount_ = Maths.wmul(collateralArbed_, auctionPrice_);
-            t0repayAmount_    = Maths.wdiv(quoteTokenAmount_, poolInflator_);
+            t0repayAmount_    = Maths.wdiv(Maths.wmul(factor, quoteTokenAmount_), poolInflator_);
         }
 
         if (!isRewarded_) {

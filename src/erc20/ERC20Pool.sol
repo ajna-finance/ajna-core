@@ -166,6 +166,7 @@ contract ERC20Pool is IERC20Pool, Pool {
             bool isRewarded
         ) = auctions.arbTake(liquidation, borrower, bucketDeposit, poolState.inflator);
 
+        uint256 depositAmountToRemove = quoteTokenAmount;
         // bucket operations
         {
             // cannot arb with a price lower than or equal with the auction price
@@ -194,15 +195,17 @@ contract ERC20Pool is IERC20Pool, Pool {
                 Buckets.addLPs(
                     bucket,
                     liquidation.kicker,
-                    Maths.wrdivr(bondChange, bucketExchangeRate));
+                    Maths.wrdivr(bondChange, bucketExchangeRate)
+                );
+                depositAmountToRemove -= bondChange;
             }
 
             // collateral is moved to the bucket’s claimable collateral
             bucket.collateral += collateralArbed;
         }
 
-        // quote token are removed from the bucket’s deposit
-        deposits.remove(index_, quoteTokenAmount);
+        // quote tokens are removed from the bucket’s deposit
+        deposits.remove(index_, depositAmountToRemove);
 
         // collateral is ewmoved from the loan
         borrower.collateral -= collateralArbed;
