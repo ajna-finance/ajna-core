@@ -35,12 +35,6 @@ interface IPoolState {
     function debtInfo() external view returns (uint256 debt_, uint256 accruedDebt_, uint256 debtInAuction_);
 
     /**
-     *  @notice Calculates pool debt with interest due as of the current block height.
-     *  @return debt_ Current amount of debt owed by borrowers in pool.
-     */
-    function debt() external view returns (uint256 debt_);
-
-    /**
      *  @notice Mapping of borrower addresses to {Borrower} structs.
      *  @dev    NOTE: Cannot use appended underscore syntax for return params since struct is used.
      *  @param  borrower   Address of the borrower.
@@ -145,8 +139,7 @@ interface IPoolState {
         view
         returns (
             uint256 lpBalance,
-            uint256 lastQuoteDeposit,
-            bool    isAuctionDebtLocked
+            uint256 lastQuoteDeposit
     );
 
     /**

@@ -848,11 +848,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         return (Maths.wmul(t0poolDebt, pendingInflator), Maths.wmul(t0poolDebt, inflatorSnapshot), Maths.wmul(t0DebtInAuction, inflatorSnapshot));
     }
 
-    function debt() external view override returns (uint256 borrowerDebt_) {
-        uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        return Maths.wmul(t0poolDebt, pendingInflator);
-    }
-
     function depositIndex(uint256 debt_) external view override returns (uint256) {
         return deposits.findIndexOfSum(debt_);
     }
@@ -924,12 +919,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         override
         returns (
             uint256,
-            uint256,
-            bool
+            uint256
         )
     {
         (uint256 exchangeRate, uint256 collateral) = buckets.getLenderInfo(index_, lender_);
-        return (exchangeRate, collateral, _isAuctionDebtLocked(index_, inflatorSnapshot));
+        return (exchangeRate, collateral);
     }
 
     function lpsToQuoteTokens(
@@ -995,19 +989,15 @@ abstract contract Pool is Clone, Multicall, IPool {
      *  @notice Called by LPB removal functions assess whether or not LPB is locked.
      *  @param  index_   The bucket index from which LPB is attempting to be removed.
      *  @param  inflator_ The pool inflator used to properly assess t0DebtInAuction.
-     *  @return isLocked_ Boolean signifying if lender can move deposit.
      */
-    function _isAuctionDebtLocked(
-        uint256 index_,
-        uint256 inflator_
-    ) internal view returns (bool isLocked_) {
-        // deposit in buckets within liquidation debt from the top-of-book down are frozen.
-        if (t0DebtInAuction != 0 ) isLocked_ = index_ <= deposits.findIndexOfSum(Maths.wmul(t0DebtInAuction, inflator_));
-    }
-
     function _checkIfAuctionDebtLocked(
         uint256 index_,
         uint256 inflator_
-    ) internal view { if (_isAuctionDebtLocked(index_, inflator_)) revert RemoveDepositLockedByAuctionDebt(); } 
+    ) internal view {
+        if (t0DebtInAuction != 0 ) {
+            // deposit in buckets within liquidation debt from the top-of-book down are frozen.
+            if (index_ <= deposits.findIndexOfSum(Maths.wmul(t0DebtInAuction, inflator_))) revert RemoveDepositLockedByAuctionDebt();
+        } 
+    }
 
 }

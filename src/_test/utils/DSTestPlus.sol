@@ -328,6 +328,8 @@ abstract contract DSTestPlus is Test {
             uint256 poolTargetUtilization
         ) = _poolUtils.poolUtilizationInfo(address(_pool));
 
+        (uint256 poolDebt,,) = _pool.debtInfo();
+
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
 
@@ -339,7 +341,7 @@ abstract contract DSTestPlus is Test {
                 state_.lup
             ),                               state_.encumberedCollateral
         );
-        assertEq(_pool.debt(),               state_.poolDebt);
+        assertEq(poolDebt,               state_.poolDebt);
         assertEq(poolActualUtilization,      state_.actualUtilization);
         assertEq(poolTargetUtilization,      state_.targetUtilization);
         assertEq(poolMinDebtAmount,          state_.minDebtAmount);
@@ -361,7 +363,7 @@ abstract contract DSTestPlus is Test {
         uint256 lpBalance,
         uint256 depositTime
     ) internal {
-        (uint256 curLpBalance, uint256 time, ) = _pool.lenderInfo(index, lender);
+        (uint256 curLpBalance, uint256 time) = _pool.lenderInfo(index, lender);
         assertEq(curLpBalance, lpBalance);
         assertEq(time,       depositTime);
     }
