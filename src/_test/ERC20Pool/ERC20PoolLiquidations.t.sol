@@ -180,7 +180,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower,
-                debt:       19.534277977147272573 * 1e18,
+                debt:       19.778456451861613480 * 1e18,
                 collateral: 2 * 1e18,
                 bond:       0.195342779771472726 * 1e18
             }
@@ -296,7 +296,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower,
-                debt:       19.534277977147272573 * 1e18,
+                debt:       19.778456451861613480 * 1e18,
                 collateral: 2 * 1e18,
                 bond:       0.195342779771472726 * 1e18
             }
@@ -393,7 +393,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:        _lender,
                 borrower:    _borrower,
-                debt:        19.534277977147272573 * 1e18,
+                debt:        19.778456451861613480 * 1e18,
                 collateral:  2 * 1e18,
                 bond:        0.195342779771472726 * 1e18
             }
@@ -487,7 +487,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:        _lender,
                 borrower:    _borrower,
-                debt:        19.534277977147272573 * 1e18,
+                debt:        19.778456451861613480 * 1e18,
                 collateral:  2 * 1e18,
                 bond:        0.195342779771472726 * 1e18
             }
@@ -534,7 +534,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower,
-                debt:       19.534277977147272573 * 1e18,
+                debt:       19.778456451861613480 * 1e18,
                 collateral: 2 * 1e18,
                 bond:       0.195342779771472726 * 1e18
             }
@@ -636,7 +636,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower2,
-                debt:       9_853.394241979221645666 * 1e18,
+                debt:       9_976.561670003961916237 * 1e18,
                 collateral: 1_000 * 1e18,
                 bond:       98.533942419792216457 * 1e18
             }
@@ -1015,7 +1015,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower,
-                debt:       19.534277977147272573 * 1e18,
+                debt:       19.778456451861613480 * 1e18,
                 collateral: 2 * 1e18,
                 bond:       0.195342779771472726 * 1e18
             }
@@ -1063,7 +1063,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower2,
-                debt:       9_853.394241979221645666 * 1e18,
+                debt:       9_976.561670003961916237 * 1e18,
                 collateral: 1_000 * 1e18,
                 bond:       98.533942419792216457 * 1e18
             }
@@ -1290,7 +1290,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower2,
-                debt:       9_853.394241979221645666 * 1e18,
+                debt:       9_976.561670003961916237 * 1e18,
                 collateral: 1_000 * 1e18,
                 bond:       98.533942419792216457 * 1e18
             }
@@ -1453,7 +1453,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower2,
-                debt:       9_853.394241979221645666 * 1e18,
+                debt:       9_976.561670003961916237 * 1e18,
                 collateral: 1_000 * 1e18,
                 bond:       98.533942419792216457 * 1e18
             }
@@ -1727,7 +1727,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower2,
-                debt:       9_853.394241979221645666 * 1e18,
+                debt:       9_976.561670003961916237 * 1e18,
                 collateral: 1_000 * 1e18,
                 bond:       98.533942419792216457 * 1e18
             }

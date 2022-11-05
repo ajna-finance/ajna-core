@@ -188,15 +188,15 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower,
-                debt:       22.728719829841718804 * 1e18,
+                debt:       23.012828827714740289 * 1e18,
                 collateral: 2 * 1e18,
                 bond:       0.227287198298417188 * 1e18
             }
         );
 
-        /******************************/
-        /*** Assert Post-kick state ***/
-        /******************************/
+        // /******************************/
+        // /*** Assert Post-kick state ***/
+        // /******************************/
 
         _assertPool(
             PoolState({
@@ -297,7 +297,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower,
-                debt:       22.728719829841718804 * 1e18,
+                debt:       23.012828827714740289 * 1e18,
                 collateral: 2 * 1e18,
                 bond:       0.227287198298417188 * 1e18
             }
