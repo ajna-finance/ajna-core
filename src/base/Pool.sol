@@ -729,6 +729,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (poolState_.isNewInterestAccrued) {
             inflatorSnapshot           = poolState_.inflator;
             lastInflatorSnapshotUpdate = block.timestamp;
+        } else if (poolState_.accruedDebt == 0) {
+            inflatorSnapshot           = Maths.WAD;
+            lastInflatorSnapshotUpdate = block.timestamp;
         }
     }
 
