@@ -1762,7 +1762,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 lender:      taker,
                 index:       _i9_91,
-                lpBalance:   0.000000000391777956808264916 * 1e27,
+                lpBalance:   0.386558148271438658550864337 * 1e27,
                 depositTime: _startTime + 100 days + 6 hours
             }
         );
@@ -1770,17 +1770,17 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 lender:      _lender,
                 index:       _i9_91,
-                lpBalance:   2_000.000000000194425917300635592 * 1e27,
+                lpBalance:   2_000.191835505958522216437892103 * 1e27,
                 depositTime: _startTime + 100 days + 6 hours
             }
         );
         _assertBucket(
             {
                 index:        _i9_91,
-                lpBalance:    2_000 * 1e27,
+                lpBalance:    2_000.578393654229960874988756440 * 1e27,
                 collateral:   2 * 1e18,
                 deposit:      2_007.563997370011192221 * 1e18,
-                exchangeRate: 1.013699183528441508184500000 * 1e27
+                exchangeRate: 1.013406109696938217842432503 * 1e27
             }
         );
         _assertBorrower(
@@ -1920,7 +1920,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             {
                 lender:      taker,
                 index:       _i10016,
-                lpBalance:   0.000002527643880967256869570 * 1e27, // arb taker was rewarded LPBs in arbed bucket
+                lpBalance:   2_527.64388096725686957 * 1e27, // arb taker was rewarded LPBs in arbed bucket
                 depositTime: _startTime + 100 days + 3 hours
             }
         );
@@ -1942,10 +1942,10 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         _assertBucket(
             {
                 index:        _i10016,
-                lpBalance:    1_000 * 1e27,                         // LP balance is the same in arbed bucket
+                lpBalance:    3_527.64388096725686957 * 1e27,       // LP balance in arbed bucket increased with LPs awarded for arb taker
                 collateral:   0.254322591527323120 * 1e18,          // arbed collateral added to the arbed bucket
                 deposit:      980.221238740810139596 * 1e18,        // quote token amount is diminished in arbed bucket
-                exchangeRate: 3.527643880967256869583690323 * 1e27
+                exchangeRate: 1.000000000000000000003880868 * 1e27
             }
         );
         _assertBorrower(

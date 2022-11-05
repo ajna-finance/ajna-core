@@ -156,6 +156,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
         Auctions.Liquidation storage liquidation = auctions.liquidations[borrowerAddress_];
+        uint256 bucketDeposit = deposits.valueAt(index_);
         (
             uint256 quoteTokenAmount,
             uint256 t0repaidDebt,
@@ -163,26 +164,48 @@ contract ERC20Pool is IERC20Pool, Pool {
             uint256 auctionPrice,
             uint256 bondChange,
             bool isRewarded
-        ) = auctions.arbTake(liquidation, borrower, deposits.valueAt(index_), poolState.inflator);
+        ) = auctions.arbTake(liquidation, borrower, bucketDeposit, poolState.inflator);
 
-        // cannot arb with a price lower than or equal with the auction price
-        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
-        if (auctionPrice >= bucketPrice) revert AuctionPriceGteQArbPrice();
+        // bucket operations
+        {
+            // cannot arb with a price lower than or equal with the auction price
+            uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+            if (auctionPrice >= bucketPrice) revert AuctionPriceGteQArbPrice();
 
-        // collateral is moved from the loan to the bucket’s claimable collateral
-        borrower.collateral         -= collateralArbed;
+            Buckets.Bucket storage bucket = buckets[index_];
+            uint256 bucketExchangeRate;
+            if (bucket.lps == 0) {
+                bucketExchangeRate = Maths.RAY;
+            } else {
+                bucketExchangeRate = (bucketDeposit * 1e18 + bucketPrice * bucket.collateral) * 1e18 / bucket.lps;
+            }
 
-        Buckets.Bucket storage bucket = buckets[index_];
-        bucket.collateral += collateralArbed;
+            // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+            Buckets.addLPs(
+                bucket,
+                msg.sender,
+                Maths.wrdivr(
+                    Maths.wmul(collateralArbed, bucketPrice - auctionPrice),
+                    bucketExchangeRate
+                )
+            );
+            // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+            if (isRewarded) {
+                Buckets.addLPs(
+                    bucket,
+                    liquidation.kicker,
+                    Maths.wrdivr(bondChange, bucketExchangeRate));
+            }
+
+            // collateral is moved to the bucket’s claimable collateral
+            bucket.collateral += collateralArbed;
+        }
 
         // quote token are removed from the bucket’s deposit
         deposits.remove(index_, quoteTokenAmount);
 
-        // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
-        Buckets.addLPs(bucket, msg.sender, Maths.wmul(collateralArbed, bucketPrice - auctionPrice));
-        // the bondholder/kicker is awarded bond change worth of LPB in the bucket
-        if (isRewarded) Buckets.addLPs(bucket, liquidation.kicker, bondChange);
-
+        // collateral is ewmoved from the loan
+        borrower.collateral -= collateralArbed;
         _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
         emit ArbTake(borrowerAddress_, index_, quoteTokenAmount, collateralArbed, bondChange, isRewarded);
