@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import "forge-std/console.sol";
 
 import { DSTestPlus }                from '../utils/DSTestPlus.sol';
 import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
@@ -90,56 +91,28 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             uint256 lenderLpBalance;
             uint256 bucketIndex = indexes[j];
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+            if(lenderLpBalance == 0) return;
 
-            //  Calculating redeemable Quote and Collateral Token in particular bucket
+            // Calculating redeemable Quote and Collateral Token in particular bucket
             ( , uint256 bucketQuoteToken, uint bucketCollateral, , , ) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
             uint256 noOfBucketNftsRedeemable = Maths.wadToIntRoundingDown(bucketCollateral);
-
-            // check if lender has lp balance to be redeemed
-            if(lenderLpBalance > 0 ){
-
-                // Calculating redeemable Quote and Collateral Token for Lenders lps
-                uint256 collateralAmount;
-                uint256 quoteTokenAmount;
-                if(bucketQuoteToken > 0){
-                    quoteTokenAmount = ERC721Pool(address(_pool)).lpsToQuoteTokens(bucketQuoteToken, lenderLpBalance, bucketIndex);
-                }
-                collateralAmount = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken, lenderLpBalance, bucketIndex);
-                uint256 noOfNftsToRemove = Maths.wadToIntRoundingDown(collateralAmount);
-
-                // check if Bucket has enough Nfts to be removed
-                if(noOfBucketNftsRedeemable >= noOfNftsToRemove){
-
-                    // Redeeming lender lp as NFT
-                    uint256 lpRedeemed = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
-
-                    // Redeeming lender lp as Quote Token
-                    _pool.removeAllQuoteToken(bucketIndex);
-                    
-                    (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
-
-                    // Checking if all lp balance is redeemed
-                    assertEq(lenderLpBalance, 0);
-
-                }
-                else{
-                    uint256 lpRedeemed;
-
-                    // Check if Bucket has Nfts to be redeemed
-                    if(noOfBucketNftsRedeemable > 0){
-                        // Redeeming lender lp as NFT
-                        lpRedeemed += _pool.removeCollateral(noOfBucketNftsRedeemable, bucketIndex);
-                    }
-                    
-                    // Redeeming lender lp as Quote Token
-                    _pool.removeAllQuoteToken(bucketIndex);
-
-                    (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
-
-                    // Checking if all lp balance is redeemed
-                    assertEq(lenderLpBalance, 0);
-                }
+            if (noOfBucketNftsRedeemable != bucketCollateral / 1e18) {
+                revert("TODO: defragment collateral from other buckets");
             }
+
+            // Calculating redeemable Quote and Collateral Token for Lenders lps
+            uint256 lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken, lenderLpBalance, bucketIndex);
+
+            // First redeem LP for collateral
+            uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
+            _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
+
+            // Then redeem LP for quote token
+            _pool.removeAllQuoteToken(bucketIndex);
+
+            // Confirm all lp balance has been redeemed
+            (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+            assertEq(lenderLpBalance, 0);
         }
     }
 
@@ -160,6 +133,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         for(uint i = 0; i < borrowers.length; i++ ){
             repayDebt(borrowers[i]);
         }
+
         for(uint i = 0; i < lenders.length; i++ ){
             redeemLenderLps(lenders[i],lendersDepositedIndex[lenders[i]]);
         }
