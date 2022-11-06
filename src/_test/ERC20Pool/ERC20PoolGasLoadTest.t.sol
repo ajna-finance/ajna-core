@@ -17,10 +17,11 @@ contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
     Token internal _collateral;
     Token internal _quote;
 
-    address[] private _lenders;
-    address[] private _borrowers;
-    uint16 private constant LENDERS     = 2_000;
-    uint16 private constant LOANS_COUNT = 8_000;
+    address[] internal _lenders;
+    address[] internal _borrowers;
+
+    uint16 internal constant LENDERS     = 2_000;
+    uint16 internal constant LOANS_COUNT = 8_000;
 
     function setUp() public {
 
@@ -35,6 +36,66 @@ contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
         _setupBorrowersAndLoans(LOANS_COUNT);
     }
 
+    /*************************/
+    /*** Utility Functions ***/
+    /*************************/
+
+    function _setupLendersAndDeposits(uint256 count_) internal virtual {
+        for (uint256 i; i < count_; i++) {
+            address lender = address(uint160(uint256(keccak256(abi.encodePacked(i, 'lender')))));
+
+            _mintQuoteAndApproveTokens(lender, 200_000 * 1e18);
+
+            vm.startPrank(lender);
+            _pool.addQuoteToken(100_000 * 1e18, 7388 - i);
+            _pool.addQuoteToken(100_000 * 1e18, 1 + i);
+            vm.stopPrank();
+
+            _lenders.push(lender);
+        }
+    }
+
+    function _setupBorrowersAndLoans(uint256 count_) internal {
+        for (uint256 i; i < count_; i++) {
+            address borrower = address(uint160(uint256(keccak256(abi.encodePacked(i, 'borrower')))));
+
+            _mintQuoteAndApproveTokens(borrower,      2_000 * 1e18);
+            _mintCollateralAndApproveTokens(borrower, 200 * 1e18);
+
+            vm.startPrank(borrower);
+            ERC20Pool(address(_pool)).pledgeCollateral(borrower, 100 * 1e18);
+            _pool.borrow(1_000 * 1e18 + i * 1e18, 5000);
+            vm.stopPrank();
+
+            _borrowers.push(borrower);
+        }
+    }
+
+    function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_quote), operator_, mintAmount_);
+
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+        vm.prank(operator_);
+        _collateral.approve(address(_pool), type(uint256).max);
+    }
+
+    function _mintCollateralAndApproveTokens(address operator_, uint256 mintAmount_) internal {
+        deal(address(_collateral), operator_, mintAmount_);
+
+        vm.prank(operator_);
+        _collateral.approve(address(_pool), type(uint256).max);
+        vm.prank(operator_);
+        _quote.approve(address(_pool), type(uint256).max);
+
+    }
+
+    function _noOfLoans() internal view returns (uint256 loans_) {
+        (, , loans_) = _pool.loansInfo();
+    }
+}
+
+contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
     function testLoadERC20PoolFuzzyPartialRepay(uint256 borrowerId_) public {
         assertEq(_noOfLoans(), LOANS_COUNT);
 
@@ -222,62 +283,68 @@ contract ERC20PoolGasLoadTest is ERC20DSTestPlus {
         }
         vm.stopPrank();
     }
+}
+
+contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
+
+    function testLoadERC20PoolGasKickAndArbTakeLowestTPLoan() public {
+        address kicker = makeAddr("kicker");
+        _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
+
+        vm.warp(8640000000);
+        vm.startPrank(kicker);
+        for (uint256 i; i < LOANS_COUNT; i ++) {
+            _pool.kick(_borrowers[i]);
+        }
+        vm.stopPrank();
+
+        assertEq(_noOfLoans(), 0); // assert all loans are kicked
+        skip(14 hours);
+        address taker = makeAddr("taker");
+        vm.startPrank(taker);
+        _pool.arbTake(_borrowers[0], 1);
+        vm.stopPrank();
+        assertEq(_noOfLoans(), 1); // assert loan was arbed and returned to loans queue
+    }
+
+    function testLoadERC20PoolGasKickAndArbTakeHighestTPLoan() public {
+        address kicker = makeAddr("kicker");
+        _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
+
+        vm.warp(8640000000);
+        vm.startPrank(kicker);
+        for (uint256 i; i < LOANS_COUNT; i ++) {
+            _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
+        }
+        vm.stopPrank();
+
+        assertEq(_noOfLoans(), 0); // assert all loans are kicked
+        skip(14 hours);
+        address taker = makeAddr("taker");
+        vm.startPrank(taker);
+        _pool.arbTake(_borrowers[LOANS_COUNT - 1], 1);
+        vm.stopPrank();
+        assertEq(_noOfLoans(), 1); // assert loan was arbed and returned to loans queue
+    }
 
     /*************************/
     /*** Utility Functions ***/
     /*************************/
 
-    function _setupLendersAndDeposits(uint256 count_) internal {
+    /**
+     *  @dev arb take deposits are set up differently to avoid auction price being greater than pool's max price
+    */
+    function _setupLendersAndDeposits(uint256 count_) internal override {
         for (uint256 i; i < count_; i++) {
             address lender = address(uint160(uint256(keccak256(abi.encodePacked(i, 'lender')))));
 
             _mintQuoteAndApproveTokens(lender, 200_000 * 1e18);
 
             vm.startPrank(lender);
-            _pool.addQuoteToken(100_000 * 1e18, 7388 - i);
-            _pool.addQuoteToken(100_000 * 1e18, 1 + i);
+            _pool.addQuoteToken(200_000 * 1e18, 5000 - i);
             vm.stopPrank();
 
             _lenders.push(lender);
         }
-    }
-
-    function _setupBorrowersAndLoans(uint256 count_) internal {
-        for (uint256 i; i < count_; i++) {
-            address borrower = address(uint160(uint256(keccak256(abi.encodePacked(i, 'borrower')))));
-
-            _mintQuoteAndApproveTokens(borrower,      2_000 * 1e18);
-            _mintCollateralAndApproveTokens(borrower, 200 * 1e18);
-
-            vm.startPrank(borrower);
-            ERC20Pool(address(_pool)).pledgeCollateral(borrower, 100 * 1e18);
-            _pool.borrow(1_000 * 1e18 + i * 1e18, 5000);
-            vm.stopPrank();
-
-            _borrowers.push(borrower);
-        }
-    }
-
-    function _mintQuoteAndApproveTokens(address operator_, uint256 mintAmount_) internal {
-        deal(address(_quote), operator_, mintAmount_);
-
-        vm.prank(operator_);
-        _quote.approve(address(_pool), type(uint256).max);
-        vm.prank(operator_);
-        _collateral.approve(address(_pool), type(uint256).max);
-    }
-
-    function _mintCollateralAndApproveTokens(address operator_, uint256 mintAmount_) internal {
-        deal(address(_collateral), operator_, mintAmount_);
-
-        vm.prank(operator_);
-        _collateral.approve(address(_pool), type(uint256).max);
-        vm.prank(operator_);
-        _quote.approve(address(_pool), type(uint256).max);
-
-    }
-
-    function _noOfLoans() internal view returns (uint256 loans_) {
-        (, , loans_) = _pool.loansInfo();
     }
 }

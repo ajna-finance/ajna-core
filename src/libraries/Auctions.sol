@@ -232,6 +232,66 @@ library Auctions {
     }
 
     /**
+     *  @notice Performs arb take collateral on an auction and updates bond size and kicker balance in case kicker is penalized.
+     *  @notice Logic of kicker being rewarded happens outside this function as bond change will be given as LPs in the arbed bucket.
+     *  @param  liquidation_      The auction to be arbed.
+     *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
+     *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
+     *  @return quoteTokenAmount_ The quote token amount that taker should pay for collateral taken.
+     *  @return t0repayAmount_    The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
+     *  @return collateralArbed_  The amount of collateral arbed.
+     *  @return auctionPrice_     The price of current auction.
+     *  @return bondChange_       The change made on the bond size (beeing reward or penalty).
+     *  @return isRewarded_       True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
+    */
+    function arbTake(
+        Data storage self,
+        Liquidation storage liquidation_,
+        Loans.Borrower memory borrower_,
+        uint256 bucketDeposit_,
+        uint256 poolInflator_
+    ) internal returns (
+        uint256 quoteTokenAmount_,
+        uint256 t0repayAmount_,
+        uint256 collateralArbed_,
+        uint256 auctionPrice_,
+        uint256 bondChange_,
+        bool    isRewarded_
+    ) {
+        uint256 borrowerDebt;
+        int256  bpf;
+        uint256 factor;
+        (auctionPrice_, borrowerDebt, bpf, factor, isRewarded_) = _validateTake(liquidation_, borrower_, poolInflator_);
+
+        // determine how much of the loan will be repaid
+        if (borrowerDebt >= bucketDeposit_) {
+            t0repayAmount_    = Maths.wdiv(bucketDeposit_, poolInflator_);
+            quoteTokenAmount_ = Maths.wdiv(bucketDeposit_, factor);
+        } else {
+            t0repayAmount_    = borrower_.t0debt;
+            quoteTokenAmount_ = Maths.wdiv(Maths.wmul(t0repayAmount_, poolInflator_), factor);
+        }
+
+        collateralArbed_ = Maths.wdiv(quoteTokenAmount_, auctionPrice_);
+
+        if (collateralArbed_ > borrower_.collateral) {
+            collateralArbed_  = borrower_.collateral;
+            quoteTokenAmount_ = Maths.wmul(collateralArbed_, auctionPrice_);
+            t0repayAmount_    = Maths.wdiv(Maths.wmul(factor, quoteTokenAmount_), poolInflator_);
+        }
+
+        if (!isRewarded_) {
+            // take is above neutralPrice, Kicker is penalized
+            bondChange_ = Maths.min(liquidation_.bondSize, Maths.wmul(quoteTokenAmount_, uint256(-bpf)));
+            liquidation_.bondSize                    -= bondChange_;
+            self.kickers[liquidation_.kicker].locked -= bondChange_;
+            self.totalBondEscrowed                   -= bondChange_;
+        } else {
+            bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(bpf)); // wil be rewarded as LPBs
+        }
+    }
+
+    /**
      *  @notice Performs take collateral on an auction and updates bond size and kicker balance accordingly.
      *  @param  borrowerAddress_  Borrower address in auction.
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
@@ -259,31 +319,14 @@ library Auctions {
         bool    isRewarded_
     ) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
-        if (liquidation.kickTime == 0) revert NoAuction();
-        if (block.timestamp - liquidation.kickTime <= 1 hours) revert TakeNotPastCooldown();
-
-        auctionPrice_ = PoolUtils.auctionPrice(
-            liquidation.kickMomp,
-            liquidation.kickTime
-        );
-
-        // calculate amounts
-        collateralTaken_     = Maths.min(borrower_.collateral, maxCollateral_);
-        quoteTokenAmount_    = Maths.wmul(auctionPrice_, collateralTaken_);
-        uint256 borrowerDebt = Maths.wmul(borrower_.t0debt, poolInflator_);
-
-        // calculate the bond payment factor
-        int256 bpf = PoolUtils.bpf(
-            borrowerDebt,
-            borrower_.collateral,
-            borrower_.mompFactor,
-            poolInflator_,
-            liquidation.bondFactor,
-            auctionPrice_
-        );
+        uint256 borrowerDebt;
+        int256  bpf;
+        uint256 factor;
+        (auctionPrice_, borrowerDebt, bpf, factor, isRewarded_) = _validateTake(liquidation, borrower_, poolInflator_);
 
         // determine how much of the loan will be repaid
-        uint256 factor = uint256(1e18 - Maths.maxInt(0, bpf));
+        collateralTaken_     = Maths.min(borrower_.collateral, maxCollateral_);
+        quoteTokenAmount_    = Maths.wmul(auctionPrice_, collateralTaken_);
         t0repayAmount_ = Maths.wdiv(Maths.wmul(quoteTokenAmount_, factor), poolInflator_);
         if (t0repayAmount_ >= borrower_.t0debt) {
             t0repayAmount_    = borrower_.t0debt;
@@ -291,7 +334,6 @@ library Auctions {
             collateralTaken_  = Maths.min(Maths.wdiv(quoteTokenAmount_, auctionPrice_), collateralTaken_);
         }
 
-        isRewarded_ = (bpf >= 0);
         if (isRewarded_) {
             // take is below neutralPrice, Kicker is rewarded
             bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(bpf));
@@ -357,6 +399,49 @@ library Auctions {
          delete self.liquidations[borrower_];
     }
 
+    /**
+     *  @notice Utility function to validate take and calculate take's parameters.
+     *  @param  liquidation_  Liquidation struct holding auction details.
+     *  @param  borrower_     Borrower struct holding details of the borrower being liquidated.
+     *  @param  poolInflator_ The pool's inflator, used to calculate borrower debt.
+     *  @return auctionPrice_ The price of current auction.
+     *  @return borrowerDebt_ The debt of auctioned borrower.
+     *  @return bpf_          The bond penalty factor.
+     *  @return factor_       The take factor, calculated based on bond penalty factor.
+     *  @return isRewarded_   True if the kicker should be rewarded. False for penalized.
+     */
+    function _validateTake(
+        Liquidation storage liquidation_,
+        Loans.Borrower memory borrower_,
+        uint256 poolInflator_
+    ) internal view returns (
+        uint256 auctionPrice_,
+        uint256 borrowerDebt_,
+        int256  bpf_,
+        uint256 factor_,
+        bool    isRewarded_
+    ) {
+        if (liquidation_.kickTime == 0) revert NoAuction();
+        if (block.timestamp - liquidation_.kickTime <= 1 hours) revert TakeNotPastCooldown();
+
+        auctionPrice_ = PoolUtils.auctionPrice(
+            liquidation_.kickMomp,
+            liquidation_.kickTime
+        );
+
+        // calculate the bond payment factor
+        borrowerDebt_ = Maths.wmul(borrower_.t0debt, poolInflator_);
+        bpf_ = PoolUtils.bpf(
+            borrowerDebt_,
+            borrower_.collateral,
+            borrower_.mompFactor,
+            poolInflator_,
+            liquidation_.bondFactor,
+            auctionPrice_
+        );
+        factor_ = uint256(1e18 - Maths.maxInt(0, bpf_));
+        isRewarded_ = (bpf_ >= 0);
+    }
 
     /**********************/
     /*** View Functions ***/
