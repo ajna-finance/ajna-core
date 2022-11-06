@@ -218,46 +218,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         _pool.transferLPTokens(from, to, indexes);
     }
 
-    function _assertTakeAuctionInCooldownRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('TakeNotPastCooldown()'));
-        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
-    }
-
-    function _assertTakeDebtUnderMinPoolDebtRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
-    }
-
-    function _assertTakeInsufficentCollateralRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
-    }
-
-    function _assertTakeNoAuctionRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
-        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
-    }
-
     function _assertTransferNoAllowanceRevert(
         address operator,
         address from,

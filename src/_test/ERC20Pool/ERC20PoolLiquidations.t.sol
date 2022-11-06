@@ -275,7 +275,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 bondFactor:        0,
                 kickTime:          0,
                 kickMomp:          0,
-                totalBondEscrowed: 0 * 1e18,
+                totalBondEscrowed: 0,
                 auctionPrice:      0
             }
         );
@@ -652,6 +652,15 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerCollateralization: 0.974413448899967463 * 1e18
             }
         );
+        _assertReserveAuction(
+            {
+                reserves:                   148.064352861909228810 * 1e18,
+                claimableReserves :         98.083873122003682866 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
 
         // skip ahead so take can be called on the loan
         skip(10 hours);
@@ -697,6 +706,16 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerCollateralization: 0.956028882245805301 * 1e18
             }
         );
+        // reserves should increase after take action
+        _assertReserveAuction(
+            {
+                reserves:                   148.141379552245490832 * 1e18,
+                claimableReserves :         98.218482774160286961 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
 
         // take remaining collateral
         _take(
@@ -737,6 +756,16 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.588542815647469183 * 1e18,
                 borrowerCollateralization: 0
+            }
+        );
+        // reserves should increase after take action
+        _assertReserveAuction(
+            {
+                reserves:                   148.141379552245490832 * 1e18,
+                claimableReserves :         101.165858164239609711 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
             }
         );
 
@@ -1777,18 +1806,411 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
     }
 
-    // TODO: move to DSTestPlus?
-    function _logBorrowerInfo(address borrower_) internal {
-        (
-            uint256 borrowerDebt,
-            uint256 collateralDeposited,
-            uint256 mompFactor
-        ) = _poolUtils.borrowerInfo(address(_pool), borrower_);
+    function testArbTakeLTNeutralPrice() external {
 
-        emit log_named_uint("borrowerDebt        ", borrowerDebt);
-        emit log_named_uint("collateralDeposited ", collateralDeposited);
-        emit log_named_uint("mompFactor ",           mompFactor);
-        emit log_named_uint("collateralEncumbered", PoolUtils.encumberance(borrowerDebt, _lup()));
-        emit log_named_uint("collateralization   ", PoolUtils.collateralization(borrowerDebt, collateralDeposited, _lup()));
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.534277977147272573 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.195342779771472726 * 1e18
+            }
+        );
+
+        _assertAuction(
+            {
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.195342779771472726 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
+                auctionPrice:      311.081467681016947360 * 1e18
+            }
+        );
+
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.195342779771472726 * 1e18
+            }
+        );
+        skip(6 hours);
+
+        address taker = makeAddr("taker");
+
+        _assertLenderLpBalance(
+            {
+                lender:      taker,
+                index:       _i9_91,
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   2_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000 * 1e27,
+                collateral:   0,
+                deposit:      2_027.000651340490292000 * 1e18,
+                exchangeRate: 1.013500325670245146000000000 * 1e27
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              19.779066071215516749 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowerMompFactor:        9.917184843435912074 * 1e18,
+                borrowerCollateralization: 0.982988360525190378 * 1e18
+            }
+        );
+
+        _addLiquidity(
+            {
+                from:   _lender1,
+                amount: 1 * 1e18,
+                index:  _i9_52,
+                newLup: 9.721295865031779605 * 1e18
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000 * 1e27,
+                collateral:   0,
+                deposit:      2_027.006589100074751447 * 1e18,
+                exchangeRate: 1.013503294550037375723500000 * 1e27
+            }
+        );
+        _assertReserveAuction(
+            {
+                reserves:                   23.908406501703106407 * 1e18,
+                claimableReserves :         0,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+
+        _arbTake(
+            {
+                from:             taker,
+                borrower:         _borrower,
+                index:            _i9_91,
+                collateralArbed:  2 * 1e18,
+                quoteTokenAmount: 19.442591730063559232 * 1e18,
+                bondChange:       0.194425917300635592 * 1e18,
+                isReward:         true
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      taker,
+                index:       _i9_91,
+                lpBalance:   0.386558148271438658550864337 * 1e27,
+                depositTime: _startTime + 100 days + 6 hours
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i9_91,
+                lpBalance:   2_000.191835505958522216437892103 * 1e27,
+                depositTime: _startTime + 100 days + 6 hours
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000.578393654229960874988756440 * 1e27,
+                collateral:   2 * 1e18,
+                deposit:      2_007.758423287311827813 * 1e18,
+                exchangeRate: 1.013503294550037375726499132 * 1e27
+            }
+        );
+        // reserves should remain the same after arb take
+        _assertReserveAuction(
+            {
+                reserves:                   23.908406501703106407 * 1e18,
+                claimableReserves :         0,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0.530900258452593109 * 1e18,
+                borrowerCollateral:        0,
+                borrowerMompFactor:        9.588739842524087291 * 1e18,
+                borrowerCollateralization: 0
+            }
+        );
+        _assertAuction(
+            {
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.195342779771472726 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 6 hours,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
+                auctionPrice:      9.721295865031779616 * 1e18
+            }
+        );
+
+        // arb take should fail on an auction without any remaining collateral to auction
+        _assertArbTakeInsufficentCollateralRevert(
+            {
+                from:     taker,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
+    }
+
+
+    function testArbTakeGTNeutralPrice() external {
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.534277977147272573 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.195342779771472726 * 1e18
+            }
+        );
+
+        _assertAuction(
+            {
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.195342779771472726 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
+                auctionPrice:      311.081467681016947360 * 1e18
+            }
+        );
+
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.195342779771472726 * 1e18
+            }
+        );
+        skip(3 hours);
+
+        address taker = makeAddr("taker");
+
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 1_000 * 1e18,
+                index:  _i10016,
+                newLup: 9.721295865031779605 * 1e18
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      taker,
+                index:       _i10016,
+                lpBalance:   0,
+                depositTime: 0
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i10016,
+                lpBalance:   1_000 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i10016,
+                lpBalance:    1_000 * 1e27,
+                collateral:   0,
+                deposit:      1_000 * 1e18,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+        
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              19.778761259189860403 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowerMompFactor:        9.917184843435912074 * 1e18,
+                borrowerCollateralization: 0.983003509435146965 * 1e18
+            }
+        );
+
+        _arbTake(
+            {
+                from:             taker,
+                borrower:         _borrower,
+                index:            _i10016,
+                collateralArbed:  0.254322591527323120 * 1e18,
+                quoteTokenAmount: 19.778761259189860403 * 1e18,
+                bondChange:       0.195342779771472726 * 1e18,
+                isReward:         false
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      taker,
+                index:       _i10016,
+                lpBalance:   2_527.64388096725686957 * 1e27, // arb taker was rewarded LPBs in arbed bucket
+                depositTime: _startTime + 100 days + 3 hours
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i10016,
+                lpBalance:   1_000 * 1e27,
+                depositTime: _startTime + 100 days + 3 hours
+            }
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0 // kicker was penalized
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i10016,
+                lpBalance:    3_527.64388096725686957 * 1e27,       // LP balance in arbed bucket increased with LPs awarded for arb taker
+                collateral:   0.254322591527323120 * 1e18,          // arbed collateral added to the arbed bucket
+                deposit:      980.221238740810139596 * 1e18,        // quote token amount is diminished in arbed bucket
+                exchangeRate: 1.000000000000000000003880868 * 1e27
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0,
+                borrowerCollateral:        1.745677408472676880 * 1e18,
+                borrowerMompFactor:        0,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+        _assertAuction(
+            {
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0
+            }
+        );
+    }
+
+    function testArbTakeReverts() external {
+
+        // should revert if there's no auction started
+        _assertArbTakeNoAuctionRevert(
+            {
+                from:     _lender,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
+
+        skip(100 days);
+
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.534277977147272573 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.195342779771472726 * 1e18
+            }
+        );
+
+        // should revert if auction in grace period
+        _assertArbTakeAuctionInCooldownRevert(
+            {
+                from:     _lender,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
+
+        skip(2 hours);
+
+        address taker = makeAddr("taker");
+
+        // should revert if bucket deposit is 0
+        _assertArbTakeAuctionInsufficientLiquidityRevert(
+            {
+                from:     taker,
+                borrower: _borrower,
+                index:    _i100
+            }
+        );
+
+        // should revert if auction price is greater than the bucket price
+        _assertArbTakeAuctionPriceGreaterThanBucketPriceRevert(
+            {
+                from:     taker,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
+
+        skip(4 hours);
+
+        // 10 borrowers draw debt to enable the min debt check
+        for (uint i=0; i<10; ++i) {
+            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7777);
+        }        
+        // should revert if auction leaves borrower with debt under minimum pool debt
+        _assertArbTakeDebtUnderMinPoolDebtRevert(
+            {
+                from:     taker,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
     }
 }
