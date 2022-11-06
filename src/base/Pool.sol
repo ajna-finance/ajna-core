@@ -377,15 +377,8 @@ abstract contract Pool is Clone, Multicall, IPool {
                 lup
             ) >= Maths.WAD
         ) revert BorrowerOk();
-
-        // uint256 t0KickPenalty = loans.kick(
-        //     borrowerAddress_,
-        //     borrowerDebt,
-        //     poolState.inflator,
-        //     poolState.rate
-        // );
-
-        // update loan heap
+ 
+         // update loan heap
         loans._remove(borrowerAddress_);
  
         // kick auction
@@ -405,7 +398,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         t0poolDebt             += t0kickPenalty;
         borrower.t0debt        += t0kickPenalty;     
         t0DebtInAuction        += borrower.t0debt;
-        loans.borrowers[borrowerAddress_] = borrower;
+        loans.borrowers[borrowerAddress_].t0debt = borrower.t0debt;
 
         // update pool state
         _updatePool(poolState, lup);
