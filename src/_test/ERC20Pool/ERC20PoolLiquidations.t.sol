@@ -652,6 +652,15 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerCollateralization: 0.974413448899967463 * 1e18
             }
         );
+        _assertReserveAuction(
+            {
+                reserves:                   148.064352861909228810 * 1e18,
+                claimableReserves :         98.083873122003682866 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
 
         // skip ahead so take can be called on the loan
         skip(10 hours);
@@ -697,6 +706,16 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerCollateralization: 0.956028882245805301 * 1e18
             }
         );
+        // reserves should increase after take action
+        _assertReserveAuction(
+            {
+                reserves:                   148.141379552245490832 * 1e18,
+                claimableReserves :         98.218482774160286961 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
 
         // take remaining collateral
         _take(
@@ -737,6 +756,16 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.588542815647469183 * 1e18,
                 borrowerCollateralization: 0
+            }
+        );
+        // reserves should increase after take action
+        _assertReserveAuction(
+            {
+                reserves:                   148.141379552245490832 * 1e18,
+                claimableReserves :         101.165858164239609711 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
             }
         );
 
@@ -1869,6 +1898,15 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 exchangeRate: 1.013503294550037375723500000 * 1e27
             }
         );
+        _assertReserveAuction(
+            {
+                reserves:                   23.908406501703106407 * 1e18,
+                claimableReserves :         0,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
 
         _arbTake(
             {
@@ -1905,6 +1943,16 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                 collateral:   2 * 1e18,
                 deposit:      2_007.758423287311827813 * 1e18,
                 exchangeRate: 1.013503294550037375726499132 * 1e27
+            }
+        );
+        // reserves should remain the same after arb take
+        _assertReserveAuction(
+            {
+                reserves:                   23.908406501703106407 * 1e18,
+                claimableReserves :         0,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
             }
         );
         _assertBorrower(
