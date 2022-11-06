@@ -401,11 +401,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         borrowerDebt           += kickPenalty;
         poolState.accruedDebt  += kickPenalty; 
 
-        uint256 t0kickPenalty                    =  Maths.wdiv(kickPenalty, poolState.inflator);
-        t0poolDebt                               += t0kickPenalty;
-        // TODO: avoid double storage hit
-        loans.borrowers[borrowerAddress_].t0debt += t0kickPenalty;     
-        t0DebtInAuction                          += loans.borrowers[borrowerAddress_].t0debt;
+        uint256 t0kickPenalty  =  Maths.wdiv(kickPenalty, poolState.inflator);
+        t0poolDebt             += t0kickPenalty;
+        borrower.t0debt        += t0kickPenalty;     
+        t0DebtInAuction        += borrower.t0debt;
+        loans.borrowers[borrowerAddress_] = borrower;
 
         // update pool state
         _updatePool(poolState, lup);
