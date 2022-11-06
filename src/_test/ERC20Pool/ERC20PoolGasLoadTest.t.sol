@@ -296,15 +296,16 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[i]);
         }
+        // add quote tokens in bucket to arb
+        _pool.addQuoteToken(100_000 * 1e18, 2_000);
         vm.stopPrank();
 
         assertEq(_noOfLoans(), 0); // assert all loans are kicked
         skip(14 hours);
         address taker = makeAddr("taker");
         vm.startPrank(taker);
-        _pool.arbTake(_borrowers[0], 1);
+        _pool.arbTake(_borrowers[0], 2_000);
         vm.stopPrank();
-        assertEq(_noOfLoans(), 1); // assert loan was arbed and returned to loans queue
     }
 
     function testLoadERC20PoolGasKickAndArbTakeHighestTPLoan() public {
@@ -316,15 +317,16 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         for (uint256 i; i < LOANS_COUNT; i ++) {
             _pool.kick(_borrowers[LOANS_COUNT - 1 - i]);
         }
+        // add quote tokens in bucket to arb
+        _pool.addQuoteToken(100_000 * 1e18, 2_000);
         vm.stopPrank();
 
         assertEq(_noOfLoans(), 0); // assert all loans are kicked
         skip(14 hours);
         address taker = makeAddr("taker");
         vm.startPrank(taker);
-        _pool.arbTake(_borrowers[LOANS_COUNT - 1], 1);
+        _pool.arbTake(_borrowers[LOANS_COUNT - 1], 2_000);
         vm.stopPrank();
-        assertEq(_noOfLoans(), 1); // assert loan was arbed and returned to loans queue
     }
 
     /*************************/
