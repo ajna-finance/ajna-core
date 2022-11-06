@@ -151,12 +151,14 @@ contract ERC20Pool is IERC20Pool, Pool {
         address borrowerAddress_,
         uint256 index_
     ) external override {
-        PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
-        Auctions.Liquidation storage liquidation = auctions.liquidations[borrowerAddress_];
+        PoolState memory poolState = _accruePoolInterest();
         uint256 bucketDeposit = deposits.valueAt(index_);
+        if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
+
+        Auctions.Liquidation storage liquidation = auctions.liquidations[borrowerAddress_];
         (
             uint256 quoteTokenAmount,
             uint256 t0repaidDebt,

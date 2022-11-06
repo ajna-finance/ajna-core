@@ -534,6 +534,16 @@ abstract contract DSTestPlus is Test {
         _pool.arbTake(borrower, index);
     }
 
+    function _assertArbTakeAuctionInsufficientLiquidityRevert(
+        address from,
+        address borrower,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
+        _pool.arbTake(borrower, index);
+    }
+
     function _assertArbTakeAuctionPriceGreaterThanBucketPriceRevert(
         address from,
         address borrower,

@@ -2132,6 +2132,15 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
         address taker = makeAddr("taker");
 
+        // should revert if bucket deposit is 0
+        _assertArbTakeAuctionInsufficientLiquidityRevert(
+            {
+                from:     taker,
+                borrower: _borrower,
+                index:    _i100
+            }
+        );
+
         // should revert if auction price is greater than the bucket price
         _assertArbTakeAuctionPriceGreaterThanBucketPriceRevert(
             {
