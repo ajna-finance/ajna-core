@@ -31,7 +31,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     /***********************/
 
     uint256 public override interestRate;       // [WAD]
-    uint256 public override interestRateUpdate;  // [SEC]
+    uint256 public override interestRateUpdate; // [SEC]
     uint256 public override pledgedCollateral;  // [WAD]
 
     uint256 internal debtEma;   // [WAD]

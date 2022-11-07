@@ -589,6 +589,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 newLup: BucketMath.MAX_PRICE
             }
         );
+        // add collateral in order to give lender LPs in bucket 5_000 with 0 deposit
+        // used to test revert on remove when bucket deposit is 0
         _addCollateral(
             {
                 from:   _lender,
