@@ -102,13 +102,19 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     function validateEmpty(
         EnumerableSet.UintSet storage buckets
     ) internal {
-        for(uint256 i = 0; i < buckets.length(); i++){
+        for(uint256 i = 0; i < buckets.length() ; i++){
             uint256 bucketIndex = buckets.at(i);
-            (, , , uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+            (, uint256 quoteTokens, uint256 collateral, uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
 
             // Checking if all bucket lps are redeemed
-            assertEq(bucketLps, 0 );
+            assertEq(bucketLps, 0);
+            assertEq(quoteTokens, 0);
+            assertEq(collateral, 0);
         }
+        ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(_pool.debt(), 0);
+        assertEq(loansCount, 0);
+        assertEq(_pool.pledgedCollateral(), 0);
     }
 
     modifier tearDown {
@@ -149,11 +155,13 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         emit AddCollateral(from, index, amount);
         vm.expectEmit(true, true, false, true);
         emit Transfer(from, address(_pool), amount);
-        return ERC20Pool(address(_pool)).addCollateral(amount, index);
 
+        // Add for tearDown
         bidders.add(from);
         bidderDepositedIndex[from].add(index);
         bucketsUsed.add(index); 
+
+        return ERC20Pool(address(_pool)).addCollateral(amount, index);
     }
 
     function _moveCollateral(
@@ -185,6 +193,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         vm.expectEmit(true, true, false, true);
         emit Transfer(from, address(_pool), amount / ERC20Pool(address(_pool)).collateralScale());
         ERC20Pool(address(_pool)).pledgeCollateral(borrower, amount);
+
+        borrowers.add(borrower);
     }
 
     function _removeAllCollateral(

@@ -134,11 +134,17 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     ) internal {
         for(uint256 i = 0; i < buckets.length() ; i++){
             uint256 bucketIndex = buckets.at(i);
-            (, , , uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+            (, uint256 quoteTokens, uint256 collateral, uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
 
             // Checking if all bucket lps are redeemed
             assertEq(bucketLps, 0);
+            assertEq(quoteTokens, 0);
+            assertEq(collateral, 0);
         }
+        ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(_pool.debt(), 0);
+        assertEq(loansCount, 0);
+        assertEq(_pool.pledgedCollateral(), 0);
     }
 
     modifier tearDown {
@@ -207,6 +213,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         }
 
         // Add for tearDown
+        borrowers.add(borrower);
         for (uint256 i=0; i < tokenIds.length; i++) {
             borrowerPlegedNFTIds[borrower].add(tokenIds[i]);
         }
