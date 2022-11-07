@@ -698,6 +698,16 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 lpRedeem: 800 * 1e27
             }
         );
+
+        _assertBucket(
+            {
+                index:        i100,
+                lpBalance:    1_003.3236814328200989 * 1e27,
+                collateral:   10 * 1e18,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
     }
 
     function testPoolRemoveQuoteTokenWithDebt() external {
