@@ -555,6 +555,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      */
     function testPoolRemoveQuoteTokenRequireChecks() external {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
+        _mintCollateralAndApproveTokens(_lender, 1 * 1e18);
         // lender adds initial quote token
         _addLiquidity(
             {
@@ -588,7 +589,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 newLup: BucketMath.MAX_PRICE
             }
         );
-
+        // add collateral in order to give lender LPs in bucket 5_000 with 0 deposit
+        // used to test revert on remove when bucket deposit is 0
+        _addCollateral(
+            {
+                from:   _lender,
+                amount: 1 * 1e18,
+                index:  5000
+            }
+        );
         _pledgeCollateral(
             {
                 from:     _borrower,
@@ -612,12 +621,12 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 index: 4550
             }
         );
-        // should revert if insufficient quote token
+        // should revert if no quote token in bucket deposit
         _assertRemoveInsufficientLiquidityRevert(
             {
                 from:  _lender,
-                amount: 20_000 * 1e18,
-                index:  4550
+                amount: 1 * 1e18,
+                index:  5000
             }
         );
         // should revert if removing quote token from higher price buckets would drive lup below htp
@@ -635,15 +644,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount: 20_000 * 1e18,
                 index:  4550,
                 newLup: 0.139445853940958153 * 1e18
-            }
-        );
-
-        // should revert if bucket has enough quote token, but lender has insufficient LP
-        _assertRemoveLiquidityInsufficientLPsRevert(
-            {
-                from:   _lender,
-                amount: 15_000 * 1e18,
-                index:  4550
             }
         );
 
@@ -1178,7 +1178,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:   5_003.981613396490344248 * 1e18,
                 index:    2873,
                 newLup:   601.252968524772188572 * 1e18,
-                lpRedeem: 5_000.290483387144984400601020184 * 1e27
+                lpRedeem: 5_000.290483387144984400382330052 * 1e27
             }
         );
         _removeAllLiquidity(
