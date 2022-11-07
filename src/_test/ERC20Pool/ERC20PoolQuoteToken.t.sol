@@ -647,7 +647,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
 
-        // should be able to removeQuoteToken
+        // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
         _removeLiquidity(
             {
                 from:     _lender,
@@ -656,46 +656,6 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 penalty:  0,
                 newLup:   PoolUtils.indexToPrice(4551),
                 lpRedeem: 10_000 * 1e27
-            }
-        );
-    }
-
-    function testPoolRemoveQuoteTokenWithCollateral() external {
-        // add 10 collateral into the 100 bucket, for LP worth 1000 quote tokens
-        _mintCollateralAndApproveTokens(_lender, 10 * 1e18);
-        uint256 i100 = PoolUtils.priceToIndex(100 * 1e18);
-        _addCollateral(
-            {
-                from:   _lender,
-                amount: 10 * 1e18,
-                index:  i100
-            }
-        );
-
-        // someone else deposits into the bucket
-        _addLiquidity(_lender1, 900 * 1e18, i100, BucketMath.MAX_PRICE);
-
-        // should be able to remove a small amount of deposit
-        skip(1 days);
-        _removeLiquidity(
-            {
-                from:     _lender,
-                amount:   100 * 1e18,
-                index:    i100,
-                penalty:  0,
-                newLup:   BucketMath.MAX_PRICE,
-                lpRedeem: 100 * 1e27
-            }
-        );
-
-        // should be able to remove the rest
-        _removeAllLiquidity(
-            {
-                from:     _lender,
-                amount:   800 * 1e18,
-                index:    i100,
-                newLup:   BucketMath.MAX_PRICE,
-                lpRedeem: 800 * 1e27
             }
         );
     }
