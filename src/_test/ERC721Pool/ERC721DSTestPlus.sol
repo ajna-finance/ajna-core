@@ -150,10 +150,10 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             redeemLenderLps(lenders[i],lendersDepositedIndex[lenders[i]]);
         }
         
-        // for(uint256 i = 0; i < bidders.length; i++){
-        //     redeemLenderLps(bidders[i] , bidderDepositedIndex[bidders[i]]);
-        // }
-        // validateEmpty(bucketsUsed);
+        for(uint256 i = 0; i < bidders.length; i++){
+            redeemLenderLps(bidders[i], bidderDepositedIndex[bidders[i]]);
+        }
+        validateEmpty(bucketsUsed);
     }
 
     /*****************************/
