@@ -3,7 +3,6 @@ pragma solidity 0.8.14;
 
 import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
-import "forge-std/console.sol";
 
 import { DSTestPlus }                from '../utils/DSTestPlus.sol';
 import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
@@ -92,16 +91,9 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             uint256 bucketIndex = indexes[j];
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
             if(lenderLpBalance == 0) return;
-            console.log("Redeeming %s LPs", lenderLpBalance);
 
             // Calculating redeemable Quote and Collateral Token in particular bucket
             (uint256 price, uint256 bucketQuoteToken, uint256 bucketCollateral, uint256 bucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
-            console.log("Bucket has %s quote token, %s collateral", bucketQuoteToken, bucketCollateral);
-            // console.log(
-            //     "Bucket %s LP entitles lenders to %s collateral", 
-            //     bucketLPs, 
-            //     ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken, bucketLPs, bucketIndex)
-            // );
 
             // If bucket has a fractional amount of NFTs, we'll need to defragment collateral across buckets
             if (bucketCollateral % 1e18 != 0) {
@@ -111,37 +103,28 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
 
             // Calculating redeemable Quote and Collateral Token for Lenders lps
             uint256 lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken, lenderLpBalance, bucketIndex);
-            console.log("Lenders LPB entitles them to %s collateral", lpsAsCollateral);
 
             // Deposit additional quote token to redeem for all NFTs
             if (bucketCollateral != 0 && lpsAsCollateral % 1e18 != 0) {
                 uint256 fractionOfNftRemaining = lpsAsCollateral % 1e18;
-                // FIXME: 1 - fractionOfNftRemaining?
-                // uint256 depositRequired = Maths.wmul(fractionOfNftRemaining, price);
-                uint256 depositRequired = price;
-                console.log("Depositing %s quote token to withdraw full NFT", depositRequired);      
+                assertLt(fractionOfNftRemaining, 1e18);
+                uint256 depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining, price);
                 deal(_pool.quoteTokenAddress(), lender, depositRequired);
                 Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
                 _pool.addQuoteToken(depositRequired, bucketIndex);
                 (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
                 lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken + depositRequired, lenderLpBalance, bucketIndex);
-                console.log("Lenders LPB now entitles them to %s collateral", lpsAsCollateral);
             }
 
             // First redeem LP for collateral
             uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
-            console.log("Redeeming %s NFTs", noOfNftsToRemove);
             uint256 lpsRedeemed = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
-            console.log("Redeemed %s LPs for collateral", lpsRedeemed);
 
             // Then redeem LP for quote token
             (, lpsRedeemed) = _pool.removeAllQuoteToken(bucketIndex);
-            console.log("Redeemed %s LPs for quote token", lpsRedeemed);
         
-
             // Confirm all lp balance has been redeemed            
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
-            assertEq(lenderLpBalance, 0);
         }
     }
 
