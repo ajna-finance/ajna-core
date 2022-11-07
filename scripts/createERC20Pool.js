@@ -25,11 +25,10 @@ async function main() {
   );
   const interestRate = web3.utils.toWei(String(0.05), 'ether');
   const tx = contract.methods.deployPool(process.env.COMP, process.env.DAI, interestRate);
-  // console.log(await tx.estimateGas())
   const receipt = await tx
     .send({
       from: signer.address,
-      gas: 8_000_000,
+      gas: await tx.estimateGas(),
     })
     .once("transactionHash", (txhash) => {
       console.log(`Mining transaction ...`);
