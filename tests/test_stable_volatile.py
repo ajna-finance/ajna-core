@@ -326,7 +326,7 @@ def remove_quote_token(lender, lender_index, price, pool_helper):
               f" from bucket {price_index} ({price / 10**18:.1f}); exchange rate is {exchange_rate/1e27:.8f}")
         if not ensure_pool_is_funded(pool_helper.pool, claimable_quote * 2, "withdraw"):
             return
-        tx = pool_helper.pool.removeAllQuoteToken(price_index, {"from": lender})
+        tx = pool_helper.pool.removeQuoteToken(2**256 - 1, price_index, {"from": lender})
     else:
         log(f" lender   {lender_index:>4} has no claim to bucket {price / 10**18:.1f}")
 
@@ -387,7 +387,7 @@ def test_stable_volatile_one(pool_helper, lenders, borrowers, test_utils, chain)
     start_time = chain.time()
     end_time = start_time + SECONDS_PER_DAY * 7
     actor_id = 0
-    with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeAllQuoteToken', 'repay']):
+    with test_utils.GasWatcher(['addQuoteToken', 'borrow', 'removeQuoteToken', 'repay']):
         while chain.time() < end_time:
             # hit the pool an hour at a time, calculating interest and then sending transactions
             actor_id = draw_and_bid(lenders, borrowers, actor_id, pool_helper, chain, test_utils)

@@ -184,7 +184,7 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amount, newLup);
         _assertTokenTransferEvent(address(_pool), from, amount);
-        (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeAllQuoteToken(index);
+        (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, index);
         assertEq(removedAmount, amount);
         assertEq(lpRedeemed,    lpRedeem);
     }
@@ -218,8 +218,9 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, expectedWithdrawal, newLup);
         _assertTokenTransferEvent(address(_pool), from, expectedWithdrawal);
-        uint256 lpRedeemed = _pool.removeQuoteToken(amount, index);
-        assertEq(lpRedeemed, lpRedeem);
+        (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
+        assertEq(removedAmount, expectedWithdrawal);
+        assertEq(lpRedeemed,    lpRedeem);
     }
 
     function _repay(
@@ -765,7 +766,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
-        _pool.removeAllQuoteToken(index);
+        _pool.removeQuoteToken(type(uint256).max, index);
     }
 
     function _assertRemoveAllLiquidityLupBelowHtpRevert(
@@ -774,7 +775,16 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
-        _pool.removeAllQuoteToken(index);
+        _pool.removeQuoteToken(type(uint256).max, index);
+    }
+
+    function _assertRemoveAllLiquidityNoClaimRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.NoClaim.selector);
+        _pool.removeQuoteToken(type(uint256).max, index);
     }
 
     function _assertMoveLiquidityBankruptcyBlockRevert(
