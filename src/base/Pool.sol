@@ -329,7 +329,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 maxDepth_
     ) external override {
         uint256 poolDebt          = Maths.wmul(t0poolDebt, inflatorSnapshot);
-        uint256 quoteTokenBalance = IERC20Token(_getArgAddress(20)).balanceOf(address(this));
+        uint256 quoteTokenBalance = _getPoolQuoteTokenBalance();
         uint256 reserves          = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
         uint256 healedDebt        = auctions.heal(
             loans,
@@ -398,7 +398,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposits.treeSum(),
             auctions.totalBondEscrowed,
             curUnclaimedAuctionReserve,
-            IERC20Token(_getArgAddress(20)).balanceOf(address(this))
+            _getPoolQuoteTokenBalance()
         );
         uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
         curUnclaimedAuctionReserve += claimable - kickerAward;
@@ -694,6 +694,10 @@ abstract contract Pool is Clone, Multicall, IPool {
             inflatorSnapshot           = Maths.WAD;
             lastInflatorSnapshotUpdate = block.timestamp;
         }
+    }
+
+    function _getPoolQuoteTokenBalance() internal returns (uint256) {
+        return IERC20Token(_getArgAddress(20)).balanceOf(address(this));
     }
 
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
