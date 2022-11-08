@@ -172,7 +172,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 deposit = deposits.valueAt(index_);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
-        uint256 exchangeRate = Buckets.getExchangeRate(buckets[index_], deposit, PoolUtils.indexToPrice(index_));
+        Buckets.Bucket storage bucket = buckets[index_];
+        uint256 exchangeRate = Buckets.getExchangeRate(
+            bucket,
+            deposit,
+            PoolUtils.indexToPrice(index_)
+        );
         removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
 
         // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
@@ -180,13 +185,15 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (removedAmount_ > deposit)    removedAmount_ = deposit;
         redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
 
-        deposits.remove(index_, removedAmount_);  // update FenwickTree
+        deposits.remove(index_, removedAmount_);  // remove from deposits
 
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
-        // persist bucket changes
-        buckets.removeLPs(redeemedLPs_, index_);
+        // update bucket LPs balance
+        bucket.lps -= redeemedLPs_;
+        // update lender LPs balance
+        bucket.lenders[msg.sender].lps -= redeemedLPs_;
 
         removedAmount_ = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,

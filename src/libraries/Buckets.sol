@@ -2,7 +2,6 @@
 pragma solidity 0.8.14;
 
 import './Maths.sol';
-import './PoolUtils.sol';
 
 library Buckets {
 
@@ -149,22 +148,6 @@ library Buckets {
         bucket_.collateral -= Maths.min(bucket_.collateral, collateralAmountToRemove_);
         // update lender LPs balance
         bucket_.lenders[msg.sender].lps -= lpsAmountToRemove_;
-    }
-
-    /**
-     *  @notice Remove LPs from a bucket and from lender balance.
-     *  @param  lpsAmountToRemove_ The amount of LPs to be removed from bucket.
-     *  @param  index_             Index of the bucket.
-     */
-    function removeLPs(
-        mapping(uint256 => Bucket) storage self,
-        uint256 lpsAmountToRemove_,
-        uint256 index_
-    ) internal {
-        // update bucket LPs balance
-        self[index_].lps -= lpsAmountToRemove_;
-        // update lender LPs balance
-        self[index_].lenders[msg.sender].lps -= lpsAmountToRemove_;
     }
 
     /**
