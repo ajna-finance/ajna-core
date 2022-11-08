@@ -693,16 +693,16 @@ abstract contract Pool is Clone, Multicall, IPool {
         }
     }
 
-    function _getPoolQuoteTokenBalance() internal returns (uint256) {
-        return IERC20Token(_getArgAddress(20)).balanceOf(address(this));
-    }
-
     function _transferQuoteTokenFrom(address from_, uint256 amount_) internal {
         if (!IERC20Token(_getArgAddress(20)).transferFrom(from_, address(this), amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
     }
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
         if (!IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
+    }
+
+    function _getPoolQuoteTokenBalance() internal view returns (uint256) {
+        return IERC20Token(_getArgAddress(20)).balanceOf(address(this));
     }
 
     function _htp(uint256 inflator_) internal view returns (uint256) {
