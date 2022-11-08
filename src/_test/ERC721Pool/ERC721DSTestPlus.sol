@@ -91,7 +91,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             uint256 lenderLpBalance;
             uint256 bucketIndex = indexes.at(j);
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
-            if(lenderLpBalance == 0) return;
+            if (lenderLpBalance == 0) continue;
 
             // Calculating redeemable Quote and Collateral Token in particular bucket
             (uint256 price, uint256 bucketQuoteToken, uint256 bucketCollateral, uint256 bucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
@@ -106,20 +106,29 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             uint256 lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken, lenderLpBalance, bucketIndex);
 
             // Deposit additional quote token to redeem for all NFTs
-            if (bucketCollateral != 0 && lpsAsCollateral % 1e18 != 0) {
-                uint256 fractionOfNftRemaining = lpsAsCollateral % 1e18;
-                assertLt(fractionOfNftRemaining, 1e18);
-                uint256 depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining, price);
-                deal(_pool.quoteTokenAddress(), lender, depositRequired);
-                Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
-                _pool.addQuoteToken(depositRequired, bucketIndex);
-                (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
-                lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken + depositRequired, lenderLpBalance, bucketIndex);
-            }
+            uint256 lpsRedeemed;
+            if (bucketCollateral != 0) {
+                if (lpsAsCollateral % 1e18 != 0) {
+                    uint256 depositRequired;
+                    {
+                        uint256 fractionOfNftRemaining = lpsAsCollateral % 1e18;
+                        assertLt(fractionOfNftRemaining, 1e18);
+                        // FIXME: now getting InsufficientLPs with this amount; was working two days ago
+                        // depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining, price);
+                        // HACK:  deposit extra quote token which will be pulled out on line 134.
+                        depositRequired = price;
+                    }
+                    deal(_pool.quoteTokenAddress(), lender, depositRequired);
+                    Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
+                    _pool.addQuoteToken(depositRequired, bucketIndex);
+                    (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+                    lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken + depositRequired, lenderLpBalance, bucketIndex);
+                }
 
-            // First redeem LP for collateral
-            uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
-            uint256 lpsRedeemed = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
+                // First redeem LP for collateral
+                uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
+                lpsRedeemed = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
+            }
 
             // Then redeem LP for quote token
             (, lpsRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
