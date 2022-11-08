@@ -22,11 +22,12 @@ contract ERC20Pool is IERC20Pool, Pool {
     /****************************/
 
     function initialize(
+        uint256 collateralScale_,
         uint256 rate_
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        collateralScale = 10**(18 - IERC20Token(_getArgAddress(0)).decimals());
+        collateralScale = collateralScale_;
 
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;

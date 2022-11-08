@@ -25,6 +25,7 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
         address collateral_, address quote_, uint256 interestRate_
     ) external canDeploy(ERC20_NON_SUBSET_HASH, collateral_, quote_, interestRate_) returns (address pool_) {
         uint256 quoteTokenScale = 10**(18 - IERC20Token(quote_).decimals());
+        uint256 collateralScale = 10**(18 - IERC20Token(collateral_).decimals());
 
         bytes memory data = abi.encodePacked(
             collateral_,
@@ -37,6 +38,6 @@ contract ERC20PoolFactory is IERC20PoolFactory, PoolDeployer {
         deployedPools[ERC20_NON_SUBSET_HASH][collateral_][quote_] = pool_;
         emit PoolCreated(pool_);
 
-        pool.initialize(interestRate_);
+        pool.initialize(collateralScale, interestRate_);
     }
 }
