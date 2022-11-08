@@ -31,31 +31,29 @@ library Buckets {
      *  @notice Updates LP balances for bucket and lender with the amount coresponding to quote token amount added.
      *  @param  deposit_               Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs
      *  @param  quoteTokenAmountToAdd_ Additional quote tokens amount to add to bucket deposit.
-     *  @param  index_                 Index of the bucket to add quote tokens to.
+     *  @param  bucketPrice_           Bucket price.
      *  @return addedLPs_              Amount of bucket LPs for the quote tokens amount added.
      */
     function addQuoteToken(
-        mapping(uint256 => Bucket) storage self,
+        Bucket storage bucket_,
         uint256 deposit_,
         uint256 quoteTokenAmountToAdd_,
-        uint256 index_
+        uint256 bucketPrice_
     ) internal returns (uint256 addedLPs_) {
 
         // calculate amount of LPs to be added for the amount of quote tokens added to bucket
         addedLPs_ = quoteTokensToLPs(
-            self,
+            bucket_,
             deposit_,
             quoteTokenAmountToAdd_,
-            index_
+            bucketPrice_
         );
 
         // update bucket LPs balance
-        Bucket storage bucket = self[index_];
         // cannot deposit in the same block when bucket becomes insolvent
-        if (bucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
-
+        if (bucket_.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
         // update bucket and lender LPs balance and deposit timestamp
-        addLPs(bucket, msg.sender, addedLPs_);
+        addLPs(bucket_, msg.sender, addedLPs_);
     }
 
     /**
@@ -305,20 +303,20 @@ library Buckets {
 
     /**
      *  @notice Returns the amount of LPs calculated for the given amount of quote tokens.
-     *  @param  deposit_       Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
-     *  @param  quoteTokens_   The amount of quote tokens to calculate LPs amount for.
-     *  @param  index_         Index of the bucket.
+     *  @param  deposit_     Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
+     *  @param  quoteTokens_ The amount of quote tokens to calculate LPs amount for.
+     *  @param  bucketPrice_ Price bucket.
      *  @return The amount of LPs coresponding to the given quote tokens in current bucket.
      */
     function quoteTokensToLPs(
-        mapping(uint256 => Bucket) storage self,
+        Bucket storage bucket_,
         uint256 deposit_,
         uint256 quoteTokens_,
-        uint256 index_
+        uint256 bucketPrice_
     ) internal view returns (uint256) {
         return Maths.rdiv(
             Maths.wadToRay(quoteTokens_),
-            getExchangeRate(self[index_], deposit_, PoolUtils.indexToPrice(index_))
+            getExchangeRate(bucket_, deposit_, bucketPrice_)
         );
     }
 }
