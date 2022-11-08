@@ -352,9 +352,10 @@ abstract contract Pool is Clone, Multicall, IPool {
     function kick(address borrowerAddress_) external override {
         auctions.revertIfActive(borrowerAddress_);
 
-        PoolState      memory poolState = _accruePoolInterest();
-        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.t0debt == 0) revert NoDebt();
+
+        PoolState memory poolState = _accruePoolInterest();
 
         uint256 lup = _lup(poolState.accruedDebt);
         uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
@@ -382,9 +383,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         borrowerDebt           += kickPenalty;
         poolState.accruedDebt  += kickPenalty; 
 
-        uint256 t0kickPenalty  =  Maths.wdiv(kickPenalty, poolState.inflator);
-        t0poolDebt             += t0kickPenalty;
-        borrower.t0debt        += t0kickPenalty;     
+        kickPenalty            =  Maths.wdiv(kickPenalty, poolState.inflator); // convert to t0
+        t0poolDebt             += kickPenalty;
+        borrower.t0debt        += kickPenalty;
         t0DebtInAuction        += borrower.t0debt;
         loans.borrowers[borrowerAddress_].t0debt = borrower.t0debt;
 
@@ -650,13 +651,15 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (block.timestamp - interestRateUpdate > 12 hours) {
             // Update EMAs for target utilization
 
-            uint256 curDebtEma   = Maths.wmul(
-                poolState_.accruedDebt,
-                EMA_7D_RATE_FACTOR) + Maths.wmul(debtEma,   LAMBDA_EMA_7D
+            uint256 curDebtEma = Maths.wmul(
+                    poolState_.accruedDebt,
+                    EMA_7D_RATE_FACTOR
+                ) + Maths.wmul(debtEma, LAMBDA_EMA_7D
             );
             uint256 curLupColEma = Maths.wmul(
-                Maths.wmul(lup_, poolState_.collateral),
-                EMA_7D_RATE_FACTOR) + Maths.wmul(lupColEma, LAMBDA_EMA_7D
+                    Maths.wmul(lup_, poolState_.collateral),
+                    EMA_7D_RATE_FACTOR
+                ) + Maths.wmul(lupColEma, LAMBDA_EMA_7D
             );
 
             debtEma   = curDebtEma;
