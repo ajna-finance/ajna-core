@@ -103,18 +103,19 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (fromIndex_ == toIndex_) revert MoveToSamePrice();
 
         PoolState memory poolState = _accruePoolInterest();
-
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
+
         (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
         );
         uint256 quoteTokenAmountToMove;
-        (quoteTokenAmountToMove, fromBucketLPs_, ) = buckets.lpsToQuoteToken(
+        (quoteTokenAmountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
+            buckets[fromIndex_],
             deposits.valueAt(fromIndex_),
             lenderLpBalance,
             maxQuoteTokenAmountToMove_,
-            fromIndex_
+            PoolUtils.indexToPrice(fromIndex_)
         );
 
         deposits.remove(fromIndex_, quoteTokenAmountToMove);
@@ -911,11 +912,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 lpTokens_,
         uint256 index_
     ) external view override returns (uint256 quoteTokenAmount_) {
-        (quoteTokenAmount_, , ) = buckets.lpsToQuoteToken(
+        (quoteTokenAmount_, , ) = Buckets.lpsToQuoteToken(
+            buckets[index_],
             deposit_,
             lpTokens_,
             deposit_,
-            index_
+            PoolUtils.indexToPrice(index_)
         );
     }
 

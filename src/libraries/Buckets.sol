@@ -277,21 +277,20 @@ library Buckets {
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
      *  @param  lenderLPsBalance_ The amount of LPs to calculate quote token amount for.
      *  @param  maxQuoteToken_    The max quote token amount to calculate LPs for.
-     *  @param  index_            Index of the bucket.
+     *  @param  bucketPrice_      Bucket price.
      *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given LPs amount.
      *  @return bucketLPs_        Amount of bucket LPs corresponding for calculated collateral amount.
      *  @return lenderLPs_        Lender LPs balance in current bucket.
      */
     function lpsToQuoteToken(
-        mapping(uint256 => Bucket) storage self,
+        Bucket storage bucket_,
         uint256 deposit_,
         uint256 lenderLPsBalance_,
         uint256 maxQuoteToken_,
-        uint256 index_
+        uint256 bucketPrice_
     ) internal view returns (uint256 quoteTokenAmount_, uint256 bucketLPs_, uint256 lenderLPs_) {
-        Bucket storage bucket = self[index_];
         lenderLPs_   = lenderLPsBalance_;
-        uint256 rate = getExchangeRate(bucket, deposit_, PoolUtils.indexToPrice(index_));
+        uint256 rate = getExchangeRate(bucket_, deposit_, bucketPrice_);
         quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
         if (quoteTokenAmount_ > deposit_) {
             quoteTokenAmount_ = deposit_;

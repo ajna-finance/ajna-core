@@ -125,9 +125,11 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
 
-        PoolState memory poolState = _accruePoolInterest();
+        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(
+            index_,
+            msg.sender
+        );
 
-        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(index_, msg.sender);
         Buckets.Bucket storage bucket = buckets[index_];
         (collateralAmountRemoved_, redeemedLenderLPs_) = Buckets.lpsToCollateral(
             bucket,
@@ -142,6 +144,8 @@ contract ERC20Pool is IERC20Pool, Pool {
             collateralAmountRemoved_,
             redeemedLenderLPs_)
         ;
+
+        PoolState memory poolState = _accruePoolInterest();
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
         // move collateral from pool to lender
