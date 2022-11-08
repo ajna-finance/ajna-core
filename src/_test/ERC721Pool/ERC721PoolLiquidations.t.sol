@@ -194,9 +194,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
             }
         );
 
-        // /******************************/
-        // /*** Assert Post-kick state ***/
-        // /******************************/
+        /******************************/
+        /*** Assert Post-kick state ***/
+        /******************************/
 
         _assertPool(
             PoolState({
@@ -452,9 +452,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         vm.revertTo(snapshot);
 
 
-        // /******************************************/
-        // /*** Take partial collateral tokens (1) ***/
-        // /******************************************/
+        /******************************************/
+        /*** Take partial collateral tokens (1) ***/
+        /******************************************/
 
         _take(
             {
