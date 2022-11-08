@@ -122,7 +122,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             uint256 lpsRedeemed = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
 
             // Then redeem LP for quote token
-            (, lpsRedeemed) = _pool.removeAllQuoteToken(bucketIndex);
+            (, lpsRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
         
             // Confirm all lp balance has been redeemed            
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
@@ -142,7 +142,8 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             assertEq(collateral, 0);
         }
         ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(_pool.debt(), 0);
+        (uint256 debt, , ) = _pool.debtInfo();
+        assertEq(debt, 0);
         assertEq(loansCount, 0);
         assertEq(_pool.pledgedCollateral(), 0);
     }

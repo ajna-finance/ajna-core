@@ -27,6 +27,7 @@ interface IPoolEvents {
      *  @param  amount     Amount of quote token used to purchase collateral.
      *  @param  collateral Amount of collateral purchased with quote token.
      *  @param  bondChange Impact of this take to the liquidation bond.
+     *  @param  isReward   True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
      *  @dev    amount / collateral implies the auction price.
      */
     event ArbTake(
@@ -34,7 +35,8 @@ interface IPoolEvents {
         uint256 index,
         uint256 amount,
         uint256 collateral,
-        int256 bondChange
+        uint256 bondChange,
+        bool    isReward
     );
 
     /**

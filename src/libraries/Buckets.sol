@@ -53,13 +53,9 @@ library Buckets {
         Bucket storage bucket = self[index_];
         // cannot deposit in the same block when bucket becomes insolvent
         if (bucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
-        bucket.lps += addedLPs_;
 
-        // update lender LPs balance and deposit timestamp
-        Lender storage lender = bucket.lenders[msg.sender];
-        if (bucket.bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
-        else lender.lps += addedLPs_;
-        lender.depositTime = block.timestamp;
+        // update bucket and lender LPs balance and deposit timestamp
+        addLPs(bucket, msg.sender, addedLPs_);
     }
 
     /**
@@ -87,13 +83,27 @@ library Buckets {
         Bucket storage bucket = self[index_];
         // cannot deposit in the same block when bucket becomes insolvent
         if (bucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
-        bucket.lps += addedLPs_;
         bucket.collateral += collateralAmountToAdd_;
+        // update bucket and lender LPs balance and deposit timestamp
+        addLPs(bucket, msg.sender, addedLPs_);
+    }
 
-        // update lender LPs balance
-        Lender storage lender = bucket.lenders[msg.sender];
-        if (bucket.bankruptcyTime >= lender.depositTime) lender.lps = addedLPs_;
-        else lender.lps += addedLPs_;
+    /**
+     *  @notice Add amount of LPs for a given lender in a given bucket.
+     *  @param  bucket_    Bucket to record lender LPs.
+     *  @param  lender_    Lender address to add LPs for in the given bucket.
+     *  @param  lpsAmount_ Amount of LPs to be recorded for the given lender.
+     */
+    function addLPs(
+        Bucket storage bucket_,
+        address lender_,
+        uint256 lpsAmount_
+    ) internal {
+        bucket_.lps += lpsAmount_;
+
+        Lender storage lender = bucket_.lenders[lender_];
+        if (bucket_.bankruptcyTime >= lender.depositTime) lender.lps = lpsAmount_;
+        else lender.lps += lpsAmount_;
         lender.depositTime = block.timestamp;
     }
 

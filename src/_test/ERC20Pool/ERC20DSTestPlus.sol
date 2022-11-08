@@ -84,7 +84,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
             // check if lender has lp balance to be redeemed
             if(lenderLpBalance > 0 ){
                 // redeeming lp of lender from a bucket as quote token
-                (, uint256 lpRedeemed) = _pool.removeAllQuoteToken(bucketIndex);
+                (, uint256 lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
                 
                 // Check if lender has more lps to be redeemed
                 if(lpRedeemed < lenderLpBalance){
@@ -112,7 +112,8 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
             assertEq(collateral, 0);
         }
         ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(_pool.debt(), 0);
+        (uint256 debt, , ) = _pool.debtInfo();
+        assertEq(debt, 0);
         assertEq(loansCount, 0);
         assertEq(_pool.pledgedCollateral(), 0);
     }
@@ -324,15 +325,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         ERC20Pool(address(_pool)).removeAllCollateral(index);
     }
 
-    function _assertRemoveAllLiquidityNoClaimRevert(
-        address from,
-        uint256 index
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.NoClaim.selector);
-        ERC20Pool(address(_pool)).removeAllQuoteToken(index);
-    }
-
     function _assertTransferInvalidIndexRevert(
         address operator,
         address from,
@@ -344,46 +336,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         _pool.transferLPTokens(from, to, indexes);
     }
 
-    function _assertTakeAuctionInCooldownRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('TakeNotPastCooldown()'));
-        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
-    }
-
-    function _assertTakeDebtUnderMinPoolDebtRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
-    }
-
-    function _assertTakeInsufficentCollateralRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
-    }
-
-    function _assertTakeNoAuctionRevert(
-        address from,
-        address borrower,
-        uint256 maxCollateral
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
-        ERC20Pool(address(_pool)).take(borrower, maxCollateral, new bytes(0));
-    }
-
     function _assertTransferNoAllowanceRevert(
         address operator,
         address from,
@@ -393,6 +345,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         changePrank(operator);
         vm.expectRevert(IPoolErrors.NoAllowance.selector);
         _pool.transferLPTokens(from, to, indexes);
+    }
+
+    function _assertDepositLockedByAuctionDebtRevert(
+        address operator,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(operator);
+        vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
+        _pool.removeQuoteToken(amount, index);
     }
 
 }

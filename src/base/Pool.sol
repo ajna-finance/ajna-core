@@ -42,6 +42,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     uint256 internal reserveAuctionKicked;    // Time a Claimable Reserve Auction was last kicked.
     uint256 internal reserveAuctionUnclaimed; // Amount of claimable reserves which has not been taken in the Claimable Reserve Auction.
+    uint256 internal t0DebtInAuction;         // Total debt in auction used to restrict LPB holder from withdrawing [WAD]
 
     mapping(address => mapping(address => mapping(uint256 => uint256))) private _lpTokenAllowances; // owner address -> new owner address -> deposit index -> allowed amount
 
@@ -102,6 +103,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         PoolState memory poolState = _accruePoolInterest();
 
+        _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
         (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
@@ -142,61 +144,53 @@ abstract contract Pool is Clone, Multicall, IPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, quoteTokenAmountToMove, newLup);
     }
 
-    function removeAllQuoteToken(
+    function removeQuoteToken(
+        uint256 maxAmount_,
         uint256 index_
-    ) external returns (uint256 quoteTokenAmountRemoved_, uint256 redeemedLenderLPs_) {
+    ) external returns (uint256 removedAmount_, uint256 redeemedLPs_) {
         auctions.revertIfAuctionClearable(loans);
 
         PoolState memory poolState = _accruePoolInterest();
+        _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(
+        (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
             index_,
             msg.sender
         );
-        if (lenderLPsBalance == 0) revert NoClaim();
+        if (lenderLPsBalance == 0) revert NoClaim(); // revert if no LP to claim
 
         uint256 deposit = deposits.valueAt(index_);
-        (quoteTokenAmountRemoved_, , redeemedLenderLPs_) = buckets.lpsToQuoteToken(
-            deposit,
-            lenderLPsBalance,
-            deposit,
-            index_
-        );
+        if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
-        _redeemLPForQuoteToken(
-            index_,
+        (uint256 exchangeRate, ) = buckets.getExchangeRate(deposit, index_);
+        removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
+
+        // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
+        if (removedAmount_ > maxAmount_) removedAmount_ = maxAmount_;
+        if (removedAmount_ > deposit)    removedAmount_ = deposit;
+        redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
+
+        deposits.remove(index_, removedAmount_);  // update FenwickTree
+
+        uint256 newLup = _lup(poolState.accruedDebt);
+        if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
+
+        // persist bucket changes
+        buckets.removeLPs(redeemedLPs_, index_);
+
+        removedAmount_ = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
-            redeemedLenderLPs_,
-            quoteTokenAmountRemoved_
-        );
-    }
-
-    function removeQuoteToken(
-        uint256 quoteTokenAmountToRemove_,
-        uint256 index_
-    ) external override returns (uint256 bucketLPs_) {
-        auctions.revertIfAuctionClearable(loans);
-
-        PoolState memory poolState = _accruePoolInterest();
-
-        uint256 deposit = deposits.valueAt(index_);
-        if (quoteTokenAmountToRemove_ > deposit) revert InsufficientLiquidity();
-
-        bucketLPs_ = buckets.quoteTokensToLPs(
-            deposit,
-            quoteTokenAmountToRemove_,
-            index_
-        );
-
-        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        if (lenderLPsBalance == 0 || bucketLPs_ > lenderLPsBalance) revert InsufficientLPs();
-
-        _redeemLPForQuoteToken(
+            lastDeposit,
             index_,
-            poolState,
-            bucketLPs_,
-            quoteTokenAmountToRemove_
+            0,
+            removedAmount_
         );
+
+        _updatePool(poolState, newLup);
+
+        // move quote token amount from pool to lender
+        emit RemoveQuoteToken(msg.sender, index_, removedAmount_, newLup);
+        _transferQuoteToken(msg.sender, removedAmount_);
     }
 
     function transferLPTokens(
@@ -337,19 +331,20 @@ abstract contract Pool is Clone, Multicall, IPool {
         address borrower_,
         uint256 maxDepth_
     ) external override {
-        uint256 poolDebt          = Maths.wmul(t0poolDebt, inflatorSnapshot);
-        uint256 quoteTokenBalance = IERC20Token(_getArgAddress(20)).balanceOf(address(this));
-        uint256 reserves          = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
-        uint256 healedDebt        = auctions.heal(
+
+        uint256 healedDebt = auctions.heal(
             loans,
             buckets,
             deposits,
             borrower_,
-            reserves, maxDepth_,
+            Maths.wmul(t0poolDebt, inflatorSnapshot) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed, // reserves
+            maxDepth_,
             inflatorSnapshot
         );
         if (healedDebt != 0) {
-            t0poolDebt -= Maths.wdiv(healedDebt, inflatorSnapshot);
+            uint256 t0HealedDebt = Maths.wdiv(healedDebt, inflatorSnapshot); 
+            t0poolDebt           -= t0HealedDebt;
+            t0DebtInAuction      -= t0HealedDebt;
             emit Heal(borrower_, healedDebt);
         }
     }
@@ -370,16 +365,10 @@ abstract contract Pool is Clone, Multicall, IPool {
                 lup
             ) >= Maths.WAD
         ) revert BorrowerOk();
-
-        uint256 kickPenalty = loans.kick(
-            borrowerAddress_,
-            borrowerDebt,
-            poolState.inflator,
-            poolState.rate
-        );
-        poolState.accruedDebt += kickPenalty;
-        t0poolDebt += Maths.wdiv(kickPenalty, poolState.inflator);
-        
+ 
+         // update loan heap
+        loans._remove(borrowerAddress_);
+ 
         // kick auction
         uint256 kickAuctionAmount = auctions.kick(
             borrowerAddress_,
@@ -387,6 +376,17 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrowerDebt * Maths.WAD / borrower.collateral,
             deposits.momp(poolState.accruedDebt, loans.noOfLoans())
         );
+
+        // update borrower & pool debt with kickPenalty
+        uint256 kickPenalty    =  Maths.wmul(Maths.wdiv(poolState.rate, 4 * 1e18), borrowerDebt); // when loan is kicked, penalty of three months of interest is added
+        borrowerDebt           += kickPenalty;
+        poolState.accruedDebt  += kickPenalty; 
+
+        uint256 t0kickPenalty  =  Maths.wdiv(kickPenalty, poolState.inflator);
+        t0poolDebt             += t0kickPenalty;
+        borrower.t0debt        += t0kickPenalty;     
+        t0DebtInAuction        += borrower.t0debt;
+        loans.borrowers[borrowerAddress_].t0debt = borrower.t0debt;
 
         // update pool state
         _updatePool(poolState, lup);
@@ -407,7 +407,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposits.treeSum(),
             auctions.totalBondEscrowed,
             curUnclaimedAuctionReserve,
-            IERC20Token(_getArgAddress(20)).balanceOf(address(this))
+            _getPoolQuoteTokenBalance()
         );
         uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
         curUnclaimedAuctionReserve += claimable - kickerAward;
@@ -416,8 +416,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             reserveAuctionKicked    = block.timestamp;
             emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
             _transferQuoteToken(msg.sender, kickerAward);
-        }
-        else revert NoReserves();
+        } else revert NoReserves();
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
@@ -435,8 +434,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
             ajnaToken.burn(ajnaRequired);
             _transferQuoteToken(msg.sender, amount_);
-        }
-        else revert NoReservesAuction();
+        } else revert NoReservesAuction();
     }
 
 
@@ -457,14 +455,19 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 newLup = _lup(poolState.accruedDebt);
 
+        uint256 collateralization = _collateralization(
+                    Maths.wmul(borrower.t0debt, poolState.inflator),
+                    borrower.collateral,
+                    newLup
+                );
+
+        if (collateralization >= Maths.WAD && auctions._isActive(borrowerAddress_)) t0DebtInAuction -= borrower.t0debt;
+
         auctions.checkAndRemove(
             borrowerAddress_,
-            _collateralization(
-                Maths.wmul(borrower.t0debt, poolState.inflator),
-                borrower.collateral,
-                newLup
-            )
+            collateralization 
         );
+
         loans.update(
             deposits,
             borrowerAddress_,
@@ -509,6 +512,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 quoteTokenAmountToRepay_, 
         uint256 newLup_
     ) {
+
+        if (auctions._isActive(borrowerAddress)) t0DebtInAuction -= t0repaidDebt;
+
         quoteTokenAmountToRepay_ = Maths.wmul(t0repaidDebt, poolState.inflator);
         uint256 borrowerDebt     = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
         poolState.accruedDebt    -= quoteTokenAmountToRepay_;
@@ -587,71 +593,38 @@ abstract contract Pool is Clone, Multicall, IPool {
         _updatePool(poolState, _lup(poolState.accruedDebt));
     }
 
-    function _redeemLPForQuoteToken(
-        uint256 index_,
-        PoolState memory poolState_,
-        uint256 lpAmount_,
-        uint256 amount
-    ) internal {
-        deposits.remove(index_, amount);  // update FenwickTree
-
-        uint256 newLup = _lup(poolState_.accruedDebt);
-        if (_htp(poolState_.inflator) > newLup) revert LUPBelowHTP();
-
-        // persist bucket changes
-        buckets.removeLPs(lpAmount_, index_);
-
-        (, uint256 lastDeposit) = buckets.getLenderInfo(index_, msg.sender);
-        amount = PoolUtils.applyEarlyWithdrawalPenalty(
-            poolState_,
-            lastDeposit,
-            index_,
-            0,
-            amount
-        );
-
-        _updatePool(poolState_, newLup);
-
-        // move quote token amount from pool to lender
-        emit RemoveQuoteToken(msg.sender, index_, amount, newLup);
-        _transferQuoteToken(msg.sender, amount);
-    }
-
 
     /*****************************/
     /*** Pool Helper Functions ***/
     /*****************************/
 
     function _accruePoolInterest() internal returns (PoolState memory poolState_) {
-        uint256 t0Debt = t0poolDebt;
-
-        poolState_.collateral  = pledgedCollateral;
-        poolState_.inflator    = inflatorSnapshot;
+        uint256 t0Debt        = t0poolDebt;
+        poolState_.collateral = pledgedCollateral;
+        poolState_.inflator   = inflatorSnapshot;
 
         if (t0Debt != 0) {
-            // TODO: when new interest has accrued, this gets overwriten, wasting a multiplication
+            // Calculate prior pool debt
             poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
 
             uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
             poolState_.isNewInterestAccrued = elapsed != 0;
+
             if (poolState_.isNewInterestAccrued) {
+                // Scale the borrower inflator to update amount of interest owed by borrowers
                 poolState_.rate = interestRate;
                 uint256 factor = PoolUtils.pendingInterestFactor(poolState_.rate, elapsed);
-                // Scale the borrower inflator to update amount of interest owed by borrowers
                 poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
 
                 // Scale the fenwick tree to update amount of debt owed to lenders
-                uint256 newHtp = _htp(poolState_.inflator);
-                if (newHtp != 0) {
-                    deposits.accrueInterest(
-                        poolState_.accruedDebt,
-                        poolState_.collateral,
-                        newHtp,
-                        factor
-                    );
-                }
+                deposits.accrueInterest(
+                    poolState_.accruedDebt,
+                    poolState_.collateral,
+                    _htp(poolState_.inflator),
+                    factor
+                );
 
-                // Calculate pool debt using the new inflator
+                // After debt owed to lenders has accrued, calculate current debt owed by borrowers
                 poolState_.accruedDebt = Maths.wmul(t0Debt, poolState_.inflator);
             }
         }
@@ -732,6 +705,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (poolState_.isNewInterestAccrued) {
             inflatorSnapshot           = poolState_.inflator;
             lastInflatorSnapshotUpdate = block.timestamp;
+        } else if (poolState_.accruedDebt == 0) {
+            inflatorSnapshot           = Maths.WAD;
+            lastInflatorSnapshotUpdate = block.timestamp;
         }
     }
 
@@ -741,6 +717,10 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
         if (!IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
+    }
+
+    function _getPoolQuoteTokenBalance() internal view returns (uint256) {
+        return IERC20Token(_getArgAddress(20)).balanceOf(address(this));
     }
 
     function _htp(uint256 inflator_) internal view returns (uint256) {
@@ -827,15 +807,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    // TODO: only PoolInfoUtils should access this
-    function accruedDebt() external view override returns (uint256 accruedDebt_)
-    {
-        return Maths.wmul(t0poolDebt, inflatorSnapshot);
-    }
-
-    function debt() external view override returns (uint256 borrowerDebt_) {
+    function debtInfo() external view returns (uint256 debt_, uint256 accruedDebt_, uint256 debtInAuction_) {
         uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        return Maths.wmul(t0poolDebt, pendingInflator);
+        return (Maths.wmul(t0poolDebt, pendingInflator), Maths.wmul(t0poolDebt, inflatorSnapshot), Maths.wmul(t0DebtInAuction, inflatorSnapshot));
     }
 
     function depositIndex(uint256 debt_) external view override returns (uint256) {
@@ -912,7 +886,8 @@ abstract contract Pool is Clone, Multicall, IPool {
             uint256
         )
     {
-        return buckets.getLenderInfo(index_, lender_);
+        (uint256 exchangeRate, uint256 collateral) = buckets.getLenderInfo(index_, lender_);
+        return (exchangeRate, collateral);
     }
 
     function lpsToQuoteTokens(
@@ -985,4 +960,20 @@ abstract contract Pool is Clone, Multicall, IPool {
     function quoteTokenScale() external pure override returns (uint256) {
         return _getArgUint256(40);
     }
+
+    /**
+     *  @notice Called by LPB removal functions assess whether or not LPB is locked.
+     *  @param  index_   The bucket index from which LPB is attempting to be removed.
+     *  @param  inflator_ The pool inflator used to properly assess t0DebtInAuction.
+     */
+    function _revertIfAuctionDebtLocked(
+        uint256 index_,
+        uint256 inflator_
+    ) internal view {
+        if (t0DebtInAuction != 0 ) {
+            // deposit in buckets within liquidation debt from the top-of-book down are frozen.
+            if (index_ <= deposits.findIndexOfSum(Maths.wmul(t0DebtInAuction, inflator_))) revert RemoveDepositLockedByAuctionDebt();
+        } 
+    }
+
 }

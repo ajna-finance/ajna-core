@@ -9,12 +9,10 @@ interface IPoolLiquidationActions {
     /**
      *  @notice Called by actors to use quote token to arb higher-priced deposit off the book.
      *  @param  borrower Identifies the loan to liquidate.
-     *  @param  amount   Amount of bucket deposit to use to exchange for collateral.
      *  @param  index    Index of a bucket, likely the HPB, in which collateral will be deposited.
      */
     function arbTake(
         address borrower,
-        uint256 amount,
         uint256 index
     ) external;
 

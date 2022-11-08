@@ -290,7 +290,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         // bidder purchases all quote from the highest bucket
         uint256 amountToPurchase = 10_100 * 1e18;
         assertGt(_quote.balanceOf(address(_pool)), amountToPurchase);
-        uint256 amountWithInterest = 10_001.321435774090050000 * 1e18;
+        uint256 amountWithInterest = 10_001.296261817085520000 * 1e18;
         // adding extra collateral to account for interest accumulation
         uint256 collateralToPurchaseWith = Maths.wmul(Maths.wdiv(amountToPurchase, p2550), 1.01 * 1e18);
         assertEq(collateralToPurchaseWith, 3.388032491631335842 * 1e18);
@@ -311,18 +311,18 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
                 amount:   amountWithInterest,
                 index:    2550,
                 newLup:   PoolUtils.indexToPrice(2552),
-                lpRedeem: 10_000.349514602285265304678747886 * 1e27
+                lpRedeem: 10_000.349513872212134187552326469 * 1e27
             }
         );
 
         // bidder withdraws unused collateral
-        uint256 expectedCollateral = 0.066434834368804842 * 1e18;
+        uint256 expectedCollateral = 0.066443194797165080 * 1e18;
         _removeAllCollateral(
             {
                 from:     _bidder,
                 amount:   expectedCollateral,
                 index:    2550,
-                lpRedeem: 200.008674209978209773691572462 * 1e27
+                lpRedeem: 200.034347595268741480953543034 * 1e27
             }
         );
         _assertLenderLpBalance(
@@ -337,7 +337,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         skip(7200);
 
         // lender exchanges their LP for collateral
-        expectedCollateral = 1.992958594357518600 * 1e18;
+        expectedCollateral = 1.992953578100502457 * 1e18;
         _removeAllCollateral(
             {
                 from:     _lender,
@@ -359,7 +359,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
         skip(3600);
 
         // lender1 exchanges their LP for collateral
-        expectedCollateral = 1.328639062905012400 * 1e18;
+        expectedCollateral = 1.328635718733668305 * 1e18;
         _removeAllCollateral(
             {
                 from:     _lender1,

@@ -167,7 +167,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
 
     function testKickSubsetPool() external {
         _assertAuction(
-            {
+            AuctionState({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -176,8 +176,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 kickTime:          0,
                 kickMomp:          0,
                 totalBondEscrowed: 0,
-                auctionPrice:      0
-            }
+                auctionPrice:      0,
+                debtInAuction:     0
+            })
         );
 
         // Skip to make borrower undercollateralized
@@ -187,7 +188,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower,
-                debt:       22.728719829841718804 * 1e18,
+                debt:       23.012828827714740289 * 1e18,
                 collateral: 2 * 1e18,
                 bond:       0.227287198298417188 * 1e18
             }
@@ -234,7 +235,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         );
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
         _assertAuction(
-            {
+            AuctionState({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -243,8 +244,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 kickTime:          block.timestamp,
                 kickMomp:          9.917184843435912074 * 1e18,
                 totalBondEscrowed: 0.227287198298417188 * 1e18,
-                auctionPrice:      317.349914989949186368 * 1e18
-            }
+                auctionPrice:      317.349914989949186368 * 1e18,
+                debtInAuction:     23.012828827714740289 * 1e18
+            })
         );
         _assertKicker(
             {
@@ -274,7 +276,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
 
     function testTakeCollateralSubsetPool() external {
         _assertAuction(
-            {
+            AuctionState({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -283,8 +285,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 kickTime:          0,
                 kickMomp:          0,
                 totalBondEscrowed: 0,
-                auctionPrice:      0
-            }
+                auctionPrice:      0,
+                debtInAuction:     0
+            })
         );
 
         // Skip to make borrower undercollateralized
@@ -294,7 +297,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
             {
                 from:       _lender,
                 borrower:   _borrower,
-                debt:       22.728719829841718804 * 1e18,
+                debt:       23.012828827714740289 * 1e18,
                 collateral: 2 * 1e18,
                 bond:       0.227287198298417188 * 1e18
             }
@@ -341,7 +344,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         );
         assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
         _assertAuction(
-            {
+            AuctionState({
                 borrower:          _borrower,
                 active:            true,
                 kicker:            _lender,
@@ -350,8 +353,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 kickTime:          block.timestamp,
                 kickMomp:          9.917184843435912074 * 1e18,
                 totalBondEscrowed: 0.227287198298417188 * 1e18,
-                auctionPrice:      317.349914989949186368 * 1e18
-            }
+                auctionPrice:      317.349914989949186368 * 1e18,
+                debtInAuction:     23.012828827714740289 * 1e18
+            })
         );
         _assertKicker(
             {
@@ -416,7 +420,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         );
 
         _assertAuction(
-            {
+            AuctionState({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -425,8 +429,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 kickTime:          0,
                 kickMomp:          0,
                 totalBondEscrowed: 0,
-                auctionPrice:      0
-            }
+                auctionPrice:      0,
+                debtInAuction:     0
+            })
         );
 
         _assertKicker(
@@ -447,9 +452,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         vm.revertTo(snapshot);
 
 
-        // /******************************************/
-        // /*** Take partial collateral tokens (1) ***/
-        // /******************************************/
+        /******************************************/
+        /*** Take partial collateral tokens (1) ***/
+        /******************************************/
 
         _take(
             {
@@ -492,7 +497,7 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
         );
 
         _assertAuction(
-            {
+            AuctionState({
                 borrower:          _borrower,
                 active:            false,
                 kicker:            address(0),
@@ -501,8 +506,9 @@ contract ERC721PoolLiquidationsTest is ERC721HelperContract {
                 kickTime:          0,
                 kickMomp:          0,
                 totalBondEscrowed: 0,
-                auctionPrice:      0
-            }
+                auctionPrice:      0,
+                debtInAuction:     3.179050231366162129 * 1e18
+            })
         );
 
         _assertKicker(

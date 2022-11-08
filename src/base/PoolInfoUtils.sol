@@ -121,13 +121,14 @@ contract PoolInfoUtils {
         )
     {
         IPool pool = IPool(ajnaPool_);
+        (uint256 debt,,) = pool.debtInfo();
         hpbIndex_ = pool.depositIndex(1);
         hpb_      = PoolUtils.indexToPrice(hpbIndex_);
         (, uint256 maxThresholdPrice, ) = pool.loansInfo();
         (uint256 inflatorSnapshot, )    = pool.inflatorInfo();
         htp_      = Maths.wmul(maxThresholdPrice, inflatorSnapshot);
         if (htp_ != 0) htpIndex_ = PoolUtils.priceToIndex(htp_);
-        lupIndex_ = pool.depositIndex(pool.debt());
+        lupIndex_ = pool.depositIndex(debt);
         lup_      = PoolUtils.indexToPrice(lupIndex_);
     }
 
@@ -150,9 +151,9 @@ contract PoolInfoUtils {
             uint256 timeRemaining_
         )
     {
-        IPool pool = IPool(ajnaPool_);
-        uint256 poolDebt = pool.accruedDebt();
-        uint256 poolSize = pool.depositSize();
+        IPool pool           = IPool(ajnaPool_);
+        (,uint256 poolDebt,) = pool.debtInfo();
+        uint256 poolSize     = pool.depositSize();
 
         uint256 quoteTokenBalance = IERC20Token(pool.quoteTokenAddress()).balanceOf(ajnaPool_);
 
@@ -191,8 +192,8 @@ contract PoolInfoUtils {
     {
         IPool pool = IPool(ajnaPool_);
 
-        uint256 poolDebt       = pool.debt();
-        uint256 poolCollateral = pool.pledgedCollateral();
+        (uint256 poolDebt,,)    = pool.debtInfo();
+        uint256 poolCollateral  = pool.pledgedCollateral();
         (, , uint256 noOfLoans) = pool.loansInfo();
 
         if (poolDebt != 0) poolMinDebtAmount_ = PoolUtils.minDebtAmount(poolDebt, noOfLoans);
@@ -214,8 +215,8 @@ contract PoolInfoUtils {
         returns (uint256 lenderInterestMargin_)
     {
         IPool pool = IPool(ajnaPool_);
-
-        uint256 poolDebt       = pool.debt();
+ 
+        (uint256 poolDebt,,)   = pool.debtInfo();
         uint256 poolCollateral = pool.pledgedCollateral();
         uint256 utilization    = pool.depositUtilization(poolDebt, poolCollateral);
 
@@ -240,8 +241,8 @@ contract PoolInfoUtils {
         address ajnaPool_
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
-
-        uint256 currentLupIndex = pool.depositIndex(pool.debt());
+        (uint256 debt,,) = pool.debtInfo();
+        uint256 currentLupIndex = pool.depositIndex(debt);
         return PoolUtils.indexToPrice(currentLupIndex);
     }
 
@@ -249,8 +250,9 @@ contract PoolInfoUtils {
         address ajnaPool_
     ) external view returns (uint256) {
         IPool pool = IPool(ajnaPool_);
+        (uint256 debt,,) = pool.debtInfo();
 
-        return pool.depositIndex(pool.debt());
+        return pool.depositIndex(debt);
     }
 
     function hpb(
