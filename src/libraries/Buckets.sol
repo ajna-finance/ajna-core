@@ -73,14 +73,15 @@ library Buckets {
     ) internal returns (uint256 addedLPs_) {
 
         // calculate amount of LPs to be added for the amount of collateral added to bucket
-        (addedLPs_, ) = collateralToLPs(
-            self,
+        Bucket storage bucket = self[index_];
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        addedLPs_ = collateralToLPs(
+            bucket,
             deposit_,
             collateralAmountToAdd_,
-            index_
+            bucketPrice
         );
         // update bucket LPs balance and collateral
-        Bucket storage bucket = self[index_];
         // cannot deposit in the same block when bucket becomes insolvent
         if (bucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
         bucket.collateral += collateralAmountToAdd_;
@@ -207,23 +208,19 @@ library Buckets {
 
     /**
      *  @notice Returns the amount of bucket LPs calculated for the given amount of collateral.
-     *  @param  deposit_    Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
-     *  @param  collateral_ The amount of collateral to calculate bucket LPs for.
-     *  @param  index_      Index of the bucket.
-     *  @return Amount of LPs calculated for the amount of collateral.
-     *  @return Amount of collateral in bucket.
+     *  @param  deposit_     Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
+     *  @param  collateral_  The amount of collateral to calculate bucket LPs for.
+     *  @param  bucketPrice_ Price bucket.
+     *  @return lps_         Amount of LPs calculated for the amount of collateral.
      */
     function collateralToLPs(
-        mapping(uint256 => Bucket) storage self,
+        Bucket storage bucket_,
         uint256 deposit_,
         uint256 collateral_,
-        uint256 index_
-    ) internal view returns (uint256, uint256) {
-        Bucket storage bucket = self[index_];
-        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
-        uint256 rate        = getExchangeRate(bucket, deposit_, bucketPrice);
-        uint256 lps         = (collateral_ * bucketPrice * 1e18 + rate / 2) / rate;
-        return (lps, bucket.collateral);
+        uint256 bucketPrice_
+    ) internal view returns (uint256 lps_) {
+        uint256 rate = getExchangeRate(bucket_, deposit_, bucketPrice_);
+        lps_        = (collateral_ * bucketPrice_ * 1e18 + rate / 2) / rate;
     }
 
     /**

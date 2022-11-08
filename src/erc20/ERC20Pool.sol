@@ -87,15 +87,17 @@ contract ERC20Pool is IERC20Pool, Pool {
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveToSamePrice();
 
+        Buckets.Bucket storage fromBucket = buckets[fromIndex_];
+        if (fromBucket.collateral < collateralAmountToMove_) revert InsufficientCollateral();
+
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 fromBucketCollateral;
-        (fromBucketLPs_, fromBucketCollateral) = buckets.collateralToLPs(
+        fromBucketLPs_= Buckets.collateralToLPs(
+            fromBucket,
             deposits.valueAt(fromIndex_),
             collateralAmountToMove_,
-            fromIndex_
+            PoolUtils.indexToPrice(fromIndex_)
         );
-        if (fromBucketCollateral < collateralAmountToMove_) revert InsufficientCollateral();
 
         (uint256 lpBalance, ) = buckets.getLenderInfo(
             fromIndex_,

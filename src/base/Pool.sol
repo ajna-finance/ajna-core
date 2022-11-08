@@ -576,15 +576,17 @@ abstract contract Pool is Clone, Multicall, IPool {
     ) internal returns (uint256 bucketLPs_) {
         auctions.revertIfAuctionClearable(loans);
 
-        PoolState memory poolState = _accruePoolInterest();
+        Buckets.Bucket storage bucket = buckets[index_];
+        if (collateralAmountToRemove_ > bucket.collateral) revert InsufficientCollateral();
 
-        uint256 bucketCollateral;
-        (bucketLPs_, bucketCollateral) = buckets.collateralToLPs(
+        PoolState memory poolState = _accruePoolInterest();
+        
+        bucketLPs_ = Buckets.collateralToLPs(
+            bucket,
             deposits.valueAt(index_),
             collateralAmountToRemove_,
-            index_
+            PoolUtils.indexToPrice(index_)
         );
-        if (collateralAmountToRemove_ > bucketCollateral) revert InsufficientCollateral();
 
         (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
         if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert InsufficientLPs(); // ensure user can actually remove that much
