@@ -328,15 +328,14 @@ abstract contract Pool is Clone, Multicall, IPool {
         address borrower_,
         uint256 maxDepth_
     ) external override {
-        uint256 poolDebt          = Maths.wmul(t0poolDebt, inflatorSnapshot);
-        uint256 quoteTokenBalance = IERC20Token(_getArgAddress(20)).balanceOf(address(this));
-        uint256 reserves          = poolDebt + quoteTokenBalance - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
-        uint256 healedDebt        = auctions.heal(
+
+        uint256 healedDebt = auctions.heal(
             loans,
             buckets,
             deposits,
             borrower_,
-            reserves, maxDepth_,
+            Maths.wmul(t0poolDebt, inflatorSnapshot) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed, // reserves
+            maxDepth_,
             inflatorSnapshot
         );
         if (healedDebt != 0) {
@@ -398,7 +397,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposits.treeSum(),
             auctions.totalBondEscrowed,
             curUnclaimedAuctionReserve,
-            IERC20Token(_getArgAddress(20)).balanceOf(address(this))
+            _getPoolQuoteTokenBalance()
         );
         uint256 kickerAward = Maths.wmul(0.01 * 1e18, claimable);
         curUnclaimedAuctionReserve += claimable - kickerAward;
@@ -407,8 +406,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             reserveAuctionKicked    = block.timestamp;
             emit ReserveAuction(curUnclaimedAuctionReserve, PoolUtils.reserveAuctionPrice(block.timestamp));
             _transferQuoteToken(msg.sender, kickerAward);
-        }
-        else revert NoReserves();
+        } else revert NoReserves();
     }
 
     function takeReserves(uint256 maxAmount_) external override returns (uint256 amount_) {
@@ -426,8 +424,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             if (!ajnaToken.transferFrom(msg.sender, address(this), ajnaRequired)) revert ERC20TransferFailed();
             ajnaToken.burn(ajnaRequired);
             _transferQuoteToken(msg.sender, amount_);
-        }
-        else revert NoReservesAuction();
+        } else revert NoReservesAuction();
     }
 
 
@@ -702,6 +699,10 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function _transferQuoteToken(address to_, uint256 amount_) internal {
         if (!IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
+    }
+
+    function _getPoolQuoteTokenBalance() internal view returns (uint256) {
+        return IERC20Token(_getArgAddress(20)).balanceOf(address(this));
     }
 
     function _htp(uint256 inflator_) internal view returns (uint256) {
