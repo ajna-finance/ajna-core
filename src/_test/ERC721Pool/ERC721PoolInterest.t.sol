@@ -2,7 +2,7 @@
 pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
-
+import "forge-std/console2.sol";
 import '../../erc721/ERC721Pool.sol';
 
 import '../../libraries/BucketMath.sol';
@@ -289,6 +289,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 newLup:     PoolUtils.indexToPrice(2550)
             }
         );
+        _assertBorrowerDebt(_borrower, 8_007.692307692307696000 * 1e18);
 
         skip(4 hours);
 
@@ -312,6 +313,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 newLup:     PoolUtils.indexToPrice(2551)
             }
         );
+        _assertBorrowerDebt(_borrower, 8_007.875133804645608008 * 1e18);
+        _assertBorrowerDebt(_borrower2, 2_752.644230769230770500 * 1e18);
 
         skip(4 hours);
 
@@ -334,6 +337,9 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 newLup:     PoolUtils.indexToPrice(2551)
             }
         );
+        _assertBorrowerDebt(_borrower, 8_008.057964091143327677 * 1e18);
+        _assertBorrowerDebt(_borrower2, 2_752.707077245346929053 * 1e18);
+        _assertBorrowerDebt(_borrower3, 2_502.403846153846155000 * 1e18);
 
         skip(4 hours);
 

@@ -457,6 +457,14 @@ abstract contract DSTestPlus is Test {
         );
     }
 
+    function _assertBorrowerDebt(
+        address borrower,
+        uint256 borrowerDebt
+    ) internal {
+        (uint256 debt, , ) = _poolUtils.borrowerInfo(address(_pool), borrower);
+        assertEq(debt, borrowerDebt);
+    }
+
     function _assertEMAs(
         uint256 debtEma,
         uint256 lupColEma
