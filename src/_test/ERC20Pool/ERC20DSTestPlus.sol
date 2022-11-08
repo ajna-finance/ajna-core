@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-
+import "forge-std/console2.sol";
 import { DSTestPlus } from '../utils/DSTestPlus.sol';
 import { Token }      from '../utils/Tokens.sol';
 
@@ -79,23 +79,27 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         // Redeem all lps of lender from all buckets as quote token and collateral token
         for( uint j = 0; j < indexes.length() ; j++ ){
             uint256 bucketIndex = indexes.at(j);
+            (, uint256 bucketQuote, uint256 bucketCollateral, , ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
             (uint256 lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
 
-            // check if lender has lp balance to be redeemed
-            if(lenderLpBalance > 0 ){
-                // redeeming lp of lender from a bucket as quote token
-                (, uint256 lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
-                
-                // Check if lender has more lps to be redeemed
-                if(lpRedeemed < lenderLpBalance){
-                    // redeeming lp of lender from a bucket as collateral Token
-                    (, uint256 morelpRedeemed) = ERC20Pool(address(_pool)).removeAllCollateral(bucketIndex);
-                    lpRedeemed += morelpRedeemed;
-                }
-
-                // check if all lps are redeemed
-                assertEq(lenderLpBalance, lpRedeemed);
+            // redeem LP for quote token if available
+            uint256 lpRedeemed;
+            if(lenderLpBalance != 0 && bucketQuote != 0) {
+                (, lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
+                lenderLpBalance -= lpRedeemed;
             }
+
+            // redeem LP for collateral if available
+            if(lenderLpBalance != 0 && bucketCollateral != 0) {
+                (, lpRedeemed) = ERC20Pool(address(_pool)).removeAllCollateral(bucketIndex);
+                lenderLpBalance -= lpRedeemed;
+            }
+
+            // confirm the redemption amount returned by removal methods is correct
+            assertEq(lenderLpBalance, 0);
+            // confirm the user actually has 0 LPB in the bucket
+            (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+            assertEq(lenderLpBalance, 0);
         }
     }
 
