@@ -177,12 +177,7 @@ contract ERC20Pool is IERC20Pool, Pool {
             if (auctionPrice >= bucketPrice) revert AuctionPriceGteQArbPrice();
 
             Buckets.Bucket storage bucket = buckets[index_];
-            uint256 bucketExchangeRate;
-            if (bucket.lps == 0) {
-                bucketExchangeRate = Maths.RAY;
-            } else {
-                bucketExchangeRate = (bucketDeposit * 1e18 + bucketPrice * bucket.collateral) * 1e18 / bucket.lps;
-            }
+            uint256 bucketExchangeRate = Buckets.getExchangeRate(bucket, bucketDeposit, bucketPrice);
 
             // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
             Buckets.addLPs(

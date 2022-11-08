@@ -219,29 +219,25 @@ library Buckets {
         uint256 collateral_,
         uint256 index_
     ) internal view returns (uint256, uint256) {
-        (uint256 rate, uint256 bucketCollateral)  = getExchangeRate(self, deposit_, index_);
-        uint256 lps = (collateral_ * PoolUtils.indexToPrice(index_) * 1e18 + rate / 2) / rate;
-        return (lps, bucketCollateral);
+        Bucket storage bucket = self[index_];
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        uint256 rate        = getExchangeRate(bucket, deposit_, bucketPrice);
+        uint256 lps         = (collateral_ * bucketPrice * 1e18 + rate / 2) / rate;
+        return (lps, bucket.collateral);
     }
 
     /**
      *  @notice Returns the exchange rate for a given bucket.
-     *  @param  quoteToken_ The amount of quote tokens deposited in the given bucket.
-     *  @param  index_      Bucket's index.
-     *  @return Exchange rate of current bucket.
-     *  @return Collateral deposited in current bucket.
+     *  @param  bucketDeposit_ The amount of quote tokens deposited in the given bucket.
+     *  @param  bucketPrice_   Bucket's price.
      */
     function getExchangeRate(
-        mapping(uint256 => Bucket) storage self,
-        uint256 quoteToken_,
-        uint256 index_
-    ) internal view returns (uint256, uint256) {
-        uint256 bucketCollateral = self[index_].collateral;
-        uint256 bucketLPs        = self[index_].lps;
-        if (bucketLPs == 0) return (Maths.RAY, bucketCollateral);
-
-        uint256 bucketSize = quoteToken_ * 10**18 + PoolUtils.indexToPrice(index_) * bucketCollateral;  // 10^36 + // 10^36
-        return (bucketSize * 10**18 / bucketLPs, bucketCollateral); // 10^27
+        Bucket storage bucket_,
+        uint256 bucketDeposit_,
+        uint256 bucketPrice_
+    ) internal view returns (uint256) {
+        return bucket_.lps == 0 ? Maths.RAY :
+            (bucketDeposit_ * 1e18 + bucketPrice_ * bucket_.collateral) * 1e18 / bucket_.lps;
     }
 
     /**
@@ -275,13 +271,15 @@ library Buckets {
         uint256 index_
     ) internal view returns (uint256 collateralAmount_, uint256 lenderLPs_) {
         // max collateral to lps
-        lenderLPs_        = lenderLPsBalance_;
-        uint256 price      = PoolUtils.indexToPrice(index_);
-        (uint256 rate, uint256 bucketCollateral) = getExchangeRate(self, deposit_, index_);
+        Bucket storage bucket = self[index_];
+        lenderLPs_    = lenderLPsBalance_;
+        uint256 price = PoolUtils.indexToPrice(index_);
+        uint256 rate  = getExchangeRate(bucket, deposit_, price);
+
         collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), price);
-        if (collateralAmount_ > bucketCollateral) {
+        if (collateralAmount_ > bucket.collateral) {
             // user is owed more collateral than is available in the bucket
-            collateralAmount_ = bucketCollateral;
+            collateralAmount_ = bucket.collateral;
             lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, price), rate);
         }
     }
@@ -303,8 +301,9 @@ library Buckets {
         uint256 maxQuoteToken_,
         uint256 index_
     ) internal view returns (uint256 quoteTokenAmount_, uint256 bucketLPs_, uint256 lenderLPs_) {
-        lenderLPs_ = lenderLPsBalance_;
-        (uint256 rate, )  = getExchangeRate(self, deposit_, index_);
+        Bucket storage bucket = self[index_];
+        lenderLPs_   = lenderLPsBalance_;
+        uint256 rate = getExchangeRate(bucket, deposit_, PoolUtils.indexToPrice(index_));
         quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
         if (quoteTokenAmount_ > deposit_) {
             quoteTokenAmount_ = deposit_;
@@ -327,7 +326,9 @@ library Buckets {
         uint256 quoteTokens_,
         uint256 index_
     ) internal view returns (uint256) {
-        (uint256 rate, )  = getExchangeRate(self, deposit_, index_);
-        return Maths.rdiv(Maths.wadToRay(quoteTokens_), rate);
+        return Maths.rdiv(
+            Maths.wadToRay(quoteTokens_),
+            getExchangeRate(self[index_], deposit_, PoolUtils.indexToPrice(index_))
+        );
     }
 }

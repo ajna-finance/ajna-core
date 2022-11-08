@@ -162,7 +162,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 deposit = deposits.valueAt(index_);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
 
-        (uint256 exchangeRate, ) = buckets.getExchangeRate(deposit, index_);
+        uint256 exchangeRate = Buckets.getExchangeRate(buckets[index_], deposit, PoolUtils.indexToPrice(index_));
         removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
 
         // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
