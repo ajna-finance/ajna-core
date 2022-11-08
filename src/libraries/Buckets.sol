@@ -62,31 +62,29 @@ library Buckets {
      *  @notice Add collateral to a bucket and updates LPs for bucket and lender with the amount coresponding to collateral amount added.
      *  @param  deposit_               Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs
      *  @param  collateralAmountToAdd_ Additional collateral amount to add to bucket.
-     *  @param  index_                 Index of the bucket to add collateral to.
+     *  @param  bucketPrice_           Bucket price.
      *  @return addedLPs_              Amount of bucket LPs for the collateral amount added.
      */
     function addCollateral(
-        mapping(uint256 => Bucket) storage self,
+        Bucket storage bucket_,
         uint256 deposit_,
         uint256 collateralAmountToAdd_,
-        uint256 index_
+        uint256 bucketPrice_
     ) internal returns (uint256 addedLPs_) {
 
         // calculate amount of LPs to be added for the amount of collateral added to bucket
-        Bucket storage bucket = self[index_];
-        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
         addedLPs_ = collateralToLPs(
-            bucket,
+            bucket_,
             deposit_,
             collateralAmountToAdd_,
-            bucketPrice
+            bucketPrice_
         );
         // update bucket LPs balance and collateral
         // cannot deposit in the same block when bucket becomes insolvent
-        if (bucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
-        bucket.collateral += collateralAmountToAdd_;
+        if (bucket_.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
+        bucket_.collateral += collateralAmountToAdd_;
         // update bucket and lender LPs balance and deposit timestamp
-        addLPs(bucket, msg.sender, addedLPs_);
+        addLPs(bucket_, msg.sender, addedLPs_);
     }
 
     /**

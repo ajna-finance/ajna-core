@@ -90,8 +90,6 @@ contract ERC20Pool is IERC20Pool, Pool {
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
         if (fromBucket.collateral < collateralAmountToMove_) revert InsufficientCollateral();
 
-        PoolState memory poolState = _accruePoolInterest();
-
         fromBucketLPs_= Buckets.collateralToLPs(
             fromBucket,
             deposits.valueAt(fromIndex_),
@@ -110,8 +108,14 @@ contract ERC20Pool is IERC20Pool, Pool {
             collateralAmountToMove_,
             fromBucketLPs_
         );
-        toBucketLPs_ = buckets.addCollateral(deposits.valueAt(toIndex_), collateralAmountToMove_, toIndex_);
+        toBucketLPs_ = Buckets.addCollateral(
+            buckets[toIndex_],
+            deposits.valueAt(toIndex_),
+            collateralAmountToMove_,
+            PoolUtils.indexToPrice(toIndex_)
+        );
 
+        PoolState memory poolState = _accruePoolInterest();
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
         emit MoveCollateral(msg.sender, fromIndex_, toIndex_, collateralAmountToMove_);

@@ -566,7 +566,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 index_
     ) internal returns (uint256 bucketLPs_) {
         PoolState memory poolState = _accruePoolInterest();
-        bucketLPs_ = buckets.addCollateral(deposits.valueAt(index_), collateralAmountToAdd_, index_);
+        bucketLPs_ = Buckets.addCollateral(
+            buckets[index_],
+            deposits.valueAt(index_),
+            collateralAmountToAdd_,
+            PoolUtils.indexToPrice(index_))
+        ;
         _updatePool(poolState, _lup(poolState.accruedDebt));
     }
 
