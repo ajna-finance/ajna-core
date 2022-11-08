@@ -257,27 +257,25 @@ library Buckets {
      *  @notice Returns the amount of collateral calculated for the given amount of LPs.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
      *  @param  lenderLPsBalance_ The amount of LPs to calculate collateral for.
-     *  @param  index_            Index of the bucket.
+     *  @param  bucketPrice_      Bucket price.
      *  @return collateralAmount_ Amount of collateral calculated for the given LPs amount.
      *  @return lenderLPs_        Amount of lender LPs corresponding for calculated collateral amount.
      */
     function lpsToCollateral(
-        mapping(uint256 => Bucket) storage self,
+        Bucket storage bucket_,
         uint256 deposit_,
         uint256 lenderLPsBalance_,
-        uint256 index_
+        uint256 bucketPrice_
     ) internal view returns (uint256 collateralAmount_, uint256 lenderLPs_) {
         // max collateral to lps
-        Bucket storage bucket = self[index_];
-        lenderLPs_    = lenderLPsBalance_;
-        uint256 price = PoolUtils.indexToPrice(index_);
-        uint256 rate  = getExchangeRate(bucket, deposit_, price);
+        lenderLPs_  = lenderLPsBalance_;
+        uint256 rate = getExchangeRate(bucket_, deposit_, bucketPrice_);
 
-        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), price);
-        if (collateralAmount_ > bucket.collateral) {
+        collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), bucketPrice_);
+        if (collateralAmount_ > bucket_.collateral) {
             // user is owed more collateral than is available in the bucket
-            collateralAmount_ = bucket.collateral;
-            lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, price), rate);
+            collateralAmount_ = bucket_.collateral;
+            lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, bucketPrice_), rate);
         }
     }
 

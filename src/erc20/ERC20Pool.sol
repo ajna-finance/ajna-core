@@ -120,10 +120,12 @@ contract ERC20Pool is IERC20Pool, Pool {
         PoolState memory poolState = _accruePoolInterest();
 
         (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
+        Buckets.Bucket storage bucket = buckets[index_];
+        (collateralAmountRemoved_, redeemedLenderLPs_) = Buckets.lpsToCollateral(
+            bucket,
             deposits.valueAt(index_),
             lenderLPsBalance,
-            index_
+            PoolUtils.indexToPrice(index_)
         );
         if (collateralAmountRemoved_ == 0) revert NoClaim();
 
