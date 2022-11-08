@@ -147,20 +147,17 @@ library Buckets {
      *  @notice Removes collateral from a bucket and subtracts LPs (coresponding to collateral amount removed) from bucket and lender balances.
      *  @param  collateralAmountToRemove_ Collateral amount to be removed from bucket.
      *  @param  lpsAmountToRemove_        The amount of LPs to be removed from bucket.
-     *  @param  index_                    Index of the bucket to remove collateral to.
      */
     function removeCollateral(
-        mapping(uint256 => Bucket) storage self,
+        Bucket storage bucket_,
         uint256 collateralAmountToRemove_,
-        uint256 lpsAmountToRemove_,
-        uint256 index_
+        uint256 lpsAmountToRemove_
     ) internal {
         // update bucket collateral and LPs balance
-        Bucket storage bucket = self[index_];
-        bucket.lps        -= Maths.min(bucket.lps, lpsAmountToRemove_);
-        bucket.collateral -= Maths.min(bucket.collateral, collateralAmountToRemove_);
+        bucket_.lps        -= Maths.min(bucket_.lps, lpsAmountToRemove_);
+        bucket_.collateral -= Maths.min(bucket_.collateral, collateralAmountToRemove_);
         // update lender LPs balance
-        bucket.lenders[msg.sender].lps -= lpsAmountToRemove_;
+        bucket_.lenders[msg.sender].lps -= lpsAmountToRemove_;
     }
 
     /**

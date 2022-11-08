@@ -591,7 +591,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
         if (lenderLpBalance == 0 || bucketLPs_ > lenderLpBalance) revert InsufficientLPs(); // ensure user can actually remove that much
 
-        buckets.removeCollateral(collateralAmountToRemove_, bucketLPs_, index_);
+        Buckets.removeCollateral(
+            bucket,
+            collateralAmountToRemove_,
+            bucketLPs_
+        );
 
         _updatePool(poolState, _lup(poolState.accruedDebt));
     }

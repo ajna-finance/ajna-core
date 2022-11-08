@@ -105,7 +105,11 @@ contract ERC20Pool is IERC20Pool, Pool {
         );
         if (fromBucketLPs_ > lpBalance) revert InsufficientLPs();
 
-        buckets.removeCollateral(collateralAmountToMove_, fromBucketLPs_, fromIndex_);
+        Buckets.removeCollateral(
+            fromBucket,
+            collateralAmountToMove_,
+            fromBucketLPs_
+        );
         toBucketLPs_ = buckets.addCollateral(deposits.valueAt(toIndex_), collateralAmountToMove_, toIndex_);
 
         _updatePool(poolState, _lup(poolState.accruedDebt));
@@ -129,7 +133,11 @@ contract ERC20Pool is IERC20Pool, Pool {
         );
         if (collateralAmountRemoved_ == 0) revert NoClaim();
 
-        buckets.removeCollateral(collateralAmountRemoved_, redeemedLenderLPs_, index_);
+        Buckets.removeCollateral(
+            bucket,
+            collateralAmountRemoved_,
+            redeemedLenderLPs_)
+        ;
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
         // move collateral from pool to lender
