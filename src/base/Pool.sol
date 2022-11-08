@@ -110,8 +110,9 @@ abstract contract Pool is Clone, Multicall, IPool {
             msg.sender
         );
         uint256 quoteTokenAmountToMove;
+        Buckets.Bucket storage fromBucket = buckets[fromIndex_];
         (quoteTokenAmountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
-            buckets[fromIndex_],
+            fromBucket,
             deposits.valueAt(fromIndex_),
             lenderLpBalance,
             maxQuoteTokenAmountToMove_,
@@ -129,8 +130,9 @@ abstract contract Pool is Clone, Multicall, IPool {
             quoteTokenAmountToMove
         );
 
+        Buckets.Bucket storage toBucket = buckets[toIndex_];
         toBucketLPs_ = Buckets.quoteTokensToLPs(
-            buckets[toIndex_],
+            toBucket,
             deposits.valueAt(toIndex_),
             quoteTokenAmountToMove,
             PoolUtils.indexToPrice(toIndex_)
@@ -141,7 +143,12 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 newLup = _lup(poolState.accruedDebt); // move lup if necessary and check loan book's htp against new lup
         if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
-        buckets.moveLPs(fromBucketLPs_, toBucketLPs_, fromIndex_, toIndex_);
+        Buckets.moveLPs(
+            fromBucket,
+            toBucket,
+            fromBucketLPs_,
+            toBucketLPs_
+        );
         _updatePool(poolState, newLup);
 
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, quoteTokenAmountToMove, newLup);

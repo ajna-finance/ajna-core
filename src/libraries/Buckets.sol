@@ -108,35 +108,30 @@ library Buckets {
      *  @notice Moves LPs between buckets and updates lender balance accordingly.
      *  @param  fromLPsAmount_ The amount of LPs to move from origin bucket.
      *  @param  toLPsAmount_   The amount of LPs to move to destination bucket.
-     *  @param  fromIndex_     Index of the origin bucket.
-     *  @param  toIndex_       Index of the destination bucket.
      */
     function moveLPs(
-        mapping(uint256 => Bucket) storage self,
+        Bucket storage fromBucket_,
+        Bucket storage toBucket_,
         uint256 fromLPsAmount_,
-        uint256 toLPsAmount_,
-        uint256 fromIndex_,
-        uint256 toIndex_
+        uint256 toLPsAmount_
     ) internal {
 
-        Bucket storage toBucket = self[toIndex_];
         // cannot move in the same block when target bucket becomes insolvent
-        if (toBucket.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
+        if (toBucket_.bankruptcyTime == block.timestamp) revert BucketBankruptcyBlock();
 
         // update buckets LPs balance
-        Bucket storage fromBucket = self[fromIndex_];
-        fromBucket.lps -= fromLPsAmount_;
-        toBucket.lps   += toLPsAmount_;
+        fromBucket_.lps -= fromLPsAmount_;
+        toBucket_.lps   += toLPsAmount_;
         // update lender LPs balance in from bucket
-        Lender storage fromLender = fromBucket.lenders[msg.sender];
+        Lender storage fromLender = fromBucket_.lenders[msg.sender];
         fromLender.lps -= fromLPsAmount_;
 
         // update lender LPs balance and deposit time in target bucket
-        Lender storage lender = toBucket.lenders[msg.sender];
-        if (toBucket.bankruptcyTime >= lender.depositTime) lender.lps = toLPsAmount_;
+        Lender storage lender = toBucket_.lenders[msg.sender];
+        if (toBucket_.bankruptcyTime >= lender.depositTime) lender.lps = toLPsAmount_;
         else lender.lps += toLPsAmount_;
         // set deposit time to the greater of the lender's from bucket and the target bucket's last bankruptcy timestamp + 1 so deposit won't get invalidated
-        lender.depositTime = Maths.max(fromLender.depositTime, toBucket.bankruptcyTime + 1);
+        lender.depositTime = Maths.max(fromLender.depositTime, toBucket_.bankruptcyTime + 1);
     }
 
     /**
