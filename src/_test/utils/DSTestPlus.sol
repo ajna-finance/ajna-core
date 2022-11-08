@@ -74,6 +74,19 @@ abstract contract DSTestPlus is Test {
         uint256 interestRateUpdate;
     }
 
+    struct AuctionState {
+        address borrower;
+        bool    active;
+        address kicker;
+        uint256 bondSize;
+        uint256 bondFactor;
+        uint256 kickTime;
+        uint256 kickMomp;
+        uint256 totalBondEscrowed;
+        uint256 auctionPrice;
+        uint256 debtInAuction;
+    }
+
     /*****************************/
     /*** Actor actions asserts ***/
     /*****************************/
@@ -184,7 +197,7 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amount, newLup);
         _assertTokenTransferEvent(address(_pool), from, amount);
-        (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeAllQuoteToken(index);
+        (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, index);
         assertEq(removedAmount, amount);
         assertEq(lpRedeemed,    lpRedeem);
     }
@@ -218,8 +231,9 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, expectedWithdrawal, newLup);
         _assertTokenTransferEvent(address(_pool), from, expectedWithdrawal);
-        uint256 lpRedeemed = _pool.removeQuoteToken(amount, index);
-        assertEq(lpRedeemed, lpRedeem);
+        (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(amount, index);
+        assertEq(removedAmount, expectedWithdrawal);
+        assertEq(lpRedeemed,    lpRedeem);
     }
 
     function _repay(
@@ -287,35 +301,27 @@ abstract contract DSTestPlus is Test {
     /*** State asserts ***/
     /*********************/
 
-    function _assertAuction(
-        address borrower,
-        bool    active,
-        address kicker,
-        uint256 bondSize,
-        uint256 bondFactor,
-        uint256 kickTime,
-        uint256 kickMomp,
-        uint256 totalBondEscrowed,
-        uint256 auctionPrice
-    ) internal {
+    function _assertAuction(AuctionState memory state_) internal {
         (
             address auctionKicker,
             uint256 auctionBondFactor,
             uint256 auctionKickTime,
             uint256 auctionKickMomp,
             ,
-        ) = _pool.auctionInfo(borrower);
-        (, uint256 lockedBonds) = _pool.kickerInfo(kicker);
+        ) = _pool.auctionInfo(state_.borrower);
+        (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (uint256 auctionTotalBondEscrowed,,) = _pool.reservesInfo();
+        (,,uint256 auctionDebtInAuction)  = _pool.debtInfo();
 
-        assertEq(auctionKickTime != 0,     active);
-        assertEq(auctionKicker,            kicker);
-        assertEq(lockedBonds,              bondSize);
-        assertEq(auctionBondFactor,        bondFactor);
-        assertEq(auctionKickTime,          kickTime);
-        assertEq(auctionKickMomp,          kickMomp);
-        assertEq(auctionTotalBondEscrowed, totalBondEscrowed);
-        assertEq(PoolUtils.auctionPrice(auctionKickMomp, auctionKickTime), auctionPrice);
+        assertEq(auctionKickTime != 0,     state_.active);
+        assertEq(auctionKicker,            state_.kicker);
+        assertEq(lockedBonds,              state_.bondSize);
+        assertEq(auctionBondFactor,        state_.bondFactor);
+        assertEq(auctionKickTime,          state_.kickTime);
+        assertEq(auctionKickMomp,          state_.kickMomp);
+        assertEq(auctionTotalBondEscrowed, state_.totalBondEscrowed);
+        assertEq(auctionDebtInAuction,     state_.debtInAuction);
+        assertEq(PoolUtils.auctionPrice(auctionKickMomp, auctionKickTime), state_.auctionPrice);
     }
 
     function _assertPool(PoolState memory state_) internal {
@@ -339,6 +345,8 @@ abstract contract DSTestPlus is Test {
             uint256 poolTargetUtilization
         ) = _poolUtils.poolUtilizationInfo(address(_pool));
 
+        (uint256 poolDebt,,) = _pool.debtInfo();
+
         assertEq(htp, state_.htp);
         assertEq(lup, state_.lup);
 
@@ -350,7 +358,7 @@ abstract contract DSTestPlus is Test {
                 state_.lup
             ),                               state_.encumberedCollateral
         );
-        assertEq(_pool.debt(),               state_.poolDebt);
+        assertEq(poolDebt,               state_.poolDebt);
         assertEq(poolActualUtilization,      state_.actualUtilization);
         assertEq(poolTargetUtilization,      state_.targetUtilization);
         assertEq(poolMinDebtAmount,          state_.minDebtAmount);
@@ -765,7 +773,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
-        _pool.removeAllQuoteToken(index);
+        _pool.removeQuoteToken(type(uint256).max, index);
     }
 
     function _assertRemoveAllLiquidityLupBelowHtpRevert(
@@ -774,7 +782,16 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
-        _pool.removeAllQuoteToken(index);
+        _pool.removeQuoteToken(type(uint256).max, index);
+    }
+
+    function _assertRemoveAllLiquidityNoClaimRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.NoClaim.selector);
+        _pool.removeQuoteToken(type(uint256).max, index);
     }
 
     function _assertMoveLiquidityBankruptcyBlockRevert(

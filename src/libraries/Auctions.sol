@@ -86,11 +86,11 @@ library Auctions {
         if (
             (block.timestamp - kickTime > 72 hours)
             ||
-            (debtToHeal > 0 && remainingCol == 0)
+            (debtToHeal != 0 && remainingCol == 0)
         ) {
             uint256 remainingDebt = debtToHeal;
 
-            while (bucketDepth_ > 0) {
+            while (bucketDepth_ != 0) {
                 // auction has debt to cover with remaining collateral
                 uint256 hpbIndex;
                 if (remainingDebt != 0 && remainingCol != 0) {
@@ -457,7 +457,20 @@ library Auctions {
         Data storage self,
         address borrower_
     ) internal view {
-        if (self.liquidations[borrower_].kickTime != 0) revert AuctionActive();
+        if (_isActive(self, borrower_)) revert AuctionActive();
+    }
+
+    /**
+     *  @notice Returns true if borrower is in auction.
+     *  @dev    Used to accuratley increment and decrement t0DebtInAuction.
+     *  @param  borrower_ Borrower address to check auction status for.
+     *  @return  active_ Boolean, based on if borrower is in auction.
+     */
+    function _isActive(
+        Data storage self,
+        address borrower_
+    ) internal view returns (bool) {
+        return self.liquidations[borrower_].kickTime != 0;
     }
 
     /**
@@ -476,7 +489,7 @@ library Auctions {
             (
                 block.timestamp - kickTime > 72 hours
                 ||
-                (loans_.borrowers[head].t0debt > 0 && loans_.borrowers[head].collateral == 0)
+                (loans_.borrowers[head].t0debt != 0 && loans_.borrowers[head].collateral == 0)
             )
         ) revert AuctionNotCleared();
     }

@@ -555,6 +555,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      */
     function testPoolRemoveQuoteTokenRequireChecks() external {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
+        _mintCollateralAndApproveTokens(_lender, 1 * 1e18);
         // lender adds initial quote token
         _addLiquidity(
             {
@@ -588,7 +589,15 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 newLup: BucketMath.MAX_PRICE
             }
         );
-
+        // add collateral in order to give lender LPs in bucket 5_000 with 0 deposit
+        // used to test revert on remove when bucket deposit is 0
+        _addCollateral(
+            {
+                from:   _lender,
+                amount: 1 * 1e18,
+                index:  5000
+            }
+        );
         _pledgeCollateral(
             {
                 from:     _borrower,
@@ -612,12 +621,12 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 index: 4550
             }
         );
-        // should revert if insufficient quote token
+        // should revert if no quote token in bucket deposit
         _assertRemoveInsufficientLiquidityRevert(
             {
                 from:  _lender,
-                amount: 20_000 * 1e18,
-                index:  4550
+                amount: 1 * 1e18,
+                index:  5000
             }
         );
         // should revert if removing quote token from higher price buckets would drive lup below htp
@@ -638,16 +647,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
 
-        // should revert if bucket has enough quote token, but lender has insufficient LP
-        _assertRemoveLiquidityInsufficientLPsRevert(
-            {
-                from:   _lender,
-                amount: 15_000 * 1e18,
-                index:  4550
-            }
-        );
-
-        // should be able to removeQuoteToken if quote tokens haven't been encumbered by a borrower
+        // should be able to removeQuoteToken
         _removeLiquidity(
             {
                 from:     _lender,
@@ -656,6 +656,56 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 penalty:  0,
                 newLup:   PoolUtils.indexToPrice(4551),
                 lpRedeem: 10_000 * 1e27
+            }
+        );
+    }
+
+    function testPoolRemoveQuoteTokenWithCollateral() external {
+        // add 10 collateral into the 100 bucket, for LP worth 1000 quote tokens
+        _mintCollateralAndApproveTokens(_lender, 10 * 1e18);
+        uint256 i100 = PoolUtils.priceToIndex(100 * 1e18);
+        _addCollateral(
+            {
+                from:   _lender,
+                amount: 10 * 1e18,
+                index:  i100
+            }
+        );
+
+        // someone else deposits into the bucket
+        _addLiquidity(_lender1, 900 * 1e18, i100, BucketMath.MAX_PRICE);
+
+        // should be able to remove a small amount of deposit
+        skip(1 days);
+        _removeLiquidity(
+            {
+                from:     _lender,
+                amount:   100 * 1e18,
+                index:    i100,
+                penalty:  0,
+                newLup:   BucketMath.MAX_PRICE,
+                lpRedeem: 100 * 1e27
+            }
+        );
+
+        // should be able to remove the rest
+        _removeAllLiquidity(
+            {
+                from:     _lender,
+                amount:   800 * 1e18,
+                index:    i100,
+                newLup:   BucketMath.MAX_PRICE,
+                lpRedeem: 800 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        i100,
+                lpBalance:    1_003.3236814328200989 * 1e27,
+                collateral:   10 * 1e18,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
             }
         );
     }
@@ -1115,7 +1165,8 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
 
-        uint256 ptp = Maths.wdiv(_pool.debt(), 10 * 1e18);
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        uint256 ptp = Maths.wdiv(poolDebt, 10 * 1e18);
         assertEq(ptp, 500.480769230769231000 * 1e18);
 
         // lender moves some liquidity below the pool threshold price; penalty should be assessed
@@ -1178,7 +1229,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
                 amount:   5_003.981613396490344248 * 1e18,
                 index:    2873,
                 newLup:   601.252968524772188572 * 1e18,
-                lpRedeem: 5_000.290483387144984400601020184 * 1e27
+                lpRedeem: 5_000.290483387144984400382330052 * 1e27
             }
         );
         _removeAllLiquidity(
