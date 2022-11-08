@@ -35,7 +35,10 @@ async function main() {
     });
   // The transaction is now on chain!
   console.log(receipt);
-
+  
+  const poolAddress = await contract.methods.deployedPools(web3.utils.keccak256("ERC20_NON_SUBSET_HASH").toString('hex'), process.env.COMP, process.env.DAI).call();
+  
+  console.log('poolAddress', poolAddress);
 }
 
 require("dotenv").config();
