@@ -684,7 +684,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         // skip ahead so take can be called on the loan
         skip(10 hours);
 
-        // // perform partial take for 20 collateral
+        // perform partial take for 20 collateral
         _take(
             {
                 from:            _lender,

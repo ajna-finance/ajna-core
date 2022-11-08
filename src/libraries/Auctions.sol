@@ -457,7 +457,7 @@ library Auctions {
         Data storage self,
         address borrower_
     ) internal view {
-        if (isActive(self, borrower_)) revert AuctionActive();
+        if (_isActive(self, borrower_)) revert AuctionActive();
     }
 
     /**
@@ -466,7 +466,7 @@ library Auctions {
      *  @param  borrower_ Borrower address to check auction status for.
      *  @return  active_ Boolean, based on if borrower is in auction.
      */
-    function isActive(
+    function _isActive(
         Data storage self,
         address borrower_
     ) internal view returns (bool) {
