@@ -121,9 +121,9 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 newLup:     3_010.892022197881557845 * 1e18
             }
         );
-
         uint256 expectedDebt = 5_004.807692307692310000 * 1e18;
-        assertEq(_pool.debt(), expectedDebt);
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, expectedDebt);
         _assertBorrower(
             {
                 borrower:                  _borrower,
@@ -147,7 +147,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         );
 
         expectedDebt = 5_012.354868151222773335 * 1e18;
-        assertEq(_pool.debt(), expectedDebt);
+        (poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, expectedDebt);
         _assertBorrower(
             {
                 borrower:                  _borrower,
@@ -169,7 +170,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         );
 
         expectedDebt = 5_020.669907328529218397 * 1e18;
-        assertEq(_pool.debt(), expectedDebt);
+        (poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, expectedDebt);
         _assertBorrower(
             {
                 borrower:                  _borrower,
@@ -193,7 +195,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
         );
 
         expectedDebt = 6_031.112190940595898550 * 1e18;
-        assertEq(_pool.debt(), expectedDebt);
+        (poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, expectedDebt);
         _assertBorrower(
             {
                 borrower:                  _borrower,
@@ -220,7 +223,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
 
-        assertEq(_pool.debt(), 0);
+        (poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, 0);
 
         _assertBorrower(
             {
@@ -345,7 +349,8 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
 
         // check pool and borrower debt to confirm interest has accumulated
         uint256 expectedPoolDebt = 13_263.471703022178416340 * 1e18;
-        assertEq(_pool.debt(), expectedPoolDebt);
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt, expectedPoolDebt);
 
         uint256 expectedBorrower1Debt = 8_008.240798551896146546 * 1e18;
         _assertBorrower(

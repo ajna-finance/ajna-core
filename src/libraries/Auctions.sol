@@ -457,7 +457,20 @@ library Auctions {
         Data storage self,
         address borrower_
     ) internal view {
-        if (self.liquidations[borrower_].kickTime != 0) revert AuctionActive();
+        if (_isActive(self, borrower_)) revert AuctionActive();
+    }
+
+    /**
+     *  @notice Returns true if borrower is in auction.
+     *  @dev    Used to accuratley increment and decrement t0DebtInAuction.
+     *  @param  borrower_ Borrower address to check auction status for.
+     *  @return  active_ Boolean, based on if borrower is in auction.
+     */
+    function _isActive(
+        Data storage self,
+        address borrower_
+    ) internal view returns (bool) {
+        return self.liquidations[borrower_].kickTime != 0;
     }
 
     /**

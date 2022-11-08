@@ -220,6 +220,16 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         _pool.transferLPTokens(from, to, indexes);
     }
 
+    function _assertDepositLockedByAuctionDebtRevert(
+        address operator,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(operator);
+        vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
+        _pool.removeQuoteToken(amount, index);
+    }
+
 }
 
 abstract contract ERC20HelperContract is ERC20DSTestPlus {

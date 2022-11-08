@@ -118,4 +118,10 @@ interface IPoolErrors {
      *  @notice Borrower is attempting to borrow an amount of quote tokens that will push the pool into under-collateralization.
      */
     error PoolUnderCollateralized();
+
+
+    /**
+     *  @notice Lender is attempting to remove quote tokens from a bucket that exists above active auction debt from top-of-book downward.
+     */
+    error RemoveDepositLockedByAuctionDebt();
 }
