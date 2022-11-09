@@ -369,7 +369,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     function kick(address borrowerAddress_) external override {
         auctions.revertIfActive(borrowerAddress_);
 
-        Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
+        Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
         if (borrower.t0debt == 0) revert NoDebt();
 
         PoolState memory poolState = _accruePoolInterest();
@@ -396,15 +396,14 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
 
         // update borrower & pool debt with kickPenalty
-        uint256 kickPenalty    =  Maths.wmul(Maths.wdiv(poolState.rate, 4 * 1e18), borrowerDebt); // when loan is kicked, penalty of three months of interest is added
-        borrowerDebt           += kickPenalty;
-        poolState.accruedDebt  += kickPenalty; 
+        uint256 kickPenalty   =  Maths.wmul(Maths.wdiv(poolState.rate, 4 * 1e18), borrowerDebt); // when loan is kicked, penalty of three months of interest is added
+        borrowerDebt          += kickPenalty;
+        poolState.accruedDebt += kickPenalty; 
 
-        kickPenalty            =  Maths.wdiv(kickPenalty, poolState.inflator); // convert to t0
-        t0poolDebt             += kickPenalty;
-        borrower.t0debt        += kickPenalty;
-        t0DebtInAuction        += borrower.t0debt;
-        loans.borrowers[borrowerAddress_].t0debt = borrower.t0debt;
+        kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator); // convert to t0
+        borrower.t0debt += kickPenalty;
+        t0poolDebt      += kickPenalty;
+        t0DebtInAuction += borrower.t0debt;
 
         // update pool state
         _updatePool(poolState, lup);
