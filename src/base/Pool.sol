@@ -179,12 +179,16 @@ abstract contract Pool is Clone, Multicall, IPool {
             PoolUtils.indexToPrice(index_)
         );
         removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
+        uint256 removedAmountBefore = removedAmount_;
 
         // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
         if (removedAmount_ > maxAmount_) removedAmount_ = maxAmount_;
         if (removedAmount_ > deposit)    removedAmount_ = deposit;
-        redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
 
+        if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
+        else {
+            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
+        }
         deposits.remove(index_, removedAmount_);  // remove from deposits
 
         uint256 newLup = _lup(poolState.accruedDebt);
@@ -933,6 +937,19 @@ abstract contract Pool is Clone, Multicall, IPool {
             lpTokens_,
             deposit_,
             PoolUtils.indexToPrice(index_)
+        );
+    }
+
+    function lpsToCollateral(
+        uint256 deposit_,
+        uint256 lpTokens_,
+        uint256 index_
+    ) external view override returns (uint256 collateralAmount) {
+        (collateralAmount, ) = Buckets.lpsToCollateral(
+            buckets[index_],
+            deposit_,
+            lpTokens_,
+            index_
         );
     }
 

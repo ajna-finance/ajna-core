@@ -6,6 +6,7 @@ import '@std/Test.sol';
 import '@std/Vm.sol';
 
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import '../../base/interfaces/IPool.sol';
 import '../../base/interfaces/IPoolFactory.sol';
@@ -14,6 +15,9 @@ import '../../base/PoolInfoUtils.sol';
 import '../../libraries/Maths.sol';
 
 abstract contract DSTestPlus is Test {
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using EnumerableSet for EnumerableSet.UintSet;
 
     // nonce for generating random addresses
     uint16 internal _nonce = 0;
@@ -87,6 +91,11 @@ abstract contract DSTestPlus is Test {
         uint256 debtInAuction;
     }
 
+    mapping(address => EnumerableSet.UintSet) lendersDepositedIndex;
+    EnumerableSet.AddressSet lenders;
+    EnumerableSet.AddressSet borrowers;
+    EnumerableSet.UintSet bucketsUsed;
+
     /*****************************/
     /*** Actor actions asserts ***/
     /*****************************/
@@ -102,6 +111,11 @@ abstract contract DSTestPlus is Test {
         emit AddQuoteToken(from, index, amount, newLup);
         _assertTokenTransferEvent(from, address(_pool), amount);
         _pool.addQuoteToken(amount, index);
+
+        // Add for tearDown
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
+        bucketsUsed.add(index);
     }
 
     function _arbTake(
@@ -130,6 +144,9 @@ abstract contract DSTestPlus is Test {
         emit Borrow(from, newLup, amount);
         _assertTokenTransferEvent(address(_pool), from, amount);
         _pool.borrow(amount, indexLimit);
+
+        // Add for tearDown
+        borrowers.add(from);
     }
 
     function _heal(
@@ -173,6 +190,11 @@ abstract contract DSTestPlus is Test {
         (uint256 lpbFrom, uint256 lpbTo) = _pool.moveQuoteToken(amount, fromIndex, toIndex);
         assertEq(lpbFrom, lpRedeemFrom);
         assertEq(lpbTo,   lpRedeemTo);
+
+        // Add for tearDown
+        lenders.add(from);
+        lendersDepositedIndex[from].add(toIndex);
+        bucketsUsed.add(toIndex);
     }
 
     function _pullCollateral(

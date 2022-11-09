@@ -67,7 +67,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _quote.approve(address(_pool), 200_000 * _quotePrecision);
     }
 
-    function testAddRemoveQuotePrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
+    function testAddRemoveQuotePrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
@@ -202,7 +202,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         );
     }
 
-    function testBorrowRepayPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
+    function testBorrowRepayPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
