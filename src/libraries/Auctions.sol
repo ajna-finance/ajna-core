@@ -216,7 +216,6 @@ library Auctions {
         liquidation.bondSize   = bondSize;
         liquidation.bondFactor = bondFactor;
 
-        liquidation.next = address(0);
         if (self.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
             self.liquidations[self.tail].next = borrower_;
@@ -224,7 +223,6 @@ library Auctions {
         } else {
             // first auction in queue
             self.head = borrower_;
-            liquidation.prev  = address(0);
         }
 
         // update liquidation with the new ordering
