@@ -36,7 +36,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     /**
      *  @notice With 1 lender and 1 borrower test pledgeCollateral, borrow, and pullCollateral.
      */
-    function testAddPullCollateral() external {
+    function testAddPullCollateral() external tearDown {
         // lender deposits 10000 Quote into 3 buckets
 
         _addLiquidity(
@@ -209,7 +209,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to remove more than available unencumbered collateral.
      */
-    function testPullCollateralRequireEnoughCollateral() external {
+    function testPullCollateralRequireEnoughCollateral() external tearDown {
         _assertPullInsufficientCollateralRevert(
             {
                 from:   _borrower,
@@ -238,7 +238,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
     /**
      *  @notice 1 actor tests addCollateral and removeCollateral.
      */
-    function testRemoveCollateral() external {
+    function testRemoveCollateral() external tearDown {
         // test setup
         _mintCollateralAndApproveTokens(_bidder,  100 * 1e18);
 
@@ -339,7 +339,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(address(_pool)),      0);
     }
 
-    function testRemoveHalfCollateral() external {
+    function testRemoveHalfCollateral() external tearDown {
         // test setup
         _mintCollateralAndApproveTokens(_bidder,  1 * 1e18);
 
@@ -416,7 +416,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(address(_pool)),      0);
     }
 
-    function testRemoveCollateralRequireChecks() external {
+    function testRemoveCollateralRequireChecks() external tearDown {
         uint256 testIndex = 6348;
 
         // should revert if no collateral in the bucket
@@ -473,7 +473,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
     }
 
-    function testMoveCollateral() external {
+    function testMoveCollateral() external tearDown {
         // actor deposits collateral into two buckets
         _mintCollateralAndApproveTokens(_lender,  20 * 1e18);
         _addCollateral(
@@ -579,7 +579,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
     }
 
-    function testMoveHalfCollateral() external {
+    function testMoveHalfCollateral() external tearDown {
         _mintCollateralAndApproveTokens(_lender,  20 * 1e18);
 
         uint256 fromBucket = 1369;
@@ -729,7 +729,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
     }
 
-    function testPledgeCollateralFromDifferentActor() external {
+    function testPledgeCollateralFromDifferentActor() external tearDown {
         // check initial pool state
         _assertPool(
             PoolState({

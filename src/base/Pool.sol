@@ -164,12 +164,16 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         (uint256 exchangeRate, ) = buckets.getExchangeRate(deposit, index_);
         removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
+        uint256 removedAmountBefore = removedAmount_;
 
         // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
         if (removedAmount_ > maxAmount_) removedAmount_ = maxAmount_;
         if (removedAmount_ > deposit)    removedAmount_ = deposit;
-        redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
 
+        if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
+        else {
+            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
+        }
         deposits.remove(index_, removedAmount_);  // update FenwickTree
 
         uint256 newLup = _lup(poolState.accruedDebt);
@@ -899,6 +903,18 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposit_,
             lpTokens_,
             deposit_,
+            index_
+        );
+    }
+
+    function lpsToCollateral(
+        uint256 deposit_,
+        uint256 lpTokens_,
+        uint256 index_
+    ) external view override returns (uint256 collateralAmount) {
+        (collateralAmount, ) = buckets.lpsToCollateral(
+            deposit_,
+            lpTokens_,
             index_
         );
     }

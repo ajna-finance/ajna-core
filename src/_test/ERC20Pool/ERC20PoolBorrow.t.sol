@@ -98,7 +98,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
-    function testPoolBorrowAndRepay() external {
+    function testPoolBorrowAndRepay() external tearDown {
         // check balances before borrow
         assertEq(_quote.balanceOf(address(_pool)), 50_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        150_000 * 1e18);
@@ -356,7 +356,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
-    function testPoolBorrowerInterestAccumulation() external {
+    function testPoolBorrowerInterestAccumulation() external tearDown {
         skip(10 days);
         _pledgeCollateral(
             {
@@ -590,7 +590,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *              Attempts to borrow when result would be borrower under collateralization.
      *              Attempts to borrow when result would be pool under collateralization.
      */
-    function testPoolBorrowRequireChecks() external {
+    function testPoolBorrowRequireChecks() external tearDown {
         // should revert if borrower attempts to borrow with an out of bounds limitIndex
         _assertBorrowLimitIndexRevert(
             {
@@ -663,7 +663,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
-    function testMinBorrowAmountCheck() external {
+    function testMinBorrowAmountCheck() external tearDown {
         // 10 borrowers draw debt
         for (uint i=0; i<10; ++i) {
             _anonBorrowerDrawsDebt(100 * 1e18, 1_200 * 1e18, 7777);
@@ -696,7 +696,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *              Attempts to repay without debt.
      *              Attempts to repay when bucket would be left with amount less than averge debt.
      */
-    function testPoolRepayRequireChecks() external {
+    function testPoolRepayRequireChecks() external tearDown {
         deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 10_000 * 1e18);
 
         // should revert if borrower has no debt
@@ -808,7 +808,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
-    function testMinRepayAmountCheck() external {
+    function testMinRepayAmountCheck() external tearDown {
         // borrower 1 borrows 1000 quote from the pool
         _pledgeCollateral(
             {
@@ -843,7 +843,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
-    function testRepayLoanFromDifferentActor() external {
+    function testRepayLoanFromDifferentActor() external tearDown {
         // borrower 1 borrows 1000 quote from the pool
         _pledgeCollateral(
             {
@@ -914,7 +914,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to borrow with a TP of 0.
      */
-    function testZeroThresholdPriceLoan() external {
+    function testZeroThresholdPriceLoan() external tearDown {
         // borrower 1 initiates a highly overcollateralized loan with a TP of 0 that won't be inserted into the Queue
         _pledgeCollateral(
             {
@@ -967,7 +967,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to repay with a subsequent TP of 0.
      */
-    function testZeroThresholdPriceLoanAfterRepay() external {
+    function testZeroThresholdPriceLoanAfterRepay() external tearDown {
 
         // borrower 1 borrows 500 quote from the pool
         _pledgeCollateral(

@@ -204,13 +204,17 @@ contract BucketMathTest is DSTestPlus {
      *  @notice Tests lender interest margin for varying meaningful actual utilization values
      */
     function testLenderInterestMargin() external {
-        assertEq(BucketMath.lenderInterestMargin(0.1 * 1e18),   0.855176592309155536 * 1e18 );
-        assertEq(BucketMath.lenderInterestMargin(0.5 * 1e18),   0.880944921102385039 * 1e18 );
-        assertEq(BucketMath.lenderInterestMargin(1 * 1e18),     1 * 1e18 );
-        assertEq(BucketMath.lenderInterestMargin(0.75 * 1e18),  0.905505921257884513 * 1e18 );
-        assertEq(BucketMath.lenderInterestMargin(0.25 * 1e18),  0.863715955537589525 * 1e18 );
-        assertEq(BucketMath.lenderInterestMargin(0.2 * 1e18),   0.860752334991616633 * 1e18 );
-        assertEq(BucketMath.lenderInterestMargin(0 * 1e18),     0.85 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0 * 1e18),          0.849999999999999999 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.1 * 1e18),        0.855176592309155536 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.2 * 1e18),        0.860752334991616632 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.25 * 1e18),       0.863715955537589525 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.5 * 1e18),        0.880944921102385039 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.75 * 1e18),       0.905505921257884512 * 1e18 );
+        assertEq(BucketMath.lenderInterestMargin(0.99 * 1e18),       0.967683479649521744 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(0.9998 * 1e18),     0.991227946785361402 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(0.99999998 * 1e18), 1 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(1 * 1e18),          1 * 1e18);
+        assertEq(BucketMath.lenderInterestMargin(1.1 * 1e18),        1 * 1e18);
     }
 
     /**

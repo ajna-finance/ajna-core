@@ -51,7 +51,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     /*** ERC721 Subset Tests ***/
     /***************************/
 
-    function testPledgeCollateralSubset() external {
+    function testPledgeCollateralSubset() external tearDown {
         // check initial token balances
         assertEq(_pool.pledgedCollateral(), 0);
 
@@ -78,7 +78,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 3);
     }
 
-    function testPledgeCollateralNotInSubset() external {
+    function testPledgeCollateralNotInSubset() external tearDown {
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 2;
         tokenIdsToAdd[1] = 4;
@@ -93,7 +93,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testPledgeCollateralInSubsetFromDifferentActor() external {
+    function testPledgeCollateralInSubsetFromDifferentActor() external tearDown {
         // check initial token balances
         assertEq(_pool.pledgedCollateral(),             0);
 
@@ -159,7 +159,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testPullCollateral() external {
+    function testPullCollateral() external tearDown {
         // check initial token balances
         assertEq(_pool.pledgedCollateral(), 0);
 
@@ -260,7 +260,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     // TODO: finish implementing
-    function testPullCollateralNotInPool() external {
+    function testPullCollateralNotInPool() external tearDown {
         // borrower is owner of NFTs
         assertEq(_collateral.ownerOf(1), _borrower);
         assertEq(_collateral.ownerOf(3), _borrower);
@@ -305,7 +305,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(5), _borrower);
     }
 
-    function testPullCollateralPartiallyEncumbered() external {
+    function testPullCollateralPartiallyEncumbered() external tearDown {
         _addLiquidity(
             {
                 from:   _lender,
@@ -441,7 +441,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
     }
 
-    function testPullCollateralOverlyEncumbered() external {
+    function testPullCollateralOverlyEncumbered() external tearDown {
 
         // lender deposits 10000 Quote into 3 buckets
         _addLiquidity(
@@ -510,7 +510,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testAddRemoveCollateral() external {
+    function testAddRemoveCollateral() external tearDown {
 
         // lender adds some liquidity
         _addLiquidity(
