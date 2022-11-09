@@ -160,14 +160,14 @@ abstract contract Pool is Clone, Multicall, IPool {
     ) external returns (uint256 removedAmount_, uint256 redeemedLPs_) {
         auctions.revertIfAuctionClearable(loans);
 
-        PoolState memory poolState = _accruePoolInterest();
-        _revertIfAuctionDebtLocked(index_, poolState.inflator);
-
         (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
             index_,
             msg.sender
         );
         if (lenderLPsBalance == 0) revert NoClaim(); // revert if no LP to claim
+
+        PoolState memory poolState = _accruePoolInterest();
+        _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
         uint256 deposit = deposits.valueAt(index_);
         if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
@@ -324,11 +324,14 @@ abstract contract Pool is Clone, Multicall, IPool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_
     ) external override {
-        PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.t0debt == 0) revert NoDebt();
 
-        uint256 t0repaidDebt = Maths.min(borrower.t0debt, Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator));
+        PoolState memory poolState     = _accruePoolInterest();
+        uint256 t0repaidDebt = Maths.min(
+            borrower.t0debt,
+            Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator)
+        );
 
         (
             uint256 quoteTokenAmountToRepay, 
