@@ -38,6 +38,10 @@ abstract contract ERC721PoolInterestTest is ERC721HelperContract {
 
         // TODO: figure out how to generally approve quote tokens for the borrowers to handle repays
         // TODO: potentially use _approveQuoteMultipleUserMultiplePool()
+        vm.prank(_borrower3);
+        _quote.approve(address(_pool), 200_000 * 1e18);
+        vm.prank(_borrower2);
+        _quote.approve(address(_pool), 200_000 * 1e18);
         vm.prank(_borrower);
         _quote.approve(address(_pool), 200_000 * 1e18);
     }
@@ -57,7 +61,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
     }
 
     // TODO: skip block number ahead as well
-    function testBorrowerInterestCalculation() external {
+    function testBorrowerInterestCalculation() external tearDown {
         _addLiquidity(
             {
                 from:   _lender,
@@ -238,7 +242,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
 
     }
 
-    function testMultipleBorrowerInterestAccumulation() external {
+    function testMultipleBorrowerInterestAccumulation() external tearDown {
         // lender deposits 10000 Quote into 3 buckets
         _addLiquidity(
             {

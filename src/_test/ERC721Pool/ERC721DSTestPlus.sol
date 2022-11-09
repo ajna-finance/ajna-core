@@ -3,6 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20 } from '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/token/ERC721/ERC721.sol';
+import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import { DSTestPlus }                from '../utils/DSTestPlus.sol';
 import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
@@ -19,9 +20,19 @@ import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
 
 abstract contract ERC721DSTestPlus is DSTestPlus {
+
+    using EnumerableSet for EnumerableSet.AddressSet;
+    using EnumerableSet for EnumerableSet.UintSet;
+    
     NFTCollateralToken internal _collateral;
     Token              internal _quote;
     ERC20              internal _ajna;
+
+    mapping(address => EnumerableSet.UintSet) borrowerPlegedNFTIds;
+    mapping(uint256 => uint256) NFTidToIndex;
+
+    mapping(address => EnumerableSet.UintSet) bidderDepositedIndex;
+    EnumerableSet.AddressSet bidders;
 
     // Pool events
     event AddCollateralNFT(address indexed actor_, uint256 indexed price_, uint256[] tokenIds_);
@@ -32,6 +43,135 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
     /*****************/
     /*** Utilities ***/
     /*****************/
+
+    function repayDebt(
+        address borrower
+    ) internal {
+        changePrank(borrower);
+        uint256 borrowerT0debt;
+        uint256 borrowerCollateral;
+        (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
+
+        // calculate current pool Inflator
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorSnapshotUpdate) = _pool.inflatorInfo();
+
+        uint256 elapsed = block.timestamp - lastInflatorSnapshotUpdate;
+        uint256 factor = PoolUtils.pendingInterestFactor(_pool.interestRate(), elapsed);
+
+        uint256 currentPoolInflator = Maths.wmul(poolInflatorSnapshot, factor);
+
+        // Calculate current debt of borrower
+        uint256 currentDebt = Maths.wmul(currentPoolInflator, borrowerT0debt);
+
+        // mint quote tokens to borrower address equivalent to the current debt
+        deal(_pool.quoteTokenAddress(), borrower, currentDebt);
+        Token(_pool.quoteTokenAddress()).approve(address(_pool) , currentDebt);
+
+        // repay current debt ( all debt )
+        if (currentDebt > 0) {
+            _pool.repay(borrower, currentDebt);
+        }
+
+        // pull borrower's Nfts
+        ERC721Pool(address(_pool)).pullCollateral(borrowerPlegedNFTIds[borrower].length());
+
+        // check borrower state after repay of loan and pull Nfts
+        (borrowerT0debt, borrowerCollateral, ) = _pool.borrowerInfo(borrower);
+        assertEq(borrowerT0debt,     0);
+        assertEq(borrowerCollateral, 0);
+    }
+
+    function redeemLenderLps(
+        address lender,
+        EnumerableSet.UintSet storage indexes
+    ) internal {
+        changePrank(lender);
+        // Redeem all lps of lender from all buckets as quote token and collateral token
+        for(uint256 j = 0; j < indexes.length(); j++){
+            uint256 lenderLpBalance;
+            uint256 bucketIndex = indexes.at(j);
+            (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+            if (lenderLpBalance == 0) continue;
+
+            // Calculating redeemable Quote and Collateral Token in particular bucket
+            (uint256 price, uint256 bucketQuoteToken, uint256 bucketCollateral, uint256 bucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+
+            // If bucket has a fractional amount of NFTs, we'll need to defragment collateral across buckets
+            if (bucketCollateral % 1e18 != 0) {
+                revert("Collateral needs to be reconstituted from other buckets");
+            }
+            uint256 noOfBucketNftsRedeemable = Maths.wadToIntRoundingDown(bucketCollateral);
+
+            // Calculating redeemable Quote and Collateral Token for Lenders lps
+            uint256 lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken, lenderLpBalance, bucketIndex);
+
+            // Deposit additional quote token to redeem for all NFTs
+            uint256 lpsRedeemed;
+            if (bucketCollateral != 0) {
+                if (lpsAsCollateral % 1e18 != 0) {
+                    uint256 depositRequired;
+                    {
+                        uint256 fractionOfNftRemaining = lpsAsCollateral % 1e18;
+                        assertLt(fractionOfNftRemaining, 1e18);
+                        // FIXME: now getting InsufficientLPs with this amount; was working two days ago
+                        // depositRequired = Maths.wmul(1e18 - fractionOfNftRemaining, price);
+                        // HACK:  deposit extra quote token which will be pulled out on line 134.
+                        depositRequired = price;
+                    }
+                    deal(_pool.quoteTokenAddress(), lender, depositRequired);
+                    Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
+                    _pool.addQuoteToken(depositRequired, bucketIndex);
+                    (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+                    lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken + depositRequired, lenderLpBalance, bucketIndex);
+                }
+
+                // First redeem LP for collateral
+                uint256 noOfNftsToRemove = Maths.min(Maths.wadToIntRoundingDown(lpsAsCollateral), noOfBucketNftsRedeemable);
+                lpsRedeemed = _pool.removeCollateral(noOfNftsToRemove, bucketIndex);
+            }
+
+            // Then redeem LP for quote token
+            (, lpsRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
+        
+            // Confirm all lp balance has been redeemed            
+            (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
+        }
+    }
+
+    function validateEmpty(
+        EnumerableSet.UintSet storage buckets
+    ) internal {
+        for(uint256 i = 0; i < buckets.length() ; i++){
+            uint256 bucketIndex = buckets.at(i);
+            (, uint256 quoteTokens, uint256 collateral, uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+
+            // Checking if all bucket lps are redeemed
+            assertEq(bucketLps, 0);
+            assertEq(quoteTokens, 0);
+            assertEq(collateral, 0);
+        }
+        ( , uint256 loansCount, , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        (uint256 debt, , ) = _pool.debtInfo();
+        assertEq(debt, 0);
+        assertEq(loansCount, 0);
+        assertEq(_pool.pledgedCollateral(), 0);
+    }
+
+    modifier tearDown {
+        _;
+        for(uint i = 0; i < borrowers.length(); i++ ){
+            repayDebt(borrowers.at(i));
+        }
+
+        for(uint i = 0; i < lenders.length(); i++ ){
+            redeemLenderLps(lenders.at(i),lendersDepositedIndex[lenders.at(i)]);
+        }
+        
+        for(uint256 i = 0; i < bidders.length(); i++){
+            redeemLenderLps(bidders.at(i), bidderDepositedIndex[bidders.at(i)]);
+        }
+        validateEmpty(bucketsUsed);
+    }
 
     /*****************************/
     /*** Actor actions asserts ***/
@@ -56,6 +196,11 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool));  // token is owned by pool after add
         }
+
+        // Add for tearDown
+        bidders.add(from);
+        bidderDepositedIndex[from].add(index);
+        bucketsUsed.add(index); 
     }
 
     function _pledgeCollateral(
@@ -73,9 +218,14 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         }
 
         ERC721Pool(address(_pool)).pledgeCollateral(borrower, tokenIds);
-
         for (uint256 i = 0; i < tokenIds.length; i++) {
-            assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool)); // token is owned by pool after pledge
+            assertEq(_collateral.ownerOf(tokenIds[i]), address(_pool));
+        }
+
+        // Add for tearDown
+        borrowers.add(borrower);
+        for (uint256 i=0; i < tokenIds.length; i++) {
+            borrowerPlegedNFTIds[borrower].add(tokenIds[i]);
         }
     }
 
@@ -96,6 +246,11 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), address(from)); // token is owned by borrower after pull
+        }
+
+        // Add for tearDown
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            borrowerPlegedNFTIds[from].remove(tokenIds[i]);
         }
     }
 
