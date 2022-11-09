@@ -151,16 +151,16 @@ library Auctions {
 
     /**
      *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
-     *  @param  borrower_          Borrower whose loan is being placed in queue.
-     *  @param  collateralization_ Borrower's collateralization.
+     *  @param  borrower_         Borrower whose loan is being placed in queue.
+     *  @param  isCollateralized_ Borrower's collateralization flag.
      */
     function checkAndRemove(
         Data storage self,
         address borrower_,
-        uint256 collateralization_
+        bool    isCollateralized_
     ) internal {
 
-        if (collateralization_ >= Maths.WAD && self.liquidations[borrower_].kickTime != 0) {
+        if (isCollateralized_ && self.liquidations[borrower_].kickTime != 0) {
             _removeAuction(self, borrower_);
         }
     }

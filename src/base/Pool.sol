@@ -285,11 +285,11 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // check borrow won't push borrower into a state of under-collateralization
         if (
-            _collateralization(
+            !_isCollateralized(
                 borrowerDebt,
                 borrower.collateral,
                 newLup
-            ) < Maths.WAD
+            )
             ||
             borrower.collateral == 0
         ) revert BorrowerUnderCollateralized();
@@ -297,11 +297,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         // check borrow won't push pool into a state of under-collateralization
         poolState.accruedDebt += debtChange;
         if (
-            _collateralization(
+            !_isCollateralized(
                 poolState.accruedDebt,
                 poolState.collateral,
                 newLup
-            ) < Maths.WAD
+            )
         ) revert PoolUnderCollateralized();
 
         borrower.t0debt += t0debtChange;
@@ -377,11 +377,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 lup = _lup(poolState.accruedDebt);
         uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
         if (
-            _collateralization(
+            _isCollateralized(
                 borrowerDebt,
                 borrower.collateral,
                 lup
-            ) >= Maths.WAD
+            )
         ) revert BorrowerOk();
  
          // update loan heap
@@ -472,17 +472,17 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         uint256 newLup = _lup(poolState.accruedDebt);
 
-        uint256 collateralization = _collateralization(
-                    Maths.wmul(borrower.t0debt, poolState.inflator),
-                    borrower.collateral,
-                    newLup
-                );
+        bool isCollateralized = _isCollateralized(
+            Maths.wmul(borrower.t0debt, poolState.inflator),
+            borrower.collateral,
+            newLup
+        );
 
-        if (collateralization >= Maths.WAD && auctions._isActive(borrowerAddress_)) t0DebtInAuction -= borrower.t0debt;
+        if (isCollateralized && auctions._isActive(borrowerAddress_)) t0DebtInAuction -= borrower.t0debt;
 
         auctions.checkAndRemove(
             borrowerAddress_,
-            collateralization 
+            isCollateralized 
         );
 
         loans.update(
@@ -543,7 +543,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         auctions.checkAndRemove(
             borrowerAddress,
-            _collateralization(
+            _isCollateralized(
                 borrowerDebt,
                 borrower.collateral,
                 newLup_
@@ -665,13 +665,19 @@ abstract contract Pool is Clone, Multicall, IPool {
      *  @param price_      Price to calculate collateralization for.
      *  @return Collateralization value.
      */
-    function _collateralization(
+    function _isCollateralized(
         uint256 debt_,
         uint256 collateral_,
         uint256 price_
-    ) internal virtual returns (uint256) {
-        uint256 encumbered = price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
-        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+    ) internal virtual returns (bool) {
+        if (debt_  == 0) return true;       // if debt is 0 then is collateralized
+        if (price_ == 0) return true;       // if price to calculate collateralized is 0 then is collateralized
+
+        uint256 encumbered = Maths.wdiv(debt_, price_); // calculated to avoid situation where debt dust amount
+        if (encumbered   == 0) return true;  // if encumbered is 0 then is collateralized
+        if (collateral_ == 0) return false; // if encumbered is not 0 and collateral is 0 then is not collateralized
+
+        return Maths.wdiv(collateral_, encumbered) >= Maths.WAD; // is collateralized when collateral divided by encumbered >= 1
     }
 
     function _updatePool(PoolState memory poolState_, uint256 lup_) internal {
@@ -692,14 +698,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
-            if (
-                _collateralization(
-                    poolState_.accruedDebt,
-                    poolState_.collateral,
-                    lup_
-                ) != Maths.WAD
-            ) {
-
+            if (poolState_.accruedDebt != 0) {
                 int256 actualUtilization = int256(
                     deposits.utilization(
                         poolState_.accruedDebt,
