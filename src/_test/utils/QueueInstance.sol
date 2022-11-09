@@ -23,7 +23,7 @@ contract QueueInstance is DSTestPlus {
     function remove(address borrower_) external {
         auctions.checkAndRemove(
             borrower_,
-            1e18
+            true
         );
     }
 

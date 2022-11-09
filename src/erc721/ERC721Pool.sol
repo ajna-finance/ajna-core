@@ -177,17 +177,23 @@ contract ERC721Pool is IERC721Pool, Pool {
      *  @param debt_       Debt to calculate collateralization for.
      *  @param collateral_ Collateral to calculate collateralization for.
      *  @param price_      Price to calculate collateralization for.
-     *  @return Collateralization value.
+     *  @return True if collateralization calculated is equal or greater than 1.
      */
-    function _collateralization(
+    function _isCollateralized(
         uint256 debt_,
         uint256 collateral_,
         uint256 price_
-    ) internal pure override returns (uint256) {
-        uint256 encumbered = price_ != 0 && debt_ != 0 ? Maths.wdiv(debt_, price_) : 0;
+    ) internal pure override returns (bool) {
+        if (debt_  == 0) return true;       // if debt is 0 then is collateralized
+        if (price_ == 0) return true;       // if price to calculate collateralized is 0 then is collateralized
+
+        uint256 encumbered = Maths.wdiv(debt_, price_); // calculated to avoid situation where debt dust amount
+        if (encumbered   == 0) return true;  // if encumbered is 0 then is collateralized
+        if (collateral_ == 0) return false; // if encumbered is not 0 and collateral is 0 then is not collateralized
+
         //slither-disable-next-line divide-before-multiply
-        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
-        return encumbered != 0 ? Maths.wdiv(collateral_, encumbered) : Maths.WAD;
+        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD;    // use collateral floor
+        return Maths.wdiv(collateral_, encumbered) >= Maths.WAD; // is collateralized when collateral divided by encumbered >= 1
     }
 
     /**

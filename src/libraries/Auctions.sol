@@ -151,16 +151,16 @@ library Auctions {
 
     /**
      *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
-     *  @param  borrower_          Borrower whose loan is being placed in queue.
-     *  @param  collateralization_ Borrower's collateralization.
+     *  @param  borrower_         Borrower whose loan is being placed in queue.
+     *  @param  isCollateralized_ Borrower's collateralization flag.
      */
     function checkAndRemove(
         Data storage self,
         address borrower_,
-        uint256 collateralization_
+        bool    isCollateralized_
     ) internal {
 
-        if (collateralization_ >= Maths.WAD && self.liquidations[borrower_].kickTime != 0) {
+        if (isCollateralized_ && self.liquidations[borrower_].kickTime != 0) {
             _removeAuction(self, borrower_);
         }
     }
@@ -216,7 +216,6 @@ library Auctions {
         liquidation.bondSize   = bondSize;
         liquidation.bondFactor = bondFactor;
 
-        liquidation.next = address(0);
         if (self.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
             self.liquidations[self.tail].next = borrower_;
@@ -224,7 +223,6 @@ library Auctions {
         } else {
             // first auction in queue
             self.head = borrower_;
-            liquidation.prev  = address(0);
         }
 
         // update liquidation with the new ordering
