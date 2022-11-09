@@ -2359,7 +2359,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         );
     }
 
-    function testLenderForcedExit() external {
+    function skiptestLenderForcedExit() external {
 
         skip(25 hours);
         
@@ -2608,6 +2608,15 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
         skip(10 days);
 
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              7_998.450478165323385467 * 1e18,
+                borrowerCollateral:        1_000.000000000000000000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerCollateralization: 0.000000012481952994 * 1e18
+            }
+        );
 
         // Should be able to repay safely but I'm unable to. Due to a LogInputTooSmall() Err when attempting to accrueInterest
         // _repay(
@@ -2620,14 +2629,14 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         //     }
         // );
 
-        // _kick(
-        //     {
-        //         from:       _lender,
-        //         borrower:   _borrower2,
-        //         debt:       19.489662805046791054 * 1e18,
-        //         collateral: 2 * 1e18,
-        //         bond:       0.192728433177224139 * 1e18
-        //     }
-        // );
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower2,
+                debt:       19.489662805046791054 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.192728433177224139 * 1e18
+            }
+        );
     }
 }
