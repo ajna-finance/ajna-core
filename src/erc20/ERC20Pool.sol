@@ -175,10 +175,10 @@ contract ERC20Pool is IERC20Pool, Pool {
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
 
+        PoolState memory poolState = _accruePoolInterest();
         uint256 bucketDeposit = deposits.valueAt(index_);
         if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
-        PoolState memory poolState = _accruePoolInterest();
         Auctions.Liquidation storage liquidation = auctions.liquidations[borrowerAddress_];
         (
             uint256 quoteTokenAmount,
@@ -252,10 +252,10 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint256 collateral_,
         bytes memory swapCalldata_
     ) external override {
+        PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
 
-        PoolState memory poolState = _accruePoolInterest();
         (
             uint256 quoteTokenAmount,
             uint256 t0repaidDebt,
