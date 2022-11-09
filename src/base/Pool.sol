@@ -189,7 +189,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         else {
             redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
         }
-        deposits.remove(index_, removedAmount_);  // remove from deposits
+        deposits.remove(index_, removedAmount_);  // update FenwickTree
 
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
@@ -332,8 +332,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.t0debt == 0) revert NoDebt();
 
-        uint256 t0repaidDebt = Maths.min(borrower.t0debt, Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator));
-
+        uint256 t0repaidDebt = Maths.min(
+            borrower.t0debt,
+            Maths.wdiv(maxQuoteTokenAmountToRepay_, poolState.inflator)
+        );
         (
             uint256 quoteTokenAmountToRepay, 
             uint256 newLup
@@ -667,7 +669,7 @@ abstract contract Pool is Clone, Multicall, IPool {
      *  @param debt_       Debt to calculate collateralization for.
      *  @param collateral_ Collateral to calculate collateralization for.
      *  @param price_      Price to calculate collateralization for.
-     *  @return Collateralization value.
+     *  @return True if collateralization calculated is equal or greater than 1.
      */
     function _isCollateralized(
         uint256 debt_,
@@ -678,7 +680,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (price_ == 0) return true;       // if price to calculate collateralized is 0 then is collateralized
 
         uint256 encumbered = Maths.wdiv(debt_, price_); // calculated to avoid situation where debt dust amount
-        if (encumbered   == 0) return true;  // if encumbered is 0 then is collateralized
+        if (encumbered  == 0) return true;  // if encumbered is 0 then is collateralized
         if (collateral_ == 0) return false; // if encumbered is not 0 and collateral is 0 then is not collateralized
 
         return Maths.wdiv(collateral_, encumbered) >= Maths.WAD; // is collateralized when collateral divided by encumbered >= 1

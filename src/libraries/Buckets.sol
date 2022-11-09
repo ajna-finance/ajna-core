@@ -191,7 +191,7 @@ library Buckets {
         uint256 bucketPrice_
     ) internal view returns (uint256 lps_) {
         uint256 rate = getExchangeRate(bucket_, deposit_, bucketPrice_);
-        lps_        = (collateral_ * bucketPrice_ * 1e18 + rate / 2) / rate;
+        lps_         = (collateral_ * bucketPrice_ * 1e18 + rate / 2) / rate;
     }
 
     /**
@@ -206,6 +206,7 @@ library Buckets {
     ) internal view returns (uint256) {
         return bucket_.lps == 0 ? Maths.RAY :
             (bucketDeposit_ * 1e18 + bucketPrice_ * bucket_.collateral) * 1e18 / bucket_.lps;
+            // 10^36 * 1e18 / 10^27 = 10^54 / 10^27 = 10^27
     }
 
     /**

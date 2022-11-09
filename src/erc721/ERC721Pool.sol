@@ -177,7 +177,7 @@ contract ERC721Pool is IERC721Pool, Pool {
      *  @param debt_       Debt to calculate collateralization for.
      *  @param collateral_ Collateral to calculate collateralization for.
      *  @param price_      Price to calculate collateralization for.
-     *  @return Collateralization value.
+     *  @return True if collateralization calculated is equal or greater than 1.
      */
     function _isCollateralized(
         uint256 debt_,
