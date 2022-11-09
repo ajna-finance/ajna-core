@@ -164,12 +164,16 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         (uint256 exchangeRate, ) = buckets.getExchangeRate(deposit, index_);
         removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
+        uint256 removedAmountBefore = removedAmount_;
 
         // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
         if (removedAmount_ > maxAmount_) removedAmount_ = maxAmount_;
         if (removedAmount_ > deposit)    removedAmount_ = deposit;
-        redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
 
+        if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
+        else {
+            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
+        }
         deposits.remove(index_, removedAmount_);  // update FenwickTree
 
         uint256 newLup = _lup(poolState.accruedDebt);
