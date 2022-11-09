@@ -468,4 +468,18 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
             }
         );
     }
+
+    function testLenderInterestMargin() external {
+        assertEq(1 * 1e18, BucketMath.lenderInterestMargin(1.1 * 1e18));
+        assertEq(0.967683479649521744 * 1e18, BucketMath.lenderInterestMargin(0.99 * 1e18));
+
+        // When the pool is in a certain undercollateralized state the tx reverts with a 
+        // PRBMathUD60x18__LogInputTooSmall(20000000000000000) Err
+        // See below
+
+        assertEq(0.930376167495808317 * 1e18, BucketMath.lenderInterestMargin(0.9998 * 1e18));
+        //assertEq(1 * 1e18, BucketMath.lenderInterestMargin(0.999899898007666220 * 1e18));
+    }
+
+
 }
