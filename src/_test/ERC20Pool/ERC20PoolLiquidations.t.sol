@@ -2358,4 +2358,276 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
             }
         );
     }
+
+    function testLenderForcedExit() external {
+
+        skip(25 hours);
+        
+        // Lender attempts to withdraw entire position
+        _removeLiquidity(
+            {
+                from:     _lender,
+                amount:   2_000.00 * 1e18,
+                index:    _i9_91,
+                penalty:  0,
+                newLup:   9.721295865031779605 * 1e18,
+                lpRedeem: 1999891367962935869240493669537
+            }
+        );
+
+        _removeLiquidity(
+            {
+                from:     _lender,
+                amount:   5_000 * 1e18,
+                index:    _i9_81,
+                penalty:  0,
+                newLup:   9.721295865031779605 * 1e18,
+                lpRedeem: 4999728419907339673101234173842
+            }
+        );
+
+        // Lender is restricted to withdrawing a certain amount 
+        _removeLiquidity(
+            {
+                from:     _lender,
+                amount:   2_992.8 * 1e18,
+                index:    _i9_72,
+                penalty:  0,
+                newLup:   9721295865031779605,
+                lpRedeem: 2992637443019737234731474727095
+            }
+        );
+
+        // lender cannot withdraw
+        _assertRemoveAllLiquidityLupBelowHtpRevert(
+            {
+                from:     _lender,
+                index:    _i9_72
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_72,
+                lpBalance:    8_007.362556980262765268525272905 * 1e27, 
+                collateral:   0,
+                deposit:      8_007.797508658144068000 * 1e18,
+                exchangeRate: 1.000054318968922188000000000 * 1e27
+            }
+        );
+
+        skip(16 hours);
+
+        _kick(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                debt:       19.489662805046791054 * 1e18,
+                collateral: 2 * 1e18,
+                bond:       0.192728433177224139 * 1e18
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i9_72,
+                lpBalance:    8_007.362556980262765268525272905 * 1e27,
+                collateral:   0,          
+                deposit:      8_008.361347558277120605 * 1e18,
+                exchangeRate: 1.000124734027079076000086027 * 1e27
+            }
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.192728433177224139 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.624807173121239337 * 1e18,
+                totalBondEscrowed: 0.192728433177224139 * 1e18,
+                auctionPrice:      307.993829539879658784 * 1e18,
+                debtInAuction:     19.489662805046791054 * 1e18
+            })
+        );
+
+        // lender cannot withdraw
+        _assertRemoveDepositLockedByAuctionDebtRevert(
+            {
+                from:     _lender,
+                amount:   10.0 * 1e18,
+                index:    _i9_72
+            }
+        );
+
+        skip(3 hours);
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              19.489933125874732298 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowerMompFactor:        9.917184843435912074 * 1e18,
+                borrowerCollateralization: 0.987669594447545452 * 1e18
+            }
+        );
+
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower,
+                maxCollateral:   2.0 * 1e18,
+                bondChange:      0.192728433177224139 * 1e18,
+                givenAmount:     19.489933125874732298 * 1e18,
+                collateralTaken: 0.253121085639816517 * 1e18,
+                isReward:        false
+            }
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0,
+                borrowerCollateral:        1.746878914360183483 * 1e18,
+                borrowerMompFactor:        0,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+
+        _assertPool(
+            PoolState({
+                htp:                  7.991488192808991114 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             63_008.836766669707728354 * 1e18,
+                pledgedCollateral:    1_001.746878914360183483 * 1e18,
+                encumberedCollateral: 821.863722498661263922 * 1e18,
+                poolDebt:             7_989.580407145861717463 * 1e18,
+                actualUtilization:    0.126800950741756503 * 1e18,
+                targetUtilization:    0.826474536317057937 * 1e18,
+                minDebtAmount:        798.958040714586171746 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.0405 * 1e18,
+                interestRateUpdate:   block.timestamp - 3 hours
+            })
+        );
+
+        _removeLiquidity(
+            {
+                from:     _lender,
+                amount:   8_008.373442262808822463 * 1e18,
+                index:    _i9_72,
+                penalty:  0,
+                newLup:   9.624807173121239337 * 1e18,
+                lpRedeem: 8_007.362556980262765268525272905 * 1e27
+            }
+        );
+        
+        _assertBucket(
+        {
+                index:        _i9_72,
+                lpBalance:    0,
+                collateral:   0,          
+                deposit:      0.000000000000002445 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        _assertBucket(
+        {
+                index:        _i9_62,
+                lpBalance:    25_000.00 * 1e27,
+                collateral:   0,          
+                deposit:      25_000.037756489769875000 * 1e18,
+                exchangeRate: 1.000001510259590795000000000 * 1e27
+            }
+        );
+
+        _removeLiquidity(
+            {
+                from:     _lender,
+                amount:   25_000.037756489769875000 * 1e18,
+                index:    _i9_62,
+                penalty:  0,
+                newLup:   9.529276179422528643 * 1e18,
+                lpRedeem: 25_000.00 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i9_52,
+                lpBalance:    30_000.00 * 1e27,
+                collateral:   0,          
+                deposit:      30_000.045307787723850000 * 1e18,
+                exchangeRate: 1.000001510259590795000000000 * 1e27
+            }
+        );
+
+        _removeLiquidity(
+            {
+                from:     _lender,
+                amount:   22_010.045307787723850000 * 1e18,
+                penalty:  0,
+                index:    _i9_52,
+                newLup:   9.529276179422528643 * 1e18,
+                lpRedeem: 22_010.012066955906216160936672387 * 1e27
+            }
+        );
+
+        _assertRemoveAllLiquidityLupBelowHtpRevert({
+            from:  _lender,
+            index: _i9_52
+        });
+
+        _assertBucket(
+            {
+                index:        _i9_52,
+                lpBalance:    7_989.987933044093783839063327613 * 1e27,
+                collateral:   0,          
+                deposit:      7_990.000000000000000000 * 1e18,
+                exchangeRate: 1.000001510259590795000000000 * 1e27
+            }
+        );
+
+        skip(10 days);
+
+
+        // Should be able to repay safely but I'm unable to. Due to a LogInputTooSmall() Err when attempting to accrueInterest
+        // _repay(
+        //     {
+        //         from:      _borrower2,
+        //         borrower:  _borrower2,
+        //         amount:    1 * 1e18,
+        //         repaid:    1 * 1e18,
+        //         newLup:    9.721295865031779605 * 1e18
+        //     }
+        // );
+
+        // _kick(
+        //     {
+        //         from:       _lender,
+        //         borrower:   _borrower2,
+        //         debt:       19.489662805046791054 * 1e18,
+        //         collateral: 2 * 1e18,
+        //         bond:       0.192728433177224139 * 1e18
+        //     }
+        // );
+    }
 }

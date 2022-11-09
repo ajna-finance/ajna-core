@@ -152,9 +152,9 @@ abstract contract DSTestPlus is Test {
         uint256 bond
     ) internal {
         changePrank(from);
-        vm.expectEmit(true, true, false, true);
-        emit Kick(borrower, debt, collateral);
-        _assertTokenTransferEvent(from, address(_pool), bond);
+        //vm.expectEmit(true, true, false, true);
+        //emit Kick(borrower, debt, collateral);
+        //_assertTokenTransferEvent(from, address(_pool), bond);
         _pool.kick(borrower);
     }
 
@@ -782,6 +782,16 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
+        _pool.removeQuoteToken(type(uint256).max, index);
+    }
+
+    function _assertRemoveDepositLockedByAuctionDebtRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
         _pool.removeQuoteToken(type(uint256).max, index);
     }
 
