@@ -940,6 +940,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
+    // TODO: remove this method after solving // FIXME: now getting InsufficientLPs with this amount; was working two days ago
     function lpsToCollateral(
         uint256 deposit_,
         uint256 lpTokens_,
@@ -949,7 +950,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             buckets[index_],
             deposit_,
             lpTokens_,
-            index_
+            PoolUtils.indexToPrice(index_)
         );
     }
 
