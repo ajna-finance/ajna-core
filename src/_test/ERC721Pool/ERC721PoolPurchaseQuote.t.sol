@@ -51,7 +51,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         _mintAndApproveCollateralTokens(_bidder, 13);
     }
 
-    function testSubsetPurchaseQuote() external tearDown{
+    function testSubsetPurchaseQuote() external tearDown {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = PoolUtils.indexToPrice(testIndex);
@@ -217,7 +217,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
      *              Attempts to remove more collateral than available given lp balance.
      *              Attempts to remove collateral not in the bucket.
      */
-    function testSubsetPurchaseQuoteWithDebt() external tearDown{
+    function testSubsetPurchaseQuoteWithDebt() external tearDown {
         // lenders add liquidity
         _addLiquidity(
             {

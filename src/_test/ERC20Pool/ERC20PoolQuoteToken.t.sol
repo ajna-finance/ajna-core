@@ -238,7 +238,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender),        130_000 * 1e18);
     }
 
-    function testPoolRemoveQuoteToken() external tearDown{
+    function testPoolRemoveQuoteToken() external tearDown {
        _addLiquidity(
             {
                 from:   _lender,
@@ -511,7 +511,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *          Reverts:
      *              Attempts to remove more quote tokens than available in bucket.
      */
-    function testPoolRemoveQuoteTokenNotAvailable() external tearDown{
+    function testPoolRemoveQuoteTokenNotAvailable() external tearDown {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         // lender adds initial quote token
         _addLiquidity(
@@ -553,7 +553,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              Attempts to remove more quote tokens than available from lpBalance.
      *              Attempts to remove quote token when doing so would drive lup below htp.
      */
-    function testPoolRemoveQuoteTokenRequireChecks() external tearDown{
+    function testPoolRemoveQuoteTokenRequireChecks() external tearDown {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 3_500_000 * 1e18);
         _mintCollateralAndApproveTokens(_lender, 1 * 1e18);
         // lender adds initial quote token
@@ -710,7 +710,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
     }
 
-    function testPoolRemoveQuoteTokenWithDebt() external tearDown{
+    function testPoolRemoveQuoteTokenWithDebt() external tearDown {
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_borrower) + 100 * 1e18);
 
         // lender adds initial quote token
@@ -874,7 +874,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
     }
 
-    function testPoolMoveQuoteToken() external tearDown{
+    function testPoolMoveQuoteToken() external tearDown {
         _addLiquidity(
             {
                 from:   _lender,
@@ -1044,7 +1044,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
      *              Attempts to move quote token from bucket with available collateral.
      *              Attempts to move quote token when doing so would drive lup below htp.
      */
-    function testPoolMoveQuoteTokenRequireChecks() external tearDown{
+    function testPoolMoveQuoteTokenRequireChecks() external tearDown {
         // test setup
         _mintCollateralAndApproveTokens(_lender1, _collateral.balanceOf(_lender1) + 100_000 * 1e18);
         _mintCollateralAndApproveTokens(_borrower, _collateral.balanceOf(_lender1) + 1_500_000 * 1e18);
@@ -1134,7 +1134,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
     }
 
-    function testMoveQuoteTokenWithDebt() external tearDown{
+    function testMoveQuoteTokenWithDebt() external tearDown {
         // lender makes an initial deposit
         skip(1 hours);
 

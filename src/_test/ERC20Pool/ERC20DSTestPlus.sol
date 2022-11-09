@@ -57,7 +57,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         deal(_pool.quoteTokenAddress(), borrower, currentDebt);
 
         // repay current debt ( all debt )
-        if(currentDebt > 0){
+        if (currentDebt > 0) {
             _pool.repay(borrower, currentDebt);
         }
 
@@ -77,7 +77,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         changePrank(lender);
 
         // Redeem all lps of lender from all buckets as quote token and collateral token
-        for( uint j = 0; j < indexes.length() ; j++ ){
+        for(uint j = 0; j < indexes.length(); j++ ){
             uint256 bucketIndex = indexes.at(j);
             (, uint256 bucketQuote, uint256 bucketCollateral, , ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
             (uint256 lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
@@ -106,7 +106,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     function validateEmpty(
         EnumerableSet.UintSet storage buckets
     ) internal {
-        for(uint256 i = 0; i < buckets.length() ; i++){
+        for(uint256 i = 0; i < buckets.length(); i++){
             uint256 bucketIndex = buckets.at(i);
             (, uint256 quoteTokens, uint256 collateral, uint256 bucketLps, ,) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
 

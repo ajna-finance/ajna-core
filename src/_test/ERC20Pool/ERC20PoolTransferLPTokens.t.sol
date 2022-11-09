@@ -31,7 +31,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
     /*** Transfer LP Tokens Tests ***/
     /********************************/
 
-    function testTransferLPTokensToZeroAddress() external tearDown{
+    function testTransferLPTokensToZeroAddress() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -61,7 +61,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         );
     }
 
-    function testTransferLPTokensToUnallowedAddress() external tearDown{
+    function testTransferLPTokensToUnallowedAddress() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -83,7 +83,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         );
     }
 
-    function testTransferLPTokensToInvalidIndex() external tearDown{
+    function testTransferLPTokensToInvalidIndex() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 9999;
         indexes[1] = 2550;
@@ -105,7 +105,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         );
     }
 
-    function testTransferLPTokensGreaterThanBalance() external tearDown{
+    function testTransferLPTokensGreaterThanBalance() external tearDown {
         uint256[] memory indexes = new uint256[](2);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -141,7 +141,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         );
     }
 
-    function testTransferLPTokensForAllIndexes() external tearDown{
+    function testTransferLPTokensForAllIndexes() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;
@@ -301,7 +301,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         );
     }
 
-    function testTransferLPTokensForTwoIndexes() external tearDown{
+    function testTransferLPTokensForTwoIndexes() external tearDown {
         uint256[] memory depositIndexes = new uint256[](3);
         depositIndexes[0] = 2550;
         depositIndexes[1] = 2551;
@@ -462,7 +462,7 @@ contract ERC20PoolTransferLPTokensTest is ERC20HelperContract {
         );
     }
 
-    function testTransferLPTokensToLenderWithLPTokens() external tearDown{
+    function testTransferLPTokensToLenderWithLPTokens() external tearDown {
         uint256[] memory indexes = new uint256[](3);
         indexes[0] = 2550;
         indexes[1] = 2551;

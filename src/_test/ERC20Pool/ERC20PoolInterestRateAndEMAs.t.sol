@@ -30,7 +30,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         _mintQuoteAndApproveTokens(_lender1,  200_000 * 1e18);
     }
 
-    function testPoolInterestRateIncreaseDecrease() external tearDown{
+    function testPoolInterestRateIncreaseDecrease() external tearDown {
         _addLiquidity(
             {
                 from:   _lender,
@@ -141,7 +141,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testPoolInterestRateDecrease() external tearDown{
+    function testPoolInterestRateDecrease() external tearDown {
         // lender makes an initial deposit
         skip(1 hours);
         _addLiquidity(
@@ -221,7 +221,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testPendingInflator() external tearDown{
+    function testPendingInflator() external tearDown {
         // add liquidity
         _addLiquidity(
             {
@@ -307,7 +307,7 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
-    function testPoolEMAAndTargetUtilizationUpdate() external tearDown{
+    function testPoolEMAAndTargetUtilizationUpdate() external tearDown {
 
         // add initial quote to the pool
         _addLiquidity(

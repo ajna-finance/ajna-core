@@ -68,7 +68,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         Token(_pool.quoteTokenAddress()).approve(address(_pool) , currentDebt);
 
         // repay current debt ( all debt )
-        if(currentDebt > 0){
+        if (currentDebt > 0) {
             _pool.repay(borrower, currentDebt);
         }
 

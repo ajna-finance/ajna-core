@@ -61,7 +61,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
     }
 
     // TODO: skip block number ahead as well
-    function testBorrowerInterestCalculation() external tearDown{
+    function testBorrowerInterestCalculation() external tearDown {
         _addLiquidity(
             {
                 from:   _lender,
@@ -242,7 +242,7 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
 
     }
 
-    function testMultipleBorrowerInterestAccumulation() external tearDown{
+    function testMultipleBorrowerInterestAccumulation() external tearDown {
         // lender deposits 10000 Quote into 3 buckets
         _addLiquidity(
             {
