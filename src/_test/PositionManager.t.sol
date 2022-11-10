@@ -5,15 +5,9 @@ import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
 import { ERC721HelperContract } from './ERC721Pool/ERC721DSTestPlus.sol';
 
 import '../base/interfaces/IPositionManager.sol';
-import '../base/interfaces/IPool.sol';
-
-import '../erc20/ERC20Pool.sol';
-import '../erc20/ERC20PoolFactory.sol';
-
-import '../base/PoolInfoUtils.sol';
 import '../base/PositionManager.sol';
 
-import '../libraries/Maths.sol';
+import '../libraries/BucketMath.sol';
 
 // TODO: test this against ERC721Pool
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {

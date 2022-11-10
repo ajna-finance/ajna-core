@@ -4,14 +4,7 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import '../../erc721/ERC721Pool.sol';
-import '../../erc721/ERC721PoolFactory.sol';
-
-import '../../erc721/interfaces/IERC721Pool.sol';
-import '../../erc721/interfaces/pool/IERC721PoolErrors.sol';
-import '../../base/interfaces/IPool.sol';
-import '../../base/interfaces/pool/IPoolErrors.sol';
-
+import '../../libraries/PoolUtils.sol';
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
 
