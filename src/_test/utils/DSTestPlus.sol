@@ -61,6 +61,7 @@ abstract contract DSTestPlus is Test {
     uint256 internal _i9_72     = 3700;
     uint256 internal _i9_62     = 3702;
     uint256 internal _i9_52     = 3704;
+    uint256 internal _i9_42     = 3706;
 
     struct PoolState {
         uint256 htp;
@@ -169,16 +170,16 @@ abstract contract DSTestPlus is Test {
         uint256 bond
     ) internal {
         changePrank(from);
-        //vm.expectEmit(true, true, false, true);
-        //emit Kick(borrower, debt, collateral);
-        //_assertTokenTransferEvent(from, address(_pool), bond);
+        vm.expectEmit(true, true, false, true);
+        emit Kick(borrower, debt, collateral);
+        _assertTokenTransferEvent(from, address(_pool), bond);
         _pool.kick(borrower);
     }
 
     function _moveLiquidity(
         address from,
         uint256 amount,
-        uint256 fromIndex, 
+        uint256 fromIndex,
         uint256 toIndex,
         uint256 newLup,
         uint256 lpRedeemFrom,
