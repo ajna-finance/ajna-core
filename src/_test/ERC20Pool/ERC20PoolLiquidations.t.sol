@@ -9,6 +9,8 @@ import '../../erc20/ERC20PoolFactory.sol';
 import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
 
+import '@std/console.sol';
+
 contract ERC20PoolLiquidationsTest is ERC20HelperContract {
 
     address internal _borrower;
@@ -1984,9 +1986,13 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                locked:    0.195342779771472726 * 1e18
            }
         );
-        skip(6 hours);
 
         address taker = makeAddr("taker");
+
+        uint256 preArbTakeSnapshotpt1 = vm.snapshot();
+        uint256 preArbTakeSnapshotpt2 = vm.snapshot();
+
+        skip(6 hours);
 
         _assertLenderLpBalance(
            {
@@ -2050,6 +2056,22 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
            }
         );
 
+        _assertAuction(
+           AuctionState({
+               borrower:          _borrower,
+               active:            true,
+               kicker:            _lender,
+               bondSize:          0.195342779771472726 * 1e18,
+               bondFactor:        0.01 * 1e18,
+               kickTime:          block.timestamp - 6 hours,
+               kickMomp:          9.721295865031779605 * 1e18,
+               totalBondEscrowed: 0.195342779771472726 * 1e18,
+               auctionPrice:      9.721295865031779616 * 1e18,
+               debtInAuction:     19.779066071215516749 * 1e18
+           })
+        );
+
+        // Amount is restricted by the collateral in the loan
         _arbTake(
            {
                from:             taker,
@@ -2061,7 +2083,6 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                isReward:         true
            }
         );
-
         _assertLenderLpBalance(
            {
                lender:      taker,
@@ -2121,7 +2142,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
            })
         );
 
-        // arb take should fail on an auction without any remaining collateral to auction
+        // Arb take should fail on an auction without any remaining collateral to auction
         _assertArbTakeInsufficentCollateralRevert(
            {
                from:     taker,
@@ -2129,6 +2150,188 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
                index:    _i9_91
            }
         );
+
+        vm.revertTo(preArbTakeSnapshotpt2);
+
+        skip(5 hours);
+
+        _assertAuction(
+           AuctionState({
+               borrower:          _borrower,
+               active:            true,
+               kicker:            _lender,
+               bondSize:          0.195342779771472726 * 1e18,
+               bondFactor:        0.01 * 1e18,
+               kickTime:          block.timestamp - 5 hours,
+               kickMomp:          9.721295865031779605 * 1e18,
+               totalBondEscrowed: 0.195342779771472726 * 1e18,
+               auctionPrice:      19.442591730063559200 * 1e18,
+               debtInAuction:     19.778456451861613480 * 1e18
+           })
+        );
+
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 25_000 * 1e18,
+                index:  _i1505_26,
+                newLup: 1_505.263728469068226832 * 1e18
+            }
+        );
+
+        // Amount is restricted by the debt in the loan
+        _arbTake(
+            {
+                from:             taker,
+                borrower:         _borrower,
+                index:            _i1505_26,
+                collateralArbed:  1.017300817776332896 * 1e18,
+                quoteTokenAmount: 19.778964466685025779 * 1e18,
+                bondChange:       0.195342779771472726 * 1e18,
+                isReward:         false
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0 * 1e18,
+                borrowerCollateral:        0.982699182223667104 * 1e18,
+                borrowerMompFactor:        0,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      taker,
+                index:       _i1505_26,
+                lpBalance:   1_511.527057473949990171000000000 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i1505_26,
+                lpBalance:   25_000.0 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i1505_26,
+                lpBalance:    26_511.527057473949990171000000000 * 1e27,
+                collateral:   1.017300817776332896 * 1e18,
+                deposit:      24_980.221035533314974222 * 1e18,
+                exchangeRate: 1.000000000000000000000078618 * 1e27
+            }
+        );
+
+        _assertReserveAuction(
+            {
+                reserves:                   24.097734789604532721 * 1e18,
+                claimableReserves :         0,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+
+        vm.revertTo(preArbTakeSnapshotpt1);
+
+        skip(5 hours);
+
+        _assertAuction(
+           AuctionState({
+               borrower:          _borrower,
+               active:            true,
+               kicker:            _lender,
+               bondSize:          0.195342779771472726 * 1e18,
+               bondFactor:        0.01 * 1e18,
+               kickTime:          block.timestamp - 5 hours,
+               kickMomp:          9.721295865031779605 * 1e18,
+               totalBondEscrowed: 0.195342779771472726 * 1e18,
+               auctionPrice:      19.442591730063559200 * 1e18,
+               debtInAuction:     19.778456451861613480 * 1e18
+           })
+        );
+
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 15.0 * 1e18,
+                index:  _i1505_26,
+                newLup: 9.721295865031779605 * 1e18
+            }
+        );
+
+        // Amount is restricted by the deposit in the bucket in the loan
+        _arbTake(
+            {
+                from:             taker,
+                borrower:         _borrower,
+                index:            _i1505_26,
+                collateralArbed:  0.771502082040117187 * 1e18,
+                quoteTokenAmount: 15.0 * 1e18,
+                bondChange:       0.15 * 1e18,
+                isReward:         false
+            }
+        );
+
+        _assertAuction(
+           AuctionState({
+               borrower:          _borrower,
+               active:            false,
+               kicker:            address(0),
+               bondSize:          0,
+               bondFactor:        0,
+               kickTime:          0,
+               kickMomp:          0,
+               totalBondEscrowed: 0,
+               auctionPrice:      0,
+               debtInAuction:     4.778964466685025779 * 1e18
+           })
+        );
+
+        _assertBucket(
+            {
+                index:        _i1505_26,
+                lpBalance:    1_161.314100533355756077000000000 * 1e27,
+                collateral:   0.771502082040117187 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000000000000000000002796054 * 1e27
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              4.778964466685025779 * 1e18,
+                borrowerCollateral:        1.228497917959882813 * 1e18,
+                borrowerMompFactor:        9.684916710602077770 * 1e18,
+                borrowerCollateralization: 2.498991531181576604 * 1e18
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      taker,
+                index:       _i1505_26,
+                lpBalance:   1_146.314100533355756077000000000 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i1505_26,
+                lpBalance:   15.0 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+
     }
 
 
