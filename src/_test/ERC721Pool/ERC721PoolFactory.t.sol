@@ -7,8 +7,6 @@ import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 import '../../erc721/ERC721Pool.sol';
 import '../../erc721/ERC721PoolFactory.sol';
 
-import '../../base/PoolDeployer.sol';
-
 contract ERC721PoolFactoryTest is ERC721HelperContract {
     address            internal _NFTCollectionPoolAddress;
     address            internal _NFTSubsetOnePoolAddress;

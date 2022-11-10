@@ -3,15 +3,9 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import '../../erc20/ERC20Pool.sol';
-import '../../erc20/ERC20PoolFactory.sol';
+import '../../libraries/BucketMath.sol';
 
-import '../../libraries/Maths.sol';
-import '../../libraries/PoolUtils.sol';
-
-import '@std/console.sol';
-
-contract ERC20PoolLiquidationsTest is ERC20HelperContract {
+contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -158,7 +152,7 @@ contract ERC20PoolLiquidationsTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
     }
-
+    
     function testArbTakeLTNeutralPrice() external {
 
         // Skip to make borrower undercollateralized

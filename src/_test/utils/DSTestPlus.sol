@@ -9,7 +9,6 @@ import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import '../../base/interfaces/IPool.sol';
-import '../../base/interfaces/IPoolFactory.sol';
 import '../../base/PoolInfoUtils.sol';
 
 import '../../libraries/Maths.sol';

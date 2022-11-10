@@ -7,8 +7,6 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import '../../erc20/ERC20Pool.sol';
 import '../../erc20/ERC20PoolFactory.sol';
 
-import '../../base/PoolDeployer.sol';
-
 contract ERC20PoolFactoryTest is ERC20HelperContract {
     ERC20PoolFactory internal _poolFactory;
 
