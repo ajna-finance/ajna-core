@@ -3,12 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import '../../erc20/interfaces/IERC20Pool.sol';
-
-import '../../base/interfaces/IPool.sol';
-
 import '../../erc721/ERC721Pool.sol';
-import '../../erc721/ERC721PoolFactory.sol';
 
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
@@ -60,7 +55,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
     /*** ERC721 Subset Tests ***/
     /***************************/
 
-    function testBorrowLimitReached() external {
+    function testBorrowLimitReached() external tearDown {
 
         // lender deposits 10000 Quote into 3 buckets
         _addLiquidity(
@@ -111,7 +106,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         );
     }
 
-    function testBorrowBorrowerUnderCollateralized() external {
+    function testBorrowBorrowerUnderCollateralized() external tearDown {
         // add initial quote to the pool
         _addLiquidity(
             {
@@ -144,7 +139,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         );
     }
 
-    function testBorrowPoolUnderCollateralized() external {
+    function testBorrowPoolUnderCollateralized() external tearDown {
         // add initial quote to the pool
         _addLiquidity(
             {
@@ -457,7 +452,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
         assertEq(_collateral.balanceOf(address(_pool)), 0);
     }
 
-    function testPoolRepayRequireChecks() external {
+    function testPoolRepayRequireChecks() external tearDown {
         // add initial quote to the pool
         _addLiquidity(
             {
@@ -555,7 +550,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
     }
 
 
-    function testRepayLoanFromDifferentActor() external {
+    function testRepayLoanFromDifferentActor() external tearDown {
         _addLiquidity(
             {
                 from:   _lender,
@@ -666,7 +661,7 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         _pool.borrow(loanAmount, 7_777);
     }
 
-    function testMinBorrowAmountCheck() external {
+    function testMinBorrowAmountCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
         _pool.addQuoteToken(20_000 * 1e18, 2550);
@@ -698,7 +693,7 @@ contract ERC721CollectionPoolBorrowTest is ERC721PoolBorrowTest {
         );
     }
 
-    function testMinRepayAmountCheck() external {
+    function testMinRepayAmountCheck() external tearDown {
         // add initial quote to the pool
         changePrank(_lender);
         _pool.addQuoteToken(20_000 * 1e18, 2550);

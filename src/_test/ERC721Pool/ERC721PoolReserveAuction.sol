@@ -4,14 +4,7 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import '../../erc721/ERC721Pool.sol';
-import '../../erc721/ERC721PoolFactory.sol';
-
-import '../../erc721/interfaces/IERC721Pool.sol';
-import '../../erc721/interfaces/pool/IERC721PoolErrors.sol';
-import '../../base/interfaces/IPool.sol';
-import '../../base/interfaces/pool/IPoolErrors.sol';
-
+import '../../libraries/PoolUtils.sol';
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
 
@@ -64,10 +57,11 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
                 newLup:     251_183.992399245533703810 * 1e18
             }
         );
-
-        assertEq(_pool.debt() - 175_000 * 1e18, 168.26923076923085 * 1e18);
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt - 175_000 * 1e18, 168.26923076923085 * 1e18);
         skip(26 weeks);
-        assertEq(_pool.debt() - 175_000 * 1e18, 4_590.373946590638353626 * 1e18);  // debt matches develop
+        (poolDebt,,) = _pool.debtInfo();
+        assertEq(poolDebt - 175_000 * 1e18, 4_590.373946590638353626 * 1e18);  // debt matches develop
     }
 
     function testClaimableReserveNoAuction() external {
@@ -192,7 +186,8 @@ contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
                 newLup:   BucketMath.MAX_PRICE
             }
         );
-        assertEq(_pool.debt(), 0);
+        (uint256 debt,,) = _pool.debtInfo();
+        assertEq(debt, 0);
 
         uint256 reserves          = 499.181304561658553626 * 1e18;
         uint256 claimableReserves = reserves;

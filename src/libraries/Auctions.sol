@@ -86,11 +86,11 @@ library Auctions {
         if (
             (block.timestamp - kickTime > 72 hours)
             ||
-            (debtToHeal > 0 && remainingCol == 0)
+            (debtToHeal != 0 && remainingCol == 0)
         ) {
             uint256 remainingDebt = debtToHeal;
 
-            while (bucketDepth_ > 0) {
+            while (bucketDepth_ != 0) {
                 // auction has debt to cover with remaining collateral
                 uint256 hpbIndex;
                 if (remainingDebt != 0 && remainingCol != 0) {
@@ -151,16 +151,16 @@ library Auctions {
 
     /**
      *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
-     *  @param  borrower_          Borrower whose loan is being placed in queue.
-     *  @param  collateralization_ Borrower's collateralization.
+     *  @param  borrower_         Borrower whose loan is being placed in queue.
+     *  @param  isCollateralized_ Borrower's collateralization flag.
      */
     function checkAndRemove(
         Data storage self,
         address borrower_,
-        uint256 collateralization_
+        bool    isCollateralized_
     ) internal {
 
-        if (collateralization_ >= Maths.WAD && self.liquidations[borrower_].kickTime != 0) {
+        if (isCollateralized_ && self.liquidations[borrower_].kickTime != 0) {
             _removeAuction(self, borrower_);
         }
     }
@@ -216,7 +216,6 @@ library Auctions {
         liquidation.bondSize   = bondSize;
         liquidation.bondFactor = bondFactor;
 
-        liquidation.next = address(0);
         if (self.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
             self.liquidations[self.tail].next = borrower_;
@@ -224,7 +223,6 @@ library Auctions {
         } else {
             // first auction in queue
             self.head = borrower_;
-            liquidation.prev  = address(0);
         }
 
         // update liquidation with the new ordering
@@ -457,7 +455,20 @@ library Auctions {
         Data storage self,
         address borrower_
     ) internal view {
-        if (self.liquidations[borrower_].kickTime != 0) revert AuctionActive();
+        if (_isActive(self, borrower_)) revert AuctionActive();
+    }
+
+    /**
+     *  @notice Returns true if borrower is in auction.
+     *  @dev    Used to accuratley increment and decrement t0DebtInAuction.
+     *  @param  borrower_ Borrower address to check auction status for.
+     *  @return  active_ Boolean, based on if borrower is in auction.
+     */
+    function _isActive(
+        Data storage self,
+        address borrower_
+    ) internal view returns (bool) {
+        return self.liquidations[borrower_].kickTime != 0;
     }
 
     /**
@@ -476,7 +487,7 @@ library Auctions {
             (
                 block.timestamp - kickTime > 72 hours
                 ||
-                (loans_.borrowers[head].t0debt > 0 && loans_.borrowers[head].collateral == 0)
+                (loans_.borrowers[head].t0debt != 0 && loans_.borrowers[head].collateral == 0)
             )
         ) revert AuctionNotCleared();
     }

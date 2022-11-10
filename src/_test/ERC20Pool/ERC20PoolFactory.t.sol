@@ -7,8 +7,6 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 import '../../erc20/ERC20Pool.sol';
 import '../../erc20/ERC20PoolFactory.sol';
 
-import '../../base/PoolDeployer.sol';
-
 contract ERC20PoolFactoryTest is ERC20HelperContract {
     ERC20PoolFactory internal _poolFactory;
 
@@ -87,9 +85,101 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
 
         assertEq(address(pool),             poolAddress);
         assertEq(pool.collateralAddress(),  address(_collateral));
-        assertEq(pool.collateralScale(),    1);
+        assertEq(pool.collateralScale(),    10 ** 0);
         assertEq(pool.quoteTokenAddress(),  address(_quote));
-        assertEq(pool.quoteTokenScale(),    1);
+        assertEq(pool.quoteTokenScale(),    10 ** 0);
+        assertEq(pool.interestRate(),       0.0543 * 10**18);
+        assertEq(pool.interestRateUpdate(), _startTime + 333);
+
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflatorSnapshot, 10**18);
+        assertEq(lastInflatorUpdate,   _startTime + 333);
+    }
+
+    function testDeployERC20CompDaiPool() external {
+        skip(333);
+
+        address poolAddress = 0x88c0A0F7B9f2D204C16409CF01d85D8BF1231f18;
+        address compAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
+        address daiAddress  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(poolAddress);
+        ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, daiAddress, 0.0543 * 10**18));
+
+        assertEq(address(pool),             poolAddress);
+        assertEq(pool.collateralAddress(),  compAddress);
+        assertEq(pool.collateralScale(),    10 ** 0);
+        assertEq(pool.quoteTokenAddress(),  daiAddress);
+        assertEq(pool.quoteTokenScale(),    10 ** 0);
+        assertEq(pool.interestRate(),       0.0543 * 10**18);
+        assertEq(pool.interestRateUpdate(), _startTime + 333);
+
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflatorSnapshot, 10**18);
+        assertEq(lastInflatorUpdate,   _startTime + 333);
+    }
+
+    function testDeployERC20WbtcDaiPool() external {
+        skip(333);
+
+        address poolAddress = 0x88c0A0F7B9f2D204C16409CF01d85D8BF1231f18;
+        address wbtcAddress = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+        address daiAddress  = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(poolAddress);
+        ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(wbtcAddress, daiAddress, 0.0543 * 10**18));
+
+        assertEq(address(pool),             poolAddress);
+        assertEq(pool.collateralAddress(),  wbtcAddress);
+        assertEq(pool.collateralScale(),    10 ** 10);         // WBTC has precision of 8, so 10 ** (18 - 8) = 10 ** 10
+        assertEq(pool.quoteTokenAddress(),  daiAddress);
+        assertEq(pool.quoteTokenScale(),    10 ** 0);          // DAI has precision of 18, so 10 ** (18 - 18) = 10 ** 0
+        assertEq(pool.interestRate(),       0.0543 * 10**18);
+        assertEq(pool.interestRateUpdate(), _startTime + 333);
+
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflatorSnapshot, 10**18);
+        assertEq(lastInflatorUpdate,   _startTime + 333);
+    }
+
+    function testDeployERC20WbtcUsdcPool() external {
+        skip(333);
+
+        address poolAddress = 0x88c0A0F7B9f2D204C16409CF01d85D8BF1231f18;
+        address wbtcAddress = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+        address usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(poolAddress);
+        ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(wbtcAddress, usdcAddress, 0.0543 * 10**18));
+
+        assertEq(address(pool),             poolAddress);
+        assertEq(pool.collateralAddress(),  wbtcAddress);
+        assertEq(pool.collateralScale(),    10 ** 10);         // WBTC has precision of 8, so 10 ** (18 - 8) = 10 ** 10
+        assertEq(pool.quoteTokenAddress(),  usdcAddress);
+        assertEq(pool.quoteTokenScale(),    10 ** 12);         // USDC has precision of 6, so 10 ** (18 - 6) = 10 ** 12
+        assertEq(pool.interestRate(),       0.0543 * 10**18);
+        assertEq(pool.interestRateUpdate(), _startTime + 333);
+
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflatorSnapshot, 10**18);
+        assertEq(lastInflatorUpdate,   _startTime + 333);
+    }
+
+    function testDeployERC20CompUsdcPool() external {
+        skip(333);
+
+        address poolAddress = 0x88c0A0F7B9f2D204C16409CF01d85D8BF1231f18;
+        address compAddress = 0xc00e94Cb662C3520282E6f5717214004A7f26888;
+        address usdcAddress = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+        vm.expectEmit(true, true, false, true);
+        emit PoolCreated(poolAddress);
+        ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, usdcAddress, 0.0543 * 10**18));
+
+        assertEq(address(pool),             poolAddress);
+        assertEq(pool.collateralAddress(),  compAddress);
+        assertEq(pool.collateralScale(),    10 ** 0);
+        assertEq(pool.quoteTokenAddress(),  usdcAddress);
+        assertEq(pool.quoteTokenScale(),    10 ** 12);
         assertEq(pool.interestRate(),       0.0543 * 10**18);
         assertEq(pool.interestRateUpdate(), _startTime + 333);
 

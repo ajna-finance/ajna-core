@@ -4,14 +4,7 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import '../../erc721/ERC721Pool.sol';
-import '../../erc721/ERC721PoolFactory.sol';
-
-import '../../erc721/interfaces/IERC721Pool.sol';
-import '../../erc721/interfaces/pool/IERC721PoolErrors.sol';
-import '../../base/interfaces/IPool.sol';
-import '../../base/interfaces/pool/IPoolErrors.sol';
-
+import '../../libraries/PoolUtils.sol';
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
 
@@ -51,7 +44,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         _mintAndApproveCollateralTokens(_bidder, 13);
     }
 
-    function testSubsetPurchaseQuote() external {
+    function testSubsetPurchaseQuote() external tearDown {
         // test setup
         uint256 testIndex = 2550;
         uint256 priceAtTestIndex = PoolUtils.indexToPrice(testIndex);
@@ -217,7 +210,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
      *              Attempts to remove more collateral than available given lp balance.
      *              Attempts to remove collateral not in the bucket.
      */
-    function testSubsetPurchaseQuoteWithDebt() external {
+    function testSubsetPurchaseQuoteWithDebt() external tearDown {
         // lenders add liquidity
         _addLiquidity(
             {
@@ -411,6 +404,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
                 index:  2350
             }
         );
-    }
 
+        skip(3600);
+    }
 }

@@ -22,11 +22,12 @@ contract ERC20Pool is IERC20Pool, Pool {
     /****************************/
 
     function initialize(
+        uint256 collateralScale_,
         uint256 rate_
     ) external override {
         if (poolInitializations != 0) revert AlreadyInitialized();
 
-        collateralScale = 10**(18 - IERC20Token(_getArgAddress(0)).decimals());
+        collateralScale = collateralScale_;
 
         inflatorSnapshot           = 10**18;
         lastInflatorSnapshotUpdate = block.timestamp;
@@ -86,15 +87,17 @@ contract ERC20Pool is IERC20Pool, Pool {
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
         if (fromIndex_ == toIndex_) revert MoveToSamePrice();
 
+        Buckets.Bucket storage fromBucket = buckets[fromIndex_];
+        if (fromBucket.collateral < collateralAmountToMove_) revert InsufficientCollateral();
+
         PoolState memory poolState = _accruePoolInterest();
 
-        uint256 fromBucketCollateral;
-        (fromBucketLPs_, fromBucketCollateral) = buckets.collateralToLPs(
+        fromBucketLPs_= Buckets.collateralToLPs(
+            fromBucket,
             deposits.valueAt(fromIndex_),
             collateralAmountToMove_,
-            fromIndex_
+            PoolUtils.indexToPrice(fromIndex_)
         );
-        if (fromBucketCollateral < collateralAmountToMove_) revert InsufficientCollateral();
 
         (uint256 lpBalance, ) = buckets.getLenderInfo(
             fromIndex_,
@@ -102,8 +105,17 @@ contract ERC20Pool is IERC20Pool, Pool {
         );
         if (fromBucketLPs_ > lpBalance) revert InsufficientLPs();
 
-        buckets.removeCollateral(collateralAmountToMove_, fromBucketLPs_, fromIndex_);
-        toBucketLPs_ = buckets.addCollateral(deposits.valueAt(toIndex_), collateralAmountToMove_, toIndex_);
+        Buckets.removeCollateral(
+            fromBucket,
+            collateralAmountToMove_,
+            fromBucketLPs_
+        );
+        toBucketLPs_ = Buckets.addCollateral(
+            buckets[toIndex_],
+            deposits.valueAt(toIndex_),
+            collateralAmountToMove_,
+            PoolUtils.indexToPrice(toIndex_)
+        );
 
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
@@ -114,17 +126,28 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
 
+        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(
+            index_,
+            msg.sender
+        );
+
         PoolState memory poolState = _accruePoolInterest();
 
-        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        (collateralAmountRemoved_, redeemedLenderLPs_) = buckets.lpsToCollateral(
+        Buckets.Bucket storage bucket = buckets[index_];
+        (collateralAmountRemoved_, redeemedLenderLPs_) = Buckets.lpsToCollateral(
+            bucket,
             deposits.valueAt(index_),
             lenderLPsBalance,
-            index_
+            PoolUtils.indexToPrice(index_)
         );
         if (collateralAmountRemoved_ == 0) revert NoClaim();
 
-        buckets.removeCollateral(collateralAmountRemoved_, redeemedLenderLPs_, index_);
+        Buckets.removeCollateral(
+            bucket,
+            collateralAmountRemoved_,
+            redeemedLenderLPs_)
+        ;
+
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
         // move collateral from pool to lender
@@ -176,12 +199,11 @@ contract ERC20Pool is IERC20Pool, Pool {
             if (auctionPrice >= bucketPrice) revert AuctionPriceGteQArbPrice();
 
             Buckets.Bucket storage bucket = buckets[index_];
-            uint256 bucketExchangeRate;
-            if (bucket.lps == 0) {
-                bucketExchangeRate = Maths.RAY;
-            } else {
-                bucketExchangeRate = (bucketDeposit * 1e18 + bucketPrice * bucket.collateral) * 1e18 / bucket.lps;
-            }
+            uint256 bucketExchangeRate = Buckets.getExchangeRate(
+                bucket,
+                bucketDeposit,
+                bucketPrice
+            );
 
             // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
             Buckets.addLPs(

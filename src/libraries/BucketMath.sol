@@ -30,8 +30,8 @@ library BucketMath {
     uint256 public constant MIN_PRICE = 99_836_282_890;
     uint256 public constant MAX_PRICE = 1_004_968_987.606512354182109771 * 10**18;
 
-    uint256 public constant CUBIC_ROOT_100      = 4.641588833612778892 * 1e18;
-    uint256 public constant ONE_THIRD           = 0.333333333333333334 * 1e18;
+    uint256 public constant CUBIC_ROOT_1000000 = 100 * 1e18;
+    uint256 public constant ONE_THIRD          = 0.333333333333333334 * 1e18;
 
     /**
         @dev step amounts in basis points. This is a constant across pools at .005, achieved by dividing WAD by 10,000
@@ -146,8 +146,13 @@ library BucketMath {
     ) public pure returns (uint256) {
         // TODO: Consider pre-calculating and storing a conversion table in a library or shared contract.
         // cubic root of the percentage of meaningful unutilized deposit
-        uint256 crpud = PRBMathUD60x18.pow(100 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 100 * 1e18), ONE_THIRD);
-        return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_100), 0.15 * 1e18);
+        uint256 base = 1000000 * 1e18 - Maths.wmul(Maths.min(mau_, 1e18), 1000000 * 1e18);
+        if (base < 1e18) {
+            return 1e18;
+        } else {
+            uint256 crpud = PRBMathUD60x18.pow(base, ONE_THIRD);
+            return 1e18 - Maths.wmul(Maths.wdiv(crpud, CUBIC_ROOT_1000000), 0.15 * 1e18);
+        }
     }
 
     function bpf(

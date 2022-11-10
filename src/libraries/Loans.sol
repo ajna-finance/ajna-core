@@ -54,31 +54,6 @@ library Loans {
     /***********************************/
 
     /**
-     *  @notice Kicks a loan by removing it from loan heap and updating borrower info (adding kick penalty to debt).
-     *  @param  self Holds tree loan data.
-     *  @param  borrower_     Address of borrower to be kicked.
-     *  @param  debt_         Accrued debt of borrower to be kicked.
-     *  @param  inflator_     Pool current inflator.
-     *  @param  rate_         Pool interest rate.
-     *  @return kickPenalty_  Liquidation penalty added to the debt of the borrower and poolstate debt.
-     */
-    function kick(
-        Data storage self,
-        address borrower_,
-        uint256 debt_,
-        uint256 inflator_,
-        uint256 rate_
-    ) internal returns (uint256 kickPenalty_) {
-        // update loan heap
-        _remove(self, borrower_);
-
-        // update borrower balance
-        Borrower storage borrower = self.borrowers[borrower_];
-        kickPenalty_              = Maths.wmul(Maths.wdiv(rate_, 4 * 1e18), debt_); // when loan is kicked, penalty of three months of interest is added
-        borrower.t0debt           = Maths.wdiv(debt_ + kickPenalty_, inflator_);
-    }
-
-    /**
      *  @notice Updates a loan: updates heap (upsert if TP not 0, remove otherwise) and borrower balance.
      *  @param self Holds tree loan data.
      *  @param deposits_        Pool deposits, used to calculate borrower MOMP factor.

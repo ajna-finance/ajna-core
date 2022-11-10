@@ -67,7 +67,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         _quote.approve(address(_pool), 200_000 * _quotePrecision);
     }
 
-    function testAddRemoveQuotePrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
+    function testAddRemoveQuotePrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
@@ -202,7 +202,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
         );
     }
 
-    function testBorrowRepayPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual {
+    function testBorrowRepayPrecision(uint8 collateralPrecisionDecimals_, uint8 quotePrecisionDecimals_) external virtual tearDown {
         // setup fuzzy bounds and initialize the pool
         uint256 boundColPrecision = bound(uint256(collateralPrecisionDecimals_), 1, 18);
         uint256 boundQuotePrecision = bound(uint256(quotePrecisionDecimals_), 1, 18);
@@ -338,8 +338,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 maxThresholdPrice: 200.192307692307692400 * 1e18
             }
         );
+        (uint256 poolDebt,,) = _pool.debtInfo();
         assertEq(_pool.depositSize(),       150_000 * _quotePoolPrecision);
-        assertEq(_pool.debt(),              debt);
+        assertEq(poolDebt,                  debt);
         assertEq(_pool.pledgedCollateral(), col);
 
         _assertBucket(
@@ -407,8 +408,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 maxThresholdPrice: 100.192307692307692400 * 1e18
             }
         );
+        (poolDebt,,) = _pool.debtInfo();
         assertEq(_pool.depositSize(),       150_000 * 1e18);
-        assertEq(_pool.debt(),              debt);
+        assertEq(poolDebt,                  debt);
         assertEq(_pool.pledgedCollateral(), col);
 
         _assertBucket(
@@ -473,8 +475,9 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
                 maxThresholdPrice: 3_025.946482308870941594 * 1e18
             }
         );
+        (poolDebt,,) = _pool.debtInfo();
         assertEq(_pool.depositSize(),       150_000 * 1e18);
-        assertEq(_pool.debt(),              debt);
+        assertEq(poolDebt,                  debt);
         assertEq(_pool.pledgedCollateral(), col);
     }
 

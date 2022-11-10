@@ -4,11 +4,9 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import '../../erc20/ERC20Pool.sol';
-import '../../erc20/ERC20PoolFactory.sol';
-
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
+import '../../libraries/PoolUtils.sol';
 
 contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
 
@@ -33,7 +31,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
     /**
      *  @notice 1 lender, 1 bidder tests purchasing quote token with collateral.
      */
-    function testPurchaseQuote() external {
+    function testPurchaseQuote() external tearDown {
         // test setup
         uint256 testIndex = 2550;
 
@@ -214,7 +212,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
     /**
      *  @notice 2 lenders, 1 borrower, 1 bidder tests purchasing quote token with collateral.
      */
-    function testPurchaseQuoteWithDebt() external {
+    function testPurchaseQuoteWithDebt() external tearDown {
         uint256 p2550 = 3_010.892022197881557845 * 1e18;
 
         // lenders add liquidity

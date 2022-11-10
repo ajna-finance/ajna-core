@@ -3,14 +3,6 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import '../../erc721/ERC721Pool.sol';
-import '../../erc721/ERC721PoolFactory.sol';
-
-import '../../erc721/interfaces/IERC721Pool.sol';
-import '../../erc721/interfaces/pool/IERC721PoolErrors.sol';
-import '../../base/interfaces/IPool.sol';
-import '../../base/interfaces/pool/IPoolErrors.sol';
-
 import '../../libraries/BucketMath.sol';
 import '../../libraries/Maths.sol';
 import '../../libraries/PoolUtils.sol';
@@ -51,7 +43,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     /*** ERC721 Subset Tests ***/
     /***************************/
 
-    function testPledgeCollateralSubset() external {
+    function testPledgeCollateralSubset() external tearDown {
         // check initial token balances
         assertEq(_pool.pledgedCollateral(), 0);
 
@@ -78,7 +70,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.balanceOf(address(_pool)), 3);
     }
 
-    function testPledgeCollateralNotInSubset() external {
+    function testPledgeCollateralNotInSubset() external tearDown {
         uint256[] memory tokenIdsToAdd = new uint256[](3);
         tokenIdsToAdd[0] = 2;
         tokenIdsToAdd[1] = 4;
@@ -93,7 +85,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testPledgeCollateralInSubsetFromDifferentActor() external {
+    function testPledgeCollateralInSubsetFromDifferentActor() external tearDown {
         // check initial token balances
         assertEq(_pool.pledgedCollateral(),             0);
 
@@ -159,7 +151,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testPullCollateral() external {
+    function testPullCollateral() external tearDown {
         // check initial token balances
         assertEq(_pool.pledgedCollateral(), 0);
 
@@ -260,7 +252,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
     }
 
     // TODO: finish implementing
-    function testPullCollateralNotInPool() external {
+    function testPullCollateralNotInPool() external tearDown {
         // borrower is owner of NFTs
         assertEq(_collateral.ownerOf(1), _borrower);
         assertEq(_collateral.ownerOf(3), _borrower);
@@ -305,7 +297,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         assertEq(_collateral.ownerOf(5), _borrower);
     }
 
-    function testPullCollateralPartiallyEncumbered() external {
+    function testPullCollateralPartiallyEncumbered() external tearDown {
         _addLiquidity(
             {
                 from:   _lender,
@@ -441,7 +433,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
 
     }
 
-    function testPullCollateralOverlyEncumbered() external {
+    function testPullCollateralOverlyEncumbered() external tearDown {
 
         // lender deposits 10000 Quote into 3 buckets
         _addLiquidity(
@@ -484,7 +476,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // check collateralization after pledge
-        assertEq(PoolUtils.encumberance(_pool.debt(), _lup()), 0);
+        (uint256 poolDebt,,) = _pool.debtInfo();
+        assertEq(PoolUtils.encumberance(poolDebt, _lup()), 0);
 
         // borrower borrows some quote
         _borrow(
@@ -497,7 +490,8 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // check collateralization after borrow
-        assertEq(PoolUtils.encumberance(_pool.debt(), _lup()), 2.992021560300836411 * 1e18);
+        (poolDebt,,) = _pool.debtInfo();
+        assertEq(PoolUtils.encumberance(poolDebt, _lup()), 2.992021560300836411 * 1e18);
 
         // should revert if borrower attempts to pull more collateral than is unencumbered
         _assertPullInsufficientCollateralRevert(
@@ -508,7 +502,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
     }
 
-    function testAddRemoveCollateral() external {
+    function testAddRemoveCollateral() external tearDown {
 
         // lender adds some liquidity
         _addLiquidity(

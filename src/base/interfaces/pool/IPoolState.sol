@@ -27,16 +27,12 @@ interface IPoolState {
     );
 
     /**
-     *  @notice Calculates pool debt as of the last time interest owed to lenders accrued.
-     *  @return accruedDebt_ Borrower debt as of the last interest accrual.
+     *  @notice Returns pool related debt values.
+     *  @return debt_            Current amount of debt owed by borrowers in pool.
+     *  @return accruedDebt_     Debt owed by borrowers based on last inflator snapshot.
+     *  @return debtInAuction_   Total amount of debt in auction.
      */
-    function accruedDebt() external view returns (uint256 accruedDebt_);
-
-    /**
-     *  @notice Calculates pool debt with interest due as of the current block height.
-     *  @return debt_ Current amount of debt owed by borrowers in pool.
-     */
-    function debt() external view returns (uint256 debt_);
+    function debtInfo() external view returns (uint256 debt_, uint256 accruedDebt_, uint256 debtInAuction_);
 
     /**
      *  @notice Mapping of borrower addresses to {Borrower} structs.
