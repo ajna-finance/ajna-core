@@ -289,7 +289,15 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 newLup:     PoolUtils.indexToPrice(2550)
             }
         );
-        _assertBorrowerDebt(_borrower, 8_007.692307692307696000 * 1e18);
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              8_007.692307692307696000 * 1e18,
+                borrowerCollateral:        3 * 1e18,
+                borrowerMompFactor:        3_010.892022197881557845 * 1e18,
+                borrowerCollateralization: 1.127999893042434013 * 1e18
+            }
+        );
 
         skip(4 hours);
 
@@ -313,8 +321,24 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 newLup:     PoolUtils.indexToPrice(2551)
             }
         );
-        _assertBorrowerDebt(_borrower, 8_007.875133804645608008 * 1e18);
-        _assertBorrowerDebt(_borrower2, 2_752.644230769230770500 * 1e18);
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              8_007.875133804645608008 * 1e18,
+                borrowerCollateral:        3 * 1e18,
+                borrowerMompFactor:        3_010.892022197881557845 * 1e18,
+                borrowerCollateralization: 1.122362328272840838 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              2_752.644230769230770500 * 1e18,
+                borrowerCollateral:        1 * 1e18,
+                borrowerMompFactor:        3010.823281155608819803 * 1e18,
+                borrowerCollateralization: 1.088376197116173336 * 1e18
+            }
+        );
 
         skip(4 hours);
 
@@ -337,9 +361,34 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 newLup:     PoolUtils.indexToPrice(2551)
             }
         );
-        _assertBorrowerDebt(_borrower, 8_008.057964091143327677 * 1e18);
-        _assertBorrowerDebt(_borrower2, 2_752.707077245346929053 * 1e18);
-        _assertBorrowerDebt(_borrower3, 2_502.403846153846155000 * 1e18);
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              8_008.057964091143327677 * 1e18,
+                borrowerCollateral:        3 * 1e18,
+                borrowerMompFactor:        3_010.892022197881557845 * 1e18,
+                borrowerCollateralization: 1.122336703854666979 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              2_752.707077245346929053 * 1e18,
+                borrowerCollateral:        1 * 1e18,
+                borrowerMompFactor:        3_010.823281155608819803 * 1e18,
+                borrowerCollateralization: 1.088351348628209297 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower3,
+                borrowerDebt:              2_502.403846153846155000 * 1e18,
+                borrowerCollateral:        1 * 1e18,
+                borrowerMompFactor:        3_010.754541682748353480 * 1e18,
+                borrowerCollateralization: 1.197213816827790670 * 1e18
+            }
+        );
+
 
         skip(4 hours);
 
