@@ -51,8 +51,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
     modifier mayInteract(address pool_, uint256 tokenId_) {
         _requireMinted(tokenId_);
-        require(_isApprovedOrOwner(msg.sender, tokenId_), "PM:NO_AUTH");
-        require(pool_ == poolKey[tokenId_], "PM:W_POOL");
+        // require(_isApprovedOrOwner(msg.sender, tokenId_), "PM:NO_AUTH");
+        // require(pool_ == poolKey[tokenId_], "PM:W_POOL");
+        if (!_isApprovedOrOwner(msg.sender, tokenId_)) revert NoAuth();
+        if (pool_ != poolKey[tokenId_]) revert WrongPool();
         _;
     }
 
@@ -61,7 +63,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
     /************************/
 
     function burn(BurnParams calldata params_) external override payable mayInteract(params_.pool, params_.tokenId) {
-        require(positionPrices[params_.tokenId].length() == 0, "PM:B:LIQ_NOT_REMOVED");
+        // require(, "PM:B:LIQ_NOT_REMOVED");
+        if (positionPrices[params_.tokenId].length() != 0) revert LiquidityNotRemoved();
 
         delete nonces[params_.tokenId];
         delete poolKey[params_.tokenId];
@@ -79,7 +82,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // record price at which a position has added liquidity
-            if (!positionPrice.contains(params_.indexes[i])) require(positionPrice.add(params_.indexes[i]), "PM:ME:ADD_FAIL");
+            // if (!positionPrice.contains(params_.indexes[i])) require(positionPrice.add(params_.indexes[i]), "PM:ME:ADD_FAIL");
+            if (!positionPrice.contains(params_.indexes[i])) if(!positionPrice.add(params_.indexes[i])) revert AddLiquidityFailed();
 
             // update PositionManager accounting
             (uint256 lpBalance,) = pool.lenderInfo(params_.indexes[i], owner);
@@ -119,8 +123,10 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
 
         // update prices set at which a position has liquidity
         EnumerableSet.UintSet storage positionPrice = positionPrices[params_.tokenId];
-        require(positionPrice.remove(params_.fromIndex), "PM:MV:REMOVE_FAIL");
-        if (!positionPrice.contains(params_.toIndex)) require(positionPrice.add(params_.toIndex), "PM:MV:ADD_FAIL");
+        // require(positionPrice.remove(params_.fromIndex), "PM:MV:REMOVE_FAIL");
+        if (!positionPrice.remove(params_.fromIndex)) revert RemoveLiquidityFailed();
+        // if (!positionPrice.contains(params_.toIndex)) require(positionPrice.add(params_.toIndex), "PM:MV:ADD_FAIL");
+        if (!positionPrice.contains(params_.toIndex)) if(!positionPrice.add(params_.toIndex)) revert AddLiquidityFailed();
 
         // move quote tokens in pool
         emit MoveLiquidity(owner, params_.tokenId);
@@ -139,7 +145,8 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         uint256 indexesLength = params_.indexes.length;
         for (uint256 i = 0; i < indexesLength; ) {
             // remove price at which a position has added liquidity
-            require(positionPrice.remove(params_.indexes[i]), "PM:R:REMOVE_FAIL");
+            // require(positionPrice.remove(params_.indexes[i]), "PM:R:REMOVE_FAIL");
+            if (!positionPrice.remove(params_.indexes[i])) revert RemoveLiquidityFailed();
 
             // update PositionManager accounting
             uint256 lpAmount = lps[params_.tokenId][params_.indexes[i]];
