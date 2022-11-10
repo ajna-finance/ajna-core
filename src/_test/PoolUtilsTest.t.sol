@@ -3,10 +3,6 @@ pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
 
-import '@prb-math/contracts/PRBMathSD59x18.sol';
-import '@prb-math/contracts/PRBMathUD60x18.sol';
-import "forge-std/console2.sol";
-
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 import '../base/Pool.sol';

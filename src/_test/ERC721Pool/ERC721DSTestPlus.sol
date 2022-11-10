@@ -94,7 +94,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             if (lenderLpBalance == 0) continue;
 
             // Calculating redeemable Quote and Collateral Token in particular bucket
-            (uint256 price, uint256 bucketQuoteToken, uint256 bucketCollateral, uint256 bucketLPs, , ) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+            (uint256 price, uint256 bucketQuoteToken, uint256 bucketCollateral, , , ) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
 
             // If bucket has a fractional amount of NFTs, we'll need to defragment collateral across buckets
             if (bucketCollateral % 1e18 != 0) {
