@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import "forge-std/console2.sol";
 import '@clones/Clone.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
@@ -277,6 +278,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
         // increase debt by the origination fee
+        console2.log("borrow rate=%s, feerate=%s", interestRate, PoolUtils.feeRate(interestRate));
         uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
         borrowerDebt += debtChange;
@@ -328,6 +330,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_
     ) external override {
+        console2.log("repay rate=%s, feerate=%s", interestRate, PoolUtils.feeRate(interestRate));
         PoolState memory poolState     = _accruePoolInterest();
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.t0debt == 0) revert NoDebt();
@@ -470,6 +473,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToPledge_
     ) internal {
 
+        console2.log("pledge rate=%s, feerate=%s", interestRate, PoolUtils.feeRate(interestRate));
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
 
@@ -505,6 +509,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateralAmountToPull_
     ) internal {
 
+        console2.log("pull rate=%s, feerate=%s", interestRate, PoolUtils.feeRate(interestRate));
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(msg.sender);
         uint256 borrowerDebt            = Maths.wmul(borrower.t0debt, poolState.inflator);
