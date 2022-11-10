@@ -268,7 +268,7 @@ library Deposits {
         uint256 ii    = 0;          // Binary index offset
         uint256 sc    = Maths.WAD;
         uint256 index = SIZE;
-	uint256 scale;
+	uint256 scaled;
 
         while (j > 0) {
             // if requested node is in current range, updates are confined to range for remaining iterations.
@@ -279,8 +279,8 @@ library Deposits {
                 
             // Update node effected by removal.
             } else {
-	      	scale = self.scaling[index];
-                if (scale!=0) sc = Maths.wmul(sc,scale+Maths.WAD);
+	      	scaled = self.scaling[index];
+                if (scaled!=0) sc = Maths.wmul(sc,scaled+Maths.WAD);
                 self.values[index] -= Maths.min(self.values[index], Maths.wdiv(x_, sc));
             }
 
@@ -316,20 +316,20 @@ library Deposits {
 
         uint256 j  =  i_;
         uint256 k  =  1;
-	uint256 scale;
+	uint256 scaled;
 
         i_         += 1;
         s_         =  self.values[i_];
 
         while (j & k != 0) {
-	    scale = self.scaling[j];
-	    if (scale!=0) s_ = s_ - Maths.wmul(scale+Maths.WAD, self.values[j]);
+	    scaled = self.scaling[j];
+	    if (scaled!=0) s_ = s_ - Maths.wmul(scaled+Maths.WAD, self.values[j]);
             j  = j - k;
             k  = k << 1;
         }
         while (i_ <= SIZE) {
-	    scale = self.scaling[i_];
-            if(scale!=0) s_ = Maths.wmul(scale+Maths.WAD, s_);
+	    scaled = self.scaling[i_];
+            if(scaled!=0) s_ = Maths.wmul(scaled+Maths.WAD, s_);
             i_ += lsb(i_);
         }
     }
