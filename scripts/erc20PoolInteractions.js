@@ -3,6 +3,7 @@ const Web3 = require("web3");
 const { FACTORY, ERC20POOL, ERC20TOKEN } = require('./abis.js');
 
 async function main() {
+
   /**********************/
   /*** Contracts setup ***/
   /**********************/
@@ -40,21 +41,15 @@ async function main() {
   /****************************/
   /*** Lender account setup ***/
   /****************************/
-
+  const allowance = web3.utils.toWei(String(100000000), 'ether');
   const lender = web3.eth.accounts.privateKeyToAccount(
     process.env.LENDER_PRIVATE_KEY
   );
   web3.eth.accounts.wallet.add(lender);
-
-  // approve pool to spend quote tokens and check allowance
-  const lenderBalance = await quoteToken.methods.balanceOf(
-    process.env.LENDER_ADDRESS
-  ).call();
-  console.log(`Lender quote balance: ${lenderBalance}`);
-
+  // approve pool to spend quote tokens
   await quoteToken.methods.approve(
     poolAddress,
-    lenderBalance
+    allowance
     ).send({
       from: process.env.LENDER_ADDRESS,
       gas: 200000,
@@ -69,21 +64,20 @@ async function main() {
     process.env.BORROWER_PRIVATE_KEY
   );
   web3.eth.accounts.wallet.add(borrower);
-
-  // approve pool to spend collateral tokens and check allowance
-  const borrowerCollateralBalance = await collateralToken.methods.balanceOf(
-    process.env.BORROWER_ADDRESS
-  ).call();
-  const borrowerQuoteBalance = await quoteToken.methods.balanceOf(
-    process.env.BORROWER_ADDRESS
-  ).call();
-  console.log(`Borrower quote balance: ${borrowerQuoteBalance} , collateral balance: ${borrowerCollateralBalance}`);
-
+  // approve pool to spend collateral tokens
   await collateralToken.methods.approve(
     poolAddress,
-    borrowerCollateralBalance
+    allowance
     ).send({
-      from: process.env.LENDER_ADDRESS,
+      from: process.env.BORROWER_ADDRESS,
+      gas: 200000,
+    });
+  // approve pool to spend quote tokens (for repay)
+  await quoteToken.methods.approve(
+    poolAddress,
+    allowance
+    ).send({
+      from: process.env.BORROWER_ADDRESS,
       gas: 200000,
     });
 
@@ -106,6 +100,7 @@ async function main() {
       console.log(`Lender added ${quoteAmount} quote token to the pool`);
     });
 
+  logLenderBalances(quoteToken)
 
   /************************/
   /*** Borrow from pool ***/
@@ -137,10 +132,12 @@ async function main() {
       console.log(`Borrower borrowed ${amountToBorrow} quote tokens from the pool`);
     });
 
+  logBorrowerBalances(collateralToken, quoteToken)
+
   // repay loan with debt
   await pool.methods.repay(
     process.env.BORROWER_ADDRESS,
-    web3.utils.toWei(String(1001), 'ether')
+    web3.utils.toWei(String(1015), 'ether')
     ).send({
       from: process.env.BORROWER_ADDRESS,
       gas: 2000000,
@@ -149,7 +146,55 @@ async function main() {
       console.log(`Borrower repaid loan`);
     });
 
+  logBorrowerBalances(collateralToken, quoteToken)
+
+  await pool.methods.pullCollateral(
+    collateralToPledge
+    ).send({
+      from: process.env.BORROWER_ADDRESS,
+      gas: 2000000,
+    })
+    .once("transactionHash", (txhash) => {
+      console.log(`Borrower pulled their collateral from pool`);
+    });
+
+  logBorrowerBalances(collateralToken, quoteToken)
+
+  /***************************/
+  /*** Remove quote tokens ***/
+  /***************************/
+
+  await pool.methods.removeQuoteToken(
+    allowance, // max amount
+    bucketIndex
+    ).send({
+      from: process.env.LENDER_ADDRESS,
+      gas: 2000000,
+    })
+    .once("transactionHash", (txhash) => {
+      console.log(`Lender removed all quote tokens from the pool`);
+    });
+
+  logLenderBalances(quoteToken)
+
 }
 
 require("dotenv").config();
 main();
+
+async function logBorrowerBalances(collateralToken, quoteToken) {
+  const borrowerCollateralBalance = await collateralToken.methods.balanceOf(
+    process.env.BORROWER_ADDRESS
+  ).call();
+  const borrowerQuoteBalance = await quoteToken.methods.balanceOf(
+    process.env.BORROWER_ADDRESS
+  ).call();
+  console.log(`Borrower quote balance: ${borrowerQuoteBalance} , collateral balance: ${borrowerCollateralBalance}`);
+}
+
+async function logLenderBalances(quoteToken) {
+  const quoteBalance = await quoteToken.methods.balanceOf(
+    process.env.LENDER_ADDRESS
+  ).call();
+  console.log(`Lender quote balance: ${quoteBalance}`);
+}
