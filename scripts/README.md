@@ -9,7 +9,7 @@ brownie console
 run('ajna_setup')
 ```
 
-Running setup script will create a basic setup for testing SDK by:
+Running setup script will create a basic setup for testing basic interaction with pools by:
 - deploying ERC20 and ERC721 pool factories and generating `.env` file with deployed addresses, lender and borrower addresses and private keys and collateral / quote addresses
 - funding test addresses with DAI, COMP and Bored Apes NFTs. Addresses and balances to fund are set in `ajna-setup.json` file.
 Tokens configuration section contains addresses of DAI contract and reserve, COMP contract and reserve and Bored Ape contract. (sample provided for mainnet)
