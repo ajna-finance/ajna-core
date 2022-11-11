@@ -19,6 +19,7 @@ import './PermitERC20.sol';
 import './PositionNFT.sol';
 
 import '../libraries/Maths.sol';
+import '../libraries/Buckets.sol';
 
 contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC20, ReentrancyGuard {
     using EnumerableSet for EnumerableSet.UintSet;
@@ -110,10 +111,13 @@ contract PositionManager is IPositionManager, Multicall, PositionNFT, PermitERC2
         address owner = ownerOf(params_.tokenId);
 
         IPool pool = IPool(params_.pool);
-        (, , , uint256 bucketDeposit, ) = pool.bucketInfo(params_.fromIndex);
-        uint256 maxQuote      = pool.lpsToQuoteTokens(
+        (uint256 bucketLPs, uint256 bucketCollateral, , uint256 bucketDeposit, ) = pool.bucketInfo(params_.fromIndex);
+        (uint256 maxQuote, , ) = Buckets.lpsToQuoteToken(
+            bucketLPs,
+            bucketCollateral,
             bucketDeposit,
             lps[params_.tokenId][params_.fromIndex],
+            bucketDeposit,
             params_.fromIndex
         );
 

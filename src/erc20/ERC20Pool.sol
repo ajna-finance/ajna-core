@@ -93,7 +93,8 @@ contract ERC20Pool is IERC20Pool, Pool {
         PoolState memory poolState = _accruePoolInterest();
 
         fromBucketLPs_= Buckets.collateralToLPs(
-            fromBucket,
+            fromBucket.collateral,
+            fromBucket.lps,
             deposits.valueAt(fromIndex_),
             collateralAmountToMove_,
             PoolUtils.indexToPrice(fromIndex_)
@@ -135,7 +136,8 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         Buckets.Bucket storage bucket = buckets[index_];
         (collateralAmountRemoved_, redeemedLenderLPs_) = Buckets.lpsToCollateral(
-            bucket,
+            bucket.collateral,
+            bucket.lps,
             deposits.valueAt(index_),
             lenderLPsBalance,
             PoolUtils.indexToPrice(index_)
@@ -200,7 +202,8 @@ contract ERC20Pool is IERC20Pool, Pool {
 
             Buckets.Bucket storage bucket = buckets[index_];
             uint256 bucketExchangeRate = Buckets.getExchangeRate(
-                bucket,
+                bucket.collateral,
+                bucket.lps,
                 bucketDeposit,
                 bucketPrice
             );

@@ -94,7 +94,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             if (lenderLpBalance == 0) continue;
 
             // Calculating redeemable Quote and Collateral Token in particular bucket
-            (uint256 price, uint256 bucketQuoteToken, uint256 bucketCollateral, , , ) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
+            (uint256 price, , uint256 bucketCollateral, , , ) = _poolUtils.bucketInfo(address(_pool), bucketIndex);
 
             // If bucket has a fractional amount of NFTs, we'll need to defragment collateral across buckets
             if (bucketCollateral % 1e18 != 0) {
@@ -103,7 +103,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             uint256 noOfBucketNftsRedeemable = Maths.wadToIntRoundingDown(bucketCollateral);
 
             // Calculating redeemable Quote and Collateral Token for Lenders lps
-            uint256 lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken, lenderLpBalance, bucketIndex);
+            uint256 lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
 
             // Deposit additional quote token to redeem for all NFTs
             uint256 lpsRedeemed;
@@ -122,7 +122,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
                     Token(_pool.quoteTokenAddress()).approve(address(_pool) , depositRequired);
                     _pool.addQuoteToken(depositRequired, bucketIndex);
                     (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);
-                    lpsAsCollateral = ERC721Pool(address(_pool)).lpsToCollateral(bucketQuoteToken + depositRequired, lenderLpBalance, bucketIndex);
+                    lpsAsCollateral = _poolUtils.lpsToCollateral(address(_pool), lenderLpBalance, bucketIndex);
                 }
 
                 // First redeem LP for collateral

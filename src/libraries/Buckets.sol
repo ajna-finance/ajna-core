@@ -42,7 +42,8 @@ library Buckets {
 
         // calculate amount of LPs to be added for the amount of quote tokens added to bucket
         addedLPs_ = quoteTokensToLPs(
-            bucket_,
+            bucket_.collateral,
+            bucket_.lps,
             deposit_,
             quoteTokenAmountToAdd_,
             bucketPrice_
@@ -71,7 +72,8 @@ library Buckets {
 
         // calculate amount of LPs to be added for the amount of collateral added to bucket
         addedLPs_ = collateralToLPs(
-            bucket_,
+            bucket_.collateral,
+            bucket_.lps,
             deposit_,
             collateralAmountToAdd_,
             bucketPrice_
@@ -179,33 +181,39 @@ library Buckets {
 
     /**
      *  @notice Returns the amount of bucket LPs calculated for the given amount of collateral.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
      *  @param  deposit_     Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
      *  @param  collateral_  The amount of collateral to calculate bucket LPs for.
      *  @param  bucketPrice_ Price bucket.
      *  @return lps_         Amount of LPs calculated for the amount of collateral.
      */
     function collateralToLPs(
-        Bucket storage bucket_,
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
         uint256 deposit_,
         uint256 collateral_,
         uint256 bucketPrice_
-    ) internal view returns (uint256 lps_) {
-        uint256 rate = getExchangeRate(bucket_, deposit_, bucketPrice_);
+    ) internal pure returns (uint256 lps_) {
+        uint256 rate = getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
         lps_         = (collateral_ * bucketPrice_ * 1e18 + rate / 2) / rate;
     }
 
     /**
      *  @notice Returns the exchange rate for a given bucket.
-     *  @param  bucketDeposit_ The amount of quote tokens deposited in the given bucket.
-     *  @param  bucketPrice_   Bucket's price.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
+     *  @param  bucketDeposit_    The amount of quote tokens deposited in the given bucket.
+     *  @param  bucketPrice_      Bucket's price.
      */
     function getExchangeRate(
-        Bucket storage bucket_,
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
         uint256 bucketDeposit_,
         uint256 bucketPrice_
-    ) internal view returns (uint256) {
-        return bucket_.lps == 0 ? Maths.RAY :
-            (bucketDeposit_ * 1e18 + bucketPrice_ * bucket_.collateral) * 1e18 / bucket_.lps;
+    ) internal pure returns (uint256) {
+        return bucketLPs_ == 0 ? Maths.RAY :
+            (bucketDeposit_ * 1e18 + bucketPrice_ * bucketCollateral_) * 1e18 / bucketLPs_;
             // 10^36 * 1e18 / 10^27 = 10^54 / 10^27 = 10^27
     }
 
@@ -227,6 +235,8 @@ library Buckets {
 
     /**
      *  @notice Returns the amount of collateral calculated for the given amount of LPs.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
      *  @param  lenderLPsBalance_ The amount of LPs to calculate collateral for.
      *  @param  bucketPrice_      Bucket price.
@@ -234,67 +244,74 @@ library Buckets {
      *  @return lenderLPs_        Amount of lender LPs corresponding for calculated collateral amount.
      */
     function lpsToCollateral(
-        Bucket storage bucket_,
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
         uint256 deposit_,
         uint256 lenderLPsBalance_,
         uint256 bucketPrice_
-    ) internal view returns (uint256 collateralAmount_, uint256 lenderLPs_) {
+    ) internal pure returns (uint256 collateralAmount_, uint256 lenderLPs_) {
         // max collateral to lps
         lenderLPs_  = lenderLPsBalance_;
-        uint256 rate = getExchangeRate(bucket_, deposit_, bucketPrice_);
+        uint256 rate = getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
 
         collateralAmount_ = Maths.rwdivw(Maths.rmul(lenderLPsBalance_, rate), bucketPrice_);
-        if (collateralAmount_ > bucket_.collateral) {
+        if (collateralAmount_ > bucketCollateral_) {
             // user is owed more collateral than is available in the bucket
-            collateralAmount_ = bucket_.collateral;
+            collateralAmount_ = bucketCollateral_;
             lenderLPs_        = Maths.wrdivr(Maths.wmul(collateralAmount_, bucketPrice_), rate);
         }
     }
 
     /**
      *  @notice Returns the amount of quote tokens calculated for the given amount of LPs.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
      *  @param  deposit_          Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
      *  @param  lenderLPsBalance_ The amount of LPs to calculate quote token amount for.
      *  @param  maxQuoteToken_    The max quote token amount to calculate LPs for.
      *  @param  bucketPrice_      Bucket price.
      *  @return quoteTokenAmount_ Amount of quote tokens calculated for the given LPs amount.
-     *  @return bucketLPs_        Amount of bucket LPs corresponding for calculated collateral amount.
+     *  @return lps_              Amount of bucket LPs corresponding for calculated collateral amount.
      *  @return lenderLPs_        Lender LPs balance in current bucket.
      */
     function lpsToQuoteToken(
-        Bucket storage bucket_,
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
         uint256 deposit_,
         uint256 lenderLPsBalance_,
         uint256 maxQuoteToken_,
         uint256 bucketPrice_
-    ) internal view returns (uint256 quoteTokenAmount_, uint256 bucketLPs_, uint256 lenderLPs_) {
+    ) internal pure returns (uint256 quoteTokenAmount_, uint256 lps_, uint256 lenderLPs_) {
         lenderLPs_   = lenderLPsBalance_;
-        uint256 rate = getExchangeRate(bucket_, deposit_, bucketPrice_);
+        uint256 rate = getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_);
         quoteTokenAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance_, rate));
         if (quoteTokenAmount_ > deposit_) {
             quoteTokenAmount_ = deposit_;
             lenderLPs_        = Maths.wrdivr(quoteTokenAmount_, rate);
         }
         if (maxQuoteToken_ != quoteTokenAmount_) quoteTokenAmount_ = Maths.min(maxQuoteToken_,quoteTokenAmount_);
-        bucketLPs_ = Maths.wrdivr(quoteTokenAmount_, rate);
+        lps_ = Maths.wrdivr(quoteTokenAmount_, rate);
     }
 
     /**
      *  @notice Returns the amount of LPs calculated for the given amount of quote tokens.
+     *  @param  bucketCollateral_ Amount of collateral in bucket.
+     *  @param  bucketLPs_        Amount of LPs in bucket.
      *  @param  deposit_     Current bucket deposit (quote tokens). Used to calculate bucket's exchange rate / LPs.
      *  @param  quoteTokens_ The amount of quote tokens to calculate LPs amount for.
      *  @param  bucketPrice_ Price bucket.
      *  @return The amount of LPs coresponding to the given quote tokens in current bucket.
      */
     function quoteTokensToLPs(
-        Bucket storage bucket_,
+        uint256 bucketCollateral_,
+        uint256 bucketLPs_,
         uint256 deposit_,
         uint256 quoteTokens_,
         uint256 bucketPrice_
-    ) internal view returns (uint256) {
+    ) internal pure returns (uint256) {
         return Maths.rdiv(
             Maths.wadToRay(quoteTokens_),
-            getExchangeRate(bucket_, deposit_, bucketPrice_)
+            getExchangeRate(bucketCollateral_, bucketLPs_, deposit_, bucketPrice_)
         );
     }
 }

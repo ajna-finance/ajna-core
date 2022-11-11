@@ -112,7 +112,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 quoteTokenAmountToMove;
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
         (quoteTokenAmountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
-            fromBucket,
+            fromBucket.collateral,
+            fromBucket.lps,
             deposits.valueAt(fromIndex_),
             lenderLpBalance,
             maxQuoteTokenAmountToMove_,
@@ -132,7 +133,8 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         Buckets.Bucket storage toBucket = buckets[toIndex_];
         toBucketLPs_ = Buckets.quoteTokensToLPs(
-            toBucket,
+            toBucket.collateral,
+            toBucket.lps,
             deposits.valueAt(toIndex_),
             quoteTokenAmountToMove,
             PoolUtils.indexToPrice(toIndex_)
@@ -174,7 +176,8 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         Buckets.Bucket storage bucket = buckets[index_];
         uint256 exchangeRate = Buckets.getExchangeRate(
-            bucket,
+            bucket.collateral,
+            bucket.lps,
             deposit,
             PoolUtils.indexToPrice(index_)
         );
@@ -609,7 +612,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         
         bucketLPs_ = Buckets.collateralToLPs(
-            bucket,
+            bucket.collateral,
+            bucket.lps,
             deposits.valueAt(index_),
             collateralAmountToRemove_,
             PoolUtils.indexToPrice(index_)
@@ -777,19 +781,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function auctionInfo(
         address borrower_
-    )
-        external
-        view
-        override
-        returns (
-            address,
-            uint256,
-            uint256,
-            uint256,
-            address,
-            address
-        )
-    {
+    ) external view override returns (address, uint256, uint256, uint256, address, address) {
         return (
             auctions.liquidations[borrower_].kicker,
             auctions.liquidations[borrower_].bondFactor,
@@ -802,16 +794,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function borrowerInfo(
         address borrower_
-    )
-        external
-        view
-        override
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    ) external view override returns (uint256, uint256, uint256) {
         return (
             loans.borrowers[borrower_].t0debt,
             loans.borrowers[borrower_].collateral,
@@ -821,18 +804,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function bucketInfo(
         uint256 index_
-    )
-        external
-        view
-        override
-        returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    ) external view override returns (uint256, uint256, uint256, uint256, uint256) {
         return (
             buckets[index_].lps,
             buckets[index_].collateral,
@@ -842,9 +814,17 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function debtInfo() external view returns (uint256 debt_, uint256 accruedDebt_, uint256 debtInAuction_) {
-        uint256 pendingInflator = PoolUtils.pendingInflator(inflatorSnapshot, lastInflatorSnapshotUpdate, interestRate);
-        return (Maths.wmul(t0poolDebt, pendingInflator), Maths.wmul(t0poolDebt, inflatorSnapshot), Maths.wmul(t0DebtInAuction, inflatorSnapshot));
+    function debtInfo() external view returns (uint256, uint256, uint256) {
+        uint256 pendingInflator = PoolUtils.pendingInflator(
+            inflatorSnapshot,
+            lastInflatorSnapshotUpdate,
+            interestRate
+        );
+        return (
+            Maths.wmul(t0poolDebt, pendingInflator),
+            Maths.wmul(t0poolDebt, inflatorSnapshot),
+            Maths.wmul(t0DebtInAuction, inflatorSnapshot)
+        );
     }
 
     function depositIndex(uint256 debt_) external view override returns (uint256) {
@@ -862,30 +842,14 @@ abstract contract Pool is Clone, Multicall, IPool {
         return deposits.utilization(debt_, collateral_);
     }
 
-    function emasInfo()
-        external
-        view
-        override
-        returns (
-            uint256,
-            uint256
-        )
-    {
+    function emasInfo() external view override returns (uint256, uint256) {
         return (
             debtEma,
             lupColEma
         );
     }
 
-    function inflatorInfo()
-        external
-        view
-        override
-        returns (
-            uint256,
-            uint256
-        )
-    {
+    function inflatorInfo() external view override returns (uint256, uint256) {
         return (
             inflatorSnapshot,
             lastInflatorSnapshotUpdate
@@ -894,15 +858,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function kickerInfo(
         address kicker_
-    )
-        external
-        view
-        override
-        returns (
-            uint256,
-            uint256
-    )
-    {
+    ) external view override returns (uint256, uint256) {
         return(
             auctions.kickers[kicker_].claimable,
             auctions.kickers[kicker_].locked
@@ -912,57 +868,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     function lenderInfo(
         uint256 index_,
         address lender_
-    )
-        external
-        view
-        override
-        returns (
-            uint256,
-            uint256
-        )
-    {
-        (uint256 exchangeRate, uint256 collateral) = buckets.getLenderInfo(index_, lender_);
-        return (exchangeRate, collateral);
+    ) external view override returns (uint256, uint256) {
+        return buckets.getLenderInfo(index_, lender_);
     }
 
-    function lpsToQuoteTokens(
-        uint256 deposit_,
-        uint256 lpTokens_,
-        uint256 index_
-    ) external view override returns (uint256 quoteTokenAmount_) {
-        (quoteTokenAmount_, , ) = Buckets.lpsToQuoteToken(
-            buckets[index_],
-            deposit_,
-            lpTokens_,
-            deposit_,
-            PoolUtils.indexToPrice(index_)
-        );
-    }
-
-    // TODO: remove this method after solving // FIXME: now getting InsufficientLPs with this amount; was working two days ago
-    function lpsToCollateral(
-        uint256 deposit_,
-        uint256 lpTokens_,
-        uint256 index_
-    ) external view override returns (uint256 collateralAmount) {
-        (collateralAmount, ) = Buckets.lpsToCollateral(
-            buckets[index_],
-            deposit_,
-            lpTokens_,
-            PoolUtils.indexToPrice(index_)
-        );
-    }
-
-    function loansInfo()
-        external
-        view
-        override
-        returns (
-            address,
-            uint256,
-            uint256
-        )
-    {
+    function loansInfo() external view override returns (address, uint256, uint256) {
         return (
             loans.getMax().borrower,
             Maths.wmul(loans.getMax().thresholdPrice, inflatorSnapshot),
@@ -970,16 +880,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
-    function reservesInfo()
-        external
-        view
-        override
-        returns (
-            uint256,
-            uint256,
-            uint256
-        )
-    {
+    function reservesInfo() external view override returns (uint256, uint256, uint256) {
         return (
             auctions.totalBondEscrowed,
             reserveAuctionUnclaimed,
