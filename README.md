@@ -1,37 +1,46 @@
-# ajna contracts
+# Ajna contracts
 
-Ajna contracts
+## Development
+### Requirements
+- `python` 3.0+
+- `eth-brownie` 1.18.1+
+- `ganache` 7.0+ is required.
+- `foundry` aka `forge` 0.2.0+ is required.
 
-# Development
+## Foundry aka forge integration
+Install Foundry [instructions](https://github.com/gakonst/foundry/blob/master/README.md#installation)
 
-Install Foundry [instructions](https://github.com/gakonst/foundry/blob/master/README.md#installation)  then, install the [foundry](https://github.com/gakonst/foundry) toolchain installer (`foundryup`) with:
+Install the [foundry](https://github.com/gakonst/foundry) toolchain installer (`foundryup`) with:
 
 ```bash
 curl -L https://foundry.paradigm.xyz | bash
 ```
 
-To get the latest `forge` or `cast` binaries, tun
+To get the latest `forge` or `cast` binaries, run:
 
 ```bash
 foundryup
 ```
 
-#### Project Setup
+### Project Setup
 
 ```bash
 make all
 ```
 
-#### Run Tests
+### Run Tests
 
+`Forge test` without the gas load tests (good for checking validity)
 ```bash
 make test
 ```
 
+Gas tests, used for gas comparison of changes:
+```bash
+forge test -vv --gas-report
+```
 
-## Brownie integration
-
-`eth-brownie` 1.18.1+ and `ganache` 7.0+ is required.
+## Run Brownie
 - Install Brownie [instructions](https://eth-brownie.readthedocs.io/en/stable/install.html)
 - Make a copy of .env.example and name it .env. Add the values for ETHERSCAN_TOKEN and WEB3_INFURA_PROJECT_ID
 - Run `brownie console`
@@ -45,14 +54,20 @@ Caveats:
 - Brownie does not support mining empty blocks using `chain.mine`
 - Brownie does not report custom errors raised by the contract when using Hardhat
 
-### Brownie integration tests
+### Brownie tests
 
+Integration:
 ```bash
 brownie test
 ```
-  - To view `stdout` on long-running tests, use `brownie test -s`.
 
-#### Debugging Brownie integration tests
+Contract size:
+```bash
+brownie compile --size
+```
+To view `stdout` on long-running tests, use `brownie test -s`.
+
+### Debugging Brownie integration tests
 
 To drop into the console upon test failure:
 ```bash
