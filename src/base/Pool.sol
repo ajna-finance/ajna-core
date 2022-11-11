@@ -389,8 +389,8 @@ abstract contract Pool is Clone, Multicall, IPool {
                 lup
             )
         ) revert BorrowerOk();
- 
-         // update loan heap
+
+        // update loan heap
         loans._remove(borrowerAddress_);
  
         // kick auction

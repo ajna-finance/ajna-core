@@ -46,12 +46,14 @@ abstract contract DSTestPlus is Test {
     PoolInfoUtils internal _poolUtils;
     uint256       internal _startTime;
 
+    uint256 internal _p1505_26  = 1_505.263728469068226832 * 1e18;
     uint256 internal _p9_91     = 9.917184843435912074 * 1e18;
     uint256 internal _p9_81     = 9.818751856078723036 * 1e18;
     uint256 internal _p9_72     = 9.721295865031779605 * 1e18;
     uint256 internal _p9_62     = 9.624807173121239337 * 1e18;
     uint256 internal _p9_52     = 9.529276179422528643 * 1e18;
 
+    uint256 internal _i1505_26  = 2689;
     uint256 internal _i49910    = 1987;
     uint256 internal _i10016    = 2309;
     uint256 internal _i100      = 3232;
@@ -177,7 +179,7 @@ abstract contract DSTestPlus is Test {
     function _moveLiquidity(
         address from,
         uint256 amount,
-        uint256 fromIndex, 
+        uint256 fromIndex,
         uint256 toIndex,
         uint256 newLup,
         uint256 lpRedeemFrom,
@@ -804,6 +806,16 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
         _pool.removeQuoteToken(type(uint256).max, index);
+    }
+
+    function _assertRemoveDepositLockedByAuctionDebtRevert(
+        address from,
+        uint256 amount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
+        _pool.removeQuoteToken(amount, index);
     }
 
     function _assertRemoveAllLiquidityNoClaimRevert(

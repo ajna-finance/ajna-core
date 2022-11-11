@@ -285,7 +285,7 @@ library Auctions {
             self.kickers[liquidation_.kicker].locked -= bondChange_;
             self.totalBondEscrowed                   -= bondChange_;
         } else {
-            bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(bpf)); // wil be rewarded as LPBs
+            bondChange_ = Maths.wmul(quoteTokenAmount_, uint256(bpf)); // will be rewarded as LPBs
         }
     }
 
