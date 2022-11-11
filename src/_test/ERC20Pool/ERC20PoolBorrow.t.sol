@@ -1042,4 +1042,87 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
     }
 
+    function testPoolBorrowRepayAndRemoveWithPenalty() external tearDown {
+        // check balances before borrow
+        assertEq(_quote.balanceOf(_lender), 150_000 * 1e18);
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       highest,
+                lpBalance:   10_000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        assertEq(_quote.balanceOf(_borrower),      0);
+        assertEq(_collateral.balanceOf(_borrower), 100 * 1e18);
+
+        // pledge and borrow
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   100 * 1e18
+            }
+        );
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     21_000 * 1e18,
+                indexLimit: 3_000,
+                newLup:     2_981.007422784467321543 * 1e18
+            }
+        );
+        assertEq(_quote.balanceOf(_borrower),      21_000 * 1e18);
+        assertEq(_collateral.balanceOf(_borrower), 0);
+
+        // repay entire loan
+        deal(address(_quote), _borrower,  _quote.balanceOf(_borrower) + 40 * 1e18);
+        _repay(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:   21_100 * 1e18,
+                repaid:   21_020.192307692307702000 * 1e18,
+                newLup:   BucketMath.MAX_PRICE
+            }
+        );
+        assertEq(_quote.balanceOf(_borrower),      19.807692307692298000 * 1e18);
+        assertEq(_collateral.balanceOf(_borrower), 0);
+
+        // lender removes everything, should have balance > prev 150_000
+        uint256 snapshot = vm.snapshot();
+        _removeAllLiquidity(
+            {
+                from:     _lender,
+                amount:   9_995 * 1e18,
+                index:    highest,
+                newLup:   BucketMath.MAX_PRICE,
+                lpRedeem: 10_000 * 1e27
+            }
+        );
+        assertEq(_quote.balanceOf(_lender), 159_995 * 1e18); // 5 tokens paid as penalty
+        vm.revertTo(snapshot);
+
+        // borrower pulls first all their collateral pledged, then lender can withdraw entire amount
+        _pullCollateral(
+            {
+                from:   _borrower,
+                amount: 100 * 1e18
+            }
+        );
+        assertEq(_quote.balanceOf(_borrower),      19.807692307692298000 * 1e18);
+        assertEq(_collateral.balanceOf(_borrower), 100 * 1e18);
+        _removeAllLiquidity(
+            {
+                from:     _lender,
+                amount:   9_995 * 1e18,
+                index:    highest,
+                newLup:   BucketMath.MAX_PRICE,
+                lpRedeem: 10_000 * 1e27
+            }
+        );
+        assertEq(_quote.balanceOf(_lender), 159_995 * 1e18); // 5 tokens paid as penalty
+    }
+
 }
