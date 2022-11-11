@@ -133,10 +133,10 @@ library Deposits {
         uint256 index = m_ + i;
         uint256 scaledMInc;
         uint256 sValue;
-        
+
         while (i > 0) {
             scaledMInc = self.scaling[index];
-            sValue = (scaledMInc!=0)?ss + Maths.wmul(Maths.wmul(sc, scaledMInc), self.values[index]) : ss + Maths.wmul(sc, self.values[index]);
+            sValue =  scaledMInc != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledMInc), self.values[index]) : ss + Maths.wmul(sc, self.values[index]);
             if (sValue  < x_) {
                 m_ += i;
                 ss = sValue;
@@ -188,7 +188,7 @@ library Deposits {
             scaledI =  self.scaling[i_];
             
             // Calc sum, will only be stored in range parents of starting node, i_
-            if(scaledI!=0) {
+            if (scaledI != 0) {
                 sum += Maths.wmul(Maths.wmul(df, self.values[i_]), scaledI);
                 // Apply scaling to all range parents less then starting node, i_
                 self.scaling[i_] = Maths.wmul(f_,scaledI);
@@ -210,7 +210,7 @@ library Deposits {
                 // Sum > 0 only when j is a range parent of starting node, i_.
                 self.values[j] += sum;
                 scaledI = self.scaling[j];
-                if (scaledI!=0) sum = Maths.wmul(sum, scaledI);
+                if (scaledI != 0) sum = Maths.wmul(sum, scaledI);
                 j += lsbJ;
                 lsbJ = lsb(j);
             }
@@ -325,13 +325,13 @@ library Deposits {
 
         while (j & k != 0) {
             scaled = self.scaling[j];
-            s_ = scaled!=0 ? s_ - Maths.wmul(scaled, self.values[j]) : s_ - self.values[j];
+            s_ = scaled != 0 ? s_ - Maths.wmul(scaled, self.values[j]) : s_ - self.values[j];
             j  = j - k;
             k  = k << 1;
         }
         while (i_ <= SIZE) {
             scaled = self.scaling[i_];
-            if(scaled!=0) s_ = Maths.wmul(scaled, s_);
+            if (scaled != 0) s_ = Maths.wmul(scaled, s_);
             i_ += lsb(i_);
         }
     }
