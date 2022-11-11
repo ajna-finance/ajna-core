@@ -14,4 +14,29 @@ interface IPositionManager is
     IPositionManagerEvents
 {
 
+    /**
+     * @notice User failed to add liquidity in an index to their NFT.
+     */
+    error AddLiquidityFailed();
+
+    /**
+     * @notice User attempting to burn a LPB NFT before removing liquidity.
+     */
+    error LiquidityNotRemoved();
+
+    /**
+     * @notice User not authorized to interact with the specified NFT.
+     */
+    error NoAuth();
+
+    /**
+     * @notice User failed to remove liquidity in an index from their NFT.
+     */
+    error RemoveLiquidityFailed();
+
+    /**
+     * @notice User attempting to interact with a pool that doesn't match the pool associated with the tokenId.
+     */
+    error WrongPool();
+
 }
