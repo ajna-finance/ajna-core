@@ -84,6 +84,7 @@ contract ERC20PoolPurchaseQuoteTokenTest is ERC20HelperContract {
 
         uint256 availableCollateral = collateralToPurchaseWith;
 
+        skip(1 days); // skip to avoid penalty
         // bidder uses their LP to purchase all quote token in the bucket
         _removeLiquidity(
             {

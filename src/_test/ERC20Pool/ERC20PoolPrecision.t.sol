@@ -146,6 +146,7 @@ contract ERC20PoolPrecisionTest is ERC20DSTestPlus {
             }
         );
 
+        skip(1 days); // skip to avoid penalty
         // lender removes some quote token from highest priced bucket
         _removeLiquidity(
             {

@@ -610,6 +610,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
         );
 
         // lender removes quote token
+        skip(1 days); // skip to avoid penalty
         _removeAllLiquidity(
             {
                 from:     _lender,
