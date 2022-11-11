@@ -62,7 +62,6 @@ abstract contract DSTestPlus is Test {
     uint256 internal _i9_72     = 3700;
     uint256 internal _i9_62     = 3702;
     uint256 internal _i9_52     = 3704;
-    uint256 internal _i9_42     = 3706;
 
     struct PoolState {
         uint256 htp;

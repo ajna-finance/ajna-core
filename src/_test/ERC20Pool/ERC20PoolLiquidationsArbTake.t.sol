@@ -11,12 +11,14 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
     address internal _borrower2;
     address internal _lender;
     address internal _lender1;
+    address internal _taker;
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
         _lender1   = makeAddr("lender1");
+        _taker     = makeAddr("taker");
 
         _mintQuoteAndApproveTokens(_lender,  120_000 * 1e18);
         _mintQuoteAndApproveTokens(_lender1, 120_000 * 1e18);
@@ -151,9 +153,14 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
 
-    }
-    
-    function testArbTakeLTNeutralPrice() external {
+        // should revert if there's no auction started
+        _assertArbTakeNoAuctionRevert(
+            {
+                from:     _lender,
+                borrower: _borrower,
+                index:    _i9_91
+            }
+        );
 
         // Skip to make borrower undercollateralized
         skip(100 days);
@@ -169,38 +176,36 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
 
         _assertAuction(
-           AuctionState({
-               borrower:          _borrower,
-               active:            true,
-               kicker:            _lender,
-               bondSize:          0.195342779771472726 * 1e18,
-               bondFactor:        0.01 * 1e18,
-               kickTime:          block.timestamp,
-               kickMomp:          9.721295865031779605 * 1e18,
-               totalBondEscrowed: 0.195342779771472726 * 1e18,
-               auctionPrice:      311.081467681016947360 * 1e18,
-               debtInAuction:     19.778456451861613480 * 1e18
-           })
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.195342779771472726 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
+                auctionPrice:      311.081467681016947360 * 1e18,
+                debtInAuction:     19.778456451861613480 * 1e18
+            })
         );
 
         _assertKicker(
-           {
-               kicker:    _lender,
-               claimable: 0,
-               locked:    0.195342779771472726 * 1e18
-           }
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.195342779771472726 * 1e18
+            }
         );
-
-        address taker = makeAddr("taker");
-
-        uint256 preArbTakeSnapshotpt1 = vm.snapshot();
-        uint256 preArbTakeSnapshotpt2 = vm.snapshot();
+    }
+    
+    function testArbTakeCollateralRestrict() external {
 
         skip(6 hours);
 
         _assertLenderLpBalance(
            {
-               lender:      taker,
+               lender:      _taker,
                index:       _i9_91,
                lpBalance:   0,
                depositTime: 0
@@ -278,7 +283,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         // Amount is restricted by the collateral in the loan
         _arbTake(
            {
-               from:             taker,
+               from:             _taker,
                borrower:         _borrower,
                index:            _i9_91,
                collateralArbed:  2 * 1e18,
@@ -289,7 +294,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
         _assertLenderLpBalance(
            {
-               lender:      taker,
+               lender:      _taker,
                index:       _i9_91,
                lpBalance:   0.386558148271438658550864337 * 1e27,
                depositTime: _startTime + 100 days + 6 hours
@@ -349,13 +354,14 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         // Arb take should fail on an auction without any remaining collateral to auction
         _assertArbTakeInsufficentCollateralRevert(
            {
-               from:     taker,
+               from:     _taker,
                borrower: _borrower,
                index:    _i9_91
            }
         );
+    }
 
-        vm.revertTo(preArbTakeSnapshotpt2);
+    function testArbTakeDebtRestrict() external {
 
         skip(5 hours);
 
@@ -386,7 +392,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         // Amount is restricted by the debt in the loan
         _arbTake(
             {
-                from:             taker,
+                from:             _taker,
                 borrower:         _borrower,
                 index:            _i1505_26,
                 collateralArbed:  1.017300817776332896 * 1e18,
@@ -408,7 +414,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _assertLenderLpBalance(
             {
-                lender:      taker,
+                lender:      _taker,
                 index:       _i1505_26,
                 lpBalance:   1_511.527057473949990171000000000 * 1e27,
                 depositTime: block.timestamp
@@ -441,8 +447,9 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                 timeRemaining:              0
             }
         );
+    }
 
-        vm.revertTo(preArbTakeSnapshotpt1);
+    function testArbTakeDepositRestrict() external {
 
         skip(5 hours);
 
@@ -473,7 +480,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         // Amount is restricted by the deposit in the bucket in the loan
         _arbTake(
             {
-                from:             taker,
+                from:             _taker,
                 borrower:         _borrower,
                 index:            _i1505_26,
                 collateralArbed:  0.771502082040117187 * 1e18,
@@ -520,7 +527,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _assertLenderLpBalance(
             {
-                lender:      taker,
+                lender:      _taker,
                 index:       _i1505_26,
                 lpBalance:   1_146.314100533355756077000000000 * 1e27,
                 depositTime: block.timestamp
@@ -535,50 +542,12 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                 depositTime: block.timestamp
             }
         );
-
     }
 
 
     function testArbTakeGTNeutralPrice() external {
 
-        // Skip to make borrower undercollateralized
-        skip(100 days);
-
-        _kick(
-            {
-                from:       _lender,
-                borrower:   _borrower,
-                debt:       19.778456451861613480 * 1e18,
-                collateral: 2 * 1e18,
-                bond:       0.195342779771472726 * 1e18
-            }
-        );
-
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower,
-                active:            true,
-                kicker:            _lender,
-                bondSize:          0.195342779771472726 * 1e18,
-                bondFactor:        0.01 * 1e18,
-                kickTime:          block.timestamp,
-                kickMomp:          9.721295865031779605 * 1e18,
-                totalBondEscrowed: 0.195342779771472726 * 1e18,
-                auctionPrice:      311.081467681016947360 * 1e18,
-                debtInAuction:     19.778456451861613480 * 1e18
-            })
-        );
-
-        _assertKicker(
-            {
-                kicker:    _lender,
-                claimable: 0,
-                locked:    0.195342779771472726 * 1e18
-            }
-        );
         skip(3 hours);
-
-        address taker = makeAddr("taker");
 
         _addLiquidity(
             {
@@ -591,7 +560,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _assertLenderLpBalance(
             {
-                lender:      taker,
+                lender:      _taker,
                 index:       _i10016,
                 lpBalance:   0,
                 depositTime: 0
@@ -629,7 +598,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _arbTake(
             {
-                from:             taker,
+                from:             _taker,
                 borrower:         _borrower,
                 index:            _i10016,
                 collateralArbed:  0.254322591527323120 * 1e18,
@@ -641,7 +610,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _assertLenderLpBalance(
             {
-                lender:      taker,
+                lender:      _taker,
                 index:       _i10016,
                 lpBalance:   2_527.64388096725686957 * 1e27, // arb taker was rewarded LPBs in arbed bucket
                 depositTime: _startTime + 100 days + 3 hours
@@ -698,27 +667,6 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
     function testArbTakeReverts() external {
 
-        // should revert if there's no auction started
-        _assertArbTakeNoAuctionRevert(
-            {
-                from:     _lender,
-                borrower: _borrower,
-                index:    _i9_91
-            }
-        );
-
-        skip(100 days);
-
-        _kick(
-            {
-                from:       _lender,
-                borrower:   _borrower,
-                debt:       19.778456451861613480 * 1e18,
-                collateral: 2 * 1e18,
-                bond:       0.195342779771472726 * 1e18
-            }
-        );
-
         // should revert if auction in grace period
         _assertArbTakeAuctionInCooldownRevert(
             {
@@ -730,12 +678,10 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         skip(2 hours);
 
-        address taker = makeAddr("taker");
-
         // should revert if bucket deposit is 0
         _assertArbTakeAuctionInsufficientLiquidityRevert(
             {
-                from:     taker,
+                from:     _taker,
                 borrower: _borrower,
                 index:    _i100
             }
@@ -744,7 +690,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         // should revert if auction price is greater than the bucket price
         _assertArbTakeAuctionPriceGreaterThanBucketPriceRevert(
             {
-                from:     taker,
+                from:     _taker,
                 borrower: _borrower,
                 index:    _i9_91
             }
@@ -759,11 +705,10 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         // should revert if auction leaves borrower with debt under minimum pool debt
         _assertArbTakeDebtUnderMinPoolDebtRevert(
             {
-                from:     taker,
+                from:     _taker,
                 borrower: _borrower,
                 index:    _i9_91
             }
         );
     }
-
 }

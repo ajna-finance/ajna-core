@@ -1086,7 +1086,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             from:         _lender,
             amount:       0,
             fromIndex:    123,
-            toIndex:      _i9_42,
+            toIndex:      1000,
             lpRedeemFrom: 0,
             lpRedeemTo:   0
         });
