@@ -33,31 +33,4 @@ interface IPoolDerivedState {
         uint256 collateral_
     ) external view returns (uint256);
 
-    /**
-     *  @notice Calculate the amount of quote tokens for a given amount of LP Tokens.
-     *  @param  deposit_     The amount of quote tokens available at this bucket index.
-     *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
-     *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return quoteAmount_ The exact amount of quote tokens that can be exchanged for the given LP Tokens, WAD units.
-     */
-    function lpsToQuoteTokens(
-        uint256 deposit_,
-        uint256 lpTokens_,
-        uint256 index_
-    ) external view returns (uint256 quoteAmount_);
-
-    /**
-     *  @notice Calculate the amount of collateral tokens for a given amount of LP Tokens.
-     *  @param  deposit_     The amount of quote tokens available at this bucket index.
-     *  @param  lpTokens_    The number of lpTokens to calculate amounts for.
-     *  @param  index_       The price bucket index for which the value should be calculated.
-     *  @return collateralAmount The exact amount of collateral tokens that can be exchanged for the given LP Tokens, WAD units.
-     */
-
-    function lpsToCollateral(
-        uint256 deposit_,
-        uint256 lpTokens_,
-        uint256 index_
-    ) external view returns (uint256 collateralAmount);
-
 }
