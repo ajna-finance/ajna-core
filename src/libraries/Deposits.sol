@@ -108,7 +108,7 @@ library Deposits {
             // Update node effected by addition.
             } else {
                 scaled = self.scaling[index];
-                if (scaled!=0) sc = Maths.wmul(sc, scaled);
+                if (scaled != 0) sc = Maths.wmul(sc, scaled);
                 self.values[index] += Maths.wdiv(x_, sc);
             }
             j = j >> 1;
@@ -282,7 +282,7 @@ library Deposits {
             // Update node effected by removal.
             } else {
                 scaled = self.scaling[index];
-                if (scaled!=0) sc = Maths.wmul(sc,scaled);
+                if (scaled != 0) sc = Maths.wmul(sc,scaled);
                 self.values[index] -= Maths.min(self.values[index], Maths.wdiv(x_, sc));
             }
 
