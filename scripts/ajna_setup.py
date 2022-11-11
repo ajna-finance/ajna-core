@@ -12,30 +12,33 @@ def main():
 
     with open("scripts/.env", "w") as outfile:
         outfile.write("ETH_RPC_URL=http://localhost:8545/")
-        outfile.write("\nPRIVATE_KEY=0xacd5fc4b1c3141f67b35f09210379295c34f7e5c33d6bf1755a65c3c07a9e854")
         outfile.write("\nERC20_FACTORY="+erc20_pool_factory.address)
         outfile.write("\nERC721_FACTORY="+erc721_pool_factory.address)
-        outfile.write("\nCOMP=0xc00e94Cb662C3520282E6f5717214004A7f26888")
-        outfile.write("\nDAI=0x6B175474E89094C44Da98b954EedeAC495271d0F")
+        outfile.write("\nLENDER_ADDRESS=0x5E9badd492c5bF5824b45E834B1A5b4a41B273f3")
+        outfile.write("\nLENDER_PRIVATE_KEY=0xacd5fc4b1c3141f67b35f09210379295c34f7e5c33d6bf1755a65c3c07a9e854")
+        outfile.write("\nBORROWER_ADDRESS=0x92620c1bCdC5D16a3661285C1f86D7992df26b1c")
+        outfile.write("\nBORROWER_PRIVATE_KEY=ed864439e1385640568cc328592c505eb294c95f93a71923713a74f54d62d94b")
+        outfile.write("\nCOLLATERAL_ADDRESS=0xc00e94Cb662C3520282E6f5717214004A7f26888")
+        outfile.write("\nQUOTE_ADDRESS=0x6B175474E89094C44Da98b954EedeAC495271d0F")
 
     # read config and fund accounts
-    with open('scripts/sdk-setup.json', 'r') as setupfile:
-        sdk_config = json.load(setupfile)
+    with open('scripts/ajna-setup.json', 'r') as setupfile:
+        ajna_config = json.load(setupfile)
 
-    dai_config = sdk_config.get('tokens').get('DAI')
+    dai_config = ajna_config.get('tokens').get('DAI')
 
     dai_contract = Contract(dai_config.get('address'))
     dai_reserve = accounts.at(dai_config.get('reserve'), True);
 
-    comp_config = sdk_config.get('tokens').get('COMP')
+    comp_config = ajna_config.get('tokens').get('COMP')
 
     comp_contract = Contract(comp_config.get('address'))
     comp_reserve = accounts.at(comp_config.get('reserve'), True);
 
-    bored_ape_config = sdk_config.get('tokens').get('BAYC')
+    bored_ape_config = ajna_config.get('tokens').get('BAYC')
     ape_contract = Contract(bored_ape_config.get('address'))
 
-    test_accounts = sdk_config.get('accounts')
+    test_accounts = ajna_config.get('accounts')
     for addresses in test_accounts.items():
         address = addresses[0]
         accounts[0].transfer(address, 100 * 1e18)

@@ -14,13 +14,11 @@
     },
     "accounts": {
         "0x5E9badd492c5bF5824b45E834B1A5b4a41B273f3": {
-            "DAI": 11000,
-            "COMP": 100,
-            "BAYC": [5, 6, 7]
+            "DAI": 100000
         },
-        "0x33A4622B82D4c04a53e170c638B944ce27cffce3": {
-            "DAI": 22000,
-            "COMP": 50,
+        "0x92620c1bCdC5D16a3661285C1f86D7992df26b1c": {
+            "DAI": 100,
+            "COMP": 200,
             "BAYC": [8, 9, 10]
         }
     }
