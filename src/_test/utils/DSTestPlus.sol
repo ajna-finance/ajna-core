@@ -269,7 +269,7 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit Repay(borrower, newLup, repaid);
-        _assertTokenTransferEvent(from, address(_pool), amount);
+        _assertTokenTransferEvent(from, address(_pool), repaid);
         _pool.repay(borrower, amount);
     }
 

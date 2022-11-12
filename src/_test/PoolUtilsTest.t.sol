@@ -125,15 +125,15 @@ contract PoolUtilsTest is DSTestPlus {
         uint256 toIndex  = 1000; // price -> 146.575625611106531706 * 1e18
         uint256 amount  = 100000 * 1e18;
 
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, depositTime, fromIndex, toIndex, amount),            amount);
+        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, depositTime, fromIndex, toIndex, amount), amount);
 
         poolState_.collateral = 2 * 1e18;
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, depositTime, fromIndex, toIndex, amount),            amount);
+        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, depositTime, fromIndex, toIndex, amount), amount);
 
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, block.timestamp - 4 hours, fromIndex, 0, amount),    99903.8461538461538 * 1e18);
+        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, block.timestamp - 4 hours, fromIndex, 0, amount), 99903.8461538461538 * 1e18);
 
-        poolState_.collateral = 0;
-        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, block.timestamp - 4 hours, fromIndex, 0, amount),    amount);
+        poolState_.collateral = 0; // should apply penalty also when no collateral in pool
+        assertEq(PoolUtils.applyEarlyWithdrawalPenalty(poolState_, block.timestamp - 4 hours, fromIndex, 0, amount), 99903.8461538461538 * 1e18);
     }
 
     /**

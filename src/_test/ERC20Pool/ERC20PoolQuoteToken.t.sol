@@ -331,6 +331,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         assertEq(_quote.balanceOf(address(_pool)), 70_000 * 1e18);
         assertEq(_quote.balanceOf(_lender),        130_000 * 1e18);
 
+        skip(1 days); // skip to avoid penalty
         _removeLiquidity(
             {
                 from:     _lender,
@@ -641,6 +642,7 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
             }
         );
 
+        skip(1 days); // skip to avoid penalty
         // should be able to removeQuoteToken
         _removeLiquidity(
             {
