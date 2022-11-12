@@ -95,7 +95,6 @@ library Deposits {
         uint256 ii    = 0;          // Binary index offset
         uint256 sc    = Maths.WAD;
         uint256 index = SIZE;
-
         uint256 scaled;
 
         while (j > 0) {
@@ -131,19 +130,16 @@ library Deposits {
         uint256 i     = 4096; // 1 << (_numBits - 1) = 1 << (13 - 1) = 4096
         uint256 ss    = 0;
         uint256 sc    = Maths.WAD;
-        uint256 index = 4096;
-
-        uint256 scaledM;
+        uint256 index = m_ + i;
         uint256 scaledMInc;
-        uint256 ssCond;
+        uint256 sValue;
 
         while (i > 0) {
             scaledMInc = self.scaling[index];
-            ssCond = scaledMInc != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledMInc), self.values[index]) : ss + Maths.wmul(sc, self.values[index]);
-            if (ssCond < x_) {
+            sValue =  scaledMInc != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledMInc), self.values[index]) : ss + Maths.wmul(sc, self.values[index]);
+            if (sValue  < x_) {
                 m_ += i;
-                scaledM = self.scaling[m_];
-                ss = scaledM != 0 ? ss + Maths.wmul(Maths.wmul(sc, scaledM), self.values[m_]) : ss + Maths.wmul(sc, self.values[m_]);
+                ss = sValue;
             } else {
                 if (scaledMInc != 0) sc = Maths.wmul(sc, scaledMInc);
             }
@@ -187,16 +183,19 @@ library Deposits {
         uint256 df  = f_ - Maths.WAD;    // Difference factor
 
         uint256 scaledI;
-        uint256 scaledJ;
 
         while (i_ > 0) {
             scaledI =  self.scaling[i_];
             
             // Calc sum, will only be stored in range parents of starting node, i_
-            sum = scaledI != 0 ? sum + Maths.wmul(Maths.wmul(df, self.values[i_]), scaledI) : sum + Maths.wmul(df, self.values[i_]);
-
-            // Apply scaling to all range parents less then starting node, i_
-            self.scaling[i_] = scaledI != 0 ? Maths.wmul(f_, scaledI) : f_;
+            if (scaledI != 0) {
+                sum += Maths.wmul(Maths.wmul(df, self.values[i_]), scaledI);
+                // Apply scaling to all range parents less then starting node, i_
+                self.scaling[i_] = Maths.wmul(f_,scaledI);
+            } else {
+                sum += Maths.wmul(df, self.values[i_]);
+                self.scaling[i_] = f_;
+            }
 
             // Increase j and decrement current node i by one binary index.
             uint256 lsbI = lsb(i_);
@@ -210,8 +209,8 @@ library Deposits {
 
                 // Sum > 0 only when j is a range parent of starting node, i_.
                 self.values[j] += sum;
-                scaledJ = self.scaling[j];
-                if (scaledJ != 0) sum = Maths.wmul(sum, scaledJ);
+                scaledI = self.scaling[j];
+                if (scaledI != 0) sum = Maths.wmul(sum, scaledI);
                 j += lsbJ;
                 lsbJ = lsb(j);
             }
@@ -242,11 +241,7 @@ library Deposits {
 
             // If requested node is in current range, compute sum with running multiplier.
             if (i_ & j != 0) {
-                if (scaled != 0) {
-                    s_ += Maths.wmul(Maths.wmul(sc, scaled), self.values[index]);
-                } else {
-                   s_ += Maths.wmul(sc, self.values[index]);
-                }
+                s_ += scaled != 0 ? Maths.wmul(Maths.wmul(sc, scaled), self.values[index]) : Maths.wmul(sc, self.values[index]);
             } else {
                 if (scaled != 0) sc = Maths.wmul(sc, scaled);
             }
@@ -275,7 +270,6 @@ library Deposits {
         uint256 ii    = 0;          // Binary index offset
         uint256 sc    = Maths.WAD;
         uint256 index = SIZE;
-
         uint256 scaled;
 
         while (j > 0) {
@@ -288,7 +282,7 @@ library Deposits {
             // Update node effected by removal.
             } else {
                 scaled = self.scaling[index];
-                if (scaled != 0) sc = Maths.wmul(sc, scaled);
+                if (scaled != 0) sc = Maths.wmul(sc,scaled);
                 self.values[index] -= Maths.min(self.values[index], Maths.wdiv(x_, sc));
             }
 
@@ -304,10 +298,8 @@ library Deposits {
         if (i_ >= SIZE) revert InvalidIndex();
 
         a_ = Maths.WAD;
-        uint256 scaled;
         while (i_ <= SIZE) {
-            scaled = self.scaling[i_];
-            if (scaled != 0) a_ = Maths.wmul(a_, scaled);
+            a_ = Maths.wmul(a_, self.scaling[i_]);
             i_ += lsb(i_);
         }
     }
@@ -326,11 +318,11 @@ library Deposits {
 
         uint256 j  =  i_;
         uint256 k  =  1;
+        uint256 scaled;
 
         i_         += 1;
         s_         =  self.values[i_];
 
-        uint256 scaled;
         while (j & k != 0) {
             scaled = self.scaling[j];
             s_ = scaled != 0 ? s_ - Maths.wmul(scaled, self.values[j]) : s_ - self.values[j];
