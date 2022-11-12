@@ -95,6 +95,15 @@ library PoolUtils {
         }
     }
 
+    /**
+     *  @notice Returns amount plus calculated early withdrawal penalty (if case).
+     *  @param  poolState_         Struct containing pool state details.
+     *  @param  depositTime_       Time when deposit happened.
+     *  @param  fromIndex_         Index of the bucket from where liquidity is removed or moved.
+     *  @param  toIndex_           Index of the bucket where liquidity is moved. 0 in case of withdrawing.
+     *  @param  amount_            Amount to calculate early withdrawal penalty for.
+     *  @return amountWithPenalty_ The amount plus applied early withdrawal penalty. Same amount if not subject of penalty.
+     */
     function applyEarlyWithdrawalPenalty(
         Pool.PoolState memory poolState_,
         uint256 depositTime_,
