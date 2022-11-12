@@ -135,6 +135,80 @@ contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
         );
     }
 
+    function testOverutilizedPoolInterestRateIncrease() external tearDown {
+        // lender deposits 1000
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 1_000 * 1e18,
+                index:  3232,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+
+        // borrower draws 9100
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower,
+                amount:    1_500 * 1e18
+            }
+        );
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     995 * 1e18,
+                indexLimit: 3300,
+                newLup:     100.332368143282009890 * 1e18
+            }
+        );
+        _assertPool(
+            PoolState({
+                htp:                  0.663971153846153846 * 1e18,
+                lup:                  100.332368143282009890 * 1e18,
+                poolSize:             1_000 * 1e18,
+                pledgedCollateral:    1_500 * 1e18,
+                encumberedCollateral: 9.926574536214785829 * 1e18,
+                poolDebt:             995.956730769230769690 * 1e18,
+                actualUtilization:    0.995956730769230770 * 1e18,
+                targetUtilization:    1e18,
+                minDebtAmount:        99.595673076923076969 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.05 * 1e18,
+                interestRateUpdate:   _startTime
+            })
+        );
+
+        // force an interest rate update
+        skip(13 hours);
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 0,
+                index:  3232,
+                newLup: 100.332368143282009890 * 1e18
+            }
+        );
+        _assertPool(
+            PoolState({
+                htp:                  0.664069695689831259 * 1e18,
+                lup:                  100.332368143282009890 * 1e18,
+                poolSize:             1_000.072137597635984000 * 1e18,
+                pledgedCollateral:    1_500 * 1e18,
+                encumberedCollateral: 9.927311124438159308 * 1e18,
+                poolDebt:             996.030634410028283604 * 1e18,
+                actualUtilization:    0.995958788335693301 * 1e18,
+                targetUtilization:    0.006618207416292106 * 1e18,
+                minDebtAmount:        99.603063441002828360 * 1e18,
+                loans:                1,
+                maxBorrower:          _borrower,
+                interestRate:         0.055 * 1e18,
+                interestRateUpdate:   _startTime + 13 hours
+            })
+        );
+    }
+
     function testPoolInterestRateDecrease() external tearDown {
         // lender makes an initial deposit
         skip(1 hours);
