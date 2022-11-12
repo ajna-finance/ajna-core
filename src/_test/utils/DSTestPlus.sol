@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import "forge-std/console2.sol";
 import '@std/Test.sol';
 import '@std/Vm.sol';
 
@@ -476,6 +477,14 @@ abstract contract DSTestPlus is Test {
 
         assertEq(curClaimable, claimable);
         assertEq(curLocked,    locked);
+    }
+
+    function _assertLenderInterest(
+        uint256 liquidityAdded,
+        uint256 lenderDebt
+    ) internal {
+        (uint256 poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(poolSize - liquidityAdded, lenderDebt);
     }
 
     function _assertLoans(
