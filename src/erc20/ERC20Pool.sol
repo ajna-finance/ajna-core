@@ -174,6 +174,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
     function arbTake(
         address borrowerAddress_,
+        bool    depositTake_,
         uint256 index_
     ) external override {
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
@@ -193,7 +194,6 @@ contract ERC20Pool is IERC20Pool, Pool {
             bool isRewarded
         ) = auctions.arbTake(liquidation, borrower, bucketDeposit, poolState.inflator);
 
-        uint256 depositAmountToRemove = quoteTokenAmount;
         // bucket operations
         {
             // cannot arb with a price lower than or equal with the auction price
@@ -217,6 +217,8 @@ contract ERC20Pool is IERC20Pool, Pool {
                     bucketExchangeRate
                 )
             );
+
+            uint256 depositAmountToRemove = quoteTokenAmount;
             // the bondholder/kicker is awarded bond change worth of LPB in the bucket
             if (isRewarded) {
                 Buckets.addLPs(
@@ -227,23 +229,18 @@ contract ERC20Pool is IERC20Pool, Pool {
                 depositAmountToRemove -= bondChange;
             }
 
-            // collateral is moved to the bucket’s claimable collateral
+            // collateral is added to the bucket’s claimable collateral
             bucket.collateral += collateralArbed;
+            // collateral is removed from the loan
+            borrower.collateral -= collateralArbed;
+
+            // quote tokens are removed from the bucket’s deposit
+            deposits.remove(index_, depositAmountToRemove);
         }
 
-        // quote tokens are removed from the bucket’s deposit
-        deposits.remove(index_, depositAmountToRemove);
-
-        // collateral is ewmoved from the loan
-        borrower.collateral -= collateralArbed;
         _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
 
         emit ArbTake(borrowerAddress_, index_, quoteTokenAmount, collateralArbed, bondChange, isRewarded);
-    }
-
-    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
-        // TODO: implement
-        emit DepositTake(borrower_, index_, amount_, 0, 0);
     }
 
     /**
