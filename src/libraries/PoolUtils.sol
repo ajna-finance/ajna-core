@@ -104,13 +104,11 @@ library PoolUtils {
     ) internal view returns (uint256 amountWithPenalty_){
         amountWithPenalty_ = amount_;
         if (depositTime_ != 0 && block.timestamp - depositTime_ < 1 days) {
-            bool applyPenalty = toIndex_ == 0; // remove quote token scenario, apply penalty
-            if (!applyPenalty) {
-                // move quote token between buckets scenario, check if moved below PTP
-                if (poolState_.collateral != 0) {
-                    uint256 ptp = Maths.wdiv(poolState_.accruedDebt, poolState_.collateral);
-                    applyPenalty = indexToPrice(fromIndex_) > ptp && indexToPrice(toIndex_) < ptp;
-                }
+            uint256 ptp = poolState_.collateral != 0 ? Maths.wdiv(poolState_.accruedDebt, poolState_.collateral) : 0;
+            bool applyPenalty = indexToPrice(fromIndex_) > ptp; // apply penalty if withdrawal from above PTP
+            if (toIndex_ != 0) {
+                // move quote token between buckets scenario, apply penalty only if moved to below PTP
+                applyPenalty = applyPenalty && indexToPrice(toIndex_) < ptp;
             }
             if (applyPenalty) amountWithPenalty_ = Maths.wmul(amountWithPenalty_, Maths.WAD - feeRate(poolState_.rate));
         }
