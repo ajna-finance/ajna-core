@@ -715,21 +715,25 @@ abstract contract Pool is Clone, Multicall, IPool {
                         poolState_.collateral
                     )
                 );
-                int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
-
-                // raise rates if 4*(targetUtilization-actualUtilization) < (targetUtilization+actualUtilization-1)^2-1
+                // raise rates if mau > 99% or 4*(targetUtilization-mau) < (targetUtilization+mau-1)^2-1
                 // decrease rates if 4*(targetUtilization-mau) > -(targetUtilization+mau-1)^2+1
-                int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
-                int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
-
-                if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate;
-
                 uint256 newInterestRate = poolState_.rate;
-                if (decreaseFactor < increaseFactor - 10**18) {
+                if (actualUtilization > 0.99 * 10**18) {
                     newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-                } else if (decreaseFactor > 10**18 - increaseFactor) {
-                    newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
+                } else {                
+                    int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
+                    int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
+                    int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+
+                    if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate;
+
+                    if (decreaseFactor < increaseFactor - 10**18) {
+                        newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
+                    } else if (decreaseFactor > 10**18 - increaseFactor) {
+                        newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
+                    }
                 }
+
                 if (poolState_.rate != newInterestRate) {
                     interestRate       = newInterestRate;
                     interestRateUpdate = block.timestamp;
