@@ -54,6 +54,10 @@ library Auctions {
      */
     error AuctionNotCleared();
     /**
+     *  @notice The auction price is greater or the same as the arbed bucket price.
+     */
+    error AuctionPriceGteQArbPrice();
+    /**
      *  @notice Actor is attempting to take or clear an inactive auction.
      */
     error NoAuction();
@@ -245,7 +249,8 @@ library Auctions {
      *  @param  borrowerAddress_  Borrower address in auction.
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
      *  @param  bucketDeposit_    Arbed bucket deposit.
-     *  @param  price_            Price to use when arbing (auction price for arb take, bucket price for deposit take).
+     *  @param  bucketPrice_      Bucket price.
+     *  @param  depositTake_      If true then the arb is a deposit take.
      *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
      *  @return params_           Struct containing take action details.
     */
@@ -254,7 +259,8 @@ library Auctions {
         address borrowerAddress_,
         Loans.Borrower memory borrower_,
         uint256 bucketDeposit_,
-        uint256 price_,
+        uint256 bucketPrice_,
+        bool    depositTake_,
         uint256 poolInflator_
     ) internal returns (TakeParams memory params_) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
@@ -264,13 +270,17 @@ library Auctions {
             liquidation.kickMomp,
             liquidation.kickTime
         );
-        if (price_ == 0) price_ = params_.auctionPrice; // not a deposit take action, use auction price
-        params_.kicker = liquidation.kicker;
+        // cannot arb with a price lower than or equal with the auction price
+        if (params_.auctionPrice >= bucketPrice_) revert AuctionPriceGteQArbPrice();
+
+        // if deposit take then price to use when calculating take is bucket price
+        uint256 price = depositTake_ ? bucketPrice_ : params_.auctionPrice;
         (
             uint256 borrowerDebt,
             int256  bpf,
             uint256 factor
-        ) = _takeParameters(liquidation, borrower_, price_, poolInflator_);
+        ) = _takeParameters(liquidation, borrower_, price, poolInflator_);
+        params_.kicker = liquidation.kicker;
         params_.isRewarded = (bpf >= 0);
 
         // determine how much of the loan will be repaid
@@ -282,11 +292,11 @@ library Auctions {
             params_.quoteTokenAmount = Maths.wdiv(Maths.wmul(params_.t0repayAmount, poolInflator_), factor);
         }
 
-        params_.collateralAmount = Maths.wdiv(params_.quoteTokenAmount, price_);
+        params_.collateralAmount = Maths.wdiv(params_.quoteTokenAmount, price);
 
         if (params_.collateralAmount > borrower_.collateral) {
             params_.collateralAmount = borrower_.collateral;
-            params_.quoteTokenAmount = Maths.wmul(params_.collateralAmount, price_);
+            params_.quoteTokenAmount = Maths.wmul(params_.collateralAmount, price);
             params_.t0repayAmount    = Maths.wdiv(Maths.wmul(factor, params_.quoteTokenAmount), poolInflator_);
         }
 

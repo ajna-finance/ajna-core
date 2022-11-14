@@ -189,12 +189,10 @@ contract ERC20Pool is IERC20Pool, Pool {
             borrowerAddress_,
             borrower,
             bucketDeposit,
-            depositTake_ ? bucketPrice : 0, // if deposit take then calculate all take amounts at price bucket
+            bucketPrice,
+            depositTake_,
             poolState.inflator
         );
-        
-        // cannot arb with a price lower than or equal with the auction price
-        if (params.auctionPrice >= bucketPrice) revert AuctionPriceGteQArbPrice();
 
         Buckets.Bucket storage bucket = buckets[index_];
         uint256 bucketExchangeRate = Buckets.getExchangeRate(
@@ -203,7 +201,6 @@ contract ERC20Pool is IERC20Pool, Pool {
             bucketDeposit,
             bucketPrice
         );
-
         // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         Buckets.addLPs(
             bucket,
@@ -225,13 +222,10 @@ contract ERC20Pool is IERC20Pool, Pool {
             depositAmountToRemove -= params.bondChange;
         }
 
-        // collateral is removed from the loan
-        borrower.collateral -= params.collateralAmount;
-        // collateral is added to the bucket’s claimable collateral
-        bucket.collateral += params.collateralAmount;
+        borrower.collateral -= params.collateralAmount; // collateral is removed from the loan
+        bucket.collateral += params.collateralAmount;   // collateral is added to the bucket’s claimable collateral
 
-        // quote tokens are removed from the bucket’s deposit
-        deposits.remove(index_, depositAmountToRemove);
+        deposits.remove(index_, depositAmountToRemove); // quote tokens are removed from the bucket’s deposit
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
