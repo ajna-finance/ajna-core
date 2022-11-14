@@ -481,10 +481,10 @@ abstract contract DSTestPlus is Test {
 
     function _assertLenderInterest(
         uint256 liquidityAdded,
-        uint256 lenderDebt
+        uint256 lenderInterest
     ) internal {
         (uint256 poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
-        assertEq(poolSize - liquidityAdded, lenderDebt);
+        assertEq(poolSize - liquidityAdded, lenderInterest);
     }
 
     function _assertLoans(

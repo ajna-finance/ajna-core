@@ -35,7 +35,7 @@ library Deposits {
 
         if (depositAboveHtp != 0) {
             uint256 netInterestMargin = PoolUtils.lenderInterestMargin(utilization(self, debt_, collateral_));
-            console2.log("netInterestMargin %s", netInterestMargin);
+            console2.log("depositAboveHtp=%s, netInterestMargin=%s", depositAboveHtp, netInterestMargin);
             uint256 newInterest       = Maths.wmul(netInterestMargin, Maths.wmul(pendingInterestFactor_ - Maths.WAD, debt_));
 
             uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;

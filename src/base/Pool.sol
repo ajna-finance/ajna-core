@@ -656,6 +656,7 @@ abstract contract Pool is Clone, Multicall, IPool {
                 poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
 
                 // Scale the fenwick tree to update amount of debt owed to lenders
+                console2.log("_accruePoolInterest factor=%s accruedDebt=%s", factor, poolState_.accruedDebt);
                 deposits.accrueInterest(
                     poolState_.accruedDebt,
                     poolState_.collateral,
