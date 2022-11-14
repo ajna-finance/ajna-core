@@ -406,12 +406,13 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
                 newLup: 2995.912459898389633881 * 1e18
             }
         );
+        liquidityAdded += 1e18;
 
         // check pool and borrower debt to confirm interest has accumulated
         uint256 expectedPoolDebt = 13_263.471703022178416340 * 1e18;
         (uint256 poolDebt,,) = _pool.debtInfo();
         assertEq(poolDebt, expectedPoolDebt);
-        _assertLenderInterest(liquidityAdded, 1.637418685977194116 * 1e18);
+        _assertLenderInterest(liquidityAdded, 0.637418685977194116 * 1e18);
 
         uint256 expectedBorrower1Debt = 8_008.240798551896146546 * 1e18;
         _assertBorrower(
