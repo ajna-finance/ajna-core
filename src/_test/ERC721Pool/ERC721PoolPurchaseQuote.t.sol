@@ -131,6 +131,7 @@ contract ERC721PoolPurchaseQuoteTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_bidder),             0);
 
         // bidder removes quote token from bucket
+        skip(1 days); // skip to avoid penalty
         uint256 qtToRemove = Maths.wmul(priceAtTestIndex, 3 * 1e18);
         _removeAllLiquidity(
             {
