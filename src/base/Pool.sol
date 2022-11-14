@@ -730,15 +730,6 @@ abstract contract Pool is Clone, Multicall, IPool {
                     newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
                 }
 
-                // int256 decreaseFactor = 4 * (tu - mau);
-                // int256 increaseFactor = ((tu + mau - 10**18) ** 2) / 10**18;
-                // uint256 newInterestRate = poolState_.rate;
-                // if (decreaseFactor < increaseFactor - 10**18) {
-                //     newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-                // } else if (decreaseFactor > 10**18 - increaseFactor) {
-                //     newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
-                // }
-
                 if (poolState_.rate != newInterestRate) {
                     interestRate       = newInterestRate;
                     interestRateUpdate = block.timestamp;

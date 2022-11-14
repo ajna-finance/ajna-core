@@ -867,7 +867,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
     }
-    
+
     function testLenderForcedExit() external {
 
         skip(25 hours);
