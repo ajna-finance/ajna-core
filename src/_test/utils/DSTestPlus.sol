@@ -131,7 +131,7 @@ abstract contract DSTestPlus is Test {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit ArbTake(borrower, index, quoteTokenAmount, collateralArbed, bondChange, isReward);
-        _pool.arbTake(borrower, index);
+        _pool.arbTake(borrower, false, index);
     }
 
     function _borrow(
@@ -562,7 +562,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('TakeNotPastCooldown()'));
-        _pool.arbTake(borrower, index);
+        _pool.arbTake(borrower, false, index);
     }
 
     function _assertArbTakeAuctionInsufficientLiquidityRevert(
@@ -572,7 +572,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientLiquidity.selector);
-        _pool.arbTake(borrower, index);
+        _pool.arbTake(borrower,false, index);
     }
 
     function _assertArbTakeAuctionPriceGreaterThanBucketPriceRevert(
@@ -582,7 +582,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AuctionPriceGteQArbPrice.selector);
-        _pool.arbTake(borrower, index);
+        _pool.arbTake(borrower, false, index);
     }
 
     function _assertArbTakeDebtUnderMinPoolDebtRevert(
@@ -592,7 +592,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        _pool.arbTake(borrower, index);
+        _pool.arbTake(borrower, false, index);
     }
 
     function _assertArbTakeInsufficentCollateralRevert(
@@ -602,7 +602,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        _pool.arbTake(borrower, index);
+        _pool.arbTake(borrower, false, index);
     }
 
     function _assertArbTakeNoAuctionRevert(
@@ -612,7 +612,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
-        _pool.arbTake(borrower, index);
+        _pool.arbTake(borrower, false, index);
     }
 
     function _assertBorrowAuctionActiveRevert(
