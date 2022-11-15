@@ -54,7 +54,7 @@ library Auctions {
      */
     error AuctionNotCleared();
     /**
-     *  @notice The auction price is greater or the same as the arbed bucket price.
+     *  @notice The auction price is greater than the arbed bucket price.
      */
     error AuctionPriceGtBucketPrice();
     /**
