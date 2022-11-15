@@ -9,10 +9,10 @@ interface IPoolLiquidationActions {
     /**
      *  @notice Called by actors to use quote token to arb higher-priced deposit off the book.
      *  @param  borrower    Identifies the loan to liquidate.
-     *  @param  depositTake If true then the arb will happen at an auction price equal with bucket price.
+     *  @param  depositTake If true then the take will happen at an auction price equal with bucket price. Auction price is used otherwise.
      *  @param  index       Index of a bucket, likely the HPB, in which collateral will be deposited.
      */
-    function arbTake(
+    function bucketTake(
         address borrower,
         bool    depositTake,
         uint256 index

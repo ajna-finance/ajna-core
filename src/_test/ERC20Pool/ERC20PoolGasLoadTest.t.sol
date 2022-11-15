@@ -318,7 +318,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         skip(14 hours);
         address taker = makeAddr("taker");
         vm.startPrank(taker);
-        _pool.arbTake(_borrowers[0], depositTake_, 2_000);
+        _pool.bucketTake(_borrowers[0], depositTake_, 2_000);
         vm.stopPrank();
     }
 
@@ -339,7 +339,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         skip(14 hours);
         address taker = makeAddr("taker");
         vm.startPrank(taker);
-        _pool.arbTake(_borrowers[LOANS_COUNT - 1], depositTake_, 2_000);
+        _pool.bucketTake(_borrowers[LOANS_COUNT - 1], depositTake_, 2_000);
         vm.stopPrank();
     }
 

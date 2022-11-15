@@ -244,17 +244,17 @@ library Auctions {
     }
 
     /**
-     *  @notice Performs arb take collateral on an auction and updates bond size and kicker balance in case kicker is penalized.
+     *  @notice Performs bucket take collateral on an auction and updates bond size and kicker balance in case kicker is penalized.
      *  @notice Logic of kicker being rewarded happens outside this function as bond change will be given as LPs in the arbed bucket.
      *  @param  borrowerAddress_  Borrower address in auction.
      *  @param  borrower_         Borrower struct containing updated info of auctioned borrower.
      *  @param  bucketDeposit_    Arbed bucket deposit.
      *  @param  bucketPrice_      Bucket price.
-     *  @param  depositTake_      If true then the arb is a deposit take.
+     *  @param  depositTake_      If true then the take happens at bucket price. Auction price is used otherwise.
      *  @param  poolInflator_     The pool's inflator, used to calculate borrower debt.
      *  @return params_           Struct containing take action details.
     */
-    function arbTake(
+    function bucketTake(
         Data storage self,
         address borrowerAddress_,
         Loans.Borrower memory borrower_,

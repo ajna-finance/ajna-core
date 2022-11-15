@@ -105,13 +105,13 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function arbTake(
+    function bucketTake(
         address borrowerAddress_,
         bool    depositTake_,
         uint256 index_
     ) external override {
         // TODO: implement
-        emit ArbTake(borrowerAddress_, index_, 0, 0, 0, true);
+        emit BucketTake(borrowerAddress_, index_, 0, 0, 0, true);
     }
 
     function take(

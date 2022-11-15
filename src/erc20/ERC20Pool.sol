@@ -172,7 +172,7 @@ contract ERC20Pool is IERC20Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function arbTake(
+    function bucketTake(
         address borrowerAddress_,
         bool    depositTake_,
         uint256 index_
@@ -185,7 +185,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
         uint256 bucketPrice = PoolUtils.indexToPrice(index_);
-        Auctions.TakeParams memory params = auctions.arbTake(
+        Auctions.TakeParams memory params = auctions.bucketTake(
             borrowerAddress_,
             borrower,
             bucketDeposit,
@@ -229,7 +229,7 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
-        emit ArbTake(
+        emit BucketTake(
             borrowerAddress_,
             index_,
             params.quoteTokenAmount,

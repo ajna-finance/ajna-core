@@ -30,7 +30,7 @@ interface IPoolEvents {
      *  @param  isReward    True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
      *  @dev    amount / collateral implies the auction price.
      */
-    event ArbTake(
+    event BucketTake(
         address indexed borrower,
         uint256 index,
         uint256 amount,
