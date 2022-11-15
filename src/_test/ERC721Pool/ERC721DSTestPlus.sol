@@ -188,7 +188,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by borrower
             vm.expectEmit(true, true, false, true);
-            emit Transfer(from, address(_pool), i);
+            emit Transfer(from, address(_pool), tokenIds[i]);
         }
 
         lps_ = ERC721Pool(address(_pool)).addCollateral(tokenIds, index);
@@ -214,7 +214,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by pledger address
             vm.expectEmit(true, true, false, true);
-            emit Transfer(from, address(_pool), i);
+            emit Transfer(from, address(_pool), tokenIds[i]);
         }
 
         ERC721Pool(address(_pool)).pledgeCollateral(borrower, tokenIds);
