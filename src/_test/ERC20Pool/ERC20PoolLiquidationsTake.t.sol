@@ -255,6 +255,24 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
+        _assertPool(
+            PoolState({
+                htp:                  8.209707505045490451 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             73_094.573651667204129413 * 1e18,
+                pledgedCollateral:    1_001.872839357460495039 * 1e18,
+                encumberedCollateral: 833.009246211652698543 * 1e18,
+                poolDebt:             8_097.929340730578997964 * 1e18,
+                actualUtilization:    0.110787011075833458 * 1e18,
+                targetUtilization:    0.833368500318426368 * 1e18,
+                minDebtAmount:        809.792934073057899796 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.045000000000000000 * 1e18,
+                interestRateUpdate:   block.timestamp - 2 hours
+            })
+        );
+
         _assertAuction(
             AuctionState({
                 borrower:          _borrower,
@@ -337,6 +355,25 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 locked:    0.292555738421790522 * 1e18
             }
         );
+
+        _assertPool(
+            PoolState({
+                htp:                  10.295367010789837835 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             73_094.716397818020278066 * 1e18,
+                pledgedCollateral:    1_001.000000000000000000 * 1e18,
+                encumberedCollateral: 834.070975103156730898 * 1e18,
+                poolDebt:             8_108.250721413341922653 * 1e18,
+                actualUtilization:    0.110928000285057328 * 1e18,
+                targetUtilization:    0.833368500318426368 * 1e18,
+                minDebtAmount:        405.412536070667096133 * 1e18,
+                loans:                2,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.045000000000000000 * 1e18,
+                interestRateUpdate:   block.timestamp - 6 hours
+            })
+        );
+
     }
 
     function testTakewithHeal() external {
