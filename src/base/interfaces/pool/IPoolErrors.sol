@@ -21,11 +21,6 @@ interface IPoolErrors {
     error AmountLTMinDebt();
 
     /**
-     *  @notice The auction price is greater or the same as the arbed bucket price.
-     */
-    error AuctionPriceGteQArbPrice();
-
-    /**
      *  @notice Borrower has a healthy over-collateralized position.
      */
     error BorrowerOk();
