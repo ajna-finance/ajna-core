@@ -25,6 +25,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     uint256 internal constant LAMBDA_EMA_7D      = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
     uint256 internal constant EMA_7D_RATE_FACTOR = 1e18 - LAMBDA_EMA_7D;
+    int256 internal constant PERCENT_102         = 1.02 * 10**18;
 
     /***********************/
     /*** State Variables ***/
@@ -708,28 +709,27 @@ abstract contract Pool is Clone, Multicall, IPool {
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
-            if (poolState_.accruedDebt != 0) {
-                int256 actualUtilization = int256(
+            if (poolState_.accruedDebt != 0) {                
+                int256 mau = int256(                                       // meaningful actual utilization                   
                     deposits.utilization(
                         poolState_.accruedDebt,
                         poolState_.collateral
                     )
                 );
-                int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
-
-                // raise rates if 4*(targetUtilization-actualUtilization) < (targetUtilization+actualUtilization-1)^2-1
-                // decrease rates if 4*(targetUtilization-mau) > -(targetUtilization+mau-1)^2+1
-                int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
-                int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+                int256 tu = int256(Maths.wdiv(curDebtEma, curLupColEma));  // target utilization
 
                 if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate;
+                // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
+                // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
+                int256 mau102 = mau * PERCENT_102 / 10**18;
 
                 uint256 newInterestRate = poolState_.rate;
-                if (decreaseFactor < increaseFactor - 10**18) {
+                if (4 * (tu - mau102) < ((tu + mau102 - 10**18) ** 2) / 10**18 - 10**18) {
                     newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-                } else if (decreaseFactor > 10**18 - increaseFactor) {
+                } else if (4 * (tu - mau) > 10**18 - ((tu + mau - 10**18) ** 2) / 10**18) {
                     newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
                 }
+
                 if (poolState_.rate != newInterestRate) {
                     interestRate       = newInterestRate;
                     interestRateUpdate = block.timestamp;
