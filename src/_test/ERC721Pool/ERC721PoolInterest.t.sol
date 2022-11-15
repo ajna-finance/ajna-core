@@ -2,7 +2,6 @@
 pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
-import "forge-std/console2.sol";
 import '../../erc721/ERC721Pool.sol';
 
 import '../../libraries/BucketMath.sol';
@@ -160,7 +159,6 @@ contract ERC721PoolSubsetInterestTest is ERC721PoolInterestTest {
             }
         );
         _assertLenderInterest(liquidityAdded, 6.454207045591150000 * 1e18);  
-        //               spreadsheet produces 6.4542067070
 
         // borrower pulls some of their collateral after some time has passed
         skip(10 days);
