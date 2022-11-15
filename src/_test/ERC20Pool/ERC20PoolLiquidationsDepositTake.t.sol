@@ -238,6 +238,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
            }
         );
 
+        // add liquidity to accrue interest and update reserves before deposit take
         _addLiquidity(
            {
                from:   _lender1,

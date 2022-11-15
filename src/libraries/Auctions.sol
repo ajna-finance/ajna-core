@@ -56,7 +56,7 @@ library Auctions {
     /**
      *  @notice The auction price is greater or the same as the arbed bucket price.
      */
-    error AuctionPriceGteQArbPrice();
+    error AuctionPriceGtBucketPrice();
     /**
      *  @notice Actor is attempting to take or clear an inactive auction.
      */
@@ -270,8 +270,8 @@ library Auctions {
             liquidation.kickMomp,
             liquidation.kickTime
         );
-        // cannot arb with a price lower than or equal with the auction price
-        if (params_.auctionPrice >= bucketPrice_) revert AuctionPriceGteQArbPrice();
+        // cannot arb with a price lower than the auction price
+        if (params_.auctionPrice > bucketPrice_) revert AuctionPriceGtBucketPrice();
 
         // if deposit take then price to use when calculating take is bucket price
         uint256 price = depositTake_ ? bucketPrice_ : params_.auctionPrice;

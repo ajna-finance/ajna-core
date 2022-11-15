@@ -596,7 +596,7 @@ abstract contract DSTestPlus is Test {
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('AuctionPriceGteQArbPrice()'));
+        vm.expectRevert(abi.encodeWithSignature('AuctionPriceGtBucketPrice()'));
         _pool.arbTake(borrower, false, index);
     }
 
@@ -656,7 +656,7 @@ abstract contract DSTestPlus is Test {
         uint256 index
     ) internal {
         changePrank(from);
-        vm.expectRevert(abi.encodeWithSignature('AuctionPriceGteQArbPrice()'));
+        vm.expectRevert(abi.encodeWithSignature('AuctionPriceGtBucketPrice()'));
         _pool.arbTake(borrower, true, index);
     }
 

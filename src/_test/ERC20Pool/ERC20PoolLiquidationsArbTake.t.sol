@@ -238,6 +238,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
            }
         );
 
+        // add liquidity to accrue interest and update reserves before arb take
         _addLiquidity(
            {
                from:   _lender1,
