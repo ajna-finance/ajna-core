@@ -3,7 +3,6 @@ pragma solidity 0.8.14;
 
 import './Maths.sol';
 import './PoolUtils.sol';
-import "forge-std/console2.sol";
 
 library Deposits {
 
@@ -35,7 +34,6 @@ library Deposits {
 
         if (depositAboveHtp != 0) {
             uint256 netInterestMargin = PoolUtils.lenderInterestMargin(utilization(self, debt_, collateral_));
-            console2.log("depositAboveHtp=%s, netInterestMargin=%s", depositAboveHtp, netInterestMargin);
             uint256 newInterest       = Maths.wmul(netInterestMargin, Maths.wmul(pendingInterestFactor_ - Maths.WAD, debt_));
 
             uint256 lenderFactor = Maths.wdiv(newInterest, depositAboveHtp) + Maths.WAD;

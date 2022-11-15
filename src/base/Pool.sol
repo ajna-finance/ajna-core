@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import "forge-std/console2.sol";
 import '@clones/Clone.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
@@ -278,7 +277,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 borrowerDebt           = Maths.wmul(borrower.t0debt, poolState.inflator);
 
         // increase debt by the origination fee
-        console2.log("borrow rate=%s, feerate=%s, inflator=%s", interestRate, PoolUtils.feeRate(interestRate), poolState.inflator);
         uint256 debtChange   = Maths.wmul(amountToBorrow_, PoolUtils.feeRate(interestRate) + Maths.WAD);
         uint256 t0debtChange = Maths.wdiv(debtChange, poolState.inflator);
         borrowerDebt += debtChange;
@@ -331,7 +329,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 maxQuoteTokenAmountToRepay_
     ) external override {
         PoolState memory poolState     = _accruePoolInterest();
-        console2.log("repay rate=%s, feerate=%s, inflator=%s", interestRate, PoolUtils.feeRate(interestRate), poolState.inflator);
         Loans.Borrower memory borrower = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.t0debt == 0) revert NoDebt();
 
@@ -474,7 +471,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     ) internal {
 
         PoolState      memory poolState = _accruePoolInterest();
-        console2.log("pledge rate=%s, feerate=%s, inflator=%s", interestRate, PoolUtils.feeRate(interestRate), poolState.inflator);
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
 
         borrower.collateral  += collateralAmountToPledge_;
@@ -510,7 +506,6 @@ abstract contract Pool is Clone, Multicall, IPool {
     ) internal {
 
         PoolState      memory poolState = _accruePoolInterest();
-        console2.log("pull rate=%s, feerate=%s, inflator=%s", interestRate, PoolUtils.feeRate(interestRate), poolState.inflator);
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(msg.sender);
         uint256 borrowerDebt            = Maths.wmul(borrower.t0debt, poolState.inflator);
 
@@ -656,7 +651,6 @@ abstract contract Pool is Clone, Multicall, IPool {
                 poolState_.inflator = Maths.wmul(poolState_.inflator, factor);
 
                 // Scale the fenwick tree to update amount of debt owed to lenders
-                console2.log("_accruePoolInterest factor=%s accruedDebt=%s", factor, poolState_.accruedDebt);
                 deposits.accrueInterest(
                     poolState_.accruedDebt,
                     poolState_.collateral,
