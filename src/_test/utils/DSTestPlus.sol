@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import "forge-std/console2.sol";
 import '@std/Test.sol';
 import '@std/Vm.sol';
 
