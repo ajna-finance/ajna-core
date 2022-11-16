@@ -217,6 +217,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         console2.log("take quote balance before swap: %s", IERC20Token(_getArgAddress(20)).balanceOf(msg.sender));
 
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
+        // FIXME: This will only work if msg.sender is a contract.  Will need additional param for callee.
         (bool success, ) = msg.sender.call(swapCalldata_);
         if (!success) revert AuctionExternalCallFailed();
 
