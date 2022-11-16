@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import "forge-std/console2.sol";
 import './interfaces/IERC20Pool.sol';
 import '../base/Pool.sol';
 
@@ -257,6 +258,8 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint256 collateral_,
         bytes memory swapCalldata_
     ) external override {
+        // TODO: add reentrancy guard
+
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
@@ -277,13 +280,17 @@ contract ERC20Pool is IERC20Pool, Pool {
 
         emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
 
-        // TODO: implement flashloan functionality
-        // Flash loan full amount to liquidate to borrower
-        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-        //msg.sender.call(swapCalldata_);
-
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
         _transferCollateral(msg.sender, collateralTaken);
+        console2.log("take collateral balance before swap: %s", IERC20Token(_getArgAddress(0)).balanceOf(msg.sender));
+        console2.log("take quote balance before swap: %s", IERC20Token(_getArgAddress(20)).balanceOf(msg.sender));
+
+        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
+        (bool success, ) = msg.sender.call(swapCalldata_);
+        if (!success) revert AuctionExternalCallFailed();
+
+        console2.log("take collateral balance after swap: %s", IERC20Token(_getArgAddress(0)).balanceOf(msg.sender));
+        console2.log("take quote balance after swap: %s", IERC20Token(_getArgAddress(20)).balanceOf(msg.sender));
+        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
     }
 
     /************************/
