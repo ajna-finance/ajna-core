@@ -172,6 +172,7 @@ library Auctions {
      *  @param  thresholdPrice_    Current threshold price (used to calculate bond factor).
      *  @param  momp_              Current MOMP (used to calculate bond factor).
      *  @return kickAuctionAmount_ The amount that kicker should send to pool in order to kick auction.
+     *  @return bondSize_          The amount that kicker locks in pool to kick auction.
      */
     function kick(
         Data storage self,
