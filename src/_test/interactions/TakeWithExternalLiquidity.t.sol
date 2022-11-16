@@ -8,18 +8,18 @@ import "@std/console.sol";
 import { ERC20Pool }        from '../../erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from '../../erc20/ERC20PoolFactory.sol';
 
+import '../../base/PoolInfoUtils.sol';
 import "./BalancerUniswapExample.sol";
 
-contract TakeWithBalancerFlashLoanTest is Test {
-    address constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-    address constant USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+contract TakeWithExternalLiquidityTest is Test {
+    address constant WETH     = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address constant USDC     = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     uint24  constant POOL_FEE = 3000;
 
     IWETH  private weth = IWETH(WETH);
     IERC20 private usdc = IERC20(USDC);
 
-    BalancerUniswapTaker internal _taker;
-    ERC20Pool            internal _ajnaPool;
+    ERC20Pool internal _ajnaPool;
 
     address internal _borrower;
     address internal _borrower2;
@@ -28,8 +28,8 @@ contract TakeWithBalancerFlashLoanTest is Test {
 
     function setUp() external {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
+        // 0x81fA6B9325b869eF7C70218A869e1b63d06A6328
         _ajnaPool = ERC20Pool(new ERC20PoolFactory().deployPool(WETH, USDC, 0.05 * 10**18));
-        _taker = new BalancerUniswapTaker();
 
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
@@ -73,6 +73,8 @@ contract TakeWithBalancerFlashLoanTest is Test {
     }
 
     function testTakeWithFlashLoan() external {
+        BalancerUniswapTaker taker = new BalancerUniswapTaker();
+
         // assert USDC balance before take
         console.log("USDC starting balance", usdc.balanceOf(address(this)));
         assertEq(0, usdc.balanceOf(address(this)));
@@ -91,10 +93,57 @@ contract TakeWithBalancerFlashLoanTest is Test {
                 maxAmount: 10 * 1e18
             })
         );
-        _taker.take(tokens, amounts, data);
+        taker.take(tokens, amounts, data);
 
         console.log("USDC ending balance", usdc.balanceOf(address(this)));
         assertGt(usdc.balanceOf(address(this)), 1000); // could vary
+    }
+
+    function testTakeWithAtomicSwap() external {
+        // assert no USDC balance before take
+        address taker = makeAddr("taker");  // 0x93646Ca7a11660aF7d74e9B08ef0aA99D1a69D81
+        vm.makePersistent(taker);
+        changePrank(taker);
+
+        ISwapRouter router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+        uint256 maxTakeAmount = 10 * 1e18;
+        weth.approve(address(router), maxTakeAmount);
+        usdc.approve(address(_ajnaPool), 100_000 * 1e18);
+
+        assertLt(_getAuctionPrice(_borrower), 1000 * 1e18);
+
+        // assemble calldata to swap WETH for USDC on Uniswap 
+        ISwapRouter.ExactInputSingleParams memory params =
+            ISwapRouter.ExactInputSingleParams({
+                tokenIn: WETH,
+                tokenOut: USDC,
+                fee: POOL_FEE,
+                recipient: taker,
+                deadline: block.timestamp,
+                amountIn: 2 * 1e18,
+                amountOutMinimum: 1,
+                sqrtPriceLimitX96: 0
+            });
+        bytes memory swapCalldata = abi.encodeWithSignature("router.exactInputSingle(bytes memory)", params);
+
+        // TODO: Uniswap is only giving me 19442591 USDC, which is 19.4 because it's 6 decimals.  Why?
+        if (true) {   // practice swap
+            deal(WETH, taker,  2 * 1e18);
+            console.log("practice collateral balance before swap: %s", weth.balanceOf(taker));
+            console.log("practice quote balance before swap: %s", usdc.balanceOf(taker));
+            // router.exactInputSingle(params);             // this works
+            (bool success, ) = taker.call(swapCalldata);    // FIXME: this does not
+            assertEq(success, true);
+            console.log("practice collateral balance after swap: %s", weth.balanceOf(taker));
+            console.log("practice quote balance after swap: %s", usdc.balanceOf(taker));
+        } else {
+            _ajnaPool.take(_borrower, maxTakeAmount, swapCalldata);
+        }
+    }
+
+    function _getAuctionPrice(address borrower) internal view returns (uint256) {
+        (, , uint256 kickTime, uint256 kickMomp, , ) = _ajnaPool.auctionInfo(borrower);
+        return PoolUtils.auctionPrice(kickMomp, kickTime);
     }
 
 }

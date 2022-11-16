@@ -11,8 +11,8 @@ contract BalancerUniswapTaker {
     error NotOwner();
 
     address constant balancerAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
-    ISwapRouter constant router =
-        ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    ISwapRouter constant router      = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
+    uint24 constant POOL_FEE         = 3000;
 
     struct TakeData {
         address taker;
@@ -66,7 +66,7 @@ contract BalancerUniswapTaker {
             ISwapRouter.ExactInputSingleParams({
                 tokenIn: address(tokens[1]),
                 tokenOut: address(tokens[0]),
-                fee: 3000,
+                fee: POOL_FEE,
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: tokens[1].balanceOf(address(this)),

@@ -21,6 +21,11 @@ interface IPoolErrors {
     error AmountLTMinDebt();
 
     /**
+     *  @notice An external call used to facilitate an auction take failed.
+     */
+    error AuctionExternalCallFailed();
+
+    /**
      *  @notice Borrower has a healthy over-collateralized position.
      */
     error BorrowerOk();
