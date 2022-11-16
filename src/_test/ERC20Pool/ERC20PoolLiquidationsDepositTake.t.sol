@@ -167,11 +167,12 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
 
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower,
-                debt:       19.778456451861613480 * 1e18,
-                collateral: 2 * 1e18,
-                bond:       0.195342779771472726 * 1e18
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           19.778456451861613480 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.195342779771472726 * 1e18,
+                transferAmount: 0.195342779771472726 * 1e18
             }
         );
 
