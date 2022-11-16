@@ -170,11 +170,12 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
         skip(100 days);
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                debt:       9_976.561670003961916237 * 1e18,
-                collateral: 1_000 * 1e18,
-                bond:       98.533942419792216457 * 1e18
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_976.561670003961916237 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           98.533942419792216457 * 1e18,
+                transferAmount: 98.533942419792216457 * 1e18
             }
         );
         _assertAuction(
@@ -397,11 +398,12 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
         skip(100 days);
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                debt:       9_976.561670003961916237 * 1e18,
-                collateral: 1_000 * 1e18,
-                bond:       98.533942419792216457 * 1e18
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_976.561670003961916237 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           98.533942419792216457 * 1e18,
+                transferAmount: 98.533942419792216457 * 1e18
             }
         );
         _assertAuction(
@@ -560,11 +562,12 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
         uint256 kickTime = _startTime + 100 days;
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                debt:       9_976.561670003961916237 * 1e18,
-                collateral: 1_000 * 1e18,
-                bond:       98.533942419792216457 * 1e18
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_976.561670003961916237 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           98.533942419792216457 * 1e18,
+                transferAmount: 98.533942419792216457 * 1e18
             }
         );
         _assertAuction(

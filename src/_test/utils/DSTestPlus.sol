@@ -30,7 +30,7 @@ abstract contract DSTestPlus is Test {
     event BucketTake(address indexed borrower, uint256 index, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
     event Heal(address indexed borrower, uint256 healedDebt);
-    event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_);
+    event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_, uint256 bond_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
     event PullCollateral(address indexed borrower_, uint256 amount_);
@@ -182,12 +182,13 @@ abstract contract DSTestPlus is Test {
         address borrower,
         uint256 debt,
         uint256 collateral,
-        uint256 bond
+        uint256 bond,
+        uint256 transferAmount
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit Kick(borrower, debt, collateral);
-        _assertTokenTransferEvent(from, address(_pool), bond);
+        emit Kick(borrower, debt, collateral, bond);
+        if(transferAmount != 0) _assertTokenTransferEvent(from, address(_pool), transferAmount);
         _pool.kick(borrower);
     }
 

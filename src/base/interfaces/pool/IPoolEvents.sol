@@ -84,11 +84,13 @@ interface IPoolEvents {
      *  @param  borrower   Identifies the loan being liquidated.
      *  @param  debt       Debt the liquidation will attempt to cover.
      *  @param  collateral Amount of collateral up for liquidation.
+     *  @param  bond       Bond amount locked by kicker
      */
     event Kick(
         address indexed borrower,
         uint256 debt,
-        uint256 collateral
+        uint256 collateral,
+        uint256 bond
     );
 
     /**

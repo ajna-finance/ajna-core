@@ -186,6 +186,7 @@ library Auctions {
      *  @param  thresholdPrice_    Current threshold price (used to calculate bond factor).
      *  @param  momp_              Current MOMP (used to calculate bond factor).
      *  @return kickAuctionAmount_ The amount that kicker should send to pool in order to kick auction.
+     *  @return bondSize_          The amount that kicker locks in pool to kick auction.
      */
     function kick(
         Data storage self,
@@ -193,7 +194,7 @@ library Auctions {
         uint256 borrowerDebt_,
         uint256 thresholdPrice_,
         uint256 momp_
-    ) internal returns (uint256 kickAuctionAmount_) {
+    ) internal returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
 
         uint256 bondFactor;
         // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
@@ -208,26 +209,26 @@ library Auctions {
                 )
             );
         }
-        uint256 bondSize = Maths.wmul(bondFactor, borrowerDebt_);
+        bondSize_ = Maths.wmul(bondFactor, borrowerDebt_);
 
         // update kicker balances
         Kicker storage kicker = self.kickers[msg.sender];
-        kicker.locked += bondSize;
-        if (kicker.claimable >= bondSize) {
-            kicker.claimable -= bondSize;
+        kicker.locked += bondSize_;
+        if (kicker.claimable >= bondSize_) {
+            kicker.claimable -= bondSize_;
         } else {
-            kickAuctionAmount_ = bondSize - kicker.claimable;
+            kickAuctionAmount_ = bondSize_ - kicker.claimable;
             kicker.claimable = 0;
         }
         // update totalBondEscrowed accumulator
-        self.totalBondEscrowed += bondSize;
+        self.totalBondEscrowed += bondSize_;
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
         liquidation.kicker     = msg.sender;
         liquidation.kickTime   = block.timestamp;
         liquidation.kickMomp   = momp_;
-        liquidation.bondSize   = bondSize;
+        liquidation.bondSize   = bondSize_;
         liquidation.bondFactor = bondFactor;
 
         if (self.head != address(0)) {

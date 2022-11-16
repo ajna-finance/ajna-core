@@ -398,7 +398,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         loans._remove(borrowerAddress_);
  
         // kick auction
-        uint256 kickAuctionAmount = auctions.kick(
+        (uint256 kickAuctionAmount, uint256 bondSize) = auctions.kick(
             borrowerAddress_,
             borrowerDebt,
             borrowerDebt * Maths.WAD / borrower.collateral,
@@ -418,8 +418,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         // update pool state
         _updatePool(poolState, lup);
 
-        emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral);
-        _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
+        emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
+        if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
 
