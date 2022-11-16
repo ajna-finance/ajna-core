@@ -184,16 +184,9 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256 collateral_,
         uint256 price_
     ) internal pure override returns (bool) {
-        if (debt_  == 0) return true;       // if debt is 0 then is collateralized
-        if (price_ == 0) return true;       // if price to calculate collateralized is 0 then is collateralized
-
-        uint256 encumbered = Maths.wdiv(debt_, price_); // calculated to avoid situation where debt dust amount
-        if (encumbered   == 0) return true;  // if encumbered is 0 then is collateralized
-        if (collateral_ == 0) return false; // if encumbered is not 0 and collateral is 0 then is not collateralized
-
         //slither-disable-next-line divide-before-multiply
-        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD;    // use collateral floor
-        return Maths.wdiv(collateral_, encumbered) >= Maths.WAD; // is collateralized when collateral divided by encumbered >= 1
+        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
+        return Maths.wmul(collateral_, price_) >= debt_;
     }
 
     /**
