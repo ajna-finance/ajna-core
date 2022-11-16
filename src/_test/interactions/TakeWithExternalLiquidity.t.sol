@@ -139,13 +139,16 @@ contract TakeWithExternalLiquidityTest is Test {
         // TODO: Uniswap is only giving me 19442591 USDC, which is 19.4 because it's 6 decimals.  Why?
         if (true) {   // practice swap
             deal(WETH, taker,  2 * 1e18);
-            console.log("practice collateral balance before swap: %s", weth.balanceOf(taker));
-            console.log("practice quote balance before swap: %s", usdc.balanceOf(taker));
-            // router.exactInputSingle(params);             // this works
-            (bool success, ) = taker.call(swapCalldata);    // FIXME: this does not
-            assertEq(success, true);
-            console.log("practice collateral balance after swap: %s", weth.balanceOf(taker));
-            console.log("practice quote balance after swap: %s", usdc.balanceOf(taker));
+            uint256 usdcBalanceBefore = usdc.balanceOf(taker);
+            console.log("practice quote balance before swap: %s", usdcBalanceBefore);
+
+            router.exactInputSingle(params);                        // this works
+            // (bool success, ) = address(router).call(swapCalldata);  // FIXME: this does not
+            // assertEq(success, true);
+
+            uint256 usdcBalanceAfter = usdc.balanceOf(taker);
+            console.log("practice quote balance after swap: %s", usdcBalanceAfter);
+            assertGt(usdcBalanceAfter, usdcBalanceBefore);
         } else {
             _ajnaPool.take(_borrower, maxTakeAmount, swapCalldata);
         }
