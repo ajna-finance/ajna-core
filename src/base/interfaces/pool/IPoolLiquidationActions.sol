@@ -8,23 +8,13 @@ pragma solidity 0.8.14;
 interface IPoolLiquidationActions {
     /**
      *  @notice Called by actors to use quote token to arb higher-priced deposit off the book.
-     *  @param  borrower Identifies the loan to liquidate.
-     *  @param  index    Index of a bucket, likely the HPB, in which collateral will be deposited.
+     *  @param  borrower    Identifies the loan to liquidate.
+     *  @param  depositTake If true then the take will happen at an auction price equal with bucket price. Auction price is used otherwise.
+     *  @param  index       Index of a bucket, likely the HPB, in which collateral will be deposited.
      */
-    function arbTake(
+    function bucketTake(
         address borrower,
-        uint256 index
-    ) external;
-
-    /**
-     *  @notice Called by actors to purchase collateral using quote token already on the book.
-     *  @param  borrower Identifies the loan under liquidation.
-     *  @param  amount   Amount of bucket deposit to use to exchange for collateral.
-     *  @param  index    Index of the bucket which has amount_ quote token available.
-     */
-    function depositTake(
-        address borrower,
-        uint256 amount,
+        bool    depositTake,
         uint256 index
     ) external;
 

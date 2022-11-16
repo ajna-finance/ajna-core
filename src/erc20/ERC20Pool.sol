@@ -172,8 +172,9 @@ contract ERC20Pool is IERC20Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function arbTake(
+    function bucketTake(
         address borrowerAddress_,
+        bool    depositTake_,
         uint256 index_
     ) external override {
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
@@ -183,67 +184,59 @@ contract ERC20Pool is IERC20Pool, Pool {
         uint256 bucketDeposit = deposits.valueAt(index_);
         if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
-        Auctions.Liquidation storage liquidation = auctions.liquidations[borrowerAddress_];
-        (
-            uint256 quoteTokenAmount,
-            uint256 t0repaidDebt,
-            uint256 collateralArbed,
-            uint256 auctionPrice,
-            uint256 bondChange,
-            bool isRewarded
-        ) = auctions.arbTake(liquidation, borrower, bucketDeposit, poolState.inflator);
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        Auctions.TakeParams memory params = auctions.bucketTake(
+            borrowerAddress_,
+            borrower,
+            bucketDeposit,
+            bucketPrice,
+            depositTake_,
+            poolState.inflator
+        );
 
-        uint256 depositAmountToRemove = quoteTokenAmount;
-        // bucket operations
-        {
-            // cannot arb with a price lower than or equal with the auction price
-            uint256 bucketPrice = PoolUtils.indexToPrice(index_);
-            if (auctionPrice >= bucketPrice) revert AuctionPriceGteQArbPrice();
+        Buckets.Bucket storage bucket = buckets[index_];
+        uint256 bucketExchangeRate = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            bucketDeposit,
+            bucketPrice
+        );
+        // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+        Buckets.addLPs(
+            bucket,
+            msg.sender,
+            Maths.wrdivr(
+                Maths.wmul(params.collateralAmount, bucketPrice - params.auctionPrice),
+                bucketExchangeRate
+            )
+        );
 
-            Buckets.Bucket storage bucket = buckets[index_];
-            uint256 bucketExchangeRate = Buckets.getExchangeRate(
-                bucket.collateral,
-                bucket.lps,
-                bucketDeposit,
-                bucketPrice
-            );
-
-            // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+        uint256 depositAmountToRemove = params.quoteTokenAmount;
+        // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+        if (params.isRewarded) {
             Buckets.addLPs(
                 bucket,
-                msg.sender,
-                Maths.wrdivr(
-                    Maths.wmul(collateralArbed, bucketPrice - auctionPrice),
-                    bucketExchangeRate
-                )
+                params.kicker,
+                Maths.wrdivr(params.bondChange, bucketExchangeRate)
             );
-            // the bondholder/kicker is awarded bond change worth of LPB in the bucket
-            if (isRewarded) {
-                Buckets.addLPs(
-                    bucket,
-                    liquidation.kicker,
-                    Maths.wrdivr(bondChange, bucketExchangeRate)
-                );
-                depositAmountToRemove -= bondChange;
-            }
-
-            // collateral is moved to the bucket’s claimable collateral
-            bucket.collateral += collateralArbed;
+            depositAmountToRemove -= params.bondChange;
         }
 
-        // quote tokens are removed from the bucket’s deposit
-        deposits.remove(index_, depositAmountToRemove);
+        borrower.collateral -= params.collateralAmount; // collateral is removed from the loan
+        bucket.collateral += params.collateralAmount;   // collateral is added to the bucket’s claimable collateral
 
-        // collateral is ewmoved from the loan
-        borrower.collateral -= collateralArbed;
-        _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
+        deposits.remove(index_, depositAmountToRemove); // quote tokens are removed from the bucket’s deposit
 
-        emit ArbTake(borrowerAddress_, index_, quoteTokenAmount, collateralArbed, bondChange, isRewarded);
-    }
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
-    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
-        // TODO: implement
-        emit DepositTake(borrower_, index_, amount_, 0, 0);
+        emit BucketTake(
+            borrowerAddress_,
+            index_,
+            params.quoteTokenAmount,
+            params.collateralAmount,
+            params.bondChange,
+            params.isRewarded
+        );
     }
 
     /**
@@ -261,29 +254,33 @@ contract ERC20Pool is IERC20Pool, Pool {
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
 
-        (
-            uint256 quoteTokenAmount,
-            uint256 t0repaidDebt,
-            uint256 collateralTaken,
-            ,
-            uint256 bondChange,
-            bool isRewarded
-        ) = auctions.take(borrowerAddress_, borrower, collateral_, poolState.inflator);
+        Auctions.TakeParams memory params = auctions.take(
+            borrowerAddress_,
+            borrower,
+            collateral_,
+            poolState.inflator
+        );
 
-        borrower.collateral  -= collateralTaken;
-        poolState.collateral -= collateralTaken;
+        borrower.collateral  -= params.collateralAmount;
+        poolState.collateral -= params.collateralAmount;
 
-        _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
-        emit Take(borrowerAddress_, quoteTokenAmount, collateralTaken, bondChange, isRewarded);
+        emit Take(
+            borrowerAddress_,
+            params.quoteTokenAmount,
+            params.collateralAmount,
+            params.bondChange,
+            params.isRewarded
+        );
 
         // TODO: implement flashloan functionality
         // Flash loan full amount to liquidate to borrower
         // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
         //msg.sender.call(swapCalldata_);
 
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount);
-        _transferCollateral(msg.sender, collateralTaken);
+        _transferQuoteTokenFrom(msg.sender, params.quoteTokenAmount);
+        _transferCollateral(msg.sender, params.collateralAmount);
     }
 
     /************************/

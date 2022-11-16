@@ -22,15 +22,15 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
-     *  @param  borrower   Identifies the loan being liquidated.
-     *  @param  index      The index of the Highest Price Bucket used for this take.
-     *  @param  amount     Amount of quote token used to purchase collateral.
-     *  @param  collateral Amount of collateral purchased with quote token.
-     *  @param  bondChange Impact of this take to the liquidation bond.
-     *  @param  isReward   True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
+     *  @param  borrower    Identifies the loan being liquidated.
+     *  @param  index       The index of the Highest Price Bucket used for this take.
+     *  @param  amount      Amount of quote token used to purchase collateral.
+     *  @param  collateral  Amount of collateral purchased with quote token.
+     *  @param  bondChange  Impact of this take to the liquidation bond.
+     *  @param  isReward    True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
      *  @dev    amount / collateral implies the auction price.
      */
-    event ArbTake(
+    event BucketTake(
         address indexed borrower,
         uint256 index,
         uint256 amount,
