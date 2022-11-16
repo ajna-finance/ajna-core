@@ -73,15 +73,6 @@ library Auctions {
     /*********************************/
 
 
-    /**
-     *  @notice Heals the debt of the given loan / borrower.
-     *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
-     *  @param  borrower_      Borrower whose debt is healed.
-     *  @param  reserves_      Pool reserves.
-     *  @param  bucketDepth_   Max number of buckets heal action should iterate through.
-     *  @param  poolInflator_  The pool's inflator, used to calculate borrower debt.
-     *  @return healedDebt_    The amount of debt that was healed.
-     */
     // function heal(
     //     Data storage self,
     //     Loans.Data storage loans_,
@@ -194,6 +185,45 @@ library Auctions {
     //     else revert AuctionNotClearable();
     // }
 
+    function _applyConstraints(
+        uint256 t0RemainingDebt_,
+        uint256 hpbDeposit_,
+        uint256 remainingCol_,
+        uint256 hpbPrice_,
+        uint256 poolInflator_
+        ) internal returns(
+        uint256 debt_,
+        uint256 deposit_,
+        uint256 col_
+        ) {
+
+        uint256 t0DebtToHeal;
+        uint256 depositToRemove;
+        uint256 healedCol;
+
+        if (hpbDeposit_ > t0RemainingDebt_) {
+            // remainingDebt reflects bucket deposit constraint
+            t0DebtToHeal     = t0RemainingDebt_;
+            depositToRemove  = Maths.wmul(t0RemainingDebt_, poolInflator_);
+        } else {
+            // hpbDeposit reflects borrower debt constraint 
+            t0DebtToHeal     = Maths.wdiv(hpbDeposit_, poolInflator_);
+            depositToRemove  = hpbDeposit_;
+        }
+
+        healedCol = Maths.wdiv(Maths.wmul(t0DebtToHeal, poolInflator_), hpbPrice_);
+
+        // borrower collateral constraint
+        if (healedCol > remainingCol_) {
+            healedCol    = remainingCol_;
+            // healedCol * hpbPrice < healableQuote should be true
+            t0DebtToHeal = Maths.min(Maths.wmul(healedCol, hpbPrice_ ), t0DebtToHeal);
+        }
+
+        debt_    = t0RemainingDebt_ -= t0DebtToHeal;
+        deposit_ = hpbDeposit_      -= depositToRemove;
+        col_     = remainingCol_    -= healedCol;
+    }
 
 
     /**
@@ -220,85 +250,80 @@ library Auctions {
     {
         if (self.liquidations[borrower_].kickTime == 0) revert NoAuction();
 
-        uint256 debtToHeal   = Maths.wmul(loans_.borrowers[borrower_].t0debt, poolInflator_);
+        // debtToHeal needs remain in t0
+        uint256 t0DebtToHeal = loans_.borrowers[borrower_].t0debt;
         uint256 remainingCol = loans_.borrowers[borrower_].collateral;
         if (
             (block.timestamp - self.liquidations[borrower_].kickTime > 72 hours)
             ||
-            (debtToHeal != 0 && remainingCol == 0)
+            (t0DebtToHeal != 0 && remainingCol == 0)
         ) {
-            uint256 remainingDebt = debtToHeal;
+            uint256 t0RemainingDebt = t0DebtToHeal;
             uint256 hpbIndex   = Deposits.findIndexOfSum(deposits_, 1);
             uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
-            uint256 healableQuote;
+            uint256 t0DebtToHeal;
+            uint256 depositToRemove;
 
             // do we still need bucketDepth check here?
-            //while (bucketDepth_ != 0 && (remainingDebt != 0 && remainingCol != 0)) {
-            while (remainingDebt != 0 && remainingCol != 0) {
+            // while (bucketDepth_ != 0 && (remainingDebt != 0 && remainingCol != 0)) {
+            while (t0RemainingDebt != 0 && remainingCol != 0) {
 
                 hpbIndex           = Deposits.findIndexOfSum(deposits_, 1);
                 hpbDeposit         = Deposits.valueAt(deposits_, hpbIndex);
-                uint256 hpbPrice   = PoolUtils.indexToPrice(hpbIndex);
                 uint256 healedCol;
 
-                // remainingDebt reflects bucket deposit constraint
-                // hpbDeposit reflects borrower debt constraint 
-                healableQuote = (hpbDeposit > remainingDebt) ? remainingDebt : hpbDeposit;
+                (t0RemainingDebt,
+                hpbDeposit,
+                remainingCol
+                ) = _applyConstraints(t0RemainingDebt, hpbDeposit, remainingCol, PoolUtils.indexToPrice(hpbIndex), poolInflator_);
 
-                healedCol = Maths.wdiv(healableQuote, hpbPrice);
-
-                // borrower collateral constraint
-                if (healedCol > remainingCol) {
-                    healedCol     = remainingCol;
-                    healableQuote = Maths.wmul(healedCol, hpbPrice);
-                }
-
-                remainingDebt -= healableQuote;
-                hpbDeposit    -= healableQuote;
-                remainingCol  -= healedCol;
-
-                Deposits.remove(deposits_, hpbIndex, healableQuote);
+                Deposits.remove(deposits_, hpbIndex, depositToRemove);
                 buckets_[hpbIndex].collateral += healedCol;
 
                 //--bucketDepth_;
             }
 
-            if (remainingDebt != 0 && reserves_ >= remainingDebt) {
-                // TODO: what do we do with the collateral in the loan in this case?
-                // TODO: In the case where the reserves_ are covering the remainingDebt, shouldn't they be reduced?
-                reserves_     -= remainingDebt;
-                remainingDebt  =  0;
-            } else { 
-                // TODO: what do we do with the collateral in the loan in this case?
-                remainingDebt -= reserves_;
-                reserves_ = 0;
+            if (reserves_ >= t0RemainingDebt) {
+                t0RemainingDebt = 0;
+            } else {
+                // TODO: need to divide reserves by the inflator?
+                t0RemainingDebt -= reserves_;
             }
 
-            while (remainingDebt != 0) {
+            while (t0RemainingDebt != 0) {
+                // TODO: Fenwick tree: will this have issues finding HPB deposit?
                 hpbIndex           = Deposits.findIndexOfSum(deposits_, 1);
                 hpbDeposit         = Deposits.valueAt(deposits_, hpbIndex);
 
-                healableQuote = (hpbDeposit > remainingDebt) ? remainingDebt : hpbDeposit;
+                if (hpbDeposit > t0RemainingDebt) {
+                    t0DebtToHeal     = t0RemainingDebt;
+                    depositToRemove  = Maths.wmul(t0RemainingDebt, poolInflator_);
+                } else {
+                    t0DebtToHeal     = Maths.wdiv(hpbDeposit, poolInflator_);
+                    depositToRemove  = hpbDeposit;
+                }
+                
+                // TODO: Fenwick tree: issues created per Matt?
+                Deposits.remove(deposits_, hpbIndex, depositToRemove);
 
-                Deposits.remove(deposits_, hpbIndex, healableQuote);
-
-                if (buckets_[hpbIndex].collateral == 0 && healableQuote >= hpbDeposit) {
+                if (buckets_[hpbIndex].collateral == 0 && depositToRemove >= hpbDeposit) {
                     // existing LPB and LP tokens for the bucket shall become unclaimable.
                     buckets_[hpbIndex].lps = 0;
                     buckets_[hpbIndex].bankruptcyTime = block.timestamp;
                 }
 
-                hpbDeposit    -= healableQuote;
-                remainingDebt -= healableQuote; 
+                t0RemainingDebt -= t0DebtToHeal; 
+                hpbDeposit      -= depositToRemove;
             }
 
             // No more debt to cover, remove auction from queue
-            if (remainingDebt == 0) _removeAuction(self, borrower_); // TODO figure out what to do with remaining collateral in NFT case        
+            if (t0RemainingDebt == 0) _removeAuction(self, borrower_); // TODO figure out what to do with remaining collateral in NFT case        
 
-            healedDebt_ = debtToHeal - remainingDebt;
+            healedDebt_ = Maths.wmul(t0DebtToHeal - t0RemainingDebt, poolInflator_);
 
             // save remaining debt and collateral after auction clear action
-            loans_.borrowers[borrower_].t0debt     = Maths.wdiv(remainingDebt, poolInflator_); // TODO: Possible accuracy loss, against Matt's wishes
+            loans_.borrowers[borrower_].t0debt     = t0RemainingDebt;
+            // loans_.borrowers[borrower_].t0debt     = Maths.wdiv(remainingDebt, poolInflator_); // TODO: Possible accuracy loss, against Matt's wishes
             loans_.borrowers[borrower_].collateral = remainingCol;
         }
         else revert AuctionNotClearable();
