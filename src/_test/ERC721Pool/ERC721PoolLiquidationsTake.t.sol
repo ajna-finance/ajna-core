@@ -413,4 +413,217 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 46_979.938343114829758652 * 1e18);
         assertEq(_quote.balanceOf(_borrower), 119.8 * 1e18); // no additional tokens as there is no rounding of collateral taken (1)
     }
+
+    function testTakeCollateralandHealSubsetPool() external {
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0
+            })
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(1000 days);
+
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           23.012828827714740289 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.227287198298417188 * 1e18
+            }
+        );
+
+        /******************************/
+        /*** Assert Post-kick state ***/
+        /******************************/
+
+        _assertPool(
+            PoolState({
+                htp:                  6.582216822103492762 * 1e18,
+                lup:                  9.917184843435912074 * 1e18,
+                poolSize:             73_000 * 1e18,
+                pledgedCollateral:    5 * 1e18,
+                encumberedCollateral: 4.056751649452525709 * 1e18,
+                poolDebt:             40.231555971534224231 * 1e18,
+                actualUtilization:    0.000551117205089510 * 1e18,
+                targetUtilization:    0.811350329890505142 * 1e18,
+                minDebtAmount:        4.023155597153422423 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              23.012828827714740289 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowerMompFactor:        9.917184843435912074 * 1e18,
+                borrowerCollateralization: 0.861883162446546169 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              17.218727143819483942 * 1e18,
+                borrowerCollateral:        3 * 1e18,
+                borrowerMompFactor:        9.917184843435912074 * 1e18,
+                borrowerCollateralization: 1.727860269914713433 * 1e18
+            }
+        );
+        assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.227287198298417188 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.917184843435912074 * 1e18,
+                totalBondEscrowed: 0.227287198298417188 * 1e18,
+                auctionPrice:      317.349914989949186368 * 1e18,
+                debtInAuction:     23.012828827714740289 * 1e18
+            })
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.227287198298417188 * 1e18
+            }
+        );
+        
+        skip(10 hours);
+
+        // before take: NFTs pledged by auctioned borrower are owned by the pool
+        assertEq(_collateral.ownerOf(3), address(_pool));
+        assertEq(_collateral.ownerOf(1), address(_pool));
+        // before take: check quote token balances of taker
+        assertEq(_quote.balanceOf(_lender), 46_999.772712801701582812 * 1e18);
+
+        /**************************************/
+        /*** Take all collateral tokens (2) ***/
+        /**************************************/
+
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower,
+                maxCollateral:   2,
+                bondChange:      0.01239648105429489 * 1e18,
+                givenAmount:     1.239648105429489024 * 1e18,
+                collateralTaken: 2 * 1e18,
+                isReward:        true
+            }
+        );
+
+        // after take: NFTs pledged by liquidated borrower are owned by the taker
+        assertEq(_collateral.ownerOf(3), _lender);
+        assertEq(_collateral.ownerOf(1), _lender);
+        // after take : Taker quote token used for buying collateral
+        assertEq(_quote.balanceOf(_lender), 46_998.533064696272093788 * 1e18);
+
+        _assertPool(
+            PoolState({
+                htp:                  6.582893111996772890 * 1e18,
+                lup:                  9.917184843435912074 * 1e18,
+                poolSize:             73_000.001756788173660000 * 1e18,
+                pledgedCollateral:    3 * 1e18,
+                encumberedCollateral: 3.933210049581735894 * 1e18,
+                poolDebt:             39.006371089761803446 * 1e18,
+                actualUtilization:    0 * 1e18,
+                targetUtilization:    0.811350329890505142 * 1e18,
+                minDebtAmount:        3.900637108976180345 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 10 hours
+            })
+        );
+
+        // Borrower collateral is 0 and some debt is still to be paid
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              21.786759399568352738 * 1e18,
+                borrowerCollateral:        0,
+                borrowerMompFactor:        8.647164155054365798 * 1e18,
+                borrowerCollateralization: 0 * 1e18
+            }
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.239683679352712078 * 1e18,
+                bondFactor:        0.010000000000000000 * 1e18,
+                kickTime:          block.timestamp - 10 hours,
+                kickMomp:          9.917184843435912074 * 1e18, 
+                totalBondEscrowed: 0.239683679352712078 * 1e18,
+                auctionPrice:      0.619824052714744512 * 1e18,
+                debtInAuction:     21.786759399568352738 * 1e18
+            })
+        );
+
+        // kicker bond is locked as auction is not cleared
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.239683679352712078 * 1e18
+            }
+        );
+
+        _heal(
+            {
+                from:       _lender,
+                borrower:   _borrower,
+                maxDepth:   10,
+                healedDebt: 21.786759399568352738 * 1e18
+            }
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0, 
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0
+            })
+        );
+
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0.239683679352712078 * 1e18,
+                locked:    0
+            }
+        );
+
+        // Kicker claims bond + reward
+        changePrank(_lender);
+        _pool.withdrawBonds();
+        assertEq(_quote.balanceOf(_lender), 46_998.772748375624805866 * 1e18);  
+
+    }
 }
