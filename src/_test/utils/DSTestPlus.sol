@@ -494,6 +494,14 @@ abstract contract DSTestPlus is Test {
         assertEq(curLocked,    locked);
     }
 
+    function _assertLenderInterest(
+        uint256 liquidityAdded,
+        uint256 lenderInterest
+    ) internal {
+        (uint256 poolSize, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
+        assertEq(poolSize - liquidityAdded, lenderInterest);
+    }
+
     function _assertLoans(
         uint256 noOfLoans,
         address maxBorrower,
