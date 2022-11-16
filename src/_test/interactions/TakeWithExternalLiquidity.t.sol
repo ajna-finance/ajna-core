@@ -124,7 +124,17 @@ contract TakeWithExternalLiquidityTest is Test {
                 amountOutMinimum: 1,
                 sqrtPriceLimitX96: 0
             });
-        bytes memory swapCalldata = abi.encodeWithSignature("router.exactInputSingle(bytes memory)", params);
+
+        // https://docs.uniswap.org/protocol/reference/periphery/interfaces/ISwapRouter#exactinputsingleparams
+        bytes memory swapCalldata = abi.encodeWithSignature("exactInputSingle(address,address,uint24,address,uint256,uint256,uint256,uint160)", 
+            params.tokenIn, 
+            params.tokenOut, 
+            params.fee,
+            params.recipient,
+            params.deadline,
+            params.amountIn,
+            params.amountOutMinimum,
+            params.sqrtPriceLimitX96);
 
         // TODO: Uniswap is only giving me 19442591 USDC, which is 19.4 because it's 6 decimals.  Why?
         if (true) {   // practice swap
