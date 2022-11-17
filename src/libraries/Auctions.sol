@@ -104,52 +104,47 @@ library Auctions {
             remainingDebt_       = debtToHeal_;
             remainingCollateral_ = collateral_;
 
-            while (bucketDepth_ != 0) {
-                // auction has debt to cover with remaining collateral
-                uint256 hpbIndex;
-                if (remainingDebt_ != 0 && remainingCollateral_ != 0) {
-                    hpbIndex              = Deposits.findIndexOfSum(deposits_, 1);
-                    uint256 hpbPrice      = PoolUtils.indexToPrice(hpbIndex);
-                    uint256 clearableDebt = Maths.min(remainingDebt_, Deposits.valueAt(deposits_, hpbIndex));
-                    clearableDebt         = Maths.min(clearableDebt, Maths.wmul(remainingCollateral_, hpbPrice));
-                    uint256 clearableCol  = Maths.wdiv(clearableDebt, hpbPrice);
+            // auction has debt to cover with remaining collateral
+            while (bucketDepth_ != 0 && remainingDebt_ != 0 && remainingCollateral_ != 0) {
+                uint256 hpbIndex      = Deposits.findIndexOfSum(deposits_, 1);
+                uint256 hpbPrice      = PoolUtils.indexToPrice(hpbIndex);
+                uint256 clearableDebt = Maths.min(remainingDebt_, Deposits.valueAt(deposits_, hpbIndex));
+                clearableDebt         = Maths.min(clearableDebt, Maths.wmul(remainingCollateral_, hpbPrice));
+                uint256 clearableCol  = Maths.wdiv(clearableDebt, hpbPrice);
 
-                    remainingDebt_       -= clearableDebt;
-                    remainingCollateral_ -= clearableCol;
+                remainingDebt_       -= clearableDebt;
+                remainingCollateral_ -= clearableCol;
 
-                    Deposits.remove(deposits_, hpbIndex, clearableDebt);
-                    buckets_[hpbIndex].collateral += clearableCol;
-                }
-
-                // there's still debt to cover but no collateral left to auction, use reserve or forgive amount form next HPB
-                if (remainingDebt_ != 0 && remainingCollateral_ == 0) {
-                    if (reserves_ != 0) {
-                        uint256 fromReserve =  Maths.min(remainingDebt_, reserves_);
-                        reserves_      -= fromReserve;
-                        remainingDebt_ -= fromReserve;
-                    } else {
-                        hpbIndex           = Deposits.findIndexOfSum(deposits_, 1);
-                        uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
-                        uint256 forgiveAmt = Maths.min(remainingDebt_, hpbDeposit);
-
-                        remainingDebt_ -= forgiveAmt;
-
-                        Deposits.remove(deposits_, hpbIndex, forgiveAmt);
-                        Buckets.Bucket storage hpbBucket = buckets_[hpbIndex];
-                        if (hpbBucket.collateral == 0 && forgiveAmt >= hpbDeposit) {
-                            // existing LPB and LP tokens for the bucket shall become unclaimable.
-                            hpbBucket.lps = 0;
-                            hpbBucket.bankruptcyTime = block.timestamp;
-                        }
-                    }
-                }
-
-                // no more debt to cover, exit
-                if (remainingDebt_ == 0) {
-                    break;
-                }
+                Deposits.remove(deposits_, hpbIndex, clearableDebt);
+                buckets_[hpbIndex].collateral += clearableCol;
 
                 --bucketDepth_;
+            }
+
+            // if there's still debt and reserves not 0 then heal debt from reserves
+            if (remainingDebt_ != 0 && reserves_ != 0) {
+                remainingDebt_ -= Maths.min(remainingDebt_, reserves_);
+            }
+
+            // if there's still debt and no remaining collateral then start to forgive amount from next HPB
+            if (remainingDebt_ != 0 && remainingCollateral_ == 0) {
+                while (bucketDepth_ != 0 && remainingDebt_ != 0) { // loop through remaining buckets or entire debt healed
+                    uint256 hpbIndex   = Deposits.findIndexOfSum(deposits_, 1);
+                    uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
+                    uint256 forgiveAmt = Maths.min(remainingDebt_, hpbDeposit);
+
+                    remainingDebt_ -= forgiveAmt;
+
+                    Deposits.remove(deposits_, hpbIndex, forgiveAmt);
+                    Buckets.Bucket storage hpbBucket = buckets_[hpbIndex];
+                    if (hpbBucket.collateral == 0 && forgiveAmt >= hpbDeposit) {
+                        // existing LPB and LP tokens for the bucket shall become unclaimable.
+                        hpbBucket.lps = 0;
+                        hpbBucket.bankruptcyTime = block.timestamp;
+                    }
+
+                    --bucketDepth_;
+                }
             }
         } else revert AuctionNotClearable();
     }

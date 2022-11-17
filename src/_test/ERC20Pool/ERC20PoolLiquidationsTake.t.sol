@@ -725,13 +725,31 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         vm.revertTo(postTakeSnapshot);
 
-        // partial clears / debt heal - max buckets to use is 1
+        _assertReserveAuction(
+            {
+                reserves:                   148.141379552245490832 * 1e18,
+                claimableReserves :         101.165858164239609711 * 1e18,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+        // partial clears / debt heal - max buckets to use is 1, remaining will be taken from reserves
         _heal(
             {
                 from:       _lender,
                 borrower:   _borrower2,
                 maxDepth:   1,
-                healedDebt: 146.118375608265144801 * 1e18
+                healedDebt: 2_236.094237994809021102 * 1e18
+            }
+        );
+        _assertReserveAuction(
+            {
+                reserves:                   0,
+                claimableReserves :         0,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
             }
         );
         _assertAuction(
@@ -745,7 +763,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 kickMomp:          9.721295865031779605 * 1e18,
                 totalBondEscrowed: 104.609752335437078857 * 1e18,
                 auctionPrice:      0.607580991564486240 * 1e18,
-                debtInAuction:     9_227.427616572825121949 * 1e18
+                debtInAuction:     7_108.516109406279010945 * 1e18
             })
         );
         _assertKicker(
@@ -758,7 +776,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              9_227.427616572825121949 * 1e18,
+                borrowerDebt:              7_108.516109406279010945 * 1e18,
                 borrowerCollateral:        0,
                 borrowerMompFactor:        9.588542815647469183 * 1e18,
                 borrowerCollateralization: 0
@@ -770,7 +788,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:       _lender,
                 borrower:   _borrower2,
                 maxDepth:   5,
-                healedDebt: 9_101.418782865855381996 * 1e18
+                healedDebt: 7_011.442920479311505695 * 1e18
             }
         );
         _assertAuction(
