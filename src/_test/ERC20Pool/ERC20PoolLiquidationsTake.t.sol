@@ -604,7 +604,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:       _lender,
                 borrower:   _borrower2,
                 maxDepth:   10,
-                healedDebt: 9_375.568996125070612781 * 1e18
+                healedDebt: 9_247.537158474120526797 * 1e18
             }
         );
         _assertAuction(
@@ -731,7 +731,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:       _lender,
                 borrower:   _borrower2,
                 maxDepth:   1,
-                healedDebt: 148.141379552245490832 * 1e18
+                healedDebt: 146.118375608265144801 * 1e18
             }
         );
         _assertAuction(
@@ -770,7 +770,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:       _lender,
                 borrower:   _borrower2,
                 maxDepth:   5,
-                healedDebt: 9_227.427616572825121949 * 1e18
+                healedDebt: 9_101.418782865855381996 * 1e18
             }
         );
         _assertAuction(
@@ -1242,7 +1242,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 from:       _lender,
                 borrower:   _borrower2,
                 maxDepth:   5,
-                healedDebt: 8_196.079597628232153239 * 1e18
+                healedDebt: 8_076.635785817307696032 * 1e18
             }
         );
 

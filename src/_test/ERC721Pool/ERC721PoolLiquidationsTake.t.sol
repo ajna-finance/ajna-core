@@ -595,7 +595,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 from:       _lender,
                 borrower:   _borrower,
                 maxDepth:   10,
-                healedDebt: 21.786759399568352738 * 1e18
+                healedDebt: 18.996689878119714537 * 1e18
             }
         );
 
