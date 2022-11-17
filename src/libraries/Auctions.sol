@@ -87,6 +87,7 @@ library Auctions {
         uint256 debtToHeal_,
         address borrower_,
         uint256 reserves_,
+        uint256 poolInflator_,
         uint256 bucketDepth_
     ) internal returns (uint256, uint256) {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
@@ -111,13 +112,12 @@ library Auctions {
                 --bucketDepth_;
             }
 
-            // if there's still debt and reserves not 0 then heal debt from reserves
-            if (debtToHeal_ != 0 && reserves_ != 0) {
-                debtToHeal_ -= Maths.min(debtToHeal_, reserves_);
-            }
-
-            // if there's still debt and no remaining collateral then start to forgive amount from next HPB
+            // if there's still debt and no collateral
             if (debtToHeal_ != 0 && collateral_ == 0) {
+                // heal debt from reserves
+                debtToHeal_ -= Maths.min(debtToHeal_, reserves_);
+
+                // if there's still debt after healing from reserves then start to forgive amount from next HPB
                 while (bucketDepth_ != 0 && debtToHeal_ != 0) { // loop through remaining buckets if there's still debt to heal
                     uint256 hpbIndex   = Deposits.findIndexOfSum(deposits_, 1);
                     uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
