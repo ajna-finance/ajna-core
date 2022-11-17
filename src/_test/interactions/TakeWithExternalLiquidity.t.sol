@@ -127,7 +127,7 @@ contract TakeWithExternalLiquidityTest is Test {
             });
 
         // https://docs.uniswap.org/protocol/reference/periphery/interfaces/ISwapRouter#exactinputsingleparams
-        bytes memory swapCalldata = abi.encodeWithSignature("exactInputSingle(address,address,uint24,address,uint256,uint256,uint256,uint160)", 
+        bytes memory swapCalldata = abi.encodeWithSignature("exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))", 
             params.tokenIn, 
             params.tokenOut, 
             params.fee,
@@ -140,16 +140,14 @@ contract TakeWithExternalLiquidityTest is Test {
         if (true) {   // practice swap
             deal(WETH, taker,  2 * 1e18);
             uint256 usdcBalanceBefore = usdc.balanceOf(taker);
-            console.log("practice quote balance before swap: %s", usdcBalanceBefore);
 
-            router.exactInputSingle(params);                        // this works
-            // (bool success, ) = address(router).call(swapCalldata);  // FIXME: this does not
-            // assertEq(success, true);
+            (bool success, ) = address(router).call(swapCalldata);
+            assertEq(success, true);
 
             uint256 usdcBalanceAfter = usdc.balanceOf(taker);
-            console.log("practice quote balance after swap: %s", usdcBalanceAfter);
             assertGt(usdcBalanceAfter, usdcBalanceBefore);
         } else {
+            // TODO: Need to pass uniswap address as callee somehow
             _ajnaPool.take(_borrower, maxTakeAmount, swapCalldata);
         }
     }
