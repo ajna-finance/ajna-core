@@ -102,7 +102,7 @@ def add_initial_liquidity(lenders, pool_helper):
 
 def draw_initial_debt(borrowers, pool_helper, test_utils, chain, target_utilization):
     pool = pool_helper.pool
-    target_debt = (pool.depositSize() - pool.debt()) * target_utilization
+    target_debt = (pool.depositSize() - pool_helper.debt()) * target_utilization
     sleep_amount = max(1, int(12 * 3600 / NUM_LENDERS))
     for borrower_index in range(0, len(borrowers) - 1):
         # determine amount we want to borrow and how much collateral should be deposited
@@ -176,7 +176,7 @@ def aggregate_borrower_debt(borrowers, pool_helper, debug=False):
 # for debugging debt-with-no-loans issue
 def log_borrower_stats(borrowers, pool_helper, chain, debug=False):
     pool = pool_helper.pool
-    poolDebt = pool.debt()
+    poolDebt = pool_helper.debt()
     agg_borrower_debt = aggregate_borrower_debt(borrowers, pool_helper, debug)
     (_, loansCount, _, _, _) = pool_helper.loansInfo()
 
@@ -282,7 +282,7 @@ def draw_and_bid(lenders, borrowers, start_from, pool_helper, chain, test_utils,
 def draw_debt(borrower, borrower_index, pool_helper, test_utils, collateralization=1.1):
     # Draw debt based on added liquidity
     borrow_amount = get_cumulative_bucket_deposit(pool_helper, (borrower_index % 4) + 1)
-    pool_quote_on_deposit = pool_helper.pool.depositSize() - pool_helper.pool.debt()
+    pool_quote_on_deposit = pool_helper.pool.depositSize() - pool_helper.debt()
     borrow_amount = min(pool_quote_on_deposit / 2, borrow_amount)
     collateral_to_deposit = borrow_amount / pool_helper.lup() * collateralization * 10**18
 
