@@ -9,6 +9,16 @@ interface IAjnaPool {
         bytes memory swapCalldata
     ) external;
 
+    function addCollateral(
+        uint256 amount,
+        uint256 index
+    ) external returns (uint256 lpbChange);
+
+    function removeQuoteToken(
+        uint256 maxAmount,
+        uint256 index
+    ) external returns (uint256 quoteTokenAmount, uint256 lpAmount);
+
     function collateralAddress() external pure returns (address);
 
     function quoteTokenAddress() external pure returns (address);
