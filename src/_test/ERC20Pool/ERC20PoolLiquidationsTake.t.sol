@@ -189,7 +189,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      311.081467681016947360 * 1e18,
                 debtInAuction:     19.778456451861613480 * 1e18,
-                thresholdPrice:    2
+                thresholdPrice:    9.889228225930806740 * 1e18
             })
         );
 
@@ -245,6 +245,22 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         uint256 snapshot = vm.snapshot();
 
         skip(2 hours);
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.195342779771472726 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 2 hours,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
+                auctionPrice:      155.540733840508473696 * 1e18,
+                debtInAuction:     19.778456451861613480 * 1e18,
+                thresholdPrice:    9.889329828112590306 * 1e18
+            })
+        );
 
         // Collateral amount is restrained by debt
         _take(
@@ -314,6 +330,22 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         vm.revertTo(snapshot);
 
         skip(6 hours);
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.195342779771472726 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 6 hours,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
+                auctionPrice:      9.721295865031779616 * 1e18,
+                debtInAuction:     19.778456451861613480 * 1e18,
+                thresholdPrice:    9.889533035607758374 * 1e18
+            })
+        );
 
         // Collateral amount is restrained by taker
         _take(
@@ -462,6 +494,22 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         // Debt cannot be used as a constraint when AP < NP
         skip(358 minutes);
 
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          98.533942419792216457 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 358 minutes,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 98.533942419792216457 * 1e18,
+                auctionPrice:      9.948520384649726656 * 1e18,
+                debtInAuction:     9_976.561670003961916237 * 1e18,
+                thresholdPrice:    9.976867463138769510 * 1e18
+            })
+        );
+
         _take(
             {
                 from:            _lender,
@@ -512,6 +560,22 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         // skip ahead so take can be called on the loan
         skip(10 hours);
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          98.533942419792216457 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 10 hours,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 98.533942419792216457 * 1e18,
+                auctionPrice:      0.607580991564486240 * 1e18,
+                debtInAuction:     9_976.561670003961916237 * 1e18,
+                thresholdPrice:    9.977074177773911990 * 1e18
+            })
+        );
 
         // partial take for 20 collateral
         // Collateral amount is restrained by taker
@@ -1037,6 +1101,22 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.192728433177224139 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 3 hours,
+                kickMomp:          9.624807173121239337 * 1e18,
+                totalBondEscrowed: 0.192728433177224139 * 1e18,
+                auctionPrice:      76.998457384969914688 * 1e18,
+                debtInAuction:     19.489662805046791054 * 1e18,
+                thresholdPrice:    9.744966562937366149 * 1e18
+            })
+        );
+
         _take(
             {
                 from:            _lender,
@@ -1241,6 +1321,22 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
 
         skip(10 hours);
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          81.054302378846351183 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 10 hours,
+                kickMomp:          0,
+                totalBondEscrowed: 81.054302378846351183 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     8_195.704467159075241912 * 1e18,
+                thresholdPrice:    8.196079597628232153 * 1e18
+            })
+        );
 
         _take(
             {
