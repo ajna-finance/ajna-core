@@ -360,7 +360,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
-        (uint256 remainingCollateral, uint256 remainingDebt) = auctions.heal(
+        (uint256 remainingCollateral, uint256 remainingt0Debt) = auctions.heal(
             buckets,
             deposits,
             borrower.collateral,
@@ -371,18 +371,15 @@ abstract contract Pool is Clone, Multicall, IPool {
             maxDepth_
         );
 
-        uint256 remainingDebtT0;
-        if (remainingDebt == 0) { // TODO: // should only this be the condition or should we check for borrower collateralization too?
+        if (remainingt0Debt == 0) {
            auctions.removeAuction(borrowerAddress_);
-        } else {
-            remainingDebtT0 = Maths.wdiv(remainingDebt, poolState.inflator);
         }
 
-        uint256 t0HealedDebt = borrower.t0debt - remainingDebtT0;
+        uint256 t0HealedDebt = borrower.t0debt - remainingt0Debt;
         t0poolDebt      -= t0HealedDebt;
         t0DebtInAuction -= t0HealedDebt;
 
-        borrower.t0debt = remainingDebtT0;
+        borrower.t0debt     = remainingt0Debt;
         borrower.collateral = remainingCollateral;
 
         _updatePool(poolState, _lup(poolState.accruedDebt));
