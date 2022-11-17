@@ -286,6 +286,22 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
 contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
 
     function testLoadERC20PoolGasKickAndArbTakeLowestTPLoan() public {
+        _kickAndTakeLowestTPLoan(false);
+    }
+
+    function testLoadERC20PoolGasKickAndDepositTakeLowestTPLoan() public {
+        _kickAndTakeLowestTPLoan(true);
+    }
+
+    function testLoadERC20PoolGasKickAndArbTakeHighestTPLoan() public {
+        _kickAndTakeHighestTPLoan(false);
+    }
+
+    function testLoadERC20PoolGasKickAndDepositTakeHighestTPLoan() public {
+        _kickAndTakeHighestTPLoan(true);
+    }
+
+    function _kickAndTakeLowestTPLoan(bool depositTake_) internal {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
@@ -302,11 +318,11 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         skip(14 hours);
         address taker = makeAddr("taker");
         vm.startPrank(taker);
-        _pool.arbTake(_borrowers[0], 2_000);
+        _pool.bucketTake(_borrowers[0], depositTake_, 2_000);
         vm.stopPrank();
     }
 
-    function testLoadERC20PoolGasKickAndArbTakeHighestTPLoan() public {
+    function _kickAndTakeHighestTPLoan(bool depositTake_) internal {
         address kicker = makeAddr("kicker");
         _mintQuoteAndApproveTokens(kicker, type(uint256).max); // mint enough to cover bonds
 
@@ -323,7 +339,7 @@ contract ERC20PoolGasArbTakeLoadTest is ERC20PoolGasLoadTest {
         skip(14 hours);
         address taker = makeAddr("taker");
         vm.startPrank(taker);
-        _pool.arbTake(_borrowers[LOANS_COUNT - 1], 2_000);
+        _pool.bucketTake(_borrowers[LOANS_COUNT - 1], depositTake_, 2_000);
         vm.stopPrank();
     }
 

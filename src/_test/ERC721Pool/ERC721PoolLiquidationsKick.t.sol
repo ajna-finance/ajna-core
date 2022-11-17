@@ -182,11 +182,12 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
 
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower,
-                debt:       23.012828827714740289 * 1e18,
-                collateral: 2 * 1e18,
-                bond:       0.227287198298417188 * 1e18
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           23.012828827714740289 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.227287198298417188 * 1e18,
+                transferAmount: 0.227287198298417188 * 1e18
             }
         );
 

@@ -168,11 +168,12 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower,
-                debt:       19.778456451861613480 * 1e18,
-                collateral: 2 * 1e18,
-                bond:       0.195342779771472726 * 1e18
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           19.778456451861613480 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.195342779771472726 * 1e18,
+                transferAmount: 0.195342779771472726 * 1e18
             }
         );
 
@@ -207,11 +208,12 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower,
-                debt:       19.778456451861613480 * 1e18,
-                collateral: 2 * 1e18,
-                bond:       0.195342779771472726 * 1e18
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           19.778456451861613480 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.195342779771472726 * 1e18,
+                transferAmount: 0.195342779771472726 * 1e18
             }
         );
 
@@ -401,11 +403,12 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                debt:       9_976.561670003961916237 * 1e18,
-                collateral: 1_000 * 1e18,
-                bond:       98.533942419792216457 * 1e18
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_976.561670003961916237 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           98.533942419792216457 * 1e18,
+                transferAmount: 98.533942419792216457 * 1e18
             }
         );
         _assertAuction(
@@ -858,11 +861,12 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower,
-                debt:       19.778456451861613480 * 1e18,
-                collateral: 2 * 1e18,
-                bond:       0.195342779771472726 * 1e18
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           19.778456451861613480 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.195342779771472726 * 1e18,
+                transferAmount: 0.195342779771472726 * 1e18
             }
         );
 
@@ -965,11 +969,12 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower,
-                debt:       19.489662805046791054 * 1e18,
-                collateral: 2 * 1e18,
-                bond:       0.192728433177224139 * 1e18
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           19.489662805046791054 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.192728433177224139 * 1e18,
+                transferAmount: 0.192728433177224139 * 1e18
             }
         );
 
@@ -1204,11 +1209,12 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                debt:       8_195.704467159075241912 * 1e18,
-                collateral: 1_000.0 * 1e18,
-                bond:       81.054302378846351183 * 1e18
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           8_195.704467159075241912 * 1e18,
+                collateral:     1_000.0 * 1e18,
+                bond:           81.054302378846351183 * 1e18,
+                transferAmount: 81.054302378846351183 * 1e18
             }
         );
 

@@ -351,6 +351,8 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
     }
 
     function testPoolBorrowerInterestAccumulation() external tearDown {
+        (uint256 liquidityAdded, , , , ) = _poolUtils.poolLoansInfo(address(_pool));
+
         skip(10 days);
         _pledgeCollateral(
             {
@@ -432,6 +434,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrowerCollateralization: 8.496170252446614257 * 1e18
             }
         );
+        _assertLenderInterest(liquidityAdded, 27.733835462507850000 * 1e18);
 
         skip(10 days);
         _pullCollateral(
@@ -468,6 +471,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrowerCollateralization: 7.068416020096421514 * 1e18
             }
         );
+        _assertLenderInterest(liquidityAdded, 58.290367928259030686 * 1e18);
 
         skip(10 days);
         _borrow(
@@ -506,6 +510,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrowerCollateralization: 7.055540006217575889 * 1e18
             }
         );
+        _assertLenderInterest(liquidityAdded, 91.962325312057981693 * 1e18);
 
         skip(10 days);
         _repay(
@@ -545,6 +550,7 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
                 borrowerCollateralization: 7.041403480162822536 * 1e18
             }
         );
+        _assertLenderInterest(liquidityAdded, 129.073938684137981888 * 1e18);
 
         skip(10 days);
         expectedDebt = 21_214.459052021027677105 * 1e18;
