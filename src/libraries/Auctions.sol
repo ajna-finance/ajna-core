@@ -84,7 +84,7 @@ library Auctions {
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         uint256 collateral_,
-        uint256 debtToHeal_,
+        uint256 t0DebtToHeal_,
         address borrower_,
         uint256 reserves_,
         uint256 poolInflator_,
@@ -93,50 +93,84 @@ library Auctions {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
         if (kickTime == 0) revert NoAuction();
 
-        if ((block.timestamp - kickTime > 72 hours) || (debtToHeal_ != 0 && collateral_ == 0)) {
+        if ((block.timestamp - kickTime > 72 hours) || (t0DebtToHeal_ != 0 && collateral_ == 0)) {
 
             // auction has debt to cover with remaining collateral
-            while (bucketDepth_ != 0 && debtToHeal_ != 0 && collateral_ != 0) {
+            while (bucketDepth_ != 0 && t0DebtToHeal_ != 0 && collateral_ != 0) {
                 uint256 hpbIndex      = Deposits.findIndexOfSum(deposits_, 1);
                 uint256 hpbPrice      = PoolUtils.indexToPrice(hpbIndex);
-                uint256 clearableDebt = Maths.min(debtToHeal_, Deposits.valueAt(deposits_, hpbIndex));
-                clearableDebt         = Maths.min(clearableDebt, Maths.wmul(collateral_, hpbPrice));
-                uint256 clearableCol  = Maths.wdiv(clearableDebt, hpbPrice);
+                uint256 hpbDeposit    = Deposits.valueAt(deposits_, hpbIndex);
 
-                debtToHeal_ -= clearableDebt;
-                collateral_ -= clearableCol;
+                uint256 t0HealedDebt;
+                uint256 depositToRemove;
+                uint256 healedCol;
 
-                Deposits.remove(deposits_, hpbIndex, clearableDebt);
-                buckets_[hpbIndex].collateral += clearableCol;
+                if (hpbDeposit > Maths.wmul(t0DebtToHeal_, poolInflator_)) {
+                    // remainingDebt reflects bucket deposit constraint
+                    t0HealedDebt     = t0DebtToHeal_;
+                    depositToRemove  = Maths.wmul(t0DebtToHeal_, poolInflator_);
+                } else {
+                    // hpbDeposit reflects borrower debt constraint 
+                    t0HealedDebt     = Maths.min(Maths.wdiv(hpbDeposit, poolInflator_), t0DebtToHeal_);
+                    depositToRemove  = hpbDeposit;
+                }
+
+                healedCol = Maths.wdiv(Maths.wmul(t0HealedDebt, poolInflator_), hpbPrice);
+
+                // borrower collateral constraint
+                if (healedCol > collateral_) {
+                    healedCol    = collateral_;
+                    // healedCol * hpbPrice < healableQuote should be true
+                    t0HealedDebt = Maths.min(Maths.wmul(healedCol, hpbPrice), t0HealedDebt);
+                }
+
+                t0DebtToHeal_  -= t0HealedDebt;
+                hpbDeposit     -= depositToRemove;
+                collateral_    -= healedCol;
+
+                Deposits.remove(deposits_, hpbIndex, depositToRemove);
+                buckets_[hpbIndex].collateral += healedCol;
 
                 --bucketDepth_;
             }
 
             // if there's still debt and no collateral
-            if (debtToHeal_ != 0 && collateral_ == 0) {
+            if (t0DebtToHeal_ != 0 && collateral_ == 0) {
                 // heal debt from reserves
-                debtToHeal_ -= Maths.min(debtToHeal_, reserves_);
+                t0DebtToHeal_ -= Maths.min(t0DebtToHeal_, reserves_);
 
                 // if there's still debt after healing from reserves then start to forgive amount from next HPB
-                while (bucketDepth_ != 0 && debtToHeal_ != 0) { // loop through remaining buckets if there's still debt to heal
+                while (bucketDepth_ != 0 && t0DebtToHeal_ != 0) { // loop through remaining buckets if there's still debt to heal
                     uint256 hpbIndex   = Deposits.findIndexOfSum(deposits_, 1);
                     uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
-                    uint256 forgiveAmt = Maths.min(debtToHeal_, hpbDeposit);
+                    uint256 t0HealedDebt;
+                    uint256 depositToRemove;
 
-                    debtToHeal_ -= forgiveAmt;
+                    if (hpbDeposit > Maths.wmul(t0DebtToHeal_, poolInflator_)) {
+                        // remainingDebt reflects bucket deposit constraint
+                        t0HealedDebt     = t0DebtToHeal_;
+                        depositToRemove  = Maths.wmul(t0DebtToHeal_, poolInflator_);
+                    } else {
+                        // hpbDeposit reflects borrower debt constraint 
+                        t0HealedDebt     = Maths.min(Maths.wdiv(hpbDeposit, poolInflator_), t0DebtToHeal_);
+                        depositToRemove  = hpbDeposit;
+                    }
 
-                    Deposits.remove(deposits_, hpbIndex, forgiveAmt);
+                    Deposits.remove(deposits_, hpbIndex, depositToRemove);
                     Buckets.Bucket storage hpbBucket = buckets_[hpbIndex];
-                    if (hpbBucket.collateral == 0 && forgiveAmt >= hpbDeposit) {
+                    if (hpbBucket.collateral == 0 && depositToRemove >= hpbDeposit) {
                         // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
                     }
 
+                    t0DebtToHeal_  -= t0HealedDebt;
+                    hpbDeposit     -= depositToRemove;
+
                     --bucketDepth_;
                 }
             }
-            return (collateral_, debtToHeal_);
+            return (collateral_, t0DebtToHeal_);
         } else revert AuctionNotClearable();
 
     }
