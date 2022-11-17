@@ -361,7 +361,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         // TODO: should heal accrue pool interest?
         uint256 inflator = inflatorSnapshot;
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
-        (uint256 remainingDebt, uint256 remainingCollateral) = auctions.heal(
+        (uint256 remainingCollateral, uint256 remainingDebt) = auctions.heal(
             buckets,
             deposits,
             borrower.collateral,

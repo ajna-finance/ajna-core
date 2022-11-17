@@ -76,8 +76,8 @@ library Auctions {
      *  @param  borrower_            Borrower whose debt is healed.
      *  @param  reserves_            Pool reserves.
      *  @param  bucketDepth_         Max number of buckets heal action should iterate through.
-     *  @return remainingDebt_       The amount of borrower debt left after heal.
-     *  @return remainingCollateral_ The amount of borrower collateral left after heal.
+     *  @return The amount of borrower collateral left after heal.
+     *  @return The amount of borrower debt left after heal.
      */
     function heal(
         Data storage self,
@@ -88,32 +88,22 @@ library Auctions {
         address borrower_,
         uint256 reserves_,
         uint256 bucketDepth_
-    ) internal returns (
-        uint256 remainingDebt_,
-        uint256 remainingCollateral_
-    )
-    {
+    ) internal returns (uint256, uint256) {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
         if (kickTime == 0) revert NoAuction();
 
-        if (
-            (block.timestamp - kickTime > 72 hours)
-            ||
-            (debtToHeal_ != 0 && collateral_ == 0)
-        ) {
-            remainingDebt_       = debtToHeal_;
-            remainingCollateral_ = collateral_;
+        if ((block.timestamp - kickTime > 72 hours) || (debtToHeal_ != 0 && collateral_ == 0)) {
 
             // auction has debt to cover with remaining collateral
-            while (bucketDepth_ != 0 && remainingDebt_ != 0 && remainingCollateral_ != 0) {
+            while (bucketDepth_ != 0 && debtToHeal_ != 0 && collateral_ != 0) {
                 uint256 hpbIndex      = Deposits.findIndexOfSum(deposits_, 1);
                 uint256 hpbPrice      = PoolUtils.indexToPrice(hpbIndex);
-                uint256 clearableDebt = Maths.min(remainingDebt_, Deposits.valueAt(deposits_, hpbIndex));
-                clearableDebt         = Maths.min(clearableDebt, Maths.wmul(remainingCollateral_, hpbPrice));
+                uint256 clearableDebt = Maths.min(debtToHeal_, Deposits.valueAt(deposits_, hpbIndex));
+                clearableDebt         = Maths.min(clearableDebt, Maths.wmul(collateral_, hpbPrice));
                 uint256 clearableCol  = Maths.wdiv(clearableDebt, hpbPrice);
 
-                remainingDebt_       -= clearableDebt;
-                remainingCollateral_ -= clearableCol;
+                debtToHeal_ -= clearableDebt;
+                collateral_ -= clearableCol;
 
                 Deposits.remove(deposits_, hpbIndex, clearableDebt);
                 buckets_[hpbIndex].collateral += clearableCol;
@@ -122,18 +112,18 @@ library Auctions {
             }
 
             // if there's still debt and reserves not 0 then heal debt from reserves
-            if (remainingDebt_ != 0 && reserves_ != 0) {
-                remainingDebt_ -= Maths.min(remainingDebt_, reserves_);
+            if (debtToHeal_ != 0 && reserves_ != 0) {
+                debtToHeal_ -= Maths.min(debtToHeal_, reserves_);
             }
 
             // if there's still debt and no remaining collateral then start to forgive amount from next HPB
-            if (remainingDebt_ != 0 && remainingCollateral_ == 0) {
-                while (bucketDepth_ != 0 && remainingDebt_ != 0) { // loop through remaining buckets or entire debt healed
+            if (debtToHeal_ != 0 && collateral_ == 0) {
+                while (bucketDepth_ != 0 && debtToHeal_ != 0) { // loop through remaining buckets if there's still debt to heal
                     uint256 hpbIndex   = Deposits.findIndexOfSum(deposits_, 1);
                     uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
-                    uint256 forgiveAmt = Maths.min(remainingDebt_, hpbDeposit);
+                    uint256 forgiveAmt = Maths.min(debtToHeal_, hpbDeposit);
 
-                    remainingDebt_ -= forgiveAmt;
+                    debtToHeal_ -= forgiveAmt;
 
                     Deposits.remove(deposits_, hpbIndex, forgiveAmt);
                     Buckets.Bucket storage hpbBucket = buckets_[hpbIndex];
@@ -146,7 +136,9 @@ library Auctions {
                     --bucketDepth_;
                 }
             }
+            return (collateral_, debtToHeal_);
         } else revert AuctionNotClearable();
+
     }
 
     /**
