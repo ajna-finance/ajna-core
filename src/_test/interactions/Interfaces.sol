@@ -8,6 +8,10 @@ interface IAjnaPool {
         uint256 maxAmount,
         bytes memory swapCalldata
     ) external;
+
+    function collateralAddress() external pure returns (address);
+
+    function quoteTokenAddress() external pure returns (address);
 }
 
 interface IBalancer {

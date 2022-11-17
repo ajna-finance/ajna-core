@@ -10,6 +10,7 @@ import { ERC20PoolFactory } from '../../erc20/ERC20PoolFactory.sol';
 
 import '../../base/PoolInfoUtils.sol';
 import "./BalancerUniswapExample.sol";
+import "./UniswapTakeExample.sol";
 
 contract TakeWithExternalLiquidityTest is Test {
     address constant WETH     = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
@@ -136,7 +137,6 @@ contract TakeWithExternalLiquidityTest is Test {
             params.amountOutMinimum,
             params.sqrtPriceLimitX96);
 
-        // TODO: Uniswap is only giving me 19442591 USDC, which is 19.4 because it's 6 decimals.  Why?
         if (true) {   // practice swap
             deal(WETH, taker,  2 * 1e18);
             uint256 usdcBalanceBefore = usdc.balanceOf(taker);
@@ -152,6 +152,22 @@ contract TakeWithExternalLiquidityTest is Test {
         } else {
             _ajnaPool.take(_borrower, maxTakeAmount, swapCalldata);
         }
+    }
+
+    function testTakeFromContractWithAtomicSwap() external {
+        UniswapTakeExample taker = new UniswapTakeExample();
+        changePrank(address(taker));
+
+        uint256 takeAmount = 2 * 1e18;  // CAUTION: must be <= amount of collateral available
+        taker.approveToken(weth);
+        weth.approve(address(taker), takeAmount);
+        usdc.approve(address(_ajnaPool), type(uint256).max);
+
+        bytes memory swapCalldata = abi.encodeWithSignature("swap(address,uint256)", 
+            address(_ajnaPool),
+            takeAmount);
+
+        _ajnaPool.take(_borrower, takeAmount, swapCalldata);
     }
 
     function _getAuctionPrice(address borrower) internal view returns (uint256) {
