@@ -3,10 +3,11 @@
 pragma solidity 0.8.14;
 
 import "forge-std/console2.sol";
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IERC20Pool.sol';
 import '../base/Pool.sol';
 
-contract ERC20Pool is IERC20Pool, Pool {
+contract ERC20Pool is ReentrancyGuard, IERC20Pool, Pool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
@@ -184,9 +185,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         address borrowerAddress_,
         uint256 collateral_,
         bytes memory swapCalldata_
-    ) external override {
-        // TODO: add reentrancy guard
-
+    ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
