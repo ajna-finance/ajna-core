@@ -318,7 +318,9 @@ abstract contract Pool is Clone, Multicall, IPool {
             msg.sender,
             borrower,
             poolState.accruedDebt,
-            poolState.inflator
+            poolState.inflator,
+            poolState.rate,
+            newLup
         );
         _updatePool(poolState, newLup);
         t0poolDebt += t0debtChange;
@@ -396,13 +398,16 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // update loan heap
         loans._remove(borrowerAddress_);
+
+        uint256 neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
  
         // kick auction
         (uint256 kickAuctionAmount, uint256 bondSize) = auctions.kick(
             borrowerAddress_,
             borrowerDebt,
             borrowerDebt * Maths.WAD / borrower.collateral,
-            deposits.momp(poolState.accruedDebt, loans.noOfLoans())
+            deposits.momp(poolState.accruedDebt, loans.noOfLoans()),
+            neutralPrice
         );
 
         // update borrower & pool debt with kickPenalty
@@ -500,7 +505,9 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrowerAddress_,
             borrower,
             poolState.accruedDebt,
-            poolState.inflator
+            poolState.inflator,
+            poolState.rate,
+            newLup
         );
         _updatePool(poolState, newLup);
     }
@@ -525,7 +532,9 @@ abstract contract Pool is Clone, Multicall, IPool {
             msg.sender,
             borrower,
             poolState.accruedDebt,
-            poolState.inflator
+            poolState.inflator,
+            poolState.rate,
+            curLup
         );
         _updatePool(poolState, curLup);
     }
@@ -566,7 +575,9 @@ abstract contract Pool is Clone, Multicall, IPool {
             borrowerAddress,
             borrower,
             poolState.accruedDebt,
-            poolState.inflator
+            poolState.inflator,
+            poolState.rate,
+            newLup_
         );
         _updatePool(poolState, newLup_);
         t0poolDebt -= t0repaidDebt;
@@ -774,12 +785,13 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function auctionInfo(
         address borrower_
-    ) external view override returns (address, uint256, uint256, uint256, address, address) {
+    ) external view override returns (address, uint256, uint256, uint256, uint256, address, address) {
         return (
             auctions.liquidations[borrower_].kicker,
             auctions.liquidations[borrower_].bondFactor,
             auctions.liquidations[borrower_].kickTime,
             auctions.liquidations[borrower_].kickMomp,
+            auctions.liquidations[borrower_].neutralPrice,
             auctions.liquidations[borrower_].prev,
             auctions.liquidations[borrower_].next
         );
@@ -791,7 +803,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         return (
             loans.borrowers[borrower_].t0debt,
             loans.borrowers[borrower_].collateral,
-            loans.borrowers[borrower_].mompFactor
+            loans.borrowers[borrower_].t0Np
         );
     }
 

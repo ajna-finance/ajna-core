@@ -348,6 +348,7 @@ abstract contract DSTestPlus is Test {
             uint256 auctionKickTime,
             uint256 auctionKickMomp,
             ,
+            ,
         ) = _pool.auctionInfo(state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (uint256 auctionTotalBondEscrowed,,) = _pool.reservesInfo();

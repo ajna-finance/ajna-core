@@ -153,7 +153,7 @@ library PoolUtils {
      *  @dev Called in kick and take.
      *  @param debt_             Borrower debt.
      *  @param collateral_       Borrower collateral.
-     *  @param mompFactor_       Factor stamped on borrower, used to calculate the MOMP retroactivley.
+     *  @param neutralPrice_     NP of auction.
      *  @param inflatorSnapshot_ Borrower inflator snapshot.
      *  @param bondFactor_       Factor used to determine bondSize.
      *  @param price_            Auction price at the time of call.
@@ -162,7 +162,7 @@ library PoolUtils {
     function bpf(
         uint256 debt_,
         uint256 collateral_,
-        uint256 mompFactor_,
+        uint256 neutralPrice_,
         uint256 inflatorSnapshot_,
         uint256 bondFactor_,
         uint256 price_
@@ -170,7 +170,7 @@ library PoolUtils {
         return BucketMath.bpf(
             debt_,
             collateral_,
-            mompFactor_,
+            neutralPrice_,
             inflatorSnapshot_,
             bondFactor_,
             price_
