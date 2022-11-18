@@ -98,7 +98,7 @@ library Auctions {
         // auction has debt to cover with remaining collateral
         while (bucketDepth_ != 0 && t0DebtToHeal_ != 0 && collateral_ != 0) {
             uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
-	        uint256 hpbPrice        = PoolUtils.indexToPrice(hpbIndex);
+            uint256 hpbPrice        = PoolUtils.indexToPrice(hpbIndex);
             uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
             uint256 collateralMoved;
 
@@ -157,7 +157,7 @@ library Auctions {
 
                 --bucketDepth_;
             }
-	}
+        }
 
         return (collateral_, t0DebtToHeal_);
     }
