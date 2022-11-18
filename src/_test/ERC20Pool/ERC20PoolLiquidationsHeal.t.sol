@@ -504,27 +504,27 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             {
                 index:        _i9_91,
                 lpBalance:    2_000 * 1e27,
-                collateral:   1_000 * 1e18,
+                collateral:   213.743127712733065764 * 1e18,
                 deposit:      0,
-                exchangeRate: 4.958592421717956037 * 1e27
+                exchangeRate: 1.059865053270651414002083680 * 1e27
             }
         );
         _assertBucket(
             {
                 index:        _i9_81,
                 lpBalance:    5_000 * 1e27,
-                collateral:   0,
-                deposit:      0.000005002238341658922865000 * 1e27,
-                exchangeRate: 1.000447668331784573000000000 * 1e27
+                collateral:   509.457659688392150697 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000447668331784572999225097 * 1e27
             }
         );
         _assertBucket(
             {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
-                collateral:   0,
-                deposit:      11_000 * 1e18,
-                exchangeRate: 1 * 1e27
+                collateral:   276.799212598874783455 * 1e18,
+                deposit:      8_290.291604705064327151 * 1e18,
+                exchangeRate: 0.998285331416959839349596834 * 1e27
             }
         );
         _assertBucket(
