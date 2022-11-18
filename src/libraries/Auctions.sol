@@ -98,29 +98,33 @@ library Auctions {
         // auction has debt to cover with remaining collateral
         while (bucketDepth_ != 0 && t0DebtToHeal_ != 0 && collateral_ != 0) {
             uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
-	    uint256 hpbPrice = PoolUtils.indexToPrice(hpbIndex);
+	        uint256 hpbPrice        = PoolUtils.indexToPrice(hpbIndex);
             uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
-	    uint256 debtToHeal = Maths.wmul(t0DebtToHeal_, poolInflator_);
+            uint256 collateralMoved;
 
-            if (depositToRemove >= debtToHeal && Maths.wmul(collateral_, hpbPrice) >= debtToHeal) { // enough deposit in bucket and collateral avail to heal entire debt
-                depositToRemove = debtToHeal;   // remove only what's needed to heal the debt
-                t0DebtToHeal_ =  0;            // no remaining debt to heal
-		uint256 collateralMoved = Maths.wdiv(depositToRemove, hpbPrice);
-		collateral_ -= collateralMoved;
-                buckets_[hpbIndex].collateral += collateralMoved; // add healed collateral into bucket
-            } else if (Maths.wmul(collateral_, hpbPrice) >= debtToHeal) { // enough collateral, therefore not enough deposit to heal entire debt, we heal only deposit amount
-                t0DebtToHeal_ -=  Maths.wdiv(debtToHeal, poolInflator_); // subtract from debt the corresponding t0 amount of deposit
-		uint256 collateralMoved = Maths.wdiv(depositToRemove, hpbPrice);
-		collateral_ -= collateralMoved;
-                buckets_[hpbIndex].collateral += collateralMoved; // add healed collateral into bucket		
-            } else { // constrained by collateral available
-	        depositToRemove = Maths.wmul(collateral_, hpbPrice);
-		t0DebtToHeal_ -=  Maths.wdiv(depositToRemove, poolInflator_);
-                buckets_[hpbIndex].collateral += collateral_; // add healed collateral into bucket				
-		collateral_ =0;
-	    }
+            {
+                uint256 debtToHeal    = Maths.wmul(t0DebtToHeal_, poolInflator_); // current debt to be healed
+                uint256 maxDebtToHeal = Maths.wmul(collateral_, hpbPrice);         // max debt that can be healed with existing collateral
+                if (depositToRemove >= debtToHeal && maxDebtToHeal >= debtToHeal) { // enough deposit in bucket and collateral avail to heal entire debt
+                    depositToRemove = debtToHeal;   // remove only what's needed to heal the debt
+                    t0DebtToHeal_   = 0;            // no remaining debt to heal
+                    collateralMoved = Maths.wdiv(depositToRemove, hpbPrice);
+                    collateral_     -= collateralMoved;
+                } else if (maxDebtToHeal >= debtToHeal) { // enough collateral, therefore not enough deposit to heal entire debt, we heal only deposit amount
+                    t0DebtToHeal_   -=  Maths.wdiv(debtToHeal, poolInflator_); // subtract from debt the corresponding t0 amount of deposit
+                    collateralMoved = Maths.wdiv(depositToRemove, hpbPrice);
+                    collateral_     -= collateralMoved;	
+                } else { // constrained by collateral available
+                    depositToRemove = maxDebtToHeal;
+                    t0DebtToHeal_   -=  Maths.wdiv(depositToRemove, poolInflator_);
+                    collateralMoved = collateral_;				
+                    collateral_     = 0;
+                }
+            }
 
+            buckets_[hpbIndex].collateral += collateralMoved;      // add healed collateral into bucket
             Deposits.remove(deposits_, hpbIndex, depositToRemove); // remove amount to heal debt from bucket (could be entire deposit or only the healed debt)
+
             --bucketDepth_;
         }
 

@@ -368,8 +368,8 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   0,
-                deposit:      8_773.654868049562639196 * 1e18,
-                exchangeRate: 0.797604988004505694472363636 * 1e27
+                deposit:      8_771.496753899478445831 * 1e18,
+                exchangeRate: 0.797408795809043495075545454 * 1e27
             }
         );
         _assertBucket(
@@ -512,10 +512,10 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
         _assertBucket(
             {
                 index:        _i9_81,
-                lpBalance:    0,
+                lpBalance:    5_000 * 1e27,
                 collateral:   0,
-                deposit:      0,
-                exchangeRate: 1 * 1e27
+                deposit:      0.000005002238341658922865000 * 1e27,
+                exchangeRate: 1.000447668331784573000000000 * 1e27
             }
         );
         _assertBucket(
@@ -523,8 +523,8 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   0,
-                deposit:      8_292.398110778663297060 * 1e18,
-                exchangeRate: 0.753854373707151208823636363 * 1e27
+                deposit:      11_000 * 1e18,
+                exchangeRate: 1 * 1e27
             }
         );
         _assertBucket(
