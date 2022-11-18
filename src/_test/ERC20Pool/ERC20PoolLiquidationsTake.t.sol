@@ -1095,6 +1095,109 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
+    function testMinimalHeal() external {
+
+        // Borrower2 borrows
+        _borrow(
+            {
+                from:       _borrower2,
+                amount:     1_730 * 1e18,
+                indexLimit: _i9_72,
+                newLup:     9.721295865031779605 * 1e18
+            }
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_853.394241979221645666 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerCollateralization: 0.986593617011217057 * 1e18
+            }
+        );
+        _kick(
+            {
+                from:           _lender,
+                borrower:       _borrower2,
+                debt:           9_976.561670003961916237 * 1e18,
+                collateral:     1_000 * 1e18,
+                bond:           98.533942419792216457 * 1e18,
+                transferAmount: 98.533942419792216457 * 1e18
+            }
+        );
+
+        skip( 73 hours);
+
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000.0 * 1e27, 
+                collateral:   0,
+                deposit:      2_118.781595119199960000 * 1e18,
+                exchangeRate: 1.059390797559599980000000000 * 1e27
+            }
+        );
+        
+        _heal(
+            {
+                from:       _lender,
+                borrower:   _borrower2,
+                maxDepth:   2,
+                healedDebt: 7_022.438514941813907106 * 1e18
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000.0 * 1e27, 
+                collateral:   213.743127712733065764 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.059865053270651414002083680 * 1e27
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i9_81,
+                lpBalance:    5_000.00 * 1e27, 
+                collateral:   509.457659688392150697 * 1e18,
+                deposit:      0,
+                exchangeRate: 1.000447668331784572999225097 * 1e27
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              2_858.335133994672974001 * 1e18,
+                borrowerCollateral:        276.799212598874783539 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerCollateralization: 0.941403619498212692 * 1e18
+            }
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 98.533942419792216457 * 1e18,
+                auctionPrice:      0,
+                debtInAuction:     2_858.335133994672974001 * 1e18,
+                thresholdPrice:    9.770802352532163575 * 1e18
+            })
+        );
+    }
+
     function testLenderForcedExit() external {
 
         skip(25 hours);
@@ -1694,5 +1797,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             })
         );
     }
+
 
 }
