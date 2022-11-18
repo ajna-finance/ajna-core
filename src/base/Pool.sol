@@ -333,13 +333,21 @@ abstract contract Pool is Clone, Multicall, IPool {
 
 
     function flashLoan(
-        IERC3156FlashBorrower receiver,
-        address token,
-        uint256 amount,
-        bytes calldata data
+        IERC3156FlashBorrower receiver_,
+        address token_,
+        uint256 amount_,
+        bytes calldata data_
     ) external override returns (bool) {
-        // TODO: useful stuff, and call onFlashLoan
-        return false;
+        if (token_ != _getArgAddress(20)) revert FlashloanUnavailableForToken();
+
+        _transferQuoteToken(address(receiver_), amount_);
+        uint256 fee = _flashFee(token_, amount_);
+        
+        if (receiver_.onFlashLoan(msg.sender, token_, amount_, fee, data_) != 
+            keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
+
+        _transferQuoteTokenFrom(address(receiver_), amount_ + fee);
+        return true;
     }
 
     function repay(
@@ -845,6 +853,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (!IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
     }
 
+    function _flashFee(address token_, uint256 amount_) internal view  returns (uint256) {
+        return Maths.wmul(amount_, PoolUtils.feeRate(interestRate));
+    }
+
     function _getPoolQuoteTokenBalance() internal view returns (uint256) {
         return IERC20Token(_getArgAddress(20)).balanceOf(address(this));
     }
@@ -937,12 +949,11 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function flashFee(
-        address token,
-        uint256 amount
+        address token_,
+        uint256 amount_
     ) external view override returns (uint256) {
-        // TODO: if token is not quote token, revert
-        // TODO: return the origination fee
-        return 3.50 * 1e18;
+        if (token_ != _getArgAddress(20)) revert FlashloanUnavailableForToken();
+        return _flashFee(token_, amount_);
     }
 
     function inflatorInfo() external view override returns (uint256, uint256) {
@@ -977,10 +988,13 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function maxFlashLoan(
-        address token
+        address token_
     ) external view override returns (uint256) {
-        // TODO: If token matches quote token, return contract balance of quote token.
-        return 0;
+        if (token_ == _getArgAddress(20)) {
+            return _getPoolQuoteTokenBalance();
+        } else {
+            return 0;
+        }
     }
 
     function reservesInfo() external view override returns (uint256, uint256, uint256) {
