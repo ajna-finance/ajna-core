@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 
 import './DSTestPlus.sol';
 
-import '../../../src/libraries/Deposits.sol';
+import '@src/libraries/Deposits.sol';
 
 contract FenwickTreeInstance is DSTestPlus {
     using Deposits for Deposits.Data;

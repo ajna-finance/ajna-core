@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 
 import './DSTestPlus.sol';
 
-import '../../../src/libraries/Auctions.sol';
+import '@src/libraries/Auctions.sol';
 
 contract QueueInstance is DSTestPlus {
     using Auctions for Auctions.Data;

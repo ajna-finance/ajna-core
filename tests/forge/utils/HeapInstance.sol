@@ -4,7 +4,7 @@ pragma solidity 0.8.14;
 
 import './DSTestPlus.sol';
 
-import '../../../src/libraries/Loans.sol';
+import '@src/libraries/Loans.sol';
 
 contract HeapInstance is DSTestPlus {
     using Loans for Loans.Data;
