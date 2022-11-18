@@ -1099,6 +1099,16 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         skip(25 hours);
         
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    2_000.0 * 1e27, 
+                collateral:   0,
+                deposit:      2_000.0 * 1e18,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
+
         // Lender attempts to withdraw entire position
         _removeLiquidity(
             {
@@ -1108,6 +1118,16 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 penalty:  0,
                 newLup:   9.721295865031779605 * 1e18,
                 lpRedeem: 1999891367962935869240493669537
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    108632037064130759506330463, 
+                collateral:   0,
+                deposit:      0.108637937844376000 * 1e18,
+                exchangeRate: 1.000054318968922188000000002 * 1e27
             }
         );
 
@@ -1308,6 +1328,16 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 interestRate:         0.0405 * 1e18,
                 interestRateUpdate:   block.timestamp - 3 hours
             })
+        );
+
+        _assertBucket(
+        {
+                index:        _i9_72,
+                lpBalance:    8007362556980262765268525272905,
+                collateral:   0,          
+                deposit:      8_008.373442262808822463 * 1e18,
+                exchangeRate: 1.000126244475050631694696767 * 1e27
+            }
         );
 
         _removeLiquidity(
