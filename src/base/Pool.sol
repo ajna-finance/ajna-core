@@ -331,6 +331,17 @@ abstract contract Pool is Clone, Multicall, IPool {
         _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
+
+    function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
+        uint256 amount,
+        bytes calldata data
+    ) external override returns (bool) {
+        // TODO: useful stuff, and call onFlashLoan
+        return false;
+    }
+
     function repay(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_
@@ -925,6 +936,15 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
     }
 
+    function flashFee(
+        address token,
+        uint256 amount
+    ) external view override returns (uint256) {
+        // TODO: if token is not quote token, revert
+        // TODO: return the origination fee
+        return 3.50 * 1e18;
+    }
+
     function inflatorInfo() external view override returns (uint256, uint256) {
         return (
             inflatorSnapshot,
@@ -954,6 +974,13 @@ abstract contract Pool is Clone, Multicall, IPool {
             Maths.wmul(loans.getMax().thresholdPrice, inflatorSnapshot),
             loans.noOfLoans()
         );
+    }
+
+    function maxFlashLoan(
+        address token
+    ) external view override returns (uint256) {
+        // TODO: If token matches quote token, return contract balance of quote token.
+        return 0;
     }
 
     function reservesInfo() external view override returns (uint256, uint256, uint256) {

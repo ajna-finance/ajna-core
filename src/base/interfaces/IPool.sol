@@ -11,6 +11,7 @@ import './pool/IPoolState.sol';
 import './pool/IPoolDerivedState.sol';
 import './pool/IPoolEvents.sol';
 import './pool/IPoolErrors.sol';
+import './IERC3156FlashLender.sol';
 
 /**
  * @title Base Pool
@@ -24,7 +25,8 @@ interface IPool is
     IPoolState,
     IPoolDerivedState,
     IPoolEvents,
-    IPoolErrors
+    IPoolErrors,
+    IERC3156FlashLender
 {
 
 }
