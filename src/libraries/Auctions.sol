@@ -102,31 +102,33 @@ library Auctions {
         while (bucketDepth_ != 0 && t0DebtToHeal_ != 0 && collateral_ != 0) {
             uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
             uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
-            uint256 collateralMoved;
+            uint256 collateralUsed;
 
             {
                 uint256 hpbPrice      = PoolUtils.indexToPrice(hpbIndex);
                 uint256 debtToHeal    = Maths.wmul(t0DebtToHeal_, poolInflator_); // current debt to be healed
                 uint256 maxDebtToHeal = Maths.wmul(collateral_, hpbPrice);         // max debt that can be healed with existing collateral
 
-                if (depositToRemove >= debtToHeal && maxDebtToHeal >= debtToHeal) { // enough deposit in bucket and collateral avail to heal entire debt
-                    depositToRemove = debtToHeal;   // remove only what's needed to heal the debt
-                    t0DebtToHeal_   = 0;            // no remaining debt to heal
-                    collateralMoved = Maths.wdiv(depositToRemove, hpbPrice);
-                    collateral_     -= collateralMoved;
-                } else if (maxDebtToHeal >= debtToHeal) { // enough collateral, therefore not enough deposit to heal entire debt, we heal only deposit amount
-                    t0DebtToHeal_   -=  Maths.wdiv(debtToHeal, poolInflator_); // subtract from debt the corresponding t0 amount of deposit
-                    collateralMoved = Maths.wdiv(depositToRemove, hpbPrice);
-                    collateral_     -= collateralMoved;	
+                if (depositToRemove >= debtToHeal && maxDebtToHeal >= debtToHeal) { // enough deposit in bucket and enough collateral to heal entire debt
+                    depositToRemove = debtToHeal;                                   // remove from deposit only what's needed to heal the debt
+                    t0DebtToHeal_   = 0;                                            // entire debt covered by deposit, no remaining debt to heal
+                    collateralUsed  = Maths.wdiv(debtToHeal, hpbPrice);             // use the amount of collateral to heal entire debt
+                    collateral_     -= collateralUsed;                              // reduce amount of collateral by collateral used to heal entire debt
+
+                } else if (maxDebtToHeal >= debtToHeal) {                             // enough collateral, therefore not enough deposit to heal entire debt, we heal only deposit amount
+                    t0DebtToHeal_  -=  Maths.wdiv(depositToRemove, poolInflator_); // subtract from debt the corresponding t0 amount of deposit
+                    collateralUsed = Maths.wdiv(depositToRemove, hpbPrice);        // use the amount of collateral corresponding to deposit amount
+                    collateral_    -= collateralUsed;                              // reduce amount of collateral by collateral used to heal deposit amount
+
                 } else { // constrained by collateral available
-                    depositToRemove = maxDebtToHeal;
-                    t0DebtToHeal_   -=  Maths.wdiv(depositToRemove, poolInflator_);
-                    collateralMoved = collateral_;				
-                    collateral_     = 0;
+                    depositToRemove = maxDebtToHeal;                              // remove from deposit only the amount that can be healed by collateral
+                    t0DebtToHeal_  -=  Maths.wdiv(maxDebtToHeal, poolInflator_); // subtract from debt only the amount that can be healed by collateral
+                    collateralUsed = collateral_;                                // use all collateral, move all collateral into bucket
+                    collateral_    = 0;                                          // entire collateral amount is used to heal debt
                 }
             }
 
-            buckets_[hpbIndex].collateral += collateralMoved;      // add healed collateral into bucket
+            buckets_[hpbIndex].collateral += collateralUsed;      // add healed collateral into bucket
             Deposits.remove(deposits_, hpbIndex, depositToRemove); // remove amount to heal debt from bucket (could be entire deposit or only the healed debt)
 
             --bucketDepth_;
