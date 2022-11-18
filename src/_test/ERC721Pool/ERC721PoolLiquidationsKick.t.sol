@@ -162,7 +162,11 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
     }
 
     function testKickSubsetPool() external {
-        _assertAuction(
+
+        // Skip to make borrower undercollateralized
+        skip(1000 days);
+
+         _assertAuction(
             AuctionState({
                 borrower:          _borrower,
                 active:            false,
@@ -174,12 +178,19 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
-                thresholdPrice:    9.909519230769230774 * 1e18
+                thresholdPrice:    11.364359914920859402 * 1e18
             })
         );
 
-        // Skip to make borrower undercollateralized
-        skip(1000 days);
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              22.728719829841718804 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowerMompFactor:        9.917184843435912074 * 1e18,
+                borrowerCollateralization: 0.872656701977127996 * 1e18
+            }
+        );
 
         _kick(
             {
