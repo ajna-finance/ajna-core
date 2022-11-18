@@ -154,22 +154,6 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
     }
     
     function testKick() external {
-        _assertAuction(
-            AuctionState({
-                borrower:          _borrower,
-                active:            false,
-                kicker:            address(0),
-                bondSize:          0,
-                bondFactor:        0,
-                kickTime:          0,
-                kickMomp:          0,
-                totalBondEscrowed: 0,
-                auctionPrice:      0,
-                debtInAuction:     0,
-                thresholdPrice:    9.634254807692307697 * 1e18
-            })
-        );
-
         // Skip to make borrower undercollateralized
         skip(100 days);
 

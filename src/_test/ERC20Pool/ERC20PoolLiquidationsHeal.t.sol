@@ -286,6 +286,16 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             })
         );
 
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_977.074177773911990381 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerCollateralization: 0.974363394700228467 * 1e18
+            }
+        );
+
         // take partial 800 collateral
         _take(
             {
@@ -723,6 +733,16 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
                 debtInAuction:     9_976.561670003961916237 * 1e18,
                 thresholdPrice:    9.977074177773911990 * 1e18
             })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_977.074177773911990381 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerCollateralization: 0.974363394700228467 * 1e18
+            }
         );
 
         // take entire collateral
