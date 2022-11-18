@@ -73,8 +73,11 @@ library Auctions {
     /**
      *  @notice Heals the debt of the given loan / borrower.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
-     *  @param  borrower_            Borrower whose debt is healed.
+     *  @param  collateral_          The amount of collateral available to heal debt.
+     *  @param  t0DebtToHeal_        The amount of t0 debt to heal.
+     *  @param  borrower_            Borrower address whose debt is healed.
      *  @param  reserves_            Pool reserves.
+     *  @param  poolInflator_        Current inflator pool.
      *  @param  bucketDepth_         Max number of buckets heal action should iterate through.
      *  @return The amount of borrower collateral left after heal.
      *  @return The amount of borrower debt left after heal.
@@ -98,13 +101,14 @@ library Auctions {
         // auction has debt to cover with remaining collateral
         while (bucketDepth_ != 0 && t0DebtToHeal_ != 0 && collateral_ != 0) {
             uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
-            uint256 hpbPrice        = PoolUtils.indexToPrice(hpbIndex);
             uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
             uint256 collateralMoved;
 
             {
+                uint256 hpbPrice      = PoolUtils.indexToPrice(hpbIndex);
                 uint256 debtToHeal    = Maths.wmul(t0DebtToHeal_, poolInflator_); // current debt to be healed
                 uint256 maxDebtToHeal = Maths.wmul(collateral_, hpbPrice);         // max debt that can be healed with existing collateral
+
                 if (depositToRemove >= debtToHeal && maxDebtToHeal >= debtToHeal) { // enough deposit in bucket and collateral avail to heal entire debt
                     depositToRemove = debtToHeal;   // remove only what's needed to heal the debt
                     t0DebtToHeal_   = 0;            // no remaining debt to heal
