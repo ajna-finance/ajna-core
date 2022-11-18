@@ -291,6 +291,20 @@ library Deposits {
         }
     }
 
+    function obliterate(
+	Data storage self,
+	uint256 i_
+    ) internal {
+	if (i_ >= SIZE) revert InvalidIndex();
+
+	uint256 runningSum = self.values[i_];
+	while (i_ <= SIZE) {
+	    self.values[i_] -= runningSum;
+	    runningSum=Maths.wmul(runningSum, ( self.scaling[i_] != 0) ? self.scaling[i_] : Maths.WAD);
+	    i_ += lsb(i_);
+	}
+    }
+
     function scale(
         Data storage self,
         uint256 i_

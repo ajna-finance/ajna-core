@@ -56,6 +56,10 @@ contract FenwickTreeInstance is DSTestPlus {
         return deposits.prefixSum(i_);
     }
 
+    function obliterate(uint256 i_) public {
+	deposits.obliterate(i_);
+    }
+
     /**
      *  @notice fills fenwick tree with fuzzed values and tests additions.
      */
