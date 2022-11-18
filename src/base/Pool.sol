@@ -376,8 +376,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         }
 
         uint256 t0HealedDebt = borrower.t0debt - remainingt0Debt;
-        t0poolDebt      -= t0HealedDebt;
-        t0DebtInAuction -= t0HealedDebt;
+        t0poolDebt           -= t0HealedDebt;
+        t0DebtInAuction      -= t0HealedDebt;
+        poolState.collateral -= borrower.collateral - remainingCollateral;
 
         borrower.t0debt     = remainingt0Debt;
         borrower.collateral = remainingCollateral;

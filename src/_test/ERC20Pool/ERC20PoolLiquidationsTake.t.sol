@@ -1587,7 +1587,42 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 lpRedeem: 7_989.987933044093783839063327613 * 1e27
             }
         );
-
+        _assertBucket(
+            {
+                index:        _i9_91,
+                lpBalance:    0,
+                collateral:   0,          
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_81,
+                lpBalance:    0,
+                collateral:   0,          
+                deposit:      1,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_72,
+                lpBalance:    0,
+                collateral:   0,          
+                deposit:      2480,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        _i9_62,
+                lpBalance:    0,
+                collateral:   0,          
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
         _assertBucket(
             {
                 index:        _i9_52,
