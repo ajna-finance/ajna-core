@@ -7,7 +7,7 @@ import '../../erc20/ERC20Pool.sol';
 
 import '../../libraries/BucketMath.sol';
 
-contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
+contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
 
     address internal _borrower;
     address internal _borrower2;
@@ -155,7 +155,7 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
 
     }
     
-    function testHealOnAuctionKicked72HoursAgoAndPartiallyTaken() external {
+    function testSettleOnAuctionKicked72HoursAgoAndPartiallyTaken() external tearDown {
         // Borrower2 borrows
         _borrow(
             {
@@ -369,14 +369,14 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             }
         );
 
-        // heal should affect first 3 buckets, reducing deposit and incrementing collateral
+        // settle should affect first 3 buckets, reducing deposit and incrementing collateral
         skip(73 hours);
-        _heal(
+        _settle(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                maxDepth:   10,
-                healedDebt: 9_495.870032454838888301 * 1e18
+                from:        _lender,
+                borrower:    _borrower2,
+                maxDepth:    10,
+                settledDebt: 9_366.195375817757960807 * 1e18
             }
         );
         _assertAuction(
@@ -426,8 +426,8 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   0,
-                deposit:      8_771.489426795178714532 * 1e18,
-                exchangeRate: 0.797408129708652610412000000 * 1e27
+                deposit:      8_771.496753899478445831 * 1e18,
+                exchangeRate: 0.797408795809043495075545454 * 1e27
             }
         );
         _assertBucket(
@@ -441,7 +441,7 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
         );
     }
 
-    function testHealOnAuctionKicked72HoursAgo() external {
+    function testSettleOnAuctionKicked72HoursAgo() external tearDown {
         // Borrower2 borrows
         _borrow(
             {
@@ -552,8 +552,8 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             }
         );
 
-        // heal should work on an kicked auction if 72 hours passed from kick time
-        // heal should affect first 3 buckets, reducing deposit and incrementing collateral
+        // settle should work on an kicked auction if 72 hours passed from kick time
+        // settle should affect first 3 buckets, reducing deposit and incrementing collateral
         skip(73 hours);
 
         _assertAuction(
@@ -582,12 +582,12 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             }
         );
 
-        _heal(
+        _settle(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                maxDepth:   10,
-                healedDebt: 9_976.561670003961916237 * 1e18
+                from:        _lender,
+                borrower:    _borrower2,
+                maxDepth:    10,
+                settledDebt: 9_840.828245192307696845 * 1e18
             }
         );
         _assertAuction(
@@ -618,27 +618,27 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             {
                 index:        _i9_91,
                 lpBalance:    2_000 * 1e27,
-                collateral:   213.647484499757089173 * 1e18,
+                collateral:   213.743127712733065764 * 1e18,
                 deposit:      0,
-                exchangeRate: 1.059390797559599980000723485 * 1e27
+                exchangeRate: 1.059865053270651414002083680 * 1e27
             }
         );
         _assertBucket(
             {
                 index:        _i9_81,
                 lpBalance:    5_000 * 1e27,
-                collateral:   509.229693680926841063 * 1e18,
+                collateral:   509.457659688392150697 * 1e18,
                 deposit:      0,
-                exchangeRate: 0.999999999999999999999092167 * 1e27
+                exchangeRate: 1.000447668331784572999225097 * 1e27
             }
         );
         _assertBucket(
             {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
-                collateral:   277.122821819316069764 * 1e18,
-                deposit:      8_290.284277977147272573 * 1e18,
-                exchangeRate: 0.998570656348654837501066179 * 1e27
+                collateral:   276.799212598874783455 * 1e18,
+                deposit:      8_290.291604705064327151 * 1e18,
+                exchangeRate: 0.998285331416959839349596834 * 1e27
             }
         );
         _assertBucket(
@@ -652,7 +652,7 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
         );
     }
 
-    function testHealAuctionReverts() external {
+    function testSettleAuctionReverts() external {
         // Borrower2 borrows
         _borrow(
             {
@@ -665,8 +665,8 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
 
         // Skip to make borrower undercollateralized
         skip(100 days);
-        // heal should revert on a borrower that is not auctioned
-        _assertHealOnNotKickedAuctionRevert(
+        // settle should revert on a borrower that is not auctioned
+        _assertSettleOnNotKickedAuctionRevert(
             {
                 from:     _lender,
                 borrower: _borrower2
@@ -709,8 +709,8 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             }
         );
 
-        // heal should revert on an kicked auction but 72 hours not passed (there's still debt to heal and collateral to be auctioned)
-        _assertHealOnNotClearableAuctionRevert(
+        // settle should revert on an kicked auction but 72 hours not passed (there's still debt to settle and collateral to be auctioned)
+        _assertSettleOnNotClearableAuctionRevert(
             {
                 from:     _lender,
                 borrower: _borrower2
@@ -781,7 +781,7 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             }
         );
 
-        // add liquidity in same block should be possible as debt was not yet healed / bucket is not yet insolvent
+        // add liquidity in same block should be possible as debt was not yet settled / bucket is not yet insolvent
         _addLiquidity(
             {
                 from:   _lender1,
@@ -808,8 +808,8 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             }
         );
 
-        // heal to make buckets insolvent
-        // heal should work because there is still debt to heal but no collateral left to auction (even if 72 hours didn't pass from kick)
+        // settle to make buckets insolvent
+        // settle should work because there is still debt to settle but no collateral left to auction (even if 72 hours didn't pass from kick)
         _assertBorrower(
             {
                 borrower:                  _borrower2,
@@ -820,12 +820,12 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
             }
         );
         assertTrue(block.timestamp - kickTime < 72 hours); // assert auction was kicked less than 72 hours ago
-        _heal(
+        _settle(
             {
                 from:       _lender,
                 borrower:   _borrower2,
                 maxDepth:   10,
-                healedDebt: 9_375.568996125070612781 * 1e18
+                settledDebt: 9_247.537158474120526797 * 1e18
             }
         );
 

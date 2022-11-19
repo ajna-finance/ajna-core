@@ -37,7 +37,7 @@ contract HeapInstance is DSTestPlus {
     }
 
     function removeTp(address borrower_) external {
-        _heap._remove(borrower_);
+        _heap.remove(borrower_);
     }
 
     function getTp(address borrower_) public view returns (uint256) {
