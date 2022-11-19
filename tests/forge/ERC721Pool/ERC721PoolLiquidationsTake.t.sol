@@ -162,6 +162,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
     }
 
     function testTakeCollateralSubsetPool() external {
+    // function testTakeCollateralSubsetPool() external tearDown { FIXME: fails with RemoveDepositLockedByAuctionDebt
 
         // Skip to make borrower undercollateralized
         skip(1000 days);
@@ -456,7 +457,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower), 119.8 * 1e18); // no additional tokens as there is no rounding of collateral taken (1)
     }
 
-    function testTakeCollateralandHealSubsetPool() external {
+    function testTakeCollateralandSettleSubsetPool() external tearDown {
 
         // Skip to make borrower undercollateralized
         skip(1000 days);
@@ -671,12 +672,12 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             }
         );
 
-        _heal(
+        _settle(
             {
-                from:       _lender,
-                borrower:   _borrower,
-                maxDepth:   10,
-                healedDebt: 21.786759399568352738 * 1e18
+                from:        _lender,
+                borrower:    _borrower,
+                maxDepth:    10,
+                settledDebt: 18.996689878119714537 * 1e18
             }
         );
 
@@ -688,7 +689,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 bondSize:          0,
                 bondFactor:        0,
                 kickTime:          0,
-                kickMomp:          0, 
+                kickMomp:          0,
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
                 debtInAuction:     0,
@@ -707,7 +708,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         // Kicker claims bond + reward
         changePrank(_lender);
         _pool.withdrawBonds();
-        assertEq(_quote.balanceOf(_lender), 46_998.772748375624805866 * 1e18);  
+        assertEq(_quote.balanceOf(_lender), 46_998.772748375624805866 * 1e18);
 
     }
 }

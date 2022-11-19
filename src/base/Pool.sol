@@ -354,26 +354,36 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
-    function heal(
-        address borrower_,
+    function settle(
+        address borrowerAddress_,
         uint256 maxDepth_
     ) external override {
-
-        uint256 healedDebt = auctions.heal(
-            loans,
+        PoolState memory poolState = _accruePoolInterest();
+        Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
+        (uint256 remainingCollateral, uint256 remainingt0Debt) = auctions.settle(
             buckets,
             deposits,
-            borrower_,
-            Maths.wmul(t0poolDebt, inflatorSnapshot) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed, // reserves
-            maxDepth_,
-            inflatorSnapshot
+            borrower.collateral,
+            borrower.t0debt,
+            borrowerAddress_,
+            Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed, // reserves
+            poolState.inflator,
+            maxDepth_
         );
-        if (healedDebt != 0) {
-            uint256 t0HealedDebt = Maths.wdiv(healedDebt, inflatorSnapshot); 
-            t0poolDebt           -= t0HealedDebt;
-            t0DebtInAuction      -= t0HealedDebt;
-            emit Heal(borrower_, healedDebt);
-        }
+
+        if (remainingt0Debt == 0) auctions.removeAuction(borrowerAddress_);
+
+        uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
+        t0poolDebt           -= t0settledDebt;
+        t0DebtInAuction      -= t0settledDebt;
+        poolState.collateral -= borrower.collateral - remainingCollateral;
+
+        borrower.t0debt     = remainingt0Debt;
+        borrower.collateral = remainingCollateral;
+
+        _updatePool(poolState, _lup(poolState.accruedDebt));
+
+        emit Settle(borrowerAddress_, t0settledDebt);
     }
 
     function kick(address borrowerAddress_) external override {
@@ -395,7 +405,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         ) revert BorrowerOk();
 
         // update loan heap
-        loans._remove(borrowerAddress_);
+        loans.remove(borrowerAddress_);
  
         // kick auction
         (uint256 kickAuctionAmount, uint256 bondSize) = auctions.kick(

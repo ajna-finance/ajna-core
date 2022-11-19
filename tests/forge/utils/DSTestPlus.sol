@@ -29,7 +29,7 @@ abstract contract DSTestPlus is Test {
     event AddQuoteToken(address indexed lender_, uint256 indexed price_, uint256 amount_, uint256 lup_);
     event BucketTake(address indexed borrower, uint256 index, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
     event Borrow(address indexed borrower_, uint256 lup_, uint256 amount_);
-    event Heal(address indexed borrower, uint256 healedDebt);
+    event Settle(address indexed borrower, uint256 settledDebt);
     event Kick(address indexed borrower_, uint256 debt_, uint256 collateral_, uint256 bond_);
     event MoveQuoteToken(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_, uint256 lup_);
     event MoveCollateral(address indexed lender_, uint256 indexed from_, uint256 indexed to_, uint256 amount_);
@@ -166,16 +166,16 @@ abstract contract DSTestPlus is Test {
         _pool.bucketTake(borrower, true, index);
     }
 
-    function _heal(
+    function _settle(
         address from,
         address borrower,
         uint256 maxDepth,
-        uint256 healedDebt
+        uint256 settledDebt
     ) internal {
         changePrank(from);
         vm.expectEmit(true, true, false, true);
-        emit Heal(borrower, healedDebt);
-        _pool.heal(borrower, maxDepth);
+        emit Settle(borrower, settledDebt);
+        _pool.settle(borrower, maxDepth);
     }
 
     function _kick(
@@ -744,22 +744,22 @@ abstract contract DSTestPlus is Test {
         _pool.borrow(amount, indexLimit);
     }
 
-    function _assertHealOnNotClearableAuctionRevert(
+    function _assertSettleOnNotClearableAuctionRevert(
         address from,
         address borrower
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionNotClearable()'));
-        _pool.heal(borrower, 1);
+        _pool.settle(borrower, 1);
     }
 
-    function _assertHealOnNotKickedAuctionRevert(
+    function _assertSettleOnNotKickedAuctionRevert(
         address from,
         address borrower
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
-        _pool.heal(borrower, 1);
+        _pool.settle(borrower, 1);
     }
 
     function _assertKickAuctionActiveRevert(
