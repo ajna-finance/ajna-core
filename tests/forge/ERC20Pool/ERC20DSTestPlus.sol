@@ -7,14 +7,14 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { DSTestPlus } from '../utils/DSTestPlus.sol';
 import { Token }      from '../utils/Tokens.sol';
 
-import { ERC20Pool }        from '@src/erc20/ERC20Pool.sol';
-import { ERC20PoolFactory } from '@src/erc20/ERC20PoolFactory.sol';
+import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
+import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
 
-import '@src/base/interfaces/IPool.sol';
-import '@src/base/interfaces/IPoolFactory.sol';
-import '@src/base/PoolInfoUtils.sol';
+import 'src/base/interfaces/IPool.sol';
+import 'src/base/interfaces/IPoolFactory.sol';
+import 'src/base/PoolInfoUtils.sol';
 
-import '@src/libraries/Maths.sol';
+import 'src/libraries/Maths.sol';
 
 abstract contract ERC20DSTestPlus is DSTestPlus {
 

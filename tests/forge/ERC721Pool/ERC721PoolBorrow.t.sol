@@ -3,10 +3,10 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import '@src/erc721/ERC721Pool.sol';
+import 'src/erc721/ERC721Pool.sol';
 
-import '@src/libraries/BucketMath.sol';
-import '@src/libraries/Maths.sol';
+import 'src/libraries/BucketMath.sol';
+import 'src/libraries/Maths.sol';
 
 abstract contract ERC721PoolBorrowTest is ERC721HelperContract {
     address internal _borrower;

@@ -4,10 +4,10 @@ pragma solidity 0.8.14;
 import { ERC20HelperContract } from './ERC20Pool/ERC20DSTestPlus.sol';
 import { ERC721HelperContract } from './ERC721Pool/ERC721DSTestPlus.sol';
 
-import '@src/base/interfaces/IPositionManager.sol';
-import '@src/base/PositionManager.sol';
+import 'src/base/interfaces/IPositionManager.sol';
+import 'src/base/PositionManager.sol';
 
-import '@src/libraries/BucketMath.sol';
+import 'src/libraries/BucketMath.sol';
 
 // TODO: test this against ERC721Pool
 abstract contract PositionManagerERC20PoolHelperContract is ERC20HelperContract {

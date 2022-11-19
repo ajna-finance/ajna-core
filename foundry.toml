@@ -10,7 +10,7 @@ remappings = [
     '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts',
     '@prb-math=lib/prb-math/',
     '@base64-sol=lib/base64/',
-    '@src=src'
+    'src/=src/'
 ]
 block_timestamp = 0
 optimizer = true

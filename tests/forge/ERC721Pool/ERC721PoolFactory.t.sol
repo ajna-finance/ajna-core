@@ -4,8 +4,8 @@ pragma solidity 0.8.14;
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 
-import '@src/erc721/ERC721Pool.sol';
-import '@src/erc721/ERC721PoolFactory.sol';
+import 'src/erc721/ERC721Pool.sol';
+import 'src/erc721/ERC721PoolFactory.sol';
 
 contract ERC721PoolFactoryTest is ERC721HelperContract {
     address            internal _NFTCollectionPoolAddress;

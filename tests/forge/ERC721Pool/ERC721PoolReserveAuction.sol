@@ -4,9 +4,9 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import '@src/libraries/PoolUtils.sol';
-import '@src/libraries/BucketMath.sol';
-import '@src/libraries/Maths.sol';
+import 'src/libraries/PoolUtils.sol';
+import 'src/libraries/BucketMath.sol';
+import 'src/libraries/Maths.sol';
 
 contract ERC721PoolReserveAuctionTest is ERC721HelperContract {
 

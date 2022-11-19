@@ -8,10 +8,10 @@ import '@std/Vm.sol';
 import '@openzeppelin/contracts/token/ERC20/ERC20.sol';
 import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import '@src/base/interfaces/IPool.sol';
-import '@src/base/PoolInfoUtils.sol';
+import 'src/base/interfaces/IPool.sol';
+import 'src/base/PoolInfoUtils.sol';
 
-import '@src/libraries/Maths.sol';
+import 'src/libraries/Maths.sol';
 
 abstract contract DSTestPlus is Test {
 

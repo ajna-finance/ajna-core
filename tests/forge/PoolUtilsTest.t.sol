@@ -3,9 +3,9 @@ pragma solidity 0.8.14;
 
 import './utils/DSTestPlus.sol';
 
-import '@src/libraries/Maths.sol';
-import '@src/libraries/PoolUtils.sol';
-import '@src/base/Pool.sol';
+import 'src/libraries/Maths.sol';
+import 'src/libraries/PoolUtils.sol';
+import 'src/base/Pool.sol';
 
 contract PoolUtilsTest is DSTestPlus {
 

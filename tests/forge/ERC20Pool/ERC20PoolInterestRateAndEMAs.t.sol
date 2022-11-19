@@ -3,7 +3,7 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import '@src/libraries/BucketMath.sol';
+import 'src/libraries/BucketMath.sol';
 
 contract ERC20PoolInterestRateTestAndEMAs is ERC20HelperContract {
     address internal _borrower;

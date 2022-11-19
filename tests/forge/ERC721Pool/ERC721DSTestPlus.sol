@@ -8,16 +8,16 @@ import '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import { DSTestPlus }                from '../utils/DSTestPlus.sol';
 import { NFTCollateralToken, Token } from '../utils/Tokens.sol';
 
-import { ERC721Pool }        from '@src/erc721/ERC721Pool.sol';
-import { ERC721PoolFactory } from '@src/erc721/ERC721PoolFactory.sol';
+import { ERC721Pool }        from 'src/erc721/ERC721Pool.sol';
+import { ERC721PoolFactory } from 'src/erc721/ERC721PoolFactory.sol';
 
-import '@src/erc721/interfaces/IERC721Pool.sol';
-import '@src/base/interfaces/IPoolFactory.sol';
-import '@src/base/interfaces/IPool.sol';
-import '@src/base/PoolInfoUtils.sol';
+import 'src/erc721/interfaces/IERC721Pool.sol';
+import 'src/base/interfaces/IPoolFactory.sol';
+import 'src/base/interfaces/IPool.sol';
+import 'src/base/PoolInfoUtils.sol';
 
-import '@src/libraries/Maths.sol';
-import '@src/libraries/PoolUtils.sol';
+import 'src/libraries/Maths.sol';
+import 'src/libraries/PoolUtils.sol';
 
 abstract contract ERC721DSTestPlus is DSTestPlus {
 

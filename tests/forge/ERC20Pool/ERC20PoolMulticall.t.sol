@@ -4,11 +4,11 @@ pragma solidity 0.8.14;
 
 import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
-import '@src/erc20/ERC20Pool.sol';
+import 'src/erc20/ERC20Pool.sol';
 
-import '@src/base/interfaces/pool/IPoolErrors.sol';
+import 'src/base/interfaces/pool/IPoolErrors.sol';
 
-import '@src/libraries/BucketMath.sol';
+import 'src/libraries/BucketMath.sol';
 
 contract ERC20PoolMulticallTest is ERC20HelperContract {
 
