@@ -188,7 +188,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by borrower
             vm.expectEmit(true, true, false, true);
-            emit Transfer(from, address(_pool), i);
+            emit Transfer(from, address(_pool), tokenIds[i]);
         }
 
         lps_ = ERC721Pool(address(_pool)).addCollateral(tokenIds, index);
@@ -214,7 +214,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by pledger address
             vm.expectEmit(true, true, false, true);
-            emit Transfer(from, address(_pool), i);
+            emit Transfer(from, address(_pool), tokenIds[i]);
         }
 
         ERC721Pool(address(_pool)).pledgeCollateral(borrower, tokenIds);
@@ -285,11 +285,11 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         uint256 collateralTaken,
         bool isReward
     ) internal override {
-        (, uint256 noOfTokens, ) = _pool.borrowerInfo(from);
+        (, uint256 noOfTokens, ) = _pool.borrowerInfo(borrower);
         noOfTokens = noOfTokens / 1e18;
         if (maxCollateral < noOfTokens) noOfTokens = maxCollateral;
         uint256[] memory tokenIds = new uint256[](noOfTokens);
-        for (uint256 i = 0; i < noOfTokens; i++) {
+        for (uint256 i = 0; i < noOfTokens + 1; i++) {
             uint256 tokenId = ERC721Pool(address(_pool)).borrowerTokenIds(borrower, --noOfTokens);
             assertEq(_collateral.ownerOf(tokenId), address(_pool)); // token is owned by pool before take
             tokenIds[i] = tokenId;
@@ -298,7 +298,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
         super._take(from, borrower, maxCollateral, bondChange, givenAmount, collateralTaken, isReward);
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
-            assertEq(_collateral.ownerOf(tokenIds[i]), from); // token is owned by taker address after remove
+            borrowerPlegedNFTIds[borrower].remove(tokenIds[i]); // for tearDown, remove NFTs taken from borrower pledged NFTs
         }
     }
 

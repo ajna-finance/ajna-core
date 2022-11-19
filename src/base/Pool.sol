@@ -25,6 +25,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     uint256 internal constant LAMBDA_EMA_7D      = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
     uint256 internal constant EMA_7D_RATE_FACTOR = 1e18 - LAMBDA_EMA_7D;
+    int256 internal constant PERCENT_102         = 1.02 * 10**18;
 
     /***********************/
     /*** State Variables ***/
@@ -353,26 +354,36 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
-    function heal(
-        address borrower_,
+    function settle(
+        address borrowerAddress_,
         uint256 maxDepth_
     ) external override {
-
-        uint256 healedDebt = auctions.heal(
-            loans,
+        PoolState memory poolState = _accruePoolInterest();
+        Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
+        (uint256 remainingCollateral, uint256 remainingt0Debt) = auctions.settle(
             buckets,
             deposits,
-            borrower_,
-            Maths.wmul(t0poolDebt, inflatorSnapshot) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed, // reserves
-            maxDepth_,
-            inflatorSnapshot
+            borrower.collateral,
+            borrower.t0debt,
+            borrowerAddress_,
+            Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed, // reserves
+            poolState.inflator,
+            maxDepth_
         );
-        if (healedDebt != 0) {
-            uint256 t0HealedDebt = Maths.wdiv(healedDebt, inflatorSnapshot); 
-            t0poolDebt           -= t0HealedDebt;
-            t0DebtInAuction      -= t0HealedDebt;
-            emit Heal(borrower_, healedDebt);
-        }
+
+        if (remainingt0Debt == 0) auctions.removeAuction(borrowerAddress_);
+
+        uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
+        t0poolDebt           -= t0settledDebt;
+        t0DebtInAuction      -= t0settledDebt;
+        poolState.collateral -= borrower.collateral - remainingCollateral;
+
+        borrower.t0debt     = remainingt0Debt;
+        borrower.collateral = remainingCollateral;
+
+        _updatePool(poolState, _lup(poolState.accruedDebt));
+
+        emit Settle(borrowerAddress_, t0settledDebt);
     }
 
     function kick(address borrowerAddress_) external override {
@@ -394,10 +405,10 @@ abstract contract Pool is Clone, Multicall, IPool {
         ) revert BorrowerOk();
 
         // update loan heap
-        loans._remove(borrowerAddress_);
+        loans.remove(borrowerAddress_);
  
         // kick auction
-        uint256 kickAuctionAmount = auctions.kick(
+        (uint256 kickAuctionAmount, uint256 bondSize) = auctions.kick(
             borrowerAddress_,
             borrowerDebt,
             borrowerDebt * Maths.WAD / borrower.collateral,
@@ -417,8 +428,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         // update pool state
         _updatePool(poolState, lup);
 
-        emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral);
-        _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
+        emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
+        if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
 
@@ -680,14 +691,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 collateral_,
         uint256 price_
     ) internal virtual returns (bool) {
-        if (debt_  == 0) return true;       // if debt is 0 then is collateralized
-        if (price_ == 0) return true;       // if price to calculate collateralized is 0 then is collateralized
-
-        uint256 encumbered = Maths.wdiv(debt_, price_); // calculated to avoid situation where debt dust amount
-        if (encumbered  == 0) return true;  // if encumbered is 0 then is collateralized
-        if (collateral_ == 0) return false; // if encumbered is not 0 and collateral is 0 then is not collateralized
-
-        return Maths.wdiv(collateral_, encumbered) >= Maths.WAD; // is collateralized when collateral divided by encumbered >= 1
+        return Maths.wmul(collateral_, price_) >= debt_;
     }
 
     function _updatePool(PoolState memory poolState_, uint256 lup_) internal {
@@ -708,28 +712,27 @@ abstract contract Pool is Clone, Multicall, IPool {
             debtEma   = curDebtEma;
             lupColEma = curLupColEma;
 
-            if (poolState_.accruedDebt != 0) {
-                int256 actualUtilization = int256(
+            if (poolState_.accruedDebt != 0) {                
+                int256 mau = int256(                                       // meaningful actual utilization                   
                     deposits.utilization(
                         poolState_.accruedDebt,
                         poolState_.collateral
                     )
                 );
-                int256 targetUtilization = int256(Maths.wdiv(curDebtEma, curLupColEma));
-
-                // raise rates if 4*(targetUtilization-actualUtilization) < (targetUtilization+actualUtilization-1)^2-1
-                // decrease rates if 4*(targetUtilization-mau) > -(targetUtilization+mau-1)^2+1
-                int256 decreaseFactor = 4 * (targetUtilization - actualUtilization);
-                int256 increaseFactor = ((targetUtilization + actualUtilization - 10**18) ** 2) / 10**18;
+                int256 tu = int256(Maths.wdiv(curDebtEma, curLupColEma));  // target utilization
 
                 if (!poolState_.isNewInterestAccrued) poolState_.rate = interestRate;
+                // raise rates if 4*(tu-1.02*mau) < (tu+1.02*mau-1)^2-1
+                // decrease rates if 4*(tu-mau) > 1-(tu+mau-1)^2
+                int256 mau102 = mau * PERCENT_102 / 10**18;
 
                 uint256 newInterestRate = poolState_.rate;
-                if (decreaseFactor < increaseFactor - 10**18) {
+                if (4 * (tu - mau102) < ((tu + mau102 - 10**18) ** 2) / 10**18 - 10**18) {
                     newInterestRate = Maths.wmul(poolState_.rate, INCREASE_COEFFICIENT);
-                } else if (decreaseFactor > 10**18 - increaseFactor) {
+                } else if (4 * (tu - mau) > 10**18 - ((tu + mau - 10**18) ** 2) / 10**18) {
                     newInterestRate = Maths.wmul(poolState_.rate, DECREASE_COEFFICIENT);
                 }
+
                 if (poolState_.rate != newInterestRate) {
                     interestRate       = newInterestRate;
                     interestRateUpdate = block.timestamp;

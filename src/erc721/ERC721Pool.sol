@@ -105,17 +105,13 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function arbTake(
+    function bucketTake(
         address borrowerAddress_,
+        bool    depositTake_,
         uint256 index_
     ) external override {
         // TODO: implement
-        emit ArbTake(borrowerAddress_, index_, 0, 0, 0, true);
-    }
-
-    function depositTake(address borrower_, uint256 amount_, uint256 index_) external override {
-        // TODO: implement
-        emit DepositTake(borrower_, index_, amount_, 0, 0);
+        emit BucketTake(borrowerAddress_, index_, 0, 0, 0, true);
     }
 
     function take(
@@ -127,30 +123,34 @@ contract ERC721Pool is IERC721Pool, Pool {
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
 
-        (
-            uint256 quoteTokenAmount,
-            uint256 t0repaidDebt,
-            uint256 takeCollateral,
-            uint256 auctionPrice,
-            uint256 bondChange,
-            bool isRewarded
-        ) = auctions.take(borrowerAddress_, borrower, Maths.wad(collateral_), poolState.inflator);
+        Auctions.TakeParams memory params = auctions.take(
+            borrowerAddress_,
+            borrower,
+            Maths.wad(collateral_),
+            poolState.inflator
+        );
 
         uint256 excessQuoteToken;
-        uint256 collateralTaken = (takeCollateral / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
-        if (collateralTaken !=  takeCollateral) { // collateral taken not a round number
+        uint256 collateralTaken = (params.collateralAmount / 1e18) * 1e18; // solidity rounds down, so if 2.5 it will be 2.5 / 1 = 2
+        if (collateralTaken !=  params.collateralAmount) { // collateral taken not a round number
             collateralTaken += 1e18; // round up collateral to take
             // taker should send additional quote tokens to cover difference between collateral needed to be taken and rounded collateral, at auction price
             // borrower will get quote tokens for the difference between rounded collateral and collateral taken to cover debt
-            excessQuoteToken = Maths.wmul(collateralTaken - takeCollateral, auctionPrice);
+            excessQuoteToken = Maths.wmul(collateralTaken - params.collateralAmount, params.auctionPrice);
         }
 
         borrower.collateral  -= collateralTaken;
         poolState.collateral -= collateralTaken;
 
-        _payLoan(t0repaidDebt, poolState, borrowerAddress_, borrower);
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
-        emit Take(borrowerAddress_, quoteTokenAmount, takeCollateral, bondChange, isRewarded);
+        emit Take(
+            borrowerAddress_,
+            params.quoteTokenAmount,
+            params.collateralAmount,
+            params.bondChange,
+            params.isRewarded
+        );
 
         // TODO: implement flashloan functionality
         // Flash loan full amount to liquidate to borrower
@@ -158,7 +158,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         //msg.sender.call(swapCalldata_);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(msg.sender, quoteTokenAmount + excessQuoteToken);
+        _transferQuoteTokenFrom(msg.sender, params.quoteTokenAmount + excessQuoteToken);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
@@ -184,16 +184,9 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256 collateral_,
         uint256 price_
     ) internal pure override returns (bool) {
-        if (debt_  == 0) return true;       // if debt is 0 then is collateralized
-        if (price_ == 0) return true;       // if price to calculate collateralized is 0 then is collateralized
-
-        uint256 encumbered = Maths.wdiv(debt_, price_); // calculated to avoid situation where debt dust amount
-        if (encumbered   == 0) return true;  // if encumbered is 0 then is collateralized
-        if (collateral_ == 0) return false; // if encumbered is not 0 and collateral is 0 then is not collateralized
-
         //slither-disable-next-line divide-before-multiply
-        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD;    // use collateral floor
-        return Maths.wdiv(collateral_, encumbered) >= Maths.WAD; // is collateralized when collateral divided by encumbered >= 1
+        collateral_ = (collateral_ / Maths.WAD) * Maths.WAD; // use collateral floor
+        return Maths.wmul(collateral_, price_) >= debt_;
     }
 
     /**

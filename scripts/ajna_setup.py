@@ -41,7 +41,7 @@ def main():
     test_accounts = ajna_config.get('accounts')
     for addresses in test_accounts.items():
         address = addresses[0]
-        accounts[0].transfer(address, 100 * 1e18)
+        accounts[0].transfer(address, 10 * 1e18)
 
         balances = test_accounts.get(address)
         for token in balances:

@@ -162,7 +162,11 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
     }
 
     function testKickSubsetPool() external {
-        _assertAuction(
+
+        // Skip to make borrower undercollateralized
+        skip(1000 days);
+
+         _assertAuction(
             AuctionState({
                 borrower:          _borrower,
                 active:            false,
@@ -173,20 +177,29 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
-                debtInAuction:     0
+                debtInAuction:     0,
+                thresholdPrice:    11.364359914920859402 * 1e18
             })
         );
 
-        // Skip to make borrower undercollateralized
-        skip(1000 days);
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              22.728719829841718804 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowerMompFactor:        9.917184843435912074 * 1e18,
+                borrowerCollateralization: 0.872656701977127996 * 1e18
+            }
+        );
 
         _kick(
             {
-                from:       _lender,
-                borrower:   _borrower,
-                debt:       23.012828827714740289 * 1e18,
-                collateral: 2 * 1e18,
-                bond:       0.227287198298417188 * 1e18
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           23.012828827714740289 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.227287198298417188 * 1e18,
+                transferAmount: 0.227287198298417188 * 1e18
             }
         );
 
@@ -241,7 +254,8 @@ contract ERC721PoolLiquidationsKickTest is ERC721HelperContract {
                 kickMomp:          9.917184843435912074 * 1e18,
                 totalBondEscrowed: 0.227287198298417188 * 1e18,
                 auctionPrice:      317.349914989949186368 * 1e18,
-                debtInAuction:     23.012828827714740289 * 1e18
+                debtInAuction:     23.012828827714740289 * 1e18,
+                thresholdPrice:    11.506414413857370144 * 1e18
             })
         );
         _assertKicker(

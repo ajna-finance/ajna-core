@@ -22,15 +22,15 @@ interface IPoolEvents {
 
     /**
      *  @notice Emitted when an actor uses quote token to arb higher-priced deposit off the book.
-     *  @param  borrower   Identifies the loan being liquidated.
-     *  @param  index      The index of the Highest Price Bucket used for this take.
-     *  @param  amount     Amount of quote token used to purchase collateral.
-     *  @param  collateral Amount of collateral purchased with quote token.
-     *  @param  bondChange Impact of this take to the liquidation bond.
-     *  @param  isReward   True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
+     *  @param  borrower    Identifies the loan being liquidated.
+     *  @param  index       The index of the Highest Price Bucket used for this take.
+     *  @param  amount      Amount of quote token used to purchase collateral.
+     *  @param  collateral  Amount of collateral purchased with quote token.
+     *  @param  bondChange  Impact of this take to the liquidation bond.
+     *  @param  isReward    True if kicker was rewarded with `bondChange` amount, false if kicker was penalized.
      *  @dev    amount / collateral implies the auction price.
      */
-    event ArbTake(
+    event BucketTake(
         address indexed borrower,
         uint256 index,
         uint256 amount,
@@ -71,12 +71,12 @@ interface IPoolEvents {
     /**
      *  @notice Emitted when an actor settles debt in a completed liquidation
      *  @param  borrower   Identifies the loan under liquidation.
-     *  @param  healedDebt Amount of pool debt healed in this transaction.
+     *  @param  settledDebt Amount of pool debt settled in this transaction.
      *  @dev    When amountRemaining_ == 0, the auction has been completed cleared and removed from the queue.
      */
-    event Heal(
+    event Settle(
         address indexed borrower,
-        uint256 healedDebt
+        uint256 settledDebt
     );
 
     /**
@@ -84,11 +84,13 @@ interface IPoolEvents {
      *  @param  borrower   Identifies the loan being liquidated.
      *  @param  debt       Debt the liquidation will attempt to cover.
      *  @param  collateral Amount of collateral up for liquidation.
+     *  @param  bond       Bond amount locked by kicker
      */
     event Kick(
         address indexed borrower,
         uint256 debt,
-        uint256 collateral
+        uint256 collateral,
+        uint256 bond
     );
 
     /**
