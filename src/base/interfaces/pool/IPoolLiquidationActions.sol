@@ -24,7 +24,7 @@ interface IPoolLiquidationActions {
      *  @param  maxDepth        Measured from HPB, maximum number of buckets deep to settle debt.
      *  @dev    maxDepth is used to prevent unbounded iteration clearing large liquidations.
      */
-    function heal(
+    function settle(
         address borrowerAddress,
         uint256 maxDepth
     ) external;

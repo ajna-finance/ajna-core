@@ -460,8 +460,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     }
 
-    function testTakeWithHeal() external {
-    // function testTakeWithHeal() external tearDown { // FIXME: fails on tear down in removeQuoteToken when lender redeems, lender and bucket LPs are 30000.000000000000000000 but contract balance is only 29999.999999999999999004
+    function testTakeAndSettle() external {
+    // function testTakeAndSettle() external tearDown { // FIXME: fails on tear down in removeQuoteToken when lender redeems, lender and bucket LPs are 30000.000000000000000000 but contract balance is only 29999.999999999999999004
 
         // Borrower2 borrows
         _borrow(
@@ -763,7 +763,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        // full clear / debt heal
+        // full clear / debt settle
         uint256 postTakeSnapshot = vm.snapshot();
 
         _assertBucket(
@@ -775,12 +775,12 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 exchangeRate: 1.059455753583273055502000000 * 1e27
             }
         );
-        _heal(
+        _settle(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                maxDepth:   10,
-                healedDebt: 9_247.537158474120526797 * 1e18
+                from:        _lender,
+                borrower:    _borrower2,
+                maxDepth:    10,
+                settledDebt: 9_247.537158474120526797 * 1e18
             }
         );
         _assertAuction(
@@ -911,13 +911,13 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 timeRemaining:              0
             }
         );
-        // partial clears / debt heal - max buckets to use is 1, remaining will be taken from reserves
-        _heal(
+        // partial clears / debt settled - max buckets to use is 1, remaining will be taken from reserves
+        _settle(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                maxDepth:   1,
-                healedDebt: 2_236.094237994809021102 * 1e18
+                from:        _lender,
+                borrower:    _borrower2,
+                maxDepth:    1,
+                settledDebt: 2_236.094237994809021102 * 1e18
             }
         );
         _assertReserveAuction(
@@ -961,12 +961,12 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
         // clear remaining debt
-        _heal(
+        _settle(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                maxDepth:   5,
-                healedDebt: 7_011.442920479311505695 * 1e18
+                from:        _lender,
+                borrower:    _borrower2,
+                maxDepth:    5,
+                settledDebt: 7_011.442920479311505695 * 1e18
             }
         );
         _assertAuction(
@@ -1541,12 +1541,12 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             index:  _i9_52
         });
 
-        _heal(
+        _settle(
             {
-                from:       _lender,
-                borrower:   _borrower2,
-                maxDepth:   5,
-                healedDebt: 8_076.635785817307696032 * 1e18
+                from:        _lender,
+                borrower:    _borrower2,
+                maxDepth:    5,
+                settledDebt: 8_076.635785817307696032 * 1e18
             }
         );
 

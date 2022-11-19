@@ -354,13 +354,13 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
-    function heal(
+    function settle(
         address borrowerAddress_,
         uint256 maxDepth_
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
-        (uint256 remainingCollateral, uint256 remainingt0Debt) = auctions.heal(
+        (uint256 remainingCollateral, uint256 remainingt0Debt) = auctions.settle(
             buckets,
             deposits,
             borrower.collateral,
@@ -375,9 +375,9 @@ abstract contract Pool is Clone, Multicall, IPool {
            auctions.removeAuction(borrowerAddress_);
         }
 
-        uint256 t0HealedDebt = borrower.t0debt - remainingt0Debt;
-        t0poolDebt           -= t0HealedDebt;
-        t0DebtInAuction      -= t0HealedDebt;
+        uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
+        t0poolDebt           -= t0settledDebt;
+        t0DebtInAuction      -= t0settledDebt;
         poolState.collateral -= borrower.collateral - remainingCollateral;
 
         borrower.t0debt     = remainingt0Debt;
@@ -385,7 +385,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         _updatePool(poolState, _lup(poolState.accruedDebt));
 
-        emit Heal(borrowerAddress_, t0HealedDebt);
+        emit Settle(borrowerAddress_, t0settledDebt);
     }
 
     function kick(address borrowerAddress_) external override {

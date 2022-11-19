@@ -71,23 +71,23 @@ library Auctions {
     /*********************************/
 
     /**
-     *  @notice Heals the debt of the given loan / borrower.
+     *  @notice Settles the debt of the given loan / borrower.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
-     *  @param  collateral_          The amount of collateral available to heal debt.
-     *  @param  t0DebtToHeal_        The amount of t0 debt to heal.
-     *  @param  borrower_            Borrower address whose debt is healed.
+     *  @param  collateral_          The amount of collateral available to settle debt.
+     *  @param  t0DebtToSettle_      The amount of t0 debt to settle.
+     *  @param  borrower_            Borrower address whose debt is settled.
      *  @param  reserves_            Pool reserves.
      *  @param  poolInflator_        Current inflator pool.
-     *  @param  bucketDepth_         Max number of buckets heal action should iterate through.
-     *  @return The amount of borrower collateral left after heal.
-     *  @return The amount of borrower debt left after heal.
+     *  @param  bucketDepth_         Max number of buckets settle action should iterate through.
+     *  @return The amount of borrower collateral left after settle.
+     *  @return The amount of borrower debt left after settle.
      */
-    function heal(
+    function settle(
         Data storage self,
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
         uint256 collateral_,
-        uint256 t0DebtToHeal_,
+        uint256 t0DebtToSettle_,
         address borrower_,
         uint256 reserves_,
         uint256 poolInflator_,
@@ -99,59 +99,59 @@ library Auctions {
         if ((block.timestamp - kickTime < 72 hours) && (collateral_ != 0)) revert AuctionNotClearable();
 
         // auction has debt to cover with remaining collateral
-        while (bucketDepth_ != 0 && t0DebtToHeal_ != 0 && collateral_ != 0) {
+        while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
             uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
             uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
             uint256 collateralUsed;
 
             {
                 uint256 hpbPrice        = PoolUtils.indexToPrice(hpbIndex);
-                uint256 debtToHeal      = Maths.wmul(t0DebtToHeal_, poolInflator_);   // current debt to be healed
-                uint256 maxHealableDebt = Maths.wmul(collateral_, hpbPrice);          // max debt that can be healed with existing collateral
+                uint256 debtToSettle      = Maths.wmul(t0DebtToSettle_, poolInflator_);     // current debt to be settled
+                uint256 maxSettleableDebt = Maths.wmul(collateral_, hpbPrice);              // max debt that can be settled with existing collateral
 
-                if (depositToRemove >= debtToHeal && maxHealableDebt >= debtToHeal) { // enough deposit in bucket and collateral avail to heal entire debt
-                    depositToRemove = debtToHeal;                                     // remove only what's needed to heal the debt
-                    t0DebtToHeal_   = 0;                                              // no remaining debt to heal
-                    collateralUsed  = Maths.wdiv(debtToHeal, hpbPrice);
+                if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
+                    depositToRemove = debtToSettle;                                         // remove only what's needed to settle the debt
+                    t0DebtToSettle_   = 0;                                                  // no remaining debt to settle
+                    collateralUsed  = Maths.wdiv(debtToSettle, hpbPrice);
                     collateral_     -= collateralUsed;
-                } else if (maxHealableDebt >= depositToRemove) {                      // enough collateral, therefore not enough deposit to heal entire debt, we heal only deposit amount
-                    t0DebtToHeal_  -= Maths.wdiv(depositToRemove, poolInflator_);     // subtract from debt the corresponding t0 amount of deposit
+                } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
+                    t0DebtToSettle_  -= Maths.wdiv(depositToRemove, poolInflator_);         // subtract from debt the corresponding t0 amount of deposit
                     collateralUsed = Maths.wdiv(depositToRemove, hpbPrice);
                     collateral_    -= collateralUsed;
-                } else {                                                              // constrained by collateral available
-                    depositToRemove = maxHealableDebt;
-                    t0DebtToHeal_   -= Maths.wdiv(maxHealableDebt, poolInflator_);
+                } else {                                                                    // constrained by collateral available
+                    depositToRemove = maxSettleableDebt;
+                    t0DebtToSettle_   -= Maths.wdiv(maxSettleableDebt, poolInflator_);
                     collateralUsed  = collateral_;
                     collateral_     = 0;
                 }
             }
 
-            buckets_[hpbIndex].collateral += collateralUsed;      // add healed collateral into bucket
-            Deposits.remove(deposits_, hpbIndex, depositToRemove); // remove amount to heal debt from bucket (could be entire deposit or only the healed debt)
+            buckets_[hpbIndex].collateral += collateralUsed;       // add settled collateral into bucket
+            Deposits.remove(deposits_, hpbIndex, depositToRemove); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
 
             --bucketDepth_;
         }
 
         // if there's still debt and no collateral
-        if (t0DebtToHeal_ != 0 && collateral_ == 0) {
-            // heal debt from reserves
-            t0DebtToHeal_ -= Maths.min(t0DebtToHeal_, Maths.wdiv(reserves_, poolInflator_));
+        if (t0DebtToSettle_ != 0 && collateral_ == 0) {
+            // settle debt from reserves
+            t0DebtToSettle_ -= Maths.min(t0DebtToSettle_, Maths.wdiv(reserves_, poolInflator_));
 
-            // if there's still debt after healing from reserves then start to forgive amount from next HPB
-            while (bucketDepth_ != 0 && t0DebtToHeal_ != 0) { // loop through remaining buckets if there's still debt to heal
+            // if there's still debt after settling from reserves then start to forgive amount from next HPB
+            while (bucketDepth_ != 0 && t0DebtToSettle_ != 0) { // loop through remaining buckets if there's still debt to settle
                 uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
                 uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
-                uint256 debtToHeal      = Maths.wmul(t0DebtToHeal_, poolInflator_);
+                uint256 debtToSettle      = Maths.wmul(t0DebtToSettle_, poolInflator_);
 
-                if (depositToRemove >= debtToHeal) {                             // enough deposit in bucket to heal entire debt
-                    depositToRemove = debtToHeal;                                // remove only what's needed to heal the debt
-                    t0DebtToHeal_  = 0;                                          // no remaining debt to heal
+                if (depositToRemove >= debtToSettle) {                             // enough deposit in bucket to settle entire debt
+                    depositToRemove = debtToSettle;                                // remove only what's needed to settle the debt
+                    t0DebtToSettle_  = 0;                                          // no remaining debt to settle
 
-                } else {                                                         // not enough deposit to heal entire debt, we heal only deposit amount
-                    t0DebtToHeal_ -= Maths.wdiv(depositToRemove, poolInflator_); // subtract from remaining debt the corresponding t0 amount of deposit
+                } else {                                                           // not enough deposit to settle entire debt, we settle only deposit amount
+                    t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_); // subtract from remaining debt the corresponding t0 amount of deposit
 
                     Buckets.Bucket storage hpbBucket = buckets_[hpbIndex];
-                    if (hpbBucket.collateral == 0) {                             // existing LPB and LP tokens for the bucket shall become unclaimable.
+                    if (hpbBucket.collateral == 0) {                               // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
                     }
@@ -163,7 +163,7 @@ library Auctions {
             }
         }
 
-        return (collateral_, t0DebtToHeal_);
+        return (collateral_, t0DebtToSettle_);
     }
     
     /**

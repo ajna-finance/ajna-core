@@ -457,7 +457,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_borrower), 119.8 * 1e18); // no additional tokens as there is no rounding of collateral taken (1)
     }
 
-    function testTakeCollateralandHealSubsetPool() external tearDown {
+    function testTakeCollateralandSettleSubsetPool() external tearDown {
 
         // Skip to make borrower undercollateralized
         skip(1000 days);
@@ -672,12 +672,12 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
             }
         );
 
-        _heal(
+        _settle(
             {
-                from:       _lender,
-                borrower:   _borrower,
-                maxDepth:   10,
-                healedDebt: 18.996689878119714537 * 1e18
+                from:        _lender,
+                borrower:    _borrower,
+                maxDepth:    10,
+                settledDebt: 18.996689878119714537 * 1e18
             }
         );
 
