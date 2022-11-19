@@ -155,7 +155,7 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
 
     }
     
-    function testHealOnAuctionKicked72HoursAgoAndPartiallyTaken() external {
+    function testHealOnAuctionKicked72HoursAgoAndPartiallyTaken() external tearDown {
         // Borrower2 borrows
         _borrow(
             {
@@ -441,7 +441,7 @@ contract ERC20PoolLiquidationsHealTest is ERC20HelperContract {
         );
     }
 
-    function testHealOnAuctionKicked72HoursAgo() external {
+    function testHealOnAuctionKicked72HoursAgo() external tearDown {
         // Borrower2 borrows
         _borrow(
             {

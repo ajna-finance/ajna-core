@@ -461,6 +461,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
     }
 
     function testTakeWithHeal() external {
+    // function testTakeWithHeal() external tearDown { // FIXME: fails on tear down in removeQuoteToken when lender redeems, lender and bucket LPs are 30000.000000000000000000 but contract balance is only 29999.999999999999999004
 
         // Borrower2 borrows
         _borrow(
@@ -1326,7 +1327,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    0,
                 collateral:   0,          
-                deposit:      0.000000000000002445 * 1e18,
+                deposit:      0.000000000000002445 * 1e18, // FIXME: should be 0, Fenwick remove bug
                 exchangeRate: 1 * 1e27
             }
         );
@@ -1601,7 +1602,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_81,
                 lpBalance:    0,
                 collateral:   0,          
-                deposit:      1,
+                deposit:      1, // FIXME: should be 0, Fenwick remove bug
                 exchangeRate: 1 * 1e27
             }
         );
@@ -1610,7 +1611,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    0,
                 collateral:   0,          
-                deposit:      2480,
+                deposit:      2480, // FIXME: should be 0, Fenwick remove bug
                 exchangeRate: 1 * 1e27
             }
         );
@@ -1628,7 +1629,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_52,
                 lpBalance:    0,
                 collateral:   0,          
-                deposit:      4,
+                deposit:      4, // FIXME: should be 0, Fenwick remove bug
                 exchangeRate: 1 * 1e27
             }
         );
