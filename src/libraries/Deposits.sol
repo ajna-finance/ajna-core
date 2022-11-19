@@ -80,7 +80,7 @@ library Deposits {
 
     /**
      *  @notice increase a value in the FenwickTree at an index.
-     *  @dev    Starts at tree root and decrements through range parent nodes until index, i_, is reached.
+     *  @dev    Starts at leaf/target and moved up towards root
      *  @param  i_  The index pointing to the value.
      *  @param  x_  amount to increase the value by.
     */    
@@ -90,29 +90,18 @@ library Deposits {
         uint256 x_
     ) internal {
         if (i_ >= SIZE) revert InvalidIndex();
+	i_+=1;
 
-        uint256 j     = SIZE;       // Binary index, 1 << 13
-        uint256 ii    = 0;          // Binary index offset
-        uint256 sc    = Maths.WAD;
-        uint256 index = SIZE;
-        uint256 scaled;
+	x_ = Maths.wdiv(x_, scale(self, i_));
 
-        while (j > 0) {
-
-            // If passed in node is in current range, updates are confined to range for remaining iterations.
-            if ((i_ & j) != 0) {
-
-                // Increase binary index offset to point next node in range.
-                ii += j;
-            
-            // Update node effected by addition.
-            } else {
-                scaled = self.scaling[index];
-                if (scaled != 0) sc = Maths.wmul(sc, scaled);
-                self.values[index] += Maths.wdiv(x_, sc);
-            }
-            j = j >> 1;
-            index = ii + j;
+        while (i_ <= SIZE) {
+	    uint256 newValue = self.values[i_]+x_;
+	    // Note: we can't just multiply x_ by scaling[i_] due to rounding
+	    // We need to track the precice change in self.values[i_] in order to ensure
+	    // obliterated indices remain zero after subsequent adding to related indices
+	    x_ = Maths.wmul(newValue, self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
+	    self.values[i_] = newValue;
+	    i_ += lsb(i_);
         }
     }
 
@@ -180,20 +169,24 @@ library Deposits {
         i_          += 1;
         uint256 sum = 0;
         uint256 j;                         // Tracks range parents of starting node, i_
-        uint256 df  = f_ - Maths.WAD;    // Difference factor
 
         uint256 scaledI;
+	uint256 valueI;
 
         while (i_ > 0) {
             scaledI =  self.scaling[i_];
+	    valueI  =  self.values[i_];
             
             // Calc sum, will only be stored in range parents of starting node, i_
             if (scaledI != 0) {
-                sum += Maths.wmul(Maths.wmul(df, self.values[i_]), scaledI);
+		// Note: we can't just multiply by f_-1 in the following line, as rounding will
+		// cause obliterated indices to have nonzero values.  Need to track the actual
+		// precise delta in the value array
+                sum += Maths.wmul(Maths.wmul(f_,scaledI), valueI) - Maths.wmul(scaledI, valueI);
                 // Apply scaling to all range parents less then starting node, i_
                 self.scaling[i_] = Maths.wmul(f_,scaledI);
             } else {
-                sum += Maths.wmul(df, self.values[i_]);
+                sum += Maths.wmul(f_, valueI) - valueI;
                 self.scaling[i_] = f_;
             }
 
@@ -206,11 +199,12 @@ library Deposits {
             // Execute while i is a range parent of j (zero is the highest parent).
             //slither-disable-next-line incorrect-equality
             while ((lsbJ < lsb(i_)) || (i_ == 0 && j <= SIZE)) {
-
                 // Sum > 0 only when j is a range parent of starting node, i_.
+		valueI = self.values[j];
                 self.values[j] += sum;
                 scaledI = self.scaling[j];
-                if (scaledI != 0) sum = Maths.wmul(sum, scaledI);
+		// again, in following line, need to be careful due to rounding
+                if (scaledI != 0) sum = Maths.wmul(valueI+sum, scaledI) - Maths.wmul(valueI, scaledI);
                 j += lsbJ;
                 lsbJ = lsb(j);
             }
@@ -255,7 +249,7 @@ library Deposits {
 
     /**
      *  @notice Decrease a node in the FenwickTree at an index.
-     *  @dev    Starts at tree root and decrements through range parent nodes until index, i_, is reached.
+     *  @dev    Starts at leaf/target and moved up towards root
      *  @param  i_  The index pointing to the value
      *  @param  x_  Amount to decrease the value by.
     */    
@@ -265,29 +259,18 @@ library Deposits {
         uint256 x_
     ) internal {
         if (i_ >= SIZE) revert InvalidIndex();
+	i_+=1;
 
-        uint256 j     = SIZE;       // Binary index, 1 << 13
-        uint256 ii    = 0;          // Binary index offset
-        uint256 sc    = Maths.WAD;
-        uint256 index = SIZE;
-        uint256 scaled;
+	x_ = Maths.wdiv(x_, scale(self, i_));
 
-        while (j > 0) {
-            // if requested node is in current range, updates are confined to range for remaining iterations.
-            if ((i_ & j) != 0) {  
-
-                // Increase binary index offset to point next node in range.
-                ii += j;
-                
-            // Update node effected by removal.
-            } else {
-                scaled = self.scaling[index];
-                if (scaled != 0) sc = Maths.wmul(sc,scaled);
-                self.values[index] -= Maths.min(self.values[index], Maths.wdiv(x_, sc));
-            }
-
-            j = j >> 1;
-            index = ii + j;
+        while (i_ <= SIZE) {
+	    uint256 newValue = self.values[i_]-x_;
+	    // Note: we can't just multiply x_ by scaling[i_] due to rounding
+	    // We need to track the precice change in self.values[i_] in order to ensure
+	    // obliterated indices remain zero after subsequent adding to related indices
+	    x_ = Maths.wmul(self.values[i_], self.scaling[i_]) - Maths.wmul(newValue, self.scaling[i_]);
+	    self.values[i_] = newValue;
+	    i_ += lsb(i_);
         }
     }
 
@@ -296,12 +279,23 @@ library Deposits {
 	uint256 i_
     ) internal {
 	if (i_ >= SIZE) revert InvalidIndex();
+    
+	uint256 valuesI = self.values[i_];
+	uint256 runningSum;
+	uint256 newValue;
+	uint256 j = 1;
 
-	uint256 runningSum = self.values[i_];
-	while (i_ <= SIZE) {
-	    self.values[i_] -= runningSum;
-	    runningSum=Maths.wmul(runningSum, ( self.scaling[i_] != 0) ? self.scaling[i_] : Maths.WAD);
-	    i_ += lsb(i_);
+	while ((j&i_)==0) {
+	    runningSum += Maths.wmul(self.scaling[i_-j], self.values[i_-j]);
+	}
+	if (runningSum >= valuesI) {
+	    runningSum -= valuesI;
+	    while (i_ <= SIZE) {
+		newValue = self.values[i_] + runningSum;
+		if ( self.scaling[i_] != 0) runningSum=Maths.wmul(newValue,  self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
+		self.values[i_] = newValue;
+		i_ += lsb(i_);
+	}
 	}
     }
 
@@ -313,7 +307,7 @@ library Deposits {
 
         a_ = Maths.WAD;
         while (i_ <= SIZE) {
-            a_ = Maths.wmul(a_, self.scaling[i_]);
+            if (self.scaling[i_] != 0) a_ = Maths.wmul(a_, self.scaling[i_]);
             i_ += lsb(i_);
         }
     }
