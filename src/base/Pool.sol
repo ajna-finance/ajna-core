@@ -371,9 +371,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             maxDepth_
         );
 
-        if (remainingt0Debt == 0) {
-           auctions.removeAuction(borrowerAddress_);
-        }
+        if (remainingt0Debt == 0) auctions.removeAuction(borrowerAddress_);
 
         uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
         t0poolDebt           -= t0settledDebt;
