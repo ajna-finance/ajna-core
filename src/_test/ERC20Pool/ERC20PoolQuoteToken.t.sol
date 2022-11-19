@@ -1239,4 +1239,123 @@ contract ERC20PoolQuoteTokenTest is ERC20HelperContract {
         );
         assertGt(_quote.balanceOf(_lender), 200_000 * 1e18);
     }
+
+    function testZeroQuoteLender() external {
+
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  _i3010_89,
+                newLup: 1_004_968_987.606512354182109771 * 1e18
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i3010_89,
+                lpBalance:   10_000 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i3010_89,
+                lpBalance:    10_000.0 * 1e27,
+                collateral:   0,
+                deposit:      10_000.0 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 0,
+                index:  _i3010_89,
+                newLup: 1_004_968_987.606512354182109771 * 1e18
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i3010_89,
+                lpBalance:   10_000 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i3010_89,
+                lpBalance:    10_000.0 * 1e27,
+                collateral:   0,
+                deposit:      10_000.0 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        // must have lpb in the bucket
+        _removeLiquidity({
+            from:     _lender,
+            amount:   0,
+            index:    _i3010_89,
+            penalty:  0,
+            newLup:   1_004_968_987.606512354182109771 * 1e18,
+            lpRedeem: 0
+        });
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i3010_89,
+                lpBalance:   10_000 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i3010_89,
+                lpBalance:    10_000.0 * 1e27,
+                collateral:   0,
+                deposit:      10_000.0 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        _moveLiquidity(
+            {
+                from:         _lender,
+                amount:       0,
+                fromIndex:    _i3010_89,
+                toIndex:      123,
+                newLup:       1_004_968_987.606512354182109771 * 1e18,
+                lpRedeemFrom: 0,
+                lpRedeemTo:   0
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i3010_89,
+                lpBalance:    10_000.0 * 1e27,
+                collateral:   0,
+                deposit:      10_000.0 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i3010_89,
+                lpBalance:   10_000.0 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+    }
 }

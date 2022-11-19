@@ -1178,4 +1178,121 @@ contract ERC20PoolBorrowTest is ERC20HelperContract {
         );
         assertEq(_quote.balanceOf(_lender), 169_995 * 1e18); // no tokens paid as penalty
     }
+
+    function testZeroCallsBorrower() external {
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0,
+                borrowerCollateral:        0,
+                borrowerMompFactor:        0,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower, 
+                amount:   1
+            }
+        );
+
+        // Must have pledgedCollateral in order to perform this call
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     0,
+                indexLimit: 1 * 1e18,
+                newLup:     1_004_968_987.606512354182109771 * 1e18
+            }
+        );
+        
+        _assertBorrower( 
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              0,
+                borrowerCollateral:        1,
+                borrowerMompFactor:        0,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+
+        _borrow(
+            {
+                from:       _borrower,
+                amount:     1,
+                indexLimit: 1 * 1e18,
+                newLup:     3_010.892022197881557845 * 1e18
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              1,
+                borrowerCollateral:        1,
+                borrowerMompFactor:        3_010.892022197881557845 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+
+        // call must provide borrower with borrowerDebt != 0
+        _repay(
+            {
+                from:     _borrower,
+                borrower: _borrower, 
+                amount:   0,
+                repaid:   0,
+                newLup:   3_010.892022197881557845 * 1e18
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              1,
+                borrowerCollateral:        1,
+                borrowerMompFactor:        3_010.892022197881557845 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+
+        _pledgeCollateral(
+            {
+                from:     _borrower,
+                borrower: _borrower, 
+                amount:   0
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              1,
+                borrowerCollateral:        1,
+                borrowerMompFactor:        3_010.892022197881557845 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+
+        _pullCollateral(
+            {
+                from:     _borrower,
+                amount:   0
+            }
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              1,
+                borrowerCollateral:        1,
+                borrowerMompFactor:        3_010.892022197881557845 * 1e18,
+                borrowerCollateralization: 1 * 1e18
+            }
+        );
+
+    }
 }

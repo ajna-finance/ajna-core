@@ -5,6 +5,7 @@ import { ERC20HelperContract } from './ERC20DSTestPlus.sol';
 
 import '../../libraries/BucketMath.sol';
 import '../../libraries/PoolUtils.sol';
+import '@std/console.sol';
 
 contract ERC20PoolCollateralTest is ERC20HelperContract {
 
@@ -773,5 +774,113 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
         );
         assertEq(_collateral.balanceOf(_borrower),  150 * 1e18);
         assertEq(_collateral.balanceOf(_borrower2), 0);
+    }
+
+
+    function testZeroCollateralLender() external {
+
+        _addLiquidity(
+            {
+                from:   _lender,
+                amount: 10_000 * 1e18,
+                index:  _i3010_89,
+                newLup: BucketMath.MAX_PRICE
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i3010_89,
+                lpBalance:    10000.0 * 1e27,
+                collateral:   0,
+                deposit:      1_0000.0 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i3010_89,
+                lpBalance:   10000.0 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+
+        _moveCollateral(
+            {
+                from:         _lender,
+                amount:       0,
+                fromIndex:    _i3010_89,
+                toIndex:      1000,
+                lpRedeemFrom: 0,
+                lpRedeemTo:   0
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i3010_89,
+                lpBalance:    10000.0 * 1e27,
+                collateral:   0,
+                deposit:      1_0000.0 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i3010_89,
+                lpBalance:   10000.0 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+
+        _addCollateral(
+            {
+                from: _lender,
+                amount: 0,
+                index: _i3010_89
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i3010_89,
+                lpBalance:    10_000.0 * 1e27,
+                collateral:   0,
+                deposit:      10_000.0 * 1e18,
+                exchangeRate: 1 * 1e27
+            }
+        );
+
+        _assertLenderLpBalance(
+            {
+                lender:      _lender,
+                index:       _i3010_89,
+                lpBalance:   10_000.0 * 1e27,
+                depositTime: block.timestamp
+            }
+        );
+
+        _removeCollateral(
+            {
+                from:     _lender,
+                amount:   0,
+                index:    _i3010_89,
+                lpRedeem: 0
+            }
+        );
+
+        _assertBucket(
+            {
+                index:        _i3010_89,
+                lpBalance:    10_000 * 1e27,
+                collateral:   0,
+                deposit:      10_000 * 1e18,
+                exchangeRate: 1.0 * 1e27
+            }
+        );
     }
 }
