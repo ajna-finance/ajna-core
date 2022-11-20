@@ -269,6 +269,132 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
     }
 
+    function testKickWithLPB() external {
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            false,
+                kicker:            address(0),
+                bondSize:          0,
+                bondFactor:        0,
+                kickTime:          0,
+                kickMomp:          0,
+                totalBondEscrowed: 0,
+                auctionPrice:      0,
+                debtInAuction:     0
+            })
+        );
+
+        // Skip to make borrower undercollateralized
+        skip(100 days);
+
+        _kickWithLPB(
+            {
+                from:           _lender,
+                borrower:       _borrower,
+                debt:           19.778456451861613480 * 1e18,
+                collateral:     2 * 1e18,
+                bond:           0.195342779771472726 * 1e18,
+                transferAmount: 0.195342779771472726 * 1e18,
+                index:          _i9_72
+            }
+        );
+
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.195342779771472726 * 1e18
+            }
+        );
+
+        /******************************/
+        /*** Assert Post-kick state ***/
+        /******************************/
+
+        _assertPool(
+            PoolState({
+                htp:                  8.209538814158655264 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             73_094.306936911944549274 * 1e18,
+                pledgedCollateral:    1_002 * 1e18,
+                encumberedCollateral: 835.035237319063220561 * 1e18,
+                poolDebt:             8_117.624599705640061720 * 1e18,
+                actualUtilization:    0.111056865300221011 * 1e18,
+                targetUtilization:    0.833368500318426368 * 1e18,
+                minDebtAmount:        811.762459970564006172 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower2),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp
+            })
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower,
+                borrowerDebt:              19.778456451861613480 * 1e18,
+                borrowerCollateral:        2 * 1e18,
+                borrowerMompFactor:        9.917184843435912074 * 1e18,
+                borrowerCollateralization: 0.983018658578564579 * 1e18
+            }
+        );
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              8_097.846143253778448241 * 1e18,
+                borrowerCollateral:        1_000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerCollateralization: 1.200479200648987171 * 1e18
+            }
+        );
+        assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          0.195342779771472726 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 0.195342779771472726 * 1e18,
+                auctionPrice:      311.081467681016947360 * 1e18,
+                debtInAuction:     19.778456451861613480 * 1e18
+            })
+        );
+        _assertKicker(
+            {
+                kicker:    _lender,
+                claimable: 0,
+                locked:    0.195342779771472726 * 1e18
+            }
+        );
+        _assertReserveAuction(
+            {
+                reserves:                   23.872320013924039720 * 1e18,
+                claimableReserves :         0,
+                claimableReservesRemaining: 0,
+                auctionPrice:               0,
+                timeRemaining:              0
+            }
+        );
+
+        // kick should fail if borrower properly collateralized
+        _assertKickCollateralizedBorrowerRevert(
+            {
+                from:       _lender,
+                borrower:   _borrower2
+            }
+        );
+
+        _assertDepositLockedByAuctionDebtRevert({
+            operator:  _lender,
+            amount:    100 * 1e18,
+            index:     _i9_91
+        });
+    }
+
     function testKickAndSaveByRepay() external {
 
         _assertAuction(

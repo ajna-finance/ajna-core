@@ -192,6 +192,21 @@ abstract contract DSTestPlus is Test {
         _pool.kick(borrower);
     }
 
+    function _kickWithLPB(
+        address from,
+        address borrower,
+        uint256 debt,
+        uint256 collateral,
+        uint256 bond,
+        uint256 transferAmount,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, false, true);
+        emit Kick(borrower, debt, collateral, bond);
+        _pool.kickWithLPB(borrower, index);
+    }
+
     function _moveLiquidity(
         address from,
         uint256 amount,
