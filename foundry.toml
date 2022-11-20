@@ -1,6 +1,6 @@
 [profile.default]
 src = 'src'
-test = 'src/_test'
+test = 'tests/forge'
 out = 'forge_out'
 libs = ['lib']
 remappings = [
@@ -9,7 +9,8 @@ remappings = [
     '@clones=lib/clones-with-immutable-args/src/',
     '@openzeppelin/contracts=lib/openzeppelin-contracts/contracts',
     '@prb-math=lib/prb-math/',
-    '@base64-sol=lib/base64/'
+    '@base64-sol=lib/base64/',
+    'src/=src/'
 ]
 block_timestamp = 0
 optimizer = true
