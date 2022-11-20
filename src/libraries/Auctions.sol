@@ -33,10 +33,10 @@ library Auctions {
 
     struct TakeParams {
         uint256 quoteTokenAmount; // The quote token amount that taker should pay for collateral taken.
-        uint256 t0repayAmount;    // The amount of debt (quote tokens) that is recovered / repayed by take t0 terms.
-        uint256 collateralAmount;  // The amount of collateral taken.
+        uint256 t0repayAmount;    // The amount of debt (quote tokens) that is recovered / repaid by take t0 terms.
+        uint256 collateralAmount; // The amount of collateral taken.
         uint256 auctionPrice;     // The price of auction.
-        uint256 bondChange;       // The change made on the bond size (beeing reward or penalty).
+        uint256 bondChange;       // The change made on the bond size (reward or penalty).
         address kicker;           // Address of auction kicker.
         bool    isRewarded;       // True if kicker is rewarded (auction price lower than neutral price), false if penalized (auction price greater than neutral price).
     }
@@ -304,9 +304,9 @@ library Auctions {
         if (!params_.isRewarded) {
             // take is above neutralPrice, Kicker is penalized
             params_.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(params_.quoteTokenAmount, uint256(-bpf)));
-            liquidation.bondSize                -= params_.bondChange;
+            liquidation.bondSize                 -= params_.bondChange;
             self.kickers[params_.kicker].locked -= params_.bondChange;
-            self.totalBondEscrowed              -= params_.bondChange;
+            self.totalBondEscrowed               -= params_.bondChange;
         } else {
             params_.bondChange = Maths.wmul(params_.quoteTokenAmount, uint256(bpf)); // will be rewarded as LPBs
         }
@@ -337,7 +337,7 @@ library Auctions {
         params_.kicker = liquidation.kicker;
         (
             uint256 borrowerDebt,
-            int256 bpf,
+            int256  bpf,
             uint256 factor
         ) = _takeParameters(liquidation, borrower_, params_.auctionPrice, poolInflator_);
         params_.isRewarded = (bpf >= 0);
@@ -350,22 +350,22 @@ library Auctions {
         if (params_.t0repayAmount >= borrower_.t0debt) {
             params_.t0repayAmount    = borrower_.t0debt;
             params_.quoteTokenAmount = Maths.wdiv(borrowerDebt, factor);
-            params_.collateralAmount  = Maths.min(Maths.wdiv(params_.quoteTokenAmount, params_.auctionPrice), params_.collateralAmount);
+            params_.collateralAmount = Maths.min(Maths.wdiv(params_.quoteTokenAmount, params_.auctionPrice), params_.collateralAmount);
         }
 
         if (params_.isRewarded) {
             // take is below neutralPrice, Kicker is rewarded
             params_.bondChange = Maths.wmul(params_.quoteTokenAmount, uint256(bpf));
-            liquidation.bondSize                += params_.bondChange;
+            liquidation.bondSize                 += params_.bondChange;
             self.kickers[params_.kicker].locked += params_.bondChange;
-            self.totalBondEscrowed              += params_.bondChange;
+            self.totalBondEscrowed               += params_.bondChange;
 
         } else {
             // take is above neutralPrice, Kicker is penalized
             params_.bondChange = Maths.min(liquidation.bondSize, Maths.wmul(params_.quoteTokenAmount, uint256(-bpf)));
-            liquidation.bondSize                -= params_.bondChange;
+            liquidation.bondSize                 -= params_.bondChange;
             self.kickers[params_.kicker].locked -= params_.bondChange;
-            self.totalBondEscrowed              -= params_.bondChange;
+            self.totalBondEscrowed               -= params_.bondChange;
         }
     }
 
@@ -415,7 +415,7 @@ library Auctions {
         }
 
         // delete liquidation
-         delete self.liquidations[borrower_];
+        delete self.liquidations[borrower_];
     }
 
     /**

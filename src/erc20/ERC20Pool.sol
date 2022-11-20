@@ -264,6 +264,7 @@ contract ERC20Pool is IERC20Pool, Pool {
         borrower.collateral  -= params.collateralAmount;
         poolState.collateral -= params.collateralAmount;
 
+        // update pool and auction state; if auction is completed remove from queue
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
         emit Take(
