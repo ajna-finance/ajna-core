@@ -120,6 +120,10 @@ class PoolHelper:
     def collateralToken(self):
         return Contract(self.pool.collateralAddress())
 
+    def debt(self):
+        (debt, accruedDebt, debtInAuction) = self.pool.debtInfo()
+        return debt
+
     def hpb(self):
         (hpb, hpbIndex, htp, htpIndex, lup, lupIndex) = self.pool_info_utils.poolPricesInfo(self.pool.address)
         return hpb
@@ -346,7 +350,7 @@ class TestUtils:
     @staticmethod
     def validate_pool(pool_helper, borrowers):
         pool = pool_helper.pool
-        poolDebt = pool.debt()
+        poolDebt = pool_helper.debt()
 
         # if pool is collateralized...
         if pool_helper.lupIndex() > pool_helper.price_to_index_safe(pool_helper.htp()):
@@ -396,7 +400,7 @@ class TestUtils:
 
         lup_index = pool_helper.lupIndex()
         htp_index = pool_helper.price_to_index_safe(pool_helper.htp())
-        ptp_index = pool_helper.price_to_index_safe(int(pool.debt() * 1e18 / pool.pledgedCollateral()))
+        ptp_index = pool_helper.price_to_index_safe(int(pool_helper.debt() * 1e18 / pool.pledgedCollateral()))
 
         min_bucket_index = max(0, pool_helper.priceToIndex(pool_helper.hpb()) - 3)  # HPB
         max_bucket_index = min(7388, max(lup_index, htp_index) + 3) if htp_index < 7388 else min(7388, lup_index + 3)
@@ -441,7 +445,7 @@ class TestUtils:
     @staticmethod
     def summarize_pool(pool_helper):
         pool = pool_helper.pool
-        poolDebt = pool.debt()
+        poolDebt = pool_helper.debt()
 
         (_, poolCollateralization, poolActualUtilization, poolTargetUtilization) = pool_helper.utilizationInfo()
         (_, loansCount, _, _, _) = pool_helper.loansInfo()
