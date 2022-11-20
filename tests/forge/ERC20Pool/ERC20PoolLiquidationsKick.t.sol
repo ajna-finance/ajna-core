@@ -282,6 +282,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
     }
 
     function testKickWithLPB() external {
+        // Skip to make borrower undercollateralized
+        skip(100 days);
 
         _assertAuction(
             AuctionState({
@@ -294,12 +296,10 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
-                debtInAuction:     0
+                debtInAuction:     0,
+                thresholdPrice:    9.767138988573636286 * 1e18
             })
         );
-
-        // Skip to make borrower undercollateralized
-        skip(100 days);
 
         _kickWithLPB(
             {
@@ -372,7 +372,8 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 kickMomp:          9.721295865031779605 * 1e18,
                 totalBondEscrowed: 0.195342779771472726 * 1e18,
                 auctionPrice:      311.081467681016947360 * 1e18,
-                debtInAuction:     19.778456451861613480 * 1e18
+                debtInAuction:     19.778456451861613480 * 1e18,
+                thresholdPrice:    9.889228225930806740 * 1e18
             })
         );
         _assertKicker(

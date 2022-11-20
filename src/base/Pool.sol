@@ -485,7 +485,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         ) revert BorrowerOk();
 
         // update loan heap
-        loans._remove(borrowerAddress_);
+        loans.remove(borrowerAddress_);
 
         // kick auction
         (uint256 kickAuctionAmount, uint256 bondSize) = auctions.kick(
