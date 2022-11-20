@@ -1,7 +1,7 @@
 project_structure:
     build: brownie_out
     contracts: src
-    tests: tests
+    tests: tests/brownie
 
 # use Ganache's forked mainnet mode as the default network
 # NOTE: You don't *have* to do this, but it is often helpful for testing

@@ -71,98 +71,101 @@ library Auctions {
     /*********************************/
 
     /**
-     *  @notice Heals the debt of the given loan / borrower.
+     *  @notice Settles the debt of the given loan / borrower.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
-     *  @param  borrower_      Borrower whose debt is healed.
-     *  @param  reserves_      Pool reserves.
-     *  @param  bucketDepth_   Max number of buckets heal action should iterate through.
-     *  @param  poolInflator_  The pool's inflator, used to calculate borrower debt.
-     *  @return healedDebt_    The amount of debt that was healed.
+     *  @param  collateral_          The amount of collateral available to settle debt.
+     *  @param  t0DebtToSettle_      The amount of t0 debt to settle.
+     *  @param  borrower_            Borrower address whose debt is settled.
+     *  @param  reserves_            Pool reserves.
+     *  @param  poolInflator_        Current inflator pool.
+     *  @param  bucketDepth_         Max number of buckets settle action should iterate through.
+     *  @return The amount of borrower collateral left after settle.
+     *  @return The amount of borrower debt left after settle.
      */
-    function heal(
+    function settle(
         Data storage self,
-        Loans.Data storage loans_,
         mapping(uint256 => Buckets.Bucket) storage buckets_,
         Deposits.Data storage deposits_,
+        uint256 collateral_,
+        uint256 t0DebtToSettle_,
         address borrower_,
         uint256 reserves_,
-        uint256 bucketDepth_,
-        uint256 poolInflator_
-    ) internal returns (
-        uint256 healedDebt_
-    )
-    {
+        uint256 poolInflator_,
+        uint256 bucketDepth_
+    ) internal returns (uint256, uint256) {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
         if (kickTime == 0) revert NoAuction();
 
-        uint256 debtToHeal   = Maths.wmul(loans_.borrowers[borrower_].t0debt, poolInflator_);
-        uint256 remainingCol = loans_.borrowers[borrower_].collateral;
-        if (
-            (block.timestamp - kickTime > 72 hours)
-            ||
-            (debtToHeal != 0 && remainingCol == 0)
-        ) {
-            uint256 remainingDebt = debtToHeal;
+        if ((block.timestamp - kickTime < 72 hours) && (collateral_ != 0)) revert AuctionNotClearable();
 
-            while (bucketDepth_ != 0) {
-                // auction has debt to cover with remaining collateral
-                uint256 hpbIndex;
-                if (remainingDebt != 0 && remainingCol != 0) {
-                    hpbIndex              = Deposits.findIndexOfSum(deposits_, 1);
-                    uint256 hpbPrice      = PoolUtils.indexToPrice(hpbIndex);
-                    uint256 clearableDebt = Maths.min(remainingDebt, Deposits.valueAt(deposits_, hpbIndex));
-                    clearableDebt         = Maths.min(clearableDebt, Maths.wmul(remainingCol, hpbPrice));
-                    uint256 clearableCol  = Maths.wdiv(clearableDebt, hpbPrice);
+        // auction has debt to cover with remaining collateral
+        while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
+            uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
+            uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
+            uint256 collateralUsed;
 
-                    remainingDebt -= clearableDebt;
-                    remainingCol  -= clearableCol;
+            {
+                uint256 hpbPrice          = PoolUtils.indexToPrice(hpbIndex);
+                uint256 debtToSettle      = Maths.wmul(t0DebtToSettle_, poolInflator_);     // current debt to be settled
+                uint256 maxSettleableDebt = Maths.wmul(collateral_, hpbPrice);              // max debt that can be settled with existing collateral
 
-                    Deposits.remove(deposits_, hpbIndex, clearableDebt);
-                    buckets_[hpbIndex].collateral += clearableCol;
+                if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
+                    depositToRemove = debtToSettle;                                         // remove only what's needed to settle the debt
+                    t0DebtToSettle_ = 0;                                                    // no remaining debt to settle
+                    collateralUsed  = Maths.wdiv(debtToSettle, hpbPrice);
+                    collateral_     -= collateralUsed;
+                } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
+                    t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_);          // subtract from debt the corresponding t0 amount of deposit
+                    collateralUsed  = Maths.wdiv(depositToRemove, hpbPrice);
+                    collateral_     -= collateralUsed;
+                } else {                                                                    // constrained by collateral available
+                    depositToRemove = maxSettleableDebt;
+                    t0DebtToSettle_ -= Maths.wdiv(maxSettleableDebt, poolInflator_);
+                    collateralUsed  = collateral_;
+                    collateral_     = 0;
                 }
+            }
 
-                // there's still debt to cover but no collateral left to auction, use reserve or forgive amount form next HPB
-                if (remainingDebt != 0 && remainingCol == 0) {
-                    if (reserves_ != 0) {
-                        uint256 fromReserve =  Maths.min(remainingDebt, reserves_);
-                        reserves_     -= fromReserve;
-                        remainingDebt -= fromReserve;
-                    } else {
-                        hpbIndex           = Deposits.findIndexOfSum(deposits_, 1);
-                        uint256 hpbDeposit = Deposits.valueAt(deposits_, hpbIndex);
-                        uint256 forgiveAmt = Maths.min(remainingDebt, hpbDeposit);
+            buckets_[hpbIndex].collateral += collateralUsed;       // add settled collateral into bucket
+            Deposits.remove(deposits_, hpbIndex, depositToRemove); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
 
-                        remainingDebt -= forgiveAmt;
+            --bucketDepth_;
+        }
 
-                        Deposits.remove(deposits_, hpbIndex, forgiveAmt);
+        // if there's still debt and no collateral
+        if (t0DebtToSettle_ != 0 && collateral_ == 0) {
+            // settle debt from reserves
+            t0DebtToSettle_ -= Maths.min(t0DebtToSettle_, Maths.wdiv(reserves_, poolInflator_));
 
-                        if (buckets_[hpbIndex].collateral == 0 && forgiveAmt >= hpbDeposit) {
-                            // existing LPB and LP tokens for the bucket shall become unclaimable.
-                            buckets_[hpbIndex].lps = 0;
-                            buckets_[hpbIndex].bankruptcyTime = block.timestamp;
-                        }
+            // if there's still debt after settling from reserves then start to forgive amount from next HPB
+            while (bucketDepth_ != 0 && t0DebtToSettle_ != 0) { // loop through remaining buckets if there's still debt to settle
+                uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
+                uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
+                uint256 debtToSettle    = Maths.wmul(t0DebtToSettle_, poolInflator_);
+
+                if (depositToRemove >= debtToSettle) {                             // enough deposit in bucket to settle entire debt
+                    depositToRemove = debtToSettle;                                // remove only what's needed to settle the debt
+                    t0DebtToSettle_ = 0;                                           // no remaining debt to settle
+
+                } else {                                                           // not enough deposit to settle entire debt, we settle only deposit amount
+                    t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_); // subtract from remaining debt the corresponding t0 amount of deposit
+
+                    Buckets.Bucket storage hpbBucket = buckets_[hpbIndex];
+                    if (hpbBucket.collateral == 0) {                               // existing LPB and LP tokens for the bucket shall become unclaimable.
+                        hpbBucket.lps = 0;
+                        hpbBucket.bankruptcyTime = block.timestamp;
                     }
                 }
 
-                // no more debt to cover, remove auction from queue
-                if (remainingDebt == 0) {
-                    _removeAuction(self, borrower_);
-                    // TODO figure out what to do with remaining collateral in NFT case
-                    break;
-                }
+                Deposits.remove(deposits_, hpbIndex, depositToRemove);
 
                 --bucketDepth_;
             }
-
-            healedDebt_ = debtToHeal - remainingDebt;
-
-            // save remaining debt and collateral after auction clear action
-            loans_.borrowers[borrower_].t0debt     = Maths.wdiv(remainingDebt, poolInflator_);
-            loans_.borrowers[borrower_].collateral = remainingCol;
         }
-        else revert AuctionNotClearable();
-    }
 
+        return (collateral_, t0DebtToSettle_);
+    }
+    
     /**
      *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
      *  @param  borrower_         Borrower whose loan is being placed in queue.
@@ -175,7 +178,7 @@ library Auctions {
     ) internal {
 
         if (isCollateralized_ && self.liquidations[borrower_].kickTime != 0) {
-            _removeAuction(self, borrower_);
+            removeAuction(self, borrower_);
         }
     }
 
@@ -379,7 +382,7 @@ library Auctions {
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
      *  @param  borrower_ Auctioned borrower address.
      */
-    function _removeAuction(
+    function removeAuction(
         Data storage self,
         address borrower_
     ) internal {
