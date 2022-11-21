@@ -211,7 +211,7 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, Pool {
             params.isRewarded
         );
 
-        _transferCollateral(msg.sender, params.collateralTaken);
+        _transferCollateral(msg.sender, params.collateralAmount);
         console2.log("take collateral balance before swap: %s", IERC20Token(_getArgAddress(0)).balanceOf(msg.sender));
         console2.log("take quote balance before swap: %s", IERC20Token(_getArgAddress(20)).balanceOf(msg.sender));
 
