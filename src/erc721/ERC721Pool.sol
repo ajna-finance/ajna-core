@@ -106,9 +106,10 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*******************************/
 
     function take(
-        address borrowerAddress_,
-        uint256 collateral_,
-        bytes memory swapCalldata_
+        address        borrowerAddress_,
+        uint256        collateral_,
+        address        callee_,
+        bytes calldata data_
     ) external override {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
@@ -145,9 +146,6 @@ contract ERC721Pool is IERC721Pool, Pool {
         );
 
         // TODO: implement flashloan functionality
-        // Flash loan full amount to liquidate to borrower
-        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-        //msg.sender.call(swapCalldata_);
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
         _transferQuoteTokenFrom(msg.sender, params.quoteTokenAmount + excessQuoteToken);

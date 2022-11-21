@@ -175,16 +175,79 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    /**
-     *  @notice Performs take checks, calculates amounts and bpf reward / penalty.
-     *  @dev Internal support method assisting in the ERC20 and ERC721 pool take calls.
-     *  @param borrowerAddress_   Address of the borower take is being called upon.
-     *  @param collateral_        Max amount of collateral to take, submited by the taker.
-     */
-    function take(
+    function bucketTake(
         address borrowerAddress_,
-        uint256 collateral_,
-        bytes memory swapCalldata_
+        bool    depositTake_,
+        uint256 index_
+    ) external override {
+        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
+
+        PoolState memory poolState = _accruePoolInterest();
+        uint256 bucketDeposit = deposits.valueAt(index_);
+        if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
+
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        Auctions.TakeParams memory params = auctions.bucketTake(
+            borrowerAddress_,
+            borrower,
+            bucketDeposit,
+            bucketPrice,
+            depositTake_,
+            poolState.inflator
+        );
+
+        Buckets.Bucket storage bucket = buckets[index_];
+        uint256 bucketExchangeRate = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            bucketDeposit,
+            bucketPrice
+        );
+        // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+        Buckets.addLPs(
+            bucket,
+            msg.sender,
+            Maths.wrdivr(
+                Maths.wmul(params.collateralAmount, bucketPrice - params.auctionPrice),
+                bucketExchangeRate
+            )
+        );
+
+        uint256 depositAmountToRemove = params.quoteTokenAmount;
+        // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+        if (params.isRewarded) {
+            Buckets.addLPs(
+                bucket,
+                params.kicker,
+                Maths.wrdivr(params.bondChange, bucketExchangeRate)
+            );
+            depositAmountToRemove -= params.bondChange;
+        }
+
+        borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
+        poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
+        bucket.collateral    += params.collateralAmount; // collateral is added to the bucket’s claimable collateral
+
+        deposits.remove(index_, depositAmountToRemove); // quote tokens are removed from the bucket’s deposit
+
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+
+        emit BucketTake(
+            borrowerAddress_,
+            index_,
+            params.quoteTokenAmount,
+            params.collateralAmount,
+            params.bondChange,
+            params.isRewarded
+        );
+    }
+
+    function take(
+        address        borrowerAddress_,
+        uint256        collateral_,
+        address        callee_,
+        bytes calldata data_
     ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
@@ -211,16 +274,17 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, Pool {
             params.isRewarded
         );
 
-        _transferCollateral(msg.sender, params.collateralAmount);
-        console2.log("take collateral balance before swap: %s", IERC20Token(_getArgAddress(0)).balanceOf(msg.sender));
-        console2.log("take quote balance before swap: %s", IERC20Token(_getArgAddress(20)).balanceOf(msg.sender));
+        _transferCollateral(callee_, params.collateralAmount);
 
-        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-        // FIXME: This will only work if msg.sender is a contract.  Will need additional param for callee.
-        (bool success, ) = msg.sender.call(swapCalldata_);
-        if (!success) revert AuctionExternalCallFailed();
+        if (data_.length > 0) {
+            IAjnaTaker(callee_).atomicSwapCallback(
+                params.collateralAmount, 
+                params.quoteTokenAmount, 
+                data_
+            );
+        }
 
-        _transferQuoteTokenFrom(msg.sender, params.quoteTokenAmount);
+        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount);
     }
 
     /************************/

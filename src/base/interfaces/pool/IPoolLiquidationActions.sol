@@ -39,20 +39,37 @@ interface IPoolLiquidationActions {
 
     /**
      *  @notice Called by actors to purchase collateral from the auction in exchange for quote token.
-     *  @param  borrower     Address of the borower take is being called upon.
-     *  @param  maxAmount    Max amount of collateral that will be taken from the auction (max number of NFTs in case of ERC721 pool).
-     *  @param  swapCalldata If provided, delegate call will be invoked after sending collateral to msg.sender,
-     *                       such that sender will have a sufficient quote token balance prior to payment.
+     *  @param  borrower  Address of the borower take is being called upon.
+     *  @param  maxAmount Max amount of collateral that will be taken from the auction (max number of NFTs in case of ERC721 pool).
+     *  @param  callee    Identifies where collateral should be sent and where quote token should be obtained.
+     *  @param  data      If provided, take will assume the callee implements IAjnaTaker.  Take will send collateral to 
+     *                    callee before passing this data to IAjnaTaker.atomicSwapCallback.  If not provided, 
+     *                    the callback function will not be invoked.
      */
     function take(
-        address borrower,
-        uint256 maxAmount,
-        bytes memory swapCalldata
+        address        borrower,
+        uint256        maxAmount,
+        address        callee,
+        bytes calldata data
     ) external;
 
     /**
      *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
      */
     function withdrawBonds() external;
+}
 
+interface IAjnaTaker {
+    /**
+     *  @notice Called by Pool.take allowing a taker to externally swap collateral for quote token.
+     *  @param  collateralAmount Actual amount of collateral being taken.
+     *  @param  quoteAmountDue   Amount of quote token required to purchase collateralAmount at the current auction price.
+     *  @param  data             Custom calldata passed from taker's invocation to their callback.  This could be used 
+     *                           to inform the callee where to source liquidity for the swap.
+     */
+    function atomicSwapCallback(
+        uint256        collateralAmount, 
+        uint256        quoteAmountDue,
+        bytes calldata data
+    ) external;
 }
