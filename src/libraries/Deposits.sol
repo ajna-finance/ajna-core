@@ -101,7 +101,7 @@ library Deposits {
             // Note: we can't just multiply x_ by scaling[i_] due to rounding
             // We need to track the precice change in self.values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
-            x_ = Maths.wmul(newValue, self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
+            if (self.scaling[i_]!=0) x_ = Maths.wmul(newValue, self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
             self.values[i_] = newValue;
             i_ += lsb(i_);
         }
@@ -270,7 +270,7 @@ library Deposits {
             // Note: we can't just multiply x_ by scaling[i_] due to rounding
             // We need to track the precice change in self.values[i_] in order to ensure
             // obliterated indices remain zero after subsequent adding to related indices
-            x_ = Maths.wmul(self.values[i_], self.scaling[i_]) - Maths.wmul(newValue, self.scaling[i_]);
+            if (self.scaling[i_] != 0) x_ = Maths.wmul(self.values[i_], self.scaling[i_]) - Maths.wmul(newValue, self.scaling[i_]);
             self.values[i_] = newValue;
             i_ += lsb(i_);
         }
@@ -280,7 +280,7 @@ library Deposits {
         Data storage self,
         uint256 i_
     ) internal {
-	    if (i_ >= SIZE) revert InvalidIndex();
+        if (i_ >= SIZE) revert InvalidIndex();
 
         uint256 valuesI = self.values[i_];
         uint256 runningSum;
@@ -288,21 +288,31 @@ library Deposits {
         uint256 j = 1;
 
         while ((j & i_) == 0) {
-            console.log("first while");
+	    //            console.log("first while");
             runningSum += Maths.wmul(self.scaling[i_-j], self.values[i_-j]);
-            console.log("runningSum", runningSum);
+	    j = j<<1;
+	    //            console.log("runningSum", runningSum);
         }
         if (runningSum >= valuesI) {
             runningSum -= valuesI;
             while (i_ <= SIZE) {
-                console.log("2ndwhile", i_);
+		//                console.log("2ndwhile", i_);
                 newValue = self.values[i_] + runningSum;
                 if ( self.scaling[i_] != 0) runningSum=Maths.wmul(newValue,  self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
                 self.values[i_] = newValue;
                 i_ += lsb(i_);
             }
-        }
-        console.log("exit obliterate");
+        } else {
+            runningSum = valuesI - runningSum;
+            while (i_ <= SIZE) {
+		//                console.log("2ndwhile", i_);
+                newValue = self.values[i_] - runningSum;
+                if ( self.scaling[i_] != 0) runningSum=Maths.wmul(self.values[i_], self.scaling[i_]) - Maths.wmul(newValue,  self.scaling[i_]);
+                self.values[i_] = newValue;
+                i_ += lsb(i_);
+	    }
+	}
+	//        console.log("exit obliterate");
     }
 
     function scale(
