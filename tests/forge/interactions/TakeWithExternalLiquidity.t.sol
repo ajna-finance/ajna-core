@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import "@std/Test.sol";
-import "@std/console.sol";
 
 import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
@@ -28,22 +27,26 @@ contract TakeWithExternalLiquidityTest is Test {
     address internal _lender1;
 
     function setUp() external {
+        // create an Ajna pool
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
-        // 0x81fA6B9325b869eF7C70218A869e1b63d06A6328
         _ajnaPool = ERC20Pool(new ERC20PoolFactory().deployPool(WETH, USDC, 0.05 * 10**18));
 
+        // create some lenders and borrowers
         _borrower  = makeAddr("borrower");
         _borrower2 = makeAddr("borrower2");
         _lender    = makeAddr("lender");
         _lender1   = makeAddr("lender1");
 
+        // fund lenders with quote token
         deal(USDC, _lender, 120_000 * 1e18);
         deal(USDC, _lender1, 120_000 * 1e18);
 
+        // fund borrowers with collateral
         deal(WETH, _borrower,  4 * 1e18);
         deal(WETH, _borrower2, 1_000 * 1e18);
         deal(WETH, _lender1,  4 * 1e18);
 
+        // add liquidity to the Ajna pool
         vm.startPrank(_lender);
         usdc.approve(address(_ajnaPool), type(uint256).max);
         _ajnaPool.addQuoteToken(2_000 * 1e18, 3696);
@@ -53,6 +56,7 @@ contract TakeWithExternalLiquidityTest is Test {
         _ajnaPool.addQuoteToken(30_000 * 1e18, 3704);
         vm.stopPrank();
 
+        // borrower draws debt
         vm.startPrank(_borrower);
         weth.approve(address(_ajnaPool), type(uint256).max);
         usdc.approve(address(_ajnaPool), type(uint256).max);
@@ -60,6 +64,7 @@ contract TakeWithExternalLiquidityTest is Test {
         _ajnaPool.borrow(19.25 * 1e18, 3696);
         vm.stopPrank();
 
+        // borrower2 draws debt
         vm.startPrank(_borrower2);
         weth.approve(address(_ajnaPool), type(uint256).max);
         usdc.approve(address(_ajnaPool), type(uint256).max);
@@ -67,18 +72,20 @@ contract TakeWithExternalLiquidityTest is Test {
         _ajnaPool.borrow(7_980 * 1e18, 3700);
         vm.stopPrank();
 
+        // wait for borrower to become undercollateralized due to interest accrual
         skip(100 days);
         vm.prank(_lender);
+        // liquidate the borrower
         _ajnaPool.kick(_borrower);
+        // wait for the price to become profitable
         skip(6 hours);
     }
 
     function testTakeWithFlashLoan() external {
         BalancerUniswapTaker taker = new BalancerUniswapTaker();
 
-        // assert USDC balance before take
-        console.log("USDC starting balance", usdc.balanceOf(address(this)));
         assertEq(0, usdc.balanceOf(address(this)));
+        
         address[] memory tokens = new address[](2);
         tokens[0] = USDC;
         tokens[1] = WETH;
@@ -96,81 +103,26 @@ contract TakeWithExternalLiquidityTest is Test {
         );
         taker.take(tokens, amounts, data);
 
-        console.log("USDC ending balance", usdc.balanceOf(address(this)));
         assertGt(usdc.balanceOf(address(this)), 1000); // could vary
     }
 
-    function testTakeWithAtomicSwap() external {
-        // assert no USDC balance before take
-        address taker = makeAddr("taker");  // 0x93646Ca7a11660aF7d74e9B08ef0aA99D1a69D81
-        vm.makePersistent(taker);
-        changePrank(taker);
-
-        ISwapRouter router = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-        uint256 maxTakeAmount = 10 * 1e18;
-        weth.approve(address(router), maxTakeAmount);
-        usdc.approve(address(_ajnaPool), 100_000 * 1e18);
-
-        assertLt(_getAuctionPrice(_borrower), 1000 * 1e18);
-
-        // assemble calldata to swap WETH for USDC on Uniswap 
-        ISwapRouter.ExactInputSingleParams memory params =
-            ISwapRouter.ExactInputSingleParams({
-                tokenIn: WETH,
-                tokenOut: USDC,
-                fee: POOL_FEE,
-                recipient: taker,
-                deadline: block.timestamp,
-                amountIn: 2 * 1e18,
-                amountOutMinimum: 1,
-                sqrtPriceLimitX96: 0
-            });
-
-        // https://docs.uniswap.org/protocol/reference/periphery/interfaces/ISwapRouter#exactinputsingleparams
-        bytes memory swapCalldata = abi.encodeWithSignature("exactInputSingle((address,address,uint24,address,uint256,uint256,uint256,uint160))", 
-            params.tokenIn, 
-            params.tokenOut, 
-            params.fee,
-            params.recipient,
-            params.deadline,
-            params.amountIn,
-            params.amountOutMinimum,
-            params.sqrtPriceLimitX96);
-
-        if (true) {   // practice swap
-            deal(WETH, taker,  2 * 1e18);
-            uint256 usdcBalanceBefore = usdc.balanceOf(taker);
-
-            (bool success, ) = address(router).call(swapCalldata);
-            assertEq(success, true);
-
-            uint256 usdcBalanceAfter = usdc.balanceOf(taker);
-            assertGt(usdcBalanceAfter, usdcBalanceBefore);
-        } else {
-            // TODO: Need to pass uniswap address as callee somehow
-            _ajnaPool.take(_borrower, maxTakeAmount, swapCalldata);
-        }
-    }
-
     function testTakeFromContractWithAtomicSwap() external {
+        // instantiate a taker contract which implements IAjnaTaker
         UniswapTakeExample taker = new UniswapTakeExample();
         changePrank(address(taker));
+        assertEq(usdc.balanceOf(address(taker)), 0);
 
-        uint256 takeAmount = 2 * 1e18;  // CAUTION: must be <= amount of collateral available
+        // take the maximum amount of collateral from the auction
+        uint256 takeAmount = type(uint256).max;
         taker.approveToken(weth);
         weth.approve(address(taker), takeAmount);
-        usdc.approve(address(_ajnaPool), type(uint256).max);
+        usdc.approve(address(_ajnaPool), takeAmount);
 
-        bytes memory swapCalldata = abi.encodeWithSignature("swap(address,uint256)", 
-            address(_ajnaPool),
-            takeAmount);
+        // call take using taker contract
+        bytes memory data = abi.encode(address(_ajnaPool));
+        _ajnaPool.take(_borrower, takeAmount, address(taker), data);
 
-        _ajnaPool.take(_borrower, takeAmount, swapCalldata);
+        // confirm we earned some quote token
+        assertGt(usdc.balanceOf(address(taker)), 1000);
     }
-
-    function _getAuctionPrice(address borrower) internal view returns (uint256) {
-        (, , uint256 kickTime, uint256 kickMomp, , ) = _ajnaPool.auctionInfo(borrower);
-        return PoolUtils.auctionPrice(kickMomp, kickTime);
-    }
-
 }

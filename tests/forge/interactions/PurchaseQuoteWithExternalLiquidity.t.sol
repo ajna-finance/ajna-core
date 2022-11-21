@@ -23,7 +23,6 @@ contract PurchaseQuoteWithExternalLiquidityTest is Test {
 
     function setUp() external {
         vm.createSelectFork(vm.envString("ETH_RPC_URL"));
-        // 0x81fA6B9325b869eF7C70218A869e1b63d06A6328
         _ajnaPool = ERC20Pool(new ERC20PoolFactory().deployPool(WETH, USDC, 0.05 * 10**18));
         _lender   = makeAddr("lender");
 

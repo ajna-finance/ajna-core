@@ -278,8 +278,8 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, Pool {
 
         if (data_.length > 0) {
             IAjnaTaker(callee_).atomicSwapCallback(
-                params.collateralAmount, 
-                params.quoteTokenAmount, 
+                params.collateralAmount / collateralScale, 
+                params.quoteTokenAmount / _getArgUint256(40), 
                 data_
             );
         }

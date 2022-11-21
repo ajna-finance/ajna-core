@@ -4,9 +4,10 @@ pragma solidity 0.8.14;
 
 interface IAjnaPool {
     function take(
-        address borrower,
-        uint256 maxAmount,
-        bytes memory swapCalldata
+        address        borrower,
+        uint256        maxAmount,
+        address        callee,
+        bytes calldata data
     ) external;
 
     function addCollateral(

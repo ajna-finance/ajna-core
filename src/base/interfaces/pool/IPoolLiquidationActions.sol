@@ -64,8 +64,7 @@ interface IAjnaTaker {
      *  @notice Called by Pool.take allowing a taker to externally swap collateral for quote token.
      *  @param  collateralAmount Actual amount of collateral being taken.
      *  @param  quoteAmountDue   Amount of quote token required to purchase collateralAmount at the current auction price.
-     *  @param  data             Custom calldata passed from taker's invocation to their callback.  This could be used 
-     *                           to inform the callee where to source liquidity for the swap.
+     *  @param  data             Taker-provided calldata passed from taker's invocation to their callback.
      */
     function atomicSwapCallback(
         uint256        collateralAmount, 

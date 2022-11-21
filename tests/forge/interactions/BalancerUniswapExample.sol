@@ -12,7 +12,7 @@ contract BalancerUniswapTaker {
 
     address constant balancerAddress = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;
     ISwapRouter constant router      = ISwapRouter(0xE592427A0AEce92De3Edee1F18E0157C05861564);
-    uint24 constant POOL_FEE         = 3000;
+    uint24 constant UNISWAP_FEE      = 3000;
 
     struct TakeData {
         address taker;
@@ -22,7 +22,7 @@ contract BalancerUniswapTaker {
     }
     address private immutable owner;
 
-    constructor() public {
+    constructor() {
         owner = msg.sender;
     }
 
@@ -55,7 +55,7 @@ contract BalancerUniswapTaker {
         tokens[0].approve(decoded.ajnaPool, totalFunds);
 
         // take auction from Ajna pool, give USDC, receive WETH
-        IAjnaPool(decoded.ajnaPool).take(decoded.borrower, decoded.maxAmount, new bytes(0));
+        IAjnaPool(decoded.ajnaPool).take(decoded.borrower, decoded.maxAmount, address(this), new bytes(0));
         console.log("USDC balance after Ajna take", tokens[0].balanceOf(address(this)));
         console.log("WETH balance after Ajna take", tokens[1].balanceOf(address(this)));
 
@@ -66,7 +66,7 @@ contract BalancerUniswapTaker {
             ISwapRouter.ExactInputSingleParams({
                 tokenIn: address(tokens[1]),
                 tokenOut: address(tokens[0]),
-                fee: POOL_FEE,
+                fee: UNISWAP_FEE,
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: tokens[1].balanceOf(address(this)),
@@ -102,7 +102,7 @@ contract BalancerUniswapPurchaser {
     }
     address private immutable owner;
 
-    constructor() public {
+    constructor() {
         owner = msg.sender;
     }
 
