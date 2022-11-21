@@ -407,7 +407,7 @@ contract ERC721SubsetPoolBorrowTest is ERC721PoolBorrowTest {
             PoolState({
                 htp:                  0,
                 lup:                  BucketMath.MAX_PRICE,
-                poolSize:             30_005.105213052294392423 * 1e18,
+                poolSize:             30_005.105213052294390000 * 1e18,
                 pledgedCollateral:    0,
                 encumberedCollateral: 0,
                 poolDebt:             0,
