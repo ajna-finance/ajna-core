@@ -289,15 +289,12 @@ library Deposits {
         uint256 j = 1;
 
         while ((j & i_) == 0) {
-	    //            console.log("first while");
             runningSum += Maths.wmul(self.scaling[i_-j], self.values[i_-j]);
 	    j = j<<1;
-	    //            console.log("runningSum", runningSum);
         }
         if (runningSum >= valuesI) {
             runningSum -= valuesI;
             while (i_ <= SIZE) {
-		//                console.log("2ndwhile", i_);
                 newValue = self.values[i_] + runningSum;
                 if ( self.scaling[i_] != 0) runningSum=Maths.wmul(newValue,  self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
                 self.values[i_] = newValue;
@@ -306,14 +303,12 @@ library Deposits {
         } else {
             runningSum = valuesI - runningSum;
             while (i_ <= SIZE) {
-		//                console.log("2ndwhile", i_);
                 newValue = self.values[i_] - runningSum;
                 if ( self.scaling[i_] != 0) runningSum=Maths.wmul(self.values[i_], self.scaling[i_]) - Maths.wmul(newValue,  self.scaling[i_]);
                 self.values[i_] = newValue;
                 i_ += lsb(i_);
 	    }
 	}
-	//        console.log("exit obliterate");
     }
 
     function scale(
@@ -341,19 +336,16 @@ library Deposits {
     ) internal view returns (uint256 s_) {
         if (i_ >= SIZE) revert InvalidIndex();
 
-        uint256 j  =  i_;
-        uint256 k  =  1;
+        uint256 j  =  1;
         uint256 scaled;
 
         i_         += 1;
-        s_         =  self.values[i_];
-
-        while (j & k != 0) {
-            scaled = self.scaling[j];
-            s_ = scaled != 0 ? s_ - Maths.wmul(scaled, self.values[j]) : s_ - self.values[j];
-            j  = j - k;
-            k  = k << 1;
+        while (j & i_ == 0) {
+            scaled = self.scaling[i_-j];
+            s_ += scaled != 0 ? Maths.wmul(scaled, self.values[i_-j]) : self.values[i_-j];
+	    j = j << 1;
         }
+	s_ = self.values[i_]-s_;
         while (i_ <= SIZE) {
             scaled = self.scaling[i_];
             if (scaled != 0) s_ = Maths.wmul(scaled, s_);
