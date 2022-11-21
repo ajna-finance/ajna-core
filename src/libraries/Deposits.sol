@@ -320,7 +320,7 @@ library Deposits {
         Data storage self,
         uint256 i_
     ) internal view returns (uint256 a_) {
-        if (i_ >= SIZE) revert InvalidIndex();
+        if (i_ > SIZE) revert InvalidIndex();
 
         a_ = Maths.WAD;
         while (i_ <= SIZE) {
