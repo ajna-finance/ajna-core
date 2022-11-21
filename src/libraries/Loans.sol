@@ -79,7 +79,7 @@ library Loans {
                 Maths.wdiv(borrower_.t0debt, borrower_.collateral)
             );
         } else if (self.indices[borrowerAddress_] != 0) {
-            _remove(self, borrowerAddress_);
+            remove(self, borrowerAddress_);
         }
 
         // update borrower
@@ -160,7 +160,7 @@ library Loans {
      *  @param self      Holds tree loan data.
      *  @param borrower_ Borrower address whose loan is being updated or inserted.
      */
-    function _remove(Data storage self, address borrower_) internal {
+    function remove(Data storage self, address borrower_) internal {
         uint256 i_ = self.indices[borrower_];
         if (i_ == 0) revert NoLoan();
 
