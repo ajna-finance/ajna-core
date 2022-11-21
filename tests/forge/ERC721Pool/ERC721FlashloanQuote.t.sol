@@ -3,15 +3,15 @@ pragma solidity 0.8.14;
 
 import { ERC721HelperContract } from './ERC721DSTestPlus.sol';
 
-import '../../erc721/ERC721Pool.sol';
+import 'src/erc721/ERC721Pool.sol';
 
-import '../../libraries/BucketMath.sol';
-import '../../libraries/Maths.sol';
+import 'src/libraries/BucketMath.sol';
+import 'src/libraries/Maths.sol';
 
 contract ERC721PoolFlashloanTest is ERC721HelperContract {
     address internal _borrower;
     address internal _lender;
-    uint16  internal _bucketId;
+    uint    internal _bucketId;
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
