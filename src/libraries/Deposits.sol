@@ -281,7 +281,8 @@ library Deposits {
         uint256 i_
     ) internal {
         if (i_ >= SIZE) revert InvalidIndex();
-
+	i_+=1;
+	
         uint256 valuesI = self.values[i_];
         uint256 runningSum;
         uint256 newValue;

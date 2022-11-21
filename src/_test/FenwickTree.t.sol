@@ -97,7 +97,7 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(_tree.get(10), 0);
         assertEq(_tree.get(11), 0);
 
-	_tree.obliterate(10);
+	_tree.obliterate(9);
 
 	assertEq(_tree.get(9), 0);
     }
