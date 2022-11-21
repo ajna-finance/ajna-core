@@ -228,6 +228,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
     }
     
     function testArbTakeCollateralRestrict() external {
+    // function testArbTakeCollateralRestrict() external tearDown { FIXME: fails due to Fenwick dust bug
 
         skip(6 hours);
 
@@ -402,7 +403,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeDebtRestrict() external {
+    function testArbTakeDebtRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -502,6 +503,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
     }
 
     function testArbTakeDepositRestrict() external {
+    // function testArbTakeDepositRestrict() external tearDown { FIXME: fails with RemoveDepositLockedByAuctionDebt
 
         skip(5 hours);
 
@@ -610,6 +612,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
 
     function testArbTakeGTNeutralPrice() external {
+    // function testArbTakeGTNeutralPrice() external tearDown { FIXME:fails due to Fenwick remove dust amounts
 
         skip(3 hours);
 
