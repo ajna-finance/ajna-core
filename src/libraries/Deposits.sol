@@ -90,18 +90,18 @@ library Deposits {
         uint256 x_
     ) internal {
         if (i_ >= SIZE) revert InvalidIndex();
-	i_+=1;
+        i_+=1;
 
-	x_ = Maths.wdiv(x_, scale(self, i_));
+        x_ = Maths.wdiv(x_, scale(self, i_));
 
         while (i_ <= SIZE) {
-	    uint256 newValue = self.values[i_]+x_;
-	    // Note: we can't just multiply x_ by scaling[i_] due to rounding
-	    // We need to track the precice change in self.values[i_] in order to ensure
-	    // obliterated indices remain zero after subsequent adding to related indices
-	    x_ = Maths.wmul(newValue, self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
-	    self.values[i_] = newValue;
-	    i_ += lsb(i_);
+            uint256 newValue = self.values[i_]+x_;
+            // Note: we can't just multiply x_ by scaling[i_] due to rounding
+            // We need to track the precice change in self.values[i_] in order to ensure
+            // obliterated indices remain zero after subsequent adding to related indices
+            x_ = Maths.wmul(newValue, self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
+            self.values[i_] = newValue;
+            i_ += lsb(i_);
         }
     }
 
@@ -171,17 +171,17 @@ library Deposits {
         uint256 j;                         // Tracks range parents of starting node, i_
 
         uint256 scaledI;
-	uint256 valueI;
+        uint256 valueI;
 
         while (i_ > 0) {
             scaledI =  self.scaling[i_];
-	    valueI  =  self.values[i_];
+            valueI  =  self.values[i_];
             
             // Calc sum, will only be stored in range parents of starting node, i_
             if (scaledI != 0) {
-		// Note: we can't just multiply by f_-1 in the following line, as rounding will
-		// cause obliterated indices to have nonzero values.  Need to track the actual
-		// precise delta in the value array
+                // Note: we can't just multiply by f_-1 in the following line, as rounding will
+                // cause obliterated indices to have nonzero values.  Need to track the actual
+                // precise delta in the value array
                 sum += Maths.wmul(Maths.wmul(f_,scaledI), valueI) - Maths.wmul(scaledI, valueI);
                 // Apply scaling to all range parents less then starting node, i_
                 self.scaling[i_] = Maths.wmul(f_,scaledI);
@@ -200,10 +200,10 @@ library Deposits {
             //slither-disable-next-line incorrect-equality
             while ((lsbJ < lsb(i_)) || (i_ == 0 && j <= SIZE)) {
                 // Sum > 0 only when j is a range parent of starting node, i_.
-		valueI = self.values[j];
+                valueI = self.values[j];
                 self.values[j] += sum;
                 scaledI = self.scaling[j];
-		// again, in following line, need to be careful due to rounding
+                // again, in following line, need to be careful due to rounding
                 if (scaledI != 0) sum = Maths.wmul(valueI+sum, scaledI) - Maths.wmul(valueI, scaledI);
                 j += lsbJ;
                 lsbJ = lsb(j);
@@ -259,18 +259,18 @@ library Deposits {
         uint256 x_
     ) internal {
         if (i_ >= SIZE) revert InvalidIndex();
-	i_+=1;
+        i_+=1;
 
-	x_ = Maths.wdiv(x_, scale(self, i_));
+        x_ = Maths.wdiv(x_, scale(self, i_));
 
         while (i_ <= SIZE) {
-	    uint256 newValue = self.values[i_]-x_;
-	    // Note: we can't just multiply x_ by scaling[i_] due to rounding
-	    // We need to track the precice change in self.values[i_] in order to ensure
-	    // obliterated indices remain zero after subsequent adding to related indices
-	    x_ = Maths.wmul(self.values[i_], self.scaling[i_]) - Maths.wmul(newValue, self.scaling[i_]);
-	    self.values[i_] = newValue;
-	    i_ += lsb(i_);
+            uint256 newValue = self.values[i_]-x_;
+            // Note: we can't just multiply x_ by scaling[i_] due to rounding
+            // We need to track the precice change in self.values[i_] in order to ensure
+            // obliterated indices remain zero after subsequent adding to related indices
+            x_ = Maths.wmul(self.values[i_], self.scaling[i_]) - Maths.wmul(newValue, self.scaling[i_]);
+            self.values[i_] = newValue;
+            i_ += lsb(i_);
         }
     }
 
@@ -278,25 +278,25 @@ library Deposits {
 	Data storage self,
 	uint256 i_
     ) internal {
-	if (i_ >= SIZE) revert InvalidIndex();
-    
-	uint256 valuesI = self.values[i_];
-	uint256 runningSum;
-	uint256 newValue;
-	uint256 j = 1;
+	    if (i_ >= SIZE) revert InvalidIndex();
 
-	while ((j&i_)==0) {
-	    runningSum += Maths.wmul(self.scaling[i_-j], self.values[i_-j]);
-	}
-	if (runningSum >= valuesI) {
-	    runningSum -= valuesI;
-	    while (i_ <= SIZE) {
-		newValue = self.values[i_] + runningSum;
-		if ( self.scaling[i_] != 0) runningSum=Maths.wmul(newValue,  self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
-		self.values[i_] = newValue;
-		i_ += lsb(i_);
-	}
-	}
+        uint256 valuesI = self.values[i_];
+        uint256 runningSum;
+        uint256 newValue;
+        uint256 j = 1;
+
+        while ((j&i_)==0) {
+            runningSum += Maths.wmul(self.scaling[i_-j], self.values[i_-j]);
+        }
+        if (runningSum >= valuesI) {
+            runningSum -= valuesI;
+            while (i_ <= SIZE) {
+                newValue = self.values[i_] + runningSum;
+                if ( self.scaling[i_] != 0) runningSum=Maths.wmul(newValue,  self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
+                self.values[i_] = newValue;
+                i_ += lsb(i_);
+            }
+        }
     }
 
     function scale(

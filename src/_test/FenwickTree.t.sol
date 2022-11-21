@@ -134,6 +134,24 @@ contract FenwickTreeTest is DSTestPlus {
         assertLe(subMax - subMin, 3);
     }
 
+    function testFenwickRemovePrecision() external {
+
+        _tree.add(   3_696, 2_000 * 1e18);
+        _tree.add(   3_698, 5_000 * 1e18);
+        _tree.add(   3_700, 11_000 * 1e18);
+        _tree.add(   3_702, 25_000 * 1e18);
+        _tree.add(   3_704, 30_000 * 1e18);
+        _tree.mult(  3_701, 1.000054318968922188 * 1e18);
+        _tree.obliterate(3_696);
+        _tree.remove(3_700, 2_992.8 * 1e18);
+        _tree.mult(  3_701, 1.000070411233491284 * 1e18);
+        _tree.mult(  3_739, 1.000001510259590795 * 1e18);
+
+        assertEq(_tree.valueAt(3_700), 8_008.373442262808822463 * 1e18);
+        _tree.obliterate(3_700);
+        assertEq(_tree.valueAt(3_700), 0); // this fails as it is actually dust 2445
+    }
+
     /**
      *  @notice Fuzz tests additions and scaling values, testing findSum.
      */

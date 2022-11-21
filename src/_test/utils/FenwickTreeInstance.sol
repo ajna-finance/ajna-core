@@ -57,7 +57,11 @@ contract FenwickTreeInstance is DSTestPlus {
     }
 
     function obliterate(uint256 i_) public {
-	deposits.obliterate(i_);
+	    deposits.obliterate(i_);
+    }
+
+    function valueAt(uint256 i_) external view returns (uint256 s_) {
+        return deposits.valueAt(i_);
     }
 
     /**
