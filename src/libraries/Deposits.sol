@@ -4,6 +4,8 @@ pragma solidity 0.8.14;
 import './Maths.sol';
 import './PoolUtils.sol';
 
+import "@std/console.sol";
+
 library Deposits {
 
     uint256 internal constant SIZE = 8192;
@@ -275,8 +277,8 @@ library Deposits {
     }
 
     function obliterate(
-	Data storage self,
-	uint256 i_
+        Data storage self,
+        uint256 i_
     ) internal {
 	    if (i_ >= SIZE) revert InvalidIndex();
 
@@ -285,18 +287,22 @@ library Deposits {
         uint256 newValue;
         uint256 j = 1;
 
-        while ((j&i_)==0) {
+        while ((j & i_) == 0) {
+            console.log("first while");
             runningSum += Maths.wmul(self.scaling[i_-j], self.values[i_-j]);
+            console.log("runningSum", runningSum);
         }
         if (runningSum >= valuesI) {
             runningSum -= valuesI;
             while (i_ <= SIZE) {
+                console.log("2ndwhile", i_);
                 newValue = self.values[i_] + runningSum;
                 if ( self.scaling[i_] != 0) runningSum=Maths.wmul(newValue,  self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
                 self.values[i_] = newValue;
                 i_ += lsb(i_);
             }
         }
+        console.log("exit obliterate");
     }
 
     function scale(
