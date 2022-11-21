@@ -12,6 +12,7 @@ library Deposits {
 
     error InvalidIndex();
     error InvalidScalingFactor();
+    error NegativeEntry();
 
     struct Data {
         uint256[8193] values;  // Array of values in the FenwickTree.
@@ -281,8 +282,8 @@ library Deposits {
         uint256 i_
     ) internal {
         if (i_ >= SIZE) revert InvalidIndex();
-	i_+=1;
-	
+        i_+=1;
+        
         uint256 valuesI = self.values[i_];
         uint256 runningSum;
         uint256 newValue;
@@ -290,25 +291,15 @@ library Deposits {
 
         while ((j & i_) == 0) {
             runningSum += Maths.wmul(self.scaling[i_-j], self.values[i_-j]);
-	    j = j<<1;
+            j = j<<1;
         }
-        if (runningSum >= valuesI) {
-            runningSum -= valuesI;
-            while (i_ <= SIZE) {
-                newValue = self.values[i_] + runningSum;
-                if ( self.scaling[i_] != 0) runningSum=Maths.wmul(newValue,  self.scaling[i_]) - Maths.wmul(self.values[i_], self.scaling[i_]);
-                self.values[i_] = newValue;
-                i_ += lsb(i_);
-            }
-        } else {
-            runningSum = valuesI - runningSum;
-            while (i_ <= SIZE) {
-                newValue = self.values[i_] - runningSum;
-                if ( self.scaling[i_] != 0) runningSum=Maths.wmul(self.values[i_], self.scaling[i_]) - Maths.wmul(newValue,  self.scaling[i_]);
-                self.values[i_] = newValue;
-                i_ += lsb(i_);
-	    }
-	}
+        runningSum = valuesI - runningSum;
+        while (i_ <= SIZE) {
+            newValue = self.values[i_] - runningSum;
+            if ( self.scaling[i_] != 0) runningSum=Maths.wmul(self.values[i_], self.scaling[i_]) - Maths.wmul(newValue,  self.scaling[i_]);
+            self.values[i_] = newValue;
+            i_ += lsb(i_);
+        }
     }
 
     function scale(
@@ -343,9 +334,9 @@ library Deposits {
         while (j & i_ == 0) {
             scaled = self.scaling[i_-j];
             s_ += scaled != 0 ? Maths.wmul(scaled, self.values[i_-j]) : self.values[i_-j];
-	    j = j << 1;
+            j = j << 1;
         }
-	s_ = self.values[i_]-s_;
+        s_ = self.values[i_]-s_;
         while (i_ <= SIZE) {
             scaled = self.scaling[i_];
             if (scaled != 0) s_ = Maths.wmul(scaled, s_);
