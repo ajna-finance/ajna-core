@@ -261,7 +261,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         }
         skip(2 hours);
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
-            ERC20Pool(address(_pool)).take(_borrowers[i], 100 * 1e18, new bytes(0));
+            ERC20Pool(address(_pool)).take(_borrowers[i], 100 * 1e18, kicker, new bytes(0));
         }
         vm.stopPrank();
     }
@@ -277,7 +277,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         }
         skip(2 hours);
         for (uint256 i; i < LOANS_COUNT - 1; i ++) {
-            ERC20Pool(address(_pool)).take(_borrowers[LOANS_COUNT - 1 - i], 100 * 1e18, new bytes(0));
+            ERC20Pool(address(_pool)).take(_borrowers[LOANS_COUNT - 1 - i], 100 * 1e18, kicker, new bytes(0));
         }
         vm.stopPrank();
     }

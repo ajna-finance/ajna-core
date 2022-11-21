@@ -324,7 +324,7 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
         _assertTokenTransferEvent(from, address(_pool), givenAmount);
-        _pool.take(borrower, maxCollateral, new bytes(0));
+        _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
     function _takeReserves(
@@ -966,7 +966,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('TakeNotPastCooldown()'));
-        _pool.take(borrower, maxCollateral, new bytes(0));
+        _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
     function _assertTakeDebtUnderMinPoolDebtRevert(
@@ -976,7 +976,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.AmountLTMinDebt.selector);
-        _pool.take(borrower, maxCollateral, new bytes(0));
+        _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
     function _assertTakeInsufficentCollateralRevert(
@@ -986,7 +986,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        _pool.take(borrower, maxCollateral, new bytes(0));
+        _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
     function _assertTakeNoAuctionRevert(
@@ -996,7 +996,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('NoAuction()'));
-        _pool.take(borrower, maxCollateral, new bytes(0));
+        _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
     function _assertTakeReservesNoAuctionRevert(
