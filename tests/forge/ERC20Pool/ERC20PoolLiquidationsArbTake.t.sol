@@ -226,9 +226,8 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             }
         );
     }
-    
-    function testArbTakeCollateralRestrict() external {
-    // function testArbTakeCollateralRestrict() external tearDown { FIXME: fails due to Fenwick dust bug
+
+    function testArbTakeCollateralRestrict() external tearDown {
 
         skip(6 hours);
 
@@ -361,7 +360,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         // reserves should remain the same after arb take
         _assertReserveAuction(
            {
-               reserves:                   23.908406501703106407 * 1e18,
+               reserves:                   23.908406501703106402 * 1e18,
                claimableReserves :         0,
                claimableReservesRemaining: 0,
                auctionPrice:               0,

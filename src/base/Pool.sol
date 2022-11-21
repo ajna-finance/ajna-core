@@ -193,7 +193,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         else {
             redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
         }
-        deposits.remove(index_, removedAmount_);  // update FenwickTree
+
+        if (removedAmount_ == deposit) deposits.obliterate(index_);  // update FenwickTree
+        else deposits.remove(index_, removedAmount_);  // update FenwickTree
 
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
