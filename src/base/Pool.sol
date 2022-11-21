@@ -14,6 +14,8 @@ import '../libraries/Loans.sol';
 import '../libraries/Maths.sol';
 import '../libraries/PoolUtils.sol';
 
+import '@std/console.sol';
+
 abstract contract Pool is Clone, Multicall, IPool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
@@ -452,6 +454,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         t0poolDebt      += kickPenalty;
         t0DebtInAuction += borrower.t0debt;
 
+        // not needed here since always using external funds in this flow
+        // if (_htp(poolState.inflator) > lup) revert LUPBelowHTP();
+
         // update pool state
         _updatePool(poolState, lup);
 
@@ -505,6 +510,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         t0poolDebt      += kickPenalty;
         t0DebtInAuction += borrower.t0debt;
 
+        // UNIQUE BELOW HERE
+
         // check bucket not currently frozen
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
@@ -531,7 +538,8 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // update lup following deposit removal
         uint256 newLup = _lup(poolState.accruedDebt);
-        if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
+        // FIXME: if not performing the htp > lup check, how to ensure deposit removal safety?
+        // if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
         // update bucket LPs balance
         bucket.lps -= lpTokenReq;

@@ -301,6 +301,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             })
         );
 
+        // TODO: test reverts -> if borrower that's being liquidated's bucket is used for kickWithLPB lp source, then should revert with auctionDebtLocked
         _kickWithLPB(
             {
                 from:           _lender,
