@@ -784,9 +784,10 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     function auctionInfo(
         address borrower_
-    ) external view override returns (address, uint256, uint256, uint256, address, address) {
+    ) external view override returns (address, uint256, uint256, uint256, uint256, address, address) {
         return (
             auctions.liquidations[borrower_].kicker,
+            auctions.liquidations[borrower_].bondSize,
             auctions.liquidations[borrower_].bondFactor,
             auctions.liquidations[borrower_].kickTime,
             auctions.liquidations[borrower_].kickMomp,

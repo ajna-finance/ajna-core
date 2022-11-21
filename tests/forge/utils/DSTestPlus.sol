@@ -344,6 +344,7 @@ abstract contract DSTestPlus is Test {
     function _assertAuction(AuctionState memory state_) internal {
         (
             address auctionKicker,
+            uint256 auctionBondSize,
             uint256 auctionBondFactor,
             uint256 auctionKickTime,
             uint256 auctionKickMomp,
@@ -358,7 +359,8 @@ abstract contract DSTestPlus is Test {
 
         assertEq(auctionKickTime != 0,                                     state_.active);
         assertEq(auctionKicker,                                            state_.kicker);
-        assertEq(lockedBonds,                                              state_.bondSize);
+        assertGe(lockedBonds,                                              auctionBondSize);
+        assertEq(auctionBondSize,                                          state_.bondSize);
         assertEq(auctionBondFactor,                                        state_.bondFactor);
         assertEq(auctionKickTime,                                          state_.kickTime);
         assertEq(auctionKickMomp,                                          state_.kickMomp);
