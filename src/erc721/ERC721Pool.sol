@@ -2,10 +2,11 @@
 
 pragma solidity 0.8.14;
 
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IERC721Pool.sol';
 import '../base/Pool.sol';
 
-contract ERC721Pool is IERC721Pool, Pool {
+contract ERC721Pool is ReentrancyGuard, IERC721Pool, Pool {
     using Auctions for Auctions.Data;
     using Loans    for Loans.Data;
 
@@ -110,7 +111,7 @@ contract ERC721Pool is IERC721Pool, Pool {
         uint256        collateral_,
         address        callee_,
         bytes calldata data_
-    ) external override {
+    ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
@@ -145,16 +146,22 @@ contract ERC721Pool is IERC721Pool, Pool {
             params.isRewarded
         );
 
-        // TODO: implement flashloan functionality
+        // transfer rounded collateral from pool to taker
+        _transferFromPoolToSender(borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
+
+        if (data_.length > 0) {
+            IAjnaTaker(callee_).atomicSwapCallback(
+                collateralTaken / 1e18, 
+                params.quoteTokenAmount / _getArgUint256(40), 
+                data_
+            );
+        }
 
         // transfer from taker to pool the amount of quote tokens needed to cover collateral auctioned (including excess for rounded collateral)
-        _transferQuoteTokenFrom(msg.sender, params.quoteTokenAmount + excessQuoteToken);
+        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount + excessQuoteToken);
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
-
-        // transfer rounded collateral from pool to taker
-        _transferFromPoolToSender(borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
     }
 
 

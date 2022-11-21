@@ -62,8 +62,10 @@ interface IPoolLiquidationActions {
 interface IAjnaTaker {
     /**
      *  @notice Called by Pool.take allowing a taker to externally swap collateral for quote token.
-     *  @param  collateralAmount Actual amount of collateral being taken.
-     *  @param  quoteAmountDue   Amount of quote token required to purchase collateralAmount at the current auction price.
+     *  @param  collateralAmount For fungible pools, the denormalized amount of collateral being taken.
+     *                           For nonfungible pools, the number of NFTs being taken.
+     *  @param  quoteAmountDue   Denormalized amount of quote token required to purchase collateralAmount at the 
+     *                           current auction price.
      *  @param  data             Taker-provided calldata passed from taker's invocation to their callback.
      */
     function atomicSwapCallback(

@@ -2,7 +2,6 @@
 
 pragma solidity 0.8.14;
 
-import "forge-std/console2.sol";
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IERC20Pool.sol';
 import '../base/Pool.sol';
