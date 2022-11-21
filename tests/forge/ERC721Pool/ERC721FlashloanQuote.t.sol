@@ -12,6 +12,7 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
     address internal _borrower;
     address internal _lender;
     uint    internal _bucketId;
+    uint    internal _bucketPrice;
 
     function setUp() external {
         _borrower  = makeAddr("borrower");
@@ -26,8 +27,9 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
         _mintAndApproveCollateralTokens(_borrower, 1);
 
         // lender adds liquidity and borrower draws debt
-        _bucketId = PoolUtils.priceToIndex(0.50 * 1e18);
-        assertEq(_bucketId, 4444);
+        _bucketPrice = 0.499939458928274853 * 1e18;
+        _bucketId = PoolUtils.priceToIndex(_bucketPrice);
+        assertEq(_bucketId, 4295);
         _addLiquidity(
             {
                 from:   _lender,
@@ -52,12 +54,13 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
                 from:       _borrower,
                 amount:     0.25 * 1e18,
                 indexLimit: _bucketId,
-                newLup:     _bucketId
+                newLup:     _bucketPrice
             }
         );
         (uint256 poolDebt,,) = _pool.debtInfo();
-        assertEq(poolDebt, 0.2555 * 1e18);
+        assertEq(poolDebt, 0.250240384615384616 * 1e18);
     }
 
-    // TODO: write tests
+    function testQuoteTokenFlashloan() external tearDown {
+    }
 }
