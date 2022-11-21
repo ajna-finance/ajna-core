@@ -235,25 +235,164 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     }
 
-    function skiptestTakeLoanColConstraintBpfPosNoResidual () external {
+    function skipTestTakeLoanColConstraintBpfPosNoResidual () external {
+
+        // In order to trigger the loan collateral as constraint the AP should be as high as possible while BPF is still positive
         skip(6 hours);
+
+        _assertPool(
+            PoolState({
+                htp:                  9.901856025849255254 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             73_118.781595119199960000 * 1e18,
+                pledgedCollateral:    1_002 * 1e18,
+                encumberedCollateral: 1_028.299538494119214286 * 1e18,
+                poolDebt:             9_996.404051576968397807 * 1e18,
+                actualUtilization:    0 * 1e18,
+                targetUtilization:    1.026215413990712532 * 1e18,
+                minDebtAmount:        999.640405157696839781 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 6 hours
+            })
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          98.533942419792216457 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 6 hours,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 98.533942419792216457 * 1e18,
+                auctionPrice:      9.721295865031779616 * 1e18,
+                debtInAuction:     9_976.561670003961916237 * 1e18,
+                thresholdPrice:    9.976869171506632084 * 1e18
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_976.869171506632084967 * 1e18,
+                borrowerCollateral:        1_000.000000000000000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerCollateralization: 0.974383416071571307 * 1e18
+            }
+        );
+
 
         // BPF Positive, Loan collateral constraint
         _take(
             {
                 from:            _lender,
                 borrower:        _borrower2,
-                maxCollateral:   1_000 * 1e18,
-                bondChange:      95.268699477311440237 * 1e18,
-                givenAmount:     9_526.869947731144023680 * 1e18,
-                collateralTaken: 980 * 1e18,
+                maxCollateral:   1_001 * 1e18,
+                bondChange:      97.212958650317796160 * 1e18,
+                givenAmount:     9_721.295865031779616000 * 1e18,
+                collateralTaken: 1_000 * 1e18,
                 isReward:        true
             }
         );
 
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          195746901070110012617,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 6 hours,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 195746901070110012617,
+                auctionPrice:      9.721295865031779616 * 1e18,
+                debtInAuction:     352786265125170265127,
+                thresholdPrice:    0
+            })
+        );
+
+
     }
 
-    function skiptestTakeCallerColConstraintBpfPosNoResidual () external {
+    function testTakeCallerColConstraintBpfPosNoResidual () external {
+        skip(6 hours);
+
+        // not working... assume the Price needs to be as high as possible but just under the BPF positive threshold. Can't get it to work.
+        _assertPool(
+            PoolState({
+                htp:                  9.901856025849255254 * 1e18,
+                lup:                  9.721295865031779605 * 1e18,
+                poolSize:             73_118.781595119199960000 * 1e18,
+                pledgedCollateral:    1_002 * 1e18,
+                encumberedCollateral: 1_028.299538494119214286 * 1e18,
+                poolDebt:             9_996.404051576968397807 * 1e18,
+                actualUtilization:    0 * 1e18,
+                targetUtilization:    1.026215413990712532 * 1e18,
+                minDebtAmount:        999.640405157696839781 * 1e18,
+                loans:                1,
+                maxBorrower:          address(_borrower),
+                interestRate:         0.045 * 1e18,
+                interestRateUpdate:   block.timestamp - 6 hours
+            })
+        );
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          98.533942419792216457 * 1e18,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 6 hours,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 98.533942419792216457 * 1e18,
+                auctionPrice:      9.721295865031779616 * 1e18,
+                debtInAuction:     9_976.561670003961916237 * 1e18,
+                thresholdPrice:    9.976869171506632084 * 1e18
+            })
+        );
+
+        _assertBorrower(
+            {
+                borrower:                  _borrower2,
+                borrowerDebt:              9_976.869171506632084967 * 1e18,
+                borrowerCollateral:        1_000.000000000000000 * 1e18,
+                borrowerMompFactor:        9.818751856078723036 * 1e18,
+                borrowerCollateralization: 0.974383416071571307 * 1e18
+            }
+        );
+
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   999.0 * 1e18,
+                bondChange:      97.115745691667478364 * 1e18,
+                givenAmount:     9_711.574569166747836384 * 1e18,
+                collateralTaken: 999.0 * 1e18,
+                isReward:        true
+            }
+        );        
+
+        _assertAuction(
+            AuctionState({
+                borrower:          _borrower2,
+                active:            true,
+                kicker:            _lender,
+                bondSize:          195649688111459694821,
+                bondFactor:        0.01 * 1e18,
+                kickTime:          block.timestamp - 6 hours,
+                kickMomp:          9.721295865031779605 * 1e18,
+                totalBondEscrowed: 195649688111459694821,
+                auctionPrice:      9.721295865031779616 * 1e18,
+                debtInAuction:     362410348031551726947,
+                thresholdPrice:    362410348031551726947
+            })
+        );
+
 
     }
 
@@ -472,7 +611,25 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
-    function skiptestTakeCallerDebtConstraintBpfPosResidual () external {}
+    function skipTestTakeCallerDebtConstraintBpfPosResidual () external {
+
+        // not working, is this the loan's debt constraint?
+        skip(10 hours);
+
+        // BPF Positive, Loan collateral constraint
+        _take(
+            {
+                from:            _lender,
+                borrower:        _borrower2,
+                maxCollateral:   1_000 * 1e18,
+                bondChange:      97.212958650317796160 * 1e18,
+                givenAmount:     9_721.295865031779616000 * 1e18,
+                collateralTaken: 1_000 * 1e18,
+                isReward:        true
+            }
+        );
+
+    }
     
     function testTakeGTAndLTNeutral() external {
 
