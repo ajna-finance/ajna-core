@@ -271,7 +271,9 @@ library Deposits {
         if (removeAmount_ == currentDeposit_) { // obliterate
             uint256 j = 1;
             while (j & index_ == 0) {
-                runningSum += Maths.wmul(self.scaling[index_ - j], self.values[index_ - j]);
+                uint256 scaling = self.scaling[index_ - j];
+                uint256 value   = self.values[index_ - j];
+                runningSum      += scaling != 0 ? Maths.wmul(scaling, value) : value;
                 j = j << 1;
             }
             runningSum = self.values[index_] - runningSum;
