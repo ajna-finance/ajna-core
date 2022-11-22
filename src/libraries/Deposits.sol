@@ -16,12 +16,6 @@ library Deposits {
         uint256[8193] scaling; // Array of values which scale (multiply) the FenwickTree accross indexes.
     }
 
-    function isDepositIndex(
-        uint256 index_
-    ) public pure returns (bool) {
-        return index_ <= SIZE;
-    }
-
     function accrueInterest(
         Data storage self,
         uint256 debt_,

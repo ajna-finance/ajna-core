@@ -227,7 +227,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 indexesLength = indexes_.length;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            if (!Deposits.isDepositIndex(indexes_[i])) revert InvalidIndex();
+            if (indexes_[i] > 8192 ) revert InvalidIndex();
 
             uint256 transferAmount = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
             if (transferAmount == 0) revert NoAllowance();
