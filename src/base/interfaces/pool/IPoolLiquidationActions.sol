@@ -42,8 +42,8 @@ interface IPoolLiquidationActions {
      *  @param  borrower  Address of the borower take is being called upon.
      *  @param  maxAmount Max amount of collateral that will be taken from the auction (max number of NFTs in case of ERC721 pool).
      *  @param  callee    Identifies where collateral should be sent and where quote token should be obtained.
-     *  @param  data      If provided, take will assume the callee implements IAjnaTaker.  Take will send collateral to 
-     *                    callee before passing this data to IAjnaTaker.atomicSwapCallback.  If not provided, 
+     *  @param  data      If provided, take will assume the callee implements IERC*Taker.  Take will send collateral to 
+     *                    callee before passing this data to IERC*Taker.atomicSwapCallback.  If not provided, 
      *                    the callback function will not be invoked.
      */
     function take(
@@ -57,20 +57,4 @@ interface IPoolLiquidationActions {
      *  @notice Called by kickers to withdraw their auction bonds (the amount of quote tokens that are not locked in active auctions).
      */
     function withdrawBonds() external;
-}
-
-interface IAjnaTaker {
-    /**
-     *  @notice Called by Pool.take allowing a taker to externally swap collateral for quote token.
-     *  @param  collateralAmount For fungible pools, the denormalized amount of collateral being taken.
-     *                           For nonfungible pools, the number of NFTs being taken.
-     *  @param  quoteAmountDue   Denormalized amount of quote token required to purchase collateralAmount at the 
-     *                           current auction price.
-     *  @param  data             Taker-provided calldata passed from taker's invocation to their callback.
-     */
-    function atomicSwapCallback(
-        uint256        collateralAmount, 
-        uint256        quoteAmountDue,
-        bytes calldata data
-    ) external;
 }

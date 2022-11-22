@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IERC20Pool.sol';
+import './interfaces/IERC20Taker.sol';
 import '../base/Pool.sol';
 
 contract ERC20Pool is ReentrancyGuard, IERC20Pool, Pool {
@@ -276,7 +277,7 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, Pool {
         _transferCollateral(callee_, params.collateralAmount);
 
         if (data_.length > 0) {
-            IAjnaTaker(callee_).atomicSwapCallback(
+            IERC20Taker(callee_).atomicSwapCallback(
                 params.collateralAmount / collateralScale, 
                 params.quoteTokenAmount / _getArgUint256(40), 
                 data_

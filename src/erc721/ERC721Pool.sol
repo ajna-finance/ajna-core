@@ -4,6 +4,7 @@ pragma solidity 0.8.14;
 
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IERC721Pool.sol';
+import './interfaces/IERC721Taker.sol';
 import '../base/Pool.sol';
 
 contract ERC721Pool is ReentrancyGuard, IERC721Pool, Pool {
@@ -147,11 +148,22 @@ contract ERC721Pool is ReentrancyGuard, IERC721Pool, Pool {
         );
 
         // transfer rounded collateral from pool to taker
-        _transferFromPoolToSender(borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
+        uint256[] storage borrowerTokens = borrowerTokenIds[borrowerAddress_];
+        uint256[] memory  tokensTaken    = new uint256[](collateralTaken / 1e18);
+        uint256 tokensRemaining = borrowerTokens.length;
+        for (uint256 i = 0; i < collateralTaken / 1e18;) {
+            uint256 tokenId = borrowerTokens[--tokensRemaining]; // start with transferring the last token added in bucket
+            borrowerTokens.pop();
+            _transferNFT(address(this), callee_, tokenId);
+            tokensTaken[0] = tokenId;
+            unchecked {
+                ++i;
+            }
+        }
 
         if (data_.length > 0) {
-            IAjnaTaker(callee_).atomicSwapCallback(
-                collateralTaken / 1e18, 
+            IERC721Taker(callee_).atomicSwapCallback(
+                tokensTaken, 
                 params.quoteTokenAmount / _getArgUint256(40), 
                 data_
             );

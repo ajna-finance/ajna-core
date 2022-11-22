@@ -52,6 +52,10 @@ interface ISwapRouter {
         returns (uint256 amountOut);
 }
 
+interface INFTMarketPlace {
+    function sellNFT(address collection, uint tokenId) external;
+}
+
 interface IERC20 {
     function approve(address, uint256) external;
 
@@ -64,4 +68,12 @@ interface IWETH is IERC20 {
     function deposit(uint256) external;
 
     function withdraw(uint256) external;
+}
+
+interface IERC721 {
+    function safeTransferFrom(
+        address from,
+        address to,
+        uint256 tokenId
+    ) external;
 }

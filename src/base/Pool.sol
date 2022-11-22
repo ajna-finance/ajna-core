@@ -2,6 +2,7 @@
 
 pragma solidity 0.8.14;
 
+import "forge-std/console.sol";
 import '@clones/Clone.sol';
 import '@openzeppelin/contracts/utils/Multicall.sol';
 
