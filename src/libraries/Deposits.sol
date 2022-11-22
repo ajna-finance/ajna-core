@@ -253,55 +253,39 @@ library Deposits {
     /**
      *  @notice Decrease a node in the FenwickTree at an index.
      *  @dev    Starts at leaf/target and moved up towards root
-     *  @param  i_  The index pointing to the value
-     *  @param  x_  Amount to decrease the value by.
+     *  @param  index_          The deposit index.
+     *  @param  removeAmount_   Amount to decrease deposit by.
+     *  @param  currentDeposit_ Current deposit amount.
     */    
     function remove(
         Data storage self,
-        uint256 i_,
-        uint256 x_
+        uint256 index_,
+        uint256 removeAmount_,
+        uint256 currentDeposit_
     ) internal {
-        if (i_ >= SIZE) revert InvalidIndex();
+        if (index_ >= SIZE) revert InvalidIndex();
 
-        i_ += 1;
-        x_ = Maths.wdiv(x_, scale(self, i_));
-
-        while (i_ <= SIZE) {
-            uint256 value    = self.values[i_];
-            uint256 newValue = value - x_;
-            uint256 scaling  = self.scaling[i_];
-            // Note: we can't just multiply x_ by scaling[i_] due to rounding
-            // We need to track the precice change in self.values[i_] in order to ensure
-            // obliterated indices remain zero after subsequent adding to related indices
-            if (scaling != 0) x_ = Maths.wmul(value, scaling) - Maths.wmul(newValue, scaling);
-            self.values[i_] = newValue;
-            i_ += lsb(i_);
-        }
-    }
-
-    function obliterate(
-        Data storage self,
-        uint256 i_
-    ) internal {
-        if (i_ >= SIZE) revert InvalidIndex();
-        
-        i_ += 1;
+        index_ += 1;
 
         uint256 runningSum;
-        uint256 j = 1;
-
-        while (j & i_ == 0) {
-            runningSum += Maths.wmul(self.scaling[i_-j], self.values[i_-j]);
-            j = j << 1;
+        if (removeAmount_ == currentDeposit_) { // obliterate
+            uint256 j = 1;
+            while (j & index_ == 0) {
+                runningSum += Maths.wmul(self.scaling[index_ - j], self.values[index_ - j]);
+                j = j << 1;
+            }
+            runningSum = self.values[index_] - runningSum;
+        } else {
+            runningSum = Maths.wdiv(removeAmount_, scale(self, index_));
         }
-        runningSum = self.values[i_] - runningSum;
-        while (i_ <= SIZE) {
-            uint256 value    = self.values[i_];
+
+        while (index_ <= SIZE) {
+            uint256 value    = self.values[index_];
             uint256 newValue = value - runningSum;
-            uint256 scaling  = self.scaling[i_];
+            uint256 scaling  = self.scaling[index_];
             if (scaling != 0) runningSum = Maths.wmul(value, scaling) - Maths.wmul(newValue,  scaling);
-            self.values[i_] = newValue;
-            i_ += lsb(i_);
+            self.values[index_] = newValue;
+            index_ += lsb(index_);
         }
     }
 

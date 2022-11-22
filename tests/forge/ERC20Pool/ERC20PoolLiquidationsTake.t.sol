@@ -853,8 +853,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    11_000 * 1e27,
                 collateral:   0,
-                deposit:      8_891.790463124946990051 * 1e18,
-                exchangeRate: 0.808344587556813362731909090 * 1e27
+                deposit:      8_891.790463124946989056 * 1e18,
+                exchangeRate: 0.808344587556813362641454545 * 1e27
             }
         );
         _assertLenderLpBalance(
@@ -1096,7 +1096,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
-    function testLenderForcedExit() external {
+    function testLenderForcedExit() external tearDown {
 
         skip(25 hours);
         
@@ -1297,7 +1297,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             PoolState({
                 htp:                  7.991488192808991114 * 1e18,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             63_008.836766669707728354 * 1e18,
+                poolSize:             63_008.836766669707730070 * 1e18,
                 pledgedCollateral:    1_001.746878914360183483 * 1e18,
                 encumberedCollateral: 821.863722498661263922 * 1e18,
                 poolDebt:             7_989.580407145861717463 * 1e18,
@@ -1327,7 +1327,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    0,
                 collateral:   0,          
-                deposit:      0.000000000000002445 * 1e18, // FIXME: should be 0, Fenwick remove bug
+                deposit:      0,
                 exchangeRate: 1 * 1e27
             }
         );
@@ -1385,7 +1385,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             PoolState({
                 htp:                  7.991488192808991114 * 1e18,
                 lup:                  0.000000099836282890 * 1e18,
-                poolSize:             7_990.380260129405180891 * 1e18,
+                poolSize:             7_990.380260129405182606 * 1e18,
                 pledgedCollateral:    1_001.746878914360183483 * 1e18,
                 encumberedCollateral: 80036071881.142911713937910614 * 1e18,
                 poolDebt:             7_990.503913730158190391 * 1e18,
@@ -1422,11 +1422,11 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             PoolState({
                 htp:                  7.993335753787741967 * 1e18,
                 lup:                  9.529276179422528643 * 1e18,
-                poolSize:             7_991.297334721700255725 * 1e18,
+                poolSize:             7_991.297334721700255549 * 1e18,
                 pledgedCollateral:    1_001.746878914360183483 * 1e18,
                 encumberedCollateral: 838.521600516187410670 * 1e18,
                 poolDebt:             7_990.503913730158190391 * 1e18,
-                actualUtilization:    0.999900714369856482 * 1e18,
+                actualUtilization:    0.999900714369856481 * 1e18,
                 targetUtilization:    0.830320609473953071 * 1e18,
                 minDebtAmount:        799.050391373015819039 * 1e18,
                 loans:                1,
@@ -1511,7 +1511,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             PoolState({
                 htp:                  0,
                 lup:                  0.000000099836282890 * 1e18,
-                poolSize:             8_105.800538156165693723 * 1e18,
+                poolSize:             8_105.800538156165696386 * 1e18,
                 pledgedCollateral:    1.746878914360183483 * 1e18,
                 encumberedCollateral: 82_095_199_864.949941479526972802 * 1e18,
                 poolDebt:             8_196.079597628232153239 * 1e18,
@@ -1554,7 +1554,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             PoolState({
                 htp:                  0,
                 lup:                  1_004_968_987.606512354182109771 * 1e18,
-                poolSize:             9.176155018749408973 * 1e18,
+                poolSize:             9.176155018749412335 * 1e18,
                 pledgedCollateral:    1.746878914360183483 * 1e18,
                 encumberedCollateral: 0,
                 poolDebt:             0,
@@ -1573,15 +1573,15 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_52,
                 lpBalance:    7_989.987933044093783839063327613 * 1e27,
                 collateral:   0,          
-                deposit:      9.176155018749414997 * 1e18,
-                exchangeRate: 1_148_456.680491306468708015 * 1e18
+                deposit:      9.176155018749412335 * 1e18,
+                exchangeRate: 1_148_456.680491306135541054 * 1e18
             }
         );
 
         _removeLiquidity(
             {
                 from:     _lender,
-                amount:   9.176155018749414997 * 1e18,
+                amount:   9.176155018749412335 * 1e18,
                 penalty:  0,
                 index:    _i9_52,
                 newLup:   1_004_968_987.606512354182109771 * 1e18,
@@ -1602,7 +1602,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_81,
                 lpBalance:    0,
                 collateral:   0,          
-                deposit:      1, // FIXME: should be 0, Fenwick remove bug
+                deposit:      0,
                 exchangeRate: 1 * 1e27
             }
         );
@@ -1611,7 +1611,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_72,
                 lpBalance:    0,
                 collateral:   0,          
-                deposit:      2480, // FIXME: should be 0, Fenwick remove bug
+                deposit:      0,
                 exchangeRate: 1 * 1e27
             }
         );
@@ -1629,7 +1629,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 index:        _i9_52,
                 lpBalance:    0,
                 collateral:   0,          
-                deposit:      4, // FIXME: should be 0, Fenwick remove bug
+                deposit:      0,
                 exchangeRate: 1 * 1e27
             }
         );

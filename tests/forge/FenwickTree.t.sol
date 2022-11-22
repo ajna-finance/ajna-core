@@ -46,7 +46,7 @@ contract FenwickTreeTest is DSTestPlus {
     /**
      *  @notice Tests additions and scaling values in the tree.
      */
-   function testFenwickScaled() external {
+    function testFenwickScaled() external {
         _tree.add(5, 100 * 1e18);
         _tree.add(9, 200 * 1e18);
         _tree.mult(5, 1.1 * 1e18);
@@ -97,9 +97,8 @@ contract FenwickTreeTest is DSTestPlus {
         assertEq(_tree.get(10), 0);
         assertEq(_tree.get(11), 0);
 
-	_tree.obliterate(9);
-
-	assertEq(_tree.get(9), 0);
+        _tree.obliterate(9);
+        assertEq(_tree.get(9), 0);
     }
 
     /**
@@ -135,7 +134,6 @@ contract FenwickTreeTest is DSTestPlus {
     }
 
     function testFenwickRemovePrecision() external {
-
         _tree.add(   3_696, 2_000 * 1e18);
         _tree.add(   3_698, 5_000 * 1e18);
         _tree.add(   3_700, 11_000 * 1e18);

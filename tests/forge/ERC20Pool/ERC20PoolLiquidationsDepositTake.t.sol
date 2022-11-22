@@ -226,9 +226,8 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             }
         );
     }
-    
-    function testDepositTakeCollateralRestrict() external {
-    // function testDepositTakeCollateralRestrict() external tearDown { FIXME: fails due to Fenwick remove dust
+
+    function testDepositTakeCollateralRestrict() external tearDown {
         skip(6 hours);
 
         _assertLenderLpBalance(
@@ -360,7 +359,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         // reserves should remain the same after deposit take
         _assertReserveAuction(
            {
-               reserves:                   23.908406501703106407 * 1e18,
+               reserves:                   23.908406501703106401 * 1e18,
                claimableReserves :         0,
                claimableReservesRemaining: 0,
                auctionPrice:               0,
@@ -502,7 +501,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
 
         _assertReserveAuction(
             {
-                reserves:                   24.097734789604532721 * 1e18,
+                reserves:                   24.097734789604532720 * 1e18,
                 claimableReserves :         0,
                 claimableReservesRemaining: 0,
                 auctionPrice:               0,
@@ -512,7 +511,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
     }
 
     function testDepositTakeDepositRestrict() external {
-    // function testDepositTakeDepositRestrict() external tearDown { FIXME: fails with RemoveDepositLockedByAuctionDebt
+    // function testDepositTakeDepositRestrict() external tearDown { // FIXME: dust issue solved, now failing with RemoveDepositLockedByAuctionDebt
 
         skip(5 hours);
 

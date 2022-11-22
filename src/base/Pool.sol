@@ -121,7 +121,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             PoolUtils.indexToPrice(fromIndex_)
         );
 
-        deposits.remove(fromIndex_, quoteTokenAmountToMove);
+        deposits.remove(fromIndex_, quoteTokenAmountToMove, deposits.valueAt(fromIndex_)); // FIXME load deposit only once
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
         quoteTokenAmountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
@@ -194,8 +194,7 @@ abstract contract Pool is Clone, Multicall, IPool {
             redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
         }
 
-        if (removedAmount_ == deposit) deposits.obliterate(index_);  // update FenwickTree
-        else deposits.remove(index_, removedAmount_);  // update FenwickTree
+        deposits.remove(index_, removedAmount_, deposit);  // update FenwickTree
 
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();

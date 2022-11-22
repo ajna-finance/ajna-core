@@ -492,7 +492,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _assertReserveAuction(
             {
-                reserves:                   24.097734789604532721 * 1e18,
+                reserves:                   24.097734789604532720 * 1e18,
                 claimableReserves :         0,
                 claimableReservesRemaining: 0,
                 auctionPrice:               0,

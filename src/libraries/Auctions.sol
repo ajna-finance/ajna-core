@@ -101,22 +101,23 @@ library Auctions {
         // auction has debt to cover with remaining collateral
         while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
             uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
-            uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
+            uint256 hpbDeposit      = Deposits.valueAt(deposits_, hpbIndex);
+            uint256 depositToRemove = hpbDeposit;
             uint256 collateralUsed;
 
             {
-                uint256 hpbPrice          = PoolUtils.indexToPrice(hpbIndex);
+                // uint256 hpbPrice          = PoolUtils.indexToPrice(hpbIndex); //FIXME compute hpb price only once
                 uint256 debtToSettle      = Maths.wmul(t0DebtToSettle_, poolInflator_);     // current debt to be settled
-                uint256 maxSettleableDebt = Maths.wmul(collateral_, hpbPrice);              // max debt that can be settled with existing collateral
+                uint256 maxSettleableDebt = Maths.wmul(collateral_, PoolUtils.indexToPrice(hpbIndex));              // max debt that can be settled with existing collateral
 
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
                     depositToRemove = debtToSettle;                                         // remove only what's needed to settle the debt
                     t0DebtToSettle_ = 0;                                                    // no remaining debt to settle
-                    collateralUsed  = Maths.wdiv(debtToSettle, hpbPrice);
+                    collateralUsed  = Maths.wdiv(debtToSettle, PoolUtils.indexToPrice(hpbIndex));
                     collateral_     -= collateralUsed;
                 } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
                     t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_);          // subtract from debt the corresponding t0 amount of deposit
-                    collateralUsed  = Maths.wdiv(depositToRemove, hpbPrice);
+                    collateralUsed  = Maths.wdiv(depositToRemove, PoolUtils.indexToPrice(hpbIndex));
                     collateral_     -= collateralUsed;
                 } else {                                                                    // constrained by collateral available
                     depositToRemove = maxSettleableDebt;
@@ -126,8 +127,8 @@ library Auctions {
                 }
             }
 
-            buckets_[hpbIndex].collateral += collateralUsed;       // add settled collateral into bucket
-            Deposits.remove(deposits_, hpbIndex, depositToRemove); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+            buckets_[hpbIndex].collateral += collateralUsed;                   // add settled collateral into bucket
+            Deposits.remove(deposits_, hpbIndex, depositToRemove, hpbDeposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
 
             --bucketDepth_;
         }
@@ -140,7 +141,8 @@ library Auctions {
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
             while (bucketDepth_ != 0 && t0DebtToSettle_ != 0) { // loop through remaining buckets if there's still debt to settle
                 uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
-                uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
+                uint256 hpbDeposit      = Deposits.valueAt(deposits_, hpbIndex);
+                uint256 depositToRemove = hpbDeposit;
                 uint256 debtToSettle    = Maths.wmul(t0DebtToSettle_, poolInflator_);
 
                 if (depositToRemove >= debtToSettle) {                             // enough deposit in bucket to settle entire debt
@@ -157,7 +159,7 @@ library Auctions {
                     }
                 }
 
-                Deposits.remove(deposits_, hpbIndex, depositToRemove);
+                Deposits.remove(deposits_, hpbIndex, depositToRemove, hpbDeposit);
 
                 --bucketDepth_;
             }

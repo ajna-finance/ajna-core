@@ -223,8 +223,7 @@ contract ERC20Pool is IERC20Pool, Pool {
                 depositAmountToRemove -= params.bondChange;
             }
             // quote tokens are removed from the bucket’s deposit
-            if (bucketDeposit == depositAmountToRemove) deposits.obliterate(index_);
-            else deposits.remove(index_, depositAmountToRemove);
+            deposits.remove(index_, depositAmountToRemove, bucketDeposit);
         }
 
         borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
