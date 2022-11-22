@@ -861,6 +861,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 depositTime: _startTime
             }
         );
+
+        // TODO: assert pool state
     }
 
     function testTakeAndSettle() external {

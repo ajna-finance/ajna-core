@@ -377,7 +377,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         changePrank(operator);
         vm.expectRevert(IPoolErrors.RemoveDepositLockedByAuctionDebt.selector);
-        _pool.kickWithLPB(borrower, index);
+        _pool.kick(borrower, index);
     }
 }
 
