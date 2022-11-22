@@ -155,7 +155,7 @@ contract ERC721Pool is ReentrancyGuard, IERC721Pool, Pool {
             uint256 tokenId = borrowerTokens[--tokensRemaining]; // start with transferring the last token added in bucket
             borrowerTokens.pop();
             _transferNFT(address(this), callee_, tokenId);
-            tokensTaken[0] = tokenId;
+            tokensTaken[i] = tokenId;
             unchecked {
                 ++i;
             }
