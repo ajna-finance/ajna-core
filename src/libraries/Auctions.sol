@@ -459,7 +459,6 @@ library Auctions {
             borrowerDebt_,
             borrower_.collateral,
             liquidation_.neutralPrice,
-            poolInflator_,
             liquidation_.bondFactor,
             price_
         );

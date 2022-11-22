@@ -316,6 +316,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         loans.update(
             deposits,
             msg.sender,
+            true,
             borrower,
             poolState.accruedDebt,
             poolState.inflator,
@@ -382,7 +383,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         auctions.revertIfActive(borrowerAddress_);
 
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
-        if (borrower.t0debt == 0) revert NoDebt();
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -503,6 +503,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         loans.update(
             deposits,
             borrowerAddress_,
+            false,
             borrower,
             poolState.accruedDebt,
             poolState.inflator,
@@ -530,6 +531,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         loans.update(
             deposits,
             msg.sender,
+            true,
             borrower,
             poolState.accruedDebt,
             poolState.inflator,
@@ -573,6 +575,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         loans.update(
             deposits,
             borrowerAddress,
+            false,
             borrower,
             poolState.accruedDebt,
             poolState.inflator,

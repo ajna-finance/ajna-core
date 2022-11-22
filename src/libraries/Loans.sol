@@ -58,6 +58,7 @@ library Loans {
      *  @param self Holds tree loan data.
      *  @param deposits_            Pool deposits, used to calculate borrower MOMP factor.
      *  @param borrowerAddress_     Borrower's address to update.
+     *  @param t0NpUpdate           t0Np should be stamped only in borrow, pull collateral
      *  @param borrower_            Borrower struct with borrower details.
      *  @param poolDebt_            Pool debt, used for calculating borrower MOMP factor.
      *  @param poolInflator_        The current pool inflator used to calculate borrower MOMP factor.
@@ -68,6 +69,7 @@ library Loans {
         Data storage self,
         Deposits.Data storage deposits_,
         address borrowerAddress_,
+        bool t0NpUpdate,
         Borrower memory borrower_,
         uint256 poolDebt_,
         uint256 poolInflator_,
@@ -87,17 +89,19 @@ library Loans {
         }
 
         // update borrower
-        if (borrower_.t0debt != 0 && borrower_.collateral != 0) borrower_.t0Np = Deposits.t0Np(
-            deposits_,
-            poolInflator_,
-            poolDebt_,
-            self.loans.length - 1,
-            poolInterestRate_,
-            lup_,
-            borrower_.t0debt,
-            borrower_.collateral
-        );
-        else borrower_.t0Np = 0;
+        if (t0NpUpdate) {
+            if (borrower_.t0debt != 0 && borrower_.collateral != 0) borrower_.t0Np = Deposits.t0Np(
+                deposits_,
+                poolInflator_,
+                poolDebt_,
+                self.loans.length - 1,
+                poolInterestRate_,
+                lup_,
+                borrower_.t0debt,
+                borrower_.collateral
+            );
+            else borrower_.t0Np = 0;
+        }
         self.borrowers[borrowerAddress_] = borrower_;
     }
 

@@ -159,7 +159,6 @@ library BucketMath {
         uint256 debt_,
         uint256 collateral_,
         uint256 neutralPrice_,
-        uint256 inflatorSnapshot_,
         uint256 bondFactor_,
         uint256 price_
     ) public pure returns (int256) {

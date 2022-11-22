@@ -82,7 +82,7 @@ library Deposits {
         uint256 thresholdPrice = borrowerDebt * Maths.WAD / borrowerCollateral_; 
         uint256 curMomp = momp(self, curDebt_, numLoans_);
         // t0Np = ((1 + rate) * MOMP * (TP / LUP)) / Inflator
-        if (curMomp != 0) t0Np_ = Maths.wdiv(Maths.wmul(1e18 + interestRate_, Maths.wmul(curMomp, Maths.wdiv(thresholdPrice, lup_))), inflator_);
+        if (curMomp != 0) t0Np_ = (1e18 + interestRate_) * curMomp * thresholdPrice / lup_ / inflator_;
     }
 
     /**
