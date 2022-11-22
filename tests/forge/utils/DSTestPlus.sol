@@ -133,6 +133,11 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit BucketTake(borrower, index, quoteTokenAmount, collateralArbed, bondChange, isReward);
         _pool.bucketTake(borrower, false, index);
+
+        // Add for tearDown
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
+        bucketsUsed.add(index);
     }
 
     function _borrow(
@@ -164,6 +169,11 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit BucketTake(borrower, index, quoteTokenAmount, collateralArbed, bondChange, isReward);
         _pool.bucketTake(borrower, true, index);
+
+        // Add for tearDown
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
+        bucketsUsed.add(index);
     }
 
     function _settle(

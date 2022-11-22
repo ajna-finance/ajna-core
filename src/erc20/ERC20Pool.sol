@@ -222,8 +222,9 @@ contract ERC20Pool is IERC20Pool, Pool {
             depositAmountToRemove -= params.bondChange;
         }
 
-        borrower.collateral -= params.collateralAmount; // collateral is removed from the loan
-        bucket.collateral += params.collateralAmount;   // collateral is added to the bucket’s claimable collateral
+        borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
+        poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
+        bucket.collateral    += params.collateralAmount; // collateral is added to the bucket’s claimable collateral
 
         deposits.remove(index_, depositAmountToRemove); // quote tokens are removed from the bucket’s deposit
 

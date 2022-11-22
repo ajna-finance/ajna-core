@@ -228,7 +228,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
     }
     
     function testDepositTakeCollateralRestrict() external {
-
+    // function testDepositTakeCollateralRestrict() external tearDown { FIXME: fails due to Fenwick remove dust
         skip(6 hours);
 
         _assertLenderLpBalance(
@@ -412,7 +412,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-    function testDepositTakeDebtRestrict() external {
+    function testDepositTakeDebtRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -512,6 +512,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
     }
 
     function testDepositTakeDepositRestrict() external {
+    // function testDepositTakeDepositRestrict() external tearDown { FIXME: fails with RemoveDepositLockedByAuctionDebt
 
         skip(5 hours);
 
@@ -620,6 +621,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
 
 
     function testDepositTakeGTNeutralPrice() external {
+    // function testDepositTakeGTNeutralPrice() external tearDown { FIXME:fails due to Fenwick remove dust amounts
 
         skip(3 hours);
 
