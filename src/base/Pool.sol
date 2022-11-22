@@ -267,7 +267,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         _transferQuoteToken(msg.sender, claimable);
     }
 
-    // TODO: determine how to determine the index of the lpb to be transferred from the pool
     function withdrawBondsLPB(uint256 index_) external {
         uint256 claimable = auctions.kickers[msg.sender].claimable;
 
@@ -290,9 +289,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         // readd bond deposit to the bucket
         deposits.add(index_, claimable);
 
-        // TODO: check don't need to update pool state
+        // update pool state
+        PoolState memory poolState = _accruePoolInterest();
+        uint256 newLup = _lup(poolState.accruedDebt);
+        _updatePool(poolState, newLup);
     }
-
 
     /***********************************/
     /*** Borrower External Functions ***/
