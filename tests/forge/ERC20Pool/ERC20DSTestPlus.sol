@@ -127,7 +127,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         for(uint i = 0; i < borrowers.length(); i++ ){
             repayDebt(borrowers.at(i));
         }
-        
+
         for(uint i = 0; i < lenders.length(); i++ ){
             redeemLendersLp(lenders.at(i), lendersDepositedIndex[lenders.at(i)]);
         }
@@ -326,6 +326,15 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoClaim.selector);
+        ERC20Pool(address(_pool)).removeAllCollateral(index);
+    }
+
+    function _assertRemoveAllCollateralAuctionNotClearedRevert(
+        address from,
+        uint256 index
+    ) internal {
+        changePrank(from);
+        vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
         ERC20Pool(address(_pool)).removeAllCollateral(index);
     }
 

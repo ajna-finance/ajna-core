@@ -27,7 +27,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     uint256 internal constant LAMBDA_EMA_7D      = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
     uint256 internal constant EMA_7D_RATE_FACTOR = 1e18 - LAMBDA_EMA_7D;
-    int256 internal constant PERCENT_102         = 1.02 * 10**18;
+    int256  internal constant PERCENT_102        = 1.02 * 10**18;
 
     /***********************/
     /*** State Variables ***/
@@ -230,7 +230,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 indexesLength = indexes_.length;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            if (!Deposits.isDepositIndex(indexes_[i])) revert InvalidIndex();
+            if (indexes_[i] > 8192 ) revert InvalidIndex();
 
             uint256 transferAmount = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
             if (transferAmount == 0) revert NoAllowance();
