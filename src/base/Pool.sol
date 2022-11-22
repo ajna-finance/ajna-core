@@ -354,19 +354,90 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
+    function bucketTake(
+        address borrowerAddress_,
+        bool    depositTake_,
+        uint256 index_
+    ) external override {
+        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
+
+        PoolState memory poolState = _accruePoolInterest();
+        uint256 bucketDeposit = deposits.valueAt(index_);
+        if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
+
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        Auctions.TakeParams memory params = Auctions.bucketTake(
+            auctions,
+            borrowerAddress_,
+            borrower,
+            bucketDeposit,
+            bucketPrice,
+            depositTake_,
+            poolState.inflator
+        );
+
+        Buckets.Bucket storage bucket = buckets[index_];
+        uint256 bucketExchangeRate = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            bucketDeposit,
+            bucketPrice
+        );
+        // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+        Buckets.addLPs(
+            bucket,
+            msg.sender,
+            Maths.wrdivr(
+                Maths.wmul(params.collateralAmount, bucketPrice - params.auctionPrice),
+                bucketExchangeRate
+            )
+        );
+
+        uint256 depositAmountToRemove = params.quoteTokenAmount;
+        // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+        if (params.isRewarded) {
+            Buckets.addLPs(
+                bucket,
+                params.kicker,
+                Maths.wrdivr(params.bondChange, bucketExchangeRate)
+            );
+            depositAmountToRemove -= params.bondChange;
+        }
+
+        borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
+        poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
+        bucket.collateral    += params.collateralAmount; // collateral is added to the bucket’s claimable collateral
+
+        deposits.remove(index_, depositAmountToRemove); // quote tokens are removed from the bucket’s deposit
+
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+
+        emit BucketTake(
+            borrowerAddress_,
+            index_,
+            params.quoteTokenAmount,
+            params.collateralAmount,
+            params.bondChange,
+            params.isRewarded
+        );
+    }
+
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
+        uint256 reserves = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
-        (uint256 remainingCollateral, uint256 remainingt0Debt) = auctions.settle(
+        (uint256 remainingCollateral, uint256 remainingt0Debt) = Auctions.settle(
+            auctions,
             buckets,
             deposits,
             borrower.collateral,
             borrower.t0debt,
             borrowerAddress_,
-            Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed, // reserves
+            reserves,
             poolState.inflator,
             maxDepth_
         );
@@ -408,7 +479,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         loans.remove(borrowerAddress_);
  
         // kick auction
-        (uint256 kickAuctionAmount, uint256 bondSize) = auctions.kick(
+        (uint256 kickAuctionAmount, uint256 bondSize) = Auctions.kick(
+            auctions,
             borrowerAddress_,
             borrowerDebt,
             borrowerDebt * Maths.WAD / borrower.collateral,

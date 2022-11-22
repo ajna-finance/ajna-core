@@ -105,15 +105,6 @@ contract ERC721Pool is IERC721Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    function bucketTake(
-        address borrowerAddress_,
-        bool    depositTake_,
-        uint256 index_
-    ) external override {
-        // TODO: implement
-        emit BucketTake(borrowerAddress_, index_, 0, 0, 0, true);
-    }
-
     function take(
         address borrowerAddress_,
         uint256 collateral_,
@@ -123,7 +114,8 @@ contract ERC721Pool is IERC721Pool, Pool {
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
 
-        Auctions.TakeParams memory params = auctions.take(
+        Auctions.TakeParams memory params = Auctions.take(
+            auctions,
             borrowerAddress_,
             borrower,
             Maths.wad(collateral_),
