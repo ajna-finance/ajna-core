@@ -91,6 +91,7 @@ abstract contract DSTestPlus is Test {
         uint256 auctionPrice;
         uint256 debtInAuction;
         uint256 thresholdPrice;
+        uint256 neutralPrice;
     }
 
     mapping(address => EnumerableSet.UintSet) lendersDepositedIndex;
@@ -352,10 +353,10 @@ abstract contract DSTestPlus is Test {
         ) = _pool.auctionInfo(state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (uint256 auctionTotalBondEscrowed,,) = _pool.reservesInfo();
-        (,,uint256 auctionDebtInAuction)  = _pool.debtInfo();
-        
-        (uint256 borrowerdebt, uint256 borrowerCollateral, ) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
-        uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerdebt * Maths.WAD / borrowerCollateral : 0;
+        (,,uint256 auctionDebtInAuction)  = _pool.debtInfo(); 
+        (uint256 borrowerdebt, uint256 borrowerCollateral, uint256 borrowerMompFactor) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
+
+        _assertPrices(address(_pool), state_.borrower, state_);
 
         assertEq(auctionKickTime != 0,                                     state_.active);
         assertEq(auctionKicker,                                            state_.kicker);
@@ -366,8 +367,25 @@ abstract contract DSTestPlus is Test {
         assertEq(auctionKickMomp,                                          state_.kickMomp);
         assertEq(auctionTotalBondEscrowed,                                 state_.totalBondEscrowed);
         assertEq(auctionDebtInAuction,                                     state_.debtInAuction);
+    }
+
+    function _assertPrices(address poolAddress, address borrowerAddress, AuctionState memory state_) internal {
+        (
+            ,
+            ,
+            ,
+            uint256 auctionKickTime,
+            uint256 auctionKickMomp,
+            ,
+        ) = _pool.auctionInfo(borrowerAddress);
+        (uint256 borrowerdebt, uint256 borrowerCollateral, uint256 borrowerMompFactor) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
+        (,,,uint256 pendingInflator,)  = _poolUtils.poolLoansInfo(address(_pool));
+        uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerdebt * Maths.WAD / borrowerCollateral : 0;
+        uint256 borrowerNeutralPrice   = borrowerCollateral > 0 ? Maths.wmul(borrowerMompFactor, pendingInflator): 0;
+
         assertEq(PoolUtils.auctionPrice(auctionKickMomp, auctionKickTime), state_.auctionPrice);
         assertEq(borrowerThresholdPrice,                                   state_.thresholdPrice);
+        assertEq(borrowerNeutralPrice,                                     state_.neutralPrice);
     }
 
     function _assertPool(PoolState memory state_) internal {
