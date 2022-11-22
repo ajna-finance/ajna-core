@@ -435,6 +435,8 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
+        // TODO: add check for insufficientLPs
+
         // Skip to make borrower undercollateralized
         skip(100 days);
         _assertBorrower(
@@ -456,7 +458,6 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 debt:           9_976.561670003961916237 * 1e18,
                 collateral:     1_000 * 1e18,
                 bond:           98.533942419792216457 * 1e18,
-                transferAmount: 98.533942419792216457 * 1e18,
                 index:          _i9_52
         });
 

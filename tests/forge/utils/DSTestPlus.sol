@@ -209,7 +209,6 @@ abstract contract DSTestPlus is Test {
         uint256 debt,
         uint256 collateral,
         uint256 bond,
-        uint256 transferAmount,
         uint256 index
     ) internal {
         changePrank(from);

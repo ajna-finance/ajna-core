@@ -281,6 +281,11 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
         });
     }
 
+    /**
+     * @dev Test the auction kickWithLPB by a pool lender with extant deposit.
+     * Reverts:
+     * - if the lender attempts to use an auction locked bucket as a source of LPB.
+     */
     function testKickWithLPB() external {
         // Skip to make borrower undercollateralized
         skip(100 days);
@@ -301,7 +306,15 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             })
         );
 
-        // TODO: test reverts -> if borrower that's being liquidated's bucket is used for kickWithLPB lp source, then should revert with auctionDebtLocked
+        // TODO: add check for insufficientLPs
+
+        // if borrower that's being liquidated's bucket is used for kickWithLPB lp source, then should revert with auctionDebtLocked
+        _assertKickWithLPBDepositLockedByAuctionDebtRevert({
+            operator:  _lender,
+            borrower:  _borrower,
+            index:     _i9_91
+        });
+
         _kickWithLPB(
             {
                 from:           _lender,
@@ -309,7 +322,6 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 debt:           19.778456451861613480 * 1e18,
                 collateral:     2 * 1e18,
                 bond:           0.195342779771472726 * 1e18,
-                transferAmount: 0.195342779771472726 * 1e18,
                 index:          _i9_72
             }
         );

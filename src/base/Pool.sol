@@ -464,8 +464,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
     }
 
-    // QUESTIONS:
-    // 3. In the event that the lpb bond is forfeited, how is the pool lpb distributed? Do we need to modify the claimable reserve auctions to support lpb?
     /**
      *  @notice Called by lender to kick off an auction, utilizing their existing LPB for the bond.
      *  @param  borrowerAddress_  Borrower whose loan is being kicked.
@@ -515,12 +513,9 @@ abstract contract Pool is Clone, Multicall, IPool {
         // check bucket not currently frozen
         _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        // TODO: apply early withdrawal penalty -> move ahead of lpTokensReq calculation
-
         // get bucket info
         Buckets.Bucket storage bucket = buckets[index_];
 
-        // TODO: verify sufficient quote to cover kick amount constituting lpb
         // calculate equivalent amount of LPB to kickAuctionAmount
         uint256 lpTokenReq = Buckets.quoteTokensToLPs(
             bucket.collateral,
@@ -538,8 +533,6 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         // update lup following deposit removal
         uint256 newLup = _lup(poolState.accruedDebt);
-        // FIXME: if not performing the htp > lup check, how to ensure deposit removal safety?
-        // if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
 
         // update bucket LPs balance
         bucket.lps -= lpTokenReq;
