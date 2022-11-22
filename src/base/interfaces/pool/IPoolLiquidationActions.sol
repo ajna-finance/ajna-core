@@ -32,12 +32,12 @@ interface IPoolLiquidationActions {
     /**
      *  @notice Called by actors to initiate a liquidation.
      *  @param  borrower Identifies the loan to liquidate.
+     *  @param  index    The bucket index to withdraw lpb from, or 0 if using external deposit.
      */
     function kick(
-        address borrower
+        address borrower,
+        uint256 index
     ) external;
-
-    function kickWithLPB(address borrowerAddress_, uint256 index_) external;
 
     /**
      *  @notice Called by actors to purchase collateral from the auction in exchange for quote token.

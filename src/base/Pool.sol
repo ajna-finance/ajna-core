@@ -415,7 +415,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         emit Settle(borrowerAddress_, t0settledDebt);
     }
 
-    function kick(address borrowerAddress_) external override {
+    function kick(address borrowerAddress_, uint256 index_) external override {
         auctions.revertIfActive(borrowerAddress_);
 
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
@@ -454,95 +454,50 @@ abstract contract Pool is Clone, Multicall, IPool {
         t0poolDebt      += kickPenalty;
         t0DebtInAuction += borrower.t0debt;
 
-        // not needed here since always using external funds in this flow
-        // if (_htp(poolState.inflator) > lup) revert LUPBelowHTP();
+        // kick with lenders existing deposit in given bucket index
+        if (index_ != 0) {
+            // check bucket not currently frozen
+            _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
-        // update pool state
-        _updatePool(poolState, lup);
+            // get bucket info
+            Buckets.Bucket storage bucket = buckets[index_];
 
-        emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
-        if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
-    }
+            // calculate equivalent amount of LPB to kickAuctionAmount
+            uint256 lpTokenReq = Buckets.quoteTokensToLPs(
+                bucket.collateral,
+                bucket.lps,
+                deposits.valueAt(index_),
+                kickAuctionAmount,
+                PoolUtils.indexToPrice(index_));
 
-    /**
-     *  @notice Called by lender to kick off an auction, utilizing their existing LPB for the bond.
-     *  @param  borrowerAddress_  Borrower whose loan is being kicked.
-     *  @param  index_            The bucket index to withdraw lpb from.
-     */
-    function kickWithLPB(address borrowerAddress_, uint256 index_) external {
-        auctions.revertIfActive(borrowerAddress_);
+            // check lender has sufficient lp available
+            (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
+            if (lenderLpBalance < lpTokenReq) revert InsufficientLPs();
 
-        Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
-        if (borrower.t0debt == 0) revert NoDebt(); // TODO: remove this check?
+            // update fenwick tree for removal of quote from bucket for use as liquidation bond
+            deposits.remove(index_, kickAuctionAmount);
 
-        PoolState memory poolState = _accruePoolInterest();
+            // update lup following deposit removal
+            uint256 newLup = _lup(poolState.accruedDebt);
 
-        uint256 lup = _lup(poolState.accruedDebt);
-        uint256 borrowerDebt = Maths.wmul(borrower.t0debt, poolState.inflator);
-        if (
-            _isCollateralized(
-                borrowerDebt,
-                borrower.collateral,
-                lup
-            )
-        ) revert BorrowerOk();
+            // update bucket LPs balance
+            bucket.lps -= lpTokenReq;
+            // update lender LPs balance
+            bucket.lenders[msg.sender].lps -= lpTokenReq;
 
-        // update loan heap
-        loans.remove(borrowerAddress_);
+            // update pool state
+            _updatePool(poolState, newLup);
 
-        // kick auction
-        (uint256 kickAuctionAmount, uint256 bondSize) = auctions.kick(
-            borrowerAddress_,
-            borrowerDebt,
-            borrowerDebt * Maths.WAD / borrower.collateral,
-            deposits.momp(poolState.accruedDebt, loans.noOfLoans())
-        );
+            emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
+        }
+        // kick with external quote tokens
+        else {
+            // update pool state
+            _updatePool(poolState, lup);
 
-        // update borrower & pool debt with kickPenalty
-        uint256 kickPenalty   =  Maths.wmul(Maths.wdiv(poolState.rate, 4 * 1e18), borrowerDebt); // when loan is kicked, penalty of three months of interest is added
-        borrowerDebt          += kickPenalty;
-        poolState.accruedDebt += kickPenalty;
-
-        kickPenalty     =  Maths.wdiv(kickPenalty, poolState.inflator); // convert to t0
-        borrower.t0debt += kickPenalty;
-        t0poolDebt      += kickPenalty;
-        t0DebtInAuction += borrower.t0debt;
-
-        // UNIQUE BELOW HERE
-
-        // check bucket not currently frozen
-        _revertIfAuctionDebtLocked(index_, poolState.inflator);
-
-        // get bucket info
-        Buckets.Bucket storage bucket = buckets[index_];
-
-        // calculate equivalent amount of LPB to kickAuctionAmount
-        uint256 lpTokenReq = Buckets.quoteTokensToLPs(
-            bucket.collateral,
-            bucket.lps,
-            deposits.valueAt(index_),
-            kickAuctionAmount,
-            PoolUtils.indexToPrice(index_));
-
-        // check lender has sufficient lp available
-        (uint256 lenderLpBalance, ) = buckets.getLenderInfo(index_, msg.sender);
-        if (lenderLpBalance < lpTokenReq) revert InsufficientLPs();
-
-        // update fenwick tree for removal of quote from bucket for use as liquidation bond
-        deposits.remove(index_, kickAuctionAmount);
-
-        // update lup following deposit removal
-        uint256 newLup = _lup(poolState.accruedDebt);
-
-        // update bucket LPs balance
-        bucket.lps -= lpTokenReq;
-        // update lender LPs balance
-        bucket.lenders[msg.sender].lps -= lpTokenReq;
-
-        // update pool state
-        _updatePool(poolState, newLup);
-
-        emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
+            emit Kick(borrowerAddress_, borrowerDebt, borrower.collateral, bondSize);
+            if(kickAuctionAmount != 0) _transferQuoteTokenFrom(msg.sender, kickAuctionAmount);
+        }
     }
 
     /*********************************/
