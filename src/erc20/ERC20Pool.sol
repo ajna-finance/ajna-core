@@ -126,6 +126,7 @@ contract ERC20Pool is IERC20Pool, Pool {
     function removeAllCollateral(
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
+        auctions.revertIfAuctionClearable(loans);
 
         (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(
             index_,
