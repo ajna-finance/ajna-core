@@ -781,6 +781,14 @@ contract ERC20PoolLiquidationsSettleTest is ERC20HelperContract {
             }
         );
 
+        // remove all collateral should fail since auction head is clearable
+        _assertRemoveAllCollateralAuctionNotClearedRevert(
+            {
+                from:   _lender,
+                index:  _i9_52
+            }
+        );
+
         // add liquidity in same block should be possible as debt was not yet settled / bucket is not yet insolvent
         _addLiquidity(
             {
