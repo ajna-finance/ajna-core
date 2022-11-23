@@ -211,10 +211,10 @@ library Deposits {
     }
 
     /**
-     *  @notice Get prefix sum of all indexes from provided index downards.
+     *  @notice Get prefix sum of all indexes from provided index downwards.
      *  @dev    Starts at tree root and decrements through range parent nodes summing from index i_'s range to index 0.
      *  @param  sumIndex_  The index to receive the prefix sum.
-     *  @param  sum_       The prefix sum from current index downards.
+     *  @param  sum_       The prefix sum from current index downwards.
      */    
     function prefixSum(
         Data storage self,
