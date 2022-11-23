@@ -158,8 +158,8 @@ contract BalancerUniswapPurchaser {
             });
 
         router.exactInputSingle(params);
-        assert(quote.balanceOf(address(this))      == 0);                           // USDC balance after Uniswap swap
-        assert(collateral.balanceOf(address(this)) == 4.29601547274087328 * 1e18);  // WETH balance after Uniswap swap
+        assert(quote.balanceOf(address(this))      == 0);    // USDC balance after Uniswap swap
+        assert(collateral.balanceOf(address(this)) > 1e18);  // WETH balance after Uniswap swap
 
         // Repay WETH flash loan
         collateral.transfer(balancerAddress, loanAmount);

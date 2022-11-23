@@ -8,10 +8,14 @@ import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
 
 import 'src/base/PoolInfoUtils.sol';
+
 import "./BalancerUniswapExample.sol";
 import "./UniswapTakeExample.sol";
 
 contract ERC20TakeWithExternalLiquidityTest is Test {
+    // pool events
+    event Take(address indexed borrower, uint256 amount, uint256 collateral, uint256 bondChange, bool isReward);
+
     address constant WETH     = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant USDC     = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     uint24  constant POOL_FEE = 3000;
@@ -101,6 +105,8 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
                 maxAmount: 10 * 1e18
             })
         );
+        vm.expectEmit(true, true, false, true);
+        emit Take(_borrower, 19.442591730063559232 * 1e18, 2 * 1e18, 0.194425917300635592 * 1e18, true);
         taker.take(tokens, amounts, data);
 
         assertGt(usdc.balanceOf(address(this)), 1000); // could vary
@@ -120,6 +126,8 @@ contract ERC20TakeWithExternalLiquidityTest is Test {
 
         // call take using taker contract
         bytes memory data = abi.encode(address(_ajnaPool));
+        vm.expectEmit(true, true, false, true);
+        emit Take(_borrower, 19.442591730063559232 * 1e18, 2 * 1e18, 0.194425917300635592 * 1e18, true);
         _ajnaPool.take(_borrower, takeAmount, address(taker), data);
 
         // confirm we earned some quote token
