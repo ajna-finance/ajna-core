@@ -147,7 +147,7 @@ contract FenwickTreeTest is DSTestPlus {
 
         assertEq(_tree.valueAt(3_700), 8_008.373442262808822463 * 1e18);
         _tree.obliterate(3_700);
-        assertEq(_tree.valueAt(3_700), 0); // this fails as it is actually dust 2445
+        assertEq(_tree.valueAt(3_700), 0);
     }
 
     /**

@@ -395,22 +395,23 @@ abstract contract Pool is Clone, Multicall, IPool {
             )
         );
 
-        uint256 depositAmountToRemove = params.quoteTokenAmount;
-        // the bondholder/kicker is awarded bond change worth of LPB in the bucket
-        if (params.isRewarded) {
-            Buckets.addLPs(
-                bucket,
-                params.kicker,
-                Maths.wrdivr(params.bondChange, bucketExchangeRate)
-            );
-            depositAmountToRemove -= params.bondChange;
+        {
+            uint256 depositAmountToRemove = params.quoteTokenAmount;
+            // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+            if (params.isRewarded) {
+                Buckets.addLPs(
+                    bucket,
+                    params.kicker,
+                    Maths.wrdivr(params.bondChange, bucketExchangeRate)
+                );
+                depositAmountToRemove -= params.bondChange;
+            }
+            deposits.remove(index_, depositAmountToRemove, bucketDeposit); // quote tokens are removed from the bucket’s deposit
         }
 
         borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
         poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
         bucket.collateral    += params.collateralAmount; // collateral is added to the bucket’s claimable collateral
-
-        deposits.remove(index_, depositAmountToRemove); // quote tokens are removed from the bucket’s deposit
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
