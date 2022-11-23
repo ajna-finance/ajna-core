@@ -2,8 +2,6 @@
 
 pragma solidity ^0.8.14;
 
-import "@std/console.sol";
-
 import './Interfaces.sol';
 
 contract BalancerUniswapTaker {
@@ -48,16 +46,17 @@ contract BalancerUniswapTaker {
         // received USDC flash loan from Balancer
         uint256 loanAmount = amounts[0];
         uint256 totalFunds = address(this).balance + loanAmount;
-        console.log("USDC balance after Balancer loan", tokens[0].balanceOf(address(this)));
-        console.log("WETH balance after Balancer loan", tokens[1].balanceOf(address(this)));
+        assert(tokens[0].balanceOf(address(this)) == 100000000);    // USDC balance after Balancer loan
+        assert(tokens[1].balanceOf(address(this)) == 0);            // WETH balance after Balancer loan
 
         TakeData memory decoded = abi.decode(userData, (TakeData));
         tokens[0].approve(decoded.ajnaPool, totalFunds);
 
         // take auction from Ajna pool, give USDC, receive WETH
         IAjnaPool(decoded.ajnaPool).take(decoded.borrower, decoded.maxAmount, address(this), new bytes(0));
-        console.log("USDC balance after Ajna take", tokens[0].balanceOf(address(this)));
-        console.log("WETH balance after Ajna take", tokens[1].balanceOf(address(this)));
+        uint256 usdcBalanceAfterTake = 80557409;
+        assert(tokens[0].balanceOf(address(this)) == usdcBalanceAfterTake); // USDC balance after Ajna take
+        assert(tokens[1].balanceOf(address(this)) == 2000000000000000000);  // WETH balance after Ajna take
 
         // swap WETH to USDC on Uniswap
         tokens[1].approve(address(router), tokens[1].balanceOf(address(this)));
@@ -75,8 +74,8 @@ contract BalancerUniswapTaker {
             });
 
         router.exactInputSingle(params);
-        console.log("USDC balance after Uniswap swap", tokens[0].balanceOf(address(this)));
-        console.log("WETH balance after Uniswap swap", tokens[1].balanceOf(address(this)));
+        assert(tokens[0].balanceOf(address(this)) > usdcBalanceAfterTake);  // USDC balance after Uniswap swap
+        assert(tokens[1].balanceOf(address(this)) == 0);                    // WETH balance after Uniswap swap
 
         // Repay USDC flash loan
         tokens[0].transfer(balancerAddress, loanAmount);
@@ -129,19 +128,19 @@ contract BalancerUniswapPurchaser {
         uint256 loanAmount = amounts[1];
         IERC20 quote       = tokens[0];
         IERC20 collateral  = tokens[1];
-        console.log("USDC balance after Balancer loan", quote.balanceOf(address(this)));
-        console.log("WETH balance after Balancer loan", collateral.balanceOf(address(this)));
+        assert(quote.balanceOf(address(this))      == 0);                   // USDC balance after Balancer loan
+        assert(collateral.balanceOf(address(this)) == 1000000000000000000); // WETH balance after Balancer loan
 
         PurchaseData memory decoded = abi.decode(userData, (PurchaseData));
         // approve ajna pool to transfer flash loaned collateral
         collateral.approve(decoded.ajnaPool, loanAmount);
         // purchase USDC with 1 WETH from ajna
-        uint256 lps = IAjnaPool(decoded.ajnaPool).addCollateral(loanAmount, decoded.bucketIndex);
-        console.log("LPS in bucket", lps);
+        uint256 lps             = IAjnaPool(decoded.ajnaPool).addCollateral(loanAmount, decoded.bucketIndex);
         (uint256 quoteAmount, ) = IAjnaPool(decoded.ajnaPool).removeQuoteToken(type(uint256).max, decoded.bucketIndex);
-        console.log("Purchased quote amount", quoteAmount);
-        console.log("USDC balance after Ajna purchase", quote.balanceOf(address(this)));
-        console.log("WETH balance after Ajna purchase", collateral.balanceOf(address(this)));
+        assert(lps                                 == 83008350.10362729922336157 * 1e27);   // LPS in bucket
+        assert(quoteAmount                         == 4997500000000000000000);              // Purchased quote amount
+        assert(quote.balanceOf(address(this))      == 4997500000);  // USDC balance after Ajna purchase
+        assert(collateral.balanceOf(address(this)) == 0);           // WETH balance after Ajna purchase
 
         // swap USDC to WETH on Uniswap, approve router to spend USDC purchased from ajna
         quote.approve(address(router), quoteAmount);
@@ -159,8 +158,8 @@ contract BalancerUniswapPurchaser {
             });
 
         router.exactInputSingle(params);
-        console.log("USDC balance after Uniswap swap", quote.balanceOf(address(this)));
-        console.log("WETH balance after Uniswap swap", collateral.balanceOf(address(this)));
+        assert(quote.balanceOf(address(this))      == 0);                           // USDC balance after Uniswap swap
+        assert(collateral.balanceOf(address(this)) == 4.29601547274087328 * 1e18);  // WETH balance after Uniswap swap
 
         // Repay WETH flash loan
         collateral.transfer(balancerAddress, loanAmount);

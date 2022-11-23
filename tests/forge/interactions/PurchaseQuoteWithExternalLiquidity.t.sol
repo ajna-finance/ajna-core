@@ -3,7 +3,6 @@
 pragma solidity 0.8.14;
 
 import "@std/Test.sol";
-import "@std/console.sol";
 
 import { ERC20Pool }        from 'src/erc20/ERC20Pool.sol';
 import { ERC20PoolFactory } from 'src/erc20/ERC20PoolFactory.sol';
@@ -35,8 +34,6 @@ contract PurchaseQuoteWithExternalLiquidityTest is Test {
 
     function testPurchaseWithFlashLoan() external {
         BalancerUniswapPurchaser purchaseContract = new BalancerUniswapPurchaser();
-        // assert USDC balance before take
-        console.log("WETH starting balance", weth.balanceOf(address(this)));
         assertEq(0, weth.balanceOf(address(this)));
         address[] memory tokens = new address[](2);
         tokens[0] = USDC;
@@ -53,8 +50,6 @@ contract PurchaseQuoteWithExternalLiquidityTest is Test {
             })
         );
         purchaseContract.purchase(tokens, amounts, data);
-
-        console.log("WETH ending balance", weth.balanceOf(address(this)));
         assertGt(weth.balanceOf(address(this)), 1e18); // could vary
     }
 
