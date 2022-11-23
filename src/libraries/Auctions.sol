@@ -92,7 +92,7 @@ library Auctions {
         uint256 reserves_,
         uint256 poolInflator_,
         uint256 bucketDepth_
-    ) internal returns (uint256, uint256) {
+    ) external returns (uint256, uint256) {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
         if (kickTime == 0) revert NoAuction();
 
@@ -175,7 +175,7 @@ library Auctions {
         Data storage self,
         address borrower_,
         bool    isCollateralized_
-    ) internal {
+    ) external {
 
         if (isCollateralized_ && self.liquidations[borrower_].kickTime != 0) {
             removeAuction(self, borrower_);
@@ -197,7 +197,7 @@ library Auctions {
         uint256 borrowerDebt_,
         uint256 thresholdPrice_,
         uint256 momp_
-    ) internal returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
+    ) external returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
 
         uint256 bondFactor;
         // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
@@ -266,7 +266,7 @@ library Auctions {
         uint256 bucketPrice_,
         bool    depositTake_,
         uint256 poolInflator_
-    ) internal returns (TakeParams memory params_) {
+    ) external returns (TakeParams memory params_) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
@@ -329,7 +329,7 @@ library Auctions {
         Loans.Borrower memory borrower_,
         uint256 maxCollateral_,
         uint256 poolInflator_
-    ) internal returns (TakeParams memory params_) {
+    ) external returns (TakeParams memory params_) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
