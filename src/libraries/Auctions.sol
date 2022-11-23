@@ -66,9 +66,9 @@ library Auctions {
      */
     error TakeNotPastCooldown();
 
-    /*********************************/
-    /***  Auctions Queue Functions ***/
-    /*********************************/
+    /***************************/
+    /***  External Functions ***/
+    /***************************/
 
     /**
      *  @notice Settles the debt of the given loan / borrower.
@@ -164,22 +164,6 @@ library Auctions {
         }
 
         return (collateral_, t0DebtToSettle_);
-    }
-    
-    /**
-     *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
-     *  @param  borrower_         Borrower whose loan is being placed in queue.
-     *  @param  isCollateralized_ Borrower's collateralization flag.
-     */
-    function checkAndRemove(
-        Data storage self,
-        address borrower_,
-        bool    isCollateralized_
-    ) external {
-
-        if (isCollateralized_ && self.liquidations[borrower_].kickTime != 0) {
-            removeAuction(self, borrower_);
-        }
     }
 
     /**
@@ -372,11 +356,6 @@ library Auctions {
         }
     }
 
-
-    /***************************/
-    /***  Internal Functions ***/
-    /***************************/
-
     /**
      *  @notice Removes auction and repairs the queue order.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
@@ -385,8 +364,7 @@ library Auctions {
     function removeAuction(
         Data storage self,
         address borrower_
-    ) internal {
-
+    ) external {
         Liquidation memory liquidation = self.liquidations[borrower_];
         // update kicker balances
         Kicker storage kicker = self.kickers[liquidation.kicker];
@@ -420,6 +398,11 @@ library Auctions {
         // delete liquidation
          delete self.liquidations[borrower_];
     }
+
+
+    /***************************/
+    /***  Internal Functions ***/
+    /***************************/
 
     /**
      *  @notice Utility function to validate take action.
@@ -479,7 +462,7 @@ library Auctions {
         Data storage self,
         address borrower_
     ) internal view {
-        if (_isActive(self, borrower_)) revert AuctionActive();
+        if (isActive(self, borrower_)) revert AuctionActive();
     }
 
     /**
@@ -488,7 +471,7 @@ library Auctions {
      *  @param  borrower_ Borrower address to check auction status for.
      *  @return  active_ Boolean, based on if borrower is in auction.
      */
-    function _isActive(
+    function isActive(
         Data storage self,
         address borrower_
     ) internal view returns (bool) {
