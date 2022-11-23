@@ -570,12 +570,10 @@ abstract contract Pool is Clone, Multicall, IPool {
             newLup
         );
 
-        if (isCollateralized && auctions._isActive(borrowerAddress_)) t0DebtInAuction -= borrower.t0debt;
-
-        auctions.checkAndRemove(
-            borrowerAddress_,
-            isCollateralized 
-        );
+        if (isCollateralized && auctions.isActive(borrowerAddress_)) {
+            t0DebtInAuction -= borrower.t0debt;
+            Auctions.removeAuction(auctions, borrowerAddress_);
+        }
 
         loans.update(
             deposits,
@@ -622,8 +620,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 newLup_
     ) {
 
-        if (auctions._isActive(borrowerAddress)) t0DebtInAuction -= t0repaidDebt;
-
         quoteTokenAmountToRepay_ = Maths.wmul(t0repaidDebt, poolState.inflator);
         uint256 borrowerDebt     = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
         poolState.accruedDebt    -= quoteTokenAmountToRepay_;
@@ -633,14 +629,13 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         newLup_ = _lup(poolState.accruedDebt);
 
-        auctions.checkAndRemove(
-            borrowerAddress,
-            _isCollateralized(
-                borrowerDebt,
-                borrower.collateral,
-                newLup_
-            )
-        );
+        if (auctions.isActive(borrowerAddress)) {
+            t0DebtInAuction -= t0repaidDebt;
+
+            if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {
+                Auctions.removeAuction(auctions, borrowerAddress);
+            }
+        }
         
         borrower.t0debt -= t0repaidDebt;
         loans.update(

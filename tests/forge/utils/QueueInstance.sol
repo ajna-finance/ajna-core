@@ -21,10 +21,7 @@ contract QueueInstance is DSTestPlus {
     }
 
     function remove(address borrower_) external {
-        auctions.checkAndRemove(
-            borrower_,
-            true
-        );
+        Auctions.removeAuction(auctions, borrower_);
     }
 
     function getHead() external view returns (address) {
