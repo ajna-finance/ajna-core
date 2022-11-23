@@ -754,6 +754,26 @@ abstract contract DSTestPlus is Test {
         _pool.borrow(amount, indexLimit);
     }
 
+    function _assertFlashloanTooLargeRevert(
+        IERC3156FlashBorrower flashBorrower,
+        uint256 amount
+    ) internal {
+        changePrank(address(flashBorrower));
+        address quoteTokenAddress = _pool.quoteTokenAddress();
+        vm.expectRevert();
+        _pool.flashLoan(flashBorrower, quoteTokenAddress, amount, new bytes(0));
+    }
+
+    function _assertFlashloanUnavailableForToken(
+        IERC3156FlashBorrower flashBorrower,
+        address token,
+        uint256 amount
+    ) internal {
+        changePrank(address(flashBorrower));
+        vm.expectRevert(abi.encodeWithSignature('FlashloanUnavailableForToken()'));
+        _pool.flashLoan(flashBorrower, token, amount, new bytes(0));
+    }
+
     function _assertSettleOnNotClearableAuctionRevert(
         address from,
         address borrower

@@ -834,7 +834,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (!IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
     }
 
-
     function _getPoolQuoteTokenBalance() internal view returns (uint256) {
         return IERC20Token(_getArgAddress(20)).balanceOf(address(this));
     }
@@ -955,16 +954,6 @@ abstract contract Pool is Clone, Multicall, IPool {
             Maths.wmul(loans.getMax().thresholdPrice, inflatorSnapshot),
             loans.noOfLoans()
         );
-    }
-
-    function maxFlashLoan(
-        address token_
-    ) external view override returns (uint256) {
-        if (token_ == _getArgAddress(20)) {
-            return _getPoolQuoteTokenBalance();
-        } else {
-            return 0;
-        }
     }
 
     function reservesInfo() external view override returns (uint256, uint256, uint256) {

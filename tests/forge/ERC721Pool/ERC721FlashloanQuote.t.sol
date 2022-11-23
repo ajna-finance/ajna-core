@@ -94,7 +94,25 @@ contract ERC721PoolFlashloanTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(address(flasher)), 3.403846153846153800 * 1e18);
     }
 
-    // TODO: negative tests
+    function testCannotFlashloanMoreThanAvailable() external tearDown {
+        FlashLoanBorrower flasher = new FlashLoanBorrower(address(0), new bytes(0));
+
+        // Cannot flashloan more than the pool size
+        _assertFlashloanTooLargeRevert(flasher, 350 * 1e18);
+
+        // Cannot flashloan less than pool size but more than available quote token
+        _assertFlashloanTooLargeRevert(flasher, 150 * 1e18);
+    }
+
+    function testCannotFlashloanWrongToken() external tearDown {
+        FlashLoanBorrower flasher = new FlashLoanBorrower(address(0), new bytes(0));
+
+        // Cannot flashloan the collateral
+        _assertFlashloanUnavailableForToken(flasher, address(_collateral), 1);
+
+        // Cannot flashloan a random address which isn't a token
+        _assertFlashloanUnavailableForToken(flasher, makeAddr("nobody"), 1);
+    }
 }
 
 contract FlashLoanBorrower is IERC3156FlashBorrower {
@@ -103,22 +121,21 @@ contract FlashLoanBorrower is IERC3156FlashBorrower {
     bytes   internal strategyCallData;
     bytes32 public constant CALLBACK_SUCCESS = keccak256("ERC3156FlashBorrower.onFlashLoan");
 
-    constructor(address strategy_, bytes memory strategyCallData_) public {
+    constructor(address strategy_, bytes memory strategyCallData_) {
         strategy         = strategy_;
         strategyCallData = strategyCallData_;
     }
 
     function onFlashLoan(
-        address initiator,
-        address token,
-        uint256 amount,
-        uint256 fee,
-        bytes   calldata data
-    ) external returns (bytes32) {
+        address,
+        address,
+        uint256,
+        uint256,
+        bytes calldata
+    ) external returns (bytes32 result_) {
         callbackInvoked = true;
-        // TODO: resolve warning
-        strategy.call(strategyCallData);
-        return CALLBACK_SUCCESS;
+        (bool success, ) = strategy.call(strategyCallData);
+        if (success) result_ = CALLBACK_SUCCESS;
     }
 }
 
