@@ -618,9 +618,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-
-    function testDepositTakeGTNeutralPrice() external {
-    // function testDepositTakeGTNeutralPrice() external tearDown { FIXME:fails due to Fenwick remove dust amounts
+    function testDepositTakeGTNeutralPrice() external tearDown {
 
         skip(3 hours);
 
