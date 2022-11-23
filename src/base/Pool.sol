@@ -331,25 +331,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         _transferQuoteToken(msg.sender, amountToBorrow_);
     }
 
-
-    function flashLoan(
-        IERC3156FlashBorrower receiver_,
-        address token_,
-        uint256 amount_,
-        bytes calldata data_
-    ) external override returns (bool) {
-        if (token_ != _getArgAddress(20)) revert FlashloanUnavailableForToken();
-
-        _transferQuoteToken(address(receiver_), amount_);
-        uint256 fee = _flashFee(token_, amount_);
-        
-        if (receiver_.onFlashLoan(msg.sender, token_, amount_, fee, data_) != 
-            keccak256("ERC3156FlashBorrower.onFlashLoan")) revert FlashloanCallbackFailed();
-
-        _transferQuoteTokenFrom(address(receiver_), amount_ + fee);
-        return true;
-    }
-
     function repay(
         address borrowerAddress_,
         uint256 maxQuoteTokenAmountToRepay_
@@ -853,9 +834,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (!IERC20Token(_getArgAddress(20)).transfer(to_, amount_ / _getArgUint256(40))) revert ERC20TransferFailed();
     }
 
-    function _flashFee(address token_, uint256 amount_) internal view  returns (uint256) {
-        return Maths.wmul(amount_, PoolUtils.feeRate(interestRate));
-    }
 
     function _getPoolQuoteTokenBalance() internal view returns (uint256) {
         return IERC20Token(_getArgAddress(20)).balanceOf(address(this));
@@ -946,14 +924,6 @@ abstract contract Pool is Clone, Multicall, IPool {
             debtEma,
             lupColEma
         );
-    }
-
-    function flashFee(
-        address token_,
-        uint256 amount_
-    ) external view override returns (uint256) {
-        if (token_ != _getArgAddress(20)) revert FlashloanUnavailableForToken();
-        return _flashFee(token_, amount_);
     }
 
     function inflatorInfo() external view override returns (uint256, uint256) {
