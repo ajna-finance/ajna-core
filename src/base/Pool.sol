@@ -97,7 +97,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function moveQuoteToken(
-        uint256 maxQuoteTokenAmountToMove_,
+        uint256 maxAmountToMove_,
         uint256 fromIndex_,
         uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
@@ -106,30 +106,32 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
-        (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = buckets.getLenderInfo(
+        Buckets.Lender memory lender;
+        (lender.lps, lender.depositTime) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
         );
-        uint256 quoteTokenAmountToMove;
+        uint256 amountToMove;
+        uint256 fromDeposit = deposits.valueAt(fromIndex_);
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-        (quoteTokenAmountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
+        (amountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
             fromBucket.collateral,
             fromBucket.lps,
-            deposits.valueAt(fromIndex_),
-            lenderLpBalance,
-            maxQuoteTokenAmountToMove_,
+            fromDeposit,
+            lender.lps,
+            maxAmountToMove_,
             PoolUtils.indexToPrice(fromIndex_)
         );
 
-        deposits.remove(fromIndex_, quoteTokenAmountToMove, deposits.valueAt(fromIndex_)); // FIXME load deposit only once
+        deposits.remove(fromIndex_, amountToMove, fromDeposit);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        quoteTokenAmountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
+        amountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
-            lenderLastDepositTime,
+            lender.depositTime,
             fromIndex_,
             toIndex_,
-            quoteTokenAmountToMove
+            amountToMove
         );
 
         Buckets.Bucket storage toBucket = buckets[toIndex_];
@@ -137,11 +139,11 @@ abstract contract Pool is Clone, Multicall, IPool {
             toBucket.collateral,
             toBucket.lps,
             deposits.valueAt(toIndex_),
-            quoteTokenAmountToMove,
+            amountToMove,
             PoolUtils.indexToPrice(toIndex_)
         );
 
-        deposits.add(toIndex_, quoteTokenAmountToMove);
+        deposits.add(toIndex_, amountToMove);
 
         uint256 newLup = _lup(poolState.accruedDebt); // move lup if necessary and check loan book's htp against new lup
         if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
@@ -154,7 +156,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         _updatePool(poolState, newLup);
 
-        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, quoteTokenAmountToMove, newLup);
+        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToMove, newLup);
     }
 
     function removeQuoteToken(
