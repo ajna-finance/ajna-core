@@ -510,8 +510,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-    function testDepositTakeDepositRestrict() external {
-    // function testDepositTakeDepositRestrict() external tearDown { // FIXME: dust issue solved, now failing with RemoveDepositLockedByAuctionDebt
+    function testDepositTakeDepositRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -574,7 +573,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                kickMomp:          0,
                totalBondEscrowed: 0,
                auctionPrice:      0,
-               debtInAuction:     4.778964466685025779 * 1e18,
+               debtInAuction:     0,
                thresholdPrice:    2.401447482873817020 * 1e18
            })
         );

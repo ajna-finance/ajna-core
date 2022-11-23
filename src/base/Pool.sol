@@ -634,10 +634,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         newLup_ = _lup(poolState.accruedDebt);
 
         if (auctions.isActive(borrowerAddress)) {
-            t0DebtInAuction -= t0repaidDebt;
-
             if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {
+                t0DebtInAuction -= borrower.t0debt; // remove entire borrower debt from pool accumulator
                 Auctions.removeAuction(auctions, borrowerAddress);
+            } else {
+                t0DebtInAuction -= t0repaidDebt; // partial repaid, remove only the paid debt
             }
         }
         

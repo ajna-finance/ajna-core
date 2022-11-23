@@ -501,8 +501,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeDepositRestrict() external {
-    // function testArbTakeDepositRestrict() external tearDown { // FIXME: fails with RemoveDepositLockedByAuctionDebt
+    function testArbTakeDepositRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -565,7 +564,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                kickMomp:          0,
                totalBondEscrowed: 0,
                auctionPrice:      0,
-               debtInAuction:     4.778964466685025779 * 1e18,
+               debtInAuction:     0,
                thresholdPrice:    3.890087558814312251 * 1e18
            })
         );
