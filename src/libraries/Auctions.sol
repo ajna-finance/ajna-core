@@ -42,6 +42,15 @@ library Auctions {
     }
 
     /**
+     *  @dev Struct to hold HPB details, used to prevent stack too deep error.
+     */
+    struct HpbLocalVars {
+        uint256 index;
+        uint256 deposit;
+        uint256 price;
+    }
+
+    /**
      *  @notice The action cannot be executed on an active auction.
      */
     error AuctionActive();
@@ -98,25 +107,29 @@ library Auctions {
 
         if ((block.timestamp - kickTime < 72 hours) && (collateral_ != 0)) revert AuctionNotClearable();
 
+        HpbLocalVars memory hpbVars;
+
         // auction has debt to cover with remaining collateral
         while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
-            uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
-            uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
+            hpbVars.index   = Deposits.findIndexOfSum(deposits_, 1);
+            hpbVars.deposit = Deposits.valueAt(deposits_, hpbVars.index);
+            hpbVars.price   = PoolUtils.indexToPrice(hpbVars.index);
+
+            uint256 depositToRemove = hpbVars.deposit;
             uint256 collateralUsed;
 
             {
-                uint256 hpbPrice          = PoolUtils.indexToPrice(hpbIndex);
                 uint256 debtToSettle      = Maths.wmul(t0DebtToSettle_, poolInflator_);     // current debt to be settled
-                uint256 maxSettleableDebt = Maths.wmul(collateral_, hpbPrice);              // max debt that can be settled with existing collateral
+                uint256 maxSettleableDebt = Maths.wmul(collateral_, hpbVars.price);         // max debt that can be settled with existing collateral
 
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
                     depositToRemove = debtToSettle;                                         // remove only what's needed to settle the debt
                     t0DebtToSettle_ = 0;                                                    // no remaining debt to settle
-                    collateralUsed  = Maths.wdiv(debtToSettle, hpbPrice);
+                    collateralUsed  = Maths.wdiv(debtToSettle, hpbVars.price);
                     collateral_     -= collateralUsed;
                 } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
                     t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_);          // subtract from debt the corresponding t0 amount of deposit
-                    collateralUsed  = Maths.wdiv(depositToRemove, hpbPrice);
+                    collateralUsed  = Maths.wdiv(depositToRemove, hpbVars.price);
                     collateral_     -= collateralUsed;
                 } else {                                                                    // constrained by collateral available
                     depositToRemove = maxSettleableDebt;
@@ -126,8 +139,8 @@ library Auctions {
                 }
             }
 
-            buckets_[hpbIndex].collateral += collateralUsed;       // add settled collateral into bucket
-            Deposits.remove(deposits_, hpbIndex, depositToRemove); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+            buckets_[hpbVars.index].collateral += collateralUsed;                        // add settled collateral into bucket
+            Deposits.remove(deposits_, hpbVars.index, depositToRemove, hpbVars.deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
 
             --bucketDepth_;
         }
@@ -139,8 +152,10 @@ library Auctions {
 
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
             while (bucketDepth_ != 0 && t0DebtToSettle_ != 0) { // loop through remaining buckets if there's still debt to settle
-                uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
-                uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
+                hpbVars.index   = Deposits.findIndexOfSum(deposits_, 1);
+                hpbVars.deposit = Deposits.valueAt(deposits_, hpbVars.index);
+
+                uint256 depositToRemove = hpbVars.deposit;
                 uint256 debtToSettle    = Maths.wmul(t0DebtToSettle_, poolInflator_);
 
                 if (depositToRemove >= debtToSettle) {                             // enough deposit in bucket to settle entire debt
@@ -150,14 +165,14 @@ library Auctions {
                 } else {                                                           // not enough deposit to settle entire debt, we settle only deposit amount
                     t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_); // subtract from remaining debt the corresponding t0 amount of deposit
 
-                    Buckets.Bucket storage hpbBucket = buckets_[hpbIndex];
+                    Buckets.Bucket storage hpbBucket = buckets_[hpbVars.index];
                     if (hpbBucket.collateral == 0) {                               // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
                     }
                 }
 
-                Deposits.remove(deposits_, hpbIndex, depositToRemove);
+                Deposits.remove(deposits_, hpbVars.index, depositToRemove, hpbVars.deposit);
 
                 --bucketDepth_;
             }

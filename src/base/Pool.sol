@@ -97,7 +97,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function moveQuoteToken(
-        uint256 maxQuoteTokenAmountToMove_,
+        uint256 maxAmountToMove_,
         uint256 fromIndex_,
         uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
@@ -106,30 +106,32 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
-        (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = buckets.getLenderInfo(
+        Buckets.Lender memory lender;
+        (lender.lps, lender.depositTime) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
         );
-        uint256 quoteTokenAmountToMove;
+        uint256 amountToMove;
+        uint256 fromDeposit = deposits.valueAt(fromIndex_);
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-        (quoteTokenAmountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
+        (amountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
             fromBucket.collateral,
             fromBucket.lps,
-            deposits.valueAt(fromIndex_),
-            lenderLpBalance,
-            maxQuoteTokenAmountToMove_,
+            fromDeposit,
+            lender.lps,
+            maxAmountToMove_,
             PoolUtils.indexToPrice(fromIndex_)
         );
 
-        deposits.remove(fromIndex_, quoteTokenAmountToMove);
+        deposits.remove(fromIndex_, amountToMove, fromDeposit);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        quoteTokenAmountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
+        amountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
-            lenderLastDepositTime,
+            lender.depositTime,
             fromIndex_,
             toIndex_,
-            quoteTokenAmountToMove
+            amountToMove
         );
 
         Buckets.Bucket storage toBucket = buckets[toIndex_];
@@ -137,11 +139,11 @@ abstract contract Pool is Clone, Multicall, IPool {
             toBucket.collateral,
             toBucket.lps,
             deposits.valueAt(toIndex_),
-            quoteTokenAmountToMove,
+            amountToMove,
             PoolUtils.indexToPrice(toIndex_)
         );
 
-        deposits.add(toIndex_, quoteTokenAmountToMove);
+        deposits.add(toIndex_, amountToMove);
 
         uint256 newLup = _lup(poolState.accruedDebt); // move lup if necessary and check loan book's htp against new lup
         if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
@@ -154,7 +156,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         _updatePool(poolState, newLup);
 
-        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, quoteTokenAmountToMove, newLup);
+        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToMove, newLup);
     }
 
     function removeQuoteToken(
@@ -193,7 +195,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         else {
             redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
         }
-        deposits.remove(index_, removedAmount_);  // update FenwickTree
+
+        deposits.remove(index_, removedAmount_, deposit);  // update FenwickTree
 
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
@@ -394,22 +397,23 @@ abstract contract Pool is Clone, Multicall, IPool {
             )
         );
 
-        uint256 depositAmountToRemove = params.quoteTokenAmount;
-        // the bondholder/kicker is awarded bond change worth of LPB in the bucket
-        if (params.isRewarded) {
-            Buckets.addLPs(
-                bucket,
-                params.kicker,
-                Maths.wrdivr(params.bondChange, bucketExchangeRate)
-            );
-            depositAmountToRemove -= params.bondChange;
+        {
+            uint256 depositAmountToRemove = params.quoteTokenAmount;
+            // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+            if (params.isRewarded) {
+                Buckets.addLPs(
+                    bucket,
+                    params.kicker,
+                    Maths.wrdivr(params.bondChange, bucketExchangeRate)
+                );
+                depositAmountToRemove -= params.bondChange;
+            }
+            deposits.remove(index_, depositAmountToRemove, bucketDeposit); // quote tokens are removed from the bucket’s deposit
         }
 
         borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
         poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
         bucket.collateral    += params.collateralAmount; // collateral is added to the bucket’s claimable collateral
-
-        deposits.remove(index_, depositAmountToRemove); // quote tokens are removed from the bucket’s deposit
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
@@ -630,10 +634,11 @@ abstract contract Pool is Clone, Multicall, IPool {
         newLup_ = _lup(poolState.accruedDebt);
 
         if (auctions.isActive(borrowerAddress)) {
-            t0DebtInAuction -= t0repaidDebt;
-
             if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {
+                t0DebtInAuction -= borrower.t0debt; // remove entire borrower debt from pool accumulator
                 Auctions.removeAuction(auctions, borrowerAddress);
+            } else {
+                t0DebtInAuction -= t0repaidDebt; // partial repaid, remove only the paid debt
             }
         }
         

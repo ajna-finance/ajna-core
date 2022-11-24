@@ -226,9 +226,8 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             }
         );
     }
-    
-    function testDepositTakeCollateralRestrict() external {
-    // function testDepositTakeCollateralRestrict() external tearDown { FIXME: fails due to Fenwick remove dust
+
+    function testDepositTakeCollateralRestrict() external tearDown {
         skip(6 hours);
 
         _assertLenderLpBalance(
@@ -360,7 +359,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         // reserves should remain the same after deposit take
         _assertReserveAuction(
            {
-               reserves:                   23.908406501703106407 * 1e18,
+               reserves:                   23.908406501703106401 * 1e18,
                claimableReserves :         0,
                claimableReservesRemaining: 0,
                auctionPrice:               0,
@@ -502,7 +501,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
 
         _assertReserveAuction(
             {
-                reserves:                   24.097734789604532721 * 1e18,
+                reserves:                   24.097734789604532720 * 1e18,
                 claimableReserves :         0,
                 claimableReservesRemaining: 0,
                 auctionPrice:               0,
@@ -511,8 +510,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-    function testDepositTakeDepositRestrict() external {
-    // function testDepositTakeDepositRestrict() external tearDown { FIXME: fails with RemoveDepositLockedByAuctionDebt
+    function testDepositTakeDepositRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -575,7 +573,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                kickMomp:          0,
                totalBondEscrowed: 0,
                auctionPrice:      0,
-               debtInAuction:     4.778964466685025779 * 1e18,
+               debtInAuction:     0,
                thresholdPrice:    2.401447482873817020 * 1e18
            })
         );
@@ -619,9 +617,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-
-    function testDepositTakeGTNeutralPrice() external {
-    // function testDepositTakeGTNeutralPrice() external tearDown { FIXME:fails due to Fenwick remove dust amounts
+    function testDepositTakeGTNeutralPrice() external tearDown {
 
         skip(3 hours);
 
