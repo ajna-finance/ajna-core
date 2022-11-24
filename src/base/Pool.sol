@@ -25,7 +25,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     uint256 internal constant LAMBDA_EMA_7D      = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
     uint256 internal constant EMA_7D_RATE_FACTOR = 1e18 - LAMBDA_EMA_7D;
-    int256 internal constant PERCENT_102         = 1.02 * 10**18;
+    int256  internal constant PERCENT_102        = 1.02 * 10**18;
 
     /***********************/
     /*** State Variables ***/
@@ -227,7 +227,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 indexesLength = indexes_.length;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            if (!Deposits.isDepositIndex(indexes_[i])) revert InvalidIndex();
+            if (indexes_[i] > 8192 ) revert InvalidIndex();
 
             uint256 transferAmount = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
             if (transferAmount == 0) revert NoAllowance();
@@ -357,26 +357,107 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
-    function heal(
-        address borrower_,
+    function bucketTake(
+        address borrowerAddress_,
+        bool    depositTake_,
+        uint256 index_
+    ) external override {
+        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
+
+        PoolState memory poolState = _accruePoolInterest();
+        uint256 bucketDeposit = deposits.valueAt(index_);
+        if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
+
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        Auctions.TakeParams memory params = Auctions.bucketTake(
+            auctions,
+            borrowerAddress_,
+            borrower,
+            bucketDeposit,
+            bucketPrice,
+            depositTake_,
+            poolState.inflator
+        );
+
+        Buckets.Bucket storage bucket = buckets[index_];
+        uint256 bucketExchangeRate = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            bucketDeposit,
+            bucketPrice
+        );
+        // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+        if (!depositTake_) Buckets.addLPs(
+            bucket,
+            msg.sender,
+            Maths.wrdivr(
+                Maths.wmul(params.collateralAmount, bucketPrice - params.auctionPrice),
+                bucketExchangeRate
+            )
+        );
+
+        uint256 depositAmountToRemove = params.quoteTokenAmount;
+        // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+        if (params.isRewarded) {
+            Buckets.addLPs(
+                bucket,
+                params.kicker,
+                Maths.wrdivr(params.bondChange, bucketExchangeRate)
+            );
+            depositAmountToRemove -= params.bondChange;
+        }
+
+        borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
+        poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
+        bucket.collateral    += params.collateralAmount; // collateral is added to the bucket’s claimable collateral
+
+        deposits.remove(index_, depositAmountToRemove); // quote tokens are removed from the bucket’s deposit
+
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+
+        emit BucketTake(
+            borrowerAddress_,
+            index_,
+            params.quoteTokenAmount,
+            params.collateralAmount,
+            params.bondChange,
+            params.isRewarded
+        );
+    }
+
+    function settle(
+        address borrowerAddress_,
         uint256 maxDepth_
     ) external override {
-
-        uint256 healedDebt = auctions.heal(
-            loans,
+        PoolState memory poolState = _accruePoolInterest();
+        uint256 reserves = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
+        Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
+        (uint256 remainingCollateral, uint256 remainingt0Debt) = Auctions.settle(
+            auctions,
             buckets,
             deposits,
-            borrower_,
-            Maths.wmul(t0poolDebt, inflatorSnapshot) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed, // reserves
-            maxDepth_,
-            inflatorSnapshot
+            borrower.collateral,
+            borrower.t0debt,
+            borrowerAddress_,
+            reserves,
+            poolState.inflator,
+            maxDepth_
         );
-        if (healedDebt != 0) {
-            uint256 t0HealedDebt = Maths.wdiv(healedDebt, inflatorSnapshot); 
-            t0poolDebt           -= t0HealedDebt;
-            t0DebtInAuction      -= t0HealedDebt;
-            emit Heal(borrower_, healedDebt);
-        }
+
+        if (remainingt0Debt == 0) auctions.removeAuction(borrowerAddress_);
+
+        uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
+        t0poolDebt           -= t0settledDebt;
+        t0DebtInAuction      -= t0settledDebt;
+        poolState.collateral -= borrower.collateral - remainingCollateral;
+
+        borrower.t0debt     = remainingt0Debt;
+        borrower.collateral = remainingCollateral;
+
+        _updatePool(poolState, _lup(poolState.accruedDebt));
+
+        emit Settle(borrowerAddress_, t0settledDebt);
     }
 
     function kick(address borrowerAddress_) external override {
@@ -397,12 +478,13 @@ abstract contract Pool is Clone, Multicall, IPool {
         ) revert BorrowerOk();
 
         // update loan heap
-        loans._remove(borrowerAddress_);
+        loans.remove(borrowerAddress_);
 
         uint256 neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
  
         // kick auction
-        (uint256 kickAuctionAmount, uint256 bondSize) = auctions.kick(
+        (uint256 kickAuctionAmount, uint256 bondSize) = Auctions.kick(
+            auctions,
             borrowerAddress_,
             borrowerDebt,
             borrowerDebt * Maths.WAD / borrower.collateral,
@@ -493,12 +575,10 @@ abstract contract Pool is Clone, Multicall, IPool {
             newLup
         );
 
-        if (isCollateralized && auctions._isActive(borrowerAddress_)) t0DebtInAuction -= borrower.t0debt;
-
-        auctions.checkAndRemove(
-            borrowerAddress_,
-            isCollateralized 
-        );
+        if (isCollateralized && auctions.isActive(borrowerAddress_)) {
+            t0DebtInAuction -= borrower.t0debt;
+            Auctions.removeAuction(auctions, borrowerAddress_);
+        }
 
         loans.update(
             deposits,
@@ -551,8 +631,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 newLup_
     ) {
 
-        if (auctions._isActive(borrowerAddress)) t0DebtInAuction -= t0repaidDebt;
-
         quoteTokenAmountToRepay_ = Maths.wmul(t0repaidDebt, poolState.inflator);
         uint256 borrowerDebt     = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
         poolState.accruedDebt    -= quoteTokenAmountToRepay_;
@@ -562,14 +640,13 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         newLup_ = _lup(poolState.accruedDebt);
 
-        auctions.checkAndRemove(
-            borrowerAddress,
-            _isCollateralized(
-                borrowerDebt,
-                borrower.collateral,
-                newLup_
-            )
-        );
+        if (auctions.isActive(borrowerAddress)) {
+            t0DebtInAuction -= t0repaidDebt;
+
+            if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {
+                Auctions.removeAuction(auctions, borrowerAddress);
+            }
+        }
         
         borrower.t0debt -= t0repaidDebt;
         loans.update(
