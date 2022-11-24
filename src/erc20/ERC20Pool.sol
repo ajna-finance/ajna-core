@@ -202,7 +202,7 @@ contract ERC20Pool is IERC20Pool, Pool {
             bucketPrice
         );
         // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
-        Buckets.addLPs(
+        if (!depositTake_) Buckets.addLPs(
             bucket,
             msg.sender,
             Maths.wrdivr(
