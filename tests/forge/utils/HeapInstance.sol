@@ -33,7 +33,7 @@ contract HeapInstance is DSTestPlus {
     }
 
     function upsertTp(address borrower_, uint256 tp_) public {
-        _heap._upsert(borrower_, tp_);
+        _heap._upsert(borrower_, uint96(tp_));
     }
 
     function removeTp(address borrower_) external {

@@ -18,7 +18,7 @@ library Loans {
 
     struct Loan {
         address borrower;       // borrower address
-        uint256 thresholdPrice; // [WAD] Loan's threshold price.
+        uint96  thresholdPrice; // [WAD] Loan's threshold price.
     }
 
     struct Borrower {
@@ -76,7 +76,7 @@ library Loans {
             _upsert(
                 self,
                 borrowerAddress_,
-                Maths.wdiv(borrower_.t0debt, borrower_.collateral)
+                uint96(Maths.wdiv(borrower_.t0debt, borrower_.collateral))
             );
         } else if (self.indices[borrowerAddress_] != 0) {
             remove(self, borrowerAddress_);
@@ -184,7 +184,7 @@ library Loans {
     function _upsert(
         Data storage self,
         address borrower_,
-        uint256 thresholdPrice_
+        uint96 thresholdPrice_
     ) internal {
         if (thresholdPrice_ == 0) revert ZeroThresholdPrice();
         uint256 i = self.indices[borrower_];
