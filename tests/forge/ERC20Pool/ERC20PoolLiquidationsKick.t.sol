@@ -366,7 +366,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
-                debtInAuction:     17.778456451861613479 * 1e18,
+                debtInAuction:     0,
                 thresholdPrice:    8.889228225930806739 * 1e18
             })
         );
@@ -424,7 +424,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
-                debtInAuction:     29.220892836483115000 * 1e18,
+                debtInAuction:     0,
                 thresholdPrice:    4.860069081639167195 * 1e18
             })
         );
@@ -737,7 +737,7 @@ contract ERC20PoolLiquidationsKickTest is ERC20HelperContract {
             PoolState({
                 htp:                  0,
                 lup:                  9.721295865031779605 * 1e18,
-                poolSize:             73_120.392679807500549985 * 1e18,
+                poolSize:             73_120.392679807500549984 * 1e18,
                 pledgedCollateral:    1_002 * 1e18,
                 encumberedCollateral: 1_028.341798247607959833 * 1e18,
                 poolDebt:             9_996.814871143815802222 * 1e18,

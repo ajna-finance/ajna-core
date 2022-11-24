@@ -226,9 +226,8 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             }
         );
     }
-    
-    function testDepositTakeCollateralRestrict() external {
-    // function testDepositTakeCollateralRestrict() external tearDown { FIXME: fails due to Fenwick remove dust
+
+    function testDepositTakeCollateralRestrict() external tearDown {
         skip(6 hours);
 
         _assertLenderLpBalance(
@@ -360,8 +359,8 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         // reserves should remain the same after deposit take
         _assertReserveAuction(
            {
-               reserves:                   286.937409002180824696 * 1e18,
-               claimableReserves :         245.603559100962129017 * 1e18,
+               reserves:                   286.937409002180824697 * 1e18,
+               claimableReserves :         245.603559100962129018 * 1e18,
                claimableReservesRemaining: 0,
                auctionPrice:               0,
                timeRemaining:              0
@@ -502,8 +501,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-    function testDepositTakeDepositRestrict() external {
-    // function testDepositTakeDepositRestrict() external tearDown { FIXME: fails with RemoveDepositLockedByAuctionDebt
+    function testDepositTakeDepositRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -566,7 +564,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
                kickMomp:          0,
                totalBondEscrowed: 0,
                auctionPrice:      0,
-               debtInAuction:     5.189585809651700719 * 1e18,
+               debtInAuction:     0,
                thresholdPrice:    2.607786240434321655 * 1e18
            })
         );
@@ -610,9 +608,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
         );
     }
 
-
-    function testDepositTakeGTNeutralPrice() external {
-    // function testDepositTakeGTNeutralPrice() external tearDown { FIXME:fails due to Fenwick remove dust amounts
+    function testDepositTakeGTNeutralPrice() external tearDown {
 
         skip(3 hours);
 
