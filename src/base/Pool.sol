@@ -577,6 +577,8 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         if (isCollateralized && auctions.isActive(borrowerAddress_)) {
             t0DebtInAuction -= borrower.t0debt;
+
+            borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
             Auctions.removeAuction(auctions, borrowerAddress_);
         }
 
@@ -637,6 +639,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         if (auctions.isActive(borrowerAddress)) {
             if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {
                 t0DebtInAuction -= borrower.t0debt; // remove entire borrower debt from pool accumulator
+
+                borrower.collateral = _settleAuction(borrowerAddress, borrower.collateral);
                 Auctions.removeAuction(auctions, borrowerAddress);
             } else {
                 t0DebtInAuction -= t0repaidDebt; // partial repaid, remove only the paid debt
@@ -677,6 +681,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         bucketLPs_ = Buckets.addCollateral(
             buckets[index_],
+            msg.sender,
             deposits.valueAt(index_),
             collateralAmountToAdd_,
             PoolUtils.indexToPrice(index_))
@@ -765,6 +770,20 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 price_
     ) internal virtual returns (bool) {
         return Maths.wmul(collateral_, price_) >= debt_;
+    }
+
+   /**
+     *  @notice Additional method to settle an auction when it exits the auction queue.
+     *  @dev Empty implementation for ERC20 pool; Overriden in NFT implementations to reconcile fragments of collateral.
+     *  @param borrowerAddress_    Address of the borrower that exits auction.
+     *  @param borrowerCollateral_ Borrower collateral amount before auction exit.
+     *  @return floorCollateral_   Remaining borrower collateral after auction exit.
+     */
+    function _settleAuction(
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) internal virtual returns (uint256) {
+        return borrowerCollateral_;
     }
 
     function _updatePool(PoolState memory poolState_, uint256 lup_) internal {

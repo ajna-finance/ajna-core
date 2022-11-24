@@ -115,6 +115,7 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
         );
         toBucketLPs_ = Buckets.addCollateral(
             buckets[toIndex_],
+            msg.sender,
             deposits.valueAt(toIndex_),
             collateralAmountToMove_,
             PoolUtils.indexToPrice(toIndex_)
