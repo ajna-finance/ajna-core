@@ -98,7 +98,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              0,
                 borrowerCollateral:        0,
-                borrowerMompFactor:        0,
+                borrowert0Np:              0,
                 borrowerCollateralization: 1 * 1e18
             }
         );
@@ -107,7 +107,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              0,
                 borrowerCollateral:        0,
-                borrowerMompFactor:        0,
+                borrowert0Np:              0,
                 borrowerCollateralization: 1 * 1e18
             }
         );
@@ -136,7 +136,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrower:                  _borrower,
                 borrowerDebt:              0,
                 borrowerCollateral:        1 * 1e18,
-                borrowerMompFactor:        0,
+                borrowert0Np:              0,
                 borrowerCollateralization: 1 * 1e18
             }
         );
@@ -145,7 +145,7 @@ contract ERC721PoolCollateralTest is ERC721HelperContract {
                 borrower:                  _borrower2,
                 borrowerDebt:              0,
                 borrowerCollateral:        0,
-                borrowerMompFactor:        0,
+                borrowert0Np:              0,
                 borrowerCollateralization: 1 * 1e18
             }
         );
