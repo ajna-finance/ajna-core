@@ -15,7 +15,7 @@ contract PoolInfoUtils {
         returns (
             uint256 debt_,             // current debt owed by borrower              (WAD)
             uint256 collateral_,       // deposited collateral including encumbered  (WAD)
-            uint256 t0Np_               // Np / inflator, used in neutralPrice calc   (WAD)
+            uint256 t0Np_              // Np / inflator, used in neutralPrice calc   (WAD)
         )
     {
         IPool pool = IPool(ajnaPool_);
