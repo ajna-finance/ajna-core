@@ -1409,14 +1409,15 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        _moveCollateral({
-            from:         _lender,
-            amount:       0,
-            fromIndex:    123,
-            toIndex:      1000,
-            lpRedeemFrom: 0,
-            lpRedeemTo:   0
-        });
+        // force accrue pool interest
+        _addLiquidity(
+           {
+               from:   _lender1,
+               amount: 0,
+               index:  _i9_52,
+               newLup: 9.529276179422528643 * 1e18
+           }
+        );
 
         _assertPool(
             PoolState({
