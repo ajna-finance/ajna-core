@@ -810,7 +810,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             {
                 from:     _taker,
                 borrower: _borrower,
-                index:    _i100
+                index:    _i100_33
             }
         );
 
