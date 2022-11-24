@@ -681,7 +681,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        // BPF Positive, Loan collateral constraint
+        // BPF Positive, Caller collateral constraint
         _take(
             {
                 from:            _lender,
