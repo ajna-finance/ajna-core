@@ -18,11 +18,11 @@ library Auctions {
 
     struct Liquidation {
         address kicker;      // address that initiated liquidation
+        uint96  bondFactor;  // bond factor used to start liquidation
         uint256 bondSize;    // liquidation bond size
-        uint256 bondFactor;  // bond factor used to start liquidation
-        uint256 kickTime;    // timestamp when liquidation was started
-        uint256 kickMomp;    // Momp when liquidation was started
+        uint96  kickTime;     // timestamp when liquidation was started
         address prev;        // previous liquidated borrower in auctions queue
+        uint96  kickMomp;    // Momp when liquidation was started
         address next;        // next liquidated borrower in auctions queue
     }
 
@@ -228,10 +228,10 @@ library Auctions {
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
         liquidation.kicker     = msg.sender;
-        liquidation.kickTime   = block.timestamp;
-        liquidation.kickMomp   = momp_;
+        liquidation.kickTime   = uint96(block.timestamp);
+        liquidation.kickMomp   = uint96(momp_);
         liquidation.bondSize   = bondSize_;
-        liquidation.bondFactor = bondFactor;
+        liquidation.bondFactor = uint96(bondFactor);
 
         if (self.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
