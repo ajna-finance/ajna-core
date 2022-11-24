@@ -294,7 +294,7 @@ library Auctions {
             params_.quoteTokenAmount = Maths.wdiv(bucketDeposit_, factor);
         } else {
             params_.t0repayAmount    = borrower_.t0debt;
-            params_.quoteTokenAmount = Maths.wdiv(Maths.wmul(params_.t0repayAmount, poolInflator_), factor);
+            params_.quoteTokenAmount = Maths.wdiv(borrowerDebt, factor);
         }
 
         params_.collateralAmount = Maths.wdiv(params_.quoteTokenAmount, price);
