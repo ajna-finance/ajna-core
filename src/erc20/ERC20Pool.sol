@@ -2,10 +2,12 @@
 
 pragma solidity 0.8.14;
 
+import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IERC20Pool.sol';
+import './interfaces/IERC20Taker.sol';
 import '../base/Pool.sol';
 
-contract ERC20Pool is IERC20Pool, Pool {
+contract ERC20Pool is ReentrancyGuard, IERC20Pool, Pool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
@@ -173,17 +175,12 @@ contract ERC20Pool is IERC20Pool, Pool {
     /*** Pool External Functions ***/
     /*******************************/
 
-    /**
-     *  @notice Performs take checks, calculates amounts and bpf reward / penalty.
-     *  @dev Internal support method assisting in the ERC20 and ERC721 pool take calls.
-     *  @param borrowerAddress_   Address of the borower take is being called upon.
-     *  @param collateral_        Max amount of collateral to take, submited by the taker.
-     */
     function take(
-        address borrowerAddress_,
-        uint256 collateral_,
-        bytes memory swapCalldata_
-    ) external override {
+        address        borrowerAddress_,
+        uint256        collateral_,
+        address        callee_,
+        bytes calldata data_
+    ) external override nonReentrant {
         PoolState      memory poolState = _accruePoolInterest();
         Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
         if (borrower.collateral == 0 || collateral_ == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0 or if maxCollateral to be taken is 0
@@ -209,13 +206,17 @@ contract ERC20Pool is IERC20Pool, Pool {
             params.isRewarded
         );
 
-        // TODO: implement flashloan functionality
-        // Flash loan full amount to liquidate to borrower
-        // Execute arbitrary code at msg.sender address, allowing atomic conversion of asset
-        //msg.sender.call(swapCalldata_);
+        _transferCollateral(callee_, params.collateralAmount);
 
-        _transferQuoteTokenFrom(msg.sender, params.quoteTokenAmount);
-        _transferCollateral(msg.sender, params.collateralAmount);
+        if (data_.length > 0) {
+            IERC20Taker(callee_).atomicSwapCallback(
+                params.collateralAmount / collateralScale, 
+                params.quoteTokenAmount / _getArgUint256(40), 
+                data_
+            );
+        }
+
+        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount);
     }
 
     /************************/
