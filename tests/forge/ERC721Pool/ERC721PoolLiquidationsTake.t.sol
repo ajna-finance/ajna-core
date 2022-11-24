@@ -161,8 +161,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
         assertEq(_quote.balanceOf(_lender), 47_000 * 1e18);
     }
 
-    function testTakeCollateralSubsetPool() external {
-    // function testTakeCollateralSubsetPool() external tearDown { FIXME: fails with RemoveDepositLockedByAuctionDebt
+    function testTakeCollateralSubsetPool() external tearDown {
 
         // Skip to make borrower undercollateralized
         skip(1000 days);
@@ -440,7 +439,7 @@ contract ERC721PoolLiquidationsTakeTest is ERC721HelperContract {
                 kickMomp:          0,
                 totalBondEscrowed: 0,
                 auctionPrice:      0,
-                debtInAuction:     3.179050231366162129 * 1e18,
+                debtInAuction:     0,
                 thresholdPrice:    3.179050231366162129 * 1e18,
                 neutralPrice:      9.917184843435912074 * 1e18
             })

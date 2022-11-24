@@ -228,8 +228,8 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
             }
         );
     }
-    
-    function testArbTakeCollateralRestrict() external {
+
+    function testArbTakeCollateralRestrict() external tearDown {
 
         skip(6 hours);
 
@@ -363,7 +363,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         // reserves should remain the same after arb take
         _assertReserveAuction(
            {
-               reserves:                   23.908406501703106407 * 1e18,
+               reserves:                   23.908406501703106402 * 1e18,
                claimableReserves :         0,
                claimableReservesRemaining: 0,
                auctionPrice:               0,
@@ -406,7 +406,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeDebtRestrict() external {
+    function testArbTakeDebtRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -497,7 +497,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
 
         _assertReserveAuction(
             {
-                reserves:                   24.097734789604532721 * 1e18,
+                reserves:                   24.097734789604532720 * 1e18,
                 claimableReserves :         0,
                 claimableReservesRemaining: 0,
                 auctionPrice:               0,
@@ -506,7 +506,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-    function testArbTakeDepositRestrict() external {
+    function testArbTakeDepositRestrict() external tearDown {
 
         skip(5 hours);
 
@@ -570,7 +570,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                kickMomp:          0,
                totalBondEscrowed: 0,
                auctionPrice:      0,
-               debtInAuction:     4.778964466685025779 * 1e18,
+               debtInAuction:     0,
                thresholdPrice:    3.890087558814312251 * 1e18,
                neutralPrice:      9.818751856078723036 * 1e18
            })
@@ -615,8 +615,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
         );
     }
 
-
-    function testArbTakeGTNeutralPrice() external {
+    function testArbTakeGTNeutralPrice() external tearDown {
 
         skip(3 hours);
 

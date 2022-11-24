@@ -25,7 +25,7 @@ abstract contract Pool is Clone, Multicall, IPool {
 
     uint256 internal constant LAMBDA_EMA_7D      = 0.905723664263906671 * 1e18; // Lambda used for interest EMAs calculated as exp(-1/7   * ln2)
     uint256 internal constant EMA_7D_RATE_FACTOR = 1e18 - LAMBDA_EMA_7D;
-    int256 internal constant PERCENT_102         = 1.02 * 10**18;
+    int256  internal constant PERCENT_102        = 1.02 * 10**18;
 
     /***********************/
     /*** State Variables ***/
@@ -97,7 +97,7 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function moveQuoteToken(
-        uint256 maxQuoteTokenAmountToMove_,
+        uint256 maxAmountToMove_,
         uint256 fromIndex_,
         uint256 toIndex_
     ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
@@ -106,30 +106,32 @@ abstract contract Pool is Clone, Multicall, IPool {
         PoolState memory poolState = _accruePoolInterest();
         _revertIfAuctionDebtLocked(fromIndex_, poolState.inflator);
 
-        (uint256 lenderLpBalance, uint256 lenderLastDepositTime) = buckets.getLenderInfo(
+        Buckets.Lender memory lender;
+        (lender.lps, lender.depositTime) = buckets.getLenderInfo(
             fromIndex_,
             msg.sender
         );
-        uint256 quoteTokenAmountToMove;
+        uint256 amountToMove;
+        uint256 fromDeposit = deposits.valueAt(fromIndex_);
         Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-        (quoteTokenAmountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
+        (amountToMove, fromBucketLPs_, ) = Buckets.lpsToQuoteToken(
             fromBucket.collateral,
             fromBucket.lps,
-            deposits.valueAt(fromIndex_),
-            lenderLpBalance,
-            maxQuoteTokenAmountToMove_,
+            fromDeposit,
+            lender.lps,
+            maxAmountToMove_,
             PoolUtils.indexToPrice(fromIndex_)
         );
 
-        deposits.remove(fromIndex_, quoteTokenAmountToMove);
+        deposits.remove(fromIndex_, amountToMove, fromDeposit);
 
         // apply early withdrawal penalty if quote token is moved from above the PTP to below the PTP
-        quoteTokenAmountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
+        amountToMove = PoolUtils.applyEarlyWithdrawalPenalty(
             poolState,
-            lenderLastDepositTime,
+            lender.depositTime,
             fromIndex_,
             toIndex_,
-            quoteTokenAmountToMove
+            amountToMove
         );
 
         Buckets.Bucket storage toBucket = buckets[toIndex_];
@@ -137,11 +139,11 @@ abstract contract Pool is Clone, Multicall, IPool {
             toBucket.collateral,
             toBucket.lps,
             deposits.valueAt(toIndex_),
-            quoteTokenAmountToMove,
+            amountToMove,
             PoolUtils.indexToPrice(toIndex_)
         );
 
-        deposits.add(toIndex_, quoteTokenAmountToMove);
+        deposits.add(toIndex_, amountToMove);
 
         uint256 newLup = _lup(poolState.accruedDebt); // move lup if necessary and check loan book's htp against new lup
         if (fromIndex_ < toIndex_) if(_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
@@ -154,7 +156,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         );
         _updatePool(poolState, newLup);
 
-        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, quoteTokenAmountToMove, newLup);
+        emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToMove, newLup);
     }
 
     function removeQuoteToken(
@@ -193,7 +195,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         else {
             redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
         }
-        deposits.remove(index_, removedAmount_);  // update FenwickTree
+
+        deposits.remove(index_, removedAmount_, deposit);  // update FenwickTree
 
         uint256 newLup = _lup(poolState.accruedDebt);
         if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
@@ -227,7 +230,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 indexesLength = indexes_.length;
 
         for (uint256 i = 0; i < indexesLength; ) {
-            if (!Deposits.isDepositIndex(indexes_[i])) revert InvalidIndex();
+            if (indexes_[i] > 8192 ) revert InvalidIndex();
 
             uint256 transferAmount = _lpTokenAllowances[owner_][newOwner_][indexes_[i]];
             if (transferAmount == 0) revert NoAllowance();
@@ -354,19 +357,91 @@ abstract contract Pool is Clone, Multicall, IPool {
     /*** Liquidation Functions ***/
     /*****************************/
 
+    function bucketTake(
+        address borrowerAddress_,
+        bool    depositTake_,
+        uint256 index_
+    ) external override {
+        Loans.Borrower memory borrower  = loans.getBorrowerInfo(borrowerAddress_);
+        if (borrower.collateral == 0) revert InsufficientCollateral(); // revert if borrower's collateral is 0
+
+        PoolState memory poolState = _accruePoolInterest();
+        uint256 bucketDeposit = deposits.valueAt(index_);
+        if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
+
+        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
+        Auctions.TakeParams memory params = Auctions.bucketTake(
+            auctions,
+            borrowerAddress_,
+            borrower,
+            bucketDeposit,
+            bucketPrice,
+            depositTake_,
+            poolState.inflator
+        );
+
+        Buckets.Bucket storage bucket = buckets[index_];
+        uint256 bucketExchangeRate = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            bucketDeposit,
+            bucketPrice
+        );
+        // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+        Buckets.addLPs(
+            bucket,
+            msg.sender,
+            Maths.wrdivr(
+                Maths.wmul(params.collateralAmount, bucketPrice - params.auctionPrice),
+                bucketExchangeRate
+            )
+        );
+
+        {
+            uint256 depositAmountToRemove = params.quoteTokenAmount;
+            // the bondholder/kicker is awarded bond change worth of LPB in the bucket
+            if (params.isRewarded) {
+                Buckets.addLPs(
+                    bucket,
+                    params.kicker,
+                    Maths.wrdivr(params.bondChange, bucketExchangeRate)
+                );
+                depositAmountToRemove -= params.bondChange;
+            }
+            deposits.remove(index_, depositAmountToRemove, bucketDeposit); // quote tokens are removed from the bucket’s deposit
+        }
+
+        borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
+        poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
+        bucket.collateral    += params.collateralAmount; // collateral is added to the bucket’s claimable collateral
+
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+
+        emit BucketTake(
+            borrowerAddress_,
+            index_,
+            params.quoteTokenAmount,
+            params.collateralAmount,
+            params.bondChange,
+            params.isRewarded
+        );
+    }
+
     function settle(
         address borrowerAddress_,
         uint256 maxDepth_
     ) external override {
         PoolState memory poolState = _accruePoolInterest();
+        uint256 reserves = Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed;
         Loans.Borrower storage borrower = loans.borrowers[borrowerAddress_];
-        (uint256 remainingCollateral, uint256 remainingt0Debt) = auctions.settle(
+        (uint256 remainingCollateral, uint256 remainingt0Debt) = Auctions.settle(
+            auctions,
             buckets,
             deposits,
             borrower.collateral,
             borrower.t0debt,
             borrowerAddress_,
-            Maths.wmul(t0poolDebt, poolState.inflator) + _getPoolQuoteTokenBalance() - deposits.treeSum() - auctions.totalBondEscrowed - reserveAuctionUnclaimed, // reserves
+            reserves,
             poolState.inflator,
             maxDepth_
         );
@@ -408,7 +483,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         loans.remove(borrowerAddress_);
  
         // kick auction
-        (uint256 kickAuctionAmount, uint256 bondSize) = auctions.kick(
+        (uint256 kickAuctionAmount, uint256 bondSize) = Auctions.kick(
+            auctions,
             borrowerAddress_,
             borrowerDebt,
             borrowerDebt * Maths.WAD / borrower.collateral,
@@ -498,12 +574,10 @@ abstract contract Pool is Clone, Multicall, IPool {
             newLup
         );
 
-        if (isCollateralized && auctions._isActive(borrowerAddress_)) t0DebtInAuction -= borrower.t0debt;
-
-        auctions.checkAndRemove(
-            borrowerAddress_,
-            isCollateralized 
-        );
+        if (isCollateralized && auctions.isActive(borrowerAddress_)) {
+            t0DebtInAuction -= borrower.t0debt;
+            Auctions.removeAuction(auctions, borrowerAddress_);
+        }
 
         loans.update(
             deposits,
@@ -550,8 +624,6 @@ abstract contract Pool is Clone, Multicall, IPool {
         uint256 newLup_
     ) {
 
-        if (auctions._isActive(borrowerAddress)) t0DebtInAuction -= t0repaidDebt;
-
         quoteTokenAmountToRepay_ = Maths.wmul(t0repaidDebt, poolState.inflator);
         uint256 borrowerDebt     = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
         poolState.accruedDebt    -= quoteTokenAmountToRepay_;
@@ -561,14 +633,14 @@ abstract contract Pool is Clone, Multicall, IPool {
 
         newLup_ = _lup(poolState.accruedDebt);
 
-        auctions.checkAndRemove(
-            borrowerAddress,
-            _isCollateralized(
-                borrowerDebt,
-                borrower.collateral,
-                newLup_
-            )
-        );
+        if (auctions.isActive(borrowerAddress)) {
+            if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {
+                t0DebtInAuction -= borrower.t0debt; // remove entire borrower debt from pool accumulator
+                Auctions.removeAuction(auctions, borrowerAddress);
+            } else {
+                t0DebtInAuction -= t0repaidDebt; // partial repaid, remove only the paid debt
+            }
+        }
         
         borrower.t0debt -= t0repaidDebt;
         loans.update(

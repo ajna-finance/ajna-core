@@ -135,6 +135,11 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit BucketTake(borrower, index, quoteTokenAmount, collateralArbed, bondChange, isReward);
         _pool.bucketTake(borrower, false, index);
+
+        // Add for tearDown
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
+        bucketsUsed.add(index);
     }
 
     function _borrow(
@@ -166,6 +171,11 @@ abstract contract DSTestPlus is Test {
         vm.expectEmit(true, true, false, true);
         emit BucketTake(borrower, index, quoteTokenAmount, collateralArbed, bondChange, isReward);
         _pool.bucketTake(borrower, true, index);
+
+        // Add for tearDown
+        lenders.add(from);
+        lendersDepositedIndex[from].add(index);
+        bucketsUsed.add(index);
     }
 
     function _settle(
@@ -355,9 +365,8 @@ abstract contract DSTestPlus is Test {
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (uint256 auctionTotalBondEscrowed,,) = _pool.reservesInfo();
         (,,uint256 auctionDebtInAuction)  = _pool.debtInfo(); 
-        (uint256 borrowerdebt, uint256 borrowerCollateral, uint256 borrowerMompFactor) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
-
-        _assertPrices(address(_pool), state_.borrower, state_);
+        
+        _assertPrices(state_);
 
         assertEq(auctionKickTime != 0,                                     state_.active);
         assertEq(auctionKicker,                                            state_.kicker);
@@ -370,7 +379,7 @@ abstract contract DSTestPlus is Test {
         assertEq(auctionDebtInAuction,                                     state_.debtInAuction);
     }
 
-    function _assertPrices(address poolAddress, address borrowerAddress, AuctionState memory state_) internal {
+    function _assertPrices(AuctionState memory state_) internal {
         (
             ,
             ,
@@ -378,7 +387,7 @@ abstract contract DSTestPlus is Test {
             uint256 auctionKickTime,
             uint256 auctionKickMomp,
             ,
-        ) = _pool.auctionInfo(borrowerAddress);
+        ) = _pool.auctionInfo(state_.borrower);
         (uint256 borrowerdebt, uint256 borrowerCollateral, uint256 borrowerMompFactor) = _poolUtils.borrowerInfo(address(_pool), state_.borrower);
         (,,,uint256 pendingInflator,)  = _poolUtils.poolLoansInfo(address(_pool));
         uint256 borrowerThresholdPrice = borrowerCollateral > 0 ? borrowerdebt * Maths.WAD / borrowerCollateral : 0;

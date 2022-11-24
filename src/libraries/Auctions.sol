@@ -42,6 +42,15 @@ library Auctions {
     }
 
     /**
+     *  @dev Struct to hold HPB details, used to prevent stack too deep error.
+     */
+    struct HpbLocalVars {
+        uint256 index;
+        uint256 deposit;
+        uint256 price;
+    }
+
+    /**
      *  @notice The action cannot be executed on an active auction.
      */
     error AuctionActive();
@@ -66,9 +75,9 @@ library Auctions {
      */
     error TakeNotPastCooldown();
 
-    /*********************************/
-    /***  Auctions Queue Functions ***/
-    /*********************************/
+    /***************************/
+    /***  External Functions ***/
+    /***************************/
 
     /**
      *  @notice Settles the debt of the given loan / borrower.
@@ -92,31 +101,35 @@ library Auctions {
         uint256 reserves_,
         uint256 poolInflator_,
         uint256 bucketDepth_
-    ) internal returns (uint256, uint256) {
+    ) external returns (uint256, uint256) {
         uint256 kickTime = self.liquidations[borrower_].kickTime;
         if (kickTime == 0) revert NoAuction();
 
         if ((block.timestamp - kickTime < 72 hours) && (collateral_ != 0)) revert AuctionNotClearable();
 
+        HpbLocalVars memory hpbVars;
+
         // auction has debt to cover with remaining collateral
         while (bucketDepth_ != 0 && t0DebtToSettle_ != 0 && collateral_ != 0) {
-            uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
-            uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
+            hpbVars.index   = Deposits.findIndexOfSum(deposits_, 1);
+            hpbVars.deposit = Deposits.valueAt(deposits_, hpbVars.index);
+            hpbVars.price   = PoolUtils.indexToPrice(hpbVars.index);
+
+            uint256 depositToRemove = hpbVars.deposit;
             uint256 collateralUsed;
 
             {
-                uint256 hpbPrice          = PoolUtils.indexToPrice(hpbIndex);
                 uint256 debtToSettle      = Maths.wmul(t0DebtToSettle_, poolInflator_);     // current debt to be settled
-                uint256 maxSettleableDebt = Maths.wmul(collateral_, hpbPrice);              // max debt that can be settled with existing collateral
+                uint256 maxSettleableDebt = Maths.wmul(collateral_, hpbVars.price);         // max debt that can be settled with existing collateral
 
                 if (depositToRemove >= debtToSettle && maxSettleableDebt >= debtToSettle) { // enough deposit in bucket and collateral avail to settle entire debt
                     depositToRemove = debtToSettle;                                         // remove only what's needed to settle the debt
                     t0DebtToSettle_ = 0;                                                    // no remaining debt to settle
-                    collateralUsed  = Maths.wdiv(debtToSettle, hpbPrice);
+                    collateralUsed  = Maths.wdiv(debtToSettle, hpbVars.price);
                     collateral_     -= collateralUsed;
                 } else if (maxSettleableDebt >= depositToRemove) {                          // enough collateral, therefore not enough deposit to settle entire debt, we settle only deposit amount
                     t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_);          // subtract from debt the corresponding t0 amount of deposit
-                    collateralUsed  = Maths.wdiv(depositToRemove, hpbPrice);
+                    collateralUsed  = Maths.wdiv(depositToRemove, hpbVars.price);
                     collateral_     -= collateralUsed;
                 } else {                                                                    // constrained by collateral available
                     depositToRemove = maxSettleableDebt;
@@ -126,8 +139,8 @@ library Auctions {
                 }
             }
 
-            buckets_[hpbIndex].collateral += collateralUsed;       // add settled collateral into bucket
-            Deposits.remove(deposits_, hpbIndex, depositToRemove); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
+            buckets_[hpbVars.index].collateral += collateralUsed;                        // add settled collateral into bucket
+            Deposits.remove(deposits_, hpbVars.index, depositToRemove, hpbVars.deposit); // remove amount to settle debt from bucket (could be entire deposit or only the settled debt)
 
             --bucketDepth_;
         }
@@ -139,8 +152,10 @@ library Auctions {
 
             // if there's still debt after settling from reserves then start to forgive amount from next HPB
             while (bucketDepth_ != 0 && t0DebtToSettle_ != 0) { // loop through remaining buckets if there's still debt to settle
-                uint256 hpbIndex        = Deposits.findIndexOfSum(deposits_, 1);
-                uint256 depositToRemove = Deposits.valueAt(deposits_, hpbIndex);
+                hpbVars.index   = Deposits.findIndexOfSum(deposits_, 1);
+                hpbVars.deposit = Deposits.valueAt(deposits_, hpbVars.index);
+
+                uint256 depositToRemove = hpbVars.deposit;
                 uint256 debtToSettle    = Maths.wmul(t0DebtToSettle_, poolInflator_);
 
                 if (depositToRemove >= debtToSettle) {                             // enough deposit in bucket to settle entire debt
@@ -150,36 +165,20 @@ library Auctions {
                 } else {                                                           // not enough deposit to settle entire debt, we settle only deposit amount
                     t0DebtToSettle_ -= Maths.wdiv(depositToRemove, poolInflator_); // subtract from remaining debt the corresponding t0 amount of deposit
 
-                    Buckets.Bucket storage hpbBucket = buckets_[hpbIndex];
+                    Buckets.Bucket storage hpbBucket = buckets_[hpbVars.index];
                     if (hpbBucket.collateral == 0) {                               // existing LPB and LP tokens for the bucket shall become unclaimable.
                         hpbBucket.lps = 0;
                         hpbBucket.bankruptcyTime = block.timestamp;
                     }
                 }
 
-                Deposits.remove(deposits_, hpbIndex, depositToRemove);
+                Deposits.remove(deposits_, hpbVars.index, depositToRemove, hpbVars.deposit);
 
                 --bucketDepth_;
             }
         }
 
         return (collateral_, t0DebtToSettle_);
-    }
-    
-    /**
-     *  @notice Removes a collateralized borrower from the auctions queue and repairs the queue order.
-     *  @param  borrower_         Borrower whose loan is being placed in queue.
-     *  @param  isCollateralized_ Borrower's collateralization flag.
-     */
-    function checkAndRemove(
-        Data storage self,
-        address borrower_,
-        bool    isCollateralized_
-    ) internal {
-
-        if (isCollateralized_ && self.liquidations[borrower_].kickTime != 0) {
-            removeAuction(self, borrower_);
-        }
     }
 
     /**
@@ -197,7 +196,7 @@ library Auctions {
         uint256 borrowerDebt_,
         uint256 thresholdPrice_,
         uint256 momp_
-    ) internal returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
+    ) external returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
 
         uint256 bondFactor;
         // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
@@ -266,7 +265,7 @@ library Auctions {
         uint256 bucketPrice_,
         bool    depositTake_,
         uint256 poolInflator_
-    ) internal returns (TakeParams memory params_) {
+    ) external returns (TakeParams memory params_) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
@@ -329,7 +328,7 @@ library Auctions {
         Loans.Borrower memory borrower_,
         uint256 maxCollateral_,
         uint256 poolInflator_
-    ) internal returns (TakeParams memory params_) {
+    ) external returns (TakeParams memory params_) {
         Liquidation storage liquidation = self.liquidations[borrowerAddress_];
         _validateTake(liquidation);
 
@@ -372,11 +371,6 @@ library Auctions {
         }
     }
 
-
-    /***************************/
-    /***  Internal Functions ***/
-    /***************************/
-
     /**
      *  @notice Removes auction and repairs the queue order.
      *  @notice Updates kicker's claimable balance with bond size awarded and subtracts bond size awarded from liquidationBondEscrowed.
@@ -385,8 +379,7 @@ library Auctions {
     function removeAuction(
         Data storage self,
         address borrower_
-    ) internal {
-
+    ) external {
         Liquidation memory liquidation = self.liquidations[borrower_];
         // update kicker balances
         Kicker storage kicker = self.kickers[liquidation.kicker];
@@ -420,6 +413,11 @@ library Auctions {
         // delete liquidation
          delete self.liquidations[borrower_];
     }
+
+
+    /***************************/
+    /***  Internal Functions ***/
+    /***************************/
 
     /**
      *  @notice Utility function to validate take action.
@@ -479,7 +477,7 @@ library Auctions {
         Data storage self,
         address borrower_
     ) internal view {
-        if (_isActive(self, borrower_)) revert AuctionActive();
+        if (isActive(self, borrower_)) revert AuctionActive();
     }
 
     /**
@@ -488,7 +486,7 @@ library Auctions {
      *  @param  borrower_ Borrower address to check auction status for.
      *  @return  active_ Boolean, based on if borrower is in auction.
      */
-    function _isActive(
+    function isActive(
         Data storage self,
         address borrower_
     ) internal view returns (bool) {
