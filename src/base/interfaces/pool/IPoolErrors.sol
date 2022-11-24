@@ -31,6 +31,16 @@ interface IPoolErrors {
     error BorrowerUnderCollateralized();
 
     /**
+     *  @notice Callback invoked by flashLoan function did not return the expected hash (see ERC-3156 spec).
+     */
+    error FlashloanCallbackFailed();
+
+    /**
+     *  @notice Pool cannot facilitate a flashloan for the specified token address.
+     */
+    error FlashloanUnavailableForToken();
+
+    /**
      *  @notice User is attempting to move or pull more collateral than is available.
      */
     error InsufficientCollateral();

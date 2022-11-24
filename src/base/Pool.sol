@@ -480,6 +480,7 @@ abstract contract Pool is Clone, Multicall, IPool {
         ) revert BorrowerOk();
 
         // update loan heap
+        // FIXME: MOMP calculation below has an incorrect loan count because removal happens here.
         loans.remove(borrowerAddress_);
  
         // kick auction
