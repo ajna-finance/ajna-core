@@ -82,49 +82,6 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
         _transferCollateralFrom(msg.sender, collateralAmountToAdd_);
     }
 
-    function moveCollateral(
-        uint256 collateralAmountToMove_,
-        uint256 fromIndex_,
-        uint256 toIndex_
-    ) external override returns (uint256 fromBucketLPs_, uint256 toBucketLPs_) {
-        if (fromIndex_ == toIndex_) revert MoveToSamePrice();
-
-        Buckets.Bucket storage fromBucket = buckets[fromIndex_];
-        if (fromBucket.collateral < collateralAmountToMove_) revert InsufficientCollateral();
-
-        PoolState memory poolState = _accruePoolInterest();
-
-        fromBucketLPs_= Buckets.collateralToLPs(
-            fromBucket.collateral,
-            fromBucket.lps,
-            deposits.valueAt(fromIndex_),
-            collateralAmountToMove_,
-            PoolUtils.indexToPrice(fromIndex_)
-        );
-
-        (uint256 lpBalance, ) = buckets.getLenderInfo(
-            fromIndex_,
-            msg.sender
-        );
-        if (fromBucketLPs_ > lpBalance) revert InsufficientLPs();
-
-        Buckets.removeCollateral(
-            fromBucket,
-            collateralAmountToMove_,
-            fromBucketLPs_
-        );
-        toBucketLPs_ = Buckets.addCollateral(
-            buckets[toIndex_],
-            deposits.valueAt(toIndex_),
-            collateralAmountToMove_,
-            PoolUtils.indexToPrice(toIndex_)
-        );
-
-        _updatePool(poolState, _lup(poolState.accruedDebt));
-
-        emit MoveCollateral(msg.sender, fromIndex_, toIndex_, collateralAmountToMove_);
-    }
-
     function removeAllCollateral(
         uint256 index_
     ) external override returns (uint256 collateralAmountRemoved_, uint256 redeemedLenderLPs_) {
