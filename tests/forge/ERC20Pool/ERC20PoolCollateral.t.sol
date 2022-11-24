@@ -345,6 +345,7 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
             }
         );
 
+        // actor withdraws half their collateral as token amount
         _removeCollateral(
             {
                 from:     _bidder,
@@ -353,7 +354,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 lpRedeem: 243_808.1263305875209909205 * 1e27
             }
         );
-        // check bucket state and bidder's LPs
         _assertBucket(
             {
                 index:        1530,
@@ -371,21 +371,51 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 depositTime: _startTime
             }
         );
-        // check balances
         assertEq(_collateral.balanceOf(_bidder),        0.5 * 1e18);
         assertEq(_collateral.balanceOf(address(_pool)), 0.5 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),      0);
 
-        // actor withdraws remainder of their _collateral
+        // actor redeems half their LPS for collateral
+        (uint256 lpBalance, ) = _pool.lenderInfo(1530, _bidder);
+        _reedemLPforCollateral(
+            {
+                from:             _bidder,
+                lpAmount:         Maths.wmul(lpBalance, 0.5 * 1e18),
+                index:            1530,
+                collateralRemove: 0.25 * 1e18,
+                lpRedeem:         121_904.063165293760495460250000000 * 1e27
+            }
+        );
+        _assertBucket(
+            {
+                index:        1530,
+                lpBalance:    121_904.063165293760495460250000000 * 1e27,
+                collateral:   0.25 * 1e18,
+                deposit:      0,
+                exchangeRate: 1 * 1e27
+            }
+        );
+        _assertLenderLpBalance(
+            {
+                lender:      _bidder,
+                index:       1530,
+                lpBalance:   121_904.063165293760495460250000000 * 1e27,
+                depositTime: _startTime
+            }
+        );
+        assertEq(_collateral.balanceOf(_bidder),        0.75 * 1e18);
+        assertEq(_collateral.balanceOf(address(_pool)), 0.25 * 1e18);
+        assertEq(_quote.balanceOf(address(_pool)),      0);
+
+        // actor withdraws remainder of their collateral
         _removeAllCollateral(
             {
                 from:     _bidder,
-                amount:   0.5 * 1e18,
+                amount:   0.25 * 1e18,
                 index:    1530,
-                lpRedeem: 243_808.1263305875209909205 * 1e27
+                lpRedeem: 121_904.063165293760495460250000000 * 1e27
             }
         );
-        // check bucket state and bidder's LPs
         _assertBucket(
             {
                 index:        1530,
@@ -403,7 +433,6 @@ contract ERC20PoolCollateralTest is ERC20HelperContract {
                 depositTime: _startTime
             }
         );
-        // check balances
         assertEq(_collateral.balanceOf(_bidder),        1 * 1e18);
         assertEq(_collateral.balanceOf(address(_pool)), 0 * 1e18);
         assertEq(_quote.balanceOf(address(_pool)),      0);

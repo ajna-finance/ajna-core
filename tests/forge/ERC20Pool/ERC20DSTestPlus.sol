@@ -91,7 +91,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
 
             // redeem LP for collateral if available
             if(lenderLpBalance != 0 && bucketCollateral != 0) {
-                (, lpRedeemed) = ERC20Pool(address(_pool)).removeAllCollateral(bucketIndex);
+                (, lpRedeemed) = ERC20Pool(address(_pool)).redeemLPforCollateral(type(uint256).max, bucketIndex);
                 lenderLpBalance -= lpRedeemed;
             }
 
@@ -184,6 +184,26 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         borrowers.add(borrower);
     }
 
+    function _reedemLPforCollateral(
+        address from,
+        uint256 lpAmount,
+        uint256 index,
+        uint256 collateralRemove,
+        uint256 lpRedeem
+    ) internal {
+        changePrank(from);
+        vm.expectEmit(true, true, true, true);
+        emit RemoveCollateral(from, index, collateralRemove);
+        vm.expectEmit(true, true, true, true);
+        emit Transfer(address(_pool), from, collateralRemove);
+        (uint256 collateralRemoved, uint256 lpRedeemed) = ERC20Pool(address(_pool)).redeemLPforCollateral(
+            lpAmount, 
+            index
+        );
+        assertEq(collateralRemoved, collateralRemove);
+        assertEq(lpRedeemed, lpRedeem);
+    }
+
     function _removeAllCollateral(
         address from,
         uint256 amount,
@@ -195,9 +215,12 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         emit RemoveCollateral(from, index, amount);
         vm.expectEmit(true, true, true, true);
         emit Transfer(address(_pool), from, amount);
-        (uint256 collateralRemoved, uint256 lpAmount) = ERC20Pool(address(_pool)).removeAllCollateral(index);
+        (uint256 collateralRemoved, uint256 lpRedeemed) = ERC20Pool(address(_pool)).redeemLPforCollateral(
+            type(uint256).max, 
+            index
+        );
         assertEq(collateralRemoved, amount);
-        assertEq(lpAmount, lpRedeem);
+        assertEq(lpRedeemed, lpRedeem);
     }
 
     function _transferLpTokens(
@@ -275,7 +298,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoClaim.selector);
-        ERC20Pool(address(_pool)).removeAllCollateral(index);
+        ERC20Pool(address(_pool)).redeemLPforCollateral(type(uint256).max, index);
     }
 
     function _assertRemoveAllCollateralAuctionNotClearedRevert(
@@ -284,7 +307,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
-        ERC20Pool(address(_pool)).removeAllCollateral(index);
+        ERC20Pool(address(_pool)).redeemLPforCollateral(type(uint256).max, index);
     }
 
     function _assertTransferInvalidIndexRevert(

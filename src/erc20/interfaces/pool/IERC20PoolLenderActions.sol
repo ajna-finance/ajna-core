@@ -18,14 +18,15 @@ interface IERC20PoolLenderActions {
 
     /**
      *  @notice Called by lenders to redeem the maximum amount of LP for unencumbered collateral.
-     *  @param  index    The bucket index from which unencumbered collateral will be removed.
-     *  @return amount   The amount of collateral removed.
-     *  @return lpAmount The amount of LP used for removing collateral.
+     *  @param  maxLPAmount             The maximum amount of LP to redeem for collateral.  [RAY]
+     *  @param  index                   The bucket index from which unencumbered collateral will be removed.
+     *  @return collateralAmountRemoved The amount of collateral removed.                   [WAD]
+     *  @return redeemedLenderLPs       The amount of LP redeemed for collateral.           [RAY]
      */
-    function removeAllCollateral(uint256 index)
+    function redeemLPforCollateral(uint256 maxLPAmount, uint256 index)
         external
         returns (
-            uint256 amount,
-            uint256 lpAmount
+            uint256 collateralAmountRemoved,
+            uint256 redeemedLenderLPs
         );
 }

@@ -91,6 +91,7 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
             index_,
             msg.sender
         );
+        maxLPAmount_ = Maths.min(maxLPAmount_, lenderLPsBalance);
 
         PoolState memory poolState = _accruePoolInterest();
 
@@ -99,7 +100,7 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
             bucket.collateral,
             bucket.lps,
             deposits.valueAt(index_),
-            lenderLPsBalance,
+            maxLPAmount_,
             PoolUtils.indexToPrice(index_)
         );
         if (collateralAmountRemoved_ == 0) revert NoClaim();
