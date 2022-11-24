@@ -107,16 +107,16 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, daiAddress, 0.0543 * 10**18));
 
         assertEq(address(pool),              poolAddress);
-        // assertEq(pool.collateralAddress(),  compAddress);
-        // assertEq(pool.collateralScale(),    10 ** 0);
-        // assertEq(pool.quoteTokenAddress(),  daiAddress);
-        // assertEq(pool.quoteTokenScale(),    10 ** 0);
-        // assertEq(pool.interestRate(),       0.0543 * 10**18);
-        // assertEq(pool.interestRateUpdate(), _startTime + 333);
+        assertEq(pool.collateralAddress(),  compAddress);
+        assertEq(pool.collateralScale(),    10 ** 0);
+        assertEq(pool.quoteTokenAddress(),  daiAddress);
+        assertEq(pool.quoteTokenScale(),    10 ** 0);
+        assertEq(pool.interestRate(),       0.0543 * 10**18);
+        assertEq(pool.interestRateUpdate(), _startTime + 333);
 
-        // (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
-        // assertEq(poolInflatorSnapshot, 10**18);
-        // assertEq(lastInflatorUpdate,   _startTime + 333);
+        (uint256 poolInflatorSnapshot, uint256 lastInflatorUpdate) = pool.inflatorInfo();
+        assertEq(poolInflatorSnapshot, 10**18);
+        assertEq(lastInflatorUpdate,   _startTime + 333);
     }
 
     function testDeployERC20WbtcDaiPool() external {

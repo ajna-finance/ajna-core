@@ -568,7 +568,7 @@ contract ERC20PoolLiquidationsDepositTakeTest is ERC20HelperContract {
             }
         );
 
-        _assertAuction( 
+        _assertAuction(
            AuctionState({
                borrower:          _borrower,
                active:            false,

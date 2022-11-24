@@ -214,7 +214,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _borrow(
             {
                 from:       _borrower,
-                amount:     8000 * 1e18,
+                amount:     8_000 * 1e18,
                 indexLimit: _i9_72,
                 newLup:     _p9_72
             }
@@ -258,15 +258,15 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _assertBorrower(
             {
                 borrower:                  _borrower2,
-                borrowerDebt:              9853394241979221645666,
+                borrowerDebt:              9_853.394241979221645666 * 1e18,
                 borrowerCollateral:        1_000 * 1e18,
-                borrowerMompFactor:        98967323110934109659,
-                borrowerCollateralization: 986593617011217057
+                borrowerMompFactor:        98.967323110934109659 * 1e18,
+                borrowerCollateralization: 0.986593617011217057 * 1e18
             }
         );
         _assertReserveAuction(
             {
-                reserves:                   33358463298707422239,
+                reserves:                   33.358463298707422239 * 1e18,
                 claimableReserves :         0,
                 claimableReservesRemaining: 0,
                 auctionPrice:               0,
@@ -645,7 +645,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 1_839.472286131933987823 * 1e18,
                 poolDebt:             17_882.054329014924422935 * 1e18,
                 actualUtilization:    0.635946983283189428 * 1e18,
-                targetUtilization:    98205815911108893,
+                targetUtilization:    0.098205815911108893 * 1e18,
                 minDebtAmount:        1_788.205432901492442294 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
@@ -987,7 +987,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
                 encumberedCollateral: 1_839.472286131933987823 * 1e18,
                 poolDebt:             17_882.054329014924422935 * 1e18,
                 actualUtilization:    0.635946983283189428 * 1e18,
-                targetUtilization:    98205815911108893,
+                targetUtilization:    0.098205815911108893 * 1e18,
                 minDebtAmount:        1_788.205432901492442294 * 1e18,
                 loans:                1,
                 maxBorrower:          address(_borrower),
@@ -1318,7 +1318,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         _assertKicker(
             {
                 kicker:    _lender,
-                claimable: 0 * 1e18,
+                claimable: 0,
                 locked:    104.609752335437078857 * 1e18 // locked bond + reward, auction is not yet finalized
             }
         );
@@ -1356,7 +1356,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         _assertBucket(
             {
-                index:        3696,
+                index:        3_696,
                 lpBalance:    2_000 * 1e27,
                 collateral:   0,
                 deposit:      2_118.911507166546111004 * 1e18,
@@ -1728,7 +1728,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
         // 10 borrowers draw debt to enable the min debt check
         for (uint i=0; i<10; ++i) {
-            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7777);
+            _anonBorrowerDrawsDebt(1_000 * 1e18, 6_000 * 1e18, 7_777);
         }        
         // should revert if auction leaves borrower with debt under minimum pool debt
         _assertTakeDebtUnderMinPoolDebtRevert(
