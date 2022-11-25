@@ -106,7 +106,7 @@ contract ERC20PoolFactoryTest is ERC20HelperContract {
         emit PoolCreated(poolAddress);
         ERC20Pool pool = ERC20Pool(_poolFactory.deployPool(compAddress, daiAddress, 0.0543 * 10**18));
 
-        assertEq(address(pool),              poolAddress);
+        assertEq(address(pool),             poolAddress);
         assertEq(pool.collateralAddress(),  compAddress);
         assertEq(pool.collateralScale(),    10 ** 0);
         assertEq(pool.quoteTokenAddress(),  daiAddress);

@@ -185,7 +185,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     }
 
-    function testTakeLoanColConstraintBpfPosNoResidual() external {
+    function testTakeLoanColConstraintBpfPosNoResidual() external tearDown {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity(
@@ -363,7 +363,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
-    function testTakeCallerColConstraintBpfPosNoResidual() external {
+    function testTakeCallerColConstraintBpfPosNoResidual() external tearDown {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity(
@@ -543,7 +543,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
-    function testTakeCallerColConstraintBpfPosResidual () external {
+    function testTakeCallerColConstraintBpfPosResidual () external tearDown {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity(
@@ -724,7 +724,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
 
     }
 
-    function testTakeCallerColConstraintBpfNegResidual () external {
+    function testTakeCallerColConstraintBpfNegResidual () external tearDown {
 
         _kick(
             {
@@ -885,7 +885,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
         );
     }
 
-    function testTakeLoanDebtConstraintBpfPosResidual() external {
+    function testTakeLoanDebtConstraintBpfPosResidual() external tearDown {
 
         // Increase neutralPrice so it exceeds TP
         _addLiquidity(

@@ -681,7 +681,7 @@ contract ERC20PoolLiquidationsArbTakeTest is ERC20HelperContract {
                 thresholdPrice:    9.889380629594930201 * 1e18,
                 neutralPrice:      10.054126388657966491 * 1e18
             })
-        ); 
+        );
 
         _assertBorrower(
             {
