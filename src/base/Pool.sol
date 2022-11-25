@@ -703,7 +703,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
     /******************************/
 
     /**
-     *  @notice Default collateralization calculation (to be overridden in pool implementations).
+     *  @notice Collateralization calculation (implemented by each pool accordingly).
      *  @param debt_       Debt to calculate collateralization for.
      *  @param collateral_ Collateral to calculate collateralization for.
      *  @param price_      Price to calculate collateralization for.
@@ -715,11 +715,11 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 price_
     ) internal virtual returns (bool);
 
-   /**
-     *  @notice Settle an auction when it exits the auction queue (to be overridden in pool implementations).
-     *  @param borrowerAddress_    Address of the borrower that exits auction.
-     *  @param borrowerCollateral_ Borrower collateral amount before auction exit.
-     *  @return floorCollateral_   Remaining borrower collateral after auction exit.
+    /**
+     *  @notice Settle an auction when it exits the auction queue (implemented by each pool accordingly).
+     *  @param  borrowerAddress_    Address of the borrower that exits auction.
+     *  @param  borrowerCollateral_ Borrower collateral amount before auction exit.
+     *  @return Remaining borrower collateral after auction exit.
      */
     function _settleAuction(
         address borrowerAddress_,
