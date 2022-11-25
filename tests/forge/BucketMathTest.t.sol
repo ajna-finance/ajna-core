@@ -224,16 +224,15 @@ contract BucketMathTest is DSTestPlus {
         uint256 debt  = 11_000 * 1e18;
         uint256 price = 10 * 1e18;
         uint256 collateral = 1000 * 1e18;
-        uint256 mompFactor = 5 * 1e18;
-        uint256 inflatorSnapshot = 2 * 1e18;
+        uint256 neutralPrice = 15 * 1e18;
         uint256 bondFactor = 0.1 *  1e18;
 
-        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, price),               0);
-        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, price),        0);
-        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, 9.5 * 1e18),          0.1 * 1e18);
-        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, 9.5 * 1e18),   0.05 * 1e18);
-        assertEq(BucketMath.bpf(9000 * 1e18, collateral, mompFactor, inflatorSnapshot, bondFactor, 10.5 * 1e18),  -0.05 * 1e18);
-        assertEq(BucketMath.bpf(debt, collateral, mompFactor, inflatorSnapshot, bondFactor, 10.5 * 1e18),         -0.1 * 1e18);
+        assertEq(BucketMath.bpf(debt, collateral, neutralPrice, bondFactor, price),               0.1 * 1e18);
+        assertEq(BucketMath.bpf(9000 * 1e18, collateral, neutralPrice, bondFactor, price),        0.083333333333333333 * 1e18);
+        assertEq(BucketMath.bpf(debt, collateral, neutralPrice, bondFactor, 9.5 * 1e18),          0.1 * 1e18);
+        assertEq(BucketMath.bpf(9000 * 1e18, collateral, neutralPrice, bondFactor, 9.5 * 1e18),   0.091666666666666667 * 1e18);
+        assertEq(BucketMath.bpf(9000 * 1e18, collateral, 10 * 1e18, bondFactor, 10.5 * 1e18),     -0.05 * 1e18);
+        assertEq(BucketMath.bpf(debt, collateral, 5 * 1e18, bondFactor, 10.5 * 1e18),             -0.1 * 1e18);
     }
 
     /**

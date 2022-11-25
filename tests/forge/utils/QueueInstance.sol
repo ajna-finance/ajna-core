@@ -16,6 +16,7 @@ contract QueueInstance is DSTestPlus {
             borrower_,
             1,
             1,
+            1,
             1
         );
     }
@@ -42,6 +43,7 @@ contract QueueInstance is DSTestPlus {
             uint256,
             uint256,
             uint256,
+            uint256,
             address,
             address
         )
@@ -52,6 +54,7 @@ contract QueueInstance is DSTestPlus {
             liquidation.bondFactor,
             liquidation.kickTime,
             liquidation.kickMomp,
+            liquidation.neutralPrice,
             liquidation.prev,
             liquidation.next
         );
