@@ -1297,10 +1297,12 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         // generate a new address
         address testAddress1 = makeAddr("testAddress1");
         address testAddress2 = makeAddr("testAddress2");
+        address testAddress3 = makeAddr("testAddress3");
         uint256 mintIndex    = 2550;
         uint256 moveIndex    = 2551;
         _mintQuoteAndApproveManagerTokens(testAddress1, 10_000 * 1e18);
         _mintQuoteAndApproveManagerTokens(testAddress2, 10_000 * 1e18);
+        _mintCollateralAndApproveTokens(testAddress3, 10_000 * 1e18);
 
         // add initial liquidity
         _addLiquidity(
@@ -1606,11 +1608,19 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
             tokenId2, address(_pool), mintIndex, moveIndex
         );
 
+        _addCollateral(
+            {
+                from:   testAddress3,
+                amount: 10_000 * 1e18,
+                index:  mintIndex
+            }
+        );
+
         // move liquidity called by testAddress2 owner
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress2, tokenId2);
         changePrank(address(testAddress2));
-        _positionManager.moveLiquidity(moveLiquidityParams);
+        _positionManager.moveLiquidity(moveLiquidityParams); // FIXME fails with Arithmetic over/underflow
 
         // check pool state
        _assertLenderLpBalance(
