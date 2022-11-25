@@ -75,7 +75,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         _pullCollateral(Maths.wad(noOfNFTsToPull_));
 
         emit PullCollateral(msg.sender, noOfNFTsToPull_);
-        _transferFromPoolToSender(borrowerTokenIds[msg.sender], noOfNFTsToPull_);
+        _transferFromPoolToAddress(msg.sender, borrowerTokenIds[msg.sender], noOfNFTsToPull_);
     }
 
     /*********************************/
@@ -100,7 +100,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         bucketLPs_ = _removeCollateral(Maths.wad(noOfNFTsToRemove_), index_);
 
         emit RemoveCollateral(msg.sender, index_, noOfNFTsToRemove_);
-        _transferFromPoolToSender(bucketTokenIds, noOfNFTsToRemove_);
+        _transferFromPoolToAddress(msg.sender, bucketTokenIds, noOfNFTsToRemove_);
     }
 
     /*******************************/
@@ -138,18 +138,7 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
         poolState.collateral -= collateralTaken;
 
         // transfer rounded collateral from pool to taker
-        uint256[] storage borrowerTokens = borrowerTokenIds[borrowerAddress_];
-        uint256[] memory  tokensTaken    = new uint256[](collateralTaken / 1e18);
-        uint256 tokensRemaining = borrowerTokens.length;
-        for (uint256 i = 0; i < collateralTaken / 1e18;) {
-            uint256 tokenId = borrowerTokens[--tokensRemaining]; // start with transferring the last token added in bucket
-            borrowerTokens.pop();
-            _transferNFT(address(this), callee_, tokenId);
-            tokensTaken[i] = tokenId;
-            unchecked {
-                ++i;
-            }
-        }
+        uint256[] memory tokensTaken = _transferFromPoolToAddress(callee_, borrowerTokenIds[borrowerAddress_], collateralTaken / 1e18);
 
         if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
@@ -251,26 +240,34 @@ contract ERC721Pool is IERC721Pool, FlashloanablePool {
     }
 
     /**
-     *  @notice Helper function for transferring multiple NFT tokens from pool to msg.sender.
+     *  @notice Helper function for transferring multiple NFT tokens from pool to given address.
      *  @notice It transfers NFTs from the most recent one added into the pool (pop from array tracking NFTs in pool).
+     *  @param  toAddress_      Address where pool should transfer tokens to.
      *  @param  poolTokens_     Array in pool that tracks NFT ids (could be tracking NFTs pledged by borrower or NFTs added by a lender in a specific bucket).
-     *  @param  amountToRemove_ Number of NFT tokens to transfer from pool to msg.sender.
+     *  @param  amountToRemove_ Number of NFT tokens to transfer from pool to given address.
+     *  @return Array containing token ids that were transferred from pool to address.
      */
-    function _transferFromPoolToSender(
+    function _transferFromPoolToAddress(
+        address toAddress_,
         uint256[] storage poolTokens_,
         uint256 amountToRemove_
-    ) internal {
+    ) internal returns (uint256[] memory) {
+        uint256[] memory tokensTransferred = new uint256[](amountToRemove_);
+
         uint256 noOfNFTsInPool = poolTokens_.length;
         for (uint256 i = 0; i < amountToRemove_;) {
             uint256 tokenId = poolTokens_[--noOfNFTsInPool]; // start with transferring the last token added in bucket
             poolTokens_.pop();
 
-            _transferNFT(address(this), msg.sender, tokenId);
+            _transferNFT(address(this), toAddress_, tokenId);
+            tokensTransferred[i] = tokenId;
 
             unchecked {
                 ++i;
             }
         }
+
+        return tokensTransferred;
     }
 
     /**

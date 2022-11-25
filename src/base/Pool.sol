@@ -570,16 +570,14 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
 
         uint256 newLup = _lup(poolState.accruedDebt);
 
-        bool isCollateralized = _isCollateralized(
-            Maths.wmul(borrower.t0debt, poolState.inflator),
-            borrower.collateral,
-            newLup
-        );
-
-        if (isCollateralized && auctions.isActive(borrowerAddress_)) {
-            t0DebtInAuction -= borrower.t0debt;
-
-            borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
+        if (
+            _isCollateralized(
+                Maths.wmul(borrower.t0debt, poolState.inflator),
+                borrower.collateral,
+                newLup
+            ) && auctions.isActive(borrowerAddress_)) { // borrower becomes collateralized, settle auction
+                t0DebtInAuction     -= borrower.t0debt;
+                borrower.collateral = _settleAuction(borrowerAddress_, borrower.collateral);
         }
 
         loans.update(
@@ -631,18 +629,16 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 borrowerDebt     = Maths.wmul(borrower.t0debt, poolState.inflator) - quoteTokenAmountToRepay_;
         poolState.accruedDebt    -= quoteTokenAmountToRepay_;
 
-        // check that repay or take doesn't leave borrower debt under min debt amount
-        _checkMinDebt(poolState.accruedDebt, borrowerDebt);
+        _checkMinDebt(poolState.accruedDebt, borrowerDebt); // check that repay or take doesn't leave borrower debt under min debt amount
 
         newLup_ = _lup(poolState.accruedDebt);
 
         if (auctions.isActive(borrowerAddress)) {
-            if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {
-                t0DebtInAuction -= borrower.t0debt; // remove entire borrower debt from pool accumulator
-
-                borrower.collateral = _settleAuction(borrowerAddress, borrower.collateral);
+            if (_isCollateralized(borrowerDebt, borrower.collateral, newLup_)) {            // borrower becomes collateralized, settle auction
+                t0DebtInAuction     -= borrower.t0debt;                                     // remove entire borrower debt from pool accumulator
+                borrower.collateral = _settleAuction(borrowerAddress, borrower.collateral); // settle auction and update borrower's collateral with value after settlement
             } else {
-                t0DebtInAuction -= t0repaidDebt; // partial repaid, remove only the paid debt
+                t0DebtInAuction -= t0repaidDebt;                                            // partial repaid, remove only the paid debt
             }
         }
         
