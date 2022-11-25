@@ -169,24 +169,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
         return ERC20Pool(address(_pool)).addCollateral(amount, index);
     }
 
-    function _moveCollateral(
-        address from,
-        uint256 amount,
-        uint256 fromIndex, 
-        uint256 toIndex,
-        uint256 lpRedeemFrom,
-        uint256 lpRedeemTo
-    ) internal {
-        changePrank(from);
-        vm.expectEmit(true, true, true, true);
-        emit MoveCollateral(from, fromIndex, toIndex, amount);
-        (uint256 lpbFrom, uint256 lpbTo) = ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
-        assertEq(lpbFrom, lpRedeemFrom);
-        assertEq(lpbTo,   lpRedeemTo);
-
-        bidderDepositedIndex[from].add(toIndex);
-    }
-
     function _pledgeCollateral(
         address from,
         address borrower,
@@ -285,39 +267,6 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
     ) internal {
         vm.expectRevert(IPoolFactory.PoolAlreadyExists.selector);
         ERC20PoolFactory(poolFactory).deployPool(collateral, quote, interestRate);
-    }
-
-    function _assertMoveCollateralInsufficientLPsRevert(
-        address from,
-        uint256 amount,
-        uint256 fromIndex,
-        uint256 toIndex
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientLPs.selector);
-        ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
-    }
-
-    function _assertMoveCollateralToSamePriceRevert(
-        address from,
-        uint256 amount,
-        uint256 fromIndex,
-        uint256 toIndex
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.MoveToSamePrice.selector);
-        ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
-    }
-
-    function _assertMoveInsufficientCollateralRevert(
-        address from,
-        uint256 amount,
-        uint256 fromIndex,
-        uint256 toIndex
-    ) internal {
-        changePrank(from);
-        vm.expectRevert(IPoolErrors.InsufficientCollateral.selector);
-        ERC20Pool(address(_pool)).moveCollateral(amount, fromIndex, toIndex);
     }
 
     function _assertRemoveAllCollateralNoClaimRevert(
