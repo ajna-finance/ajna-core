@@ -370,51 +370,20 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
         uint256 bucketDeposit = deposits.valueAt(index_);
         if (bucketDeposit == 0) revert InsufficientLiquidity(); // revert if no quote tokens in arbed bucket
 
-        uint256 bucketPrice = PoolUtils.indexToPrice(index_);
         Auctions.TakeParams memory params = Auctions.bucketTake(
             auctions,
+            deposits,
+            buckets[index_],
             borrowerAddress_,
             borrower,
             bucketDeposit,
-            bucketPrice,
+            index_,
             depositTake_,
             poolState.inflator
         );
 
-        Buckets.Bucket storage bucket = buckets[index_];
-        uint256 bucketExchangeRate = Buckets.getExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            bucketDeposit,
-            bucketPrice
-        );
-        // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
-        Buckets.addLPs(
-            bucket,
-            msg.sender,
-            Maths.wrdivr(
-                Maths.wmul(params.collateralAmount, bucketPrice - params.auctionPrice),
-                bucketExchangeRate
-            )
-        );
-
-        {
-            uint256 depositAmountToRemove = params.quoteTokenAmount;
-            // the bondholder/kicker is awarded bond change worth of LPB in the bucket
-            if (params.isRewarded) {
-                Buckets.addLPs(
-                    bucket,
-                    params.kicker,
-                    Maths.wrdivr(params.bondChange, bucketExchangeRate)
-                );
-                depositAmountToRemove -= params.bondChange;
-            }
-            deposits.remove(index_, depositAmountToRemove, bucketDeposit); // quote tokens are removed from the bucket’s deposit
-        }
-
         borrower.collateral  -= params.collateralAmount; // collateral is removed from the loan
         poolState.collateral -= params.collateralAmount; // collateral is removed from pledged collateral accumulator
-        bucket.collateral    += params.collateralAmount; // collateral is added to the bucket’s claimable collateral
 
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
@@ -447,7 +416,7 @@ abstract contract Pool is Clone, ReentrancyGuard, Multicall, IPool {
             maxDepth_
         );
 
-        if (remainingt0Debt == 0) _settleAuction(borrowerAddress_, borrower.collateral); // TODO: should we here just remove auction or should we settle and reconcile pool collateral for NFT?
+        if (remainingt0Debt == 0) remainingCollateral = _settleAuction(borrowerAddress_, remainingCollateral);
 
         uint256 t0settledDebt = borrower.t0debt - remainingt0Debt;
         t0poolDebt           -= t0settledDebt;
