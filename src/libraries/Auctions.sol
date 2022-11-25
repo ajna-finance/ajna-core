@@ -5,6 +5,7 @@ pragma solidity 0.8.14;
 import './Buckets.sol';
 import './Loans.sol';
 import './Maths.sol';
+import './PoolUtils.sol';
 
 library Auctions {
 
@@ -412,6 +413,56 @@ library Auctions {
 
         // delete liquidation
          delete self.liquidations[borrower_];
+    }
+
+    /**
+     *  @notice Performs NFT auction settlement by rounding down borrower's collateral amount and by moving borrower's token ids to pool claimable array.
+     *  @param borrowerTokens_     Array of borrower NFT token ids.
+     *  @param poolTokens_         Array of claimable NFT token ids in pool.
+     *  @param borrowerAddress_    Address of the borrower that exits auction.
+     *  @param borrowerCollateral_ Borrower collateral amount before auction exit (could be fragmented as result of partial takes).
+     *  @return floorCollateral_   Rounded down collateral, the number of NFT tokens borrower can pull after auction exit.
+     */
+    function settleNFTAuction(
+        Data storage self,
+        mapping(uint256 => Buckets.Bucket) storage buckets_,
+        Deposits.Data storage deposits_,
+        uint256[] storage borrowerTokens_,
+        uint256[] storage poolTokens_,
+        address borrowerAddress_,
+        uint256 borrowerCollateral_
+    ) external returns (uint256 floorCollateral_) {
+        floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
+
+        // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
+        if (floorCollateral_ != borrowerCollateral_) {
+            // cover borrower's fractional amount with LPs in auction price bucket
+            uint256 fractionalCollateral = borrowerCollateral_ - floorCollateral_;
+            uint256 auctionPrice = PoolUtils.auctionPrice(
+                self.liquidations[borrowerAddress_].kickMomp,
+                self.liquidations[borrowerAddress_].kickTime
+            );
+            uint256 bucketIndex = PoolUtils.priceToIndex(auctionPrice);
+            Buckets.addCollateral(
+                buckets_[bucketIndex],
+                borrowerAddress_,
+                Deposits.valueAt(deposits_, bucketIndex),
+                fractionalCollateral,
+                PoolUtils.indexToPrice(bucketIndex)
+            );
+        }
+
+        // rebalance borrower's collateral, transfer difference to floor collateral from borrower to pool claimable array
+        uint256 noOfTokensPledged    = borrowerTokens_.length;
+        uint256 noOfTokensToTransfer = noOfTokensPledged - floorCollateral_ / 1e18;
+        for (uint256 i = 0; i < noOfTokensToTransfer;) {
+            uint256 tokenId = borrowerTokens_[--noOfTokensPledged]; // start with moving the last token pledged by borrower
+            borrowerTokens_.pop();                                  // remove token id from borrower
+            poolTokens_.push(tokenId);                              // add token id to pool claimable tokens
+            unchecked {
+                ++i;
+            }
+        }
     }
 
 
