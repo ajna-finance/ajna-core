@@ -52,16 +52,13 @@ interface IPoolLenderActions {
      *  @return redeemedLPs    The amount of LP redeemed for deposit.           [RAY]
      */
     function redeemLPforQuoteToken(uint256 maxLPAmount, uint256 index)
-        external returns (
-            uint256 depositRemoved,
-            uint256 redeemedLPs
-        );
+        external returns (uint256 depositRemoved, uint256 redeemedLPs);
 
     /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
      *  @param  amount   The amount of unencumbered collateral (or the number of NFT tokens) to claim.
      *  @param  index    The bucket index from which unencumbered collateral will be removed.
-     *  @return lpAmount The amount of LP used for removing collateral amount.
+     *  @return lpAmount The amount of LP redeemed for collateral.
      */
     function removeCollateral(
         uint256 amount,
@@ -69,16 +66,16 @@ interface IPoolLenderActions {
     ) external returns (uint256 lpAmount);
 
     /**
-     *  @notice Called by lenders to remove an amount of credit at a specified price bucket.
-     *  @param  maxAmount        The max amount of quote token to be removed by a lender.
-     *  @param  index            The bucket index from which quote tokens will be removed.
-     *  @return quoteTokenAmount The amount of quote token removed.
-     *  @return lpAmount         The amount of LP used for removing quote tokens amount.
+     *  @notice Called by lenders to remove an amount of deposit at a specified price bucket.
+     *  @param  amount         The amount of quote token to be removed by a lender.     [WAD]
+     *  @param  index          The bucket index from which quote tokens will be removed.
+     *  @return depositRemoved The amount of deposit removed.                           [WAD]
+     *  @return redeemedLPs    The amount of LP redeemed for deposit.                   [RAY]
      */
     function removeQuoteToken(
-        uint256 maxAmount,
+        uint256 amount,
         uint256 index
-    ) external returns (uint256 quoteTokenAmount, uint256 lpAmount);
+    ) external returns (uint256 depositRemoved, uint256 redeemedLPs);
 
     /**
      *  @notice Called by lenders to transfers their LP tokens to a different address.

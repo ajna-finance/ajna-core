@@ -1311,12 +1311,11 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             })
         );
 
-        _removeLiquidity(
+        _removeAllLiquidity(
             {
                 from:     _lender,
                 amount:   8_008.373442262808822463 * 1e18,
                 index:    _i9_72,
-                penalty:  0,
                 newLup:   9.624807173121239337 * 1e18,
                 lpRedeem: 8_007.362556980262765268525272905 * 1e27
             }
@@ -1332,12 +1331,11 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        _removeLiquidity(
+        _removeAllLiquidity(
             {
                 from:     _lender,
                 amount:   25_000.037756489769875000 * 1e18,
                 index:    _i9_62,
-                penalty:  0,
                 newLup:   9.529276179422528643 * 1e18,
                 lpRedeem: 25_000.00 * 1e27
             }
@@ -1579,11 +1577,10 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        _removeLiquidity(
+        _removeAllLiquidity(
             {
                 from:     _lender,
-                amount:   9.176161196119415534 * 1e18,
-                penalty:  0,
+                amount:   9.176155018749412335 * 1e18,
                 index:    _i9_52,
                 newLup:   1_004_968_987.606512354182109771 * 1e18,
                 lpRedeem: 7_989.987933044093783839063327613 * 1e27
@@ -1635,8 +1632,7 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-
-        _pullCollateral(_borrower, 1.749391266909416578 * 1e18);
+        _pullCollateral(_borrower, 1.746878914360183483 * 1e18);
 
         _assertBorrower(
             {

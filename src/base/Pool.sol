@@ -160,127 +160,127 @@ abstract contract Pool is Clone, Multicall, IPool {
     }
 
     function redeemLPforQuoteToken(uint256 maxLPAmount_, uint256 index_)
-        external returns (uint256 depositRemoved_, uint256 redeemedLPs_)
+        external override returns (uint256 depositRemoved_, uint256 redeemedLPs_)
     {
-        auctions.revertIfAuctionClearable(loans);
-
         PoolState memory poolState = _accruePoolInterest();
-        _revertIfAuctionDebtLocked(index_, poolState.inflator);
 
         // determine how much LPB the lender has in the bucket
-        (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
-            index_,
-            msg.sender
-        );
+        (uint256 lenderLPsBalance, ) = buckets.getLenderInfo(index_, msg.sender);
         if (lenderLPsBalance == 0) revert NoClaim(); // revert if no LP to claim
+        // TODO: Should _redeemLPforDeposit just take maxLPAmount too?
         maxLPAmount_ = Maths.min(maxLPAmount_, lenderLPsBalance);
 
         // determine how much quote token is in the bucket
-        uint256 deposit = deposits.valueAt(index_);
-        if (deposit == 0) revert InsufficientLiquidity(); 
-
+        uint256 bucketDeposit = deposits.valueAt(index_);
+        
+        // calculate the exchange rate
         Buckets.Bucket storage bucket = buckets[index_];
         uint256 exchangeRate = Buckets.getExchangeRate(
             bucket.collateral,
             bucket.lps,
-            deposit,
+            bucketDeposit,
             PoolUtils.indexToPrice(index_)
         );
-        depositRemoved_ = Maths.rayToWad(Maths.rmul(maxLPAmount_, exchangeRate));
-        if (depositRemoved_ > deposit) {
-            // restrict the withdrawal to the amount of deposit available in the bucket
-            depositRemoved_ = deposit;
-            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(depositRemoved_, exchangeRate));
+
+        (depositRemoved_, redeemedLPs_) = _redeemLPforDeposit(
+            maxLPAmount_, 
+            index_,
+            poolState,
+            bucketDeposit, 
+            bucket, 
+            exchangeRate);
+    }
+
+    function removeQuoteToken(
+        uint256 amount_,
+        uint256 index_
+    ) external override returns (uint256 depositRemoved_, uint256 redeemedLPs_) {
+        PoolState memory poolState = _accruePoolInterest();
+
+        // determine the exchange rate
+        uint256 bucketDeposit = deposits.valueAt(index_);
+        Buckets.Bucket storage bucket = buckets[index_];
+        uint256 exchangeRate = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            bucketDeposit,
+            PoolUtils.indexToPrice(index_)
+        );
+
+        // calculate LPB required for removal
+        uint256 lpbRequired = Maths.wrdivr(amount_, exchangeRate);
+
+        // perform the removal
+        (depositRemoved_, redeemedLPs_) = _redeemLPforDeposit(
+            lpbRequired, 
+            index_, 
+            poolState,
+            bucketDeposit, 
+            bucket, 
+            exchangeRate);
+    }
+
+    /**
+     *  @dev Called by redeemLPforQuoteToken and removeQuoteToken.
+     *  @param  lpAmount_       Amount of LPB to redeem for deposit.                                [RAY]
+     *  @param  index_          The bucket index from which unencumbered deposit will be removed.
+     *  @param  bucketDeposit_  Obtained from FenwickTree lookup.                                   [WAD]
+     *  @param  bucket_         The bucket struct.
+     *  @param  exchangeRate_   Exchange rate, calculated by the caller.
+     *  @return depositRemoved_ Amount of quote token transferred to the caller.                    [WAD]
+     *  @return redeemedLPs_    LPB redeemed by the lender, which may have been limited by amount 
+     *                          of deposit in the bucket.                                           [WAD]
+     */
+    function _redeemLPforDeposit(
+        uint256                lpAmount_, 
+        uint256                index_, 
+        PoolState memory       poolState_,
+        uint256                bucketDeposit_, 
+        Buckets.Bucket storage bucket_,  // TODO: try this as memory and compare gas
+        uint256                exchangeRate_
+    ) internal returns (uint256 depositRemoved_, uint256 redeemedLPs_) {
+        auctions.revertIfAuctionClearable(loans);
+        if (bucketDeposit_ == 0) revert InsufficientLiquidity(); 
+
+        _revertIfAuctionDebtLocked(index_, poolState_.inflator);
+
+        // restrict the withdrawal to the amount of deposit available in the bucket
+        (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(index_, msg.sender);
+        depositRemoved_ = Maths.rayToWad(Maths.rmul(lpAmount_, exchangeRate_));
+        if (depositRemoved_ > bucketDeposit_) {
+            depositRemoved_ = bucketDeposit_;
+            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(depositRemoved_, exchangeRate_));
         } else {
-            redeemedLPs_ = maxLPAmount_;
+            redeemedLPs_ = lpAmount_;
         }
 
-        deposits.remove(index_, depositRemoved_, deposit);  // update FenwickTree
+        // TODO: should we really revert here or just restrict it to lender LPB?
+        if (redeemedLPs_ > lenderLPsBalance) revert InsufficientLPs();
 
-        uint256 newLup = _lup(poolState.accruedDebt);
-        if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
+        // update FenwickTree
+        deposits.remove(index_, depositRemoved_, bucketDeposit_);
+
+        uint256 newLup = _lup(poolState_.accruedDebt);
+        if (_htp(poolState_.inflator) > newLup) revert LUPBelowHTP();
 
         // update bucket LPs balance
-        bucket.lps -= redeemedLPs_;
+        bucket_.lps -= redeemedLPs_;
         // update lender LPs balance
-        bucket.lenders[msg.sender].lps -= redeemedLPs_;
+        bucket_.lenders[msg.sender].lps -= redeemedLPs_;
 
         depositRemoved_ = PoolUtils.applyEarlyWithdrawalPenalty(
-            poolState,
+            poolState_,
             lastDeposit,
             index_,
             0,
             depositRemoved_
         );
 
-        _updatePool(poolState, newLup);
+        _updatePool(poolState_, newLup);
 
         // move quote token amount from pool to lender
         emit RemoveQuoteToken(msg.sender, index_, depositRemoved_, newLup);
         _transferQuoteToken(msg.sender, depositRemoved_);
-    }
-
-    // TODO: Replace maxAmount_ with amount_, call redeemLPforQuoteToken from here.
-    function removeQuoteToken(
-        uint256 maxAmount_,
-        uint256 index_
-    ) external returns (uint256 removedAmount_, uint256 redeemedLPs_) {
-        auctions.revertIfAuctionClearable(loans);
-
-        PoolState memory poolState = _accruePoolInterest();
-        _revertIfAuctionDebtLocked(index_, poolState.inflator);
-
-        (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
-            index_,
-            msg.sender
-        );
-        if (lenderLPsBalance == 0) revert NoClaim(); // revert if no LP to claim
-
-        uint256 deposit = deposits.valueAt(index_);
-        if (deposit == 0) revert InsufficientLiquidity(); // revert if there's no liquidity in bucket
-
-        Buckets.Bucket storage bucket = buckets[index_];
-        uint256 exchangeRate = Buckets.getExchangeRate(
-            bucket.collateral,
-            bucket.lps,
-            deposit,
-            PoolUtils.indexToPrice(index_)
-        );
-        removedAmount_ = Maths.rayToWad(Maths.rmul(lenderLPsBalance, exchangeRate));
-        uint256 removedAmountBefore = removedAmount_;
-
-        // remove min amount of lender entitled LPBs, max amount desired and deposit in bucket
-        if (removedAmount_ > maxAmount_) removedAmount_ = maxAmount_;
-        if (removedAmount_ > deposit)    removedAmount_ = deposit;
-
-        if (removedAmountBefore == removedAmount_) redeemedLPs_ = lenderLPsBalance;
-        else {
-            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(removedAmount_, exchangeRate));
-        }
-
-        deposits.remove(index_, removedAmount_, deposit);  // update FenwickTree
-
-        uint256 newLup = _lup(poolState.accruedDebt);
-        if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
-
-        // update bucket LPs balance
-        bucket.lps -= redeemedLPs_;
-        // update lender LPs balance
-        bucket.lenders[msg.sender].lps -= redeemedLPs_;
-
-        removedAmount_ = PoolUtils.applyEarlyWithdrawalPenalty(
-            poolState,
-            lastDeposit,
-            index_,
-            0,
-            removedAmount_
-        );
-
-        _updatePool(poolState, newLup);
-
-        // move quote token amount from pool to lender
-        emit RemoveQuoteToken(msg.sender, index_, removedAmount_, newLup);
-        _transferQuoteToken(msg.sender, removedAmount_);
     }
 
     function transferLPTokens(
