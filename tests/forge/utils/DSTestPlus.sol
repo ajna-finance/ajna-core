@@ -242,12 +242,11 @@ abstract contract DSTestPlus is Test {
         uint256 newLup,
         uint256 lpRedeem
     ) internal {
-        // apply penalty if case
         changePrank(from);
         vm.expectEmit(true, true, false, true);
         emit RemoveQuoteToken(from, index, amount, newLup);
         _assertTokenTransferEvent(address(_pool), from, amount);
-        (uint256 removedAmount, uint256 lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, index);
+        (uint256 removedAmount, uint256 lpRedeemed) = _pool.redeemLPforQuoteToken(type(uint256).max, index);
         assertEq(removedAmount, amount);
         assertEq(lpRedeemed,    lpRedeem);
     }

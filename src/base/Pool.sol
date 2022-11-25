@@ -159,6 +159,68 @@ abstract contract Pool is Clone, Multicall, IPool {
         emit MoveQuoteToken(msg.sender, fromIndex_, toIndex_, amountToMove, newLup);
     }
 
+    function redeemLPforQuoteToken(uint256 maxLPAmount_, uint256 index_)
+        external returns (uint256 depositRemoved_, uint256 redeemedLPs_)
+    {
+        auctions.revertIfAuctionClearable(loans);
+
+        PoolState memory poolState = _accruePoolInterest();
+        _revertIfAuctionDebtLocked(index_, poolState.inflator);
+
+        // determine how much LPB the lender has in the bucket
+        (uint256 lenderLPsBalance, uint256 lastDeposit) = buckets.getLenderInfo(
+            index_,
+            msg.sender
+        );
+        if (lenderLPsBalance == 0) revert NoClaim(); // revert if no LP to claim
+        maxLPAmount_ = Maths.min(maxLPAmount_, lenderLPsBalance);
+
+        // determine how much quote token is in the bucket
+        uint256 deposit = deposits.valueAt(index_);
+        if (deposit == 0) revert InsufficientLiquidity(); 
+
+        Buckets.Bucket storage bucket = buckets[index_];
+        uint256 exchangeRate = Buckets.getExchangeRate(
+            bucket.collateral,
+            bucket.lps,
+            deposit,
+            PoolUtils.indexToPrice(index_)
+        );
+        depositRemoved_ = Maths.rayToWad(Maths.rmul(maxLPAmount_, exchangeRate));
+        if (depositRemoved_ > deposit) {
+            // restrict the withdrawal to the amount of deposit available in the bucket
+            depositRemoved_ = deposit;
+            redeemedLPs_ = Maths.min(lenderLPsBalance, Maths.wrdivr(depositRemoved_, exchangeRate));
+        } else {
+            redeemedLPs_ = maxLPAmount_;
+        }
+
+        deposits.remove(index_, depositRemoved_, deposit);  // update FenwickTree
+
+        uint256 newLup = _lup(poolState.accruedDebt);
+        if (_htp(poolState.inflator) > newLup) revert LUPBelowHTP();
+
+        // update bucket LPs balance
+        bucket.lps -= redeemedLPs_;
+        // update lender LPs balance
+        bucket.lenders[msg.sender].lps -= redeemedLPs_;
+
+        depositRemoved_ = PoolUtils.applyEarlyWithdrawalPenalty(
+            poolState,
+            lastDeposit,
+            index_,
+            0,
+            depositRemoved_
+        );
+
+        _updatePool(poolState, newLup);
+
+        // move quote token amount from pool to lender
+        emit RemoveQuoteToken(msg.sender, index_, depositRemoved_, newLup);
+        _transferQuoteToken(msg.sender, depositRemoved_);
+    }
+
+    // TODO: Replace maxAmount_ with amount_, call redeemLPforQuoteToken from here.
     function removeQuoteToken(
         uint256 maxAmount_,
         uint256 index_
@@ -697,6 +759,8 @@ abstract contract Pool is Clone, Multicall, IPool {
         _updatePool(poolState, _lup(poolState.accruedDebt));
     }
 
+    // TODO: Consider making this take LPs, moving the Buckets.collateralToLPs call into ERC20Pool.removeCollateral, 
+    // and allowing us to reuse this in ERC20Pool.redeemLPforCollateral.
     function _removeCollateral(
         uint256 collateralAmountToRemove_,
         uint256 index_

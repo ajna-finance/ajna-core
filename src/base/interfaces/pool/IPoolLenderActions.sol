@@ -45,6 +45,19 @@ interface IPoolLenderActions {
     ) external returns (uint256 lpbAmountFrom, uint256 lpbAmountTo);
 
     /**
+     *  @notice Called by lenders to redeem the maximum amount of LP for deposit.
+     *  @param  maxLPAmount    The maximum amount of LP to redeem for deposit.  [RAY]
+     *  @param  index          The bucket index from which unencumbered deposit will be removed.
+     *  @return depositRemoved The amount of deposit removed.                   [WAD]
+     *  @return redeemedLPs    The amount of LP redeemed for deposit.           [RAY]
+     */
+    function redeemLPforQuoteToken(uint256 maxLPAmount, uint256 index)
+        external returns (
+            uint256 depositRemoved,
+            uint256 redeemedLPs
+        );
+
+    /**
      *  @notice Called by lenders to claim unencumbered collateral from a price bucket.
      *  @param  amount   The amount of unencumbered collateral (or the number of NFT tokens) to claim.
      *  @param  index    The bucket index from which unencumbered collateral will be removed.
