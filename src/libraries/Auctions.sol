@@ -388,7 +388,7 @@ library Auctions {
     function settleERC20Auction(
         Data storage self,
         address borrower_
-    ) internal {
+    ) external {
         _removeAuction(self, borrower_);
     }
 
@@ -515,7 +515,7 @@ library Auctions {
             params_.bucketPrice
         );
 
-        // taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
+        // if arb take - taker is awarded collateral * (bucket price - auction price) worth (in quote token terms) units of LPB in the bucket
         if (!depositTake_) Buckets.addLPs(
             bucket_,
             msg.sender,
