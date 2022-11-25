@@ -2,12 +2,11 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IERC721Pool.sol';
 import './interfaces/IERC721Taker.sol';
 import '../base/FlashloanablePool.sol';
 
-contract ERC721Pool is ReentrancyGuard, IERC721Pool, FlashloanablePool {
+contract ERC721Pool is IERC721Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
     using Deposits for Deposits.Data;
     using Loans    for Loans.Data;

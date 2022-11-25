@@ -2,12 +2,11 @@
 
 pragma solidity 0.8.14;
 
-import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
 import './interfaces/IERC20Pool.sol';
 import './interfaces/IERC20Taker.sol';
 import '../base/FlashloanablePool.sol';
 
-contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
+contract ERC20Pool is IERC20Pool, FlashloanablePool {
     using Auctions for Auctions.Data;
     using Buckets  for mapping(uint256 => Buckets.Bucket);
     using Deposits for Deposits.Data;
