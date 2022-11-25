@@ -479,14 +479,13 @@ contract ERC20PoolLiquidationsTakeTest is ERC20HelperContract {
             }
         );
 
-        _moveCollateral({
-            from:         _lender,
-            amount:       0,
-            fromIndex:    123,
-            toIndex:      1000,
-            lpRedeemFrom: 0,
-            lpRedeemTo:   0
-        });
+        _pledgeCollateral(
+            {
+                from:     _lender,
+                borrower: _lender,
+                amount:   0
+            }
+        );
 
         _assertPool(
             PoolState({
