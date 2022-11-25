@@ -481,9 +481,6 @@ abstract contract Pool is Clone, Multicall, IPool {
             )
         ) revert BorrowerOk();
 
-        // update loan heap
-        loans.remove(borrowerAddress_);
-
         uint256 neutralPrice = Maths.wmul(borrower.t0Np, poolState.inflator);
  
         // kick auction
@@ -495,6 +492,9 @@ abstract contract Pool is Clone, Multicall, IPool {
             deposits.momp(poolState.accruedDebt, loans.noOfLoans()),
             neutralPrice
         );
+
+        // update loan heap
+        loans.remove(borrowerAddress_);
 
         // update borrower & pool debt with kickPenalty
         uint256 kickPenalty   =  Maths.wmul(Maths.wdiv(poolState.rate, 4 * 1e18), borrowerDebt); // when loan is kicked, penalty of three months of interest is added
