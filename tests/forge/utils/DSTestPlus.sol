@@ -321,9 +321,9 @@ abstract contract DSTestPlus is Test {
         bool isReward
     ) internal virtual {
         changePrank(from);
-        _assertTokenTransferEvent(from, address(_pool), givenAmount);
         vm.expectEmit(true, true, false, true);
         emit Take(borrower, givenAmount, collateralTaken, bondChange, isReward);
+        _assertTokenTransferEvent(from, address(_pool), givenAmount);
         _pool.take(borrower, maxCollateral, from, new bytes(0));
     }
 
