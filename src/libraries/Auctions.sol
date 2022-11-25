@@ -17,13 +17,14 @@ library Auctions {
     }
 
     struct Liquidation {
-        address kicker;      // address that initiated liquidation
-        uint96  bondFactor;  // bond factor used to start liquidation
-        uint256 bondSize;    // liquidation bond size
-        uint96  kickTime;     // timestamp when liquidation was started
-        address prev;        // previous liquidated borrower in auctions queue
-        uint96  kickMomp;    // Momp when liquidation was started
-        address next;        // next liquidated borrower in auctions queue
+        address kicker;         // address that initiated liquidation
+        uint96  bondFactor;     // bond factor used to start liquidation
+        uint256 bondSize;       // liquidation bond size
+        uint96  kickTime;       // timestamp when liquidation was started
+        address prev;           // previous liquidated borrower in auctions queue
+        uint96  kickMomp;       // Momp when liquidation was started
+        address next;           // next liquidated borrower in auctions queue
+        uint256 neutralPrice;   // Neutral Price when liquidation was started
     }
 
     struct Kicker {
@@ -187,6 +188,7 @@ library Auctions {
      *  @param  borrowerDebt_      Borrower debt to be recovered.
      *  @param  thresholdPrice_    Current threshold price (used to calculate bond factor).
      *  @param  momp_              Current MOMP (used to calculate bond factor).
+     *  @param  neutralPrice_      Neutral Price of auction.
      *  @return kickAuctionAmount_ The amount that kicker should send to pool in order to kick auction.
      *  @return bondSize_          The amount that kicker locks in pool to kick auction.
      */
@@ -195,11 +197,12 @@ library Auctions {
         address borrower_,
         uint256 borrowerDebt_,
         uint256 thresholdPrice_,
-        uint256 momp_
+        uint256 momp_,
+        uint256 neutralPrice_
     ) external returns (uint256 kickAuctionAmount_, uint256 bondSize_) {
 
         uint256 bondFactor;
-        // bondFactor = min(30%, max(1%, (neutralPrice - thresholdPrice) / neutralPrice))
+        // bondFactor = min(30%, max(1%, (MOMP - thresholdPrice) / MOMP))
         if (thresholdPrice_ >= momp_) {
             bondFactor = 0.01 * 1e18;
         } else {
@@ -227,11 +230,12 @@ library Auctions {
 
         // record liquidation info
         Liquidation storage liquidation = self.liquidations[borrower_];
-        liquidation.kicker     = msg.sender;
-        liquidation.kickTime   = uint96(block.timestamp);
-        liquidation.kickMomp   = uint96(momp_);
-        liquidation.bondSize   = bondSize_;
-        liquidation.bondFactor = uint96(bondFactor);
+        liquidation.kicker              = msg.sender;
+        liquidation.kickTime            = uint96(block.timestamp);
+        liquidation.kickMomp            = uint96(momp_);
+        liquidation.bondSize            = bondSize_;
+        liquidation.bondFactor          = uint96(bondFactor);
+        liquidation.neutralPrice        = neutralPrice_;
 
         if (self.head != address(0)) {
             // other auctions in queue, liquidation doesn't exist or overwriting.
@@ -292,7 +296,7 @@ library Auctions {
             params_.quoteTokenAmount = Maths.wdiv(bucketDeposit_, factor);
         } else {
             params_.t0repayAmount    = borrower_.t0debt;
-            params_.quoteTokenAmount = Maths.wdiv(Maths.wmul(params_.t0repayAmount, poolInflator_), factor);
+            params_.quoteTokenAmount = Maths.wdiv(borrowerDebt, factor);
         }
 
         params_.collateralAmount = Maths.wdiv(params_.quoteTokenAmount, price);
@@ -455,8 +459,7 @@ library Auctions {
         bpf_ = PoolUtils.bpf(
             borrowerDebt_,
             borrower_.collateral,
-            borrower_.mompFactor,
-            poolInflator_,
+            liquidation_.neutralPrice,
             liquidation_.bondFactor,
             price_
         );

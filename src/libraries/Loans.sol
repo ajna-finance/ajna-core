@@ -24,7 +24,7 @@ library Loans {
     struct Borrower {
         uint256 t0debt;           // [WAD] Borrower debt time-adjusted as if it was incurred upon first loan of pool.
         uint256 collateral;       // [WAD] Collateral deposited by borrower.
-        uint256 mompFactor;       // [WAD] Most Optimistic Matching Price (MOMP) / inflator, used in neutralPrice calc.
+        uint256 t0Np;             // [WAD] Neutral Price time-adjusted as if it was incurred upon first loan of pool.
     }
 
     /**
@@ -56,19 +56,25 @@ library Loans {
     /**
      *  @notice Updates a loan: updates heap (upsert if TP not 0, remove otherwise) and borrower balance.
      *  @param self Holds tree loan data.
-     *  @param deposits_        Pool deposits, used to calculate borrower MOMP factor.
-     *  @param borrowerAddress_ Borrower's address to update.
-     *  @param borrower_        Borrower struct with borrower details.
-     *  @param poolDebt_        Pool debt, used for calculating borrower MOMP factor.
-     *  @param poolInflator_    The current pool inflator used to calculate borrower MOMP factor.
+     *  @param deposits_            Pool deposits, used to calculate borrower MOMP factor.
+     *  @param borrowerAddress_     Borrower's address to update.
+     *  @param t0NpUpdate           t0Np should be stamped only in borrow, pull collateral
+     *  @param borrower_            Borrower struct with borrower details.
+     *  @param poolDebt_            Pool debt, used for calculating borrower MOMP factor.
+     *  @param poolInflator_        The current pool inflator used to calculate borrower MOMP factor.
+     *  @param poolInterestRate_    Current Pool interest Rate.
+     *  @param lup_                 Current Lup.
      */
     function update(
         Data storage self,
         Deposits.Data storage deposits_,
         address borrowerAddress_,
+        bool t0NpUpdate,
         Borrower memory borrower_,
         uint256 poolDebt_,
-        uint256 poolInflator_
+        uint256 poolInflator_,
+        uint256 poolInterestRate_,
+        uint256 lup_
     ) internal {
 
         // update loan heap
@@ -83,13 +89,19 @@ library Loans {
         }
 
         // update borrower
-        if (borrower_.t0debt != 0) borrower_.mompFactor = Deposits.mompFactor(
-            deposits_,
-            poolInflator_,
-            poolDebt_,
-            self.loans.length - 1
-        );
-        else borrower_.mompFactor = 0;
+        if (t0NpUpdate) {
+            if (borrower_.t0debt != 0 && borrower_.collateral != 0) borrower_.t0Np = Deposits.t0Np(
+                deposits_,
+                poolInflator_,
+                poolDebt_,
+                self.loans.length - 1,
+                poolInterestRate_,
+                lup_,
+                borrower_.t0debt,
+                borrower_.collateral
+            );
+            else borrower_.t0Np = 0;
+        }
         self.borrowers[borrowerAddress_] = borrower_;
     }
 

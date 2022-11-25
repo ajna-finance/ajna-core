@@ -358,6 +358,7 @@ abstract contract DSTestPlus is Test {
             uint256 auctionKickTime,
             uint256 auctionKickMomp,
             ,
+            ,
         ) = _pool.auctionInfo(state_.borrower);
         (, uint256 lockedBonds) = _pool.kickerInfo(state_.kicker);
         (uint256 auctionTotalBondEscrowed,,) = _pool.reservesInfo();
@@ -464,20 +465,20 @@ abstract contract DSTestPlus is Test {
         address borrower,
         uint256 borrowerDebt,
         uint256 borrowerCollateral,
-        uint256 borrowerMompFactor,
+        uint256 borrowert0Np,
         uint256 borrowerCollateralization
     ) internal {
         (
             uint256 debt,
             uint256 col,
-            uint256 mompFactor
+            uint256 t0Np
         ) = _poolUtils.borrowerInfo(address(_pool), borrower);
 
         uint256 lup = _poolUtils.lup(address(_pool));
 
         assertEq(debt,        borrowerDebt);
         assertEq(col,         borrowerCollateral);
-        assertEq(mompFactor,  borrowerMompFactor);
+        assertEq(t0Np,  borrowert0Np);
         assertEq(
             PoolUtils.collateralization(
                 borrowerDebt,

@@ -54,7 +54,7 @@ contract BalancerUniswapTaker {
 
         // take auction from Ajna pool, give USDC, receive WETH
         IAjnaPool(decoded.ajnaPool).take(decoded.borrower, decoded.maxAmount, address(this), new bytes(0));
-        uint256 usdcBalanceAfterTake = 80557409;
+        uint256 usdcBalanceAfterTake = 86114188;
         assert(tokens[0].balanceOf(address(this)) == usdcBalanceAfterTake); // USDC balance after Ajna take
         assert(tokens[1].balanceOf(address(this)) == 2000000000000000000);  // WETH balance after Ajna take
 
