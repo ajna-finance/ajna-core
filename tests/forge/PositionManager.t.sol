@@ -1620,7 +1620,7 @@ contract PositionManagerERC20PoolTest is PositionManagerERC20PoolHelperContract 
         vm.expectEmit(true, true, true, true);
         emit MoveLiquidity(testAddress2, tokenId2);
         changePrank(address(testAddress2));
-        _positionManager.moveLiquidity(moveLiquidityParams); // FIXME fails with Arithmetic over/underflow
+        _positionManager.moveLiquidity(moveLiquidityParams);
 
         // check pool state
        _assertLenderLpBalance(
