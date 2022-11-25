@@ -138,16 +138,6 @@ contract ERC721Pool is ReentrancyGuard, IERC721Pool, FlashloanablePool {
         borrower.collateral  -= collateralTaken;
         poolState.collateral -= collateralTaken;
 
-        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
-
-        emit Take(
-            borrowerAddress_,
-            params.quoteTokenAmount,
-            params.collateralAmount,
-            params.bondChange,
-            params.isRewarded
-        );
-
         // transfer rounded collateral from pool to taker
         uint256[] storage borrowerTokens = borrowerTokenIds[borrowerAddress_];
         uint256[] memory  tokensTaken    = new uint256[](collateralTaken / 1e18);
@@ -162,7 +152,7 @@ contract ERC721Pool is ReentrancyGuard, IERC721Pool, FlashloanablePool {
             }
         }
 
-        if (data_.length > 0) {
+        if (data_.length != 0) {
             IERC721Taker(callee_).atomicSwapCallback(
                 tokensTaken, 
                 params.quoteTokenAmount / _getArgUint256(40), 
@@ -175,12 +165,22 @@ contract ERC721Pool is ReentrancyGuard, IERC721Pool, FlashloanablePool {
 
         // transfer from pool to borrower the excess of quote tokens after rounding collateral auctioned
         if (excessQuoteToken != 0) _transferQuoteToken(borrowerAddress_, excessQuoteToken);
+
+        _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
+
+        emit Take(
+            borrowerAddress_,
+            params.quoteTokenAmount,
+            params.collateralAmount,
+            params.bondChange,
+            params.isRewarded
+        );
     }
 
 
-    /**************************/
-    /*** Internal Functions ***/
-    /**************************/
+    /*******************************/
+    /*** Pool Override Functions ***/
+    /*******************************/
 
     /**
      *  @notice Overrides default implementation and use floor(amount of collateral) to calculate collateralization.
@@ -209,7 +209,7 @@ contract ERC721Pool is ReentrancyGuard, IERC721Pool, FlashloanablePool {
         address borrowerAddress_,
         uint256 borrowerCollateral_
     ) internal override returns (uint256 floorCollateral_) {
-        floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // this should be set as new collateral of borrower
+        floorCollateral_ = (borrowerCollateral_ / Maths.WAD) * Maths.WAD; // floor collateral of borrower
 
         // if there's fraction of NFTs remaining then reward difference to borrower as LPs in auction price bucket
         if (floorCollateral_ != borrowerCollateral_) {
@@ -242,6 +242,11 @@ contract ERC721Pool is ReentrancyGuard, IERC721Pool, FlashloanablePool {
             }
         }
     }
+
+
+    /**************************/
+    /*** Internal Functions ***/
+    /**************************/
 
     /**
      *  @notice Helper function for transferring multiple NFT tokens from msg.sender to pool.

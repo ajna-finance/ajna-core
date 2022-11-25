@@ -197,6 +197,18 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
         borrower.collateral  -= params.collateralAmount;
         poolState.collateral -= params.collateralAmount;
 
+        _transferCollateral(callee_, params.collateralAmount);
+
+        if (data_.length != 0) {
+            IERC20Taker(callee_).atomicSwapCallback(
+                params.collateralAmount / collateralScale, 
+                params.quoteTokenAmount / _getArgUint256(40), 
+                data_
+            );
+        }
+
+        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount);
+
         _payLoan(params.t0repayAmount, poolState, borrowerAddress_, borrower);
 
         emit Take(
@@ -206,18 +218,6 @@ contract ERC20Pool is ReentrancyGuard, IERC20Pool, FlashloanablePool {
             params.bondChange,
             params.isRewarded
         );
-
-        _transferCollateral(callee_, params.collateralAmount);
-
-        if (data_.length > 0) {
-            IERC20Taker(callee_).atomicSwapCallback(
-                params.collateralAmount / collateralScale, 
-                params.quoteTokenAmount / _getArgUint256(40), 
-                data_
-            );
-        }
-
-        _transferQuoteTokenFrom(callee_, params.quoteTokenAmount);
     }
 
     /************************/
