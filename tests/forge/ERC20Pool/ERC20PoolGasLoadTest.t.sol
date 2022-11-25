@@ -226,7 +226,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
         skip(15 hours);
         _pool.moveQuoteToken(1_000 * 1e18, index_, index_ + 1);
         skip(15 hours);
-        _pool.removeQuoteToken(type(uint256).max, index_);
+        _pool.redeemLPforQuoteToken(type(uint256).max, index_);
         vm.stopPrank();
     }
 
@@ -244,7 +244,7 @@ contract ERC20PoolCommonActionsGasLoadTest is ERC20PoolGasLoadTest {
             skip(15 hours);
             _pool.removeQuoteToken(5_000 * 1e18, 7388 - i);
             skip(15 hours);
-            _pool.removeQuoteToken(type(uint256).max, 1 + i);
+            _pool.redeemLPforQuoteToken(type(uint256).max, 1 + i);
             vm.stopPrank();
             vm.revertTo(snapshot);
         }

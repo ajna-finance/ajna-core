@@ -915,7 +915,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(abi.encodeWithSignature('AuctionNotCleared()'));
-        _pool.removeQuoteToken(type(uint256).max, index);
+        _pool.redeemLPforQuoteToken(type(uint256).max, index);
     }
 
     function _assertRemoveAllLiquidityLupBelowHtpRevert(
@@ -924,7 +924,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.LUPBelowHTP.selector);
-        _pool.removeQuoteToken(type(uint256).max, index);
+        _pool.redeemLPforQuoteToken(type(uint256).max, index);
     }
 
     function _assertRemoveDepositLockedByAuctionDebtRevert(
@@ -943,7 +943,7 @@ abstract contract DSTestPlus is Test {
     ) internal {
         changePrank(from);
         vm.expectRevert(IPoolErrors.NoClaim.selector);
-        _pool.removeQuoteToken(type(uint256).max, index);
+        _pool.redeemLPforQuoteToken(type(uint256).max, index);
     }
 
     function _assertMoveLiquidityBankruptcyBlockRevert(

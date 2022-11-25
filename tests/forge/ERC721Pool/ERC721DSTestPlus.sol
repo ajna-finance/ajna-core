@@ -131,7 +131,7 @@ abstract contract ERC721DSTestPlus is DSTestPlus {
             }
 
             // Then redeem LP for quote token
-            (, lpsRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
+            (, lpsRedeemed) = _pool.redeemLPforQuoteToken(type(uint256).max, bucketIndex);
         
             // Confirm all lp balance has been redeemed            
             (lenderLpBalance, ) = _pool.lenderInfo(bucketIndex, lender);

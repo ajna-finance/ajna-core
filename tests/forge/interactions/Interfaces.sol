@@ -15,6 +15,11 @@ interface IAjnaPool {
         uint256 index
     ) external returns (uint256 lpbChange);
 
+    function redeemLPforQuoteToken(
+        uint256 maxLPAmount, 
+        uint256 index)
+    external returns (uint256 depositRemoved, uint256 redeemedLPs);
+
     function removeQuoteToken(
         uint256 maxAmount,
         uint256 index

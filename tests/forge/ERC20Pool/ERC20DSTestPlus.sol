@@ -85,7 +85,7 @@ abstract contract ERC20DSTestPlus is DSTestPlus {
             // redeem LP for quote token if available
             uint256 lpRedeemed;
             if(lenderLpBalance != 0 && bucketQuote != 0) {
-                (, lpRedeemed) = _pool.removeQuoteToken(type(uint256).max, bucketIndex);
+                (, lpRedeemed) = _pool.redeemLPforQuoteToken(type(uint256).max, bucketIndex);
                 lenderLpBalance -= lpRedeemed;
             }
 

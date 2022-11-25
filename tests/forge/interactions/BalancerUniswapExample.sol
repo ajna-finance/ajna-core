@@ -136,7 +136,11 @@ contract BalancerUniswapPurchaser {
         collateral.approve(decoded.ajnaPool, loanAmount);
         // purchase USDC with 1 WETH from ajna
         uint256 lps             = IAjnaPool(decoded.ajnaPool).addCollateral(loanAmount, decoded.bucketIndex);
-        (uint256 quoteAmount, ) = IAjnaPool(decoded.ajnaPool).removeQuoteToken(type(uint256).max, decoded.bucketIndex);
+        (uint256 quoteAmount, ) = 
+            IAjnaPool(decoded.ajnaPool).redeemLPforQuoteToken(
+                type(uint256).max, 
+                decoded.bucketIndex
+            );
         assert(lps                                 == 83008350.10362729922336157 * 1e27);   // LPS in bucket
         assert(quoteAmount                         == 4997500000000000000000);              // Purchased quote amount
         assert(quote.balanceOf(address(this))      == 4997500000);  // USDC balance after Ajna purchase
